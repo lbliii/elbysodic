@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from urllib.parse import urlencode
 
 from chirp.testing import TestClient
 
-from elbysodic.services import create_services
+from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db.seed import DemoSeed
+from elbysodic.services import AppServices, create_services
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 
@@ -64,7 +67,125 @@ def test_reading_thread_clears_unread_marker_for_membership() -> None:
             assert thread.status == 200
 
             board_after = await client.get("/boards/plotting")
-            assert "unread" not in board_after.text
+            assert ">unread<" not in board_after.text
+
+    asyncio.run(run())
+
+
+def test_board_thread_filters_use_roster_participation() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        role = repo.get_role_by_slug(community.id, "member")
+        outsider_user = repo.create_user("outsider@example.com", "hash")
+        outsider_membership = repo.create_membership(
+            community.id,
+            outsider_user.id,
+            role.id,
+            "outsider",
+            "Outsider",
+        )
+        outsider = repo.create_character(
+            community.id,
+            outsider_membership.id,
+            "outsider-face",
+            "Outsider Face",
+        )
+        board = repo.get_board_by_slug(community.id, "plotting")
+        outside_thread = repo.create_thread(
+            community.id,
+            board.id,
+            outsider.id,
+            "outsider-plot",
+            "Outsider plot",
+        )
+        repo.create_post(
+            community.id,
+            outside_thread.id,
+            outsider.id,
+            "A visible thread from another writer.",
+        )
+
+        async with TestClient(app) as client:
+            all_threads = await client.get("/boards/plotting")
+            assert all_threads.status == 200
+            assert "Outsider plot" in all_threads.text
+            assert "?filter=mine" in all_threads.text
+            assert "?filter=unread" in all_threads.text
+            assert "?filter=attention" in all_threads.text
+
+            mine = await client.get("/boards/plotting?filter=mine")
+            assert mine.status == 200
+            assert "Open thread roster" in mine.text
+            assert "Outsider plot" not in mine.text
+            assert "mine" in mine.text
+
+            pinned = await client.get("/boards/plotting?filter=pinned")
+            assert pinned.status == 200
+            assert "No pinned threads here yet." in pinned.text
+
+            locked = await client.get("/boards/announcements?filter=locked")
+            assert locked.status == 200
+            assert "Welcome to the rebuild" in locked.text
+            assert "locked" in locked.text
+
+    asyncio.run(run())
+
+
+def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        role = repo.get_role_by_slug(community.id, "member")
+        outsider_user = repo.create_user("attention@example.com", "hash")
+        outsider_membership = repo.create_membership(
+            community.id,
+            outsider_user.id,
+            role.id,
+            "attention",
+            "Attention",
+        )
+        outsider = repo.create_character(
+            community.id,
+            outsider_membership.id,
+            "attention-face",
+            "Attention Face",
+        )
+        board = repo.get_board_by_slug(community.id, "plotting")
+        thread = repo.get_thread_by_slug(community.id, board.id, "open-thread-roster")
+        repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "A different writer nudges the plot forward.",
+        )
+
+        async with TestClient(app) as client:
+            index = await client.get("/")
+            assert index.status == 200
+            assert "Needs attention" in index.text
+            assert "Open thread roster" in index.text
+            assert "Attention Face" in index.text
+            assert "A different writer nudges the plot forward." in index.text
+
+            board_attention = await client.get("/boards/plotting?filter=attention")
+            assert board_attention.status == 200
+            assert "Open thread roster" in board_attention.text
+            assert "attention" in board_attention.text
+
+            thread_response = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert thread_response.status == 200
+
+            cleared = await client.get("/boards/plotting?filter=attention")
+            assert cleared.status == 200
+            assert "No threads need your attention here." in cleared.text
+
+            index_after_read = await client.get("/")
+            assert "No threads need your attention right now." in index_after_read.text
 
     asyncio.run(run())
 
@@ -148,6 +269,7 @@ def test_character_roster_and_profiles_are_community_scoped() -> None:
             assert profile.status == 200
             assert "Power-stealing brawler with a careful heart." in profile.text
             assert "Sentinel drill after midnight" in profile.text
+            assert "#post-" in profile.text
 
     asyncio.run(run())
 
@@ -174,6 +296,59 @@ def test_character_roster_can_create_new_default_character() -> None:
     asyncio.run(run())
 
 
+def test_character_profile_can_set_current_face() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/characters/storm",
+                body=b"intent=set_default",
+                headers=_FORM,
+            )
+            assert response.status == 302
+            assert dict(response.headers)["location"] == "/characters/storm"
+
+            profile = await client.get("/characters/storm")
+            assert "current" in profile.text
+
+            index = await client.get("/")
+            assert "Current face: Storm" in index.text
+
+    asyncio.run(run())
+
+
+def test_character_profile_can_edit_owned_character() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/characters/rogue",
+                body=(
+                    b"intent=save"
+                    b"&name=Rogue+Prime"
+                    b"&avatar_url=https%3A%2F%2Fexample.test%2Frogue.png"
+                    b"&summary=Still+carrying+the+whole+plot."
+                ),
+                headers=_FORM,
+            )
+            assert response.status == 302
+            assert dict(response.headers)["location"] == "/characters/rogue-prime"
+
+            profile = await client.get("/characters/rogue-prime")
+            assert profile.status == 200
+            assert "Rogue Prime" in profile.text
+            assert "Still carrying the whole plot." in profile.text
+            assert "https://example.test/rogue.png" in profile.text
+
+            thread = await client.get("/boards/danger-room/threads/sentinel-drill")
+            assert "Rogue Prime" in thread.text
+            assert "Rogue drops from the observation gantry" in thread.text
+
+    asyncio.run(run())
+
+
 def test_reply_uses_selected_character() -> None:
     async def run() -> None:
         app = _app()
@@ -196,6 +371,165 @@ def test_reply_uses_selected_character() -> None:
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert "Lightning answers." in thread.text
             assert "Storm" in thread.text
+
+    asyncio.run(run())
+
+
+def test_thread_posts_render_safe_markup() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        storm = next(
+            character for character in services.viewer().roster if character.name == "Storm"
+        )
+        body = (
+            "**Lightning** answers.\n\n"
+            "> Hold the line.\n\n"
+            "[Briefing](https://example.test/briefing) "
+            '<script>alert("x")</script>'
+        )
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/boards/plotting/threads/open-thread-roster",
+                body=urlencode({"character_id": storm.id, "body": body}).encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+            thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert "<strong>Lightning</strong> answers." in thread.text
+            assert "<blockquote><p>Hold the line.</p></blockquote>" in thread.text
+            assert 'href="https://example.test/briefing"' in thread.text
+            assert '<script>alert("x")</script>' not in thread.text
+            assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in thread.text
+
+    asyncio.run(run())
+
+
+def test_writer_can_edit_own_post_with_safe_markup() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        storm = next(
+            character for character in services.viewer().roster if character.name == "Storm"
+        )
+
+        async with TestClient(app) as client:
+            created = await client.post(
+                "/boards/plotting/threads/open-thread-roster",
+                body=urlencode({"character_id": storm.id, "body": "Original typo."}).encode(),
+                headers=_FORM,
+            )
+            assert created.status == 302
+            post_id = dict(created.headers)["location"].split("#post-")[1]
+
+            edit_form = await client.get(
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit"
+            )
+            assert edit_form.status == 200
+            assert "Edit post" in edit_form.text
+            assert "Original typo." in edit_form.text
+            assert "edit-post-composer-config" in edit_form.text
+
+            edited = await client.post(
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit",
+                body=urlencode(
+                    {
+                        "body": (
+                            '**Updated** line.\n\n> Edited safely.\n\n<script>alert("x")</script>'
+                        )
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert edited.status == 302
+            assert dict(edited.headers)["location"] == (
+                f"/boards/plotting/threads/open-thread-roster#post-{post_id}"
+            )
+
+            thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert "Original typo." not in thread.text
+            assert "<strong>Updated</strong> line." in thread.text
+            assert "<blockquote><p>Edited safely.</p></blockquote>" in thread.text
+            assert '<script>alert("x")</script>' not in thread.text
+            assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in thread.text
+            assert "edited" in thread.text
+            assert f"/posts/{post_id}/edit" in thread.text
+
+    asyncio.run(run())
+
+
+def test_writer_cannot_edit_someone_elses_post() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        role = repo.get_role_by_slug(community.id, "member")
+        outsider_user = repo.create_user("not-yours@example.com", "hash")
+        outsider_membership = repo.create_membership(
+            community.id,
+            outsider_user.id,
+            role.id,
+            "notyours",
+            "Not Yours",
+        )
+        outsider = repo.create_character(
+            community.id,
+            outsider_membership.id,
+            "not-yours-face",
+            "Not Yours Face",
+        )
+        board = repo.get_board_by_slug(community.id, "plotting")
+        thread = repo.get_thread_by_slug(community.id, board.id, "open-thread-roster")
+        outsider_post = repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "This belongs to another writer.",
+        )
+
+        async with TestClient(app) as client:
+            edit_form = await client.get(
+                f"/boards/plotting/threads/open-thread-roster/posts/{outsider_post.id}/edit"
+            )
+            assert edit_form.status == 403
+
+            edited = await client.post(
+                f"/boards/plotting/threads/open-thread-roster/posts/{outsider_post.id}/edit",
+                body=urlencode({"body": "Trying to overwrite."}).encode(),
+                headers=_FORM,
+            )
+            assert edited.status == 403
+            assert repo.get_post(community.id, outsider_post.id).body == (
+                "This belongs to another writer."
+            )
+
+    asyncio.run(run())
+
+
+def test_locked_threads_still_allow_editing_own_existing_post() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "announcements")
+        thread = repo.get_thread_by_slug(community.id, board.id, "welcome-to-the-rebuild")
+        post = repo.list_posts(community.id, thread.id)[0]
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                f"/boards/announcements/threads/welcome-to-the-rebuild/posts/{post.id}/edit",
+                body=urlencode({"body": "Updated staff note."}).encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+            restored = await client.get("/boards/announcements/threads/welcome-to-the-rebuild")
+            assert "Updated staff note." in restored.text
+            assert "Thread locked" in restored.text
 
     asyncio.run(run())
 
@@ -250,6 +584,7 @@ def test_file_backed_services_persist_created_threads(tmp_path: Path) -> None:
     db_path = tmp_path / "elbysodic.sqlite3"
     services = create_services(path=db_path)
     viewer = services.viewer()
+    assert viewer.current_character is not None
 
     thread = services.start_thread(
         board_slug="danger-room",
@@ -265,6 +600,74 @@ def test_file_backed_services_persist_created_threads(tmp_path: Path) -> None:
         "This scene survives the next service boot."
     ]
     assert len(restarted.viewer().roster) == 3
+
+
+def test_composer_pages_point_empty_roster_to_character_setup() -> None:
+    async def run() -> None:
+        connection = connect(check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.seed_default_community("Empty Roster")
+        role = repo.create_role(community.id, "member", "Member")
+        user = repo.create_user("empty@example.com", "hash")
+        membership = repo.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "empty",
+            "Empty",
+        )
+        author_user = repo.create_user("author@example.com", "hash")
+        author_membership = repo.create_membership(
+            community.id,
+            author_user.id,
+            role.id,
+            "author",
+            "Author",
+        )
+        author = repo.create_character(
+            community.id,
+            author_membership.id,
+            "author-face",
+            "Author Face",
+        )
+        board = repo.create_board(community.id, "ic", "In Character")
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            author.id,
+            "open-scene",
+            "Open Scene",
+        )
+        repo.create_post(community.id, thread.id, author.id, "A scene exists.")
+        services = AppServices(
+            repo,
+            DemoSeed(
+                community=community,
+                user=user,
+                membership=membership,
+                default_character=None,
+            ),
+        )
+
+        app = create_app(debug=False, services=services)
+        async with TestClient(app) as client:
+            index = await client.get("/")
+            assert index.status == 200
+            assert "Create your first character" in index.text
+
+            new_thread = await client.get(f"/boards/{board.slug}/threads/new")
+            assert new_thread.status == 200
+            assert "Create a character first" in new_thread.text
+            assert "Open roster" in new_thread.text
+            assert "elbysodicComposer" not in new_thread.text
+
+            reply = await client.get(f"/boards/{board.slug}/threads/{thread.slug}")
+            assert reply.status == 200
+            assert "Create a character first" in reply.text
+            assert "A scene exists." in reply.text
+
+    asyncio.run(run())
 
 
 def test_app_contract_check_passes() -> None:

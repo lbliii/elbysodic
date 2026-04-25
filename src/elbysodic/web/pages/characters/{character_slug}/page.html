@@ -1,6 +1,6 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/layout.html" import container, stack, cluster %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
 {% end %}
@@ -20,14 +20,15 @@
         <div class="elbysodic-character-avatar elbysodic-character-avatar--lg" aria-hidden="true">
           {% if profile.character.avatar_url %}
           <img src="{{ profile.character.avatar_url }}" alt="">
-          {% else %}
-          {{ profile.character.name[:1] }}
-          {% end %}
+        {% else %}
+        {{ profile.character.name[:1] }}
+        {% end %}
         </div>
         <div>
-          {% call section_header(profile.character.name) %}
-          {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
-          {% end %}
+          <div class="chirpui-cluster chirpui-cluster--sm">
+            <h2>{{ profile.character.name }}</h2>
+            {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
+          </div>
           <p class="chirpui-text-muted">{{ profile.character.summary }}</p>
         </div>
       </div>
@@ -37,7 +38,57 @@
       {{ stat(value=profile.thread_count, label="Threads started") }}
       {{ stat(value=viewer.membership.username, label="Writer") }}
     {% end %}
+    <div class="chirpui-cluster chirpui-cluster--end">
+      {% if not profile.is_default %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="set_default">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Set current face</button>
+      </form>
+      {% end %}
+    </div>
   </article>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+    <div>
+      <h2>Edit character</h2>
+      <p class="chirpui-text-muted">Roster identity for {{ viewer.community.name }}</p>
+    </div>
+    {% if error %}
+    <p class="chirpui-field__error">{{ error }}</p>
+    {% end %}
+    <input type="hidden" name="intent" value="save">
+    <div class="elbysodic-form-grid">
+      <div>
+        <label class="chirpui-field__label" for="character-name">Name</label>
+        <input id="character-name"
+               class="chirpui-field__input"
+               name="name"
+               value="{{ name }}"
+               autocomplete="off"
+               required>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-avatar">Avatar URL</label>
+        <input id="character-avatar"
+               class="chirpui-field__input"
+               name="avatar_url"
+               value="{{ avatar_url }}"
+               autocomplete="off">
+      </div>
+    </div>
+    <div>
+      <label class="chirpui-field__label" for="character-summary">Summary</label>
+      <textarea id="character-summary"
+                class="chirpui-field__input"
+                name="summary"
+                rows="4">{{ summary }}</textarea>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Save character</button>
+    </div>
+  </form>
   {% end %}
 
   <div class="chirpui-stack chirpui-stack--md">
@@ -49,14 +100,23 @@
         <div>
           <h3>
             <a class="chirpui-link"
-               href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}">
+               href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.post.anchor }}">
               {{ item.thread.title }}
             </a>
           </h3>
-          <p class="chirpui-text-muted">{{ item.board.name }} · {{ item.post.created_at }}</p>
+          <p class="chirpui-text-muted">
+            {{ item.board.name }} · {{ item.post.created_at_label }}
+          </p>
         </div>
+        <a class="chirpui-link"
+           href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.post.anchor }}"
+           aria-label="Jump to post {{ item.post.post.id }}">
+          #{{ item.post.post.id }}
+        </a>
       </div>
-      <p>{{ item.post.body }}</p>
+      <div class="elbysodic-post-content elbysodic-post-content--compact">
+        {{ item.post.rendered_body }}
+      </div>
     </article>
     {% end %}
     {% end %}

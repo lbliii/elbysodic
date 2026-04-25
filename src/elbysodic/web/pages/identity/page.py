@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.http.request import Request
 from chirp.http.response import Redirect
 
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class IdentityForm:
+    character_id: str
+    next: str
+
+
+@contract(form=FormContract(IdentityForm, "_layout.html"))
 async def post(request: Request) -> Redirect:
     form = await request.form()
     character_id = int(str(form.get("character_id") or "0"))

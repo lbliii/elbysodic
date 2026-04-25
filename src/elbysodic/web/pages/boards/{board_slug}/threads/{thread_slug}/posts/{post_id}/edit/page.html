@@ -1,0 +1,100 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link"
+     href="/boards/{{ edit_view.board.slug }}/threads/{{ edit_view.thread.slug }}#{{ edit_view.post.anchor }}">
+    ← {{ edit_view.thread.title }}
+  </a>
+
+  {% call section_header("Edit post") %}
+  {{ badge(edit_view.board.name, variant="muted") }}
+  {{ badge("post #" ~ edit_view.post.post.id) }}
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  {{ alpine_json_config(composer_config_id, composer_config) }}
+  <form method="post"
+        hx-boost="false"
+        class="chirpui-stack chirpui-stack--md"
+        x-data="elbysodicComposer('{{ composer_config_id }}')"
+        @submit="clearDraft()">
+    <div class="elbysodic-composer-heading">
+      <div>
+        <h2>{{ edit_view.thread.title }}</h2>
+        <p class="chirpui-text-muted">
+          Posted {{ edit_view.post.created_at_label }}
+          {% if edit_view.post.is_edited %}
+          · edited {{ edit_view.post.updated_at_label }}
+          {% end %}
+        </p>
+      </div>
+    </div>
+    <div class="elbysodic-composer-character">
+      <div class="elbysodic-character-avatar" aria-hidden="true">
+        {% if edit_view.post.author.avatar_url %}
+        <img src="{{ edit_view.post.author.avatar_url }}" alt="">
+        {% else %}
+        {{ edit_view.post.author.name[:1] }}
+        {% end %}
+      </div>
+      <div>
+        <strong>{{ edit_view.post.author.name }}</strong>
+        <p class="chirpui-text-muted">writer {{ edit_view.post.author_membership.username }}</p>
+      </div>
+    </div>
+    {% if error %}
+    <p class="chirpui-field__error">{{ error }}</p>
+    {% end %}
+    <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
+      <label>
+        <input type="radio"
+               name="edit-post-composer-view"
+               value="write"
+               x-model="viewMode">
+        <span>Write</span>
+      </label>
+      <label>
+        <input type="radio"
+               name="edit-post-composer-view"
+               value="preview"
+               x-model="viewMode">
+        <span>Preview</span>
+      </label>
+    </div>
+    <div x-show="!previewMode">
+      <label class="chirpui-field__label" for="edit-post-body">Post body</label>
+      <textarea id="edit-post-body"
+                class="chirpui-field__input"
+                name="body"
+                rows="10"
+                x-model="body">{{ body }}</textarea>
+    </div>
+    <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
+      <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
+      <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
+      <a class="chirpui-btn chirpui-btn--secondary"
+         href="/boards/{{ edit_view.board.slug }}/threads/{{ edit_view.thread.slug }}#{{ edit_view.post.anchor }}">
+        Cancel
+      </a>
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Save post</button>
+    </div>
+  </form>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 from chirp.app import App
 from chirp.config import AppConfig
@@ -29,5 +30,16 @@ def create_app(
     use_chirp_ui(app)
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))
+    _copy_page_contracts(app)
 
     return app
+
+
+def _copy_page_contracts(app: App) -> None:
+    """Expose filesystem-page handler contracts to Chirp's route wrapper."""
+
+    for route in app._mutable_state.pending_routes:
+        source_handler = getattr(route, "page_source_handler", None)
+        route_contract = getattr(source_handler, "_chirp_contract", None)
+        if route_contract is not None:
+            cast(Any, route.handler)._chirp_contract = route_contract

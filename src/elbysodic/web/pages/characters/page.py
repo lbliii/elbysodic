@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
@@ -9,10 +12,19 @@ from chirp.templating.returns import Page
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class CharacterCreateForm:
+    name: str
+    avatar_url: str
+    summary: str
+    make_default: str
+
+
 def get(request: Request) -> Page:
     return _render_roster(request)
 
 
+@contract(form=FormContract(CharacterCreateForm, "characters/page.html"))
 async def post(request: Request) -> Page | Redirect:
     form = await request.form()
     name = str(form.get("name") or "")

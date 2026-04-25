@@ -18,5 +18,6 @@ def get(request: Request) -> Page:
         current_path=request.url,
         viewer=viewer,
         boards=services.list_boards(),
+        attention=services.needs_attention(),
         activity=services.recent_activity(),
     )

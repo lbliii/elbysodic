@@ -94,6 +94,55 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
         repo.set_default_character(default.id, default_membership.id, magneto.id)
 
 
+def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    user = repo.create_user("writer@example.com", "hash")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "writer",
+        "Writer",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "writer",
+        "Writer Elsewhere",
+    )
+    rogue = repo.create_character(default.id, default_membership.id, "rogue", "Rogue")
+    repo.create_character(hosted.id, hosted_membership.id, "rogue", "Rogue Elsewhere")
+
+    updated = repo.update_character(
+        default.id,
+        rogue.id,
+        slug="rogue-prime",
+        name="Rogue Prime",
+        avatar_url="https://example.test/rogue.png",
+        summary="Still carrying the whole plot.",
+    )
+
+    assert updated.slug == "rogue-prime"
+    assert updated.name == "Rogue Prime"
+    assert updated.avatar_url == "https://example.test/rogue.png"
+    assert updated.summary == "Still carrying the whole plot."
+    assert repo.get_character_by_slug(hosted.id, "rogue").name == "Rogue Elsewhere"
+
+    with pytest.raises(LookupError):
+        repo.update_character(
+            hosted.id,
+            rogue.id,
+            slug="bad",
+            name="Bad",
+            avatar_url=None,
+            summary="Wrong community.",
+        )
+
+
 def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")

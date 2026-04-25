@@ -17,7 +17,11 @@
 
   {% call cluster(gap="sm") %}
     {{ stat(value=viewer.roster | length, label="Characters") }}
+    {% if viewer.current_character %}
     {{ stat(value=viewer.current_character.name, label="Current face") }}
+    {% else %}
+    {{ stat(value="Needed", label="Current face") }}
+    {% end %}
     {{ stat(value=viewer.membership.post_count, label="Posts") }}
   {% end %}
 
@@ -41,9 +45,12 @@
             <p class="chirpui-text-muted">{{ character.summary }}</p>
           </div>
         </div>
-        {% if viewer.current_character.id == character.id %}
+        {% if viewer.current_character and viewer.current_character.id == character.id %}
         {{ badge("current", variant="success") }}
         {% end %}
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ character.slug }}">Manage</a>
       </div>
     </article>
     {% end %}

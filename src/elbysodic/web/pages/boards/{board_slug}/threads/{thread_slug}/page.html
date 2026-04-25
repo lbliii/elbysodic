@@ -43,9 +43,25 @@
       </aside>
       <div class="elbysodic-post__body">
         <header class="elbysodic-post__meta">
-          <span>{{ item.created_at_label }}</span>
+          <div class="elbysodic-post__meta-line">
+            <span>{{ item.created_at_label }}</span>
+            {% if item.is_edited %}
+            <span>edited {{ item.updated_at_label }}</span>
+            {% end %}
+          </div>
+          <div class="elbysodic-post__meta-actions">
+            {% if item.can_edit %}
+            <a class="chirpui-link"
+               href="/boards/{{ thread_view.board.slug }}/threads/{{ thread_view.thread.slug }}/posts/{{ item.post.id }}/edit">
+              Edit
+            </a>
+            {% end %}
+            <a class="chirpui-link" href="#{{ item.anchor }}" aria-label="Permalink to post {{ item.post.id }}">
+              #{{ item.post.id }}
+            </a>
+          </div>
         </header>
-        <p>{{ item.post.body }}</p>
+        <div class="elbysodic-post-content">{{ item.rendered_body }}</div>
       </div>
     </article>
     {% end %}
@@ -54,6 +70,19 @@
 
   {% if thread_view.can_reply %}
     {% call surface(variant="elevated") %}
+    {% if not selected_character %}
+    <div class="chirpui-stack chirpui-stack--md">
+      <div>
+        <h2>Create a character first</h2>
+        <p class="chirpui-text-muted">
+          {{ viewer.community.name }} needs a roster face before you can reply.
+        </p>
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--primary" href="/characters">Open roster</a>
+      </div>
+    </div>
+    {% else %}
     {{ alpine_json_config(composer_config_id, composer_config) }}
     <form method="post"
           hx-boost="false"
@@ -118,13 +147,15 @@
                   x-model="body">{{ body }}</textarea>
       </div>
       <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
-        <p x-show="hasPreview()" x-text="body"></p>
+        <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
         <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
       </div>
       <div class="chirpui-cluster chirpui-cluster--end">
+        <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
         <button type="submit" class="chirpui-btn chirpui-btn--primary">Post reply</button>
       </div>
     </form>
+    {% end %}
     {% end %}
   {% else %}
     {% call surface(variant="elevated") %}

@@ -17,6 +17,19 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
+  {% if not selected_character %}
+  <div class="chirpui-stack chirpui-stack--md">
+    <div>
+      <h2>Create a character first</h2>
+      <p class="chirpui-text-muted">
+        {{ viewer.community.name }} needs a roster face before you can start a thread.
+      </p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <a class="chirpui-btn chirpui-btn--primary" href="/characters">Open roster</a>
+    </div>
+  </div>
+  {% else %}
   {{ alpine_json_config(composer_config_id, composer_config) }}
   <form method="post"
         hx-boost="false"
@@ -92,13 +105,15 @@
     </div>
     <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
       <h2 x-show="title.trim()" x-text="title"></h2>
-      <p x-show="hasPreview()" x-text="body"></p>
+      <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
       <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
     </div>
     <div class="chirpui-cluster chirpui-cluster--end">
+      <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
       <button type="submit" class="chirpui-btn chirpui-btn--primary">Start thread</button>
     </div>
   </form>
+  {% end %}
   {% end %}
 {% end %}
 {% end %}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from elbysodic.domain.models import Board, Character, CommunityMembership, Role, Thread
+from elbysodic.domain.models import Board, Character, CommunityMembership, Post, Role, Thread
 
 
 def can_view_board(
@@ -53,6 +53,18 @@ def can_post_as(membership: CommunityMembership, character: Character) -> bool:
         and membership.id == character.membership_id
         and membership.is_active
     )
+
+
+def can_edit_post(
+    membership: CommunityMembership,
+    post: Post,
+    role: Role | None = None,
+) -> bool:
+    if membership.community_id != post.community_id or not membership.is_active:
+        return False
+    if post.author_membership_id == membership.id:
+        return True
+    return _is_admin_membership(membership, role)
 
 
 def _is_admin_membership(membership: CommunityMembership, role: Role | None) -> bool:

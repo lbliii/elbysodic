@@ -6,8 +6,8 @@
 {% block title %}Elbysodic{% end %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=composer-radio-toggle">
-<script defer src="/elbysodic-static/elbysodic-composer.js?v=composer-radio-toggle"></script>
+<link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=post-markup">
+<script defer src="/elbysodic-static/elbysodic-composer.js?v=post-markup"></script>
 {% end %}
 
 {% block title_oob %}
@@ -29,7 +29,7 @@
 {% end %}
 
 {% block topbar_end %}
-{% if viewer %}
+{% if viewer and viewer.current_character %}
 <form action="/identity" method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--sm">
   <input type="hidden" name="next" value="{{ current_path or "/" }}">
   <label class="chirpui-visually-hidden" for="active-character">Active character</label>

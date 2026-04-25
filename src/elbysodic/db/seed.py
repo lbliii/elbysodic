@@ -14,7 +14,7 @@ class DemoSeed:
     community: Community
     user: User
     membership: CommunityMembership
-    default_character: Character
+    default_character: Character | None
 
 
 def seed_demo_forum(repo: ForumRepository) -> DemoSeed:

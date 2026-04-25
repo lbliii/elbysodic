@@ -53,6 +53,22 @@ def _render_form(
     services = get_services()
     viewer = services.viewer()
     board, _threads = services.board_threads(board_slug)
+    if viewer.current_character is None:
+        return Page(
+            "boards/{board_slug}/threads/new/page.html",
+            "page_content",
+            page_block_name="page_root",
+            current_path=request.url,
+            viewer=viewer,
+            board=board,
+            selected_character=None,
+            selected_character_id=None,
+            error=error,
+            title=title,
+            body=body,
+            composer_config={},
+            composer_config_id="thread-composer-config",
+        )
     selected_character = _select_character(
         viewer.roster,
         character_id or viewer.current_character.id,

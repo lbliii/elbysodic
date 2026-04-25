@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
 from elbysodic.domain.models import (
@@ -291,6 +291,28 @@ class ForumRepository:
         if row is None:
             raise LookupError(f"character not found in community {community_id}: {slug}")
         return _character_from_row(row)
+
+    def update_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        slug: str,
+        name: str,
+        avatar_url: str | None,
+        summary: str,
+    ) -> Character:
+        self.get_character(community_id, character_id)
+        self.connection.execute(
+            """
+            UPDATE characters
+            SET slug = ?, name = ?, avatar_url = ?, summary = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (slug, name, avatar_url, summary, _utc_now(), community_id, character_id),
+        )
+        self.connection.commit()
+        return self.get_character(community_id, character_id)
 
     def list_characters(self, community_id: int, membership_id: int) -> list[Character]:
         self.get_membership(community_id, membership_id)
@@ -629,6 +651,19 @@ class ForumRepository:
         self.connection.commit()
         return self.get_post(community_id, _last_id(cursor))
 
+    def update_post_body(self, community_id: int, post_id: int, body: str) -> Post:
+        post = self.get_post(community_id, post_id)
+        self.connection.execute(
+            """
+            UPDATE posts
+            SET body = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (body, _next_update_stamp(post.updated_at), community_id, post_id),
+        )
+        self.connection.commit()
+        return self.get_post(community_id, post_id)
+
     def get_post(self, community_id: int, post_id: int) -> Post:
         row = self.connection.execute(
             """
@@ -758,6 +793,18 @@ class ForumRepository:
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def _next_update_stamp(previous: str) -> str:
+    now = _utc_now()
+    try:
+        previous_stamp = datetime.fromisoformat(previous)
+        now_stamp = datetime.fromisoformat(now)
+    except ValueError:
+        return now
+    if now_stamp <= previous_stamp:
+        return (previous_stamp + timedelta(seconds=1)).isoformat(timespec="seconds")
+    return now
 
 
 def _last_id(cursor: sqlite3.Cursor) -> int:

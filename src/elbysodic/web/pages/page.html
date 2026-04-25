@@ -12,9 +12,19 @@
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
   {% call section_header(viewer.community.name) %}
+  {% if viewer.current_character %}
   {{ badge("posting as " ~ viewer.current_character.name) }}
+  {% else %}
+  {{ badge("roster needed", variant="warning") }}
   {% end %}
+  {% end %}
+  {% if viewer.current_character %}
   <p class="chirpui-text-muted">Current face: {{ viewer.current_character.name }}</p>
+  {% else %}
+  <p class="chirpui-text-muted">
+    Create your first character to start posting in {{ viewer.community.name }}.
+  </p>
+  {% end %}
 
   {% call cluster(gap="sm") %}
     {{ stat(value=boards | length, label="Boards") }}
@@ -60,6 +70,43 @@
       <p class="elbysodic-empty-state">No threads yet.</p>
       {% end %}
     </div>
+    {% end %}
+    {% end %}
+  </div>
+
+  {% call section_header("Needs attention") %}
+  Unread threads where someone else posted last.
+  {% end %}
+
+  <div class="chirpui-stack chirpui-stack--sm elbysodic-activity-list">
+    {% if attention %}
+    {% for item in attention %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-activity-item">
+      <div class="elbysodic-activity-item__meta">
+        {{ badge("attention", variant="warning") }}
+        <a class="chirpui-link" href="/characters/{{ item.latest_post.author.slug }}">
+          {{ item.latest_post.author.name }}
+        </a>
+        <span class="chirpui-text-muted">
+          in
+          <a class="chirpui-link" href="/boards/{{ item.board.slug }}">{{ item.board.name }}</a>
+          · {{ item.latest_post.created_at_label }}
+        </span>
+      </div>
+      <h2>
+        <a class="chirpui-link"
+           href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.latest_post.anchor }}">
+          {{ item.thread.title }}
+        </a>
+      </h2>
+      <p class="chirpui-text-muted">{{ item.snippet }}</p>
+    </article>
+    {% end %}
+    {% end %}
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No threads need your attention right now.</p>
     {% end %}
     {% end %}
   </div>

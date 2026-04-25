@@ -23,6 +23,15 @@
   {{ badge("private", variant="muted") if board.is_private else "" }}
   {% end %}
 
+  <nav class="elbysodic-filter-bar" aria-label="Thread filters">
+    {% for option in filter_options %}
+    <a class="chirpui-btn {{ "chirpui-btn--primary" if option.is_active else "chirpui-btn--secondary" }}"
+       href="{{ option.href }}">
+      {{ option.label }}
+    </a>
+    {% end %}
+  </nav>
+
   <div class="chirpui-stack chirpui-stack--md elbysodic-thread-list">
     {% if threads %}
     {% for item in threads %}
@@ -45,6 +54,8 @@
         </div>
         <div class="chirpui-cluster chirpui-cluster--sm">
           {{ badge("unread", variant="info") if item.is_unread else "" }}
+          {{ badge("attention", variant="warning") if item.needs_attention else "" }}
+          {{ badge("mine", variant="success") if item.is_mine else "" }}
           {{ badge("pinned", variant="warning") if item.thread.is_pinned else "" }}
           {{ badge("locked", variant="muted") if item.thread.is_locked else "" }}
           {{ stat(value=item.reply_count, label="Replies") }}
@@ -72,7 +83,13 @@
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
+    {% if active_filter == "all" %}
     <p class="elbysodic-empty-state">No threads yet.</p>
+    {% elif active_filter == "attention" %}
+    <p class="elbysodic-empty-state">No threads need your attention here.</p>
+    {% else %}
+    <p class="elbysodic-empty-state">No {{ active_filter }} threads here yet.</p>
+    {% end %}
     {% end %}
     {% end %}
   </div>

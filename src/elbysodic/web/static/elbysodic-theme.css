@@ -194,6 +194,12 @@ body {
     padding-top: 0.875rem;
 }
 
+.elbysodic-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .elbysodic-thread-card {
     display: grid;
     gap: 0.875rem;
@@ -374,12 +380,20 @@ body {
 }
 
 .elbysodic-composer-preview h2,
-.elbysodic-composer-preview p {
+.elbysodic-composer-preview p,
+.elbysodic-composer-preview .elbysodic-post-content {
     margin: 0;
 }
 
+.elbysodic-composer-preview h2 + .elbysodic-post-content,
 .elbysodic-composer-preview h2 + p {
     margin-top: 0.75rem;
+}
+
+.elbysodic-draft-status {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    margin: 0;
 }
 
 .elbysodic-post {
@@ -397,8 +411,7 @@ body {
 }
 
 .elbysodic-post__author h2,
-.elbysodic-post__author p,
-.elbysodic-post__body p {
+.elbysodic-post__author p {
     margin: 0;
 }
 
@@ -412,14 +425,58 @@ body {
     gap: 1.25rem;
 }
 
-.elbysodic-post__body p {
+.elbysodic-post-content {
     font-size: var(--chirpui-font-lg);
     line-height: var(--chirpui-line-height-relaxed);
 }
 
-.elbysodic-post__meta {
+.elbysodic-post-content--compact {
+    font-size: var(--chirpui-font-md);
+}
+
+.elbysodic-post-content p,
+.elbysodic-post-content blockquote {
+    margin: 0;
+}
+
+.elbysodic-post-content p + p,
+.elbysodic-post-content blockquote + p,
+.elbysodic-post-content p + blockquote,
+.elbysodic-post-content blockquote + blockquote {
+    margin-top: 1rem;
+}
+
+.elbysodic-post-content blockquote {
+    background: color-mix(in srgb, var(--chirpui-accent) 7%, transparent);
+    border-left: 3px solid var(--chirpui-accent);
     color: var(--chirpui-text-muted);
+    padding: 0.75rem 1rem;
+}
+
+.elbysodic-post-content strong {
+    color: var(--chirpui-text);
+    font-weight: 700;
+}
+
+.elbysodic-post-content em {
+    color: color-mix(in srgb, var(--chirpui-text) 82%, var(--chirpui-accent));
+}
+
+.elbysodic-post__meta {
+    align-items: center;
+    color: var(--chirpui-text-muted);
+    display: flex;
     font-size: var(--chirpui-font-sm);
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.elbysodic-post__meta-line,
+.elbysodic-post__meta-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 @media (max-width: 48rem) {

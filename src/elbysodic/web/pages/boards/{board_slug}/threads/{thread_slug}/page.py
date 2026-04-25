@@ -48,6 +48,20 @@ def _render_thread(
     services = get_services()
     viewer = services.viewer()
     thread_view = services.read_thread(board_slug, thread_slug)
+    if viewer.current_character is None:
+        return Page(
+            "boards/{board_slug}/threads/{thread_slug}/page.html",
+            "page_content",
+            page_block_name="page_root",
+            current_path=request.url,
+            viewer=viewer,
+            selected_character=None,
+            thread_view=thread_view,
+            error=error,
+            body=body,
+            composer_config={},
+            composer_config_id="reply-composer-config",
+        )
     selected_character = _select_character(
         viewer.roster,
         selected_character_id or viewer.current_character.id,
