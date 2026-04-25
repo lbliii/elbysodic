@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -17,8 +18,48 @@ from elbysodic.web.state import get_services
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
 
+def _sidebar_board_count(html: str, board_slug: str) -> int:
+    match = re.search(
+        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*" href="/boards/{re.escape(board_slug)}">'
+        r"(?P<body>.*?)</a>",
+        html,
+        re.DOTALL,
+    )
+    assert match is not None
+    count = re.search(
+        r'<span class="elbysodic-sidebar-count">(?P<count>\d+)</span>',
+        match.group("body"),
+    )
+    return int(count.group("count")) if count is not None else 0
+
+
 def _app():
     return create_app(debug=False, services=create_services(path=":memory:"))
+
+
+def _outsider_services(
+    services: AppServices, *, prefix: str = "outsider"
+) -> tuple[AppServices, int]:
+    repo = services.repo
+    community = services.seed.community
+    role = repo.get_role_by_slug(community.id, "member")
+    user = repo.create_user(f"{prefix}@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        prefix,
+        prefix.title(),
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        f"{prefix}-face",
+        f"{prefix.title()} Face",
+        make_default=True,
+    )
+    membership = repo.get_membership(community.id, membership.id)
+    return AppServices(repo, DemoSeed(community, user, membership, character)), character.id
 
 
 def test_forum_pages_render_seeded_boards_and_thread() -> None:
@@ -34,17 +75,19 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Latest" in index.text
             assert "Recent activity" in index.text
             assert "#post-" in index.text
-            assert "unread" in index.text
+            assert "new replies" in index.text
             assert "writer starlane" in index.text
+            assert _sidebar_board_count(index.text, "plotting") == 1
 
             board = await client.get("/boards/plotting")
             assert board.status == 200
             assert "Open thread roster" in board.text
             assert "Started by" in board.text
             assert "Latest" in board.text
-            assert "Jump to post" in board.text
+            assert "First unread" in board.text
             assert "#post-" in board.text
-            assert "unread" in board.text
+            assert "new replies" in board.text
+            assert "Next unread" in board.text
             assert "Magneto" in board.text
 
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
@@ -54,6 +97,214 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Rogue" in thread.text
             assert "Magneto" in thread.text
             assert "writer starlane" in thread.text
+            assert "caught up" in thread.text
+            assert _sidebar_board_count(thread.text, "plotting") == 0
+
+    asyncio.run(run())
+
+
+def test_thread_cards_jump_to_first_unread_then_latest() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        membership = services.seed.membership
+        role = repo.get_role_by_slug(community.id, "member")
+        outsider_user = repo.create_user("jump@example.com", "hash")
+        outsider_membership = repo.create_membership(
+            community.id,
+            outsider_user.id,
+            role.id,
+            "jumpwriter",
+            "Jump Writer",
+        )
+        outsider = repo.create_character(
+            community.id,
+            outsider_membership.id,
+            "jump-face",
+            "Jump Face",
+        )
+        board = repo.get_board_by_slug(community.id, "plotting")
+        thread = repo.get_thread_by_slug(community.id, board.id, "open-thread-roster")
+        repo.mark_thread_read(
+            community.id,
+            thread.id,
+            membership.id,
+            read_at="2026-01-01T00:00:00+00:00",
+        )
+        first_unread = repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "First unread beat.",
+        )
+        latest_unread = repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "Latest unread beat.",
+        )
+        repo.connection.execute(
+            """
+            UPDATE posts
+            SET created_at = '2025-12-31T23:59:00+00:00',
+                updated_at = '2025-12-31T23:59:00+00:00'
+            WHERE community_id = ? AND thread_id = ? AND id NOT IN (?, ?)
+            """,
+            (community.id, thread.id, first_unread.id, latest_unread.id),
+        )
+        repo.connection.execute(
+            """
+            UPDATE posts
+            SET created_at = '2026-01-01T00:00:01+00:00',
+                updated_at = '2026-01-01T00:00:01+00:00'
+            WHERE community_id = ? AND id = ?
+            """,
+            (community.id, first_unread.id),
+        )
+        repo.connection.execute(
+            """
+            UPDATE posts
+            SET created_at = '2026-01-01T00:00:02+00:00',
+                updated_at = '2026-01-01T00:00:02+00:00'
+            WHERE community_id = ? AND id = ?
+            """,
+            (community.id, latest_unread.id),
+        )
+        repo.connection.execute(
+            """
+            UPDATE threads
+            SET updated_at = '2026-01-01T00:00:02+00:00'
+            WHERE community_id = ? AND id = ?
+            """,
+            (community.id, thread.id),
+        )
+        repo.connection.commit()
+
+        async with TestClient(app) as client:
+            board_response = await client.get("/boards/plotting")
+            assert board_response.status == 200
+            assert "First unread" in board_response.text
+            assert (
+                f"/boards/plotting/threads/open-thread-roster#post-{first_unread.id}"
+                in board_response.text
+            )
+            assert (
+                f"/boards/plotting/threads/open-thread-roster#post-{latest_unread.id}"
+                not in board_response.text
+            )
+
+            thread_response = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert thread_response.status == 200
+
+            board_after_read = await client.get("/boards/plotting")
+            assert board_after_read.status == 200
+            assert "Jump to latest" in board_after_read.text
+            assert (
+                f"/boards/plotting/threads/open-thread-roster#post-{latest_unread.id}"
+                in board_after_read.text
+            )
+
+    asyncio.run(run())
+
+
+def test_board_page_next_unread_jumps_to_first_unread_post() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        membership = services.seed.membership
+        role = repo.get_role_by_slug(community.id, "member")
+        outsider_user = repo.create_user("board-next@example.com", "hash")
+        outsider_membership = repo.create_membership(
+            community.id,
+            outsider_user.id,
+            role.id,
+            "boardnext",
+            "Board Next",
+        )
+        outsider = repo.create_character(
+            community.id,
+            outsider_membership.id,
+            "board-next-face",
+            "Board Next Face",
+        )
+        board = repo.create_board(community.id, "board-next", "Board Next")
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            outsider.id,
+            "board-next-thread",
+            "Board Next Thread",
+        )
+        repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "The board-level thread exists.",
+        )
+        repo.connection.execute(
+            """
+            UPDATE posts
+            SET created_at = '2026-01-01T00:00:00+00:00',
+                updated_at = '2026-01-01T00:00:00+00:00'
+            WHERE community_id = ? AND thread_id = ?
+            """,
+            (community.id, thread.id),
+        )
+        repo.connection.execute(
+            """
+            UPDATE threads
+            SET updated_at = '2026-01-01T00:00:00+00:00'
+            WHERE community_id = ? AND id = ?
+            """,
+            (community.id, thread.id),
+        )
+        repo.connection.commit()
+        repo.mark_thread_read(
+            community.id,
+            thread.id,
+            membership.id,
+            read_at="2026-01-01T00:00:00+00:00",
+        )
+        post = repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "The board-level next unread target.",
+        )
+        repo.connection.execute(
+            """
+            UPDATE posts
+            SET created_at = '2026-01-01T00:00:01+00:00',
+                updated_at = '2026-01-01T00:00:01+00:00'
+            WHERE community_id = ? AND id = ?
+            """,
+            (community.id, post.id),
+        )
+        repo.connection.execute(
+            """
+            UPDATE threads
+            SET updated_at = '2026-01-01T00:00:01+00:00'
+            WHERE community_id = ? AND id = ?
+            """,
+            (community.id, thread.id),
+        )
+        repo.connection.commit()
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/board-next")
+            assert page.status == 200
+            assert "Next unread" in page.text
+            assert f"/boards/board-next/threads/board-next-thread#post-{post.id}" in page.text
+
+            thread_response = await client.get("/boards/board-next/threads/board-next-thread")
+            assert thread_response.status == 200
+
+            caught_up = await client.get("/boards/board-next")
+            assert "Next unread" not in caught_up.text
 
     asyncio.run(run())
 
@@ -63,13 +314,159 @@ def test_reading_thread_clears_unread_marker_for_membership() -> None:
         app = _app()
         async with TestClient(app) as client:
             board_before = await client.get("/boards/plotting")
-            assert "unread" in board_before.text
+            assert "new replies" in board_before.text
 
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread.status == 200
 
             board_after = await client.get("/boards/plotting")
-            assert ">unread<" not in board_after.text
+            assert ">new replies<" not in board_after.text
+
+    asyncio.run(run())
+
+
+def test_thread_watch_toggle_controls_thread_notifications() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert thread.status == 200
+            assert "Watch thread" in thread.text
+
+            watched = await client.post(
+                "/boards/plotting/threads/open-thread-roster",
+                body=b"intent=watch",
+                headers=_FORM,
+            )
+            assert watched.status == 302
+
+            watched_thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert "watching" in watched_thread.text
+            assert "Unwatch thread" in watched_thread.text
+
+            unwatched = await client.post(
+                "/boards/plotting/threads/open-thread-roster",
+                body=b"intent=unwatch",
+                headers=_FORM,
+            )
+            assert unwatched.status == 302
+
+            unwatched_thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert "Watch thread" in unwatched_thread.text
+            assert "Unwatch thread" not in unwatched_thread.text
+
+    asyncio.run(run())
+
+
+def test_notifications_track_watched_thread_replies_and_open_read_state() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        services.watch_thread("plotting", "open-thread-roster")
+        outsider_services, outsider_character_id = _outsider_services(services, prefix="notify")
+        post = outsider_services.reply_to_thread(
+            "plotting",
+            "open-thread-roster",
+            outsider_character_id,
+            "A watched reply arrives.",
+        )
+
+        async with TestClient(app) as client:
+            index = await client.get("/")
+            assert index.status == 200
+            assert "Notifications" in index.text
+            assert "elbysodic-sidebar-count" in index.text
+
+            notifications = await client.get("/notifications")
+            assert notifications.status == 200
+            assert "Watched thread" in notifications.text
+            assert "A watched reply arrives." in notifications.text
+            assert "Notify Face" in notifications.text
+            assert "new" in notifications.text
+
+            item = services.notifications().items[0]
+            opened = await client.post(
+                "/notifications",
+                body=f"intent=open&notification_id={item.notification.id}".encode(),
+                headers=_FORM,
+            )
+            assert opened.status == 302
+            assert dict(opened.headers)["location"] == (
+                f"/boards/plotting/threads/open-thread-roster#post-{post.id}"
+            )
+            assert services.viewer().unread_notification_count == 0
+
+    asyncio.run(run())
+
+
+def test_mentions_notify_character_owner_without_thread_watch() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        outsider_services, outsider_character_id = _outsider_services(services, prefix="mention")
+        outsider_services.reply_to_thread(
+            "plotting",
+            "open-thread-roster",
+            outsider_character_id,
+            "Hey @Rogue, the plotting board needs you.",
+        )
+
+        async with TestClient(app) as client:
+            notifications = await client.get("/notifications")
+            assert notifications.status == 200
+            assert "Mention" in notifications.text
+            assert "Hey @Rogue, the plotting board needs you." in notifications.text
+            assert "Mention Face" in notifications.text
+
+    asyncio.run(run())
+
+
+def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        membership = services.seed.membership
+        viewer = services.viewer()
+        character = viewer.current_character
+        assert character is not None
+        board = repo.create_board(community.id, "navigation", "Navigation")
+        newer = repo.create_thread(community.id, board.id, character.id, "newer", "Newer thread")
+        current = repo.create_thread(
+            community.id, board.id, character.id, "middle", "Middle thread"
+        )
+        older = repo.create_thread(community.id, board.id, character.id, "older", "Older thread")
+        repo.create_post(community.id, newer.id, character.id, "Newer post.")
+        repo.create_post(community.id, current.id, character.id, "Middle post.")
+        older_post = repo.create_post(community.id, older.id, character.id, "Older post.")
+        repo.connection.execute(
+            """
+            UPDATE threads
+            SET updated_at = CASE id
+                WHEN ? THEN '2026-01-01T00:03:00+00:00'
+                WHEN ? THEN '2026-01-01T00:02:00+00:00'
+                WHEN ? THEN '2026-01-01T00:01:00+00:00'
+                ELSE updated_at
+            END
+            WHERE community_id = ? AND board_id = ?
+            """,
+            (newer.id, current.id, older.id, community.id, board.id),
+        )
+        repo.connection.commit()
+        repo.mark_thread_read(community.id, newer.id, membership.id)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/navigation/threads/middle")
+            assert page.status == 200
+            assert "Thread navigation" in page.text
+            assert "Previous" in page.text
+            assert "Newer thread" in page.text
+            assert "/boards/navigation/threads/newer" in page.text
+            assert "Next" in page.text
+            assert "Older thread" in page.text
+            assert "Next unread" in page.text
+            assert f"/boards/navigation/threads/older#post-{older_post.id}" in page.text
 
     asyncio.run(run())
 
@@ -169,7 +566,7 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
         async with TestClient(app) as client:
             index = await client.get("/")
             assert index.status == 200
-            assert "Needs attention" in index.text
+            assert "Needs reply" in index.text
             assert "Open thread roster" in index.text
             assert "Attention Face" in index.text
             assert "A different writer nudges the plot forward." in index.text
@@ -177,17 +574,17 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
             board_attention = await client.get("/boards/plotting?filter=attention")
             assert board_attention.status == 200
             assert "Open thread roster" in board_attention.text
-            assert "attention" in board_attention.text
+            assert "needs reply" in board_attention.text
 
             thread_response = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread_response.status == 200
 
             cleared = await client.get("/boards/plotting?filter=attention")
             assert cleared.status == 200
-            assert "No threads need your attention here." in cleared.text
+            assert "No threads need a reply here." in cleared.text
 
             index_after_read = await client.get("/")
-            assert "No threads need your attention right now." in index_after_read.text
+            assert "No threads need a reply right now." in index_after_read.text
 
     asyncio.run(run())
 
@@ -455,6 +852,8 @@ def test_reply_uses_selected_character() -> None:
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert "Lightning answers." in thread.text
             assert "Storm" in thread.text
+            assert 'role="toolbar"' in thread.text
+            assert 'aria-label="Bold"' in thread.text
 
     asyncio.run(run())
 
@@ -515,6 +914,8 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
             assert "Edit post" in edit_form.text
             assert "Original typo." in edit_form.text
             assert "edit-post-composer-config" in edit_form.text
+            assert 'role="toolbar"' in edit_form.text
+            assert 'aria-label="Bold"' in edit_form.text
 
             edited = await client.post(
                 f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit",
@@ -673,6 +1074,7 @@ def test_staff_can_pin_and_lock_threads() -> None:
             assert "Staff controls" in page.text
             assert "Pin thread" in page.text
             assert "Lock thread" in page.text
+            assert "Move thread" in page.text
 
             pinned = await client.post(
                 "/boards/ic/threads/moderation-queue",
@@ -715,23 +1117,82 @@ def test_staff_can_pin_and_lock_threads() -> None:
     asyncio.run(run())
 
 
+def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
+    async def run() -> None:
+        app, repo, community, thread = _moderation_app(is_admin=True)
+        target_board = repo.get_board_by_slug(community.id, "archive")
+        original = repo.get_thread(community.id, thread.id)
+        post = repo.list_posts(community.id, thread.id)[0]
+        repo.create_post_revision(
+            community.id,
+            post.id,
+            post.author_membership_id,
+            "Old wording.",
+            post.body,
+        )
+        repo.mark_thread_read(
+            community.id,
+            thread.id,
+            post.author_membership_id,
+            read_at="2026-01-01T00:00:00+00:00",
+        )
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=f"intent=move&target_board_id={target_board.id}".encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+            assert dict(response.headers)["location"] == "/boards/archive/threads/moderation-queue"
+
+            moved = repo.get_thread(community.id, thread.id)
+            assert moved.board_id == target_board.id
+            assert moved.slug == original.slug
+            assert moved.title == original.title
+            assert moved.updated_at == original.updated_at
+            assert [restored.body for restored in repo.list_posts(community.id, moved.id)] == [
+                "A thread ready for staff tools."
+            ]
+            assert len(repo.list_post_revisions(community.id, post.id)) == 1
+            assert repo.get_thread_read_at(community.id, moved.id, post.author_membership_id) == (
+                "2026-01-01T00:00:00+00:00"
+            )
+
+            new_page = await client.get("/boards/archive/threads/moderation-queue")
+            assert new_page.status == 200
+            assert "Archive" in new_page.text
+            assert "A thread ready for staff tools." in new_page.text
+
+    asyncio.run(run())
+
+
 def test_regular_members_cannot_manage_thread_lifecycle() -> None:
     async def run() -> None:
         app, repo, community, thread = _moderation_app(is_admin=False)
+        target_board = repo.get_board_by_slug(community.id, "archive")
 
         async with TestClient(app) as client:
             page = await client.get("/boards/ic/threads/moderation-queue")
             assert page.status == 200
             assert "Staff controls" not in page.text
 
-            response = await client.post(
+            lock_response = await client.post(
                 "/boards/ic/threads/moderation-queue",
                 body=b"intent=lock",
                 headers=_FORM,
             )
-            assert response.status == 403
+            assert lock_response.status == 403
+
+            move_response = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=f"intent=move&target_board_id={target_board.id}".encode(),
+                headers=_FORM,
+            )
+            assert move_response.status == 403
             assert repo.get_thread(community.id, thread.id).is_locked is False
             assert repo.get_thread(community.id, thread.id).is_pinned is False
+            assert repo.get_thread(community.id, thread.id).board_id != target_board.id
 
     asyncio.run(run())
 
@@ -751,6 +1212,11 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "elbysodicComposer" in form.text
             assert "thread-composer-config" in form.text
             assert "Posting as" in form.text
+            assert 'role="toolbar"' in form.text
+            assert 'aria-label="Bold"' in form.text
+            assert 'aria-label="Italic"' in form.text
+            assert 'aria-label="Quote"' in form.text
+            assert 'aria-label="Link"' in form.text
             assert "Power-stealing brawler with a careful heart." in form.text
 
             response = await client.post(
@@ -906,6 +1372,7 @@ def _moderation_app(
         make_default=True,
     )
     board = repo.create_board(community.id, "ic", "In Character")
+    repo.create_board(community.id, "archive", "Archive", sort_order=20)
     thread = repo.create_thread(
         community.id,
         board.id,

@@ -4,22 +4,56 @@
   {% from "chirpui/surface.html" import surface %}
 {% end %}
 
+{% def thread_nav_link(item, label) %}
+{% if item %}
+<a class="chirpui-btn chirpui-btn--secondary"
+   href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}{{ "#" ~ item.jump_post.anchor if item.jump_post else "" }}">
+  <span class="elbysodic-thread-nav__label">{{ label }}</span>
+  <span class="elbysodic-thread-nav__title">{{ item.thread.title }}</span>
+</a>
+{% else %}
+<span class="chirpui-btn chirpui-btn--secondary elbysodic-thread-nav__disabled" aria-disabled="true">
+  <span class="elbysodic-thread-nav__label">{{ label }}</span>
+  <span class="elbysodic-thread-nav__title">None</span>
+</span>
+{% end %}
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  <a class="chirpui-link" href="/boards/{{ thread_view.board.slug }}">← {{ thread_view.board.name }}</a>
+  <nav class="elbysodic-thread-nav" aria-label="Thread navigation">
+    <a class="chirpui-link" href="/boards/{{ thread_view.board.slug }}">← {{ thread_view.board.name }}</a>
+    <div class="elbysodic-thread-nav__links">
+      {{ thread_nav_link(thread_view.previous_thread, "Previous") }}
+      {{ thread_nav_link(thread_view.next_thread, "Next") }}
+      {% if thread_view.next_unread_thread %}
+      {{ thread_nav_link(thread_view.next_unread_thread, "Next unread") }}
+      {% end %}
+    </div>
+  </nav>
 
   {% call section_header(thread_view.thread.title) %}
   {{ badge(thread_view.board.name) }}
   {% end %}
 
   <div class="elbysodic-thread-status">
-    {{ badge(thread_view.board.name) }}
-    {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
-    {{ badge("locked", variant="muted") if thread_view.thread.is_locked else "" }}
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      {{ badge(thread_view.board.name) }}
+      {{ badge("caught up", variant="success") }}
+      {{ badge("watching", variant="info") if thread_view.is_watched else "" }}
+      {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
+      {{ badge("locked", variant="muted") if thread_view.thread.is_locked else "" }}
+    </div>
+    <form method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
+      <button type="submit" class="chirpui-btn {{ "chirpui-btn--secondary" if thread_view.is_watched else "chirpui-btn--primary" }}">
+        {{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}
+      </button>
+    </form>
   </div>
 
   {% if thread_view.can_moderate %}
@@ -29,18 +63,32 @@
       <h2 id="thread-staff-controls">Staff controls</h2>
       <p class="chirpui-text-muted">Manage this thread's visibility in the community queue.</p>
     </div>
-    <div class="chirpui-cluster chirpui-cluster--sm">
-      <form method="post" hx-boost="false">
-        <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-          {{ "Unpin thread" if thread_view.thread.is_pinned else "Pin thread" }}
-        </button>
-      </form>
-      <form method="post" hx-boost="false">
-        <input type="hidden" name="intent" value="{{ "unlock" if thread_view.thread.is_locked else "lock" }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-          {{ "Unlock thread" if thread_view.thread.is_locked else "Lock thread" }}
-        </button>
+    <div class="elbysodic-staff-panel__controls">
+      <div class="chirpui-cluster chirpui-cluster--sm">
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+            {{ "Unpin thread" if thread_view.thread.is_pinned else "Pin thread" }}
+          </button>
+        </form>
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="{{ "unlock" if thread_view.thread.is_locked else "lock" }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+            {{ "Unlock thread" if thread_view.thread.is_locked else "Lock thread" }}
+          </button>
+        </form>
+      </div>
+      <form method="post" hx-boost="false" class="elbysodic-move-thread-form">
+        <input type="hidden" name="intent" value="move">
+        <label class="chirpui-field__label" for="target-board">Move to</label>
+        <select id="target-board" name="target_board_id" class="chirpui-field__input">
+          {% for board in thread_view.moderation_boards %}
+          <option value="{{ board.id }}" {{ "selected" if board.id == thread_view.board.id else "" }}>
+            {{ board.name }}
+          </option>
+          {% end %}
+        </select>
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Move thread</button>
       </form>
     </div>
   </section>
@@ -176,6 +224,12 @@
       </div>
       <div x-show="!previewMode">
         <label class="chirpui-visually-hidden" for="reply-body">Reply body</label>
+        <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
+          <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'reply-body')">B</button>
+          <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'reply-body')">I</button>
+          <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'reply-body')">&gt;</button>
+          <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'reply-body')">[]</button>
+        </div>
         <textarea id="reply-body"
                   name="body"
                   class="chirpui-field__input"

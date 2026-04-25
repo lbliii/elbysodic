@@ -11,10 +11,12 @@ from elbysodic.domain.models import (
     Character,
     Community,
     CommunityMembership,
+    Notification,
     Post,
     PostRevision,
     Role,
     Thread,
+    ThreadWatch,
     User,
 )
 
@@ -337,6 +339,27 @@ class ForumRepository:
         ).fetchall()
         return [_character_from_row(row) for row in rows]
 
+    def list_community_characters(self, community_id: int) -> list[Character]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                name,
+                slug,
+                avatar_url,
+                summary,
+                created_at,
+                updated_at
+            FROM characters
+            WHERE community_id = ?
+            ORDER BY name, id
+            """,
+            (community_id,),
+        ).fetchall()
+        return [_character_from_row(row) for row in rows]
+
     def set_default_character(
         self,
         community_id: int,
@@ -511,6 +534,20 @@ class ForumRepository:
             WHERE community_id = ? AND id = ?
             """,
             (int(locked), int(pinned), community_id, thread_id),
+        )
+        self.connection.commit()
+        return self.get_thread(community_id, thread_id)
+
+    def move_thread(self, community_id: int, thread_id: int, board_id: int) -> Thread:
+        self.get_thread(community_id, thread_id)
+        self.get_board(community_id, board_id)
+        self.connection.execute(
+            """
+            UPDATE threads
+            SET board_id = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (board_id, community_id, thread_id),
         )
         self.connection.commit()
         return self.get_thread(community_id, thread_id)
@@ -858,6 +895,256 @@ class ForumRepository:
         )
         self.connection.commit()
 
+    def watch_thread(
+        self,
+        community_id: int,
+        thread_id: int,
+        membership_id: int,
+    ) -> ThreadWatch:
+        self.get_thread(community_id, thread_id)
+        self.get_membership(community_id, membership_id)
+        now = _utc_now()
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO thread_watches (
+                community_id, thread_id, membership_id, created_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (community_id, thread_id, membership_id, now),
+        )
+        self.connection.commit()
+        return self.get_thread_watch(community_id, thread_id, membership_id)
+
+    def unwatch_thread(self, community_id: int, thread_id: int, membership_id: int) -> None:
+        self.connection.execute(
+            """
+            DELETE FROM thread_watches
+            WHERE community_id = ? AND thread_id = ? AND membership_id = ?
+            """,
+            (community_id, thread_id, membership_id),
+        )
+        self.connection.commit()
+
+    def get_thread_watch(
+        self,
+        community_id: int,
+        thread_id: int,
+        membership_id: int,
+    ) -> ThreadWatch:
+        row = self.connection.execute(
+            """
+            SELECT id, community_id, thread_id, membership_id, created_at
+            FROM thread_watches
+            WHERE community_id = ? AND thread_id = ? AND membership_id = ?
+            """,
+            (community_id, thread_id, membership_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"thread watch not found in community {community_id}: {thread_id}/{membership_id}"
+            )
+        return _thread_watch_from_row(row)
+
+    def is_thread_watched(self, community_id: int, thread_id: int, membership_id: int) -> bool:
+        row = self.connection.execute(
+            """
+            SELECT 1
+            FROM thread_watches
+            WHERE community_id = ? AND thread_id = ? AND membership_id = ?
+            """,
+            (community_id, thread_id, membership_id),
+        ).fetchone()
+        return row is not None
+
+    def list_thread_watch_membership_ids(self, community_id: int, thread_id: int) -> list[int]:
+        self.get_thread(community_id, thread_id)
+        rows = self.connection.execute(
+            """
+            SELECT membership_id
+            FROM thread_watches
+            WHERE community_id = ? AND thread_id = ?
+            ORDER BY created_at, id
+            """,
+            (community_id, thread_id),
+        ).fetchall()
+        return [int(row["membership_id"]) for row in rows]
+
+    def create_notification(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        kind: str,
+        thread_id: int,
+        post_id: int,
+        actor_membership_id: int,
+        actor_character_id: int,
+    ) -> Notification:
+        self.get_membership(community_id, membership_id)
+        self.get_membership(community_id, actor_membership_id)
+        actor = self.get_character(community_id, actor_character_id)
+        if actor.membership_id != actor_membership_id:
+            raise TenantBoundaryError(
+                f"character {actor_character_id} does not belong to membership {actor_membership_id}"
+            )
+        thread = self.get_thread(community_id, thread_id)
+        post = self.get_post(community_id, post_id)
+        if post.thread_id != thread.id:
+            raise TenantBoundaryError(f"post {post_id} does not belong to thread {thread_id}")
+        now = _utc_now()
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO notifications (
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                actor_membership_id,
+                actor_character_id,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                actor_membership_id,
+                actor_character_id,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_notification_for_post(community_id, membership_id, kind, post_id)
+
+    def get_notification(self, community_id: int, notification_id: int) -> Notification:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, notification_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"notification not found in community {community_id}: {notification_id}"
+            )
+        return _notification_from_row(row)
+
+    def get_notification_for_post(
+        self,
+        community_id: int,
+        membership_id: int,
+        kind: str,
+        post_id: int,
+    ) -> Notification:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ? AND membership_id = ? AND kind = ? AND post_id = ?
+            """,
+            (community_id, membership_id, kind, post_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"notification not found in community {community_id}: {membership_id}/{kind}/{post_id}"
+            )
+        return _notification_from_row(row)
+
+    def list_notifications(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        limit: int = 50,
+    ) -> list[Notification]:
+        self.get_membership(community_id, membership_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ? AND membership_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?
+            """,
+            (community_id, membership_id, limit),
+        ).fetchall()
+        return [_notification_from_row(row) for row in rows]
+
+    def count_unread_notifications(self, community_id: int, membership_id: int) -> int:
+        self.get_membership(community_id, membership_id)
+        row = self.connection.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM notifications
+            WHERE community_id = ? AND membership_id = ? AND read_at IS NULL
+            """,
+            (community_id, membership_id),
+        ).fetchone()
+        return int(row["count"] if row is not None else 0)
+
+    def mark_notification_read(self, community_id: int, notification_id: int) -> Notification:
+        notification = self.get_notification(community_id, notification_id)
+        if notification.read_at is None:
+            self.connection.execute(
+                """
+                UPDATE notifications
+                SET read_at = ?
+                WHERE community_id = ? AND id = ?
+                """,
+                (_utc_now(), community_id, notification_id),
+            )
+            self.connection.commit()
+        return self.get_notification(community_id, notification_id)
+
+    def mark_all_notifications_read(self, community_id: int, membership_id: int) -> None:
+        self.get_membership(community_id, membership_id)
+        self.connection.execute(
+            """
+            UPDATE notifications
+            SET read_at = COALESCE(read_at, ?)
+            WHERE community_id = ? AND membership_id = ?
+            """,
+            (_utc_now(), community_id, membership_id),
+        )
+        self.connection.commit()
+
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
@@ -996,5 +1283,30 @@ def _post_revision_from_row(row: sqlite3.Row) -> PostRevision:
         editor_membership_id=row["editor_membership_id"],
         previous_body=row["previous_body"],
         new_body=row["new_body"],
+        created_at=row["created_at"],
+    )
+
+
+def _thread_watch_from_row(row: sqlite3.Row) -> ThreadWatch:
+    return ThreadWatch(
+        id=row["id"],
+        community_id=row["community_id"],
+        thread_id=row["thread_id"],
+        membership_id=row["membership_id"],
+        created_at=row["created_at"],
+    )
+
+
+def _notification_from_row(row: sqlite3.Row) -> Notification:
+    return Notification(
+        id=row["id"],
+        community_id=row["community_id"],
+        membership_id=row["membership_id"],
+        kind=row["kind"],
+        thread_id=row["thread_id"],
+        post_id=row["post_id"],
+        actor_membership_id=row["actor_membership_id"],
+        actor_character_id=row["actor_character_id"],
+        read_at=row["read_at"],
         created_at=row["created_at"],
     )

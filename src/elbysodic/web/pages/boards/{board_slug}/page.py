@@ -44,6 +44,7 @@ def get(request: Request, board_slug: str) -> Page:
         threads=threads,
         active_filter=active_filter,
         filter_options=_filter_options(board.slug, active_filter),
+        next_unread_thread=services.next_unread_thread(board.slug),
         can_start_thread=services.can_start_thread(board),
     )
 
@@ -58,8 +59,8 @@ def _parse_filter(raw: object) -> BoardThreadFilter:
 def _filter_options(board_slug: str, active_filter: BoardThreadFilter) -> list[ThreadFilterOption]:
     labels = {
         "all": "All",
-        "unread": "Unread",
-        "attention": "Needs attention",
+        "unread": "New replies",
+        "attention": "Needs reply",
         "mine": "Mine",
         "pinned": "Pinned",
         "locked": "Locked",

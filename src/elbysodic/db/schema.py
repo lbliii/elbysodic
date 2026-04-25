@@ -144,6 +144,29 @@ CREATE TABLE IF NOT EXISTS thread_reads (
     UNIQUE (community_id, thread_id, membership_id)
 );
 
+CREATE TABLE IF NOT EXISTS thread_watches (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, thread_id, membership_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
+    actor_character_id INTEGER NOT NULL REFERENCES characters(id),
+    read_at TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, membership_id, kind, post_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_boards_community_sort ON boards(community_id, sort_order, name);
 CREATE INDEX IF NOT EXISTS idx_threads_community_board ON threads(community_id, board_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_posts_community_thread ON posts(community_id, thread_id, created_at);
@@ -151,6 +174,8 @@ CREATE INDEX IF NOT EXISTS idx_post_revisions_post ON post_revisions(community_i
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON community_memberships(user_id, community_id);
 CREATE INDEX IF NOT EXISTS idx_characters_membership ON characters(community_id, membership_id, name);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);
+CREATE INDEX IF NOT EXISTS idx_thread_watches_membership ON thread_watches(community_id, membership_id, thread_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_membership ON notifications(community_id, membership_id, read_at, created_at);
 """
 
 

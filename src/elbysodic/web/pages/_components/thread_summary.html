@@ -1,0 +1,107 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def thread_card(board, thread, author, author_membership, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-thread-card {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
+  <div class="chirpui-cluster chirpui-cluster--between elbysodic-thread-card__header">
+    <div>
+      {% if heading_level == "h2" %}
+      <h2>
+        <a class="chirpui-link" href="/boards/{{ board.slug }}/threads/{{ thread.slug }}">
+          {{ thread.title }}
+        </a>
+      </h2>
+      {% else %}
+      <h3>
+        <a class="chirpui-link" href="/boards/{{ board.slug }}/threads/{{ thread.slug }}">
+          {{ thread.title }}
+        </a>
+      </h3>
+      {% end %}
+      <p class="elbysodic-thread-card__meta">
+        {% if show_board_name %}
+        {{ board.name }} ·
+        {% end %}
+        Started by
+        <a class="chirpui-link" href="/characters/{{ author.slug }}">{{ author.name }}</a>
+        {% if author_membership %}
+        · writer {{ author_membership.username }}
+        {% end %}
+      </p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      {% for item_badge in badges %}
+      {{ badge(item_badge.label, variant=item_badge.variant) }}
+      {% end %}
+      {{ stat(value=reply_count, label="Replies") }}
+    </div>
+  </div>
+  {% if latest_post %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Latest</span>
+    <span class="chirpui-text-muted">
+      {% if jump_post %}
+      <a class="chirpui-link"
+         href="/boards/{{ board.slug }}/threads/{{ thread.slug }}#{{ jump_post.anchor }}">
+        {{ jump_label }}
+      </a>
+      {% else %}
+      <a class="chirpui-link" href="/boards/{{ board.slug }}/threads/{{ thread.slug }}">
+        Open thread
+      </a>
+      {% end %}
+      by
+      <a class="chirpui-link" href="/characters/{{ latest_post.author.slug }}">
+        {{ latest_post.author.name }}
+      </a>
+      · writer {{ latest_post.author_membership.username }}
+      · {{ latest_post.updated_at_label }}
+    </span>
+  </div>
+  {% end %}
+  {% if show_last_own_post and last_own_post %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Your last post</span>
+    <span class="chirpui-text-muted">
+      <a class="chirpui-link"
+         href="/boards/{{ board.slug }}/threads/{{ thread.slug }}#{{ last_own_post.anchor }}">
+        {{ last_own_post.author.name }}
+      </a>
+      · {{ last_own_post.updated_at_label }}
+    </span>
+  </div>
+  {% end %}
+</article>
+{% end %}
+{% end %}
+
+{% def activity_item(board, thread, post, snippet, badge_label, badge_variant) %}
+{% call surface(variant="elevated") %}
+<article class="elbysodic-activity-item">
+  <div class="elbysodic-activity-item__meta">
+    {% if badge_label %}
+    {{ badge(badge_label, variant=badge_variant) }}
+    {% end %}
+    <a class="chirpui-link" href="/characters/{{ post.author.slug }}">
+      {{ post.author.name }}
+    </a>
+    <span class="chirpui-text-muted">
+      in
+      <a class="chirpui-link" href="/boards/{{ board.slug }}">{{ board.name }}</a>
+      · {{ post.created_at_label }}
+    </span>
+  </div>
+  <h2>
+    <a class="chirpui-link"
+       href="/boards/{{ board.slug }}/threads/{{ thread.slug }}#{{ post.anchor }}">
+      {{ thread.title }}
+    </a>
+  </h2>
+  <p class="chirpui-text-muted">{{ snippet }}</p>
+</article>
+{% end %}
+{% end %}

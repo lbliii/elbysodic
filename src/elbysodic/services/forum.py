@@ -16,6 +16,7 @@ from elbysodic.domain.models import (
     Character,
     Community,
     CommunityMembership,
+    Notification,
     Post,
     PostRevision,
     Role,
@@ -40,15 +41,50 @@ class BoardSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class BoardNavigationItem:
+    board: Board
+    unread_thread_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ThreadCardBadge:
+    label: str
+    variant: str
+
+
+@dataclass(frozen=True, slots=True)
 class ThreadSummary:
     thread: Thread
     author: Character
     author_membership: CommunityMembership
     reply_count: int
     latest_post: PostView | None
+    first_unread_post: PostView | None
     is_unread: bool
     is_mine: bool
     needs_attention: bool
+
+    @property
+    def badges(self) -> tuple[ThreadCardBadge, ...]:
+        badges: list[ThreadCardBadge] = []
+        if self.needs_attention:
+            badges.append(ThreadCardBadge("needs reply", "warning"))
+        elif self.is_unread:
+            badges.append(ThreadCardBadge("new replies", "info"))
+        if self.is_mine:
+            badges.append(ThreadCardBadge("mine", "success"))
+        badges.extend(_thread_state_badges(self.thread))
+        return tuple(badges)
+
+    @property
+    def jump_post(self) -> PostView | None:
+        return self.first_unread_post or self.latest_post
+
+    @property
+    def jump_label(self) -> str:
+        if self.first_unread_post is not None:
+            return "First unread"
+        return "Jump to latest"
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +120,29 @@ class AttentionItem:
 
 
 @dataclass(frozen=True, slots=True)
+class NotificationItem:
+    notification: Notification
+    board: Board
+    thread: Thread
+    post: PostView
+    actor: Character
+    actor_membership: CommunityMembership
+    label: str
+    snippet: str
+    href: str
+
+    @property
+    def is_unread(self) -> bool:
+        return self.notification.read_at is None
+
+
+@dataclass(frozen=True, slots=True)
+class NotificationInbox:
+    items: list[NotificationItem]
+    unread_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class CreatedThread:
     thread: Thread
     post: Post
@@ -116,13 +175,39 @@ class ThreadObligationItem:
     board: Board
     thread: Thread
     author: Character
+    author_membership: CommunityMembership
     latest_post: PostView | None
+    first_unread_post: PostView | None
     last_own_post: PostView | None
     reply_count: int
     is_unread: bool
     is_started_by_roster: bool
     needs_reply: bool
     waiting_on_others: bool
+
+    @property
+    def badges(self) -> tuple[ThreadCardBadge, ...]:
+        badges: list[ThreadCardBadge] = []
+        if self.needs_reply:
+            badges.append(ThreadCardBadge("needs reply", "warning"))
+        if self.waiting_on_others:
+            badges.append(ThreadCardBadge("waiting", "info"))
+        if self.is_started_by_roster:
+            badges.append(ThreadCardBadge("started by me", "success"))
+        if self.is_unread and not self.needs_reply:
+            badges.append(ThreadCardBadge("new replies", "info"))
+        badges.extend(_thread_state_badges(self.thread))
+        return tuple(badges)
+
+    @property
+    def jump_post(self) -> PostView | None:
+        return self.first_unread_post or self.latest_post
+
+    @property
+    def jump_label(self) -> str:
+        if self.first_unread_post is not None:
+            return "First unread"
+        return "Jump to latest"
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,13 +259,25 @@ class CharacterProfile:
 
 
 @dataclass(frozen=True, slots=True)
+class ThreadNavigationItem:
+    board: Board
+    thread: Thread
+    jump_post: PostView | None
+
+
+@dataclass(frozen=True, slots=True)
 class ThreadView:
     board: Board
     thread: Thread
     posts: list[PostView]
     can_reply: bool
     can_moderate: bool
+    moderation_boards: list[Board]
     is_unread: bool
+    previous_thread: ThreadNavigationItem | None
+    next_thread: ThreadNavigationItem | None
+    next_unread_thread: ThreadNavigationItem | None
+    is_watched: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,6 +287,8 @@ class ForumView:
     role: Role
     current_character: Character | None
     roster: list[Character]
+    navigation_boards: list[BoardNavigationItem]
+    unread_notification_count: int
 
 
 class AppServices:
@@ -211,6 +310,10 @@ class AppServices:
             role=role,
             current_character=current_character,
             roster=roster,
+            navigation_boards=_board_navigation(self.repo, community.id, membership, role),
+            unread_notification_count=self.repo.count_unread_notifications(
+                community.id, membership.id
+            ),
         )
 
     def list_boards(self) -> list[BoardSummary]:
@@ -384,6 +487,13 @@ class AppServices:
             )
             is_mine = _thread_belongs_to_roster(thread, posts, roster_character_ids)
             latest_post = posts[-1] if posts else None
+            first_unread_post = _first_unread_post(
+                self.repo,
+                viewer.community.id,
+                viewer.membership.id,
+                thread,
+                posts,
+            )
             summary = ThreadSummary(
                 thread=thread,
                 author=self.repo.get_character(viewer.community.id, thread.author_character_id),
@@ -394,6 +504,11 @@ class AppServices:
                 reply_count=max(0, len(posts) - 1),
                 latest_post=(
                     _post_view(self.repo, viewer.community.id, latest_post) if latest_post else None
+                ),
+                first_unread_post=(
+                    _post_view(self.repo, viewer.community.id, first_unread_post)
+                    if first_unread_post
+                    else None
                 ),
                 is_unread=is_unread,
                 is_mine=is_mine,
@@ -413,6 +528,22 @@ class AppServices:
                 summaries.append(summary)
         return board, summaries
 
+    def next_unread_thread(self, board_slug: str) -> ThreadNavigationItem | None:
+        viewer = self.viewer()
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        for thread in self.repo.list_threads(viewer.community.id, board.id):
+            if _is_unread(self.repo, viewer.community.id, viewer.membership.id, thread):
+                return _thread_navigation_item(
+                    self.repo,
+                    viewer.community.id,
+                    viewer.membership.id,
+                    board,
+                    thread,
+                )
+        return None
+
     def can_start_thread(self, board: Board) -> bool:
         viewer = self.viewer()
         return policies.can_start_thread(viewer.membership, board, viewer.role)
@@ -423,6 +554,15 @@ class AppServices:
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
+        board_threads = self.repo.list_threads(viewer.community.id, board.id)
+        previous_thread, next_thread, next_unread_thread = _thread_navigation(
+            self.repo,
+            viewer.community.id,
+            viewer.membership.id,
+            board,
+            board_threads,
+            thread,
+        )
         is_unread = _is_unread(self.repo, viewer.community.id, viewer.membership.id, thread)
         posts = [
             _post_view(
@@ -435,18 +575,82 @@ class AppServices:
             for post in self.repo.list_posts(viewer.community.id, thread.id)
         ]
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+        can_moderate = policies.can_moderate_thread(
+            viewer.membership,
+            thread,
+            viewer.role,
+        )
         return ThreadView(
             board=board,
             thread=thread,
             posts=posts,
             can_reply=policies.can_reply(viewer.membership, thread, viewer.role),
-            can_moderate=policies.can_moderate_thread(
-                viewer.membership,
-                thread,
-                viewer.role,
+            can_moderate=can_moderate,
+            moderation_boards=(
+                [
+                    board
+                    for board in self.repo.list_boards(viewer.community.id)
+                    if policies.can_view_board(viewer.membership, board, viewer.role)
+                ]
+                if can_moderate
+                else []
             ),
             is_unread=is_unread,
+            previous_thread=previous_thread,
+            next_thread=next_thread,
+            next_unread_thread=next_unread_thread,
+            is_watched=self.repo.is_thread_watched(
+                viewer.community.id,
+                thread.id,
+                viewer.membership.id,
+            ),
         )
+
+    def watch_thread(self, board_slug: str, thread_slug: str) -> None:
+        viewer = self.viewer()
+        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
+        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
+
+    def unwatch_thread(self, board_slug: str, thread_slug: str) -> None:
+        viewer = self.viewer()
+        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
+        self.repo.unwatch_thread(viewer.community.id, thread.id, viewer.membership.id)
+
+    def notifications(self, *, limit: int = 50) -> NotificationInbox:
+        viewer = self.viewer()
+        items: list[NotificationItem] = []
+        for notification in self.repo.list_notifications(
+            viewer.community.id,
+            viewer.membership.id,
+            limit=limit,
+        ):
+            item = _notification_item(self.repo, viewer, notification)
+            if item is not None:
+                items.append(item)
+        return NotificationInbox(
+            items=items,
+            unread_count=self.repo.count_unread_notifications(
+                viewer.community.id,
+                viewer.membership.id,
+            ),
+        )
+
+    def open_notification(self, notification_id: int) -> str:
+        viewer = self.viewer()
+        notification = self.repo.get_notification(viewer.community.id, notification_id)
+        if notification.membership_id != viewer.membership.id:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot read notification {notification.id}"
+            )
+        item = _notification_item(self.repo, viewer, notification)
+        if item is None:
+            raise LookupError(f"notification target not found: {notification.id}")
+        self.repo.mark_notification_read(viewer.community.id, notification.id)
+        return item.href
+
+    def mark_all_notifications_read(self) -> None:
+        viewer = self.viewer()
+        self.repo.mark_all_notifications_read(viewer.community.id, viewer.membership.id)
 
     def set_default_character(self, character_id: int) -> ForumView:
         viewer = self.viewer()
@@ -629,6 +833,43 @@ class AppServices:
             is_pinned=is_pinned,
         )
 
+    def move_thread(
+        self,
+        board_slug: str,
+        thread_slug: str,
+        target_board_id: int,
+    ) -> tuple[Board, Thread]:
+        viewer = self.viewer()
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
+        if not policies.can_moderate_thread(viewer.membership, thread, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot moderate thread {thread.id}"
+            )
+        target_board = self.repo.get_board(viewer.community.id, target_board_id)
+        if not policies.can_view_board(viewer.membership, target_board, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot move thread into board {target_board.id}"
+            )
+        if target_board.id == board.id:
+            return target_board, thread
+        try:
+            conflicting = self.repo.get_thread_by_slug(
+                viewer.community.id,
+                target_board.id,
+                thread.slug,
+            )
+        except LookupError:
+            conflicting = None
+        if conflicting is not None and conflicting.id != thread.id:
+            raise ValueError(
+                f"board {target_board.slug} already has a thread at slug {thread.slug}"
+            )
+        moved = self.repo.move_thread(viewer.community.id, thread.id, target_board.id)
+        return target_board, moved
+
     def reply_to_thread(
         self, board_slug: str, thread_slug: str, character_id: int, body: str
     ) -> Post:
@@ -650,6 +891,8 @@ class AppServices:
         if not cleaned:
             raise ValueError("reply body is required")
         post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned)
+        self._notify_post_created(viewer, thread, post)
+        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
         return post
 
@@ -703,8 +946,59 @@ class AppServices:
         )
         post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned_body)
         thread = self.repo.get_thread(viewer.community.id, thread.id)
+        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
         return CreatedThread(thread=thread, post=post)
+
+    def _visible_thread(
+        self,
+        viewer: ForumView,
+        board_slug: str,
+        thread_slug: str,
+    ) -> tuple[Board, Thread]:
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
+        return board, thread
+
+    def _notify_post_created(
+        self,
+        viewer: ForumView,
+        thread: Thread,
+        post: Post,
+    ) -> None:
+        mentioned_memberships = _mentioned_membership_ids(
+            self.repo,
+            viewer.community.id,
+            post.body,
+        )
+        watch_memberships = set(
+            self.repo.list_thread_watch_membership_ids(viewer.community.id, thread.id)
+        )
+        actor_membership_id = viewer.membership.id
+        for membership_id in mentioned_memberships:
+            if membership_id != actor_membership_id:
+                self.repo.create_notification(
+                    viewer.community.id,
+                    membership_id,
+                    kind="mention",
+                    thread_id=thread.id,
+                    post_id=post.id,
+                    actor_membership_id=actor_membership_id,
+                    actor_character_id=post.author_character_id,
+                )
+        for membership_id in watch_memberships - mentioned_memberships:
+            if membership_id != actor_membership_id:
+                self.repo.create_notification(
+                    viewer.community.id,
+                    membership_id,
+                    kind="thread_reply",
+                    thread_id=thread.id,
+                    post_id=post.id,
+                    actor_membership_id=actor_membership_id,
+                    actor_character_id=post.author_character_id,
+                )
 
     def _editable_post(
         self,
@@ -776,6 +1070,13 @@ class AppServices:
             if not _thread_belongs_to_roster(thread, posts, target_character_ids):
                 continue
             latest_post = posts[-1] if posts else None
+            first_unread_post = _first_unread_post(
+                self.repo,
+                viewer.community.id,
+                viewer.membership.id,
+                thread,
+                posts,
+            )
             last_own_post = _last_roster_post(posts, target_character_ids)
             needs_reply = (
                 latest_post is not None
@@ -795,9 +1096,18 @@ class AppServices:
                         viewer.community.id,
                         thread.author_character_id,
                     ),
+                    author_membership=self.repo.get_membership(
+                        viewer.community.id,
+                        thread.author_membership_id,
+                    ),
                     latest_post=(
                         _post_view(self.repo, viewer.community.id, latest_post)
                         if latest_post
+                        else None
+                    ),
+                    first_unread_post=(
+                        _post_view(self.repo, viewer.community.id, first_unread_post)
+                        if first_unread_post
                         else None
                     ),
                     last_own_post=(
@@ -876,6 +1186,24 @@ def _resolve_current_character(
     return roster[0]
 
 
+def _board_navigation(
+    repo: ForumRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    role: Role,
+) -> list[BoardNavigationItem]:
+    items: list[BoardNavigationItem] = []
+    for board in repo.list_boards(community_id):
+        if not policies.can_view_board(membership, board, role):
+            continue
+        threads = repo.list_threads(community_id, board.id)
+        unread_thread_count = sum(
+            1 for thread in threads if _is_unread(repo, community_id, membership.id, thread)
+        )
+        items.append(BoardNavigationItem(board=board, unread_thread_count=unread_thread_count))
+    return items
+
+
 def _latest_thread(threads: list[Thread]) -> Thread | None:
     if not threads:
         return None
@@ -892,6 +1220,90 @@ def _is_unread(
     if read_at is None:
         return True
     return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
+
+
+def _first_unread_post(
+    repo: ForumRepository,
+    community_id: int,
+    membership_id: int,
+    thread: Thread,
+    posts: list[Post],
+) -> Post | None:
+    if not posts or not _is_unread(repo, community_id, membership_id, thread):
+        return None
+    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
+    if read_at is None:
+        return posts[0]
+    read_stamp = _timestamp_key(read_at)
+    for post in posts:
+        if _timestamp_key(post.created_at) > read_stamp:
+            return post
+    return posts[-1]
+
+
+def _thread_navigation(
+    repo: ForumRepository,
+    community_id: int,
+    membership_id: int,
+    board: Board,
+    threads: list[Thread],
+    current: Thread,
+) -> tuple[ThreadNavigationItem | None, ThreadNavigationItem | None, ThreadNavigationItem | None]:
+    current_index = _thread_index(threads, current.id)
+    if current_index is None:
+        return None, None, None
+    previous_thread = (
+        _thread_navigation_item(
+            repo, community_id, membership_id, board, threads[current_index - 1]
+        )
+        if current_index > 0
+        else None
+    )
+    next_thread = (
+        _thread_navigation_item(
+            repo, community_id, membership_id, board, threads[current_index + 1]
+        )
+        if current_index + 1 < len(threads)
+        else None
+    )
+    ordered_candidates = threads[current_index + 1 :] + threads[:current_index]
+    next_unread_thread = None
+    for thread in ordered_candidates:
+        if _is_unread(repo, community_id, membership_id, thread):
+            next_unread_thread = _thread_navigation_item(
+                repo,
+                community_id,
+                membership_id,
+                board,
+                thread,
+            )
+            break
+    return previous_thread, next_thread, next_unread_thread
+
+
+def _thread_index(threads: list[Thread], thread_id: int) -> int | None:
+    for index, thread in enumerate(threads):
+        if thread.id == thread_id:
+            return index
+    return None
+
+
+def _thread_navigation_item(
+    repo: ForumRepository,
+    community_id: int,
+    membership_id: int,
+    board: Board,
+    thread: Thread,
+) -> ThreadNavigationItem:
+    posts = repo.list_posts(community_id, thread.id)
+    jump_post = _first_unread_post(repo, community_id, membership_id, thread, posts)
+    if jump_post is None and posts:
+        jump_post = posts[-1]
+    return ThreadNavigationItem(
+        board=board,
+        thread=thread,
+        jump_post=_post_view(repo, community_id, jump_post) if jump_post else None,
+    )
 
 
 def _thread_belongs_to_roster(
@@ -939,6 +1351,73 @@ def _thread_matches_filter(summary: ThreadSummary, filter_by: BoardThreadFilter)
             return summary.thread.is_pinned
         case "locked":
             return summary.thread.is_locked
+
+
+def _thread_state_badges(thread: Thread) -> tuple[ThreadCardBadge, ...]:
+    badges: list[ThreadCardBadge] = []
+    if thread.is_pinned:
+        badges.append(ThreadCardBadge("pinned", "warning"))
+    if thread.is_locked:
+        badges.append(ThreadCardBadge("locked", "muted"))
+    return tuple(badges)
+
+
+def _notification_item(
+    repo: ForumRepository,
+    viewer: ForumView,
+    notification: Notification,
+) -> NotificationItem | None:
+    thread = repo.get_thread(viewer.community.id, notification.thread_id)
+    board = repo.get_board(viewer.community.id, thread.board_id)
+    if not policies.can_view_board(viewer.membership, board, viewer.role):
+        return None
+    post = repo.get_post(viewer.community.id, notification.post_id)
+    post_view = _post_view(repo, viewer.community.id, post)
+    actor = repo.get_character(viewer.community.id, notification.actor_character_id)
+    actor_membership = repo.get_membership(
+        viewer.community.id,
+        notification.actor_membership_id,
+    )
+    return NotificationItem(
+        notification=notification,
+        board=board,
+        thread=thread,
+        post=post_view,
+        actor=actor,
+        actor_membership=actor_membership,
+        label=_notification_label(notification.kind),
+        snippet=post_view.snippet,
+        href=f"/boards/{board.slug}/threads/{thread.slug}#{post_view.anchor}",
+    )
+
+
+def _notification_label(kind: str) -> str:
+    match kind:
+        case "mention":
+            return "Mention"
+        case "thread_reply":
+            return "Watched thread"
+        case _:
+            return "Notification"
+
+
+def _mentioned_membership_ids(
+    repo: ForumRepository,
+    community_id: int,
+    body: str,
+) -> set[int]:
+    mentioned: set[int] = set()
+    for character in repo.list_community_characters(community_id):
+        if _mentions_character(body, character):
+            mentioned.add(character.membership_id)
+    return mentioned
+
+
+def _mentions_character(body: str, character: Character) -> bool:
+    for label in {character.slug, character.name}:
+        if re.search(rf"(?<![\w-])@{re.escape(label)}(?![\w-])", body, re.IGNORECASE):
+            return True
+    return False
 
 
 def _post_view(

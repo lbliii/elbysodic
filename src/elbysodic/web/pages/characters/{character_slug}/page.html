@@ -3,45 +3,11 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/thread_summary.html" import thread_card %}
 {% end %}
 
 {% def character_thread_item(item) %}
-{% call surface(variant="elevated") %}
-<article class="chirpui-stack chirpui-stack--sm elbysodic-thread-card {{ "elbysodic-thread-card--unread" if item.is_unread else "" }}">
-  <div class="chirpui-cluster chirpui-cluster--between elbysodic-thread-card__header">
-    <div>
-      <h3>
-        <a class="chirpui-link" href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}">
-          {{ item.thread.title }}
-        </a>
-      </h3>
-      <p class="elbysodic-thread-card__meta">
-        {{ item.board.name }} · started by
-        <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
-      </p>
-    </div>
-    <div class="chirpui-cluster chirpui-cluster--sm">
-      {{ badge("needs reply", variant="warning") if item.needs_reply else "" }}
-      {{ badge("waiting", variant="info") if item.waiting_on_others else "" }}
-      {{ badge("started", variant="success") if item.is_started_by_roster else "" }}
-      {{ badge("locked", variant="muted") if item.thread.is_locked else "" }}
-      {{ stat(value=item.reply_count, label="Replies") }}
-    </div>
-  </div>
-  {% if item.latest_post %}
-  <div class="elbysodic-latest">
-    <span class="chirpui-text-muted">Latest</span>
-    <span class="chirpui-text-muted">
-      <a class="chirpui-link"
-         href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.latest_post.anchor }}">
-        {{ item.latest_post.author.name }}
-      </a>
-      · {{ item.latest_post.updated_at_label }}
-    </span>
-  </div>
-  {% end %}
-</article>
-{% end %}
+{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h3", True, False) }}
 {% end %}
 
 {% block page_root %}

@@ -20,6 +20,33 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
     services = get_services()
     form = await request.form()
     intent = str(form.get("intent") or "reply")
+    if intent == "move":
+        try:
+            target_board, moved_thread = services.move_thread(
+                board_slug,
+                thread_slug,
+                _parse_board_id(form.get("target_board_id")),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/boards/{target_board.slug}/threads/{moved_thread.slug}")
+
+    if intent in {"watch", "unwatch"}:
+        try:
+            if intent == "watch":
+                services.watch_thread(board_slug, thread_slug)
+            else:
+                services.unwatch_thread(board_slug, thread_slug)
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        return Redirect(request.path)
+
     if intent in {"lock", "unlock", "pin", "unpin"}:
         try:
             services.update_thread_state(
@@ -62,8 +89,8 @@ def _render_thread(
     selected_character_id: int | None = None,
 ) -> Page:
     services = get_services()
-    viewer = services.viewer()
     thread_view = services.read_thread(board_slug, thread_slug)
+    viewer = services.viewer()
     if viewer.current_character is None:
         return Page(
             "boards/{board_slug}/threads/{thread_slug}/page.html",
@@ -109,6 +136,13 @@ def _parse_character_id(raw: object) -> int:
         return int(str(raw or ""))
     except ValueError as exc:
         raise ValueError("choose a character before posting") from exc
+
+
+def _parse_board_id(raw: object) -> int:
+    try:
+        return int(str(raw or ""))
+    except ValueError as exc:
+        raise ValueError("choose a board before moving the thread") from exc
 
 
 def _locked_state(intent: str) -> bool | None:

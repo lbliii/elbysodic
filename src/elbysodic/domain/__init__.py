@@ -6,9 +6,11 @@ from elbysodic.domain.models import (
     Character,
     Community,
     CommunityMembership,
+    Notification,
     Post,
     Role,
     Thread,
+    ThreadWatch,
     User,
 )
 
@@ -19,8 +21,10 @@ __all__ = [
     "Community",
     "CommunityContext",
     "CommunityMembership",
+    "Notification",
     "Post",
     "Role",
     "Thread",
+    "ThreadWatch",
     "User",
 ]

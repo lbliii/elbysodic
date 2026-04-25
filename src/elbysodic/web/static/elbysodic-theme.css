@@ -168,6 +168,28 @@ body {
     color: var(--chirpui-text);
 }
 
+.elbysodic-sidebar-link {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.elbysodic-sidebar-count {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 18%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    color: var(--chirpui-text);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 700;
+    justify-content: center;
+    min-width: 1.4rem;
+    padding: 0.05rem 0.4rem;
+}
+
 .chirpui-surface {
     border-color: var(--chirpui-border-subtle);
 }
@@ -209,12 +231,96 @@ body {
     margin: 0;
 }
 
+.elbysodic-staff-panel__controls {
+    display: grid;
+    gap: 1rem;
+}
+
+.elbysodic-move-thread-form {
+    align-items: end;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(min(100%, 16rem), 1fr) auto;
+}
+
+.elbysodic-move-thread-form label {
+    grid-column: 1 / -1;
+}
+
 .elbysodic-thread-status {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    justify-content: space-between;
     margin-top: -0.75rem;
+}
+
+.elbysodic-notification-card {
+    align-items: center;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-notification-card--unread {
+    border-color: color-mix(in srgb, var(--chirpui-accent) 46%, var(--chirpui-border));
+}
+
+.elbysodic-notification-card__body {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.elbysodic-notification-card h2,
+.elbysodic-notification-card p {
+    margin: 0;
+}
+
+.elbysodic-notification-card__action {
+    justify-self: end;
+}
+
+.elbysodic-thread-nav {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.elbysodic-thread-nav__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.elbysodic-thread-nav__links .chirpui-btn {
+    align-items: flex-start;
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.2;
+    max-width: min(100%, 18rem);
+    min-height: 3rem;
+    text-align: left;
+}
+
+.elbysodic-thread-nav__label {
+    color: currentColor;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 700;
+}
+
+.elbysodic-thread-nav__title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.elbysodic-thread-nav__disabled {
+    opacity: 0.58;
 }
 
 .elbysodic-thread-card {
@@ -406,6 +512,42 @@ body {
     color: var(--chirpui-bg);
 }
 
+.elbysodic-composer-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.5rem 0;
+}
+
+.elbysodic-composer-tool {
+    align-items: center;
+    aspect-ratio: 1;
+    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--chirpui-ui-font-family);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 700;
+    justify-content: center;
+    line-height: 1;
+    min-width: 2rem;
+    padding: 0.35rem;
+}
+
+.elbysodic-composer-tool:hover {
+    border-color: var(--chirpui-card-hover-border);
+    color: var(--chirpui-accent);
+}
+
+.elbysodic-composer-tool:focus-visible {
+    outline: 2px solid var(--chirpui-focus-ring);
+    outline-offset: 2px;
+}
+
 .elbysodic-composer-preview {
     background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
     border: 1px solid var(--chirpui-border-subtle);
@@ -560,5 +702,17 @@ body {
         border-right: 0;
         padding-bottom: 1rem;
         padding-right: 0;
+    }
+
+    .elbysodic-move-thread-form {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-notification-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-notification-card__action {
+        justify-self: start;
     }
 }

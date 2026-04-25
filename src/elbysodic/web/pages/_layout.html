@@ -6,8 +6,8 @@
 {% block title %}Elbysodic{% end %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=post-markup">
-<script defer src="/elbysodic-static/elbysodic-composer.js?v=post-markup"></script>
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=shell-counts">
+    <script defer src="/elbysodic-static/elbysodic-composer.js?v=shell-counts"></script>
 {% end %}
 
 {% block title_oob %}
@@ -60,10 +60,23 @@
   {% call sidebar_section("Forum") %}
     {{ sidebar_link(url_for("index"), "Overview", icon="grid") }}
     <a class="chirpui-sidebar__link" href="/my/threads">My threads</a>
+    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/notifications">
+      <span>Notifications</span>
+      {% if viewer and viewer.unread_notification_count %}
+      <span class="elbysodic-sidebar-count">{{ viewer.unread_notification_count }}</span>
+      {% end %}
+    </a>
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
-    <a class="chirpui-sidebar__link" href="/boards/announcements">Announcements</a>
-    <a class="chirpui-sidebar__link" href="/boards/plotting">Plotting</a>
-    <a class="chirpui-sidebar__link" href="/boards/danger-room">Danger Room</a>
+    {% if viewer %}
+    {% for item in viewer.navigation_boards %}
+    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/boards/{{ item.board.slug }}">
+      <span>{{ item.board.name }}</span>
+      {% if item.unread_thread_count %}
+      <span class="elbysodic-sidebar-count">{{ item.unread_thread_count }}</span>
+      {% end %}
+    </a>
+    {% end %}
+    {% end %}
   {% end %}
 {% end %}
 {% end %}
@@ -73,10 +86,23 @@
   {% call sidebar_section("Forum") %}
     {{ sidebar_link(url_for("index"), "Overview", icon="grid") }}
     <a class="chirpui-sidebar__link" href="/my/threads">My threads</a>
+    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/notifications">
+      <span>Notifications</span>
+      {% if viewer and viewer.unread_notification_count %}
+      <span class="elbysodic-sidebar-count">{{ viewer.unread_notification_count }}</span>
+      {% end %}
+    </a>
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
-    <a class="chirpui-sidebar__link" href="/boards/announcements">Announcements</a>
-    <a class="chirpui-sidebar__link" href="/boards/plotting">Plotting</a>
-    <a class="chirpui-sidebar__link" href="/boards/danger-room">Danger Room</a>
+    {% if viewer %}
+    {% for item in viewer.navigation_boards %}
+    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/boards/{{ item.board.slug }}">
+      <span>{{ item.board.name }}</span>
+      {% if item.unread_thread_count %}
+      <span class="elbysodic-sidebar-count">{{ item.unread_thread_count }}</span>
+      {% end %}
+    </a>
+    {% end %}
+    {% end %}
   {% end %}
 {% end %}
 {% end %}

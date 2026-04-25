@@ -104,6 +104,60 @@
     return blocks.join("");
   }
 
+  function formatBody(value, start, end, kind) {
+    const selected = value.slice(start, end);
+    if (kind === "bold") {
+      return wrapSelection(value, start, end, selected || "bold text", "**", "**");
+    }
+    if (kind === "italic") {
+      return wrapSelection(value, start, end, selected || "italic text", "*", "*");
+    }
+    if (kind === "quote") {
+      return quoteSelection(value, start, end, selected || "quoted text");
+    }
+    if (kind === "link") {
+      return linkSelection(value, start, end, selected || "link text");
+    }
+    return {
+      end: end,
+      next: value,
+      start: start,
+    };
+  }
+
+  function wrapSelection(value, start, end, selected, prefix, suffix) {
+    const insertion = `${prefix}${selected}${suffix}`;
+    const innerStart = start + prefix.length;
+    return {
+      end: innerStart + selected.length,
+      next: value.slice(0, start) + insertion + value.slice(end),
+      start: innerStart,
+    };
+  }
+
+  function quoteSelection(value, start, end, selected) {
+    const insertion = selected
+      .split("\n")
+      .map((line) => `> ${line}`)
+      .join("\n");
+    return {
+      end: start + insertion.length,
+      next: value.slice(0, start) + insertion + value.slice(end),
+      start: start,
+    };
+  }
+
+  function linkSelection(value, start, end, selected) {
+    const url = "https://";
+    const insertion = `[${selected}](${url})`;
+    const urlStart = start + selected.length + 3;
+    return {
+      end: urlStart + url.length,
+      next: value.slice(0, start) + insertion + value.slice(end),
+      start: urlStart,
+    };
+  }
+
   function register(factory) {
     if (window._chirpAlpineData) {
       window._chirpAlpineData("elbysodicComposer", factory);
@@ -144,6 +198,22 @@
           (character) => String(character.id) === String(this.selectedCharacterId),
         );
         return selected || this.config.characters[0] || {};
+      },
+
+      applyFormat(kind, fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) {
+          return;
+        }
+        const start = field.selectionStart || 0;
+        const end = field.selectionEnd || start;
+        const formatted = formatBody(this.body, start, end, kind);
+        this.body = formatted.next;
+        this.$nextTick(() => {
+          field.focus();
+          field.setSelectionRange(formatted.start, formatted.end);
+          this.saveDraft();
+        });
       },
 
       clearDraft() {

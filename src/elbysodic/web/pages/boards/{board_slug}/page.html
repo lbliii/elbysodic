@@ -1,8 +1,15 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/thread_summary.html" import thread_card %}
+{% end %}
+
+{% def next_unread_link(item) %}
+<a class="chirpui-btn chirpui-btn--secondary"
+   href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}{{ "#" ~ item.jump_post.anchor if item.jump_post else "" }}">
+  Next unread
+</a>
 {% end %}
 
 {% block page_root %}
@@ -13,9 +20,14 @@
 {% call stack(gap="lg") %}
   <div class="chirpui-cluster chirpui-cluster--between">
     <a class="chirpui-link" href="/">← Boards</a>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      {% if next_unread_thread %}
+      {{ next_unread_link(next_unread_thread) }}
+      {% end %}
     {% if can_start_thread %}
     <a class="chirpui-btn chirpui-btn--primary" href="/boards/{{ board.slug }}/threads/new">Start thread</a>
     {% end %}
+    </div>
   </div>
 
   {% call section_header(board.name) %}
@@ -35,58 +47,16 @@
   <div class="chirpui-stack chirpui-stack--md elbysodic-thread-list">
     {% if threads %}
     {% for item in threads %}
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm elbysodic-thread-card {{ "elbysodic-thread-card--unread" if item.is_unread else "" }}">
-      <div class="chirpui-cluster chirpui-cluster--between elbysodic-thread-card__header">
-        <div>
-          <h2>
-            <a class="chirpui-link" href="/boards/{{ board.slug }}/threads/{{ item.thread.slug }}">
-              {{ item.thread.title }}
-            </a>
-          </h2>
-          <p class="elbysodic-thread-card__meta">
-            Started by
-            <a class="chirpui-link" href="/characters/{{ item.author.slug }}">
-              {{ item.author.name }}
-            </a>
-            · writer {{ item.author_membership.username }}
-          </p>
-        </div>
-        <div class="chirpui-cluster chirpui-cluster--sm">
-          {{ badge("unread", variant="info") if item.is_unread else "" }}
-          {{ badge("attention", variant="warning") if item.needs_attention else "" }}
-          {{ badge("mine", variant="success") if item.is_mine else "" }}
-          {{ badge("pinned", variant="warning") if item.thread.is_pinned else "" }}
-          {{ badge("locked", variant="muted") if item.thread.is_locked else "" }}
-          {{ stat(value=item.reply_count, label="Replies") }}
-        </div>
-      </div>
-      {% if item.latest_post %}
-      <div class="elbysodic-latest">
-        <span class="chirpui-text-muted">Latest</span>
-        <span class="chirpui-text-muted">
-          <a class="chirpui-link"
-             href="/boards/{{ board.slug }}/threads/{{ item.thread.slug }}#{{ item.latest_post.anchor }}">
-            Jump to post
-          </a>
-          by
-          <a class="chirpui-link" href="/characters/{{ item.latest_post.author.slug }}">
-            {{ item.latest_post.author.name }}
-          </a>
-          · writer {{ item.latest_post.author_membership.username }}
-          · {{ item.latest_post.updated_at_label }}
-        </span>
-      </div>
-      {% end %}
-    </article>
-    {% end %}
+    {{ thread_card(board, item.thread, item.author, item.author_membership, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h2", False, False) }}
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
     {% if active_filter == "all" %}
     <p class="elbysodic-empty-state">No threads yet.</p>
+    {% elif active_filter == "unread" %}
+    <p class="elbysodic-empty-state">No new replies here yet.</p>
     {% elif active_filter == "attention" %}
-    <p class="elbysodic-empty-state">No threads need your attention here.</p>
+    <p class="elbysodic-empty-state">No threads need a reply here.</p>
     {% else %}
     <p class="elbysodic-empty-state">No {{ active_filter }} threads here yet.</p>
     {% end %}

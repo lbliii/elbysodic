@@ -112,3 +112,26 @@ class PostRevision:
     previous_body: str
     new_body: str
     created_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ThreadWatch:
+    id: int
+    community_id: int
+    thread_id: int
+    membership_id: int
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class Notification:
+    id: int
+    community_id: int
+    membership_id: int
+    kind: str
+    thread_id: int
+    post_id: int
+    actor_membership_id: int
+    actor_character_id: int
+    read_at: str | None
+    created_at: str

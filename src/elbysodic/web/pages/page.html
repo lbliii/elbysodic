@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/thread_summary.html" import activity_item %}
 {% end %}
 
 {% block page_root %}
@@ -42,7 +43,7 @@
           <p class="chirpui-text-muted">{{ summary.board.description }}</p>
         </div>
         <div class="chirpui-cluster chirpui-cluster--sm">
-          {{ badge(summary.unread_thread_count ~ " unread", variant="info") if summary.unread_thread_count else "" }}
+          {{ badge(summary.unread_thread_count ~ " new", variant="info") if summary.unread_thread_count else "" }}
           {{ badge("private", variant="muted") if summary.board.is_private else "" }}
           {{ stat(value=summary.thread_count, label="Threads") }}
           {{ stat(value=summary.post_count, label="Posts") }}
@@ -74,39 +75,18 @@
     {% end %}
   </div>
 
-  {% call section_header("Needs attention") %}
-  Unread threads where someone else posted last.
+  {% call section_header("Needs reply") %}
+  Threads where someone else posted last.
   {% end %}
 
   <div class="chirpui-stack chirpui-stack--sm elbysodic-activity-list">
     {% if attention %}
     {% for item in attention %}
-    {% call surface(variant="elevated") %}
-    <article class="elbysodic-activity-item">
-      <div class="elbysodic-activity-item__meta">
-        {{ badge("attention", variant="warning") }}
-        <a class="chirpui-link" href="/characters/{{ item.latest_post.author.slug }}">
-          {{ item.latest_post.author.name }}
-        </a>
-        <span class="chirpui-text-muted">
-          in
-          <a class="chirpui-link" href="/boards/{{ item.board.slug }}">{{ item.board.name }}</a>
-          · {{ item.latest_post.created_at_label }}
-        </span>
-      </div>
-      <h2>
-        <a class="chirpui-link"
-           href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.latest_post.anchor }}">
-          {{ item.thread.title }}
-        </a>
-      </h2>
-      <p class="chirpui-text-muted">{{ item.snippet }}</p>
-    </article>
-    {% end %}
+    {{ activity_item(item.board, item.thread, item.latest_post, item.snippet, "needs reply", "warning") }}
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No threads need your attention right now.</p>
+    <p class="elbysodic-empty-state">No threads need a reply right now.</p>
     {% end %}
     {% end %}
   </div>
@@ -117,28 +97,7 @@
 
   <div class="chirpui-stack chirpui-stack--sm elbysodic-activity-list">
     {% for item in activity %}
-    {% call surface(variant="elevated") %}
-    <article class="elbysodic-activity-item">
-      <div class="elbysodic-activity-item__meta">
-        {{ badge("unread", variant="info") if item.is_unread else "" }}
-        <a class="chirpui-link" href="/characters/{{ item.post.author.slug }}">
-          {{ item.post.author.name }}
-        </a>
-        <span class="chirpui-text-muted">
-          in
-          <a class="chirpui-link" href="/boards/{{ item.board.slug }}">{{ item.board.name }}</a>
-          · {{ item.post.created_at_label }}
-        </span>
-      </div>
-      <h2>
-        <a class="chirpui-link"
-           href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.post.anchor }}">
-          {{ item.thread.title }}
-        </a>
-      </h2>
-      <p class="chirpui-text-muted">{{ item.snippet }}</p>
-    </article>
-    {% end %}
+    {{ activity_item(item.board, item.thread, item.post, item.snippet, "new replies" if item.is_unread else "", "info") }}
     {% end %}
   </div>
 {% end %}

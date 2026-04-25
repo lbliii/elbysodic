@@ -72,6 +72,12 @@
     </div>
     <div x-show="!previewMode">
       <label class="chirpui-field__label" for="edit-post-body">Post body</label>
+      <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
+        <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'edit-post-body')">B</button>
+        <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'edit-post-body')">I</button>
+        <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'edit-post-body')">&gt;</button>
+        <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'edit-post-body')">[]</button>
+      </div>
       <textarea id="edit-post-body"
                 class="chirpui-field__input"
                 name="body"
