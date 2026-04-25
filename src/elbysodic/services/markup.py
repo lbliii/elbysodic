@@ -4,23 +4,34 @@ from __future__ import annotations
 
 import html
 import re
+from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from kida.template import Markup
 
 _LINK_RE = re.compile(r"\[([^\]\n]+)\]\(([^)\s]+)\)")
+_MENTION_RE = re.compile(r"(?<![\w-])@([A-Za-z0-9][\w-]*)")
 _STRONG_RE = re.compile(r"\*\*([^*\n]+)\*\*")
 _EM_RE = re.compile(r"(?<!\*)\*([^*\n]+)\*(?!\*)")
 _SAFE_SCHEMES = {"http", "https", "mailto"}
 
 
-def render_post_body(value: str) -> Markup:
+@dataclass(frozen=True, slots=True)
+class MentionLink:
+    handle: str
+    href: str
+    label: str
+    kind: str
+
+
+def render_post_body(value: str, *, mentions: list[MentionLink] | None = None) -> Markup:
     """Render a user-authored post body as sanitized HTML."""
 
     blocks = _blocks(value)
     if not blocks:
         return Markup("")
-    return Markup("".join(_render_block(kind, lines) for kind, lines in blocks))
+    mention_map = {mention.handle.lower(): mention for mention in mentions or []}
+    return Markup("".join(_render_block(kind, lines, mention_map) for kind, lines in blocks))
 
 
 def post_snippet(value: str, *, limit: int = 130) -> str:
@@ -66,39 +77,61 @@ def _strip_quote_marker(value: str) -> str:
     return stripped
 
 
-def _render_block(kind: str, lines: list[str]) -> str:
-    paragraphs = _paragraphs(lines)
+def _render_block(kind: str, lines: list[str], mentions: dict[str, MentionLink]) -> str:
+    paragraphs = _paragraphs(lines, mentions)
     if kind == "quote":
         return f"<blockquote>{''.join(paragraphs)}</blockquote>"
     return "".join(paragraphs)
 
 
-def _paragraphs(lines: list[str]) -> list[str]:
+def _paragraphs(lines: list[str], mentions: dict[str, MentionLink]) -> list[str]:
     chunks: list[list[str]] = [[]]
     for line in lines:
         if line.strip():
             chunks[-1].append(line)
         elif chunks[-1]:
             chunks.append([])
-    return [f"<p>{_render_inline_lines(chunk)}</p>" for chunk in chunks if chunk]
+    return [f"<p>{_render_inline_lines(chunk, mentions)}</p>" for chunk in chunks if chunk]
 
 
-def _render_inline_lines(lines: list[str]) -> str:
-    return "<br>".join(_render_inline(line) for line in lines)
+def _render_inline_lines(lines: list[str], mentions: dict[str, MentionLink]) -> str:
+    return "<br>".join(_render_inline(line, mentions) for line in lines)
 
 
-def _render_inline(value: str) -> str:
+def _render_inline(value: str, mentions: dict[str, MentionLink]) -> str:
     rendered = []
     last_end = 0
     for match in _LINK_RE.finditer(value):
-        rendered.append(_render_emphasis(html.escape(value[last_end : match.start()], quote=True)))
+        rendered.append(_render_mentions(value[last_end : match.start()], mentions))
         href = _safe_href(match.group(2))
         if href is None:
-            rendered.append(_render_emphasis(html.escape(match.group(0), quote=True)))
+            rendered.append(_render_mentions(match.group(0), mentions))
         else:
             label = _render_emphasis(html.escape(match.group(1), quote=True))
             rendered.append(
                 f'<a class="chirpui-link" href="{html.escape(href, quote=True)}">{label}</a>'
+            )
+        last_end = match.end()
+    rendered.append(_render_mentions(value[last_end:], mentions))
+    return "".join(rendered)
+
+
+def _render_mentions(value: str, mentions: dict[str, MentionLink]) -> str:
+    rendered = []
+    last_end = 0
+    for match in _MENTION_RE.finditer(value):
+        rendered.append(_render_emphasis(html.escape(value[last_end : match.start()], quote=True)))
+        handle = match.group(1).lower()
+        mention = mentions.get(handle)
+        if mention is None:
+            rendered.append(_render_emphasis(html.escape(match.group(0), quote=True)))
+        else:
+            rendered.append(
+                '<a class="elbysodic-mention-link" '
+                f'data-mention-kind="{html.escape(mention.kind, quote=True)}" '
+                f'href="{html.escape(mention.href, quote=True)}" '
+                f'title="{html.escape(mention.label, quote=True)}">'
+                f"@{html.escape(mention.handle, quote=True)}</a>"
             )
         last_end = match.end()
     rendered.append(_render_emphasis(html.escape(value[last_end:], quote=True)))

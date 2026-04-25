@@ -1,5 +1,6 @@
 (function () {
   const linkPattern = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
+  const mentionPattern = /(?<![\w-])@([A-Za-z0-9][\w-]*)/g;
 
   function escapeHtml(value) {
     return String(value)
@@ -31,15 +32,17 @@
       .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
   }
 
-  function renderInline(value) {
+  function renderMentions(value, mentions) {
     let rendered = "";
     let lastEnd = 0;
-    for (const match of value.matchAll(linkPattern)) {
+    for (const match of value.matchAll(mentionPattern)) {
       rendered += renderEmphasis(escapeHtml(value.slice(lastEnd, match.index)));
-      const href = safeHref(match[2]);
-      if (href) {
-        rendered += `<a class="chirpui-link" href="${escapeHtml(href)}">${renderEmphasis(
-          escapeHtml(match[1]),
+      const mention = mentions.get(match[1].toLowerCase());
+      if (mention) {
+        rendered += `<a class="elbysodic-mention-link" data-mention-kind="${escapeHtml(
+          mention.kind,
+        )}" href="${escapeHtml(mention.href)}" title="${escapeHtml(mention.label)}">${escapeHtml(
+          mention.tag,
         )}</a>`;
       } else {
         rendered += renderEmphasis(escapeHtml(match[0]));
@@ -47,6 +50,25 @@
       lastEnd = match.index + match[0].length;
     }
     rendered += renderEmphasis(escapeHtml(value.slice(lastEnd)));
+    return rendered;
+  }
+
+  function renderInline(value, mentions) {
+    let rendered = "";
+    let lastEnd = 0;
+    for (const match of value.matchAll(linkPattern)) {
+      rendered += renderMentions(value.slice(lastEnd, match.index), mentions);
+      const href = safeHref(match[2]);
+      if (href) {
+        rendered += `<a class="chirpui-link" href="${escapeHtml(href)}">${renderEmphasis(
+          escapeHtml(match[1]),
+        )}</a>`;
+      } else {
+        rendered += renderMentions(match[0], mentions);
+      }
+      lastEnd = match.index + match[0].length;
+    }
+    rendered += renderMentions(value.slice(lastEnd), mentions);
     return rendered;
   }
 
@@ -58,7 +80,7 @@
     return stripped;
   }
 
-  function paragraphs(lines) {
+  function paragraphs(lines, mentions) {
     const chunks = [[]];
     for (const line of lines) {
       if (line.trim()) {
@@ -69,11 +91,11 @@
     }
     return chunks
       .filter((chunk) => chunk.length > 0)
-      .map((chunk) => `<p>${chunk.map(renderInline).join("<br>")}</p>`)
+      .map((chunk) => `<p>${chunk.map((line) => renderInline(line, mentions)).join("<br>")}</p>`)
       .join("");
   }
 
-  function renderPostBody(value) {
+  function renderPostBody(value, mentions) {
     const lines = String(value).replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
     const blocks = [];
     let index = 0;
@@ -87,7 +109,7 @@
           quoteLines.push(stripQuoteMarker(lines[index]));
           index += 1;
         }
-        blocks.push(`<blockquote>${paragraphs(quoteLines)}</blockquote>`);
+        blocks.push(`<blockquote>${paragraphs(quoteLines, mentions)}</blockquote>`);
       } else {
         const paragraphLines = [];
         while (
@@ -98,7 +120,7 @@
           paragraphLines.push(lines[index].trim());
           index += 1;
         }
-        blocks.push(paragraphs(paragraphLines));
+        blocks.push(paragraphs(paragraphLines, mentions));
       }
     }
     return blocks.join("");
@@ -266,8 +288,14 @@
 
     return {
       body: config.initialBody || "",
+      bodyMentionFieldId: "",
+      bodyMentionHighlightedIndex: 0,
+      bodyMentionOpen: false,
+      bodyMentionQuery: "",
+      bodyMentionResults: [],
       config: config,
       draftState: "",
+      knownMentionables: {},
       selectedCharacterId: String(config.selectedCharacterId || ""),
       title: config.initialTitle || "",
       viewMode: "write",
@@ -308,9 +336,43 @@
         });
       },
 
+      bodyMentionKeydown(event, fieldId) {
+        if (!this.bodyMentionOpen) {
+          return;
+        }
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          this.moveBodyMention(1);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          this.moveBodyMention(-1);
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          this.chooseBodyMention(fieldId);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          this.closeBodyMention();
+        }
+      },
+
+      chooseBodyMention(fieldId) {
+        if (!this.bodyMentionOpen || this.bodyMentionResults.length === 0) {
+          return;
+        }
+        this.insertBodyMention(
+          this.bodyMentionResults[this.bodyMentionHighlightedIndex] || this.bodyMentionResults[0],
+          fieldId,
+        );
+      },
+
       clearDraft() {
         window.localStorage.removeItem(this.storageKey());
         this.draftState = "";
+      },
+
+      closeBodyMention() {
+        this.bodyMentionOpen = false;
+        this.bodyMentionHighlightedIndex = 0;
       },
 
       draftPayload() {
@@ -322,6 +384,43 @@
 
       hasPreview() {
         return this.body.trim().length > 0;
+      },
+
+      activeBodyMention(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) {
+          return null;
+        }
+        const cursor = field.selectionStart || 0;
+        const before = this.body.slice(0, cursor);
+        const match = before.match(/(?:^|[^\w-])@([A-Za-z0-9][\w-]*)$/);
+        if (!match) {
+          return null;
+        }
+        return {
+          end: cursor,
+          query: match[1],
+          start: cursor - match[1].length - 1,
+        };
+      },
+
+      insertBodyMention(item, fieldId) {
+        const active = this.activeBodyMention(fieldId);
+        const field = document.getElementById(fieldId);
+        if (!active || !field) {
+          return;
+        }
+        this.rememberMention(item);
+        const insertion = `${item.tag} `;
+        this.body =
+          this.body.slice(0, active.start) + insertion + this.body.slice(active.end);
+        const nextCursor = active.start + insertion.length;
+        this.closeBodyMention();
+        this.$nextTick(() => {
+          field.focus();
+          field.setSelectionRange(nextCursor, nextCursor);
+          this.saveDraft();
+        });
       },
 
       loadDraft() {
@@ -353,7 +452,7 @@
       },
 
       renderPreview() {
-        return renderPostBody(this.body);
+        return renderPostBody(this.body, this.mentionMap());
       },
 
       saveDraft() {
@@ -368,6 +467,70 @@
 
       storageKey() {
         return `elbysodic:draft:${this.config.draftKey}:${this.selectedCharacterId}`;
+      },
+
+      mentionKey(item) {
+        return `${item.kind}:${item.id}`;
+      },
+
+      mentionMap() {
+        const mentions = new Map();
+        for (const item of Object.values(this.knownMentionables)) {
+          mentions.set(String(item.handle).toLowerCase(), item);
+        }
+        return mentions;
+      },
+
+      moveBodyMention(delta) {
+        if (!this.bodyMentionOpen || this.bodyMentionResults.length === 0) {
+          return;
+        }
+        this.bodyMentionHighlightedIndex =
+          (this.bodyMentionHighlightedIndex + delta + this.bodyMentionResults.length) %
+          this.bodyMentionResults.length;
+      },
+
+      rememberMention(item) {
+        this.knownMentionables = {
+          ...this.knownMentionables,
+          [this.mentionKey(item)]: item,
+        };
+      },
+
+      rememberMentions(items) {
+        const next = { ...this.knownMentionables };
+        for (const item of items) {
+          next[this.mentionKey(item)] = item;
+        }
+        this.knownMentionables = next;
+      },
+
+      async searchBodyMention(fieldId) {
+        const active = this.activeBodyMention(fieldId);
+        if (!active || !active.query) {
+          this.bodyMentionResults = [];
+          this.closeBodyMention();
+          return;
+        }
+        this.bodyMentionFieldId = fieldId;
+        this.bodyMentionQuery = active.query;
+        const params = new URLSearchParams({
+          q: active.query,
+          scope: this.config.mentionScope || "all",
+        });
+        const response = await fetch(`${this.config.mentionEndpoint}?${params.toString()}`, {
+          credentials: "same-origin",
+        });
+        if (!response.ok) {
+          this.bodyMentionResults = [];
+          this.closeBodyMention();
+          return;
+        }
+        const payload = await response.json();
+        this.bodyMentionResults = payload.items || [];
+        this.rememberMentions(this.bodyMentionResults);
+        this.bodyMentionHighlightedIndex = 0;
+        this.bodyMentionOpen = this.bodyMentionResults.length > 0;
       },
     };
   });

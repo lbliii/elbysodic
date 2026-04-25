@@ -143,6 +143,165 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
         )
 
 
+def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("writer@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "writer", "Writer")
+    rogue = repo.create_character(community.id, membership.id, "rogue", "Rogue")
+    board = repo.create_board(community.id, "danger-room", "Danger Room")
+    thread = repo.create_thread(
+        community.id, board.id, rogue.id, "sentinel-drill", "Sentinel Drill"
+    )
+
+    species = repo.create_facet_group(community.id, "species", "Species", sort_order=10)
+    affiliation = repo.create_facet_group(
+        community.id,
+        "affiliation",
+        "Affiliation",
+        sort_order=20,
+    )
+    mutant = repo.create_facet(community.id, species.id, "mutant", "Mutant")
+    x_men = repo.create_facet(community.id, affiliation.id, "x-men", "X-Men")
+
+    repo.assign_character_facet(community.id, rogue.id, mutant.id)
+    repo.assign_character_facet(community.id, rogue.id, x_men.id)
+    repo.assign_board_facet(community.id, board.id, x_men.id)
+    repo.assign_thread_facet(community.id, thread.id, x_men.id)
+
+    assert [facet.slug for facet in repo.list_character_facets(community.id, rogue.id)] == [
+        "mutant",
+        "x-men",
+    ]
+    assert [facet.slug for facet in repo.list_board_facets(community.id, board.id)] == ["x-men"]
+    assert [facet.slug for facet in repo.list_thread_facets(community.id, thread.id)] == ["x-men"]
+    assert repo.list_character_ids_for_facets(community.id, [mutant.id, x_men.id]) == {rogue.id}
+    assert repo.list_thread_ids_for_facets(community.id, [x_men.id]) == {thread.id}
+
+
+def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    default_group = repo.create_facet_group(default.id, "affiliation", "Affiliation")
+    hosted_group = repo.create_facet_group(hosted.id, "affiliation", "Affiliation")
+    x_men = repo.create_facet(default.id, default_group.id, "x-men", "X-Men")
+    repo.create_facet(hosted.id, hosted_group.id, "x-men", "X-Men Elsewhere")
+
+    premise = repo.create_material(
+        default.id,
+        "premise",
+        "Premise",
+        material_type="premise",
+        summary="The core hook.",
+        body="Mutants face a new machine.",
+        is_featured=True,
+    )
+    repo.create_material(
+        hosted.id,
+        "premise",
+        "Hosted Premise",
+        material_type="premise",
+        summary="Different world.",
+    )
+    repo.assign_material_facet(default.id, premise.id, x_men.id)
+
+    assert repo.get_material_by_slug(default.id, "premise").title == "Premise"
+    assert repo.get_material_by_slug(hosted.id, "premise").title == "Hosted Premise"
+    assert [material.title for material in repo.list_materials(default.id)] == ["Premise"]
+    assert [facet.slug for facet in repo.list_material_facets(default.id, premise.id)] == ["x-men"]
+
+    with pytest.raises(LookupError):
+        repo.assign_material_facet(hosted.id, premise.id, x_men.id)
+
+
+def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_user = repo.create_user("default@example.com", "hash")
+    hosted_user = repo.create_user("hosted@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        default_user.id,
+        default_role.id,
+        "writer",
+        "Writer",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "hosted",
+        "Hosted",
+    )
+    rogue = repo.create_character(default.id, default_membership.id, "rogue", "Rogue")
+    magneto = repo.create_character(default.id, default_membership.id, "magneto", "Magneto")
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "rogue",
+        "Rogue Elsewhere",
+    )
+    group = repo.create_facet_group(default.id, "affiliation", "Affiliation")
+    x_men = repo.create_facet(default.id, group.id, "x-men", "X-Men")
+
+    wanted = repo.create_wanted_ad(
+        default.id,
+        default_membership.id,
+        "rogue-rival",
+        "Rogue rival",
+        creator_character_id=rogue.id,
+        summary="A sharp foil.",
+    )
+    repo.create_wanted_ad(
+        hosted.id,
+        hosted_membership.id,
+        "rogue-rival",
+        "Hosted rival",
+        creator_character_id=hosted_character.id,
+    )
+    repo.add_wanted_ad_related_character(default.id, wanted.id, magneto.id)
+    repo.assign_wanted_ad_facet(default.id, wanted.id, x_men.id)
+    interest = repo.create_wanted_ad_interest(
+        default.id,
+        wanted.id,
+        default_membership.id,
+        magneto.id,
+    )
+    notification = repo.create_notification(
+        default.id,
+        default_membership.id,
+        kind="wanted_interest",
+        wanted_ad_id=wanted.id,
+        wanted_ad_interest_id=interest.id,
+        actor_membership_id=default_membership.id,
+        actor_character_id=magneto.id,
+    )
+
+    assert repo.get_wanted_ad_by_slug(default.id, "rogue-rival").title == "Rogue rival"
+    assert repo.get_wanted_ad_by_slug(hosted.id, "rogue-rival").title == "Hosted rival"
+    assert [item.title for item in repo.list_wanted_ads(default.id)] == ["Rogue rival"]
+    assert [facet.slug for facet in repo.list_wanted_ad_facets(default.id, wanted.id)] == ["x-men"]
+    assert repo.list_wanted_ad_related_characters(default.id, wanted.id) == [magneto]
+    assert repo.list_wanted_ad_interests(default.id, wanted.id) == [interest]
+    assert repo.list_wanted_ads_for_character(default.id, rogue.id) == [wanted]
+    assert repo.list_wanted_ads_for_character(default.id, magneto.id) == [wanted]
+    assert notification.wanted_ad_id == wanted.id
+    assert notification.wanted_ad_interest_id == interest.id
+    reserved_interest = repo.update_wanted_ad_interest_status(default.id, interest.id, "reserved")
+    reserved_wanted = repo.update_wanted_ad_status(default.id, wanted.id, "reserved")
+    assert reserved_interest.status == "reserved"
+    assert reserved_wanted.status == "reserved"
+
+    with pytest.raises(LookupError):
+        repo.assign_wanted_ad_facet(hosted.id, wanted.id, x_men.id)
+    with pytest.raises(LookupError):
+        repo.create_wanted_ad_interest(
+            hosted.id, wanted.id, hosted_membership.id, hosted_character.id
+        )
+
+
 def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")

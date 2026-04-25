@@ -103,6 +103,155 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
     asyncio.run(run())
 
 
+def test_discovery_defaults_to_active_face_lens_and_filters_facets() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            discover = await client.get("/discover")
+            assert discover.status == 200
+            assert "Plot discovery" in discover.text
+            assert "For Rogue" in discover.text
+            assert "Mutant" in discover.text
+            assert "X-Men" in discover.text
+            assert "Academy" in discover.text
+            assert "Rogue" in discover.text
+            assert "Bolivar Trask" not in discover.text
+
+            human_un = await client.get("/discover?facets=human,united-nations")
+            assert human_un.status == 200
+            assert "Bolivar Trask" in human_un.text
+            assert "Moira MacTaggert" in human_un.text
+            assert 'href="/characters/rogue">Rogue' not in human_un.text
+
+    asyncio.run(run())
+
+
+def test_world_materials_render_pillars_events_and_application_guides() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            world = await client.get("/world")
+            assert world.status == 200
+            assert "World" in world.text
+            assert "Premise" in world.text
+            assert "Application Guide" in world.text
+            assert "Current Event: B-24 Winter" in world.text
+            assert 'href="/world/premise"' in world.text
+            assert 'href="/world/b-24-winter"' in world.text
+            assert "United Nations" in world.text
+
+            event = await client.get("/world/b-24-winter")
+            assert event.status == 200
+            assert "Iceman is infected with B-24" in event.text
+            assert "Evil Lab" in event.text
+            assert "Related materials" in event.text
+
+            missing = await client.get("/world/not-a-material")
+            assert missing.status == 404
+
+    asyncio.run(run())
+
+
+def test_wanted_ads_render_board_detail_and_character_hub() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            wanted = await client.get("/wanted")
+            assert wanted.status == 200
+            assert "Wanted" in wanted.text
+            assert "Brotherhood rival from Rogue" in wanted.text
+            assert "Human UN liaison for B-24 talks" in wanted.text
+            assert 'href="/wanted/brotherhood-rival-for-rogue"' in wanted.text
+            assert "United Nations" in wanted.text
+
+            detail = await client.get("/wanted/brotherhood-rival-for-rogue")
+            assert detail.status == 200
+            assert "Rogue needs someone who remembers" in detail.text
+            assert 'href="/characters/rogue"' in detail.text
+            assert 'href="/world/factions"' in detail.text
+            assert "Complicated Romance" in detail.text
+
+            character = await client.get("/characters/rogue")
+            assert character.status == 200
+            assert "Plotter" in character.text
+            assert "Tracker" in character.text
+            assert "Brotherhood rival from Rogue" in character.text
+            assert 'href="/wanted"' in character.text
+
+            interest_response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert interest_response.status == 302
+
+            interested = await client.get("/wanted/human-un-liaison-for-b24")
+            assert interested.status == 200
+            assert "Rogue is interested in this hook." in interested.text
+            assert "Interested faces" in interested.text
+
+            services = get_services()
+            repo = services.repo
+            community = services.seed.community
+            wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+            rogue = repo.get_character_by_slug(community.id, "rogue")
+            interest = repo.get_wanted_ad_interest_for_character(
+                community.id,
+                wanted_ad.id,
+                rogue.id,
+            )
+            assert interest.character_id == rogue.id
+
+            charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+            charlie_user = repo.get_user(charlie_membership.user_id)
+            xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+            charlie_services = AppServices(
+                repo,
+                DemoSeed(community, charlie_user, charlie_membership, xavier),
+            )
+            inbox = charlie_services.notifications()
+            assert inbox.unread_count == 1
+            assert inbox.items[0].label == "Wanted interest"
+            assert inbox.items[0].title == "Human UN liaison for B-24 talks"
+            assert inbox.items[0].href == "/wanted/human-un-liaison-for-b24"
+
+            charlie_app = create_app(debug=False, services=charlie_services)
+            async with TestClient(charlie_app) as charlie_client:
+                creator_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+                assert creator_view.status == 200
+                assert "Reserve for Rogue" in creator_view.text
+
+                reserve_response = await charlie_client.post(
+                    "/wanted/human-un-liaison-for-b24",
+                    body=f"intent=reserve_interest&interest_id={interest.id}".encode(),
+                    headers=_FORM,
+                )
+                assert reserve_response.status == 302
+
+                reserved_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+                assert reserved_view.status == 200
+                assert "reserved" in reserved_view.text
+                assert "Reserve for Rogue" not in reserved_view.text
+
+            assert (
+                repo.get_wanted_ad_interest_for_character(
+                    community.id,
+                    wanted_ad.id,
+                    rogue.id,
+                ).status
+                == "reserved"
+            )
+            assert repo.get_wanted_ad(community.id, wanted_ad.id).status == "reserved"
+
+            lane_inbox = AppServices(repo, services.seed).notifications()
+            assert any(item.label == "Wanted reserved" for item in lane_inbox.items)
+
+            missing = await client.get("/wanted/not-a-hook")
+            assert missing.status == 404
+
+    asyncio.run(run())
+
+
 def test_thread_cards_jump_to_first_unread_then_latest() -> None:
     async def run() -> None:
         app = _app()
@@ -412,6 +561,11 @@ def test_mentions_notify_character_owner_without_thread_watch() -> None:
         )
 
         async with TestClient(app) as client:
+            thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert thread.status == 200
+            assert 'href="/characters/rogue"' in thread.text
+            assert 'data-mention-kind="character"' in thread.text
+
             notifications = await client.get("/notifications")
             assert notifications.status == 200
             assert "Mention" in notifications.text
@@ -437,6 +591,11 @@ def test_writer_mentions_notify_membership_without_thread_watch() -> None:
         )
 
         async with TestClient(app) as client:
+            thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert thread.status == 200
+            assert 'href="/members/starlane"' in thread.text
+            assert 'data-mention-kind="writer"' in thread.text
+
             notifications = await client.get("/notifications")
             assert notifications.status == 200
             assert "Mention" in notifications.text
@@ -839,7 +998,7 @@ def test_character_activity_center_tracks_identity_specific_threads() -> None:
 
             profile = await client.get("/characters/rogue")
             assert profile.status == 200
-            assert "Active threads" in profile.text
+            assert "Tracker" in profile.text
             assert "Open filtered queue" in profile.text
             assert "Open thread roster" in profile.text
             assert "Sentinel drill after midnight" in profile.text
@@ -1403,6 +1562,89 @@ def test_mentionable_search_supports_character_and_writer_scopes() -> None:
             ooc_payload = json.loads(ooc.body)
             assert ooc_payload["items"][0]["kind"] == "writer"
             assert ooc_payload["items"][0]["handle"] == "starlane"
+
+    asyncio.run(run())
+
+
+def test_open_thread_can_be_joined_as_active_face() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        plotting = repo.get_board_by_slug(community.id, "plotting")
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        thread = repo.create_thread(
+            community.id,
+            plotting.id,
+            xavier.id,
+            "telepathy-office-hours",
+            "Telepathy office hours",
+            status="open",
+            summary="Charles opens the study for whoever needs to talk.",
+        )
+        repo.create_post(
+            community.id,
+            thread.id,
+            xavier.id,
+            "Charles leaves the study door open and waits.",
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/plotting/threads/telepathy-office-hours")
+            assert page.status == 200
+            assert "Join as Rogue" in page.text
+            assert "watching" not in page.text
+
+            joined = await client.post(
+                "/boards/plotting/threads/telepathy-office-hours",
+                body=b"intent=join_scene",
+                headers=_FORM,
+            )
+            assert joined.status == 302
+
+            assert {
+                character.slug
+                for character in repo.list_thread_participants(community.id, thread.id)
+            } == {"charles-xavier", "rogue"}
+            assert repo.is_thread_watched(community.id, thread.id, services.seed.membership.id)
+
+            joined_page = await client.get("/boards/plotting/threads/telepathy-office-hours")
+            assert joined_page.status == 200
+            assert "Join as Rogue" not in joined_page.text
+            assert 'aria-label="Rogue"' in joined_page.text
+            assert "watching" in joined_page.text
+
+    asyncio.run(run())
+
+
+def test_non_open_threads_do_not_show_join_action() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        danger_room = repo.get_board_by_slug(community.id, "danger-room")
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        thread = repo.create_thread(
+            community.id,
+            danger_room.id,
+            xavier.id,
+            "closed-practice",
+            "Closed practice",
+            status="active",
+        )
+        repo.create_post(
+            community.id,
+            thread.id,
+            xavier.id,
+            "This practice has already started.",
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/closed-practice")
+            assert page.status == 200
+            assert "Join as Rogue" not in page.text
 
     asyncio.run(run())
 

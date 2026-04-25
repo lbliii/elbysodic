@@ -1,0 +1,65 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% def wanted_card(item) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card">
+  <div class="chirpui-cluster chirpui-cluster--between">
+    <div>
+      <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>
+      <h2>
+        <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">
+          {{ item.wanted_ad.title }}
+        </a>
+      </h2>
+    </div>
+    {{ badge(item.wanted_ad.status, variant="success" if item.wanted_ad.status == "open" else "muted") }}
+  </div>
+  <p class="chirpui-text-muted">{{ item.wanted_ad.summary }}</p>
+  <div class="elbysodic-wanted-card__meta">
+    {% if item.creator_character %}
+    <span>
+      wanted by
+      <a class="chirpui-link" href="/characters/{{ item.creator_character.slug }}">
+        {{ item.creator_character.name }}
+      </a>
+    </span>
+    {% else %}
+    <span>
+      wanted by
+      <a class="chirpui-link" href="/members/{{ item.creator_membership.username }}">
+        {{ item.creator_membership.username }}
+      </a>
+    </span>
+    {% end %}
+    {% if item.related_material %}
+    <span>
+      <a class="chirpui-link" href="/world/{{ item.related_material.slug }}">
+        {{ item.related_material.title }}
+      </a>
+    </span>
+    {% end %}
+  </div>
+  {% if item.related_characters %}
+  <div class="elbysodic-scene-cast" aria-label="Related characters">
+    {% for character in item.related_characters %}
+    <a class="elbysodic-scene-cast__face"
+       href="/characters/{{ character.slug }}"
+       title="{{ character.name }}"
+       aria-label="{{ character.name }}">
+      {% if character.avatar_url %}
+      <img src="{{ character.avatar_url }}" alt="">
+      {% else %}
+      {{ character.name[:1] }}
+      {% end %}
+    </a>
+    {% end %}
+  </div>
+  {% end %}
+  {{ facet_pills(item.facets) }}
+</article>
+{% end %}
+{% end %}

@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import activity_item %}
 {% end %}
 
@@ -44,11 +45,13 @@
         </div>
         <div class="chirpui-cluster chirpui-cluster--sm">
           {{ badge(summary.unread_thread_count ~ " new", variant="info") if summary.unread_thread_count else "" }}
+          {{ badge("for " ~ viewer.current_character.name, variant="success") if summary.is_relevant_to_current_face and viewer.current_character else "" }}
           {{ badge("private", variant="muted") if summary.board.is_private else "" }}
           {{ stat(value=summary.thread_count, label="Threads") }}
           {{ stat(value=summary.post_count, label="Posts") }}
         </div>
       </div>
+      {{ facet_pills(summary.facets) }}
       {% if summary.latest_thread %}
       <div class="elbysodic-latest">
         <span class="chirpui-text-muted">Latest</span>

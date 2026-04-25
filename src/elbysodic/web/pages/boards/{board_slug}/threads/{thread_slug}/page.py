@@ -49,6 +49,17 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             raise HTTPError(status=403, detail=str(exc)) from exc
         return Redirect(request.path)
 
+    if intent == "join_scene":
+        try:
+            services.join_thread_as_current_character(board_slug, thread_slug)
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            return _render_thread(request, board_slug, thread_slug, error=str(exc))
+        return Redirect(request.path)
+
     if intent in {"lock", "unlock", "pin", "unpin"}:
         try:
             services.update_thread_state(

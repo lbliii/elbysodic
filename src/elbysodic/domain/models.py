@@ -77,6 +77,80 @@ class Character:
 
 
 @dataclass(frozen=True, slots=True)
+class FacetGroup:
+    id: int
+    community_id: int
+    slug: str
+    name: str
+    description: str
+    selection_mode: str
+    visibility: str
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class Facet:
+    id: int
+    community_id: int
+    facet_group_id: int
+    slug: str
+    name: str
+    description: str
+    accent_color: str
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class Material:
+    id: int
+    community_id: int
+    slug: str
+    title: str
+    material_type: str
+    summary: str
+    body: str
+    status: str
+    sort_order: int
+    is_featured: bool
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class WantedAd:
+    id: int
+    community_id: int
+    creator_membership_id: int
+    creator_character_id: int | None
+    related_material_id: int | None
+    slug: str
+    title: str
+    wanted_type: str
+    summary: str
+    body: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class WantedAdInterest:
+    id: int
+    community_id: int
+    wanted_ad_id: int
+    membership_id: int
+    character_id: int
+    note: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class Thread:
     id: int
     community_id: int
@@ -143,8 +217,10 @@ class Notification:
     community_id: int
     membership_id: int
     kind: str
-    thread_id: int
-    post_id: int
+    thread_id: int | None
+    post_id: int | None
+    wanted_ad_id: int | None
+    wanted_ad_interest_id: int | None
     actor_membership_id: int
     actor_character_id: int
     read_at: str | None

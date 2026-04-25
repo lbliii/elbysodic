@@ -38,10 +38,10 @@
           {{ badge(item.label, variant="info" if item.is_unread else "muted") }}
           {{ badge("new", variant="warning") if item.is_unread else "" }}
         </div>
-        <h2>{{ item.thread.title }}</h2>
+        <h2>{{ item.title }}</h2>
         <p class="chirpui-text-muted">
           {{ item.actor.name }} · writer <a class="chirpui-link" href="/members/{{ item.actor_membership.username }}">{{ item.actor_membership.username }}</a>
-          · {{ item.post.created_at_label }}
+          · {{ item.created_at_label }}
         </p>
         <p>{{ item.snippet }}</p>
       </div>

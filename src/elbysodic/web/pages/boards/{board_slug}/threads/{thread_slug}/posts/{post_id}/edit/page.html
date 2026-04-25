@@ -70,7 +70,7 @@
         <span>Preview</span>
       </label>
     </div>
-    <div x-show="!previewMode">
+    <div class="elbysodic-composer-body" x-show="!previewMode">
       <label class="chirpui-field__label" for="edit-post-body">Post body</label>
       <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
         <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'edit-post-body')">B</button>
@@ -82,7 +82,32 @@
                 class="chirpui-field__input"
                 name="body"
                 rows="10"
-                x-model="body">{{ body }}</textarea>
+                x-model="body"
+                @input.debounce.150ms="searchBodyMention('edit-post-body')"
+                @click="searchBodyMention('edit-post-body')"
+                @keyup="searchBodyMention('edit-post-body')"
+                @keydown="bodyMentionKeydown($event, 'edit-post-body')">{{ body }}</textarea>
+      <div class="elbysodic-body-mention-list"
+           role="listbox"
+           x-show="bodyMentionOpen && bodyMentionFieldId === 'edit-post-body'"
+           x-cloak>
+        <template x-for="(item, index) in bodyMentionResults" :key="item.kind + ':' + item.id">
+          <button type="button"
+                  class="elbysodic-mention-picker__result"
+                  :class="{ 'is-active': index === bodyMentionHighlightedIndex }"
+                  role="option"
+                  @click="insertBodyMention(item, 'edit-post-body')">
+            <span class="elbysodic-character-avatar" aria-hidden="true">
+              <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+              <span x-show="!item.avatar_url" x-text="item.initial"></span>
+            </span>
+            <span>
+              <strong x-text="item.tag"></strong>
+              <small x-text="item.detail"></small>
+            </span>
+          </button>
+        </template>
+      </div>
     </div>
     <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
       <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>

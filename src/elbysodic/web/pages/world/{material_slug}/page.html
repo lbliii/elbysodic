@@ -1,0 +1,59 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/world">← World</a>
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md elbysodic-material-detail">
+    <div>
+      <p class="elbysodic-material-card__type">{{ material.type_label }}</p>
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <h2>{{ material.material.title }}</h2>
+        {% if material.material.is_featured %}
+        {{ badge("featured", variant="success") }}
+        {% end %}
+      </div>
+      {% if material.material.summary %}
+      <p class="chirpui-text-muted">{{ material.material.summary }}</p>
+      {% end %}
+    </div>
+    {{ facet_pills(material.facets) }}
+    <div class="elbysodic-post-content">
+      {{ material.rendered_body }}
+    </div>
+  </article>
+  {% end %}
+
+  {% if material.related_materials %}
+  {% call section_header("Related materials") %}
+  More creator-authored context that shares this lens.
+  {% end %}
+  <div class="elbysodic-material-grid">
+    {% for item in material.related_materials %}
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card">
+      <p class="elbysodic-material-card__type">{{ item.type_label }}</p>
+      <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
+      <p class="chirpui-text-muted">{{ item.rendered_summary }}</p>
+      {{ facet_pills(item.facets) }}
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

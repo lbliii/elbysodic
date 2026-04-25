@@ -1,0 +1,13 @@
+{% def facet_pills(tags) %}
+{% if tags %}
+<div class="elbysodic-facet-pills">
+  {% for tag in tags %}
+  <span class="elbysodic-facet-pill"
+        title="{{ tag.group_label }}"
+        {% if tag.facet.accent_color %}style="--elbysodic-facet-accent: {{ tag.facet.accent_color }}"{% end %}>
+    {{ tag.label }}
+  </span>
+  {% end %}
+</div>
+{% end %}
+{% end %}

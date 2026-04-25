@@ -6,8 +6,8 @@
 {% block title %}Elbysodic{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=mention-picker">
-    <script defer src="/elbysodic-static/elbysodic-composer.js?v=mention-picker"></script>
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=wanted-hooks">
+    <script defer src="/elbysodic-static/elbysodic-composer.js?v=inline-mentions"></script>
 {% end %}
 
 {% block title_oob %}
@@ -68,6 +68,9 @@
     </a>
     <a class="chirpui-sidebar__link" href="/members">Members</a>
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
+    <a class="chirpui-sidebar__link" href="/world">World</a>
+    <a class="chirpui-sidebar__link" href="/wanted">Wanted</a>
+    <a class="chirpui-sidebar__link" href="/discover">Discover</a>
     {% if viewer %}
     {% for item in viewer.navigation_boards %}
     <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/boards/{{ item.board.slug }}">
@@ -95,6 +98,9 @@
     </a>
     <a class="chirpui-sidebar__link" href="/members">Members</a>
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
+    <a class="chirpui-sidebar__link" href="/world">World</a>
+    <a class="chirpui-sidebar__link" href="/wanted">Wanted</a>
+    <a class="chirpui-sidebar__link" href="/discover">Discover</a>
     {% if viewer %}
     {% for item in viewer.navigation_boards %}
     <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/boards/{{ item.board.slug }}">

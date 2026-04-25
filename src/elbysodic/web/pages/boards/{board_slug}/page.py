@@ -41,6 +41,7 @@ def get(request: Request, board_slug: str) -> Page:
         current_path=request.url,
         viewer=viewer,
         board=board,
+        board_facets=services.board_facets(board.slug),
         threads=threads,
         active_filter=active_filter,
         filter_options=_filter_options(board.slug, active_filter),

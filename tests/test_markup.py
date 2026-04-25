@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from elbysodic.services.markup import post_snippet, render_post_body
+from elbysodic.services.markup import MentionLink, post_snippet, render_post_body
 
 
 def test_post_markup_renders_small_safe_dialect() -> None:
@@ -25,6 +25,34 @@ def test_post_markup_escapes_raw_html() -> None:
 
     assert "<script>" not in rendered
     assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in rendered
+
+
+def test_post_markup_renders_known_mentions_as_links() -> None:
+    rendered = str(
+        render_post_body(
+            "Hey @rogue and @starlane, not @unknown.",
+            mentions=[
+                MentionLink(
+                    handle="rogue",
+                    href="/characters/rogue",
+                    label="Rogue",
+                    kind="character",
+                ),
+                MentionLink(
+                    handle="starlane",
+                    href="/members/starlane",
+                    label="Lane",
+                    kind="writer",
+                ),
+            ],
+        )
+    )
+
+    assert 'href="/characters/rogue"' in rendered
+    assert 'data-mention-kind="character"' in rendered
+    assert 'href="/members/starlane"' in rendered
+    assert 'data-mention-kind="writer"' in rendered
+    assert "@unknown" in rendered
 
 
 def test_post_snippet_collapses_whitespace_and_truncates() -> None:

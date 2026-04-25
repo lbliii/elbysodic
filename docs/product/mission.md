@@ -31,10 +31,21 @@ Threads are not just discussions. They are scenes, arcs, prompts, logs,
 continuity, relationships, and creative commitments. Elbysodic should make it
 easy to find, follow, archive, resume, and understand them.
 
+Plotting is not side content. Plot pages, wanted ads, relationship hooks,
+claims, reserves, applications, and event prompts are part of how PBP
+communities turn lore into writing. Elbysodic should make that work structured,
+discoverable, and easier to act on without flattening it into generic forum
+posts.
+
 Communities are not interchangeable tenants. They have rules, tones, canons,
 styles, rituals, staff practices, and visual identities. Elbysodic should give
 community owners enough structure to feel safe and enough control to feel like
 the place is theirs.
+
+World material is part of the creator toolkit. A community's premise, factions,
+rules, events, application guidance, canons, claims, and reserves can be
+surfaced as first-class pages or workflows when that better supports the board's
+rituals than a standard thread.
 
 Writing flow matters. The composer should respect long-form posting, drafts,
 formatting, previews, character voice, and the quiet concentration needed to
@@ -50,6 +61,9 @@ the trust model, not afterthoughts.
 - Make character identity a primitive everywhere posts are created, read, or
   searched.
 - Keep membership permissions community-local and character authorship explicit.
+- Let directors define the world lenses that matter to their board: factions,
+  species, houses, nations, powers, locations, event roles, relationship lanes,
+  or any other facet that helps writers find story.
 - Preserve the creative rituals that people love, but automate the tedious
   ones.
 - Treat privacy, pseudonymity, and identity exploration as normal use cases.
@@ -69,10 +83,12 @@ The MVP should prove the loop that makes PBP feel alive:
 4. They read a scene with clear character authorship.
 5. They reply as the right character.
 6. Their default face and roster preferences follow them through the community.
+7. They find plots through director-defined world facets, wanted hooks, events,
+   and character hubs.
 
 Everything else should grow from that loop: thread states, archives, drafts,
-plotting tools, wanted ads, ship/relationship trackers, notifications, member
-directories, moderation, theming, and export.
+plotting tools, wanted ads, claims, reserves, applications, ship/relationship
+trackers, notifications, member directories, moderation, theming, and export.
 
 ## Current Product Understanding
 
@@ -90,7 +106,16 @@ core product shape is:
 - Writing should preserve flow with a focused composer, safe markup, preview,
   drafts, and character context.
 - Notifications should point at meaningful creative obligations: watched
-  threads and direct character mentions.
+  threads, direct character mentions, and writer mentions.
+- Facets are the director-authored grammar of the board's world. They should
+  power discovery across characters, threads, boards, world materials, and
+  wanted hooks.
+- World materials can carry premise, rules, factions, applications, and event
+  pages outside the thread format.
+- Wanted hooks are first-class invitations for connections, faction needs,
+  event roles, and plot pressure.
+- Character pages should become hubs for the character's identity, wanted hooks,
+  writing tracker, recent posts, and future relationship or application state.
 
 Future work should keep sharpening this loop before expanding into large hosted
 platform features.

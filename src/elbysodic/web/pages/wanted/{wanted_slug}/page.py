@@ -1,0 +1,67 @@
+"""Wanted hook detail page."""
+
+from __future__ import annotations
+
+from chirp.errors import HTTPError
+from chirp.http.request import Request
+from chirp.http.response import Redirect
+from chirp.templating.returns import Page
+
+from elbysodic.web.state import get_services
+
+
+def get(request: Request, wanted_slug: str) -> Page:
+    return _render_wanted(request, wanted_slug)
+
+
+async def post(request: Request, wanted_slug: str) -> Page | Redirect:
+    services = get_services()
+    form = await request.form()
+    intent = str(form.get("intent") or "")
+    if intent == "express_interest":
+        try:
+            services.express_wanted_interest(wanted_slug)
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/wanted/{wanted_slug}")
+    if intent == "reserve_interest":
+        try:
+            services.reserve_wanted_interest(
+                wanted_slug,
+                _parse_interest_id(form.get("interest_id")),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/wanted/{wanted_slug}")
+    raise HTTPError(status=400, detail=f"unknown wanted intent: {intent}")
+
+
+def _render_wanted(request: Request, wanted_slug: str) -> Page:
+    services = get_services()
+    try:
+        wanted = services.read_wanted_ad(wanted_slug)
+    except LookupError as exc:
+        raise HTTPError(status=404, detail=str(exc)) from exc
+    return Page(
+        "wanted/{wanted_slug}/page.html",
+        "page_content",
+        page_block_name="page_root",
+        current_path=request.url,
+        viewer=services.viewer(),
+        wanted=wanted,
+    )
+
+
+def _parse_interest_id(value: object) -> int:
+    try:
+        return int(str(value or ""))
+    except ValueError as exc:
+        raise HTTPError(status=400, detail="interest_id must be an integer") from exc

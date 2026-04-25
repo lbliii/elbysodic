@@ -11,6 +11,9 @@ from elbysodic.domain.models import (
     Character,
     Community,
     CommunityMembership,
+    Facet,
+    FacetGroup,
+    Material,
     Notification,
     Post,
     PostRevision,
@@ -19,6 +22,8 @@ from elbysodic.domain.models import (
     ThreadParticipant,
     ThreadWatch,
     User,
+    WantedAd,
+    WantedAdInterest,
 )
 
 
@@ -628,6 +633,969 @@ class ForumRepository:
             (community_id,),
         ).fetchall()
         return [_board_from_row(row) for row in rows]
+
+    def create_facet_group(
+        self,
+        community_id: int,
+        slug: str,
+        name: str,
+        description: str = "",
+        *,
+        selection_mode: str = "multiple",
+        visibility: str = "public",
+        sort_order: int = 0,
+    ) -> FacetGroup:
+        self.get_community(community_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO facet_groups (
+                community_id,
+                slug,
+                name,
+                description,
+                selection_mode,
+                visibility,
+                sort_order,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                slug,
+                name,
+                description,
+                selection_mode,
+                visibility,
+                sort_order,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_facet_group(community_id, _last_id(cursor))
+
+    def get_facet_group(self, community_id: int, facet_group_id: int) -> FacetGroup:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                name,
+                description,
+                selection_mode,
+                visibility,
+                sort_order,
+                created_at,
+                updated_at
+            FROM facet_groups
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, facet_group_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"facet group not found in community {community_id}: {facet_group_id}"
+            )
+        return _facet_group_from_row(row)
+
+    def get_facet_group_by_slug(self, community_id: int, slug: str) -> FacetGroup:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                name,
+                description,
+                selection_mode,
+                visibility,
+                sort_order,
+                created_at,
+                updated_at
+            FROM facet_groups
+            WHERE community_id = ? AND slug = ?
+            """,
+            (community_id, slug),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"facet group not found in community {community_id}: {slug}")
+        return _facet_group_from_row(row)
+
+    def list_facet_groups(self, community_id: int) -> list[FacetGroup]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                name,
+                description,
+                selection_mode,
+                visibility,
+                sort_order,
+                created_at,
+                updated_at
+            FROM facet_groups
+            WHERE community_id = ?
+            ORDER BY sort_order, name, id
+            """,
+            (community_id,),
+        ).fetchall()
+        return [_facet_group_from_row(row) for row in rows]
+
+    def create_facet(
+        self,
+        community_id: int,
+        facet_group_id: int,
+        slug: str,
+        name: str,
+        description: str = "",
+        *,
+        accent_color: str = "",
+        sort_order: int = 0,
+    ) -> Facet:
+        group = self.get_facet_group(community_id, facet_group_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO facets (
+                community_id,
+                facet_group_id,
+                slug,
+                name,
+                description,
+                accent_color,
+                sort_order,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                group.community_id,
+                group.id,
+                slug,
+                name,
+                description,
+                accent_color,
+                sort_order,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_facet(community_id, _last_id(cursor))
+
+    def get_facet(self, community_id: int, facet_id: int) -> Facet:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                facet_group_id,
+                slug,
+                name,
+                description,
+                accent_color,
+                sort_order,
+                created_at,
+                updated_at
+            FROM facets
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, facet_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"facet not found in community {community_id}: {facet_id}")
+        return _facet_from_row(row)
+
+    def get_facet_by_slug(self, community_id: int, slug: str) -> Facet:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                facet_group_id,
+                slug,
+                name,
+                description,
+                accent_color,
+                sort_order,
+                created_at,
+                updated_at
+            FROM facets
+            WHERE community_id = ? AND slug = ?
+            """,
+            (community_id, slug),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"facet not found in community {community_id}: {slug}")
+        return _facet_from_row(row)
+
+    def list_facets(self, community_id: int) -> list[Facet]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM facets
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE facets.community_id = ?
+            ORDER BY facet_groups.sort_order, facet_groups.name, facets.sort_order, facets.name
+            """,
+            (community_id,),
+        ).fetchall()
+        return [_facet_from_row(row) for row in rows]
+
+    def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]:
+        self.get_character(community_id, character_id)
+        return self._list_facets_for_assignment(
+            "character_facets",
+            "character_id",
+            community_id,
+            character_id,
+        )
+
+    def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]:
+        self.get_board(community_id, board_id)
+        return self._list_facets_for_assignment(
+            "board_facets",
+            "board_id",
+            community_id,
+            board_id,
+        )
+
+    def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]:
+        self.get_thread(community_id, thread_id)
+        return self._list_facets_for_assignment(
+            "thread_facets",
+            "thread_id",
+            community_id,
+            thread_id,
+        )
+
+    def list_material_facets(self, community_id: int, material_id: int) -> list[Facet]:
+        self.get_material(community_id, material_id)
+        return self._list_facets_for_assignment(
+            "material_facets",
+            "material_id",
+            community_id,
+            material_id,
+        )
+
+    def list_wanted_ad_facets(self, community_id: int, wanted_ad_id: int) -> list[Facet]:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        return self._list_facets_for_assignment(
+            "wanted_ad_facets",
+            "wanted_ad_id",
+            community_id,
+            wanted_ad_id,
+        )
+
+    def list_character_ids_for_facets(
+        self,
+        community_id: int,
+        facet_ids: list[int],
+    ) -> set[int]:
+        return self._list_entity_ids_for_facets(
+            "character_facets",
+            "character_id",
+            community_id,
+            facet_ids,
+        )
+
+    def list_thread_ids_for_facets(
+        self,
+        community_id: int,
+        facet_ids: list[int],
+    ) -> set[int]:
+        return self._list_entity_ids_for_facets(
+            "thread_facets",
+            "thread_id",
+            community_id,
+            facet_ids,
+        )
+
+    def assign_character_facet(
+        self,
+        community_id: int,
+        character_id: int,
+        facet_id: int,
+    ) -> None:
+        self.get_character(community_id, character_id)
+        self.get_facet(community_id, facet_id)
+        self._assign_facet("character_facets", "character_id", community_id, character_id, facet_id)
+
+    def assign_board_facet(self, community_id: int, board_id: int, facet_id: int) -> None:
+        self.get_board(community_id, board_id)
+        self.get_facet(community_id, facet_id)
+        self._assign_facet("board_facets", "board_id", community_id, board_id, facet_id)
+
+    def assign_thread_facet(self, community_id: int, thread_id: int, facet_id: int) -> None:
+        self.get_thread(community_id, thread_id)
+        self.get_facet(community_id, facet_id)
+        self._assign_facet("thread_facets", "thread_id", community_id, thread_id, facet_id)
+
+    def assign_material_facet(self, community_id: int, material_id: int, facet_id: int) -> None:
+        self.get_material(community_id, material_id)
+        self.get_facet(community_id, facet_id)
+        self._assign_facet(
+            "material_facets",
+            "material_id",
+            community_id,
+            material_id,
+            facet_id,
+        )
+
+    def assign_wanted_ad_facet(self, community_id: int, wanted_ad_id: int, facet_id: int) -> None:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        self.get_facet(community_id, facet_id)
+        self._assign_facet(
+            "wanted_ad_facets",
+            "wanted_ad_id",
+            community_id,
+            wanted_ad_id,
+            facet_id,
+        )
+
+    def _list_facets_for_assignment(
+        self,
+        table: str,
+        column: str,
+        community_id: int,
+        entity_id: int,
+    ) -> list[Facet]:
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM {table}
+            JOIN facets
+              ON facets.community_id = {table}.community_id
+             AND facets.id = {table}.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE {table}.community_id = ? AND {table}.{column} = ?
+            ORDER BY facet_groups.sort_order, facet_groups.name, facets.sort_order, facets.name
+            """,
+            (community_id, entity_id),
+        ).fetchall()
+        return [_facet_from_row(row) for row in rows]
+
+    def _list_entity_ids_for_facets(
+        self,
+        table: str,
+        column: str,
+        community_id: int,
+        facet_ids: list[int],
+    ) -> set[int]:
+        cleaned_facet_ids = list(dict.fromkeys(facet_ids))
+        if not cleaned_facet_ids:
+            return set()
+        placeholders = ", ".join("?" for _ in cleaned_facet_ids)
+        rows = self.connection.execute(
+            f"""
+            SELECT {column}
+            FROM {table}
+            WHERE community_id = ? AND facet_id IN ({placeholders})
+            GROUP BY {column}
+            HAVING COUNT(DISTINCT facet_id) = ?
+            """,
+            (community_id, *cleaned_facet_ids, len(cleaned_facet_ids)),
+        ).fetchall()
+        return {int(row[column]) for row in rows}
+
+    def _assign_facet(
+        self,
+        table: str,
+        column: str,
+        community_id: int,
+        entity_id: int,
+        facet_id: int,
+    ) -> None:
+        self.connection.execute(
+            f"""
+            INSERT OR IGNORE INTO {table} (community_id, {column}, facet_id, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (community_id, entity_id, facet_id, _utc_now()),
+        )
+        self.connection.commit()
+
+    def create_material(
+        self,
+        community_id: int,
+        slug: str,
+        title: str,
+        *,
+        material_type: str = "guide",
+        summary: str = "",
+        body: str = "",
+        status: str = "published",
+        sort_order: int = 0,
+        is_featured: bool = False,
+    ) -> Material:
+        self.get_community(community_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO materials (
+                community_id,
+                slug,
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                is_featured,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                slug,
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                int(is_featured),
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_material(community_id, _last_id(cursor))
+
+    def get_material(self, community_id: int, material_id: int) -> Material:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                is_featured,
+                created_at,
+                updated_at
+            FROM materials
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, material_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"material not found in community {community_id}: {material_id}")
+        return _material_from_row(row)
+
+    def get_material_by_slug(self, community_id: int, slug: str) -> Material:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                is_featured,
+                created_at,
+                updated_at
+            FROM materials
+            WHERE community_id = ? AND slug = ?
+            """,
+            (community_id, slug),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"material not found in community {community_id}: {slug}")
+        return _material_from_row(row)
+
+    def list_materials(
+        self, community_id: int, *, status: str | None = "published"
+    ) -> list[Material]:
+        where = "WHERE community_id = ?"
+        params: tuple[object, ...] = (community_id,)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (community_id, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                slug,
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                is_featured,
+                created_at,
+                updated_at
+            FROM materials
+            {where}
+            ORDER BY is_featured DESC, sort_order, title, id
+            """,
+            params,
+        ).fetchall()
+        return [_material_from_row(row) for row in rows]
+
+    def create_wanted_ad(
+        self,
+        community_id: int,
+        creator_membership_id: int,
+        slug: str,
+        title: str,
+        *,
+        creator_character_id: int | None = None,
+        related_material_id: int | None = None,
+        wanted_type: str = "plot_role",
+        summary: str = "",
+        body: str = "",
+        status: str = "open",
+    ) -> WantedAd:
+        self.get_membership(community_id, creator_membership_id)
+        if creator_character_id is not None:
+            character = self.get_character(community_id, creator_character_id)
+            if character.membership_id != creator_membership_id:
+                raise TenantBoundaryError(
+                    "wanted ad creator character must belong to creator membership"
+                )
+        if related_material_id is not None:
+            self.get_material(community_id, related_material_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO wanted_ads (
+                community_id,
+                creator_membership_id,
+                creator_character_id,
+                related_material_id,
+                slug,
+                title,
+                wanted_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                creator_membership_id,
+                creator_character_id,
+                related_material_id,
+                slug,
+                title,
+                wanted_type,
+                summary,
+                body,
+                status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_wanted_ad(community_id, _last_id(cursor))
+
+    def get_wanted_ad(self, community_id: int, wanted_ad_id: int) -> WantedAd:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                creator_membership_id,
+                creator_character_id,
+                related_material_id,
+                slug,
+                title,
+                wanted_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ads
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, wanted_ad_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"wanted ad not found in community {community_id}: {wanted_ad_id}")
+        return _wanted_ad_from_row(row)
+
+    def get_wanted_ad_by_slug(self, community_id: int, slug: str) -> WantedAd:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                creator_membership_id,
+                creator_character_id,
+                related_material_id,
+                slug,
+                title,
+                wanted_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ads
+            WHERE community_id = ? AND slug = ?
+            """,
+            (community_id, slug),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"wanted ad not found in community {community_id}: {slug}")
+        return _wanted_ad_from_row(row)
+
+    def list_wanted_ads(
+        self,
+        community_id: int,
+        *,
+        status: str | None = "open",
+    ) -> list[WantedAd]:
+        where = "WHERE community_id = ?"
+        params: tuple[object, ...] = (community_id,)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (community_id, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                creator_membership_id,
+                creator_character_id,
+                related_material_id,
+                slug,
+                title,
+                wanted_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ads
+            {where}
+            ORDER BY updated_at DESC, title, id
+            """,
+            params,
+        ).fetchall()
+        return [_wanted_ad_from_row(row) for row in rows]
+
+    def list_wanted_ads_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = "open",
+    ) -> list[WantedAd]:
+        self.get_character(community_id, character_id)
+        where = """
+            WHERE wanted_ads.community_id = ?
+              AND (
+                wanted_ads.creator_character_id = ?
+                OR wanted_ad_related_characters.character_id = ?
+              )
+        """
+        params: tuple[object, ...] = (community_id, character_id, character_id)
+        if status is not None:
+            where = f"{where} AND wanted_ads.status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT DISTINCT
+                wanted_ads.id,
+                wanted_ads.community_id,
+                wanted_ads.creator_membership_id,
+                wanted_ads.creator_character_id,
+                wanted_ads.related_material_id,
+                wanted_ads.slug,
+                wanted_ads.title,
+                wanted_ads.wanted_type,
+                wanted_ads.summary,
+                wanted_ads.body,
+                wanted_ads.status,
+                wanted_ads.created_at,
+                wanted_ads.updated_at
+            FROM wanted_ads
+            LEFT JOIN wanted_ad_related_characters
+              ON wanted_ad_related_characters.community_id = wanted_ads.community_id
+             AND wanted_ad_related_characters.wanted_ad_id = wanted_ads.id
+            {where}
+            ORDER BY wanted_ads.updated_at DESC, wanted_ads.title, wanted_ads.id
+            """,
+            params,
+        ).fetchall()
+        return [_wanted_ad_from_row(row) for row in rows]
+
+    def add_wanted_ad_related_character(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        character_id: int,
+    ) -> None:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        self.get_character(community_id, character_id)
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO wanted_ad_related_characters (
+                community_id,
+                wanted_ad_id,
+                character_id,
+                created_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (community_id, wanted_ad_id, character_id, _utc_now()),
+        )
+        self.connection.commit()
+
+    def list_wanted_ad_related_characters(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+    ) -> list[Character]:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                characters.id,
+                characters.community_id,
+                characters.membership_id,
+                characters.name,
+                characters.slug,
+                characters.avatar_url,
+                characters.summary,
+                characters.created_at,
+                characters.updated_at
+            FROM wanted_ad_related_characters
+            JOIN characters
+              ON characters.community_id = wanted_ad_related_characters.community_id
+             AND characters.id = wanted_ad_related_characters.character_id
+            WHERE wanted_ad_related_characters.community_id = ?
+              AND wanted_ad_related_characters.wanted_ad_id = ?
+            ORDER BY characters.name, characters.id
+            """,
+            (community_id, wanted_ad_id),
+        ).fetchall()
+        return [_character_from_row(row) for row in rows]
+
+    def update_wanted_ad_status(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        status: str,
+    ) -> WantedAd:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        self.connection.execute(
+            """
+            UPDATE wanted_ads
+            SET status = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, _utc_now(), community_id, wanted_ad_id),
+        )
+        self.connection.commit()
+        return self.get_wanted_ad(community_id, wanted_ad_id)
+
+    def create_wanted_ad_interest(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        membership_id: int,
+        character_id: int,
+        *,
+        note: str = "",
+        status: str = "interested",
+    ) -> WantedAdInterest:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        self.get_membership(community_id, membership_id)
+        character = self.get_character(community_id, character_id)
+        if character.membership_id != membership_id:
+            raise TenantBoundaryError(
+                f"character {character_id} does not belong to membership {membership_id}"
+            )
+        now = _utc_now()
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO wanted_ad_interests (
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_wanted_ad_interest_for_character(
+            community_id,
+            wanted_ad_id,
+            character_id,
+        )
+
+    def get_wanted_ad_interest(
+        self,
+        community_id: int,
+        interest_id: int,
+    ) -> WantedAdInterest:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ad_interests
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, interest_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"wanted interest not found in community {community_id}: {interest_id}"
+            )
+        return _wanted_ad_interest_from_row(row)
+
+    def get_wanted_ad_interest_for_character(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        character_id: int,
+    ) -> WantedAdInterest:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ad_interests
+            WHERE community_id = ? AND wanted_ad_id = ? AND character_id = ?
+            """,
+            (community_id, wanted_ad_id, character_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"wanted interest not found in community {community_id}: {wanted_ad_id}/{character_id}"
+            )
+        return _wanted_ad_interest_from_row(row)
+
+    def list_wanted_ad_interests(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[WantedAdInterest]:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        where = "WHERE community_id = ? AND wanted_ad_id = ?"
+        params: tuple[object, ...] = (community_id, wanted_ad_id)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ad_interests
+            {where}
+            ORDER BY created_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_wanted_ad_interest_from_row(row) for row in rows]
+
+    def update_wanted_ad_interest_status(
+        self,
+        community_id: int,
+        interest_id: int,
+        status: str,
+    ) -> WantedAdInterest:
+        self.get_wanted_ad_interest(community_id, interest_id)
+        self.connection.execute(
+            """
+            UPDATE wanted_ad_interests
+            SET status = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, _utc_now(), community_id, interest_id),
+        )
+        self.connection.commit()
+        return self.get_wanted_ad_interest(community_id, interest_id)
 
     def create_thread(
         self,
@@ -1349,8 +2317,10 @@ class ForumRepository:
         membership_id: int,
         *,
         kind: str,
-        thread_id: int,
-        post_id: int,
+        thread_id: int | None = None,
+        post_id: int | None = None,
+        wanted_ad_id: int | None = None,
+        wanted_ad_interest_id: int | None = None,
         actor_membership_id: int,
         actor_character_id: int,
     ) -> Notification:
@@ -1361,10 +2331,26 @@ class ForumRepository:
             raise TenantBoundaryError(
                 f"character {actor_character_id} does not belong to membership {actor_membership_id}"
             )
-        thread = self.get_thread(community_id, thread_id)
-        post = self.get_post(community_id, post_id)
-        if post.thread_id != thread.id:
-            raise TenantBoundaryError(f"post {post_id} does not belong to thread {thread_id}")
+        post_target_id: int | None = None
+        wanted_interest_target_id: int | None = None
+        has_post_target = thread_id is not None and post_id is not None
+        has_wanted_target = wanted_ad_id is not None and wanted_ad_interest_id is not None
+        if has_post_target == has_wanted_target:
+            raise ValueError("notification must target exactly one post or wanted interest")
+        if thread_id is not None and post_id is not None:
+            post_target_id = post_id
+            thread = self.get_thread(community_id, thread_id)
+            post = self.get_post(community_id, post_target_id)
+            if post.thread_id != thread.id:
+                raise TenantBoundaryError(f"post {post_id} does not belong to thread {thread_id}")
+        elif wanted_ad_id is not None and wanted_ad_interest_id is not None:
+            wanted_interest_target_id = wanted_ad_interest_id
+            wanted_ad = self.get_wanted_ad(community_id, wanted_ad_id)
+            interest = self.get_wanted_ad_interest(community_id, wanted_interest_target_id)
+            if interest.wanted_ad_id != wanted_ad.id:
+                raise TenantBoundaryError(
+                    f"wanted interest {wanted_ad_interest_id} does not belong to wanted ad {wanted_ad_id}"
+                )
         now = _utc_now()
         self.connection.execute(
             """
@@ -1374,11 +2360,13 @@ class ForumRepository:
                 kind,
                 thread_id,
                 post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
                 actor_membership_id,
                 actor_character_id,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -1386,13 +2374,24 @@ class ForumRepository:
                 kind,
                 thread_id,
                 post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
                 actor_membership_id,
                 actor_character_id,
                 now,
             ),
         )
         self.connection.commit()
-        return self.get_notification_for_post(community_id, membership_id, kind, post_id)
+        if post_target_id is not None:
+            return self.get_notification_for_post(community_id, membership_id, kind, post_target_id)
+        if wanted_interest_target_id is None:
+            raise ValueError("notification must target exactly one post or wanted interest")
+        return self.get_notification_for_wanted_interest(
+            community_id,
+            membership_id,
+            kind,
+            wanted_interest_target_id,
+        )
 
     def get_notification(self, community_id: int, notification_id: int) -> Notification:
         row = self.connection.execute(
@@ -1404,6 +2403,8 @@ class ForumRepository:
                 kind,
                 thread_id,
                 post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -1435,6 +2436,8 @@ class ForumRepository:
                 kind,
                 thread_id,
                 post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -1447,6 +2450,42 @@ class ForumRepository:
         if row is None:
             raise LookupError(
                 f"notification not found in community {community_id}: {membership_id}/{kind}/{post_id}"
+            )
+        return _notification_from_row(row)
+
+    def get_notification_for_wanted_interest(
+        self,
+        community_id: int,
+        membership_id: int,
+        kind: str,
+        wanted_ad_interest_id: int,
+    ) -> Notification:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND kind = ?
+              AND wanted_ad_interest_id = ?
+            """,
+            (community_id, membership_id, kind, wanted_ad_interest_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"notification not found in community {community_id}: {membership_id}/{kind}/{wanted_ad_interest_id}"
             )
         return _notification_from_row(row)
 
@@ -1467,6 +2506,8 @@ class ForumRepository:
                 kind,
                 thread_id,
                 post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -1619,6 +2660,85 @@ def _character_from_row(row: sqlite3.Row) -> Character:
     )
 
 
+def _facet_group_from_row(row: sqlite3.Row) -> FacetGroup:
+    return FacetGroup(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        name=row["name"],
+        description=row["description"],
+        selection_mode=row["selection_mode"],
+        visibility=row["visibility"],
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _facet_from_row(row: sqlite3.Row) -> Facet:
+    return Facet(
+        id=row["id"],
+        community_id=row["community_id"],
+        facet_group_id=row["facet_group_id"],
+        slug=row["slug"],
+        name=row["name"],
+        description=row["description"],
+        accent_color=row["accent_color"],
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _material_from_row(row: sqlite3.Row) -> Material:
+    return Material(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        title=row["title"],
+        material_type=row["material_type"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        sort_order=row["sort_order"],
+        is_featured=bool(row["is_featured"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _wanted_ad_from_row(row: sqlite3.Row) -> WantedAd:
+    return WantedAd(
+        id=row["id"],
+        community_id=row["community_id"],
+        creator_membership_id=row["creator_membership_id"],
+        creator_character_id=row["creator_character_id"],
+        related_material_id=row["related_material_id"],
+        slug=row["slug"],
+        title=row["title"],
+        wanted_type=row["wanted_type"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _wanted_ad_interest_from_row(row: sqlite3.Row) -> WantedAdInterest:
+    return WantedAdInterest(
+        id=row["id"],
+        community_id=row["community_id"],
+        wanted_ad_id=row["wanted_ad_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        note=row["note"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
 def _thread_from_row(row: sqlite3.Row) -> Thread:
     return Thread(
         id=row["id"],
@@ -1693,6 +2813,8 @@ def _notification_from_row(row: sqlite3.Row) -> Notification:
         kind=row["kind"],
         thread_id=row["thread_id"],
         post_id=row["post_id"],
+        wanted_ad_id=row["wanted_ad_id"],
+        wanted_ad_interest_id=row["wanted_ad_interest_id"],
         actor_membership_id=row["actor_membership_id"],
         actor_character_id=row["actor_character_id"],
         read_at=row["read_at"],

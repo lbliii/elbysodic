@@ -192,7 +192,7 @@
         <span>Preview</span>
       </label>
     </div>
-    <div x-show="!previewMode">
+    <div class="elbysodic-composer-body" x-show="!previewMode">
       <label class="chirpui-field__label" for="thread-body">Opening post</label>
       <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
         <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'thread-body')">B</button>
@@ -205,7 +205,32 @@
                 name="body"
                 rows="9"
                 placeholder="Set the scene..."
-                x-model="body">{{ body }}</textarea>
+                x-model="body"
+                @input.debounce.150ms="searchBodyMention('thread-body')"
+                @click="searchBodyMention('thread-body')"
+                @keyup="searchBodyMention('thread-body')"
+                @keydown="bodyMentionKeydown($event, 'thread-body')">{{ body }}</textarea>
+      <div class="elbysodic-body-mention-list"
+           role="listbox"
+           x-show="bodyMentionOpen && bodyMentionFieldId === 'thread-body'"
+           x-cloak>
+        <template x-for="(item, index) in bodyMentionResults" :key="item.kind + ':' + item.id">
+          <button type="button"
+                  class="elbysodic-mention-picker__result"
+                  :class="{ 'is-active': index === bodyMentionHighlightedIndex }"
+                  role="option"
+                  @click="insertBodyMention(item, 'thread-body')">
+            <span class="elbysodic-character-avatar" aria-hidden="true">
+              <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+              <span x-show="!item.avatar_url" x-text="item.initial"></span>
+            </span>
+            <span>
+              <strong x-text="item.tag"></strong>
+              <small x-text="item.detail"></small>
+            </span>
+          </button>
+        </template>
+      </div>
     </div>
     <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
       <h2 x-show="title.trim()" x-text="title"></h2>

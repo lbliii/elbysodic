@@ -48,5 +48,10 @@ the current product spine, architectural invariants, and implementation style.
 The development forum currently includes community-scoped boards, threads,
 posts, character rosters, active face switching, safe post markup, composer
 preview/drafts, read-state queues, first-unread jumps, post editing with
-revision history, staff thread controls, thread watches, mentions, and a
-notification inbox.
+revision history, staff thread controls, thread watches, character and writer
+mentions, and a notification inbox.
+
+It also includes early PBP-native structure beyond threads: director-defined
+facets, plot discovery, world materials for premise/factions/applications/events,
+wanted hooks, richer seed writers, and character profile hubs with plotter and
+tracker sections.

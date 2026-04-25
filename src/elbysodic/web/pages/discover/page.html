@@ -1,0 +1,141 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Plot discovery") %}
+  {% end %}
+  {% if viewer.current_character and discovery.used_active_face_lens %}
+  <p class="chirpui-text-muted">For {{ viewer.current_character.name }}</p>
+  {% elif viewer.current_character %}
+  <p class="chirpui-text-muted">Face: {{ viewer.current_character.name }}</p>
+  {% end %}
+
+  {% if discovery.selected_facets %}
+  <div class="chirpui-stack chirpui-stack--sm">
+    <p class="chirpui-text-muted">Current lens</p>
+    {{ facet_pills(discovery.selected_facets) }}
+  </div>
+  {% endif %}
+
+  {% call surface(variant="elevated") %}
+  <nav class="elbysodic-discovery-filters" aria-label="World facets">
+    {% for group in discovery.filter_groups %}
+    {% if group.options %}
+    <section class="elbysodic-discovery-filter-group">
+      <h2>{{ group.group.name }}</h2>
+      <div class="elbysodic-facet-filter-row">
+        {% for option in group.options %}
+        <a class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if option.is_selected else "" }}"
+           href="{{ option.href }}"
+           {% if option.tag.facet.accent_color %}style="--elbysodic-facet-accent: {{ option.tag.facet.accent_color }}"{% end %}>
+          {{ option.tag.label }}
+        </a>
+        {% end %}
+      </div>
+    </section>
+    {% end %}
+    {% end %}
+    {% if discovery.selected_facets %}
+    <a class="chirpui-btn chirpui-btn--secondary" href="/discover?facets=none">Clear lens</a>
+    {% endif %}
+  </nav>
+  {% end %}
+
+  {% call section_header("Characters") %}
+  {{ discovery.characters | length }} matches
+  {% end %}
+  <div class="elbysodic-discovery-grid">
+    {% for result in discovery.characters %}
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm elbysodic-discovery-card">
+      <div class="elbysodic-character-card__identity">
+        <a class="elbysodic-character-avatar" href="/characters/{{ result.character.slug }}" aria-label="{{ result.character.name }}">
+          {% if result.character.avatar_url %}
+          <img src="{{ result.character.avatar_url }}" alt="">
+          {% else %}
+          {{ result.character.name[:1] }}
+          {% end %}
+        </a>
+        <div>
+          <h2><a class="chirpui-link" href="/characters/{{ result.character.slug }}">{{ result.character.name }}</a></h2>
+          <p class="chirpui-text-muted">
+            writer <a class="chirpui-link" href="/members/{{ result.owner_membership.username }}">{{ result.owner_membership.username }}</a>
+          </p>
+        </div>
+      </div>
+      <p class="chirpui-text-muted">{{ result.character.summary }}</p>
+      {{ facet_pills(result.facets) }}
+    </article>
+    {% end %}
+    {% end %}
+    {% if not discovery.characters %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No characters match this lens yet.</p>
+    {% end %}
+    {% end %}
+  </div>
+
+  {% call section_header("Open threads") %}
+  {{ discovery.open_threads | length }} matches
+  {% end %}
+  <div class="chirpui-stack chirpui-stack--md">
+    {% for result in discovery.open_threads %}
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm elbysodic-discovery-thread">
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <div>
+          <h2>
+            <a class="chirpui-link" href="/boards/{{ result.board.slug }}/threads/{{ result.thread.slug }}">
+              {{ result.thread.title }}
+            </a>
+          </h2>
+          <p class="chirpui-text-muted">
+            {{ result.board.name }} · opened by
+            <a class="chirpui-link" href="/characters/{{ result.author.slug }}">{{ result.author.name }}</a>
+          </p>
+        </div>
+        {{ stat(value=result.reply_count, label="Replies") }}
+      </div>
+      {% if result.thread.summary %}
+      <p class="chirpui-text-muted">{{ result.thread.summary }}</p>
+      {% end %}
+      <div class="elbysodic-scene-cast" aria-label="Scene participants">
+        {% for participant in result.participants %}
+        <a class="elbysodic-scene-cast__face"
+           href="/characters/{{ participant.slug }}"
+           title="{{ participant.name }}"
+           aria-label="{{ participant.name }}">
+          {% if participant.avatar_url %}
+          <img src="{{ participant.avatar_url }}" alt="">
+          {% else %}
+          {{ participant.name[:1] }}
+          {% end %}
+        </a>
+        {% end %}
+      </div>
+      {{ facet_pills(result.facets) }}
+    </article>
+    {% end %}
+    {% end %}
+    {% if not discovery.open_threads %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No open threads match this lens yet.</p>
+    {% end %}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

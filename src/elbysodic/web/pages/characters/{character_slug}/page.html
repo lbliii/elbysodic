@@ -3,7 +3,9 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
+  {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
 {% def character_thread_item(item) %}
@@ -45,6 +47,7 @@
               {{ profile.owner_membership.username }}
             </a>
           </p>
+          {{ facet_pills(profile.facets) }}
         </div>
       </div>
     </div>
@@ -68,8 +71,28 @@
   </article>
   {% end %}
 
-  <div class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Active threads") %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Plotter") %}
+    Wanted hooks and character-facing story invitations.
+    {% end %}
+    {% if profile.wanted_ads %}
+    <div class="elbysodic-wanted-grid">
+      {% for item in profile.wanted_ads %}
+      {{ wanted_card(item) }}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No open wanted hooks for {{ profile.character.name }} yet.</p>
+    {% end %}
+    {% end %}
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
+    </div>
+  </section>
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Tracker") %}
     {{ profile.character.name }}'s current writing queue.
     {% end %}
     {% call cluster(gap="sm") %}
@@ -88,7 +111,7 @@
     <p class="elbysodic-empty-state">{{ profile.character.name }} has not joined any visible threads yet.</p>
     {% end %}
     {% end %}
-  </div>
+  </section>
 
   {% if profile.can_manage %}
   {% call surface(variant="elevated") %}

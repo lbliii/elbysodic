@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
 {% end %}
 
@@ -34,6 +35,7 @@
   {{ board.description }}
   {{ badge("private", variant="muted") if board.is_private else "" }}
   {% end %}
+  {{ facet_pills(board_facets) }}
 
   <nav class="elbysodic-filter-bar" aria-label="Thread filters">
     {% for option in filter_options %}

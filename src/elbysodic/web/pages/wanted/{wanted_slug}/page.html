@@ -1,0 +1,157 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/wanted.html" import wanted_card %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/wanted">← Wanted</a>
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md elbysodic-wanted-detail">
+    <div>
+      <p class="elbysodic-wanted-card__type">{{ wanted.type_label }}</p>
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <h2>{{ wanted.wanted_ad.title }}</h2>
+        {{ badge(wanted.wanted_ad.status, variant="success" if wanted.wanted_ad.status == "open" else "muted") }}
+      </div>
+      {% if wanted.wanted_ad.summary %}
+      <p class="chirpui-text-muted">{{ wanted.wanted_ad.summary }}</p>
+      {% end %}
+    </div>
+
+    <div class="elbysodic-wanted-card__meta">
+      {% if wanted.creator_character %}
+      <span>
+        wanted by
+        <a class="chirpui-link" href="/characters/{{ wanted.creator_character.slug }}">
+          {{ wanted.creator_character.name }}
+        </a>
+      </span>
+      {% else %}
+      <span>
+        wanted by
+        <a class="chirpui-link" href="/members/{{ wanted.creator_membership.username }}">
+          {{ wanted.creator_membership.username }}
+        </a>
+      </span>
+      {% end %}
+      {% if wanted.related_material %}
+      <span>
+        tied to
+        <a class="chirpui-link" href="/world/{{ wanted.related_material.slug }}">
+          {{ wanted.related_material.title }}
+        </a>
+      </span>
+      {% end %}
+    </div>
+
+    {% if wanted.related_characters %}
+    <div>
+      <p class="chirpui-text-muted">Related characters</p>
+      <div class="elbysodic-character-chip-row">
+        {% for character in wanted.related_characters %}
+        <a class="elbysodic-character-chip" href="/characters/{{ character.slug }}">
+          <span class="elbysodic-character-avatar" aria-hidden="true">
+            {% if character.avatar_url %}
+            <img src="{{ character.avatar_url }}" alt="">
+            {% else %}
+            {{ character.name[:1] }}
+            {% end %}
+          </span>
+          <span>{{ character.name }}</span>
+        </a>
+        {% end %}
+      </div>
+    </div>
+    {% end %}
+
+    {{ facet_pills(wanted.facets) }}
+    <div class="elbysodic-post-content">
+      {{ wanted.rendered_body }}
+    </div>
+    <div class="elbysodic-wanted-action">
+      {% if wanted.viewer_interest %}
+      <p class="elbysodic-wanted-action__note">
+        {% if wanted.viewer_interest.interest.status == "reserved" %}
+        {{ wanted.viewer_interest.character.name }} is reserved for this hook.
+        {% else %}
+        {{ wanted.viewer_interest.character.name }} is interested in this hook.
+        {% end %}
+      </p>
+      {% elif wanted.can_express_interest and viewer.current_character %}
+      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        <input type="hidden" name="intent" value="express_interest">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">
+          I'm interested as {{ viewer.current_character.name }}
+        </button>
+      </form>
+      {% elif wanted.is_created_by_viewer %}
+      <p class="chirpui-text-muted">You created this hook.</p>
+      {% elif wanted.wanted_ad.status != "open" %}
+      <p class="chirpui-text-muted">This hook is {{ wanted.wanted_ad.status }}.</p>
+      {% end %}
+    </div>
+  </article>
+  {% end %}
+
+  {% if wanted.interests %}
+  {% call section_header("Interested faces") %}
+  Writers who have raised a hand for this hook.
+  {% end %}
+  <div class="elbysodic-interest-list">
+    {% for item in wanted.interests %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-interest-card">
+      <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+        <span class="elbysodic-character-avatar" aria-hidden="true">
+          {% if item.character.avatar_url %}
+          <img src="{{ item.character.avatar_url }}" alt="">
+          {% else %}
+          {{ item.character.name[:1] }}
+          {% end %}
+        </span>
+        <span>{{ item.character.name }}</span>
+      </a>
+      <div class="elbysodic-interest-card__meta">
+        {{ badge(item.interest.status, variant="warning" if item.interest.status == "reserved" else "info") }}
+        <span>{{ item.created_at_label }}</span>
+      </div>
+      {% if wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
+      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        <input type="hidden" name="intent" value="reserve_interest">
+        <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          Reserve for {{ item.character.name }}
+        </button>
+      </form>
+      {% end %}
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+  {% end %}
+
+  {% if wanted.related_ads %}
+  {% call section_header("Related wanted") %}
+  Hooks that share this world lens.
+  {% end %}
+  <div class="elbysodic-wanted-grid">
+    {% for item in wanted.related_ads %}
+    {{ wanted_card(item) }}
+    {% end %}
+  </div>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

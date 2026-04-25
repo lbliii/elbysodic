@@ -14,6 +14,8 @@ def composer_config(
     selected_character_id: int,
     initial_body: str = "",
     initial_title: str = "",
+    mention_endpoint: str = "/mentionables/search",
+    mention_scope: str = "all",
 ) -> dict[str, object]:
     return {
         "configId": config_id,
@@ -31,6 +33,8 @@ def composer_config(
         "selectedCharacterId": selected_character_id,
         "initialBody": initial_body,
         "initialTitle": initial_title,
+        "mentionEndpoint": mention_endpoint,
+        "mentionScope": mention_scope,
     }
 
 

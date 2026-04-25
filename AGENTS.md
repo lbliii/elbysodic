@@ -42,6 +42,15 @@ platforms forced roleplayers to do.
   in exactly one community.
 - Characters are public posting identities, aliases, and roster faces. They are
   core product primitives, not profile decoration.
+- The active/default face is a product lens, not just a composer default. When
+  a writer is browsing as a character, discovery, queues, joins, and future
+  filters should reduce cognitive load by assuming that face where safe.
+- Facets are director-defined world lenses. They can describe species,
+  factions, locations, plot lanes, application categories, or any other
+  community-specific dimension the board uses to make its world playable.
+- Pillar content does not have to be a thread. World materials, events,
+  application guides, claims, reserves, and wanted hooks can be first-class
+  objects when that better fits the PBP ritual.
 
 ## Current Product Spine
 
@@ -59,8 +68,32 @@ The current prototype already has:
   unread-only forum language.
 - Post editing and revision history.
 - Staff thread lifecycle controls: pin, lock, unlock, unpin, and move.
-- Thread watches, `@Character` mention detection, notification inbox, and shell
-  notification counts.
+- Thread watches, character and writer mention detection, notification inbox,
+  and shell notification counts.
+- Director-defined facets for characters, boards, threads, materials, discovery,
+  and wanted hooks.
+- World materials for premise, rules, factions, application guidance, and
+  events outside the forum/thread format.
+- Wanted hooks as first-class plot and casting invitations linked to characters,
+  world materials, and facets.
+- Character profiles are becoming hubs: profile identity, plotter hooks,
+  writing tracker, and recent posts.
+
+## Product Shape To Preserve
+
+- Character pages should continue moving toward a hub model: identity at the
+  top, plotter and wanted material near the character, tracker/queue below it,
+  and world/facet context where it helps.
+- Wanted hooks should stay more structured than ordinary plotter threads. They
+  can become claimable/reservable, notify creators, spawn applications, or spawn
+  plotting threads, but they should remain a first-class object.
+- Applications, claims, reserves, canons, face claims, and wanted ads belong near
+  the "materials of running a board." They may integrate with threads, but they
+  should not be forced to be threads by default.
+- Plot discovery should use facets and the active face to help writers find
+  compatible people, open scenes, event roles, and faction pressure.
+- Keep visual and cognitive load low by using the current face, current lens,
+  and director-authored structure to choose sensible defaults.
 
 ## Architecture Rules
 
@@ -69,13 +102,29 @@ The current prototype already has:
 - Add service-layer methods that accept or resolve community/membership context
   rather than reaching around it in page handlers.
 - Prefer repository methods over ad hoc SQL in web pages.
+- New structured content should be community-scoped from the first schema, even
+  when the MVP only exposes one community.
+- If a feature can involve a writer identity and a character identity, store both
+  intentionally: membership for ownership/permissions, character for public
+  authorship or story context.
 - When adding a new forum primitive, ask:
   - Is it community-scoped?
   - Is it membership-scoped or character-scoped?
+  - Is it director-authored, writer-authored, or both?
+  - Should it be a thread, or does it deserve a structured primitive?
+  - Does the active face provide a safe default?
   - Does it need export support later?
   - Can it leak staff/private data across communities or roles?
 - Tests should cover behavior through both repository boundaries and rendered
   pages when the feature affects user workflow.
+
+## Scoped Agent Guides
+
+Root `AGENTS.md` is currently the source of truth. Add nested `AGENTS.md` files
+only when a subtree has materially different rules, such as a future package
+with its own design contract, migration workflow, or generated assets. When
+nested guides exist, the closest guide should refine this one rather than
+contradicting the mission or tenant-boundary rules.
 
 ## Development Commands
 
@@ -104,8 +153,9 @@ or, in this workspace, the known direct form:
 ## Product Voice
 
 Use language that fits roleplayers. Prefer "face", "roster", "thread",
-"scene", "needs reply", "waiting", "caught up", and "watching" over generic
-forum jargon when the PBP concept is more precise.
+"scene", "plotter", "wanted", "claims", "reserves", "needs reply", "waiting",
+"caught up", and "watching" over generic forum jargon when the PBP concept is
+more precise.
 
 The interface should feel like a calm, capable writing room: dense enough for
 regular players, gentle enough for long sessions, and expressive enough to let

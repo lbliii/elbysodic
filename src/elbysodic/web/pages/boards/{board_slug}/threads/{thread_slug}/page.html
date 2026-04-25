@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
 {% end %}
 
 {% def thread_nav_link(item, label) %}
@@ -82,6 +83,7 @@
       </div>
       {% end %}
     </div>
+    {{ facet_pills(thread_view.thread_facets) }}
     {% if thread_view.thread.location or thread_view.thread.timeline %}
     <div class="elbysodic-scene-panel__meta">
       {% if thread_view.thread.location %}
@@ -115,6 +117,16 @@
         </a>
         {% end %}
       </div>
+    </div>
+    {% end %}
+    {% if thread_view.can_join_scene and viewer.current_character %}
+    <div class="elbysodic-scene-panel__join">
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="join_scene">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          Join as {{ viewer.current_character.name }}
+        </button>
+      </form>
     </div>
     {% end %}
   </section>
@@ -398,7 +410,7 @@
           <span>Preview</span>
         </label>
       </div>
-      <div x-show="!previewMode">
+      <div class="elbysodic-composer-body" x-show="!previewMode">
         <label class="chirpui-visually-hidden" for="reply-body">Reply body</label>
         <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
           <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'reply-body')">B</button>
@@ -411,7 +423,32 @@
                   class="chirpui-field__input"
                   rows="6"
                   placeholder="Write the next beat..."
-                  x-model="body">{{ body }}</textarea>
+                  x-model="body"
+                  @input.debounce.150ms="searchBodyMention('reply-body')"
+                  @click="searchBodyMention('reply-body')"
+                  @keyup="searchBodyMention('reply-body')"
+                  @keydown="bodyMentionKeydown($event, 'reply-body')">{{ body }}</textarea>
+        <div class="elbysodic-body-mention-list"
+             role="listbox"
+             x-show="bodyMentionOpen && bodyMentionFieldId === 'reply-body'"
+             x-cloak>
+          <template x-for="(item, index) in bodyMentionResults" :key="item.kind + ':' + item.id">
+            <button type="button"
+                    class="elbysodic-mention-picker__result"
+                    :class="{ 'is-active': index === bodyMentionHighlightedIndex }"
+                    role="option"
+                    @click="insertBodyMention(item, 'reply-body')">
+              <span class="elbysodic-character-avatar" aria-hidden="true">
+                <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+                <span x-show="!item.avatar_url" x-text="item.initial"></span>
+              </span>
+              <span>
+                <strong x-text="item.tag"></strong>
+                <small x-text="item.detail"></small>
+              </span>
+            </button>
+          </template>
+        </div>
       </div>
       <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
         <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>

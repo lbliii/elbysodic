@@ -78,6 +78,126 @@ CREATE TABLE IF NOT EXISTS boards (
     UNIQUE (community_id, slug)
 );
 
+CREATE TABLE IF NOT EXISTS facet_groups (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    selection_mode TEXT NOT NULL DEFAULT 'multiple',
+    visibility TEXT NOT NULL DEFAULT 'public',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    facet_group_id INTEGER NOT NULL REFERENCES facet_groups(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    accent_color TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slug),
+    UNIQUE (community_id, facet_group_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS character_facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    facet_id INTEGER NOT NULL REFERENCES facets(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, character_id, facet_id)
+);
+
+CREATE TABLE IF NOT EXISTS board_facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    board_id INTEGER NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+    facet_id INTEGER NOT NULL REFERENCES facets(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, board_id, facet_id)
+);
+
+CREATE TABLE IF NOT EXISTS materials (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    material_type TEXT NOT NULL DEFAULT 'guide',
+    summary TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'published',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_featured INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS material_facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    material_id INTEGER NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+    facet_id INTEGER NOT NULL REFERENCES facets(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, material_id, facet_id)
+);
+
+CREATE TABLE IF NOT EXISTS wanted_ads (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    creator_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
+    creator_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    related_material_id INTEGER REFERENCES materials(id) ON DELETE SET NULL,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    wanted_type TEXT NOT NULL DEFAULT 'plot_role',
+    summary TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS wanted_ad_facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    wanted_ad_id INTEGER NOT NULL REFERENCES wanted_ads(id) ON DELETE CASCADE,
+    facet_id INTEGER NOT NULL REFERENCES facets(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, wanted_ad_id, facet_id)
+);
+
+CREATE TABLE IF NOT EXISTS wanted_ad_related_characters (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    wanted_ad_id INTEGER NOT NULL REFERENCES wanted_ads(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, wanted_ad_id, character_id)
+);
+
+CREATE TABLE IF NOT EXISTS wanted_ad_interests (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    wanted_ad_id INTEGER NOT NULL REFERENCES wanted_ads(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    note TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'interested',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, wanted_ad_id, membership_id, character_id)
+);
+
 CREATE TABLE IF NOT EXISTS threads (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -96,6 +216,15 @@ CREATE TABLE IF NOT EXISTS threads (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     UNIQUE (community_id, board_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS thread_facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+    facet_id INTEGER NOT NULL REFERENCES facets(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, thread_id, facet_id)
 );
 
 CREATE TABLE IF NOT EXISTS thread_participants (
@@ -172,13 +301,16 @@ CREATE TABLE IF NOT EXISTS notifications (
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
     membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
     kind TEXT NOT NULL,
-    thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
-    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    thread_id INTEGER REFERENCES threads(id) ON DELETE CASCADE,
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE CASCADE,
+    wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE CASCADE,
     actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
     actor_character_id INTEGER NOT NULL REFERENCES characters(id),
     read_at TEXT,
     created_at TEXT NOT NULL,
-    UNIQUE (community_id, membership_id, kind, post_id)
+    UNIQUE (community_id, membership_id, kind, post_id),
+    UNIQUE (community_id, membership_id, kind, wanted_ad_interest_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_boards_community_sort ON boards(community_id, sort_order, name);
@@ -189,6 +321,22 @@ CREATE INDEX IF NOT EXISTS idx_posts_community_thread ON posts(community_id, thr
 CREATE INDEX IF NOT EXISTS idx_post_revisions_post ON post_revisions(community_id, post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON community_memberships(user_id, community_id);
 CREATE INDEX IF NOT EXISTS idx_characters_membership ON characters(community_id, membership_id, name);
+CREATE INDEX IF NOT EXISTS idx_facet_groups_community_sort ON facet_groups(community_id, sort_order, name);
+CREATE INDEX IF NOT EXISTS idx_facets_group_sort ON facets(community_id, facet_group_id, sort_order, name);
+CREATE INDEX IF NOT EXISTS idx_character_facets_character ON character_facets(community_id, character_id, facet_id);
+CREATE INDEX IF NOT EXISTS idx_character_facets_facet ON character_facets(community_id, facet_id, character_id);
+CREATE INDEX IF NOT EXISTS idx_board_facets_board ON board_facets(community_id, board_id, facet_id);
+CREATE INDEX IF NOT EXISTS idx_materials_community_sort ON materials(community_id, status, sort_order, title);
+CREATE INDEX IF NOT EXISTS idx_material_facets_material ON material_facets(community_id, material_id, facet_id);
+CREATE INDEX IF NOT EXISTS idx_material_facets_facet ON material_facets(community_id, facet_id, material_id);
+CREATE INDEX IF NOT EXISTS idx_wanted_ads_community_status ON wanted_ads(community_id, status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_wanted_ads_creator ON wanted_ads(community_id, creator_character_id, status);
+CREATE INDEX IF NOT EXISTS idx_wanted_ad_facets_ad ON wanted_ad_facets(community_id, wanted_ad_id, facet_id);
+CREATE INDEX IF NOT EXISTS idx_wanted_ad_related_characters_character ON wanted_ad_related_characters(community_id, character_id, wanted_ad_id);
+CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_ad ON wanted_ad_interests(community_id, wanted_ad_id, status);
+CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_character ON wanted_ad_interests(community_id, character_id, status);
+CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
+CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id, facet_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_watches_membership ON thread_watches(community_id, membership_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_membership ON notifications(community_id, membership_id, read_at, created_at);
@@ -238,3 +386,81 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         GROUP BY community_id, thread_id, author_character_id
         """
     )
+    _migrate_notifications_schema(connection)
+
+
+def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]: row
+        for row in connection.execute("PRAGMA table_info(notifications)").fetchall()
+    }
+    if (
+        "wanted_ad_id" in columns
+        and "wanted_ad_interest_id" in columns
+        and not columns["thread_id"]["notnull"]
+        and not columns["post_id"]["notnull"]
+    ):
+        return
+
+    connection.execute("PRAGMA foreign_keys = OFF")
+    connection.execute(
+        """
+        CREATE TABLE notifications_new (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            thread_id INTEGER REFERENCES threads(id) ON DELETE CASCADE,
+            post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+            wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE CASCADE,
+            wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE CASCADE,
+            actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
+            actor_character_id INTEGER NOT NULL REFERENCES characters(id),
+            read_at TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE (community_id, membership_id, kind, post_id),
+            UNIQUE (community_id, membership_id, kind, wanted_ad_interest_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO notifications_new (
+            id,
+            community_id,
+            membership_id,
+            kind,
+            thread_id,
+            post_id,
+            wanted_ad_id,
+            wanted_ad_interest_id,
+            actor_membership_id,
+            actor_character_id,
+            read_at,
+            created_at
+        )
+        SELECT
+            id,
+            community_id,
+            membership_id,
+            kind,
+            thread_id,
+            post_id,
+            NULL,
+            NULL,
+            actor_membership_id,
+            actor_character_id,
+            read_at,
+            created_at
+        FROM notifications
+        """
+    )
+    connection.execute("DROP TABLE notifications")
+    connection.execute("ALTER TABLE notifications_new RENAME TO notifications")
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_notifications_membership
+        ON notifications(community_id, membership_id, read_at, created_at)
+        """
+    )
+    connection.execute("PRAGMA foreign_keys = ON")
