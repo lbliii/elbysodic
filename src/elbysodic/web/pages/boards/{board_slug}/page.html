@@ -13,14 +13,45 @@
 </a>
 {% end %}
 
+{% def subboard_card(summary) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-subboard-card">
+  <a class="elbysodic-board-poster elbysodic-board-poster--compact"
+     href="/boards/{{ summary.board.slug }}"
+     aria-label="{{ summary.board.name }}"
+     {% if summary.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.82)), url('{{ summary.board.image_url }}');"{% end %}>
+    <span>{{ summary.board.tagline or summary.board.board_kind }}</span>
+  </a>
+  <div>
+    <h2><a class="chirpui-link" href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a></h2>
+    <p class="chirpui-text-muted">{{ summary.board.description }}</p>
+  </div>
+  {{ facet_pills(summary.facets) }}
+  <div class="chirpui-cluster chirpui-cluster--sm">
+    {{ badge(summary.unread_thread_count ~ " new", variant="info") if summary.unread_thread_count else "" }}
+    {{ badge("for " ~ viewer.current_character.name, variant="success") if summary.is_relevant_to_current_face and viewer.current_character else "" }}
+  </div>
+  {% if summary.latest_thread %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Latest</span>
+    <a class="chirpui-link"
+       href="/boards/{{ summary.latest_board.slug if summary.latest_board else summary.board.slug }}/threads/{{ summary.latest_thread.slug }}#{{ summary.latest_post.anchor if summary.latest_post else "" }}">
+      {{ summary.latest_thread.title }}
+    </a>
+  </div>
+  {% end %}
+</article>
+{% end %}
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
+{% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
   <div class="chirpui-cluster chirpui-cluster--between">
-    <a class="chirpui-link" href="/">← Boards</a>
+    <a class="chirpui-link" href="{{ "/boards/" ~ parent_board.slug if parent_board else "/" }}">← {{ parent_board.name if parent_board else "World" }}</a>
     <div class="chirpui-cluster chirpui-cluster--sm">
       {% if next_unread_thread %}
       {{ next_unread_link(next_unread_thread) }}
@@ -31,11 +62,45 @@
     </div>
   </div>
 
-  {% call section_header(board.name) %}
-  {{ board.description }}
-  {{ badge("private", variant="muted") if board.is_private else "" }}
+  <section class="elbysodic-board-hero">
+    <div class="elbysodic-board-hero__media"
+         {% if board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86)), url('{{ board.image_url }}');"{% end %}>
+      <span>{{ board.tagline or board.board_kind }}</span>
+    </div>
+    <div class="chirpui-stack chirpui-stack--sm">
+      {% if parent_board %}
+      <p class="elbysodic-kicker">{{ parent_board.name }}</p>
+      {% else %}
+      <p class="elbysodic-kicker">Location</p>
+      {% end %}
+      <h1>{{ board.name }}</h1>
+      <p class="chirpui-text-muted">{{ board.description }}</p>
+      <div class="chirpui-cluster chirpui-cluster--sm">
+        {{ badge(board.board_kind) }}
+        {{ badge("private", variant="muted") if board.is_private else "" }}
+      </div>
+      {{ facet_pills(board_facets) }}
+    </div>
+  </section>
+
+  {% if subboards %}
+  {% call section_header("Sublocations") %}
+  Smaller rooms, districts, and pressure points inside {{ board.name }}.
   {% end %}
-  {{ facet_pills(board_facets) }}
+  <div class="elbysodic-subboard-grid">
+    {% for summary in subboards %}
+    {{ subboard_card(summary) }}
+    {% end %}
+  </div>
+  {% end %}
+
+  {% if sibling_boards %}
+  <nav class="elbysodic-subboard-strip" aria-label="Nearby locations">
+    {% for summary in sibling_boards %}
+    <a href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a>
+    {% end %}
+  </nav>
+  {% end %}
 
   <nav class="elbysodic-filter-bar" aria-label="Thread filters">
     {% for option in filter_options %}

@@ -69,9 +69,14 @@ CREATE TABLE IF NOT EXISTS characters (
 CREATE TABLE IF NOT EXISTS boards (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    parent_board_id INTEGER REFERENCES boards(id) ON DELETE SET NULL,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
+    board_kind TEXT NOT NULL DEFAULT 'location',
+    tagline TEXT NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
+    image_url TEXT,
+    image_alt TEXT NOT NULL DEFAULT '',
     sort_order INTEGER NOT NULL DEFAULT 0,
     is_private INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
@@ -377,6 +382,25 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
 
 def _migrate_schema(connection: sqlite3.Connection) -> None:
+    board_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(boards)").fetchall()
+    }
+    for name, definition in {
+        "parent_board_id": "INTEGER REFERENCES boards(id) ON DELETE SET NULL",
+        "board_kind": "TEXT NOT NULL DEFAULT 'location'",
+        "tagline": "TEXT NOT NULL DEFAULT ''",
+        "image_url": "TEXT",
+        "image_alt": "TEXT NOT NULL DEFAULT ''",
+    }.items():
+        if name not in board_columns:
+            connection.execute(f"ALTER TABLE boards ADD COLUMN {name} {definition}")
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_boards_parent_sort
+        ON boards(community_id, parent_board_id, sort_order, name)
+        """
+    )
+
     character_columns = {
         row["name"] for row in connection.execute("PRAGMA table_info(characters)").fetchall()
     }

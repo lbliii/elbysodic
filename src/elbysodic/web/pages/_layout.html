@@ -6,7 +6,7 @@
 {% block title %}Elbysodic{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=wanted-hooks">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=board-geography">
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=inline-mentions"></script>
 {% end %}
 
@@ -17,9 +17,12 @@
 {% block brand %}Elbysodic{% end %}
 
 {% block topbar_center %}
-<span class="chirpui-text-muted chirpui-font-sm">
-  X-Men Apocalypse
-</span>
+<nav class="elbysodic-topnav" aria-label="Primary">
+  <a href="/">World</a>
+  <a href="/world">Guidebook</a>
+  <a href="/wanted">Wanted</a>
+  <a href="/my/threads">Desk</a>
+</nav>
 {% end %}
 
 {% block breadcrumbs_oob %}
@@ -55,66 +58,55 @@
 {% end %}
 {% end %}
 
-{% block sidebar %}
+{% def sidebar_count_link(href, label, count) %}
+<a class="chirpui-sidebar__link elbysodic-sidebar-link" href="{{ href }}">
+  <span>{{ label }}</span>
+  {% if count %}
+  <span class="elbysodic-sidebar-count">{{ count }}</span>
+  {% end %}
+</a>
+{% end %}
+
+{% def elbysodic_sidebar() %}
 {% call sidebar() %}
-  {% call sidebar_section("Forum") %}
+  {% call sidebar_section("World") %}
     {{ sidebar_link(url_for("index"), "Overview", icon="grid") }}
-    <a class="chirpui-sidebar__link" href="/my/threads">My threads</a>
-    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/notifications">
-      <span>Notifications</span>
-      {% if viewer and viewer.unread_notification_count %}
-      <span class="elbysodic-sidebar-count">{{ viewer.unread_notification_count }}</span>
-      {% end %}
-    </a>
+    <a class="chirpui-sidebar__link" href="/world">Guidebook</a>
+    <a class="chirpui-sidebar__link" href="/wanted">Wanted</a>
+  {% end %}
+
+  {% if viewer and viewer.location_navigation_boards %}
+  {% call sidebar_section("Locations") %}
+    {% for item in viewer.location_navigation_boards %}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {% end %}
+  {% end %}
+  {% end %}
+
+  {% call sidebar_section("Community") %}
     <a class="chirpui-sidebar__link" href="/members">Members</a>
+    {% if viewer %}
+    {% for item in viewer.community_navigation_boards %}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {% end %}
+    {% end %}
+  {% end %}
+
+  {% call sidebar_section("Writer Desk") %}
+    <a class="chirpui-sidebar__link" href="/my/threads">My threads</a>
+    {{ sidebar_count_link("/notifications", "Notifications", viewer.unread_notification_count if viewer else 0) }}
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
     <a class="chirpui-sidebar__link" href="/applications">Applications</a>
-    <a class="chirpui-sidebar__link" href="/world">World</a>
-    <a class="chirpui-sidebar__link" href="/wanted">Wanted</a>
     <a class="chirpui-sidebar__link" href="/casting">Casting</a>
     <a class="chirpui-sidebar__link" href="/discover">Discover</a>
-    {% if viewer %}
-    {% for item in viewer.navigation_boards %}
-    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/boards/{{ item.board.slug }}">
-      <span>{{ item.board.name }}</span>
-      {% if item.unread_thread_count %}
-      <span class="elbysodic-sidebar-count">{{ item.unread_thread_count }}</span>
-      {% end %}
-    </a>
-    {% end %}
-    {% end %}
   {% end %}
 {% end %}
 {% end %}
 
-{% block sidebar_oob %}
-{% call sidebar() %}
-  {% call sidebar_section("Forum") %}
-    {{ sidebar_link(url_for("index"), "Overview", icon="grid") }}
-    <a class="chirpui-sidebar__link" href="/my/threads">My threads</a>
-    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/notifications">
-      <span>Notifications</span>
-      {% if viewer and viewer.unread_notification_count %}
-      <span class="elbysodic-sidebar-count">{{ viewer.unread_notification_count }}</span>
-      {% end %}
-    </a>
-    <a class="chirpui-sidebar__link" href="/members">Members</a>
-    <a class="chirpui-sidebar__link" href="/characters">Characters</a>
-    <a class="chirpui-sidebar__link" href="/applications">Applications</a>
-    <a class="chirpui-sidebar__link" href="/world">World</a>
-    <a class="chirpui-sidebar__link" href="/wanted">Wanted</a>
-    <a class="chirpui-sidebar__link" href="/casting">Casting</a>
-    <a class="chirpui-sidebar__link" href="/discover">Discover</a>
-    {% if viewer %}
-    {% for item in viewer.navigation_boards %}
-    <a class="chirpui-sidebar__link elbysodic-sidebar-link" href="/boards/{{ item.board.slug }}">
-      <span>{{ item.board.name }}</span>
-      {% if item.unread_thread_count %}
-      <span class="elbysodic-sidebar-count">{{ item.unread_thread_count }}</span>
-      {% end %}
-    </a>
-    {% end %}
-    {% end %}
-  {% end %}
+{% block sidebar %}
+{{ elbysodic_sidebar() }}
 {% end %}
+
+{% block sidebar_oob %}
+{{ elbysodic_sidebar() }}
 {% end %}

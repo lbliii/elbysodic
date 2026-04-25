@@ -69,15 +69,42 @@ APPLICATION_STATUS_VARIANTS: dict[str, str] = {
     "revision_requested": "warning",
     "rejected": "muted",
 }
+LOCATION_BOARD_SLUGS = frozenset(
+    {
+        "xavier-institute",
+        "new-york-city",
+        "mutant-underground",
+        "trask-b24-facilities",
+        "united-nations",
+        "genosha",
+        "danger-room",
+    }
+)
+COMMUNITY_BOARD_SLUGS = frozenset({"announcements", "plotting", "out-of-character", "archive"})
+DESK_BOARD_SLUGS = frozenset({"applications", "staff-room"})
+
+
+def is_location_board(board: Board) -> bool:
+    return board.board_kind in {"location", "sublocation"} or board.slug in LOCATION_BOARD_SLUGS
+
+
+def is_community_board(board: Board) -> bool:
+    return board.board_kind == "community" or board.slug in COMMUNITY_BOARD_SLUGS
+
+
+def is_desk_board(board: Board) -> bool:
+    return board.board_kind == "desk" or board.slug in DESK_BOARD_SLUGS
 
 
 @dataclass(frozen=True, slots=True)
 class BoardSummary:
     board: Board
+    child_boards: list[Board]
     thread_count: int
     post_count: int
     unread_thread_count: int
     latest_thread: Thread | None
+    latest_board: Board | None
     latest_post: PostView | None
     facets: list[FacetTag]
     is_relevant_to_current_face: bool
@@ -584,6 +611,8 @@ class ForumView:
     current_character: Character | None
     roster: list[Character]
     navigation_boards: list[BoardNavigationItem]
+    location_navigation_boards: list[BoardNavigationItem]
+    community_navigation_boards: list[BoardNavigationItem]
     unread_notification_count: int
 
 
@@ -600,13 +629,24 @@ class AppServices:
         role = self.repo.get_role(community.id, membership.role_id)
         roster = self.repo.list_characters(community.id, membership.id)
         current_character = _resolve_current_character(self.repo, membership, roster)
+        navigation_boards = _board_navigation(self.repo, community.id, membership, role)
         return ForumView(
             community=community,
             membership=membership,
             role=role,
             current_character=current_character,
             roster=roster,
-            navigation_boards=_board_navigation(self.repo, community.id, membership, role),
+            navigation_boards=navigation_boards,
+            location_navigation_boards=[
+                item
+                for item in navigation_boards
+                if item.board.parent_board_id is None and is_location_board(item.board)
+            ],
+            community_navigation_boards=[
+                item
+                for item in navigation_boards
+                if item.board.parent_board_id is None and is_community_board(item.board)
+            ],
             unread_notification_count=self.repo.count_unread_notifications(
                 community.id, membership.id
             ),
@@ -619,48 +659,38 @@ class AppServices:
         for board in self.repo.list_boards(viewer.community.id):
             if not policies.can_view_board(viewer.membership, board, viewer.role):
                 continue
-            board_facets = _facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_board_facets(viewer.community.id, board.id),
-            )
-            threads = self.repo.list_threads(viewer.community.id, board.id)
-            posts_by_thread = {
-                thread.id: self.repo.list_posts(viewer.community.id, thread.id)
-                for thread in threads
-            }
-            latest_thread = _latest_thread(threads)
-            latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
-            latest_post = (
-                _post_view(self.repo, viewer.community.id, latest_thread_posts[-1])
-                if latest_thread_posts
-                else None
-            )
-            summaries.append(
-                BoardSummary(
-                    board=board,
-                    thread_count=len(threads),
-                    post_count=sum(len(posts) for posts in posts_by_thread.values()),
-                    unread_thread_count=sum(
-                        1
-                        for thread in threads
-                        if _is_unread(
-                            self.repo,
-                            viewer.community.id,
-                            viewer.membership.id,
-                            thread,
-                        )
-                    ),
-                    latest_thread=latest_thread,
-                    latest_post=latest_post,
-                    facets=board_facets,
-                    is_relevant_to_current_face=bool(
-                        current_facet_ids
-                        and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
-                    ),
-                )
-            )
+            summaries.append(_board_summary(self.repo, viewer, board, current_facet_ids))
         return summaries
+
+    def child_board_summaries(self, board: Board) -> list[BoardSummary]:
+        viewer = self.viewer()
+        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
+        return [
+            _board_summary(self.repo, viewer, child, current_facet_ids)
+            for child in self.repo.list_child_boards(viewer.community.id, board.id)
+            if policies.can_view_board(viewer.membership, child, viewer.role)
+        ]
+
+    def sibling_board_summaries(self, board: Board) -> list[BoardSummary]:
+        viewer = self.viewer()
+        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
+        siblings = self.repo.list_child_boards(viewer.community.id, board.parent_board_id)
+        return [
+            _board_summary(self.repo, viewer, sibling, current_facet_ids)
+            for sibling in siblings
+            if sibling.id != board.id
+            and is_location_board(sibling)
+            and policies.can_view_board(viewer.membership, sibling, viewer.role)
+        ]
+
+    def parent_board(self, board: Board) -> Board | None:
+        if board.parent_board_id is None:
+            return None
+        viewer = self.viewer()
+        parent = self.repo.get_board(viewer.community.id, board.parent_board_id)
+        if not policies.can_view_board(viewer.membership, parent, viewer.role):
+            return None
+        return parent
 
     def recent_activity(self, *, limit: int = 6) -> list[ActivityItem]:
         viewer = self.viewer()
@@ -2308,6 +2338,69 @@ def _board_navigation(
         )
         items.append(BoardNavigationItem(board=board, unread_thread_count=unread_thread_count))
     return items
+
+
+def _board_summary(
+    repo: ForumRepository,
+    viewer: ForumView,
+    board: Board,
+    current_facet_ids: set[int],
+) -> BoardSummary:
+    child_boards = [
+        child
+        for child in repo.list_child_boards(viewer.community.id, board.id)
+        if policies.can_view_board(viewer.membership, child, viewer.role)
+    ]
+    boards_for_activity = [board, *child_boards]
+    board_facets = _facet_tags(
+        repo,
+        viewer.community.id,
+        repo.list_board_facets(viewer.community.id, board.id),
+    )
+    threads_with_boards: list[tuple[Board, Thread]] = []
+    posts_by_thread: dict[int, list[Post]] = {}
+    for activity_board in boards_for_activity:
+        for thread in repo.list_threads(viewer.community.id, activity_board.id):
+            threads_with_boards.append((activity_board, thread))
+            posts_by_thread[thread.id] = repo.list_posts(viewer.community.id, thread.id)
+    latest_board: Board | None = None
+    latest_thread: Thread | None = None
+    if threads_with_boards:
+        latest_board, latest_thread = max(
+            threads_with_boards,
+            key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
+        )
+    latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
+    latest_post = (
+        _post_view(repo, viewer.community.id, latest_thread_posts[-1])
+        if latest_thread_posts
+        else None
+    )
+    threads = [thread for _, thread in threads_with_boards]
+    return BoardSummary(
+        board=board,
+        child_boards=child_boards,
+        thread_count=len(threads),
+        post_count=sum(len(posts) for posts in posts_by_thread.values()),
+        unread_thread_count=sum(
+            1
+            for thread in threads
+            if _is_unread(
+                repo,
+                viewer.community.id,
+                viewer.membership.id,
+                thread,
+            )
+        ),
+        latest_thread=latest_thread,
+        latest_board=latest_board,
+        latest_post=latest_post,
+        facets=board_facets,
+        is_relevant_to_current_face=bool(
+            current_facet_ids
+            and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
+        ),
+    )
 
 
 def _default_character(

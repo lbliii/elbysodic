@@ -1,0 +1,289 @@
+"""SQLite row mappers for forum-domain records."""
+
+from __future__ import annotations
+
+import sqlite3
+
+from elbysodic.domain.models import (
+    Board,
+    Character,
+    CharacterReserve,
+    Community,
+    CommunityMembership,
+    Facet,
+    FacetGroup,
+    Material,
+    Notification,
+    Post,
+    PostRevision,
+    Role,
+    Thread,
+    ThreadParticipant,
+    ThreadWatch,
+    User,
+    WantedAd,
+    WantedAdInterest,
+)
+
+
+def _community_from_row(row: sqlite3.Row) -> Community:
+    return Community(
+        id=row["id"],
+        name=row["name"],
+        slug=row["slug"],
+        host=row["host"],
+        default_theme_id=row["default_theme_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _user_from_row(row: sqlite3.Row) -> User:
+    return User(
+        id=row["id"],
+        email=row["email"],
+        password_hash=row["password_hash"],
+        created_at=row["created_at"],
+    )
+
+
+def _role_from_row(row: sqlite3.Row) -> Role:
+    return Role(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        name=row["name"],
+        is_admin=bool(row["is_admin"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _membership_from_row(row: sqlite3.Row) -> CommunityMembership:
+    return CommunityMembership(
+        id=row["id"],
+        community_id=row["community_id"],
+        user_id=row["user_id"],
+        username=row["username"],
+        display_name=row["display_name"],
+        avatar_url=row["avatar_url"],
+        role_id=row["role_id"],
+        default_character_id=row["default_character_id"],
+        post_count=row["post_count"],
+        is_active=bool(row["is_active"]),
+        joined_at=row["joined_at"],
+    )
+
+
+def _board_from_row(row: sqlite3.Row) -> Board:
+    return Board(
+        id=row["id"],
+        community_id=row["community_id"],
+        parent_board_id=row["parent_board_id"],
+        slug=row["slug"],
+        name=row["name"],
+        board_kind=row["board_kind"],
+        tagline=row["tagline"],
+        description=row["description"],
+        image_url=row["image_url"],
+        image_alt=row["image_alt"],
+        sort_order=row["sort_order"],
+        is_private=bool(row["is_private"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _character_from_row(row: sqlite3.Row) -> Character:
+    return Character(
+        id=row["id"],
+        community_id=row["community_id"],
+        membership_id=row["membership_id"],
+        name=row["name"],
+        slug=row["slug"],
+        avatar_url=row["avatar_url"],
+        summary=row["summary"],
+        application_status=row["application_status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _facet_group_from_row(row: sqlite3.Row) -> FacetGroup:
+    return FacetGroup(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        name=row["name"],
+        description=row["description"],
+        selection_mode=row["selection_mode"],
+        visibility=row["visibility"],
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _facet_from_row(row: sqlite3.Row) -> Facet:
+    return Facet(
+        id=row["id"],
+        community_id=row["community_id"],
+        facet_group_id=row["facet_group_id"],
+        slug=row["slug"],
+        name=row["name"],
+        description=row["description"],
+        accent_color=row["accent_color"],
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _material_from_row(row: sqlite3.Row) -> Material:
+    return Material(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        title=row["title"],
+        material_type=row["material_type"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        sort_order=row["sort_order"],
+        is_featured=bool(row["is_featured"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _wanted_ad_from_row(row: sqlite3.Row) -> WantedAd:
+    return WantedAd(
+        id=row["id"],
+        community_id=row["community_id"],
+        creator_membership_id=row["creator_membership_id"],
+        creator_character_id=row["creator_character_id"],
+        related_material_id=row["related_material_id"],
+        slug=row["slug"],
+        title=row["title"],
+        wanted_type=row["wanted_type"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _wanted_ad_interest_from_row(row: sqlite3.Row) -> WantedAdInterest:
+    return WantedAdInterest(
+        id=row["id"],
+        community_id=row["community_id"],
+        wanted_ad_id=row["wanted_ad_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        note=row["note"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _character_reserve_from_row(row: sqlite3.Row) -> CharacterReserve:
+    return CharacterReserve(
+        id=row["id"],
+        community_id=row["community_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        wanted_ad_id=row["wanted_ad_id"],
+        wanted_ad_interest_id=row["wanted_ad_interest_id"],
+        reserve_type=row["reserve_type"],
+        title=row["title"],
+        notes=row["notes"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _thread_from_row(row: sqlite3.Row) -> Thread:
+    return Thread(
+        id=row["id"],
+        community_id=row["community_id"],
+        board_id=row["board_id"],
+        author_membership_id=row["author_membership_id"],
+        author_character_id=row["author_character_id"],
+        slug=row["slug"],
+        title=row["title"],
+        status=row["status"],
+        location=row["location"],
+        timeline=row["timeline"],
+        summary=row["summary"],
+        posting_mode=row["posting_mode"],
+        is_locked=bool(row["is_locked"]),
+        is_pinned=bool(row["is_pinned"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _thread_participant_from_row(row: sqlite3.Row) -> ThreadParticipant:
+    return ThreadParticipant(
+        id=row["id"],
+        community_id=row["community_id"],
+        thread_id=row["thread_id"],
+        character_id=row["character_id"],
+        added_at=row["added_at"],
+    )
+
+
+def _post_from_row(row: sqlite3.Row) -> Post:
+    return Post(
+        id=row["id"],
+        community_id=row["community_id"],
+        thread_id=row["thread_id"],
+        author_membership_id=row["author_membership_id"],
+        author_character_id=row["author_character_id"],
+        body=row["body"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _post_revision_from_row(row: sqlite3.Row) -> PostRevision:
+    return PostRevision(
+        id=row["id"],
+        community_id=row["community_id"],
+        post_id=row["post_id"],
+        editor_membership_id=row["editor_membership_id"],
+        previous_body=row["previous_body"],
+        new_body=row["new_body"],
+        created_at=row["created_at"],
+    )
+
+
+def _thread_watch_from_row(row: sqlite3.Row) -> ThreadWatch:
+    return ThreadWatch(
+        id=row["id"],
+        community_id=row["community_id"],
+        thread_id=row["thread_id"],
+        membership_id=row["membership_id"],
+        created_at=row["created_at"],
+    )
+
+
+def _notification_from_row(row: sqlite3.Row) -> Notification:
+    return Notification(
+        id=row["id"],
+        community_id=row["community_id"],
+        membership_id=row["membership_id"],
+        kind=row["kind"],
+        thread_id=row["thread_id"],
+        post_id=row["post_id"],
+        wanted_ad_id=row["wanted_ad_id"],
+        wanted_ad_interest_id=row["wanted_ad_interest_id"],
+        character_id=row["character_id"],
+        actor_membership_id=row["actor_membership_id"],
+        actor_character_id=row["actor_character_id"],
+        read_at=row["read_at"],
+        created_at=row["created_at"],
+    )

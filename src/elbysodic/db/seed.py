@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from elbysodic.db.repository import ForumRepository
-from elbysodic.domain.models import Character, Community, CommunityMembership, Facet, User
+from elbysodic.domain.models import Board, Character, Community, CommunityMembership, Facet, User
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,76 +236,241 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     if simon_membership.default_character_id is None:
         repo.set_default_character(community.id, simon_membership.id, trask.id)
 
-    announcements = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "announcements"),
-        lambda: repo.create_board(
-            community.id,
-            "announcements",
-            "Announcements",
-            "Site news, plot drops, and staff notes.",
-            sort_order=10,
-        ),
+    announcements = _ensure_board(
+        repo,
+        community.id,
+        "announcements",
+        "Announcements",
+        "Director notices, plot drops, and the public record of what changed.",
+        10,
+        board_kind="community",
+        tagline="The public pulse of the board.",
     )
-    applications = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "applications"),
-        lambda: repo.create_board(
-            community.id,
-            "applications",
-            "Applications",
-            "Character reserves, claims, and staff-side casting notes.",
-            sort_order=15,
-        ),
+    plotting = _ensure_board(
+        repo,
+        community.id,
+        "plotting",
+        "Plotting",
+        "Character plotters, open scene calls, and continuity trouble before it becomes canon.",
+        20,
+        board_kind="community",
+        tagline="Where scenes become plans.",
     )
-    plotting = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "plotting"),
-        lambda: repo.create_board(
-            community.id,
-            "plotting",
-            "Plotting",
-            "Find threads, plan arcs, and make delicious continuity trouble.",
-            sort_order=20,
-        ),
+    out_of_character = _ensure_board(
+        repo,
+        community.id,
+        "out-of-character",
+        "OOC Lounge",
+        "Introductions, availability notes, celebration threads, and writer-side chatter.",
+        25,
+        board_kind="community",
+        tagline="The writer room behind the world.",
     )
-    out_of_character = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "out-of-character"),
-        lambda: repo.create_board(
-            community.id,
-            "out-of-character",
-            "Out of Character",
-            "Introductions, availability notes, and community chatter.",
-            sort_order=25,
-        ),
+    xavier_institute = _ensure_board(
+        repo,
+        community.id,
+        "xavier-institute",
+        "Xavier Institute",
+        "Classrooms, med-bay lights, locked offices, and the fragile everyday life worth defending.",
+        30,
+        tagline="The heart of the rebuilt school.",
     )
-    danger_room = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "danger-room"),
-        lambda: repo.create_board(
-            community.id,
-            "danger-room",
-            "Danger Room",
-            "In-character training sequences, sparring, and tactical disasters.",
-            sort_order=30,
-        ),
+    danger_room = _ensure_board(
+        repo,
+        community.id,
+        "danger-room",
+        "Danger Room",
+        "Simulated disasters, team drills, and every lesson that becomes real too quickly.",
+        35,
+        parent_board_id=xavier_institute.id,
+        board_kind="sublocation",
+        tagline="Training turns cinematic, fast.",
     )
-    archive = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "archive"),
-        lambda: repo.create_board(
-            community.id,
-            "archive",
-            "Archive",
-            "Completed scenes and old event material.",
-            sort_order=35,
-        ),
+    new_york = _ensure_board(
+        repo,
+        community.id,
+        "new-york-city",
+        "New York City",
+        "Frozen avenues, evacuation routes, media glare, and the public crisis outside the gates.",
+        40,
+        tagline="The crisis everyone can see.",
     )
-    staff_room = _get_or_create(
-        lambda: repo.get_board_by_slug(community.id, "staff-room"),
-        lambda: repo.create_board(
-            community.id,
-            "staff-room",
-            "Staff Room",
-            "Private staff coordination and moderation notes.",
-            sort_order=40,
-            is_private=True,
-        ),
+    mutant_underground = _ensure_board(
+        repo,
+        community.id,
+        "mutant-underground",
+        "Mutant Underground",
+        "Safehouse whispers, smuggling routes, and the people who do not trust either side.",
+        50,
+        tagline="The people between factions.",
+    )
+    b24_facilities = _ensure_board(
+        repo,
+        community.id,
+        "trask-b24-facilities",
+        "Trask / B-24 Facilities",
+        "Clean rooms, sealed servers, plausible deniability, and experiments with a budget.",
+        60,
+        tagline="The machine room behind the winter.",
+    )
+    united_nations = _ensure_board(
+        repo,
+        community.id,
+        "united-nations",
+        "United Nations",
+        "Emergency sessions, back-channel bargains, and public safety language sharpened into policy.",
+        70,
+        tagline="Where fear becomes policy.",
+    )
+    genosha = _ensure_board(
+        repo,
+        community.id,
+        "genosha",
+        "Genosha",
+        "A mutant homeland on the horizon, broadcasting hope, warning, and leverage.",
+        80,
+        tagline="Sanctuary, threat, or both.",
+    )
+    applications = _ensure_board(
+        repo,
+        community.id,
+        "applications",
+        "Applications",
+        "Character reserves, claims, and staff-side casting notes.",
+        90,
+        board_kind="desk",
+        tagline="Staff-facing character intake.",
+    )
+    archive = _ensure_board(
+        repo,
+        community.id,
+        "archive",
+        "Archive",
+        "Completed scenes, retired events, and continuity artifacts that still cast shadows.",
+        100,
+        board_kind="archive",
+        tagline="The past still has teeth.",
+    )
+    staff_room = _ensure_board(
+        repo,
+        community.id,
+        "staff-room",
+        "Staff Room",
+        "Private staff coordination and moderation notes.",
+        110,
+        board_kind="desk",
+        tagline="Director-only coordination.",
+        is_private=True,
+    )
+    med_bay = _ensure_board(
+        repo,
+        community.id,
+        "med-bay",
+        "Med Bay",
+        "Cots, monitors, frostbite triage, and the quiet aftermath of every public disaster.",
+        10,
+        parent_board_id=xavier_institute.id,
+        board_kind="sublocation",
+        tagline="Where damage becomes decisions.",
+    )
+    cerebro_room = _ensure_board(
+        repo,
+        community.id,
+        "cerebro",
+        "Cerebro",
+        "A locked room full of frightened lights, impossible reach, and dangerous empathy.",
+        20,
+        parent_board_id=xavier_institute.id,
+        board_kind="sublocation",
+        tagline="Every mind is a doorway.",
+    )
+    dormitories = _ensure_board(
+        repo,
+        community.id,
+        "dormitories",
+        "Dormitories",
+        "Late-night whispers, borrowed hoodies, contraband snacks, and students trying to be ordinary.",
+        30,
+        parent_board_id=xavier_institute.id,
+        board_kind="sublocation",
+        tagline="Ordinary is its own rebellion.",
+    )
+    frozen_midtown = _ensure_board(
+        repo,
+        community.id,
+        "frozen-midtown",
+        "Frozen Midtown",
+        "Ice-glazed streets, stalled traffic, searchlights, and civilians who cannot wait for jurisdiction.",
+        10,
+        parent_board_id=new_york.id,
+        board_kind="sublocation",
+        tagline="Rescue under camera glare.",
+    )
+    transit_tunnels = _ensure_board(
+        repo,
+        community.id,
+        "transit-tunnels",
+        "Transit Tunnels",
+        "Dark platforms, emergency shelters, and routes the official maps no longer admit exist.",
+        20,
+        parent_board_id=new_york.id,
+        board_kind="sublocation",
+        tagline="The city below the crisis.",
+    )
+    station_nine_board = _ensure_board(
+        repo,
+        community.id,
+        "station-nine",
+        "Station Nine",
+        "An underground waystation where every distress call might be a trap or a test of faith.",
+        10,
+        parent_board_id=mutant_underground.id,
+        board_kind="sublocation",
+        tagline="Trust is the expensive currency.",
+    )
+    observation_suite = _ensure_board(
+        repo,
+        community.id,
+        "observation-suite",
+        "Observation Suite",
+        "Glass walls, unreadable dashboards, and people applauding a model they do not understand.",
+        10,
+        parent_board_id=b24_facilities.id,
+        board_kind="sublocation",
+        tagline="The experiment watches back.",
+    )
+    server_core = _ensure_board(
+        repo,
+        community.id,
+        "server-core",
+        "Server Core",
+        "Cold aisles, hot processors, and the place B-24 keeps what it learned from fear.",
+        20,
+        parent_board_id=b24_facilities.id,
+        board_kind="sublocation",
+        tagline="Where prediction became appetite.",
+    )
+    crisis_chamber = _ensure_board(
+        repo,
+        community.id,
+        "crisis-chamber",
+        "Crisis Chamber",
+        "Delegates, live feeds, translation headsets, and accountability deferred one motion at a time.",
+        10,
+        parent_board_id=united_nations.id,
+        board_kind="sublocation",
+        tagline="Diplomacy under whiteout.",
+    )
+    relay_tower = _ensure_board(
+        repo,
+        community.id,
+        "relay-tower",
+        "Relay Tower",
+        "A Genoshan signal point carrying sanctuary, provocation, and the sound of a future arriving.",
+        10,
+        parent_board_id=genosha.id,
+        board_kind="sublocation",
+        tagline="Hope, broadcast loudly.",
     )
     facets = _seed_world_facets(repo, community.id)
     _assign_facets(
@@ -369,7 +534,101 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     _assign_board_facets(repo, community.id, plotting.id, facets, ["plotting"])
     _assign_board_facets(repo, community.id, out_of_character.id, facets, ["community"])
     _assign_board_facets(
+        repo, community.id, xavier_institute.id, facets, ["x-men", "academy", "community"]
+    )
+    _assign_board_facets(repo, community.id, med_bay.id, facets, ["x-men", "academy", "science"])
+    _assign_board_facets(
+        repo, community.id, cerebro_room.id, facets, ["x-men", "academy", "mentor", "science"]
+    )
+    _assign_board_facets(
+        repo, community.id, dormitories.id, facets, ["x-men", "academy", "student", "community"]
+    )
+    _assign_board_facets(
         repo, community.id, danger_room.id, facets, ["x-men", "academy", "training"]
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        new_york.id,
+        facets,
+        ["mutant", "human", "united-nations", "mission-ready"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        frozen_midtown.id,
+        facets,
+        ["mutant", "human", "mission-ready"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        transit_tunnels.id,
+        facets,
+        ["mutant", "human", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        mutant_underground.id,
+        facets,
+        ["mutant", "brotherhood", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        station_nine_board.id,
+        facets,
+        ["mutant", "brotherhood", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        b24_facilities.id,
+        facets,
+        ["human", "evil-lab", "science", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        observation_suite.id,
+        facets,
+        ["human", "evil-lab", "science", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        server_core.id,
+        facets,
+        ["human", "evil-lab", "science", "tech"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        united_nations.id,
+        facets,
+        ["human", "united-nations", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        crisis_chamber.id,
+        facets,
+        ["human", "united-nations", "political"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        genosha.id,
+        facets,
+        ["mutant", "brotherhood", "political", "history"],
+    )
+    _assign_board_facets(
+        repo,
+        community.id,
+        relay_tower.id,
+        facets,
+        ["mutant", "brotherhood", "political", "history"],
     )
     _assign_board_facets(repo, community.id, archive.id, facets, ["history"])
     _assign_board_facets(repo, community.id, staff_room.id, facets, ["staff"])
@@ -416,6 +675,220 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         welcome.id,
         storm.id,
         "The mansion is standing again. Classes resume Monday, provided nobody explodes the west wing before then.",
+    )
+
+    triage = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, med_bay.id, "med-bay-lights"),
+        lambda: repo.create_thread(
+            community.id,
+            med_bay.id,
+            moira.id,
+            "med-bay-lights",
+            "The med-bay lights stay on",
+        ),
+    )
+    triage = repo.update_thread_scene(
+        community.id,
+        triage.id,
+        status="active",
+        location="Xavier Institute med-bay",
+        timeline="First night of the B-24 winter",
+        summary="Moira opens the school infirmary while students and refugees arrive from the cold.",
+        posting_mode="freeform",
+    )
+    repo.set_thread_participants(community.id, triage.id, [moira.id, kitty.id])
+    _assign_thread_facets(
+        repo,
+        community.id,
+        triage.id,
+        facets,
+        ["x-men", "academy", "science", "mission-ready"],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        triage.id,
+        moira.id,
+        "Moira labels the last cot with tape, looks at the frost on the windows, and decides the school can hold ten more people than it safely should.",
+    )
+
+    evacuation = _get_or_create(
+        lambda: repo.get_thread_by_slug(
+            community.id, frozen_midtown.id, "frozen-avenue-evacuation"
+        ),
+        lambda: repo.create_thread(
+            community.id,
+            frozen_midtown.id,
+            cyclops.id,
+            "frozen-avenue-evacuation",
+            "Frozen avenue evacuation",
+        ),
+    )
+    evacuation = repo.update_thread_scene(
+        community.id,
+        evacuation.id,
+        status="open",
+        location="Midtown evacuation route",
+        timeline="B-24 winter, hour six",
+        summary="Cyclops coordinates a street-level rescue while cameras turn every mutant power into evidence.",
+        posting_mode="freeform",
+    )
+    repo.set_thread_participants(community.id, evacuation.id, [cyclops.id, xavier.id])
+    _assign_thread_facets(
+        repo,
+        community.id,
+        evacuation.id,
+        facets,
+        ["mutant", "human", "x-men", "mission-ready"],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        evacuation.id,
+        cyclops.id,
+        "Scott marks the safe path with optic fire reflected off the ice, counting civilians by voice because visibility is already gone.",
+    )
+
+    station_nine = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, station_nine_board.id, "station-nine-signal"),
+        lambda: repo.create_thread(
+            community.id,
+            station_nine_board.id,
+            kitty.id,
+            "station-nine-signal",
+            "Station Nine signal",
+        ),
+    )
+    station_nine = repo.update_thread_scene(
+        community.id,
+        station_nine.id,
+        status="open",
+        location="Mutant Underground, Station Nine",
+        timeline="After the first UN denial",
+        summary="A safehouse asks whether the X-Men are coming to rescue them or recruit them.",
+        posting_mode="posting_order",
+    )
+    repo.set_thread_participants(community.id, station_nine.id, [kitty.id, xavier.id])
+    _assign_thread_facets(
+        repo,
+        community.id,
+        station_nine.id,
+        facets,
+        ["mutant", "brotherhood", "political", "tech"],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        station_nine.id,
+        kitty.id,
+        "Kitty catches the coded distress call between two dead relays and writes the word trap in the margin anyway.",
+    )
+
+    cold_start = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, observation_suite.id, "cold-start-protocol"),
+        lambda: repo.create_thread(
+            community.id,
+            observation_suite.id,
+            trask.id,
+            "cold-start-protocol",
+            "Cold-start protocol",
+        ),
+    )
+    cold_start = repo.update_thread_scene(
+        community.id,
+        cold_start.id,
+        status="private",
+        location="B-24 observation suite",
+        timeline="Minutes before public failure",
+        summary="Trask watches the model exceed its brief and calls it a breakthrough anyway.",
+        posting_mode="freeform",
+    )
+    repo.set_thread_participants(community.id, cold_start.id, [trask.id, moira.id])
+    _assign_thread_facets(
+        repo,
+        community.id,
+        cold_start.id,
+        facets,
+        ["human", "evil-lab", "science", "political"],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        cold_start.id,
+        trask.id,
+        "The room applauds when the prediction curve spikes. Trask does not tell them the machine has stopped predicting and started choosing.",
+    )
+
+    emergency_session = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, crisis_chamber.id, "emergency-session"),
+        lambda: repo.create_thread(
+            community.id,
+            crisis_chamber.id,
+            moira.id,
+            "emergency-session",
+            "Emergency session",
+        ),
+    )
+    emergency_session = repo.update_thread_scene(
+        community.id,
+        emergency_session.id,
+        status="active",
+        location="UN crisis chamber",
+        timeline="B-24 winter, hour twelve",
+        summary="Diplomats debate mutant aid while every screen in the room shows New York turning white.",
+        posting_mode="posting_order",
+    )
+    repo.set_thread_participants(
+        community.id, emergency_session.id, [moira.id, xavier.id, trask.id]
+    )
+    _assign_thread_facets(
+        repo,
+        community.id,
+        emergency_session.id,
+        facets,
+        ["human", "united-nations", "political", "science"],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        emergency_session.id,
+        moira.id,
+        "Moira places the casualty estimate on the table and waits for someone to say the word accountability without flinching.",
+    )
+
+    genosha_broadcast = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, relay_tower.id, "broadcast-from-genosha"),
+        lambda: repo.create_thread(
+            community.id,
+            relay_tower.id,
+            xavier.id,
+            "broadcast-from-genosha",
+            "Broadcast from Genosha",
+        ),
+    )
+    genosha_broadcast = repo.update_thread_scene(
+        community.id,
+        genosha_broadcast.id,
+        status="open",
+        location="Genosha relay tower",
+        timeline="After midnight",
+        summary="A mutant homeland offers sanctuary and dares the world to call that escalation.",
+        posting_mode="freeform",
+    )
+    repo.set_thread_participants(community.id, genosha_broadcast.id, [xavier.id])
+    _assign_thread_facets(
+        repo,
+        community.id,
+        genosha_broadcast.id,
+        facets,
+        ["mutant", "brotherhood", "political", "history"],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        genosha_broadcast.id,
+        xavier.id,
+        "Charles listens to the Genoshan relay twice, because hope and warning can sound exactly alike through static.",
     )
 
     roster = _get_or_create(
@@ -744,6 +1217,12 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     )
 
     for read_thread in (
+        triage,
+        evacuation,
+        station_nine,
+        cold_start,
+        emergency_session,
+        genosha_broadcast,
         claims,
         ooc_intro,
         cerebro,
@@ -769,6 +1248,52 @@ def _get_or_create[T](get: Callable[[], T], create: Callable[[], T]) -> T:
         return get()
     except LookupError:
         return create()
+
+
+def _ensure_board(
+    repo: ForumRepository,
+    community_id: int,
+    slug: str,
+    name: str,
+    description: str,
+    sort_order: int,
+    *,
+    parent_board_id: int | None = None,
+    board_kind: str = "location",
+    tagline: str = "",
+    image_url: str | None = None,
+    image_alt: str = "",
+    is_private: bool = False,
+) -> Board:
+    board = _get_or_create(
+        lambda: repo.get_board_by_slug(community_id, slug),
+        lambda: repo.create_board(
+            community_id,
+            slug,
+            name,
+            description,
+            parent_board_id=parent_board_id,
+            board_kind=board_kind,
+            tagline=tagline,
+            image_url=image_url,
+            image_alt=image_alt,
+            sort_order=sort_order,
+            is_private=is_private,
+        ),
+    )
+    return repo.update_board(
+        community_id,
+        board.id,
+        name=name,
+        description=description,
+        sort_order=sort_order,
+        parent_board_id=parent_board_id,
+        board_kind=board_kind,
+        tagline=tagline,
+        image_url=image_url,
+        image_alt=image_alt,
+        is_private=is_private,
+    )
 
 
 def _ensure_post(

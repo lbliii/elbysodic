@@ -54,9 +54,14 @@ class CommunityMembership:
 class Board:
     id: int
     community_id: int
+    parent_board_id: int | None
     slug: str
     name: str
+    board_kind: str
+    tagline: str
     description: str
+    image_url: str | None
+    image_alt: str
     sort_order: int
     is_private: bool
     created_at: str

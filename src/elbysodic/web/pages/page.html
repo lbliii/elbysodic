@@ -7,74 +7,115 @@
   {% from "_components/thread_summary.html" import activity_item %}
 {% end %}
 
+{% def board_signal(summary, heading_level="h2") %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-board-card elbysodic-location-card">
+  <a class="elbysodic-board-poster"
+     href="/boards/{{ summary.board.slug }}"
+     aria-label="{{ summary.board.name }}"
+     {% if summary.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.82)), url('{{ summary.board.image_url }}');"{% end %}>
+    <span>{{ summary.board.tagline or summary.board.board_kind }}</span>
+  </a>
+  <div class="chirpui-cluster chirpui-cluster--between elbysodic-board-card__header">
+    <div>
+      {% if heading_level == "h3" %}
+      <h3><a class="chirpui-link" href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a></h3>
+      {% else %}
+      <h2><a class="chirpui-link" href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a></h2>
+      {% end %}
+      <p class="chirpui-text-muted">{{ summary.board.description }}</p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--sm elbysodic-board-card__signals">
+      {{ badge(summary.unread_thread_count ~ " new", variant="info") if summary.unread_thread_count else "" }}
+      {{ badge("for " ~ viewer.current_character.name, variant="success") if summary.is_relevant_to_current_face and viewer.current_character else "" }}
+      {{ badge("private", variant="muted") if summary.board.is_private else "" }}
+      {{ stat(value=summary.thread_count, label="Threads") }}
+      {{ stat(value=summary.post_count, label="Posts") }}
+    </div>
+  </div>
+  {{ facet_pills(summary.facets) }}
+  {% if summary.child_boards %}
+  <div class="elbysodic-subboard-strip" aria-label="{{ summary.board.name }} sublocations">
+    {% for child in summary.child_boards %}
+    <a href="/boards/{{ child.slug }}">{{ child.name }}</a>
+    {% end %}
+  </div>
+  {% end %}
+  {% if summary.latest_thread %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Latest</span>
+    <a class="chirpui-link"
+       href="/boards/{{ summary.latest_board.slug if summary.latest_board else summary.board.slug }}/threads/{{ summary.latest_thread.slug }}#{{ summary.latest_post.anchor if summary.latest_post else "" }}">
+      {{ summary.latest_thread.title }}
+    </a>
+    {% if summary.latest_post %}
+    <span class="chirpui-text-muted">
+      by
+      <a class="chirpui-link" href="/characters/{{ summary.latest_post.author.slug }}">
+      {{ summary.latest_post.author.name }}
+      </a>
+      · writer <a class="chirpui-link" href="/members/{{ summary.latest_post.author_membership.username }}">{{ summary.latest_post.author_membership.username }}</a>
+      · {{ summary.latest_post.updated_at_label }}
+    </span>
+    {% end %}
+  </div>
+  {% else %}
+  <p class="elbysodic-empty-state">No threads yet.</p>
+  {% end %}
+</article>
+{% end %}
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header(viewer.community.name) %}
-  {% if viewer.current_character %}
-  {{ badge("posting as " ~ viewer.current_character.name) }}
-  {% else %}
-  {{ badge("roster needed", variant="warning") }}
-  {% end %}
-  {% end %}
-  {% if viewer.current_character %}
-  <p class="chirpui-text-muted">Current face: {{ viewer.current_character.name }}</p>
-  {% else %}
-  <p class="chirpui-text-muted">
-    Create your first character to start posting in {{ viewer.community.name }}.
-  </p>
-  {% end %}
-
-  {% call cluster(gap="sm") %}
-    {{ stat(value=boards | length, label="Boards") }}
-    {{ stat(value=viewer.roster | length, label="Characters") }}
-    {{ stat(value=viewer.membership.post_count, label="Posts") }}
-  {% end %}
-
-  <div class="chirpui-stack chirpui-stack--md">
-    {% for summary in boards %}
-    {% call surface(variant="elevated") %}
-    <div class="chirpui-stack chirpui-stack--sm elbysodic-board-card">
-      <div class="chirpui-cluster chirpui-cluster--between elbysodic-board-card__header">
-        <div>
-          <h2><a class="chirpui-link" href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a></h2>
-          <p class="chirpui-text-muted">{{ summary.board.description }}</p>
-        </div>
-        <div class="chirpui-cluster chirpui-cluster--sm">
-          {{ badge(summary.unread_thread_count ~ " new", variant="info") if summary.unread_thread_count else "" }}
-          {{ badge("for " ~ viewer.current_character.name, variant="success") if summary.is_relevant_to_current_face and viewer.current_character else "" }}
-          {{ badge("private", variant="muted") if summary.board.is_private else "" }}
-          {{ stat(value=summary.thread_count, label="Threads") }}
-          {{ stat(value=summary.post_count, label="Posts") }}
-        </div>
-      </div>
-      {{ facet_pills(summary.facets) }}
-      {% if summary.latest_thread %}
-      <div class="elbysodic-latest">
-        <span class="chirpui-text-muted">Latest</span>
-        <a class="chirpui-link"
-           href="/boards/{{ summary.board.slug }}/threads/{{ summary.latest_thread.slug }}#{{ summary.latest_post.anchor if summary.latest_post else "" }}">
-          {{ summary.latest_thread.title }}
-        </a>
-        {% if summary.latest_post %}
-        <span class="chirpui-text-muted">
-          by
-          <a class="chirpui-link" href="/characters/{{ summary.latest_post.author.slug }}">
-          {{ summary.latest_post.author.name }}
-          </a>
-          · writer <a class="chirpui-link" href="/members/{{ summary.latest_post.author_membership.username }}">{{ summary.latest_post.author_membership.username }}</a>
-          · {{ summary.latest_post.updated_at_label }}
-        </span>
-        {% end %}
-      </div>
+{% call container(max_width="76rem") %}
+{% call stack(gap="xl") %}
+  <section class="elbysodic-world-hero">
+    <div class="elbysodic-world-hero__copy">
+      <p class="elbysodic-kicker">World status</p>
+      <h1>{{ viewer.community.name }}</h1>
+      <p>
+        The school has reopened under a fragile truce while B-24 turns mutant fear into
+        policy, prediction, and weaponry. Choose a door into the crisis: academy halls,
+        frozen streets, underground networks, diplomatic rooms, or the labs pretending
+        this was all inevitable.
+      </p>
+      {% if viewer.current_character %}
+      <p class="chirpui-text-muted">
+        Current face: {{ viewer.current_character.name }}. Relevant locations are quietly marked.
+      </p>
       {% else %}
-      <p class="elbysodic-empty-state">No threads yet.</p>
+      <p class="chirpui-text-muted">
+        Create your first character to start posting in {{ viewer.community.name }}.
+      </p>
       {% end %}
     </div>
+    <div class="elbysodic-world-hero__stats">
+      {{ stat(value=location_boards | length, label="Locations") }}
+      {{ stat(value=viewer.roster | length, label="Characters") }}
+      {{ stat(value=viewer.membership.post_count, label="Posts") }}
+    </div>
+  </section>
+
+  {% call section_header("Locations") %}
+  In-character doors into the board's world, conflicts, and current event pressure.
+  {% end %}
+
+  <div class="elbysodic-location-grid">
+    {% for summary in location_boards %}
+    {{ board_signal(summary) }}
     {% end %}
+  </div>
+
+  {% call section_header("Community Table") %}
+  The director notes, plotting boards, OOC room, and continuity shelves behind the story.
+  {% end %}
+
+  <div class="elbysodic-community-grid">
+    {% for summary in community_boards %}
+    {{ board_signal(summary, "h3") }}
     {% end %}
   </div>
 
