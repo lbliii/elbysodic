@@ -25,6 +25,10 @@ platforms forced roleplayers to do.
 - Elbysodic-specific design belongs in `src/elbysodic/web/static/elbysodic-theme.css`
   as an app token layer on top of Chirp-UI, including light, dark, and system
   theme behavior.
+- Repeated PBP UI concepts belong in the Elbysodic vocabulary components under
+  `src/elbysodic/web/pages/_components/` before they become page-local CSS.
+  Use `docs/product/information-hierarchy.md` for the meaning of counters,
+  facets, state badges, latest lines, cast faces, and metadata.
 - Keep frontend controls complete and ergonomic for roleplayers doing real
   writing: stable composer dimensions, previews, drafts, toolbar affordances,
   and clear character context.

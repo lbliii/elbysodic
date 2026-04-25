@@ -229,6 +229,32 @@ def test_world_map_sidebar_anchors_current_location_branch() -> None:
     asyncio.run(run())
 
 
+def test_board_pages_render_location_stage_and_place_tiles() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            academy = await client.get("/boards/xavier-institute")
+
+            assert academy.status == 200
+            assert "elbysodic-board-stage" in academy.text
+            assert "elbysodic-board-media--xavier-institute" in academy.text
+            assert "Sublocations in Xavier Institute" in academy.text
+            assert "Scenes in Xavier Institute" in academy.text
+            assert "No direct scenes here yet." in academy.text
+            assert "Sublocations" in academy.text
+            assert "elbysodic-board-poster--tile" in academy.text
+
+            midtown = await client.get("/boards/frozen-midtown")
+
+            assert midtown.status == 200
+            assert "elbysodic-board-media--frozen-midtown" in midtown.text
+            assert "Nearby" in midtown.text
+            assert "New York City" in midtown.text
+            assert "/boards/transit-tunnels" in midtown.text
+
+    asyncio.run(run())
+
+
 def test_topbar_marks_active_product_realm() -> None:
     async def run() -> None:
         app = _app()

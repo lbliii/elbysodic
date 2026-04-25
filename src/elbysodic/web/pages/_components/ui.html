@@ -1,0 +1,93 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+{% end %}
+
+{% def counter(mark, value, label) %}
+<span class="elbysodic-counter" title="{{ value }} {{ label }}" aria-label="{{ value }} {{ label }}">
+  <span class="elbysodic-counter__mark" aria-hidden="true">{{ mark }}</span>
+  <span class="elbysodic-counter__value">{{ value }}</span>
+  <span class="elbysodic-counter__label">{{ label }}</span>
+</span>
+{% end %}
+
+{% def latest_line(label, href, title, author=None, author_href=None, writer=None, writer_href=None, updated=None) %}
+<div class="elbysodic-latest">
+  <span class="elbysodic-latest__label">{{ label }}</span>
+  <span class="elbysodic-hover-source">
+    <a class="elbysodic-latest__title" href="{{ href }}">{{ title }}</a>
+    {% if author or writer or updated %}
+    <span class="elbysodic-hovercard" role="tooltip">
+      <span class="elbysodic-hovercard__label">{{ label }} details</span>
+      <strong>{{ title }}</strong>
+      {% if author %}
+      <span>by {{ author }}</span>
+      {% end %}
+      {% if writer %}
+      <span>writer {{ writer }}</span>
+      {% end %}
+      {% if updated %}
+      <span>{{ updated }}</span>
+      {% end %}
+    </span>
+    {% end %}
+  </span>
+  {% if author or writer or updated %}
+  <span class="elbysodic-latest__byline">
+    {% if author %}
+    by
+    {% if author_href %}
+    <a href="{{ author_href }}">{{ author }}</a>
+    {% else %}
+    {{ author }}
+    {% end %}
+    {% endif %}
+  </span>
+  {% end %}
+</div>
+{% end %}
+
+{% def cast_faces(characters, label="Scene participants") %}
+{% if characters %}
+<div class="elbysodic-scene-cast" aria-label="{{ label }}">
+  {% for character in characters %}
+  <a class="elbysodic-scene-cast__face"
+     href="/characters/{{ character.slug }}"
+     title="{{ character.name }}"
+     aria-label="{{ character.name }}">
+    {% if character.avatar_url %}
+    <img src="{{ character.avatar_url }}" alt="">
+    {% else %}
+    {{ character.name[:1] }}
+    {% end %}
+  </a>
+  {% end %}
+</div>
+{% end %}
+{% end %}
+
+{% def scene_state_badges(thread, board_name=None, is_caught_up=False, is_watched=False) %}
+<div class="chirpui-cluster chirpui-cluster--sm elbysodic-state-row">
+  {% if board_name %}
+  {{ badge(board_name, variant="muted") }}
+  {% end %}
+  {% if thread.status == "open" %}
+  {{ badge("open to join", variant="info") }}
+  {% elif thread.status == "active" %}
+  {{ badge("active", variant="success") }}
+  {% elif thread.status == "paused" %}
+  {{ badge("paused", variant="warning") }}
+  {% elif thread.status == "complete" %}
+  {{ badge("complete", variant="muted") }}
+  {% elif thread.status == "private" %}
+  {{ badge("private scene", variant="muted") }}
+  {% elif thread.status == "archived" %}
+  {{ badge("archived", variant="muted") }}
+  {% endif %}
+  {% if is_caught_up %}
+  {{ badge("caught up", variant="success") }}
+  {% endif %}
+  {{ badge("watching", variant="info") if is_watched else "" }}
+  {{ badge("pinned", variant="warning") if thread.is_pinned else "" }}
+  {{ badge("locked", variant="muted") if thread.is_locked else "" }}
+</div>
+{% end %}

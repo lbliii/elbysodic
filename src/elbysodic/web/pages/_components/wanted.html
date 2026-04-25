@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/ui.html" import cast_faces %}
 {% end %}
 
 {% def wanted_card(item) %}
@@ -43,22 +44,7 @@
     </span>
     {% end %}
   </div>
-  {% if item.related_characters %}
-  <div class="elbysodic-scene-cast" aria-label="Related characters">
-    {% for character in item.related_characters %}
-    <a class="elbysodic-scene-cast__face"
-       href="/characters/{{ character.slug }}"
-       title="{{ character.name }}"
-       aria-label="{{ character.name }}">
-      {% if character.avatar_url %}
-      <img src="{{ character.avatar_url }}" alt="">
-      {% else %}
-      {{ character.name[:1] }}
-      {% end %}
-    </a>
-    {% end %}
-  </div>
-  {% end %}
+  {{ cast_faces(item.related_characters, "Related characters") }}
   {{ facet_pills(item.facets) }}
 </article>
 {% end %}

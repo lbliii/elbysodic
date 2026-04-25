@@ -34,6 +34,8 @@ def get(request: Request, board_slug: str) -> Page:
     viewer = services.viewer()
     active_filter = _parse_filter(request.query.get("filter", "all"))
     board, threads = services.board_threads(board_slug, filter_by=active_filter)
+    board_summary = services.board_summary(board)
+    parent_board = services.parent_board(board)
     return Page(
         "boards/{board_slug}/page.html",
         "page_content",
@@ -41,7 +43,8 @@ def get(request: Request, board_slug: str) -> Page:
         current_path=request.url,
         viewer=viewer,
         board=board,
-        parent_board=services.parent_board(board),
+        board_summary=board_summary,
+        parent_board=parent_board,
         board_facets=services.board_facets(board.slug),
         subboards=services.child_board_summaries(board),
         sibling_boards=services.sibling_board_summaries(board),

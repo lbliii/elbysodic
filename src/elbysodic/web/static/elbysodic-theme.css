@@ -19,6 +19,10 @@
     --elbysodic-rose-strong: #e57984;
     --elbysodic-moss: #79a889;
     --elbysodic-gold: #c99a46;
+    --elbysodic-on-media-text: #fff8ef;
+    --elbysodic-on-media-muted: rgba(255, 248, 239, 0.74);
+    --elbysodic-on-media-chip-bg: rgba(8, 10, 12, 0.68);
+    --elbysodic-on-media-chip-border: rgba(255, 248, 239, 0.2);
 
     --chirpui-font-xs: 0.75rem;
     --chirpui-font-sm: 0.875rem;
@@ -413,11 +417,20 @@ body {
     height: 100%;
 }
 
-.elbysodic-board-card__signals {
-    justify-content: flex-end;
+.elbysodic-board-card__body {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.elbysodic-board-card__description {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-base);
+    line-height: 1.45;
+    margin: 0;
 }
 
 .elbysodic-board-poster,
+.elbysodic-board-stage,
 .elbysodic-board-hero__media {
     background:
         radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--chirpui-accent) 32%, transparent), transparent 30%),
@@ -433,48 +446,277 @@ body {
 
 .elbysodic-board-poster {
     align-items: end;
+    color: var(--elbysodic-on-media-text);
     display: flex;
+    flex-direction: column;
+    justify-content: end;
     min-height: 10.5rem;
     padding: 1rem;
     text-decoration: none;
 }
 
-.elbysodic-board-poster--compact {
-    min-height: 7.5rem;
+.elbysodic-board-poster:hover,
+.elbysodic-board-poster:visited {
+    color: var(--elbysodic-on-media-text);
 }
 
-.elbysodic-board-poster span,
-.elbysodic-board-hero__media span {
-    background: color-mix(in srgb, var(--chirpui-bg) 72%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
+.elbysodic-board-poster--tile {
+    align-items: flex-start;
+}
+
+.elbysodic-board-poster--tile {
+    min-height: 13rem;
+}
+
+.elbysodic-board-poster--compact {
+    min-height: 9rem;
+}
+
+.elbysodic-board-poster h2,
+.elbysodic-board-poster h3 {
+    color: var(--elbysodic-on-media-text);
+    display: block;
+    font-size: var(--chirpui-font-xl);
+    letter-spacing: 0;
+    line-height: 1.05;
+    margin: 0;
+    max-width: 14rem;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.elbysodic-board-poster__face-signal {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-success) 22%, var(--elbysodic-on-media-chip-bg));
+    border: 1px solid color-mix(in srgb, var(--chirpui-success) 56%, var(--elbysodic-on-media-chip-border));
     border-radius: 999px;
-    color: var(--chirpui-text);
+    color: var(--elbysodic-on-media-text);
+    display: inline-flex;
+    height: 1.65rem;
+    inset-block-start: 0.75rem;
+    inset-inline-end: 0.75rem;
+    justify-content: center;
+    min-width: 1.65rem;
+    padding: 0;
+    position: absolute;
+}
+
+.elbysodic-board-poster__face-icon {
+    color: var(--elbysodic-on-media-text);
+    filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.42));
+}
+
+.elbysodic-board-hero__media span {
+    background: var(--elbysodic-on-media-chip-bg);
+    border: 1px solid var(--elbysodic-on-media-chip-border);
+    border-radius: 999px;
+    color: var(--elbysodic-on-media-text);
     display: inline-flex;
     font-size: var(--chirpui-font-sm);
     font-weight: 800;
+    margin-top: 0.45rem;
     padding: 0.3rem 0.7rem;
+}
+
+.elbysodic-board-poster__tagline {
+    border-left: 2px solid color-mix(in srgb, var(--chirpui-accent) 72%, var(--elbysodic-on-media-muted));
+    color: var(--elbysodic-on-media-muted);
+    display: block;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 800;
+    line-height: 1.3;
+    margin-top: 0.55rem;
+    max-width: min(100%, 24rem);
+    padding-left: 0.6rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.elbysodic-board-stat-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.55rem;
+}
+
+.elbysodic-board-stat-row .chirpui-stat {
+    align-items: flex-start;
+    min-width: 4.25rem;
+    text-align: start;
+}
+
+.elbysodic-board-stat-row .chirpui-badge {
+    border-radius: 999px;
+    font-size: var(--chirpui-font-xs);
+    min-height: 1.5rem;
+    padding: 0.18rem 0.45rem;
+}
+
+.elbysodic-state-row .chirpui-badge {
+    border-radius: 999px;
+    font-size: var(--chirpui-font-xs);
+    min-height: 1.55rem;
+    padding: 0.2rem 0.52rem;
+}
+
+.elbysodic-counter {
+    align-items: center;
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.28rem;
+    line-height: 1;
+    min-height: 1.6rem;
+}
+
+.elbysodic-counter__mark {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    height: 1.25rem;
+    justify-content: center;
+    min-width: 1.25rem;
+}
+
+.elbysodic-counter__value {
+    color: var(--chirpui-text);
+    font-weight: 800;
+}
+
+.elbysodic-counter__label {
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-board-media--xavier-institute {
+    background:
+        linear-gradient(180deg, rgba(8, 11, 13, 0.08), rgba(8, 11, 13, 0.86)),
+        radial-gradient(circle at 18% 20%, rgba(121, 168, 137, 0.74), transparent 28%),
+        radial-gradient(circle at 72% 22%, rgba(123, 200, 238, 0.38), transparent 24%),
+        linear-gradient(135deg, #243028, #151914 54%, #2c2630);
+}
+
+.elbysodic-board-media--med-bay {
+    background:
+        linear-gradient(180deg, rgba(8, 12, 14, 0.04), rgba(8, 12, 14, 0.88)),
+        radial-gradient(circle at 78% 18%, rgba(167, 219, 244, 0.58), transparent 26%),
+        linear-gradient(135deg, #1f3437, #162023 52%, #343330);
+}
+
+.elbysodic-board-media--cerebro {
+    background:
+        linear-gradient(180deg, rgba(10, 9, 16, 0.04), rgba(10, 9, 16, 0.9)),
+        radial-gradient(circle at 50% 18%, rgba(199, 164, 227, 0.64), transparent 24%),
+        radial-gradient(circle at 20% 70%, rgba(123, 200, 238, 0.42), transparent 28%),
+        linear-gradient(135deg, #1e1832, #11131b 58%, #20313a);
+}
+
+.elbysodic-board-media--dormitories {
+    background:
+        linear-gradient(180deg, rgba(12, 9, 10, 0.08), rgba(12, 9, 10, 0.86)),
+        radial-gradient(circle at 18% 22%, rgba(229, 121, 132, 0.44), transparent 26%),
+        radial-gradient(circle at 78% 24%, rgba(201, 154, 70, 0.46), transparent 24%),
+        linear-gradient(135deg, #332527, #171916 58%, #2f3328);
+}
+
+.elbysodic-board-media--danger-room {
+    background:
+        linear-gradient(180deg, rgba(12, 12, 14, 0.04), rgba(12, 12, 14, 0.9)),
+        repeating-linear-gradient(90deg, rgba(240, 154, 161, 0.16) 0 2px, transparent 2px 22px),
+        radial-gradient(circle at 68% 26%, rgba(240, 154, 161, 0.58), transparent 28%),
+        linear-gradient(135deg, #302023, #151719 54%, #263238);
+}
+
+.elbysodic-board-media--new-york-city,
+.elbysodic-board-media--frozen-midtown {
+    background:
+        linear-gradient(180deg, rgba(7, 10, 13, 0.02), rgba(7, 10, 13, 0.88)),
+        radial-gradient(circle at 76% 18%, rgba(167, 219, 244, 0.72), transparent 26%),
+        linear-gradient(135deg, #203540, #15191b 48%, #3a332a);
+}
+
+.elbysodic-board-media--transit-tunnels {
+    background:
+        linear-gradient(180deg, rgba(8, 8, 6, 0.04), rgba(8, 8, 6, 0.9)),
+        radial-gradient(circle at 22% 76%, rgba(201, 154, 70, 0.5), transparent 20%),
+        linear-gradient(135deg, #161614, #28302a 54%, #3a2c21);
+}
+
+.elbysodic-board-media--mutant-underground,
+.elbysodic-board-media--station-nine {
+    background:
+        linear-gradient(180deg, rgba(7, 9, 8, 0.04), rgba(7, 9, 8, 0.88)),
+        radial-gradient(circle at 18% 20%, rgba(121, 168, 137, 0.58), transparent 24%),
+        radial-gradient(circle at 84% 72%, rgba(199, 164, 227, 0.36), transparent 24%),
+        linear-gradient(135deg, #18231c, #101511 54%, #2a2232);
+}
+
+.elbysodic-board-media--trask-b24-facilities,
+.elbysodic-board-media--observation-suite,
+.elbysodic-board-media--server-core {
+    background:
+        linear-gradient(180deg, rgba(8, 9, 11, 0.02), rgba(8, 9, 11, 0.9)),
+        repeating-linear-gradient(0deg, rgba(123, 200, 238, 0.11) 0 1px, transparent 1px 18px),
+        radial-gradient(circle at 76% 24%, rgba(123, 200, 238, 0.56), transparent 24%),
+        linear-gradient(135deg, #1c2730, #111519 56%, #302626);
+}
+
+.elbysodic-board-media--united-nations,
+.elbysodic-board-media--crisis-chamber {
+    background:
+        linear-gradient(180deg, rgba(8, 10, 12, 0.04), rgba(8, 10, 12, 0.88)),
+        radial-gradient(circle at 20% 18%, rgba(201, 154, 70, 0.48), transparent 26%),
+        radial-gradient(circle at 78% 24%, rgba(123, 200, 238, 0.42), transparent 22%),
+        linear-gradient(135deg, #252825, #12171d 56%, #302a20);
+}
+
+.elbysodic-board-media--genosha,
+.elbysodic-board-media--relay-tower {
+    background:
+        linear-gradient(180deg, rgba(10, 8, 9, 0.04), rgba(10, 8, 9, 0.88)),
+        radial-gradient(circle at 22% 18%, rgba(229, 121, 132, 0.54), transparent 24%),
+        radial-gradient(circle at 80% 18%, rgba(201, 154, 70, 0.5), transparent 24%),
+        linear-gradient(135deg, #33202a, #171916 54%, #333224);
 }
 
 .elbysodic-subboard-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .elbysodic-subboard-strip a {
-    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-bg-subtle));
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 82%, transparent);
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: 999px;
     color: var(--chirpui-text);
     font-size: var(--chirpui-font-sm);
     font-weight: 700;
-    padding: 0.35rem 0.7rem;
+    padding: 0.28rem 0.62rem;
     text-decoration: none;
+}
+
+.elbysodic-place-link {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.3rem;
+}
+
+.elbysodic-place-link span {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
 }
 
 .elbysodic-subboard-strip a:hover {
     border-color: var(--chirpui-card-hover-border);
     color: var(--chirpui-accent);
+}
+
+.elbysodic-subboard-strip--nearby {
+    margin-top: -0.5rem;
 }
 
 .elbysodic-place-path {
@@ -500,6 +742,61 @@ body {
 
 .elbysodic-place-path__separator {
     color: color-mix(in srgb, var(--chirpui-text-muted) 56%, transparent);
+}
+
+.elbysodic-board-stage {
+    align-items: end;
+    border: 1px solid var(--chirpui-border-subtle);
+    display: flex;
+    min-height: min(58vh, 30rem);
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.elbysodic-board-stage__copy {
+    max-width: 48rem;
+}
+
+.elbysodic-board-stage h1 {
+    color: var(--elbysodic-on-media-text);
+    font-size: clamp(2.25rem, 6vw, 5rem);
+    letter-spacing: 0;
+    line-height: 0.92;
+    margin: 0;
+    text-shadow: 0 3px 20px rgba(0, 0, 0, 0.42);
+}
+
+.elbysodic-board-stage p:not(.elbysodic-kicker) {
+    color: var(--elbysodic-on-media-muted);
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.6;
+    margin: 0;
+    max-width: 42rem;
+}
+
+.elbysodic-board-stage .chirpui-stat__value {
+    color: var(--elbysodic-on-media-text);
+}
+
+.elbysodic-board-stage .chirpui-stat__label {
+    color: var(--elbysodic-on-media-muted);
+}
+
+.elbysodic-board-stage .elbysodic-counter {
+    color: var(--elbysodic-on-media-muted);
+}
+
+.elbysodic-board-stage .elbysodic-counter__mark {
+    background: var(--elbysodic-on-media-chip-bg);
+    border-color: var(--elbysodic-on-media-chip-border);
+    color: var(--elbysodic-on-media-muted);
+}
+
+.elbysodic-board-stage .elbysodic-counter__value {
+    color: var(--elbysodic-on-media-text);
+}
+
+.elbysodic-board-stage .elbysodic-counter__label {
+    color: var(--elbysodic-on-media-muted);
 }
 
 .elbysodic-board-hero {
@@ -536,9 +833,112 @@ body {
 
 .elbysodic-latest {
     border-top: 1px solid var(--chirpui-border-subtle);
-    display: grid;
-    gap: 0.25rem;
+    align-items: baseline;
+    color: var(--chirpui-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.25rem 0.45rem;
     padding-top: 0.875rem;
+}
+
+.elbysodic-latest__label {
+    color: var(--chirpui-text-muted);
+    font-weight: 800;
+}
+
+.elbysodic-latest__label::after {
+    content: ":";
+}
+
+.elbysodic-latest__title,
+.elbysodic-latest__byline a {
+    color: var(--chirpui-link);
+    text-decoration: none;
+}
+
+.elbysodic-latest__title:hover,
+.elbysodic-latest__byline a:hover {
+    color: var(--chirpui-link-hover);
+}
+
+.elbysodic-latest__byline {
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-hover-source {
+    display: inline-flex;
+    position: relative;
+}
+
+.elbysodic-hovercard {
+    background: var(--chirpui-surface);
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius-md);
+    box-shadow: var(--chirpui-card-hover-shadow);
+    color: var(--chirpui-text);
+    display: grid;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.25rem;
+    inline-size: max-content;
+    left: 0;
+    line-height: 1.35;
+    max-width: min(20rem, 78vw);
+    min-width: 13rem;
+    opacity: 0;
+    padding: 0.7rem 0.8rem;
+    pointer-events: none;
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    transform: translateY(-0.2rem);
+    transition:
+        opacity 150ms ease,
+        transform 150ms ease,
+        visibility 150ms ease;
+    visibility: hidden;
+    z-index: 30;
+}
+
+.elbysodic-latest .elbysodic-hovercard {
+    bottom: calc(100% + 0.45rem);
+    top: auto;
+    transform: translateY(0.2rem);
+}
+
+.elbysodic-hovercard::before {
+    content: "";
+    height: 0.45rem;
+    inset-block-end: 100%;
+    inset-inline: 0;
+    position: absolute;
+}
+
+.elbysodic-latest .elbysodic-hovercard::before {
+    inset-block-end: auto;
+    inset-block-start: 100%;
+}
+
+.elbysodic-hovercard__label {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.elbysodic-hovercard strong {
+    color: var(--chirpui-text);
+    line-height: 1.2;
+}
+
+.elbysodic-hovercard span:not(.elbysodic-hovercard__label) {
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-hover-source:hover .elbysodic-hovercard,
+.elbysodic-hover-source:focus-within .elbysodic-hovercard {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
 }
 
 .elbysodic-filter-bar {
@@ -1327,7 +1727,7 @@ body {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.32rem;
 }
 
 .elbysodic-facet-pill,
@@ -1338,14 +1738,15 @@ body {
     border-radius: 999px;
     color: var(--chirpui-text);
     display: inline-flex;
-    font-size: var(--chirpui-font-sm);
+    font-size: var(--chirpui-font-xs);
     line-height: 1.2;
-    min-height: 2rem;
+    min-height: 1.6rem;
 }
 
 .elbysodic-facet-pill {
-    background: color-mix(in srgb, var(--elbysodic-facet-accent) 10%, var(--chirpui-bg-subtle));
-    padding: 0.35rem 0.65rem;
+    background: color-mix(in srgb, var(--elbysodic-facet-accent) 7%, var(--chirpui-bg-subtle));
+    color: color-mix(in srgb, var(--chirpui-text) 84%, var(--chirpui-text-muted));
+    padding: 0.24rem 0.52rem;
 }
 
 .elbysodic-discovery-filters {

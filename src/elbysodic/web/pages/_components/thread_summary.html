@@ -1,7 +1,7 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/ui.html" import cast_faces, counter, latest_line %}
 {% end %}
 
 {% def thread_card(board, thread, author, author_membership, participants, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post) %}
@@ -44,62 +44,22 @@
       {% for item_badge in badges %}
       {{ badge(item_badge.label, variant=item_badge.variant) }}
       {% end %}
-      {{ stat(value=reply_count, label="Replies") }}
+      {{ counter("R", reply_count, "replies") }}
     </div>
   </div>
   {% if thread.summary %}
   <p class="chirpui-text-muted">{{ thread.summary }}</p>
   {% end %}
-  {% if participants %}
-  <div class="elbysodic-scene-cast" aria-label="Scene participants">
-    {% for participant in participants %}
-    <a class="elbysodic-scene-cast__face"
-       href="/characters/{{ participant.slug }}"
-       title="{{ participant.name }}"
-       aria-label="{{ participant.name }}">
-      {% if participant.avatar_url %}
-      <img src="{{ participant.avatar_url }}" alt="">
-      {% else %}
-      {{ participant.name[:1] }}
-      {% end %}
-    </a>
-    {% end %}
-  </div>
-  {% end %}
+  {{ cast_faces(participants) }}
   {% if latest_post %}
-  <div class="elbysodic-latest">
-    <span class="chirpui-text-muted">Latest</span>
-    <span class="chirpui-text-muted">
-      {% if jump_post %}
-      <a class="chirpui-link"
-         href="/boards/{{ board.slug }}/threads/{{ thread.slug }}#{{ jump_post.anchor }}">
-        {{ jump_label }}
-      </a>
-      {% else %}
-      <a class="chirpui-link" href="/boards/{{ board.slug }}/threads/{{ thread.slug }}">
-        Open thread
-      </a>
-      {% end %}
-      by
-      <a class="chirpui-link" href="/characters/{{ latest_post.author.slug }}">
-        {{ latest_post.author.name }}
-      </a>
-      · writer <a class="chirpui-link" href="/members/{{ latest_post.author_membership.username }}">{{ latest_post.author_membership.username }}</a>
-      · {{ latest_post.updated_at_label }}
-    </span>
-  </div>
+  {% if jump_post %}
+  {{ latest_line("Latest", "/boards/" ~ board.slug ~ "/threads/" ~ thread.slug ~ "#" ~ jump_post.anchor, jump_label, latest_post.author.name, "/characters/" ~ latest_post.author.slug, latest_post.author_membership.username, "/members/" ~ latest_post.author_membership.username, latest_post.updated_at_label) }}
+  {% else %}
+  {{ latest_line("Latest", "/boards/" ~ board.slug ~ "/threads/" ~ thread.slug, "Open thread", latest_post.author.name, "/characters/" ~ latest_post.author.slug, latest_post.author_membership.username, "/members/" ~ latest_post.author_membership.username, latest_post.updated_at_label) }}
+  {% end %}
   {% end %}
   {% if show_last_own_post and last_own_post %}
-  <div class="elbysodic-latest">
-    <span class="chirpui-text-muted">Your last post</span>
-    <span class="chirpui-text-muted">
-      <a class="chirpui-link"
-         href="/boards/{{ board.slug }}/threads/{{ thread.slug }}#{{ last_own_post.anchor }}">
-        {{ last_own_post.author.name }}
-      </a>
-      · {{ last_own_post.updated_at_label }}
-    </span>
-  </div>
+  {{ latest_line("Your last post", "/boards/" ~ board.slug ~ "/threads/" ~ thread.slug ~ "#" ~ last_own_post.anchor, last_own_post.author.name, None, None, None, None, last_own_post.updated_at_label) }}
   {% end %}
 </article>
 {% end %}

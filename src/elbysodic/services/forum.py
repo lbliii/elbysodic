@@ -693,6 +693,15 @@ class AppServices:
             and policies.can_view_board(viewer.membership, sibling, viewer.role)
         ]
 
+    def board_summary(self, board: Board) -> BoardSummary:
+        viewer = self.viewer()
+        return _board_summary(
+            self.repo,
+            viewer,
+            board,
+            _current_character_facet_ids(self.repo, viewer),
+        )
+
     def parent_board(self, board: Board) -> Board | None:
         if board.parent_board_id is None:
             return None

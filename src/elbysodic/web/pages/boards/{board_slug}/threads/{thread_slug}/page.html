@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/ui.html" import cast_faces, scene_state_badges %}
 {% end %}
 
 {% def thread_nav_link(item, label) %}
@@ -42,24 +43,7 @@
   {% end %}
 
   <div class="elbysodic-thread-status">
-    <div class="chirpui-cluster chirpui-cluster--sm">
-      {{ badge(thread_view.board.name) }}
-      {% if thread_view.thread.status == "open" %}
-      {{ badge("open to join", variant="info") }}
-      {% elif thread_view.thread.status == "paused" %}
-      {{ badge("paused", variant="warning") }}
-      {% elif thread_view.thread.status == "complete" %}
-      {{ badge("complete", variant="muted") }}
-      {% elif thread_view.thread.status == "private" %}
-      {{ badge("private scene", variant="muted") }}
-      {% elif thread_view.thread.status == "archived" %}
-      {{ badge("archived", variant="muted") }}
-      {% end %}
-      {{ badge("caught up", variant="success") }}
-      {{ badge("watching", variant="info") if thread_view.is_watched else "" }}
-      {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
-      {{ badge("locked", variant="muted") if thread_view.thread.is_locked else "" }}
-    </div>
+    {{ scene_state_badges(thread_view.thread, None, True, thread_view.is_watched) }}
     <form method="post" hx-boost="false">
       <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
       <button type="submit" class="chirpui-btn {{ "chirpui-btn--secondary" if thread_view.is_watched else "chirpui-btn--primary" }}">
@@ -103,20 +87,7 @@
     {% if thread_view.participants %}
     <div class="elbysodic-scene-panel__cast">
       <span class="chirpui-text-muted">Cast</span>
-      <div class="elbysodic-scene-cast">
-        {% for participant in thread_view.participants %}
-        <a class="elbysodic-scene-cast__face"
-           href="/characters/{{ participant.slug }}"
-           title="{{ participant.name }}"
-           aria-label="{{ participant.name }}">
-          {% if participant.avatar_url %}
-          <img src="{{ participant.avatar_url }}" alt="">
-          {% else %}
-          {{ participant.name[:1] }}
-          {% end %}
-        </a>
-        {% end %}
-      </div>
+      {{ cast_faces(thread_view.participants) }}
     </div>
     {% end %}
     {% if thread_view.can_join_scene and viewer.current_character %}
