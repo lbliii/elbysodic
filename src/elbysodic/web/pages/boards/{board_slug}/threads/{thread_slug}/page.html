@@ -14,8 +14,37 @@
 
   {% call section_header(thread_view.thread.title) %}
   {{ badge(thread_view.board.name) }}
-  {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
-  {{ badge("locked", variant="muted") if thread_view.thread.is_locked else "" }}
+  {% end %}
+
+  <div class="elbysodic-thread-status">
+    {{ badge(thread_view.board.name) }}
+    {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
+    {{ badge("locked", variant="muted") if thread_view.thread.is_locked else "" }}
+  </div>
+
+  {% if thread_view.can_moderate %}
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="thread-staff-controls">
+    <div>
+      <h2 id="thread-staff-controls">Staff controls</h2>
+      <p class="chirpui-text-muted">Manage this thread's visibility in the community queue.</p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          {{ "Unpin thread" if thread_view.thread.is_pinned else "Pin thread" }}
+        </button>
+      </form>
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="{{ "unlock" if thread_view.thread.is_locked else "lock" }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          {{ "Unlock thread" if thread_view.thread.is_locked else "Lock thread" }}
+        </button>
+      </form>
+    </div>
+  </section>
+  {% end %}
   {% end %}
 
   <div class="chirpui-stack chirpui-stack--md">
@@ -46,7 +75,14 @@
           <div class="elbysodic-post__meta-line">
             <span>{{ item.created_at_label }}</span>
             {% if item.is_edited %}
+            {% if item.can_edit %}
+            <a class="chirpui-link"
+               href="/boards/{{ thread_view.board.slug }}/threads/{{ thread_view.thread.slug }}/posts/{{ item.post.id }}/revisions">
+              edited {{ item.updated_at_label }}
+            </a>
+            {% else %}
             <span>edited {{ item.updated_at_label }}</span>
+            {% end %}
             {% end %}
           </div>
           <div class="elbysodic-post__meta-actions">
@@ -89,6 +125,7 @@
           class="chirpui-stack chirpui-stack--md"
           x-data="elbysodicComposer('{{ composer_config_id }}')"
           @submit="clearDraft()">
+      <input type="hidden" name="intent" value="reply">
       <div class="elbysodic-composer-heading">
         <div>
           <h2>Reply</h2>

@@ -1,0 +1,80 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link"
+     href="/boards/{{ history.board.slug }}/threads/{{ history.thread.slug }}#{{ history.post.anchor }}">
+    ← {{ history.thread.title }}
+  </a>
+
+  {% call section_header("Post history") %}
+  {{ badge(history.board.name, variant="muted") }}
+  {{ badge("post #" ~ history.post.post.id) }}
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--sm">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <h2>{{ history.post.author.name }}</h2>
+        <p class="chirpui-text-muted">
+          Posted by writer {{ history.post.author_membership.username }}
+          · {{ history.post.created_at_label }}
+        </p>
+      </div>
+      <a class="chirpui-link"
+         href="/boards/{{ history.board.slug }}/threads/{{ history.thread.slug }}/posts/{{ history.post.post.id }}/edit">
+        Edit current post
+      </a>
+    </div>
+    <div class="elbysodic-post-content elbysodic-post-content--compact">
+      {{ history.post.rendered_body }}
+    </div>
+  </article>
+  {% end %}
+
+  <div class="chirpui-stack chirpui-stack--md">
+    {% if history.revisions %}
+    {% for item in history.revisions %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-revision chirpui-stack chirpui-stack--md">
+      <div>
+        <h2>Revision {{ history.revisions | length - loop.index0 }}</h2>
+        <p class="chirpui-text-muted">
+          Edited by writer {{ item.editor_membership.username }}
+          · {{ item.created_at_label }}
+        </p>
+      </div>
+      <div class="elbysodic-revision-grid">
+        <section>
+          <h3>Before</h3>
+          <pre>{{ item.revision.previous_body }}</pre>
+        </section>
+        <section>
+          <h3>After</h3>
+          <pre>{{ item.revision.new_body }}</pre>
+        </section>
+      </div>
+    </article>
+    {% end %}
+    {% end %}
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No revisions recorded yet.</p>
+    {% end %}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

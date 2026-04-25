@@ -247,3 +247,68 @@ def test_thread_reads_are_membership_scoped(repo: ForumRepository) -> None:
         "2026-01-01T00:00:00+00:00"
     )
     assert repo.get_thread_read_at(default.id, thread.id, other_membership.id) is None
+
+
+def test_post_revisions_are_scoped_by_community(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    user = repo.create_user("revisions@example.com", "hash")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "writer",
+        "Writer",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "writer",
+        "Writer Elsewhere",
+    )
+    default_character = repo.create_character(default.id, default_membership.id, "rogue", "Rogue")
+    hosted_character = repo.create_character(hosted.id, hosted_membership.id, "rogue", "Rogue")
+    default_board = repo.create_board(default.id, "ic", "In Character")
+    hosted_board = repo.create_board(hosted.id, "ic", "In Character")
+    default_thread = repo.create_thread(
+        default.id, default_board.id, default_character.id, "a", "A"
+    )
+    hosted_thread = repo.create_thread(hosted.id, hosted_board.id, hosted_character.id, "a", "A")
+    default_post = repo.create_post(default.id, default_thread.id, default_character.id, "Before.")
+    hosted_post = repo.create_post(hosted.id, hosted_thread.id, hosted_character.id, "Before.")
+
+    default_revision = repo.create_post_revision(
+        default.id,
+        default_post.id,
+        default_membership.id,
+        "Before.",
+        "After.",
+    )
+    hosted_revision = repo.create_post_revision(
+        hosted.id,
+        hosted_post.id,
+        hosted_membership.id,
+        "Before.",
+        "Elsewhere.",
+    )
+
+    assert [
+        revision.new_body for revision in repo.list_post_revisions(default.id, default_post.id)
+    ] == ["After."]
+    assert [
+        revision.new_body for revision in repo.list_post_revisions(hosted.id, hosted_post.id)
+    ] == ["Elsewhere."]
+    assert default_revision.community_id == default.id
+    assert hosted_revision.community_id == hosted.id
+
+    with pytest.raises(LookupError):
+        repo.create_post_revision(
+            default.id,
+            hosted_post.id,
+            default_membership.id,
+            "Wrong.",
+            "Wrong.",
+        )

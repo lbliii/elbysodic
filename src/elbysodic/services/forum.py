@@ -17,6 +17,7 @@ from elbysodic.domain.models import (
     Community,
     CommunityMembership,
     Post,
+    PostRevision,
     Role,
     Thread,
 )
@@ -96,6 +97,66 @@ class EditablePostView:
 
 
 @dataclass(frozen=True, slots=True)
+class PostRevisionView:
+    revision: PostRevision
+    editor_membership: CommunityMembership
+    created_at_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class PostRevisionHistory:
+    board: Board
+    thread: Thread
+    post: PostView
+    revisions: list[PostRevisionView]
+
+
+@dataclass(frozen=True, slots=True)
+class ThreadObligationItem:
+    board: Board
+    thread: Thread
+    author: Character
+    latest_post: PostView | None
+    last_own_post: PostView | None
+    reply_count: int
+    is_unread: bool
+    is_started_by_roster: bool
+    needs_reply: bool
+    waiting_on_others: bool
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterThreadActivity:
+    character: Character
+    needs_reply: list[ThreadObligationItem]
+    waiting_on_others: list[ThreadObligationItem]
+    started_by_character: list[ThreadObligationItem]
+    participated: list[ThreadObligationItem]
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterRosterCard:
+    character: Character
+    is_default: bool
+    activity: CharacterThreadActivity
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterRosterDashboard:
+    cards: list[CharacterRosterCard]
+
+
+@dataclass(frozen=True, slots=True)
+class MyThreadsDashboard:
+    needs_reply: list[ThreadObligationItem]
+    waiting_on_others: list[ThreadObligationItem]
+    started_by_me: list[ThreadObligationItem]
+    participated: list[ThreadObligationItem]
+    selected_character: Character | None
+    roster_activity: list[CharacterThreadActivity]
+
+
+@dataclass(frozen=True, slots=True)
 class CharacterAppearance:
     post: PostView
     thread: Thread
@@ -108,6 +169,7 @@ class CharacterProfile:
     is_default: bool
     post_count: int
     thread_count: int
+    activity: CharacterThreadActivity
     recent_posts: list[CharacterAppearance]
 
 
@@ -117,6 +179,7 @@ class ThreadView:
     thread: Thread
     posts: list[PostView]
     can_reply: bool
+    can_moderate: bool
     is_unread: bool
 
 
@@ -267,6 +330,37 @@ class AppServices:
             reverse=True,
         )[:limit]
 
+    def my_threads(self, *, character_slug: str | None = None) -> MyThreadsDashboard:
+        viewer = self.viewer()
+        selected_character = self._selected_character(viewer, character_slug)
+        target_ids = (
+            {selected_character.id}
+            if selected_character is not None
+            else {character.id for character in viewer.roster}
+        )
+        sorted_items = self._thread_obligations(viewer, target_ids)
+        return MyThreadsDashboard(
+            needs_reply=[item for item in sorted_items if item.needs_reply],
+            waiting_on_others=[item for item in sorted_items if item.waiting_on_others],
+            started_by_me=[item for item in sorted_items if item.is_started_by_roster],
+            participated=sorted_items,
+            selected_character=selected_character,
+            roster_activity=self._roster_activity(viewer),
+        )
+
+    def character_roster(self) -> CharacterRosterDashboard:
+        viewer = self.viewer()
+        return CharacterRosterDashboard(
+            cards=[
+                CharacterRosterCard(
+                    character=character,
+                    is_default=viewer.membership.default_character_id == character.id,
+                    activity=self._character_activity(viewer, character),
+                )
+                for character in viewer.roster
+            ]
+        )
+
     def board_threads(
         self,
         board_slug: str,
@@ -346,6 +440,11 @@ class AppServices:
             thread=thread,
             posts=posts,
             can_reply=policies.can_reply(viewer.membership, thread, viewer.role),
+            can_moderate=policies.can_moderate_thread(
+                viewer.membership,
+                thread,
+                viewer.role,
+            ),
             is_unread=is_unread,
         )
 
@@ -384,6 +483,7 @@ class AppServices:
             is_default=viewer.membership.default_character_id == character.id,
             post_count=len(posts),
             thread_count=len(threads),
+            activity=self._character_activity(viewer, character),
             recent_posts=recent_posts,
         )
 
@@ -400,6 +500,31 @@ class AppServices:
                 viewer_membership=viewer.membership,
                 viewer_role=viewer.role,
             ),
+        )
+
+    def read_post_revisions(
+        self,
+        board_slug: str,
+        thread_slug: str,
+        post_id: int,
+    ) -> PostRevisionHistory:
+        viewer = self.viewer()
+        board, thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
+        revisions = [
+            _post_revision_view(self.repo, viewer.community.id, revision)
+            for revision in self.repo.list_post_revisions(viewer.community.id, post.id)
+        ]
+        return PostRevisionHistory(
+            board=board,
+            thread=thread,
+            post=_post_view(
+                self.repo,
+                viewer.community.id,
+                post,
+                viewer_membership=viewer.membership,
+                viewer_role=viewer.role,
+            ),
+            revisions=revisions,
         )
 
     def create_character(
@@ -465,11 +590,44 @@ class AppServices:
 
     def update_post(self, board_slug: str, thread_slug: str, post_id: int, body: str) -> Post:
         viewer = self.viewer()
-        self._editable_post(viewer, board_slug, thread_slug, post_id)
+        _board, _thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
         cleaned = body.strip()
         if not cleaned:
             raise ValueError("post body is required")
+        if cleaned == post.body:
+            return post
+        self.repo.create_post_revision(
+            viewer.community.id,
+            post.id,
+            viewer.membership.id,
+            post.body,
+            cleaned,
+        )
         return self.repo.update_post_body(viewer.community.id, post_id, cleaned)
+
+    def update_thread_state(
+        self,
+        board_slug: str,
+        thread_slug: str,
+        *,
+        is_locked: bool | None = None,
+        is_pinned: bool | None = None,
+    ) -> Thread:
+        viewer = self.viewer()
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
+        if not policies.can_moderate_thread(viewer.membership, thread, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot moderate thread {thread.id}"
+            )
+        return self.repo.update_thread_flags(
+            viewer.community.id,
+            thread.id,
+            is_locked=is_locked,
+            is_pinned=is_pinned,
+        )
 
     def reply_to_thread(
         self, board_slug: str, thread_slug: str, character_id: int, body: str
@@ -566,6 +724,105 @@ class AppServices:
             raise PermissionError(f"membership {viewer.membership.id} cannot edit post {post.id}")
         return board, thread, post
 
+    def _selected_character(
+        self,
+        viewer: ForumView,
+        character_slug: str | None,
+    ) -> Character | None:
+        if not character_slug:
+            return None
+        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
+        if character.membership_id != viewer.membership.id:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot filter by character {character.id}"
+            )
+        return character
+
+    def _character_activity(
+        self,
+        viewer: ForumView,
+        character: Character,
+    ) -> CharacterThreadActivity:
+        items = self._thread_obligations(viewer, {character.id})
+        return CharacterThreadActivity(
+            character=character,
+            needs_reply=[item for item in items if item.needs_reply],
+            waiting_on_others=[item for item in items if item.waiting_on_others],
+            started_by_character=[item for item in items if item.is_started_by_roster],
+            participated=items,
+        )
+
+    def _roster_activity(self, viewer: ForumView) -> list[CharacterThreadActivity]:
+        return [self._character_activity(viewer, character) for character in viewer.roster]
+
+    def _thread_obligations(
+        self,
+        viewer: ForumView,
+        target_character_ids: set[int],
+    ) -> list[ThreadObligationItem]:
+        if not target_character_ids:
+            return []
+        visible_boards = {
+            board.id: board
+            for board in self.repo.list_boards(viewer.community.id)
+            if policies.can_view_board(viewer.membership, board, viewer.role)
+        }
+        items = []
+        for thread in self.repo.list_threads(viewer.community.id):
+            board = visible_boards.get(thread.board_id)
+            if board is None:
+                continue
+            posts = self.repo.list_posts(viewer.community.id, thread.id)
+            if not _thread_belongs_to_roster(thread, posts, target_character_ids):
+                continue
+            latest_post = posts[-1] if posts else None
+            last_own_post = _last_roster_post(posts, target_character_ids)
+            needs_reply = (
+                latest_post is not None
+                and latest_post.author_character_id not in target_character_ids
+                and not thread.is_locked
+            )
+            waiting_on_others = (
+                latest_post is not None
+                and latest_post.author_character_id in target_character_ids
+                and not thread.is_locked
+            )
+            items.append(
+                ThreadObligationItem(
+                    board=board,
+                    thread=thread,
+                    author=self.repo.get_character(
+                        viewer.community.id,
+                        thread.author_character_id,
+                    ),
+                    latest_post=(
+                        _post_view(self.repo, viewer.community.id, latest_post)
+                        if latest_post
+                        else None
+                    ),
+                    last_own_post=(
+                        _post_view(self.repo, viewer.community.id, last_own_post)
+                        if last_own_post
+                        else None
+                    ),
+                    reply_count=max(0, len(posts) - 1),
+                    is_unread=_is_unread(
+                        self.repo,
+                        viewer.community.id,
+                        viewer.membership.id,
+                        thread,
+                    ),
+                    is_started_by_roster=thread.author_character_id in target_character_ids,
+                    needs_reply=needs_reply,
+                    waiting_on_others=waiting_on_others,
+                )
+            )
+        return sorted(
+            items,
+            key=lambda item: (_timestamp_key(item.thread.updated_at), item.thread.id),
+            reverse=True,
+        )
+
 
 def create_services(path: str | Path | None = None) -> AppServices:
     database_path = _resolve_database_path(path)
@@ -647,6 +904,13 @@ def _thread_belongs_to_roster(
     return any(post.author_character_id in roster_character_ids for post in posts)
 
 
+def _last_roster_post(posts: list[Post], roster_character_ids: set[int]) -> Post | None:
+    for post in reversed(posts):
+        if post.author_character_id in roster_character_ids:
+            return post
+    return None
+
+
 def _thread_needs_attention(
     repo: ForumRepository,
     community_id: int,
@@ -702,6 +966,18 @@ def _post_view(
         created_at_label=_timestamp_label(post.created_at),
         updated_at_label=_timestamp_label(post.updated_at),
         anchor=f"post-{post.id}",
+    )
+
+
+def _post_revision_view(
+    repo: ForumRepository,
+    community_id: int,
+    revision: PostRevision,
+) -> PostRevisionView:
+    return PostRevisionView(
+        revision=revision,
+        editor_membership=repo.get_membership(community_id, revision.editor_membership_id),
+        created_at_label=_timestamp_label(revision.created_at),
     )
 
 

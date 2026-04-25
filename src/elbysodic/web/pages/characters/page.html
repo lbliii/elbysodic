@@ -26,31 +26,57 @@
   {% end %}
 
   <div class="elbysodic-character-grid">
-    {% for character in viewer.roster %}
+    {% for card in roster_dashboard.cards %}
     {% call surface(variant="elevated") %}
     <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm">
       <div class="elbysodic-character-card__header">
         <div class="elbysodic-character-card__identity">
           <div class="elbysodic-character-avatar" aria-hidden="true">
-            {% if character.avatar_url %}
-            <img src="{{ character.avatar_url }}" alt="">
+            {% if card.character.avatar_url %}
+            <img src="{{ card.character.avatar_url }}" alt="">
             {% else %}
-            {{ character.name[:1] }}
+            {{ card.character.name[:1] }}
             {% end %}
           </div>
           <div>
             <h2>
-              <a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a>
+              <a class="chirpui-link" href="/characters/{{ card.character.slug }}">{{ card.character.name }}</a>
             </h2>
-            <p class="chirpui-text-muted">{{ character.summary }}</p>
+            <p class="chirpui-text-muted">{{ card.character.summary }}</p>
           </div>
         </div>
-        {% if viewer.current_character and viewer.current_character.id == character.id %}
+        {% if card.is_default %}
         {{ badge("current", variant="success") }}
         {% end %}
       </div>
+      <div class="elbysodic-character-activity">
+        {{ stat(value=card.activity.needs_reply | length, label="Needs reply") }}
+        {{ stat(value=card.activity.waiting_on_others | length, label="Waiting") }}
+        {{ stat(value=card.activity.participated | length, label="Active") }}
+      </div>
+      {% if card.activity.needs_reply %}
+      <p class="elbysodic-character-card__queue">
+        <a class="chirpui-link" href="/my/threads?character={{ card.character.slug }}">Needs {{ card.character.name }}</a>
+        · latest in
+        <a class="chirpui-link"
+           href="/boards/{{ card.activity.needs_reply[0].board.slug }}/threads/{{ card.activity.needs_reply[0].thread.slug }}">
+          {{ card.activity.needs_reply[0].thread.title }}
+        </a>
+      </p>
+      {% elif card.activity.waiting_on_others %}
+      <p class="elbysodic-character-card__queue">
+        <a class="chirpui-link" href="/my/threads?character={{ card.character.slug }}">Waiting on {{ card.character.name }}</a>
+        · latest in
+        <a class="chirpui-link"
+           href="/boards/{{ card.activity.waiting_on_others[0].board.slug }}/threads/{{ card.activity.waiting_on_others[0].thread.slug }}">
+          {{ card.activity.waiting_on_others[0].thread.title }}
+        </a>
+      </p>
+      {% else %}
+      <p class="elbysodic-character-card__queue">No active thread queue.</p>
+      {% end %}
       <div class="chirpui-cluster chirpui-cluster--end">
-        <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ character.slug }}">Manage</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ card.character.slug }}">Manage</a>
       </div>
     </article>
     {% end %}

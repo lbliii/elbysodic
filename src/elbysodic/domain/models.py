@@ -101,3 +101,14 @@ class Post:
     body: str
     created_at: str
     updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class PostRevision:
+    id: int
+    community_id: int
+    post_id: int
+    editor_membership_id: int
+    previous_body: str
+    new_body: str
+    created_at: str

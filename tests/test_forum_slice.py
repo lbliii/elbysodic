@@ -4,10 +4,12 @@ import asyncio
 from pathlib import Path
 from urllib.parse import urlencode
 
+from chirp.app import App
 from chirp.testing import TestClient
 
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed
+from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
@@ -190,6 +192,58 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
     asyncio.run(run())
 
 
+def test_my_threads_tracks_obligations_after_threads_are_read() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        role = repo.get_role_by_slug(community.id, "member")
+        outsider_user = repo.create_user("obligation@example.com", "hash")
+        outsider_membership = repo.create_membership(
+            community.id,
+            outsider_user.id,
+            role.id,
+            "obligation",
+            "Obligation",
+        )
+        outsider = repo.create_character(
+            community.id,
+            outsider_membership.id,
+            "obligation-face",
+            "Obligation Face",
+        )
+        board = repo.get_board_by_slug(community.id, "plotting")
+        thread = repo.get_thread_by_slug(community.id, board.id, "open-thread-roster")
+        repo.create_post(
+            community.id,
+            thread.id,
+            outsider.id,
+            "A different writer puts the ball back in your court.",
+        )
+
+        async with TestClient(app) as client:
+            read_thread = await client.get("/boards/plotting/threads/open-thread-roster")
+            assert read_thread.status == 200
+
+            dashboard = await client.get("/my/threads")
+            assert dashboard.status == 200
+            assert "My threads" in dashboard.text
+            assert "Needs reply" in dashboard.text
+            assert "Waiting on others" in dashboard.text
+            assert "Started by me" in dashboard.text
+            assert "All participated" in dashboard.text
+            assert "Open thread roster" in dashboard.text
+            assert "Obligation Face" in dashboard.text
+            assert "needs reply" in dashboard.text
+            assert "Sentinel drill after midnight" in dashboard.text
+            assert "waiting" in dashboard.text
+            assert "Welcome to the rebuild" in dashboard.text
+            assert "/boards/plotting/threads/open-thread-roster#post-" in dashboard.text
+
+    asyncio.run(run())
+
+
 def test_locked_seed_thread_suppresses_reply_composer() -> None:
     async def run() -> None:
         app = _app()
@@ -270,6 +324,36 @@ def test_character_roster_and_profiles_are_community_scoped() -> None:
             assert "Power-stealing brawler with a careful heart." in profile.text
             assert "Sentinel drill after midnight" in profile.text
             assert "#post-" in profile.text
+
+    asyncio.run(run())
+
+
+def test_character_activity_center_tracks_identity_specific_threads() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            roster = await client.get("/characters")
+            assert roster.status == 200
+            assert "Needs Rogue" in roster.text
+            assert "Waiting on Magneto" in roster.text
+            assert "/my/threads?character=rogue" in roster.text
+
+            profile = await client.get("/characters/rogue")
+            assert profile.status == 200
+            assert "Active threads" in profile.text
+            assert "Open filtered queue" in profile.text
+            assert "Open thread roster" in profile.text
+            assert "Sentinel drill after midnight" in profile.text
+            assert "needs reply" in profile.text
+            assert "waiting" in profile.text
+
+            filtered = await client.get("/my/threads?character=rogue")
+            assert filtered.status == 200
+            assert "Character threads" in filtered.text
+            assert "Rogue · 1" in filtered.text
+            assert "Open thread roster" in filtered.text
+            assert "Sentinel drill after midnight" in filtered.text
+            assert "Welcome to the rebuild" not in filtered.text
 
     asyncio.run(run())
 
@@ -455,7 +539,51 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
             assert '<script>alert("x")</script>' not in thread.text
             assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in thread.text
             assert "edited" in thread.text
+            assert f"/posts/{post_id}/revisions" in thread.text
             assert f"/posts/{post_id}/edit" in thread.text
+
+            revisions = await client.get(
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/revisions"
+            )
+            assert revisions.status == 200
+            assert "Post history" in revisions.text
+            assert "Revision 1" in revisions.text
+            assert "Original typo." in revisions.text
+            assert "**Updated** line." in revisions.text
+            assert "writer starlane" in revisions.text
+
+    asyncio.run(run())
+
+
+def test_noop_post_edit_does_not_create_revision() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        storm = next(
+            character for character in services.viewer().roster if character.name == "Storm"
+        )
+
+        async with TestClient(app) as client:
+            created = await client.post(
+                "/boards/plotting/threads/open-thread-roster",
+                body=urlencode({"character_id": storm.id, "body": "Already polished."}).encode(),
+                headers=_FORM,
+            )
+            assert created.status == 302
+            post_id = int(dict(created.headers)["location"].split("#post-")[1])
+            original = repo.get_post(services.seed.community.id, post_id)
+
+            edited = await client.post(
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit",
+                body=urlencode({"body": "Already polished."}).encode(),
+                headers=_FORM,
+            )
+            assert edited.status == 302
+
+            unchanged = repo.get_post(services.seed.community.id, post_id)
+            assert unchanged.updated_at == original.updated_at
+            assert repo.list_post_revisions(services.seed.community.id, post_id) == []
 
     asyncio.run(run())
 
@@ -505,6 +633,7 @@ def test_writer_cannot_edit_someone_elses_post() -> None:
             assert repo.get_post(community.id, outsider_post.id).body == (
                 "This belongs to another writer."
             )
+            assert repo.list_post_revisions(community.id, outsider_post.id) == []
 
     asyncio.run(run())
 
@@ -530,6 +659,79 @@ def test_locked_threads_still_allow_editing_own_existing_post() -> None:
             restored = await client.get("/boards/announcements/threads/welcome-to-the-rebuild")
             assert "Updated staff note." in restored.text
             assert "Thread locked" in restored.text
+
+    asyncio.run(run())
+
+
+def test_staff_can_pin_and_lock_threads() -> None:
+    async def run() -> None:
+        app, repo, community, thread = _moderation_app(is_admin=True)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/ic/threads/moderation-queue")
+            assert page.status == 200
+            assert "Staff controls" in page.text
+            assert "Pin thread" in page.text
+            assert "Lock thread" in page.text
+
+            pinned = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=b"intent=pin",
+                headers=_FORM,
+            )
+            assert pinned.status == 302
+            assert repo.get_thread(community.id, thread.id).is_pinned is True
+
+            locked = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=b"intent=lock",
+                headers=_FORM,
+            )
+            assert locked.status == 302
+            assert repo.get_thread(community.id, thread.id).is_locked is True
+
+            updated = await client.get("/boards/ic/threads/moderation-queue")
+            assert "pinned" in updated.text
+            assert "locked" in updated.text
+            assert "Unpin thread" in updated.text
+            assert "Unlock thread" in updated.text
+
+            unpinned = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=b"intent=unpin",
+                headers=_FORM,
+            )
+            assert unpinned.status == 302
+            assert repo.get_thread(community.id, thread.id).is_pinned is False
+
+            unlocked = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=b"intent=unlock",
+                headers=_FORM,
+            )
+            assert unlocked.status == 302
+            assert repo.get_thread(community.id, thread.id).is_locked is False
+
+    asyncio.run(run())
+
+
+def test_regular_members_cannot_manage_thread_lifecycle() -> None:
+    async def run() -> None:
+        app, repo, community, thread = _moderation_app(is_admin=False)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/ic/threads/moderation-queue")
+            assert page.status == 200
+            assert "Staff controls" not in page.text
+
+            response = await client.post(
+                "/boards/ic/threads/moderation-queue",
+                body=b"intent=lock",
+                headers=_FORM,
+            )
+            assert response.status == 403
+            assert repo.get_thread(community.id, thread.id).is_locked is False
+            assert repo.get_thread(community.id, thread.id).is_pinned is False
 
     asyncio.run(run())
 
@@ -672,3 +874,53 @@ def test_composer_pages_point_empty_roster_to_character_setup() -> None:
 
 def test_app_contract_check_passes() -> None:
     _app().check()
+
+
+def _moderation_app(
+    *,
+    is_admin: bool,
+) -> tuple[App, ForumRepository, Community, Thread]:
+    connection = connect(check_same_thread=False)
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Moderation Test")
+    role = repo.create_role(
+        community.id,
+        "staff" if is_admin else "member",
+        "Staff" if is_admin else "Member",
+        is_admin=is_admin,
+    )
+    user = repo.create_user("moderator@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "modlane" if is_admin else "memberlane",
+        "Mod Lane" if is_admin else "Member Lane",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "moderator-face" if is_admin else "member-face",
+        "Moderator Face" if is_admin else "Member Face",
+        make_default=True,
+    )
+    board = repo.create_board(community.id, "ic", "In Character")
+    thread = repo.create_thread(
+        community.id,
+        board.id,
+        character.id,
+        "moderation-queue",
+        "Moderation Queue",
+    )
+    repo.create_post(community.id, thread.id, character.id, "A thread ready for staff tools.")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            community=community,
+            user=user,
+            membership=repo.get_membership(community.id, membership.id),
+            default_character=character,
+        ),
+    )
+    return create_app(debug=False, services=services), repo, community, thread

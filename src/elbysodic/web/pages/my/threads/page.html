@@ -1,0 +1,137 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def thread_item(item) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-thread-card {{ "elbysodic-thread-card--unread" if item.is_unread else "" }}">
+  <div class="chirpui-cluster chirpui-cluster--between elbysodic-thread-card__header">
+    <div>
+      <h3>
+        <a class="chirpui-link" href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}">
+          {{ item.thread.title }}
+        </a>
+      </h3>
+      <p class="elbysodic-thread-card__meta">
+        {{ item.board.name }}
+        · started by
+        <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
+      </p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      {{ badge("needs reply", variant="warning") if item.needs_reply else "" }}
+      {{ badge("waiting", variant="info") if item.waiting_on_others else "" }}
+      {{ badge("started by me", variant="success") if item.is_started_by_roster else "" }}
+      {{ badge("unread", variant="info") if item.is_unread else "" }}
+      {{ badge("locked", variant="muted") if item.thread.is_locked else "" }}
+      {{ stat(value=item.reply_count, label="Replies") }}
+    </div>
+  </div>
+  {% if item.latest_post %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Latest</span>
+    <span class="chirpui-text-muted">
+      <a class="chirpui-link"
+         href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.latest_post.anchor }}">
+        {{ item.latest_post.author.name }}
+      </a>
+      · writer {{ item.latest_post.author_membership.username }}
+      · {{ item.latest_post.updated_at_label }}
+    </span>
+  </div>
+  {% end %}
+  {% if item.last_own_post %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Your last post</span>
+    <span class="chirpui-text-muted">
+      <a class="chirpui-link"
+         href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.last_own_post.anchor }}">
+        {{ item.last_own_post.author.name }}
+      </a>
+      · {{ item.last_own_post.updated_at_label }}
+    </span>
+  </div>
+  {% end %}
+</article>
+{% end %}
+{% end %}
+
+{% def thread_section(title, subtitle, items, empty_text) %}
+{% call section_header(title) %}
+{{ subtitle }}
+{% end %}
+<div class="chirpui-stack chirpui-stack--sm">
+  {% if items %}
+  {% for item in items %}
+    {{ thread_item(item) }}
+  {% end %}
+  {% else %}
+  {% call surface(variant="elevated") %}
+  <p class="elbysodic-empty-state">{{ empty_text }}</p>
+  {% end %}
+  {% end %}
+</div>
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% if dashboard.selected_character %}
+  {% call section_header("Character threads") %}
+  {{ dashboard.selected_character.name }}'s current queue.
+  {% end %}
+  {% else %}
+  {% call section_header("My threads") %}
+  Track where your roster owes replies and where you are waiting on other writers.
+  {% end %}
+  {% end %}
+
+  <div class="elbysodic-filter-bar">
+    <a class="chirpui-btn {{ "chirpui-btn--primary" if not dashboard.selected_character else "chirpui-btn--secondary" }}"
+       href="/my/threads">
+      Whole roster
+    </a>
+    {% for activity in dashboard.roster_activity %}
+    <a class="chirpui-btn {{ "chirpui-btn--primary" if dashboard.selected_character and dashboard.selected_character.id == activity.character.id else "chirpui-btn--secondary" }}"
+       href="/my/threads?character={{ activity.character.slug }}">
+      {{ activity.character.name }} · {{ activity.needs_reply | length }}
+    </a>
+    {% end %}
+  </div>
+
+  {% call cluster(gap="sm") %}
+    {{ stat(value=dashboard.needs_reply | length, label="Needs reply") }}
+    {{ stat(value=dashboard.waiting_on_others | length, label="Waiting") }}
+    {{ stat(value=dashboard.started_by_me | length, label="Started") }}
+    {{ stat(value=dashboard.participated | length, label="All active") }}
+  {% end %}
+
+  {% if dashboard.selected_character %}
+  {{ thread_section("Needs reply", "Threads where another face currently has the last word.", dashboard.needs_reply, "Nothing needs this character right now.") }}
+
+  {{ thread_section("Waiting on others", "Threads where this character currently has the last word.", dashboard.waiting_on_others, "This character is not waiting on active threads yet.") }}
+
+  {{ thread_section("Started by character", "Threads opened by this character.", dashboard.started_by_me, "This character has not started any visible threads yet.") }}
+
+  {{ thread_section("All participated", "Every visible thread touched by this character.", dashboard.participated, "This character has not joined any visible threads yet.") }}
+  {% else %}
+  {{ thread_section("Needs reply", "Participated threads where someone outside your roster posted last.", dashboard.needs_reply, "Nothing needs a reply right now.") }}
+
+  {{ thread_section("Waiting on others", "Threads where one of your characters currently has the last word.", dashboard.waiting_on_others, "You are not waiting on any active threads yet.") }}
+
+  {{ thread_section("Started by me", "Threads opened by one of your community characters.", dashboard.started_by_me, "No threads started by your roster yet.") }}
+
+  {{ thread_section("All participated", "Every visible thread touched by your roster.", dashboard.participated, "Your roster has not joined any visible threads yet.") }}
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

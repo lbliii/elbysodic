@@ -104,6 +104,16 @@ CREATE TABLE IF NOT EXISTS posts (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS post_revisions (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    editor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
+    previous_body TEXT NOT NULL,
+    new_body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS themes (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -137,6 +147,7 @@ CREATE TABLE IF NOT EXISTS thread_reads (
 CREATE INDEX IF NOT EXISTS idx_boards_community_sort ON boards(community_id, sort_order, name);
 CREATE INDEX IF NOT EXISTS idx_threads_community_board ON threads(community_id, board_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_posts_community_thread ON posts(community_id, thread_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_post_revisions_post ON post_revisions(community_id, post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON community_memberships(user_id, community_id);
 CREATE INDEX IF NOT EXISTS idx_characters_membership ON characters(community_id, membership_id, name);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);

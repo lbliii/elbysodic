@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
@@ -18,6 +19,21 @@ def get(request: Request, board_slug: str, thread_slug: str) -> Page:
 async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Redirect:
     services = get_services()
     form = await request.form()
+    intent = str(form.get("intent") or "reply")
+    if intent in {"lock", "unlock", "pin", "unpin"}:
+        try:
+            services.update_thread_state(
+                board_slug,
+                thread_slug,
+                is_locked=_locked_state(intent),
+                is_pinned=_pinned_state(intent),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        return Redirect(request.path)
+
     character_id = _parse_character_id(form.get("character_id"))
     body = str(form.get("body") or "")
 
@@ -93,6 +109,26 @@ def _parse_character_id(raw: object) -> int:
         return int(str(raw or ""))
     except ValueError as exc:
         raise ValueError("choose a character before posting") from exc
+
+
+def _locked_state(intent: str) -> bool | None:
+    match intent:
+        case "lock":
+            return True
+        case "unlock":
+            return False
+        case _:
+            return None
+
+
+def _pinned_state(intent: str) -> bool | None:
+    match intent:
+        case "pin":
+            return True
+        case "unpin":
+            return False
+        case _:
+            return None
 
 
 def _select_character(roster: list[Character], character_id: int) -> Character:

@@ -12,6 +12,7 @@ from elbysodic.domain.models import (
     Community,
     CommunityMembership,
     Post,
+    PostRevision,
     Role,
     Thread,
     User,
@@ -664,6 +665,73 @@ class ForumRepository:
         self.connection.commit()
         return self.get_post(community_id, post_id)
 
+    def create_post_revision(
+        self,
+        community_id: int,
+        post_id: int,
+        editor_membership_id: int,
+        previous_body: str,
+        new_body: str,
+    ) -> PostRevision:
+        self.get_post(community_id, post_id)
+        self.get_membership(community_id, editor_membership_id)
+        cursor = self.connection.execute(
+            """
+            INSERT INTO post_revisions (
+                community_id,
+                post_id,
+                editor_membership_id,
+                previous_body,
+                new_body,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (community_id, post_id, editor_membership_id, previous_body, new_body, _utc_now()),
+        )
+        self.connection.commit()
+        return self.get_post_revision(community_id, _last_id(cursor))
+
+    def get_post_revision(self, community_id: int, revision_id: int) -> PostRevision:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                post_id,
+                editor_membership_id,
+                previous_body,
+                new_body,
+                created_at
+            FROM post_revisions
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, revision_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"post revision not found in community {community_id}: {revision_id}")
+        return _post_revision_from_row(row)
+
+    def list_post_revisions(self, community_id: int, post_id: int) -> list[PostRevision]:
+        self.get_post(community_id, post_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                post_id,
+                editor_membership_id,
+                previous_body,
+                new_body,
+                created_at
+            FROM post_revisions
+            WHERE community_id = ? AND post_id = ?
+            ORDER BY created_at DESC, id DESC
+            """,
+            (community_id, post_id),
+        ).fetchall()
+        return [_post_revision_from_row(row) for row in rows]
+
     def get_post(self, community_id: int, post_id: int) -> Post:
         row = self.connection.execute(
             """
@@ -917,4 +985,16 @@ def _post_from_row(row: sqlite3.Row) -> Post:
         body=row["body"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+    )
+
+
+def _post_revision_from_row(row: sqlite3.Row) -> PostRevision:
+    return PostRevision(
+        id=row["id"],
+        community_id=row["community_id"],
+        post_id=row["post_id"],
+        editor_membership_id=row["editor_membership_id"],
+        previous_body=row["previous_body"],
+        new_body=row["new_body"],
+        created_at=row["created_at"],
     )

@@ -1,8 +1,47 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def character_thread_item(item) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-thread-card {{ "elbysodic-thread-card--unread" if item.is_unread else "" }}">
+  <div class="chirpui-cluster chirpui-cluster--between elbysodic-thread-card__header">
+    <div>
+      <h3>
+        <a class="chirpui-link" href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}">
+          {{ item.thread.title }}
+        </a>
+      </h3>
+      <p class="elbysodic-thread-card__meta">
+        {{ item.board.name }} · started by
+        <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
+      </p>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      {{ badge("needs reply", variant="warning") if item.needs_reply else "" }}
+      {{ badge("waiting", variant="info") if item.waiting_on_others else "" }}
+      {{ badge("started", variant="success") if item.is_started_by_roster else "" }}
+      {{ badge("locked", variant="muted") if item.thread.is_locked else "" }}
+      {{ stat(value=item.reply_count, label="Replies") }}
+    </div>
+  </div>
+  {% if item.latest_post %}
+  <div class="elbysodic-latest">
+    <span class="chirpui-text-muted">Latest</span>
+    <span class="chirpui-text-muted">
+      <a class="chirpui-link"
+         href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.latest_post.anchor }}">
+        {{ item.latest_post.author.name }}
+      </a>
+      · {{ item.latest_post.updated_at_label }}
+    </span>
+  </div>
+  {% end %}
+</article>
+{% end %}
 {% end %}
 
 {% block page_root %}
@@ -36,6 +75,8 @@
     {% call cluster(gap="sm") %}
       {{ stat(value=profile.post_count, label="Posts") }}
       {{ stat(value=profile.thread_count, label="Threads started") }}
+      {{ stat(value=profile.activity.needs_reply | length, label="Needs reply") }}
+      {{ stat(value=profile.activity.participated | length, label="Active") }}
       {{ stat(value=viewer.membership.username, label="Writer") }}
     {% end %}
     <div class="chirpui-cluster chirpui-cluster--end">
@@ -48,6 +89,24 @@
     </div>
   </article>
   {% end %}
+
+  <div class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Active threads") %}
+    {{ profile.character.name }}'s current writing queue.
+    {% end %}
+    {% call cluster(gap="sm") %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">Open filtered queue</a>
+    {% end %}
+    {% if profile.activity.participated %}
+    {% for item in profile.activity.participated %}
+      {{ character_thread_item(item) }}
+    {% end %}
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">{{ profile.character.name }} has not joined any visible threads yet.</p>
+    {% end %}
+    {% end %}
+  </div>
 
   {% call surface(variant="elevated") %}
   <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">

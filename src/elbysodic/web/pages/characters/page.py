@@ -61,13 +61,15 @@ def _render_roster(
     avatar_url: str = "",
     make_default: bool = False,
 ) -> Page:
-    viewer = get_services().viewer()
+    services = get_services()
+    viewer = services.viewer()
     return Page(
         "characters/page.html",
         "page_content",
         page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
+        roster_dashboard=services.character_roster(),
         error=error,
         name=name,
         summary=summary,

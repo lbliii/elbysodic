@@ -200,9 +200,31 @@ body {
     gap: 0.5rem;
 }
 
+.elbysodic-staff-panel {
+    background: color-mix(in srgb, var(--chirpui-warning) 7%, var(--chirpui-surface));
+}
+
+.elbysodic-staff-panel h2,
+.elbysodic-staff-panel p {
+    margin: 0;
+}
+
+.elbysodic-thread-status {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: -0.75rem;
+}
+
 .elbysodic-thread-card {
     display: grid;
     gap: 0.875rem;
+}
+
+.elbysodic-thread-card h3 {
+    font-size: var(--chirpui-font-xl);
+    margin: 0;
 }
 
 .elbysodic-thread-card--unread {
@@ -250,6 +272,19 @@ body {
 
 .elbysodic-character-card {
     min-height: 8.5rem;
+}
+
+.elbysodic-character-activity {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.elbysodic-character-card__queue {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    color: var(--chirpui-text-muted);
+    margin: 0;
+    padding-top: 0.875rem;
 }
 
 .elbysodic-character-card__header,
@@ -431,7 +466,7 @@ body {
 }
 
 .elbysodic-post-content--compact {
-    font-size: var(--chirpui-font-md);
+    font-size: var(--chirpui-font-base);
 }
 
 .elbysodic-post-content p,
@@ -477,6 +512,33 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
+}
+
+.elbysodic-revision-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.elbysodic-revision h3 {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+}
+
+.elbysodic-revision pre {
+    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius);
+    color: var(--chirpui-text);
+    font-family: var(--chirpui-font-mono);
+    font-size: var(--chirpui-font-sm);
+    line-height: var(--chirpui-line-height-relaxed);
+    margin: 0;
+    overflow-x: auto;
+    padding: 1rem;
+    white-space: pre-wrap;
 }
 
 @media (max-width: 48rem) {
