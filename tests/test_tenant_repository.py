@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db.repositories.base import TenantBoundaryError
 
 
 @pytest.fixture
@@ -23,6 +24,113 @@ def test_boards_are_scoped_by_community(repo: ForumRepository) -> None:
 
     assert [board.name for board in repo.list_boards(default.id)] == ["Announcements"]
     assert [board.name for board in repo.list_boards(hosted.id)] == ["Hosted Announcements"]
+
+
+def test_schema_migrates_existing_boards_for_place_navigation() -> None:
+    connection = connect()
+    connection.executescript(
+        """
+        CREATE TABLE communities (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE,
+            host TEXT UNIQUE,
+            default_theme_id INTEGER,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE boards (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            slug TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_private INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, slug)
+        );
+        INSERT INTO communities (id, name, slug, host, default_theme_id, created_at, updated_at)
+        VALUES (1, 'Default', 'default', NULL, NULL, '2026-01-01T00:00:00', '2026-01-01T00:00:00');
+        INSERT INTO boards (
+            id, community_id, slug, name, description, sort_order, is_private, created_at, updated_at
+        )
+        VALUES (
+            1, 1, 'ic', 'In Character', 'Old board shape.', 10, 0,
+            '2026-01-01T00:00:00', '2026-01-01T00:00:00'
+        );
+        """
+    )
+
+    create_schema(connection)
+
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(boards)").fetchall()}
+    indexes = {row["name"] for row in connection.execute("PRAGMA index_list(boards)").fetchall()}
+    board = connection.execute(
+        """
+        SELECT parent_board_id, board_kind, tagline, image_url, image_alt
+        FROM boards
+        WHERE id = 1
+        """
+    ).fetchone()
+
+    assert {"parent_board_id", "board_kind", "tagline", "image_url", "image_alt"}.issubset(columns)
+    assert "idx_boards_parent_sort" in indexes
+    assert dict(board) == {
+        "parent_board_id": None,
+        "board_kind": "location",
+        "tagline": "",
+        "image_url": None,
+        "image_alt": "",
+    }
+
+
+def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    parent = repo.create_board(default.id, "academy", "Academy", board_kind="location")
+    hosted_parent = repo.create_board(hosted.id, "academy", "Academy", board_kind="location")
+
+    child = repo.create_board(
+        default.id,
+        "med-bay",
+        "Med Bay",
+        parent_board_id=parent.id,
+        board_kind="sublocation",
+    )
+
+    assert child.parent_board_id == parent.id
+    assert [board.slug for board in repo.list_child_boards(default.id, parent.id)] == ["med-bay"]
+    assert [board.slug for board in repo.list_child_boards(default.id, None)] == ["academy"]
+
+    with pytest.raises(LookupError):
+        repo.create_board(
+            default.id,
+            "wrong-house",
+            "Wrong House",
+            parent_board_id=hosted_parent.id,
+        )
+
+
+def test_board_cannot_parent_itself(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    board = repo.create_board(community.id, "academy", "Academy", board_kind="location")
+
+    with pytest.raises(TenantBoundaryError):
+        repo.update_board(
+            community.id,
+            board.id,
+            name=board.name,
+            description=board.description,
+            sort_order=board.sort_order,
+            parent_board_id=board.id,
+            board_kind=board.board_kind,
+            tagline=board.tagline,
+            image_url=board.image_url,
+            image_alt=board.image_alt,
+            is_private=board.is_private,
+        )
 
 
 def test_public_identity_is_membership_scoped(repo: ForumRepository) -> None:

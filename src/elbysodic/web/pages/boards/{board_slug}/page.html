@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/boards.html" import subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
 {% end %}
@@ -13,37 +14,6 @@
 </a>
 {% end %}
 
-{% def subboard_card(summary) %}
-{% call surface(variant="elevated") %}
-<article class="chirpui-stack chirpui-stack--sm elbysodic-subboard-card">
-  <a class="elbysodic-board-poster elbysodic-board-poster--compact"
-     href="/boards/{{ summary.board.slug }}"
-     aria-label="{{ summary.board.name }}"
-     {% if summary.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.82)), url('{{ summary.board.image_url }}');"{% end %}>
-    <span>{{ summary.board.tagline or summary.board.board_kind }}</span>
-  </a>
-  <div>
-    <h2><a class="chirpui-link" href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a></h2>
-    <p class="chirpui-text-muted">{{ summary.board.description }}</p>
-  </div>
-  {{ facet_pills(summary.facets) }}
-  <div class="chirpui-cluster chirpui-cluster--sm">
-    {{ badge(summary.unread_thread_count ~ " new", variant="info") if summary.unread_thread_count else "" }}
-    {{ badge("for " ~ viewer.current_character.name, variant="success") if summary.is_relevant_to_current_face and viewer.current_character else "" }}
-  </div>
-  {% if summary.latest_thread %}
-  <div class="elbysodic-latest">
-    <span class="chirpui-text-muted">Latest</span>
-    <a class="chirpui-link"
-       href="/boards/{{ summary.latest_board.slug if summary.latest_board else summary.board.slug }}/threads/{{ summary.latest_thread.slug }}#{{ summary.latest_post.anchor if summary.latest_post else "" }}">
-      {{ summary.latest_thread.title }}
-    </a>
-  </div>
-  {% end %}
-</article>
-{% end %}
-{% end %}
-
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
@@ -51,7 +21,15 @@
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
   <div class="chirpui-cluster chirpui-cluster--between">
-    <a class="chirpui-link" href="{{ "/boards/" ~ parent_board.slug if parent_board else "/" }}">← {{ parent_board.name if parent_board else "World" }}</a>
+    <nav class="elbysodic-place-path" aria-label="Place path">
+      <a href="/">World</a>
+      {% if parent_board %}
+      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
+      <a href="/boards/{{ parent_board.slug }}">{{ parent_board.name }}</a>
+      {% end %}
+      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
+      <span aria-current="page">{{ board.name }}</span>
+    </nav>
     <div class="chirpui-cluster chirpui-cluster--sm">
       {% if next_unread_thread %}
       {{ next_unread_link(next_unread_thread) }}
@@ -89,7 +67,7 @@
   {% end %}
   <div class="elbysodic-subboard-grid">
     {% for summary in subboards %}
-    {{ subboard_card(summary) }}
+    {{ subboard_card(summary, viewer) }}
     {% end %}
   </div>
   {% end %}

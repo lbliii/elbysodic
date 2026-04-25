@@ -22,4 +22,5 @@ def get(request: Request, material_slug: str) -> Page:
         current_path=request.url,
         viewer=services.viewer(),
         material=material,
+        guidebook=services.world_hub(),
     )

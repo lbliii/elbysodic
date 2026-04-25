@@ -11,6 +11,7 @@ from typing import Literal, cast
 
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, seed_demo_forum
+from elbysodic.domain.boards import is_community_board, is_location_board
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -69,31 +70,6 @@ APPLICATION_STATUS_VARIANTS: dict[str, str] = {
     "revision_requested": "warning",
     "rejected": "muted",
 }
-LOCATION_BOARD_SLUGS = frozenset(
-    {
-        "xavier-institute",
-        "new-york-city",
-        "mutant-underground",
-        "trask-b24-facilities",
-        "united-nations",
-        "genosha",
-        "danger-room",
-    }
-)
-COMMUNITY_BOARD_SLUGS = frozenset({"announcements", "plotting", "out-of-character", "archive"})
-DESK_BOARD_SLUGS = frozenset({"applications", "staff-room"})
-
-
-def is_location_board(board: Board) -> bool:
-    return board.board_kind in {"location", "sublocation"} or board.slug in LOCATION_BOARD_SLUGS
-
-
-def is_community_board(board: Board) -> bool:
-    return board.board_kind == "community" or board.slug in COMMUNITY_BOARD_SLUGS
-
-
-def is_desk_board(board: Board) -> bool:
-    return board.board_kind == "desk" or board.slug in DESK_BOARD_SLUGS
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,11 +85,43 @@ class BoardSummary:
     facets: list[FacetTag]
     is_relevant_to_current_face: bool
 
+    @property
+    def href(self) -> str:
+        return f"/boards/{self.board.slug}"
+
+    @property
+    def latest_href(self) -> str | None:
+        if self.latest_thread is None:
+            return None
+        board = self.latest_board or self.board
+        anchor = f"#{self.latest_post.anchor}" if self.latest_post else ""
+        return f"/boards/{board.slug}/threads/{self.latest_thread.slug}{anchor}"
+
+    @property
+    def display_tagline(self) -> str:
+        return self.board.tagline or self.board.board_kind
+
+    @property
+    def has_children(self) -> bool:
+        return bool(self.child_boards)
+
 
 @dataclass(frozen=True, slots=True)
 class BoardNavigationItem:
     board: Board
     unread_thread_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class LocationNavigationGroup:
+    parent: BoardNavigationItem
+    children: list[BoardNavigationItem]
+
+    @property
+    def unread_thread_count(self) -> int:
+        return self.parent.unread_thread_count + sum(
+            child.unread_thread_count for child in self.children
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -612,6 +620,7 @@ class ForumView:
     roster: list[Character]
     navigation_boards: list[BoardNavigationItem]
     location_navigation_boards: list[BoardNavigationItem]
+    location_navigation_groups: list[LocationNavigationGroup]
     community_navigation_boards: list[BoardNavigationItem]
     unread_notification_count: int
 
@@ -642,6 +651,7 @@ class AppServices:
                 for item in navigation_boards
                 if item.board.parent_board_id is None and is_location_board(item.board)
             ],
+            location_navigation_groups=_location_navigation_groups(navigation_boards),
             community_navigation_boards=[
                 item
                 for item in navigation_boards
@@ -2338,6 +2348,32 @@ def _board_navigation(
         )
         items.append(BoardNavigationItem(board=board, unread_thread_count=unread_thread_count))
     return items
+
+
+def _location_navigation_groups(
+    navigation_boards: list[BoardNavigationItem],
+) -> list[LocationNavigationGroup]:
+    parents = [
+        item
+        for item in navigation_boards
+        if item.board.parent_board_id is None and is_location_board(item.board)
+    ]
+    children_by_parent: dict[int, list[BoardNavigationItem]] = {
+        item.board.id: [] for item in parents
+    }
+    for item in navigation_boards:
+        parent_id = item.board.parent_board_id
+        if parent_id is None or not is_location_board(item.board):
+            continue
+        if parent_id in children_by_parent:
+            children_by_parent[parent_id].append(item)
+    return [
+        LocationNavigationGroup(
+            parent=parent,
+            children=children_by_parent[parent.board.id],
+        )
+        for parent in parents
+    ]
 
 
 def _board_summary(

@@ -24,6 +24,7 @@ from elbysodic.db.repositories.rows import (
     _wanted_ad_from_row,
     _wanted_ad_interest_from_row,
 )
+from elbysodic.domain.boards import normalize_board_kind
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -63,6 +64,7 @@ class ForumRepository(
     ) -> Board:
         if parent_board_id is not None:
             self.get_board(community_id, parent_board_id)
+        normalized_board_kind = normalize_board_kind(board_kind)
         now = _utc_now()
         cursor = self.connection.execute(
             """
@@ -88,7 +90,7 @@ class ForumRepository(
                 parent_board_id,
                 slug,
                 name,
-                board_kind,
+                normalized_board_kind,
                 tagline,
                 description,
                 image_url,
@@ -122,6 +124,7 @@ class ForumRepository(
             parent = self.get_board(community_id, parent_board_id)
             if parent.id == board.id:
                 raise TenantBoundaryError("board cannot be its own parent")
+        normalized_board_kind = normalize_board_kind(board_kind)
         self.connection.execute(
             """
             UPDATE boards
@@ -141,7 +144,7 @@ class ForumRepository(
             (
                 parent_board_id,
                 name,
-                board_kind,
+                normalized_board_kind,
                 tagline,
                 description,
                 image_url,

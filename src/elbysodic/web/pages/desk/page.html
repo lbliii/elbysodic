@@ -1,0 +1,43 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="62rem") %}
+{% call stack(gap="lg") %}
+  <section class="chirpui-stack chirpui-stack--sm elbysodic-desk-hero">
+    <p class="elbysodic-kicker">Writer Desk</p>
+    <h1>{{ viewer.current_character.name if viewer.current_character else viewer.membership.display_name }}</h1>
+    <p class="chirpui-text-muted">
+      The behind-the-scenes workbench for your scenes, faces, alerts, applications, and plotting tools.
+    </p>
+  </section>
+
+  {% call section_header("Tools") %}
+  Everything here supports the writing; the world map stays focused on places.
+  {% end %}
+
+  <div class="elbysodic-desk-grid">
+    {% for item in desk_links %}
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm elbysodic-desk-card">
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <h2><a class="chirpui-link" href="{{ item.href }}">{{ item.label }}</a></h2>
+        {{ badge(item.count ~ " new", variant="info") if item.count else "" }}
+      </div>
+      <p class="chirpui-text-muted">{{ item.summary }}</p>
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

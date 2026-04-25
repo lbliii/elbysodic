@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
+from elbysodic.domain.boards import normalize_board_kind
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -82,7 +83,7 @@ def _board_from_row(row: sqlite3.Row) -> Board:
         parent_board_id=row["parent_board_id"],
         slug=row["slug"],
         name=row["name"],
-        board_kind=row["board_kind"],
+        board_kind=normalize_board_kind(row["board_kind"]),
         tagline=row["tagline"],
         description=row["description"],
         image_url=row["image_url"],

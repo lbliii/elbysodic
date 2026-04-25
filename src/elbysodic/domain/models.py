@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from elbysodic.domain.boards import BoardKind
+
 
 @dataclass(frozen=True, slots=True)
 class Community:
@@ -57,7 +59,7 @@ class Board:
     parent_board_id: int | None
     slug: str
     name: str
-    board_kind: str
+    board_kind: BoardKind
     tagline: str
     description: str
     image_url: str | None

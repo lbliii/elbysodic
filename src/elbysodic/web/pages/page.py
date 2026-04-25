@@ -5,7 +5,7 @@ from __future__ import annotations
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
-from elbysodic.services.forum import is_community_board, is_desk_board, is_location_board
+from elbysodic.domain.boards import is_community_board, is_desk_board, is_location_board
 from elbysodic.web.state import get_services
 
 

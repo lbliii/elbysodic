@@ -103,6 +103,230 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
     asyncio.run(run())
 
 
+def test_seeded_world_surfaces_place_hierarchy() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            index = await client.get("/")
+            assert index.status == 200
+            assert "/boards/xavier-institute" in index.text
+            assert "/boards/med-bay" in index.text
+            assert "Locations" in index.text
+
+            academy = await client.get("/boards/xavier-institute")
+            assert academy.status == 200
+            assert "Sublocations" in academy.text
+            assert "Med Bay" in academy.text
+            assert "Cerebro" in academy.text
+            assert "Danger Room" in academy.text
+
+            med_bay = await client.get("/boards/med-bay")
+            assert med_bay.status == 200
+            assert "Xavier Institute" in med_bay.text
+            assert "Nearby locations" in med_bay.text
+            assert "The med-bay lights stay on" in med_bay.text
+
+    asyncio.run(run())
+
+
+def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            index = await client.get("/")
+
+            assert index.status == 200
+            assert (
+                '<span class="elbysodic-community-brand__name">X-Men Apocalypse</span>'
+                in index.text
+            )
+            assert "Built on" in index.text
+            assert "<strong>Elbysodic</strong>" in index.text
+            assert 'href="/desk"' in index.text
+            assert index.text.count("Writer Desk") == 1
+
+    asyncio.run(run())
+
+
+def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            desk = await client.get("/desk")
+
+            assert desk.status == 200
+            assert "Writer Desk" in desk.text
+            assert "/my/threads" in desk.text
+            assert "/notifications" in desk.text
+            assert "/characters" in desk.text
+            assert "/applications" in desk.text
+            assert "/casting" in desk.text
+            assert "/discover" in desk.text
+
+    asyncio.run(run())
+
+
+def test_sidebar_modes_follow_major_product_paths() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            world = await client.get("/boards/xavier-institute")
+            assert world.status == 200
+            assert "World Map" in world.text
+            assert "Locations" in world.text
+            assert "Sublocations" in world.text
+            assert "Wanted board" not in world.text
+
+            guidebook = await client.get("/world")
+            assert guidebook.status == 200
+            assert "Guidebook" in guidebook.text
+            assert "Start Here" in guidebook.text
+            assert "World Map" not in guidebook.text
+
+            desk = await client.get("/desk")
+            assert desk.status == 200
+            assert "Writer Desk" in desk.text
+            assert "My threads" in desk.text
+            assert "World Map" not in desk.text
+
+            wanted = await client.get("/wanted")
+            assert wanted.status == 200
+            assert "Casting" in wanted.text
+            assert "Wanted board" in wanted.text
+            assert "Open Wants" in wanted.text
+            assert "World Map" not in wanted.text
+
+    asyncio.run(run())
+
+
+def test_world_map_sidebar_anchors_current_location_branch() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            parent = await client.get("/boards/new-york-city")
+            assert parent.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-sidebar-tree__link--active[^"]*"'
+                r'[^>]*href="/boards/new-york-city"',
+                parent.text,
+            )
+            assert "/boards/frozen-midtown" in parent.text
+
+            child = await client.get("/boards/frozen-midtown")
+            assert child.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-sidebar-tree__link--branch[^"]*"'
+                r'[^>]*href="/boards/new-york-city"',
+                child.text,
+            )
+            assert re.search(
+                r'class="[^"]*elbysodic-sidebar-tree__link--active[^"]*"'
+                r'[^>]*href="/boards/frozen-midtown"',
+                child.text,
+            )
+            assert 'aria-label="Place path"' in child.text
+
+    asyncio.run(run())
+
+
+def test_topbar_marks_active_product_realm() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            world = await client.get("/boards/xavier-institute")
+            assert world.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/"',
+                world.text,
+            )
+
+            guidebook = await client.get("/world")
+            assert guidebook.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/world"',
+                guidebook.text,
+            )
+
+            desk = await client.get("/desk")
+            assert desk.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/desk"',
+                desk.text,
+            )
+
+            wanted = await client.get("/wanted")
+            assert wanted.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/wanted"',
+                wanted.text,
+            )
+
+    asyncio.run(run())
+
+
+def test_parent_board_summaries_roll_up_child_activity_but_thread_lists_stay_direct() -> None:
+    connection = connect(check_same_thread=False)
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Hierarchy Test")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("writer@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "writer", "Writer")
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "active-face",
+        "Active Face",
+        make_default=True,
+    )
+    parent = repo.create_board(community.id, "academy", "Academy", board_kind="location")
+    child = repo.create_board(
+        community.id,
+        "med-bay",
+        "Med Bay",
+        parent_board_id=parent.id,
+        board_kind="sublocation",
+    )
+    parent_thread = repo.create_thread(
+        community.id,
+        parent.id,
+        character.id,
+        "hallway-scene",
+        "Hallway Scene",
+    )
+    repo.create_post(community.id, parent_thread.id, character.id, "A direct academy scene.")
+    child_thread = repo.create_thread(
+        community.id,
+        child.id,
+        character.id,
+        "med-bay-scene",
+        "Med Bay Scene",
+    )
+    repo.create_post(community.id, child_thread.id, character.id, "A child-location scene.")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            community=community,
+            user=user,
+            membership=repo.get_membership(community.id, membership.id),
+            default_character=character,
+        ),
+    )
+
+    summaries = {summary.board.slug: summary for summary in services.list_boards()}
+    _, direct_threads = services.board_threads("academy")
+
+    assert summaries["academy"].thread_count == 2
+    assert summaries["academy"].post_count == 2
+    assert summaries["academy"].has_children is True
+    assert summaries["academy"].latest_thread == child_thread
+    assert [item.thread.title for item in direct_threads] == ["Hallway Scene"]
+
+
 def test_discovery_defaults_to_active_face_lens_and_filters_facets() -> None:
     async def run() -> None:
         app = _app()
