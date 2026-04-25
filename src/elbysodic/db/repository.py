@@ -16,6 +16,7 @@ from elbysodic.domain.models import (
     PostRevision,
     Role,
     Thread,
+    ThreadParticipant,
     ThreadWatch,
     User,
 )
@@ -222,6 +223,104 @@ class ForumRepository:
             )
         return _membership_from_row(row)
 
+    def get_membership_by_username(self, community_id: int, username: str) -> CommunityMembership:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                user_id,
+                username,
+                display_name,
+                avatar_url,
+                role_id,
+                default_character_id,
+                post_count,
+                is_active,
+                joined_at
+            FROM community_memberships
+            WHERE community_id = ? AND username = ?
+            """,
+            (community_id, username),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"membership not found in community {community_id} for username {username}"
+            )
+        return _membership_from_row(row)
+
+    def list_memberships(self, community_id: int) -> list[CommunityMembership]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                user_id,
+                username,
+                display_name,
+                avatar_url,
+                role_id,
+                default_character_id,
+                post_count,
+                is_active,
+                joined_at
+            FROM community_memberships
+            WHERE community_id = ?
+            ORDER BY display_name, username, id
+            """,
+            (community_id,),
+        ).fetchall()
+        return [_membership_from_row(row) for row in rows]
+
+    def search_memberships(
+        self,
+        community_id: int,
+        query: str,
+        *,
+        limit: int = 8,
+    ) -> list[CommunityMembership]:
+        normalized = query.strip().lower().lstrip("@")
+        if not normalized:
+            return []
+        like = f"%{normalized}%"
+        prefix = f"{normalized}%"
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                user_id,
+                username,
+                display_name,
+                avatar_url,
+                role_id,
+                default_character_id,
+                post_count,
+                is_active,
+                joined_at
+            FROM community_memberships
+            WHERE community_id = ?
+              AND is_active = 1
+              AND (
+                lower(username) LIKE ?
+                OR lower(display_name) LIKE ?
+              )
+            ORDER BY
+                CASE
+                  WHEN lower(username) = ? THEN 0
+                  WHEN lower(username) LIKE ? THEN 1
+                  WHEN lower(display_name) LIKE ? THEN 2
+                  ELSE 3
+                END,
+                display_name,
+                username,
+                id
+            LIMIT ?
+            """,
+            (community_id, like, like, normalized, prefix, prefix, limit),
+        ).fetchall()
+        return [_membership_from_row(row) for row in rows]
+
     def create_character(
         self,
         community_id: int,
@@ -360,6 +459,66 @@ class ForumRepository:
         ).fetchall()
         return [_character_from_row(row) for row in rows]
 
+    def search_characters(
+        self,
+        community_id: int,
+        query: str,
+        *,
+        limit: int = 8,
+        exclude_membership_ids: list[int] | None = None,
+    ) -> list[Character]:
+        normalized = query.strip().lower().lstrip("@")
+        if not normalized:
+            return []
+        excluded_ids = exclude_membership_ids or []
+        like = f"%{normalized}%"
+        prefix = f"{normalized}%"
+        exclude_clause = ""
+        params: list[object] = [community_id, like, like]
+        if excluded_ids:
+            placeholders = ", ".join("?" for _ in excluded_ids)
+            exclude_clause = f"AND characters.membership_id NOT IN ({placeholders})"
+            params.extend(excluded_ids)
+        params.extend([normalized, prefix, prefix])
+        params.append(limit)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                characters.id,
+                characters.community_id,
+                characters.membership_id,
+                characters.name,
+                characters.slug,
+                characters.avatar_url,
+                characters.summary,
+                characters.created_at,
+                characters.updated_at
+            FROM characters
+            JOIN community_memberships
+              ON community_memberships.community_id = characters.community_id
+             AND community_memberships.id = characters.membership_id
+            WHERE characters.community_id = ?
+              AND community_memberships.is_active = 1
+              AND (
+                lower(characters.slug) LIKE ?
+                OR lower(characters.name) LIKE ?
+              )
+              {exclude_clause}
+            ORDER BY
+                CASE
+                  WHEN lower(characters.slug) = ? THEN 0
+                  WHEN lower(characters.slug) LIKE ? THEN 1
+                  WHEN lower(characters.name) LIKE ? THEN 2
+                  ELSE 3
+                END,
+                characters.name,
+                characters.id
+            LIMIT ?
+            """,
+            tuple(params),
+        ).fetchall()
+        return [_character_from_row(row) for row in rows]
+
     def set_default_character(
         self,
         community_id: int,
@@ -478,6 +637,11 @@ class ForumRepository:
         slug: str,
         title: str,
         *,
+        status: str = "active",
+        location: str = "",
+        timeline: str = "",
+        summary: str = "",
+        posting_mode: str = "freeform",
         is_locked: bool = False,
         is_pinned: bool = False,
     ) -> Thread:
@@ -493,12 +657,17 @@ class ForumRepository:
                 author_character_id,
                 slug,
                 title,
+                status,
+                location,
+                timeline,
+                summary,
+                posting_mode,
                 is_locked,
                 is_pinned,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -507,14 +676,64 @@ class ForumRepository:
                 author_character_id,
                 slug,
                 title,
+                status,
+                location,
+                timeline,
+                summary,
+                posting_mode,
                 int(is_locked),
                 int(is_pinned),
                 now,
                 now,
             ),
         )
+        thread_id = _last_id(cursor)
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO thread_participants (
+                community_id, thread_id, character_id, added_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (community_id, thread_id, author_character_id, now),
+        )
         self.connection.commit()
-        return self.get_thread(community_id, _last_id(cursor))
+        return self.get_thread(community_id, thread_id)
+
+    def update_thread_scene(
+        self,
+        community_id: int,
+        thread_id: int,
+        *,
+        status: str | None = None,
+        location: str | None = None,
+        timeline: str | None = None,
+        summary: str | None = None,
+        posting_mode: str | None = None,
+    ) -> Thread:
+        thread = self.get_thread(community_id, thread_id)
+        self.connection.execute(
+            """
+            UPDATE threads
+            SET status = ?,
+                location = ?,
+                timeline = ?,
+                summary = ?,
+                posting_mode = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                thread.status if status is None else status,
+                thread.location if location is None else location,
+                thread.timeline if timeline is None else timeline,
+                thread.summary if summary is None else summary,
+                thread.posting_mode if posting_mode is None else posting_mode,
+                community_id,
+                thread_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_thread(community_id, thread_id)
 
     def update_thread_flags(
         self,
@@ -563,6 +782,11 @@ class ForumRepository:
                 author_character_id,
                 slug,
                 title,
+                status,
+                location,
+                timeline,
+                summary,
+                posting_mode,
                 is_locked,
                 is_pinned,
                 created_at,
@@ -587,6 +811,11 @@ class ForumRepository:
                 author_character_id,
                 slug,
                 title,
+                status,
+                location,
+                timeline,
+                summary,
+                posting_mode,
                 is_locked,
                 is_pinned,
                 created_at,
@@ -612,6 +841,11 @@ class ForumRepository:
                     author_character_id,
                     slug,
                     title,
+                    status,
+                    location,
+                    timeline,
+                    summary,
+                    posting_mode,
                     is_locked,
                     is_pinned,
                     created_at,
@@ -633,6 +867,11 @@ class ForumRepository:
                     author_character_id,
                     slug,
                     title,
+                    status,
+                    location,
+                    timeline,
+                    summary,
+                    posting_mode,
                     is_locked,
                     is_pinned,
                     created_at,
@@ -644,6 +883,126 @@ class ForumRepository:
                 (community_id, board_id),
             ).fetchall()
         return [_thread_from_row(row) for row in rows]
+
+    def add_thread_participant(
+        self,
+        community_id: int,
+        thread_id: int,
+        character_id: int,
+    ) -> ThreadParticipant:
+        self.get_thread(community_id, thread_id)
+        self.get_character(community_id, character_id)
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO thread_participants (
+                community_id, thread_id, character_id, added_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (community_id, thread_id, character_id, _utc_now()),
+        )
+        self.connection.commit()
+        return self.get_thread_participant(community_id, thread_id, character_id)
+
+    def set_thread_participants(
+        self,
+        community_id: int,
+        thread_id: int,
+        character_ids: list[int],
+    ) -> list[Character]:
+        thread = self.get_thread(community_id, thread_id)
+        posted_rows = self.connection.execute(
+            """
+            SELECT author_character_id
+            FROM posts
+            WHERE community_id = ? AND thread_id = ?
+            GROUP BY author_character_id
+            ORDER BY MIN(created_at), author_character_id
+            """,
+            (community_id, thread_id),
+        ).fetchall()
+        unique_ids: list[int] = []
+        posted_character_ids = [row["author_character_id"] for row in posted_rows]
+        for character_id in [thread.author_character_id, *posted_character_ids, *character_ids]:
+            if character_id not in unique_ids:
+                self.get_character(community_id, character_id)
+                unique_ids.append(character_id)
+        self.connection.execute(
+            """
+            DELETE FROM thread_participants
+            WHERE community_id = ? AND thread_id = ?
+            """,
+            (community_id, thread_id),
+        )
+        now = _utc_now()
+        self.connection.executemany(
+            """
+            INSERT INTO thread_participants (
+                community_id, thread_id, character_id, added_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            [(community_id, thread_id, character_id, now) for character_id in unique_ids],
+        )
+        self.connection.commit()
+        return self.list_thread_participants(community_id, thread_id)
+
+    def get_thread_participant(
+        self,
+        community_id: int,
+        thread_id: int,
+        character_id: int,
+    ) -> ThreadParticipant:
+        row = self.connection.execute(
+            """
+            SELECT id, community_id, thread_id, character_id, added_at
+            FROM thread_participants
+            WHERE community_id = ? AND thread_id = ? AND character_id = ?
+            """,
+            (community_id, thread_id, character_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"thread participant not found in community {community_id}: {thread_id}/{character_id}"
+            )
+        return _thread_participant_from_row(row)
+
+    def list_thread_participants(self, community_id: int, thread_id: int) -> list[Character]:
+        self.get_thread(community_id, thread_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                characters.id,
+                characters.community_id,
+                characters.membership_id,
+                characters.name,
+                characters.slug,
+                characters.avatar_url,
+                characters.summary,
+                characters.created_at,
+                characters.updated_at
+            FROM thread_participants
+            JOIN characters
+              ON characters.community_id = thread_participants.community_id
+             AND characters.id = thread_participants.character_id
+            WHERE thread_participants.community_id = ?
+              AND thread_participants.thread_id = ?
+            ORDER BY thread_participants.added_at, characters.name, characters.id
+            """,
+            (community_id, thread_id),
+        ).fetchall()
+        return [_character_from_row(row) for row in rows]
+
+    def list_thread_participant_ids(self, community_id: int, thread_id: int) -> set[int]:
+        rows = self.connection.execute(
+            """
+            SELECT character_id
+            FROM thread_participants
+            WHERE community_id = ? AND thread_id = ?
+            """,
+            (community_id, thread_id),
+        ).fetchall()
+        return {row["character_id"] for row in rows}
 
     def create_post(
         self,
@@ -685,6 +1044,15 @@ class ForumRepository:
             WHERE community_id = ? AND id = ?
             """,
             (now, community_id, thread_id),
+        )
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO thread_participants (
+                community_id, thread_id, character_id, added_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (community_id, thread_id, author_character_id, now),
         )
         self.connection.commit()
         return self.get_post(community_id, _last_id(cursor))
@@ -843,6 +1211,11 @@ class ForumRepository:
                 author_character_id,
                 slug,
                 title,
+                status,
+                location,
+                timeline,
+                summary,
+                posting_mode,
                 is_locked,
                 is_pinned,
                 created_at,
@@ -1255,10 +1628,25 @@ def _thread_from_row(row: sqlite3.Row) -> Thread:
         author_character_id=row["author_character_id"],
         slug=row["slug"],
         title=row["title"],
+        status=row["status"],
+        location=row["location"],
+        timeline=row["timeline"],
+        summary=row["summary"],
+        posting_mode=row["posting_mode"],
         is_locked=bool(row["is_locked"]),
         is_pinned=bool(row["is_pinned"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+    )
+
+
+def _thread_participant_from_row(row: sqlite3.Row) -> ThreadParticipant:
+    return ThreadParticipant(
+        id=row["id"],
+        community_id=row["community_id"],
+        thread_id=row["thread_id"],
+        character_id=row["character_id"],
+        added_at=row["added_at"],
     )
 
 

@@ -224,6 +224,68 @@ def test_thread_flags_sort_pinned_threads_first(repo: ForumRepository) -> None:
     ]
 
 
+def test_thread_scene_metadata_and_participants_are_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    user = repo.create_user("scene@example.com", "hash")
+    hosted_user = repo.create_user("hosted-scene@example.com", "hash")
+    role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    membership = repo.create_membership(default.id, user.id, role.id, "scene", "Scene")
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "scene",
+        "Scene Elsewhere",
+    )
+    rogue = repo.create_character(default.id, membership.id, "rogue", "Rogue")
+    storm = repo.create_character(default.id, membership.id, "storm", "Storm")
+    gambit = repo.create_character(default.id, membership.id, "gambit", "Gambit")
+    hosted_rogue = repo.create_character(hosted.id, hosted_membership.id, "rogue", "Rogue")
+    board = repo.create_board(default.id, "ic", "In Character")
+    hosted_board = repo.create_board(hosted.id, "ic", "In Character")
+
+    thread = repo.create_thread(
+        default.id,
+        board.id,
+        rogue.id,
+        "moonlight",
+        "Moonlight",
+        status="open",
+        location="Lake",
+        timeline="Night",
+        summary="A quiet lakeside scene.",
+        posting_mode="posting_order",
+    )
+    repo.create_thread(hosted.id, hosted_board.id, hosted_rogue.id, "moonlight", "Moonlight")
+    repo.set_thread_participants(default.id, thread.id, [rogue.id, storm.id])
+
+    stored = repo.get_thread(default.id, thread.id)
+    assert stored.status == "open"
+    assert stored.location == "Lake"
+    assert stored.timeline == "Night"
+    assert stored.summary == "A quiet lakeside scene."
+    assert stored.posting_mode == "posting_order"
+    assert [
+        character.slug for character in repo.list_thread_participants(default.id, thread.id)
+    ] == [
+        "rogue",
+        "storm",
+    ]
+    repo.create_post(default.id, thread.id, gambit.id, "Gambit joins the scene.")
+    assert {
+        character.slug for character in repo.list_thread_participants(default.id, thread.id)
+    } == {"rogue", "storm", "gambit"}
+    repo.set_thread_participants(default.id, thread.id, [rogue.id])
+    assert {
+        character.slug for character in repo.list_thread_participants(default.id, thread.id)
+    } == {"rogue", "gambit"}
+
+    with pytest.raises(LookupError):
+        repo.add_thread_participant(default.id, thread.id, hosted_rogue.id)
+
+
 def test_thread_reads_are_membership_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     user = repo.create_user("reads@example.com", "hash")

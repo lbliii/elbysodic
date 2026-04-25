@@ -158,17 +158,109 @@
     };
   }
 
-  function register(factory) {
+  function register(name, factory) {
     if (window._chirpAlpineData) {
-      window._chirpAlpineData("elbysodicComposer", factory);
+      window._chirpAlpineData(name, factory);
       return;
     }
     document.addEventListener("alpine:init", function () {
-      Alpine.data("elbysodicComposer", factory);
+      Alpine.data(name, factory);
     });
   }
 
-  register(function (configId) {
+  register("elbysodicMentionPicker", function (configId) {
+    const configElement = document.getElementById(configId);
+    const config = configElement ? JSON.parse(configElement.textContent || "{}") : {};
+
+    return {
+      config: config,
+      highlightedIndex: 0,
+      loading: false,
+      open: false,
+      query: "",
+      results: [],
+      selected: config.selected || [],
+
+      selectedKey(item) {
+        return `${item.kind}:${item.id}`;
+      },
+
+      selectedKeys() {
+        return new Set(this.selected.map((item) => this.selectedKey(item)));
+      },
+
+      close() {
+        this.open = false;
+        this.highlightedIndex = 0;
+      },
+
+      chooseHighlighted() {
+        if (!this.open || this.results.length === 0) {
+          return;
+        }
+        this.select(this.results[this.highlightedIndex] || this.results[0]);
+      },
+
+      move(delta) {
+        if (!this.open || this.results.length === 0) {
+          return;
+        }
+        this.highlightedIndex =
+          (this.highlightedIndex + delta + this.results.length) % this.results.length;
+      },
+
+      remove(item) {
+        const key = this.selectedKey(item);
+        this.selected = this.selected.filter((selectedItem) => this.selectedKey(selectedItem) !== key);
+        this.$nextTick(() => this.$refs.search.focus());
+      },
+
+      select(item) {
+        if (!this.selectedKeys().has(this.selectedKey(item))) {
+          this.selected = [...this.selected, item];
+        }
+        this.query = "";
+        this.results = [];
+        this.close();
+        this.$nextTick(() => this.$refs.search.focus());
+      },
+
+      async search() {
+        const term = this.query.trim().replace(/^@+/, "");
+        if (!term) {
+          this.results = [];
+          this.close();
+          return;
+        }
+        this.loading = true;
+        const params = new URLSearchParams({
+          q: term,
+          scope: this.config.scope || "all",
+        });
+        try {
+          const response = await fetch(`${this.config.endpoint}?${params.toString()}`, {
+            credentials: "same-origin",
+          });
+          if (!response.ok) {
+            this.results = [];
+            this.close();
+            return;
+          }
+          const payload = await response.json();
+          const selected = this.selectedKeys();
+          this.results = (payload.items || []).filter(
+            (item) => !selected.has(this.selectedKey(item)),
+          );
+          this.highlightedIndex = 0;
+          this.open = this.results.length > 0;
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  });
+
+  register("elbysodicComposer", function (configId) {
     const configElement = document.getElementById(configId);
     const config = configElement ? JSON.parse(configElement.textContent || "{}") : {};
 

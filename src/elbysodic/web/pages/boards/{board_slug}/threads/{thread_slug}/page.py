@@ -8,7 +8,9 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.domain import Character
-from elbysodic.web.composer import composer_config
+from elbysodic.services import Mentionable
+from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
+from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
 
 
@@ -61,6 +63,26 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             raise HTTPError(status=403, detail=str(exc)) from exc
         return Redirect(request.path)
 
+    if intent == "scene":
+        try:
+            services.update_thread_scene(
+                board_slug,
+                thread_slug,
+                status=str(form.get("status") or "active"),
+                location=str(form.get("location") or ""),
+                timeline=str(form.get("timeline") or ""),
+                summary=str(form.get("summary") or ""),
+                posting_mode=str(form.get("posting_mode") or "freeform"),
+                participant_ids=_parse_participant_ids(form),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            return _render_thread(request, board_slug, thread_slug, error=str(exc))
+        return Redirect(request.path)
+
     character_id = _parse_character_id(form.get("character_id"))
     body = str(form.get("body") or "")
 
@@ -91,6 +113,19 @@ def _render_thread(
     services = get_services()
     thread_view = services.read_thread(board_slug, thread_slug)
     viewer = services.viewer()
+    selected_cast = _character_mentionables(
+        [
+            character
+            for character in thread_view.taggable_characters
+            if character.id in thread_view.tagged_character_ids
+        ]
+    )
+    cast_picker_config = mention_picker_config(
+        endpoint="/mentionables/search",
+        hidden_name="participant_ids",
+        scope="cast",
+        selected=selected_cast,
+    )
     if viewer.current_character is None:
         return Page(
             "boards/{board_slug}/threads/{thread_slug}/page.html",
@@ -104,6 +139,10 @@ def _render_thread(
             body=body,
             composer_config={},
             composer_config_id="reply-composer-config",
+            thread_statuses=THREAD_STATUSES,
+            posting_modes=POSTING_MODES,
+            cast_picker_config_id="scene-cast-picker-config",
+            cast_picker_config=cast_picker_config,
         )
     selected_character = _select_character(
         viewer.roster,
@@ -128,6 +167,10 @@ def _render_thread(
             initial_body=body,
         ),
         composer_config_id=config_id,
+        thread_statuses=THREAD_STATUSES,
+        posting_modes=POSTING_MODES,
+        cast_picker_config_id="scene-cast-picker-config",
+        cast_picker_config=cast_picker_config,
     )
 
 
@@ -143,6 +186,28 @@ def _parse_board_id(raw: object) -> int:
         return int(str(raw or ""))
     except ValueError as exc:
         raise ValueError("choose a board before moving the thread") from exc
+
+
+def _parse_participant_ids(form: object) -> list[int]:
+    values: list[object]
+    get_list = getattr(form, "get_list", None)
+    getlist = getattr(form, "getlist", None)
+    if callable(get_list):
+        values = list(get_list("participant_ids"))
+    elif callable(getlist):
+        values = list(getlist("participant_ids"))
+    else:
+        raw = getattr(form, "get", lambda _name: None)("participant_ids")
+        values = [] if raw is None else [raw]
+    parsed: list[int] = []
+    for value in values:
+        try:
+            character_id = int(str(value))
+        except ValueError:
+            continue
+        if character_id not in parsed:
+            parsed.append(character_id)
+    return parsed
 
 
 def _locked_state(intent: str) -> bool | None:
@@ -172,3 +237,18 @@ def _select_character(roster: list[Character], character_id: int) -> Character:
     for character in roster:
         return character
     raise LookupError("membership does not have a character roster")
+
+
+def _character_mentionables(characters: list[Character]) -> list[Mentionable]:
+    return [
+        Mentionable(
+            kind="character",
+            id=character.id,
+            handle=character.slug,
+            label=character.name,
+            detail="Character",
+            avatar_url=character.avatar_url,
+            href=f"/characters/{character.slug}",
+        )
+        for character in characters
+    ]

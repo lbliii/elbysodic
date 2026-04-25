@@ -39,3 +39,14 @@ The first product primitives live in
 [docs/architecture/primitives.md](docs/architecture/primitives.md).
 
 The product mission lives in [docs/product/mission.md](docs/product/mission.md).
+
+Future coding agents should start with [AGENTS.md](AGENTS.md), which captures
+the current product spine, architectural invariants, and implementation style.
+
+## Current Slice
+
+The development forum currently includes community-scoped boards, threads,
+posts, character rosters, active face switching, safe post markup, composer
+preview/drafts, read-state queues, first-unread jumps, post editing with
+revision history, staff thread controls, thread watches, mentions, and a
+notification inbox.

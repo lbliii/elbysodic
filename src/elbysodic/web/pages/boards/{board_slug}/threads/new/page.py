@@ -7,7 +7,9 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.domain import Character
-from elbysodic.web.composer import composer_config
+from elbysodic.services import Mentionable
+from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES, taggable_characters
+from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
 
 
@@ -18,7 +20,13 @@ def get(request: Request, board_slug: str) -> Page:
 async def post(request: Request, board_slug: str) -> Page | Redirect:
     form = await request.form()
     character_id = _parse_character_id(form.get("character_id"))
+    participant_ids = _parse_participant_ids(form)
     title = str(form.get("title") or "")
+    status = str(form.get("status") or "active")
+    location = str(form.get("location") or "")
+    timeline = str(form.get("timeline") or "")
+    summary = str(form.get("summary") or "")
+    posting_mode = str(form.get("posting_mode") or "freeform")
     body = str(form.get("body") or "")
 
     try:
@@ -27,6 +35,12 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             character_id=character_id,
             title=title,
             body=body,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            participant_ids=participant_ids,
         )
     except (LookupError, PermissionError, ValueError) as exc:
         return _render_form(
@@ -34,7 +48,13 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             board_slug,
             error=str(exc),
             character_id=character_id,
+            participant_ids=participant_ids,
             title=title,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
             body=body,
         )
 
@@ -47,7 +67,13 @@ def _render_form(
     *,
     error: str | None = None,
     character_id: int | None = None,
+    participant_ids: list[int] | None = None,
     title: str = "",
+    status: str = "active",
+    location: str = "",
+    timeline: str = "",
+    summary: str = "",
+    posting_mode: str = "freeform",
     body: str = "",
 ) -> Page:
     services = get_services()
@@ -65,6 +91,22 @@ def _render_form(
             selected_character_id=None,
             error=error,
             title=title,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            thread_statuses=THREAD_STATUSES,
+            posting_modes=POSTING_MODES,
+            taggable_characters=[],
+            selected_participant_ids=set(),
+            cast_picker_config_id="thread-cast-picker-config",
+            cast_picker_config=mention_picker_config(
+                endpoint="/mentionables/search",
+                hidden_name="participant_ids",
+                scope="cast",
+                selected=[],
+            ),
             body=body,
             composer_config={},
             composer_config_id="thread-composer-config",
@@ -74,6 +116,16 @@ def _render_form(
         character_id or viewer.current_character.id,
     )
     config_id = "thread-composer-config"
+    taggable = taggable_characters(
+        services.repo.list_community_characters(viewer.community.id), viewer.roster
+    )
+    taggable_ids = {character.id for character in taggable}
+    selected_participant_ids = {
+        character_id for character_id in participant_ids or [] if character_id in taggable_ids
+    }
+    selected_cast = _character_mentionables(
+        [character for character in taggable if character.id in selected_participant_ids]
+    )
     return Page(
         "boards/{board_slug}/threads/new/page.html",
         "page_content",
@@ -85,6 +137,22 @@ def _render_form(
         selected_character_id=selected_character.id,
         error=error,
         title=title,
+        status=status,
+        location=location,
+        timeline=timeline,
+        summary=summary,
+        posting_mode=posting_mode,
+        thread_statuses=THREAD_STATUSES,
+        posting_modes=POSTING_MODES,
+        taggable_characters=taggable,
+        selected_participant_ids=selected_participant_ids,
+        cast_picker_config_id="thread-cast-picker-config",
+        cast_picker_config=mention_picker_config(
+            endpoint="/mentionables/search",
+            hidden_name="participant_ids",
+            scope="cast",
+            selected=selected_cast,
+        ),
         body=body,
         composer_config=composer_config(
             config_id=config_id,
@@ -105,6 +173,28 @@ def _parse_character_id(raw: object) -> int:
         raise ValueError("choose a character before starting a thread") from exc
 
 
+def _parse_participant_ids(form: object) -> list[int]:
+    values: list[object]
+    get_list = getattr(form, "get_list", None)
+    getlist = getattr(form, "getlist", None)
+    if callable(get_list):
+        values = list(get_list("participant_ids"))
+    elif callable(getlist):
+        values = list(getlist("participant_ids"))
+    else:
+        raw = getattr(form, "get", lambda _name: None)("participant_ids")
+        values = [] if raw is None else [raw]
+    parsed: list[int] = []
+    for value in values:
+        try:
+            character_id = int(str(value))
+        except ValueError:
+            continue
+        if character_id not in parsed:
+            parsed.append(character_id)
+    return parsed
+
+
 def _select_character(roster: list[Character], character_id: int) -> Character:
     for character in roster:
         if character.id == character_id:
@@ -112,3 +202,18 @@ def _select_character(roster: list[Character], character_id: int) -> Character:
     for character in roster:
         return character
     raise LookupError("membership does not have a character roster")
+
+
+def _character_mentionables(characters: list[Character]) -> list[Mentionable]:
+    return [
+        Mentionable(
+            kind="character",
+            id=character.id,
+            handle=character.slug,
+            label=character.name,
+            detail="Character",
+            avatar_url=character.avatar_url,
+            href=f"/characters/{character.slug}",
+        )
+        for character in characters
+    ]

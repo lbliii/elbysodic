@@ -1,0 +1,80 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Members") %}
+  Writers and rosters active in {{ viewer.community.name }}.
+  {% end %}
+
+  {% call cluster(gap="sm") %}
+    {{ stat(value=directory.cards | length, label="Writers") }}
+    {{ stat(value=viewer.community.name, label="Community") }}
+  {% end %}
+
+  <div class="elbysodic-member-grid">
+    {% for card in directory.cards %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-member-card chirpui-stack chirpui-stack--sm">
+      <div class="elbysodic-member-card__header">
+        <a class="elbysodic-character-avatar" href="/members/{{ card.membership.username }}" aria-label="{{ card.membership.display_name }}">
+          {% if card.default_character and card.default_character.avatar_url %}
+          <img src="{{ card.default_character.avatar_url }}" alt="">
+          {% else %}
+          {{ card.membership.display_name[:1] }}
+          {% end %}
+        </a>
+        <div>
+          <h2>
+            <a class="chirpui-link" href="/members/{{ card.membership.username }}">
+              {{ card.membership.display_name }}
+            </a>
+          </h2>
+          <p class="chirpui-text-muted">@{{ card.membership.username }}</p>
+        </div>
+        <div class="chirpui-cluster chirpui-cluster--sm">
+          {{ badge("you", variant="success") if card.is_current_member else "" }}
+          {{ badge(card.role.name, variant="warning" if card.role.is_admin else "muted") }}
+        </div>
+      </div>
+      {% call cluster(gap="sm") %}
+        {{ stat(value=card.roster | length, label="Faces") }}
+        {{ stat(value=card.visible_post_count, label="Visible posts") }}
+        {{ stat(value=card.active_thread_count, label="Active") }}
+      {% end %}
+      {% if card.roster %}
+      <p class="elbysodic-member-card__roster">
+        {% for character in card.roster %}
+        <a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a>
+        {% end %}
+      </p>
+      {% else %}
+      <p class="elbysodic-member-card__roster">No public faces yet.</p>
+      {% end %}
+      {% if card.latest_post %}
+      <p class="elbysodic-member-card__latest">
+        Latest:
+        <a class="chirpui-link"
+           href="/boards/{{ card.latest_post.board.slug }}/threads/{{ card.latest_post.thread.slug }}#{{ card.latest_post.post.anchor }}">
+          {{ card.latest_post.thread.title }}
+        </a>
+      </p>
+      {% end %}
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@
 {% end %}
 
 {% def thread_item(item) %}
-{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.latest_post, item.jump_post, item.jump_label, item.last_own_post, item.reply_count, item.is_unread, item.badges, "h3", True, True) }}
+{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item.latest_post, item.jump_post, item.jump_label, item.last_own_post, item.reply_count, item.is_unread, item.badges, "h3", True, True) }}
 {% end %}
 
 {% def thread_section(title, subtitle, items, empty_text) %}

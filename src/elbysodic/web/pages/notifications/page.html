@@ -40,7 +40,8 @@
         </div>
         <h2>{{ item.thread.title }}</h2>
         <p class="chirpui-text-muted">
-          {{ item.actor.name }} · writer {{ item.actor_membership.username }} · {{ item.post.created_at_label }}
+          {{ item.actor.name }} · writer <a class="chirpui-link" href="/members/{{ item.actor_membership.username }}">{{ item.actor_membership.username }}</a>
+          · {{ item.post.created_at_label }}
         </p>
         <p>{{ item.snippet }}</p>
       </div>

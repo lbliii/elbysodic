@@ -86,11 +86,25 @@ CREATE TABLE IF NOT EXISTS threads (
     author_character_id INTEGER NOT NULL REFERENCES characters(id),
     slug TEXT NOT NULL,
     title TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    location TEXT NOT NULL DEFAULT '',
+    timeline TEXT NOT NULL DEFAULT '',
+    summary TEXT NOT NULL DEFAULT '',
+    posting_mode TEXT NOT NULL DEFAULT 'freeform',
     is_locked INTEGER NOT NULL DEFAULT 0,
     is_pinned INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     UNIQUE (community_id, board_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS thread_participants (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    added_at TEXT NOT NULL,
+    UNIQUE (community_id, thread_id, character_id)
 );
 
 CREATE TABLE IF NOT EXISTS posts (
@@ -169,6 +183,8 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_boards_community_sort ON boards(community_id, sort_order, name);
 CREATE INDEX IF NOT EXISTS idx_threads_community_board ON threads(community_id, board_id, updated_at);
+CREATE INDEX IF NOT EXISTS idx_thread_participants_thread ON thread_participants(community_id, thread_id, added_at);
+CREATE INDEX IF NOT EXISTS idx_thread_participants_character ON thread_participants(community_id, character_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_posts_community_thread ON posts(community_id, thread_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_post_revisions_post ON post_revisions(community_id, post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON community_memberships(user_id, community_id);
@@ -188,3 +204,37 @@ def connect(path: str | Path = ":memory:", *, check_same_thread: bool = True) ->
 
 def create_schema(connection: sqlite3.Connection) -> None:
     connection.executescript(SCHEMA)
+    _migrate_schema(connection)
+    connection.commit()
+
+
+def _migrate_schema(connection: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(threads)").fetchall()}
+    for name, definition in {
+        "status": "TEXT NOT NULL DEFAULT 'active'",
+        "location": "TEXT NOT NULL DEFAULT ''",
+        "timeline": "TEXT NOT NULL DEFAULT ''",
+        "summary": "TEXT NOT NULL DEFAULT ''",
+        "posting_mode": "TEXT NOT NULL DEFAULT 'freeform'",
+    }.items():
+        if name not in columns:
+            connection.execute(f"ALTER TABLE threads ADD COLUMN {name} {definition}")
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO thread_participants (
+            community_id, thread_id, character_id, added_at
+        )
+        SELECT community_id, id, author_character_id, created_at
+        FROM threads
+        """
+    )
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO thread_participants (
+            community_id, thread_id, character_id, added_at
+        )
+        SELECT community_id, thread_id, author_character_id, MIN(created_at)
+        FROM posts
+        GROUP BY community_id, thread_id, author_character_id
+        """
+    )

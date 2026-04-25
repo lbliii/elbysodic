@@ -60,9 +60,9 @@
         <span class="chirpui-text-muted">
           by
           <a class="chirpui-link" href="/characters/{{ summary.latest_post.author.slug }}">
-            {{ summary.latest_post.author.name }}
+          {{ summary.latest_post.author.name }}
           </a>
-          · writer {{ summary.latest_post.author_membership.username }}
+          · writer <a class="chirpui-link" href="/members/{{ summary.latest_post.author_membership.username }}">{{ summary.latest_post.author_membership.username }}</a>
           · {{ summary.latest_post.updated_at_label }}
         </span>
         {% end %}

@@ -48,7 +48,7 @@
       </div>
       <div>
         <strong>{{ edit_view.post.author.name }}</strong>
-        <p class="chirpui-text-muted">writer {{ edit_view.post.author_membership.username }}</p>
+        <p class="chirpui-text-muted">writer <a class="chirpui-link" href="/members/{{ edit_view.post.author_membership.username }}">{{ edit_view.post.author_membership.username }}</a></p>
       </div>
     </div>
     {% if error %}

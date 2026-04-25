@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from elbysodic.domain import Character
+from elbysodic.services import Mentionable
 
 
 def composer_config(
@@ -30,4 +31,21 @@ def composer_config(
         "selectedCharacterId": selected_character_id,
         "initialBody": initial_body,
         "initialTitle": initial_title,
+    }
+
+
+def mention_picker_config(
+    *,
+    endpoint: str,
+    hidden_name: str,
+    scope: str,
+    selected: list[Mentionable],
+    placeholder: str = "@character",
+) -> dict[str, object]:
+    return {
+        "endpoint": endpoint,
+        "hiddenName": hidden_name,
+        "placeholder": placeholder,
+        "scope": scope,
+        "selected": [item.to_dict() for item in selected],
     }

@@ -43,6 +43,17 @@
   <div class="elbysodic-thread-status">
     <div class="chirpui-cluster chirpui-cluster--sm">
       {{ badge(thread_view.board.name) }}
+      {% if thread_view.thread.status == "open" %}
+      {{ badge("open to join", variant="info") }}
+      {% elif thread_view.thread.status == "paused" %}
+      {{ badge("paused", variant="warning") }}
+      {% elif thread_view.thread.status == "complete" %}
+      {{ badge("complete", variant="muted") }}
+      {% elif thread_view.thread.status == "private" %}
+      {{ badge("private scene", variant="muted") }}
+      {% elif thread_view.thread.status == "archived" %}
+      {{ badge("archived", variant="muted") }}
+      {% end %}
       {{ badge("caught up", variant="success") }}
       {{ badge("watching", variant="info") if thread_view.is_watched else "" }}
       {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
@@ -55,6 +66,171 @@
       </button>
     </form>
   </div>
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-scene-panel" aria-labelledby="scene-details">
+    <div class="elbysodic-scene-panel__header">
+      <div>
+        <h2 id="scene-details">Scene details</h2>
+        {% if thread_view.thread.summary %}
+        <p class="chirpui-text-muted">{{ thread_view.thread.summary }}</p>
+        {% end %}
+      </div>
+      {% if thread_view.thread.posting_mode == "posting_order" %}
+      <div class="chirpui-cluster chirpui-cluster--sm">
+        {{ badge("Posting order", variant="muted") }}
+      </div>
+      {% end %}
+    </div>
+    {% if thread_view.thread.location or thread_view.thread.timeline %}
+    <div class="elbysodic-scene-panel__meta">
+      {% if thread_view.thread.location %}
+      <div>
+        <span class="chirpui-text-muted">Location</span>
+        <strong>{{ thread_view.thread.location }}</strong>
+      </div>
+      {% end %}
+      {% if thread_view.thread.timeline %}
+      <div>
+        <span class="chirpui-text-muted">Timeline</span>
+        <strong>{{ thread_view.thread.timeline }}</strong>
+      </div>
+      {% end %}
+    </div>
+    {% end %}
+    {% if thread_view.participants %}
+    <div class="elbysodic-scene-panel__cast">
+      <span class="chirpui-text-muted">Cast</span>
+      <div class="elbysodic-scene-cast">
+        {% for participant in thread_view.participants %}
+        <a class="elbysodic-scene-cast__face"
+           href="/characters/{{ participant.slug }}"
+           title="{{ participant.name }}"
+           aria-label="{{ participant.name }}">
+          {% if participant.avatar_url %}
+          <img src="{{ participant.avatar_url }}" alt="">
+          {% else %}
+          {{ participant.name[:1] }}
+          {% end %}
+        </a>
+        {% end %}
+      </div>
+    </div>
+    {% end %}
+  </section>
+  {% end %}
+
+  {% if thread_view.can_manage_scene %}
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="scene-management">
+    <div>
+      <h2 id="scene-management">Scene management</h2>
+      <p class="chirpui-text-muted">Update the scene signal and tag other writers into the cast.</p>
+    </div>
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+      <input type="hidden" name="intent" value="scene">
+      <div class="elbysodic-scene-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="scene-status">Status</label>
+          <select id="scene-status" name="status" class="chirpui-field__input">
+            {% for item_status in thread_statuses %}
+            <option value="{{ item_status }}" {{ "selected" if item_status == thread_view.thread.status else "" }}>
+              {% if item_status == "open" %}Open to join{% elif item_status == "active" %}Active{% elif item_status == "paused" %}Paused{% elif item_status == "complete" %}Complete{% elif item_status == "private" %}Private scene{% else %}Archived{% end %}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="scene-posting-mode">Posting mode</label>
+          <select id="scene-posting-mode" name="posting_mode" class="chirpui-field__input">
+            {% for mode in posting_modes %}
+            <option value="{{ mode }}" {{ "selected" if mode == thread_view.thread.posting_mode else "" }}>
+              {{ "Posting order" if mode == "posting_order" else "Freeform" }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="scene-location">Location</label>
+          <input id="scene-location"
+                 class="chirpui-field__input"
+                 name="location"
+                 value="{{ thread_view.thread.location }}"
+                 autocomplete="off">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="scene-timeline">Timeline</label>
+          <input id="scene-timeline"
+                 class="chirpui-field__input"
+                 name="timeline"
+                 value="{{ thread_view.thread.timeline }}"
+                 autocomplete="off">
+        </div>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="scene-summary">Scene summary</label>
+        <textarea id="scene-summary"
+                  class="chirpui-field__input"
+                  name="summary"
+                  rows="3">{{ thread_view.thread.summary }}</textarea>
+      </div>
+      {{ alpine_json_config(cast_picker_config_id, cast_picker_config) }}
+      <div class="elbysodic-mention-picker"
+           x-data="elbysodicMentionPicker('{{ cast_picker_config_id }}')"
+           @click.outside="close()">
+        <label class="chirpui-field__label" for="scene-cast-search">Tag cast</label>
+        <div class="elbysodic-mention-picker__control" @click="$refs.search.focus()">
+          <template x-for="item in selected" :key="item.kind + ':' + item.id">
+            <span class="elbysodic-mention-token">
+              <input type="hidden" :name="config.hiddenName" :value="item.id">
+              <span x-text="item.tag"></span>
+              <button type="button" :aria-label="'Remove ' + item.label" @click.stop="remove(item)">&times;</button>
+            </span>
+          </template>
+          <input id="scene-cast-search"
+                 x-ref="search"
+                 type="text"
+                 class="elbysodic-mention-picker__input"
+                 x-model="query"
+                 :placeholder="selected.length ? '@character' : config.placeholder"
+                 autocomplete="off"
+                 @input.debounce.150ms="search()"
+                 @focus="search()"
+                 @keydown.arrow-down.prevent="move(1)"
+                 @keydown.arrow-up.prevent="move(-1)"
+                 @keydown.enter.prevent="chooseHighlighted()"
+                 @keydown.escape.prevent="close()">
+        </div>
+        <div class="elbysodic-mention-picker__list"
+             role="listbox"
+             x-show="open"
+             x-cloak>
+          <template x-for="(item, index) in results" :key="item.kind + ':' + item.id">
+            <button type="button"
+                    class="elbysodic-mention-picker__result"
+                    :class="{ 'is-active': index === highlightedIndex }"
+                    role="option"
+                    @click="select(item)">
+              <span class="elbysodic-character-avatar" aria-hidden="true">
+                <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+                <span x-show="!item.avatar_url" x-text="item.initial"></span>
+              </span>
+              <span>
+                <strong x-text="item.tag"></strong>
+                <small x-text="item.detail"></small>
+              </span>
+            </button>
+          </template>
+          <p class="chirpui-text-muted" x-show="!loading && query.trim() && results.length === 0">No matches.</p>
+        </div>
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save scene</button>
+      </div>
+    </form>
+  </section>
+  {% end %}
+  {% end %}
 
   {% if thread_view.can_moderate %}
   {% call surface(variant="elevated") %}
@@ -111,7 +287,7 @@
         </a>
         <div>
           <h2><a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a></h2>
-          <p class="chirpui-text-muted">writer {{ item.author_membership.username }}</p>
+          <p class="chirpui-text-muted">writer <a class="chirpui-link" href="/members/{{ item.author_membership.username }}">{{ item.author_membership.username }}</a></p>
         </div>
         <p class="chirpui-text-muted">{{ item.author.summary }}</p>
         <div class="elbysodic-post__author-stats">

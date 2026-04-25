@@ -10,6 +10,7 @@ from elbysodic.domain.models import (
     Post,
     Role,
     Thread,
+    ThreadParticipant,
     ThreadWatch,
     User,
 )
@@ -25,6 +26,7 @@ __all__ = [
     "Post",
     "Role",
     "Thread",
+    "ThreadParticipant",
     "ThreadWatch",
     "User",
 ]

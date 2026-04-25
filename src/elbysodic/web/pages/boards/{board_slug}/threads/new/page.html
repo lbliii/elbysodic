@@ -78,6 +78,104 @@
              x-model="title"
              required>
     </div>
+    <div class="elbysodic-scene-form-grid">
+      <div>
+        <label class="chirpui-field__label" for="thread-status">Status</label>
+        <select id="thread-status" name="status" class="chirpui-field__input">
+          {% for item_status in thread_statuses %}
+          <option value="{{ item_status }}" {{ "selected" if item_status == status else "" }}>
+            {% if item_status == "open" %}Open to join{% elif item_status == "active" %}Active{% elif item_status == "paused" %}Paused{% elif item_status == "complete" %}Complete{% elif item_status == "private" %}Private scene{% else %}Archived{% end %}
+          </option>
+          {% end %}
+        </select>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="thread-posting-mode">Posting mode</label>
+        <select id="thread-posting-mode" name="posting_mode" class="chirpui-field__input">
+          {% for mode in posting_modes %}
+          <option value="{{ mode }}" {{ "selected" if mode == posting_mode else "" }}>
+            {{ "Posting order" if mode == "posting_order" else "Freeform" }}
+          </option>
+          {% end %}
+        </select>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="thread-location">Location</label>
+        <input id="thread-location"
+               class="chirpui-field__input"
+               name="location"
+               value="{{ location }}"
+               autocomplete="off"
+               placeholder="Danger Room">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="thread-timeline">Timeline</label>
+        <input id="thread-timeline"
+               class="chirpui-field__input"
+               name="timeline"
+               value="{{ timeline }}"
+               autocomplete="off"
+               placeholder="After curfew">
+      </div>
+    </div>
+    <div>
+      <label class="chirpui-field__label" for="thread-summary">Scene summary</label>
+      <textarea id="thread-summary"
+                class="chirpui-field__input"
+                name="summary"
+                rows="3"
+                placeholder="A short premise for the scene.">{{ summary }}</textarea>
+    </div>
+    {{ alpine_json_config(cast_picker_config_id, cast_picker_config) }}
+    <div class="elbysodic-mention-picker"
+         x-data="elbysodicMentionPicker('{{ cast_picker_config_id }}')"
+         @click.outside="close()">
+      <label class="chirpui-field__label" for="thread-cast-search">Tag cast</label>
+      <div class="elbysodic-mention-picker__control" @click="$refs.search.focus()">
+        <template x-for="item in selected" :key="item.kind + ':' + item.id">
+          <span class="elbysodic-mention-token">
+            <input type="hidden" :name="config.hiddenName" :value="item.id">
+            <span x-text="item.tag"></span>
+            <button type="button" :aria-label="'Remove ' + item.label" @click.stop="remove(item)">&times;</button>
+          </span>
+        </template>
+        <input id="thread-cast-search"
+               x-ref="search"
+               type="text"
+               class="elbysodic-mention-picker__input"
+               x-model="query"
+               :placeholder="selected.length ? '@character' : config.placeholder"
+               autocomplete="off"
+               @input.debounce.150ms="search()"
+               @focus="search()"
+               @keydown.arrow-down.prevent="move(1)"
+               @keydown.arrow-up.prevent="move(-1)"
+               @keydown.enter.prevent="chooseHighlighted()"
+               @keydown.escape.prevent="close()">
+      </div>
+      <div class="elbysodic-mention-picker__list"
+           role="listbox"
+           x-show="open"
+           x-cloak>
+        <template x-for="(item, index) in results" :key="item.kind + ':' + item.id">
+          <button type="button"
+                  class="elbysodic-mention-picker__result"
+                  :class="{ 'is-active': index === highlightedIndex }"
+                  role="option"
+                  @click="select(item)">
+            <span class="elbysodic-character-avatar" aria-hidden="true">
+              <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+              <span x-show="!item.avatar_url" x-text="item.initial"></span>
+            </span>
+            <span>
+              <strong x-text="item.tag"></strong>
+              <small x-text="item.detail"></small>
+            </span>
+          </button>
+        </template>
+        <p class="chirpui-text-muted" x-show="!loading && query.trim() && results.length === 0">No matches.</p>
+      </div>
+    </div>
     <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
       <label>
         <input type="radio"

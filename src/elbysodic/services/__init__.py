@@ -1,6 +1,8 @@
 """Application service APIs for Elbysodic."""
 
 from elbysodic.services.forum import (
+    POSTING_MODES,
+    THREAD_STATUSES,
     ActivityItem,
     AppServices,
     AttentionItem,
@@ -14,6 +16,10 @@ from elbysodic.services.forum import (
     CreatedThread,
     EditablePostView,
     ForumView,
+    MemberDirectory,
+    MemberDirectoryCard,
+    MemberProfile,
+    Mentionable,
     MyThreadsDashboard,
     NotificationInbox,
     NotificationItem,
@@ -30,6 +36,8 @@ from elbysodic.services.forum import (
 )
 
 __all__ = [
+    "POSTING_MODES",
+    "THREAD_STATUSES",
     "ActivityItem",
     "AppServices",
     "AttentionItem",
@@ -43,6 +51,10 @@ __all__ = [
     "CreatedThread",
     "EditablePostView",
     "ForumView",
+    "MemberDirectory",
+    "MemberDirectoryCard",
+    "MemberProfile",
+    "Mentionable",
     "MyThreadsDashboard",
     "NotificationInbox",
     "NotificationItem",

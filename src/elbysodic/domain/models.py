@@ -85,10 +85,24 @@ class Thread:
     author_character_id: int
     slug: str
     title: str
+    status: str
+    location: str
+    timeline: str
+    summary: str
+    posting_mode: str
     is_locked: bool
     is_pinned: bool
     created_at: str
     updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ThreadParticipant:
+    id: int
+    community_id: int
+    thread_id: int
+    character_id: int
+    added_at: str
 
 
 @dataclass(frozen=True, slots=True)

@@ -7,7 +7,7 @@
 {% end %}
 
 {% def character_thread_item(item) %}
-{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h3", True, False) }}
+{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h3", True, False) }}
 {% end %}
 
 {% block page_root %}
@@ -16,7 +16,11 @@
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  <a class="chirpui-link" href="/characters">← Characters</a>
+  {% if profile.can_manage %}
+  <a class="chirpui-link" href="/characters">← Your roster</a>
+  {% else %}
+  <a class="chirpui-link" href="/members/{{ profile.owner_membership.username }}">← {{ profile.owner_membership.display_name }}</a>
+  {% end %}
 
   {% call surface(variant="elevated") %}
   <article class="elbysodic-profile-hero chirpui-stack chirpui-stack--md">
@@ -35,6 +39,12 @@
             {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
           </div>
           <p class="chirpui-text-muted">{{ profile.character.summary }}</p>
+          <p class="chirpui-text-muted">
+            writer
+            <a class="chirpui-link" href="/members/{{ profile.owner_membership.username }}">
+              {{ profile.owner_membership.username }}
+            </a>
+          </p>
         </div>
       </div>
     </div>
@@ -43,8 +53,9 @@
       {{ stat(value=profile.thread_count, label="Threads started") }}
       {{ stat(value=profile.activity.needs_reply | length, label="Needs reply") }}
       {{ stat(value=profile.activity.participated | length, label="Active") }}
-      {{ stat(value=viewer.membership.username, label="Writer") }}
+      {{ stat(value=profile.owner_membership.display_name, label="Writer") }}
     {% end %}
+    {% if profile.can_manage %}
     <div class="chirpui-cluster chirpui-cluster--end">
       {% if not profile.is_default %}
       <form method="post" hx-boost="false">
@@ -53,6 +64,7 @@
       </form>
       {% end %}
     </div>
+    {% end %}
   </article>
   {% end %}
 
@@ -61,7 +73,11 @@
     {{ profile.character.name }}'s current writing queue.
     {% end %}
     {% call cluster(gap="sm") %}
+      {% if profile.can_manage %}
       <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">Open filtered queue</a>
+      {% else %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/members/{{ profile.owner_membership.username }}">View writer</a>
+      {% end %}
     {% end %}
     {% if profile.activity.participated %}
     {% for item in profile.activity.participated %}
@@ -74,6 +90,7 @@
     {% end %}
   </div>
 
+  {% if profile.can_manage %}
   {% call surface(variant="elevated") %}
   <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
     <div>
@@ -114,6 +131,7 @@
       <button type="submit" class="chirpui-btn chirpui-btn--primary">Save character</button>
     </div>
   </form>
+  {% end %}
   {% end %}
 
   <div class="chirpui-stack chirpui-stack--md">

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from chirp.contracts import FormContract, contract
+from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
@@ -31,7 +32,10 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
     intent = str(form.get("intent") or "save")
     if intent == "set_default":
         profile = services.read_character(character_slug)
-        services.set_default_character(profile.character.id)
+        try:
+            services.set_default_character(profile.character.id)
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
         return Redirect(f"/characters/{profile.character.slug}")
 
     name = str(form.get("name") or "")
@@ -53,6 +57,8 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
             summary=summary,
             avatar_url=avatar_url,
         )
+    except PermissionError as exc:
+        raise HTTPError(status=403, detail=str(exc)) from exc
     return Redirect(f"/characters/{character.slug}")
 
 

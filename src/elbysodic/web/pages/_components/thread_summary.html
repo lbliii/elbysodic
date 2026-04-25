@@ -4,7 +4,7 @@
   {% from "chirpui/surface.html" import surface %}
 {% end %}
 
-{% def thread_card(board, thread, author, author_membership, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post) %}
+{% def thread_card(board, thread, author, author_membership, participants, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post) %}
 {% call surface(variant="elevated") %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-thread-card {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
   <div class="chirpui-cluster chirpui-cluster--between elbysodic-thread-card__header">
@@ -29,9 +29,16 @@
         Started by
         <a class="chirpui-link" href="/characters/{{ author.slug }}">{{ author.name }}</a>
         {% if author_membership %}
-        · writer {{ author_membership.username }}
+        · writer <a class="chirpui-link" href="/members/{{ author_membership.username }}">{{ author_membership.username }}</a>
         {% end %}
       </p>
+      {% if thread.location or thread.timeline %}
+      <p class="elbysodic-thread-card__meta">
+        {% if thread.location %}{{ thread.location }}{% end %}
+        {% if thread.location and thread.timeline %} · {% end %}
+        {% if thread.timeline %}{{ thread.timeline }}{% end %}
+      </p>
+      {% end %}
     </div>
     <div class="chirpui-cluster chirpui-cluster--sm">
       {% for item_badge in badges %}
@@ -40,6 +47,25 @@
       {{ stat(value=reply_count, label="Replies") }}
     </div>
   </div>
+  {% if thread.summary %}
+  <p class="chirpui-text-muted">{{ thread.summary }}</p>
+  {% end %}
+  {% if participants %}
+  <div class="elbysodic-scene-cast" aria-label="Scene participants">
+    {% for participant in participants %}
+    <a class="elbysodic-scene-cast__face"
+       href="/characters/{{ participant.slug }}"
+       title="{{ participant.name }}"
+       aria-label="{{ participant.name }}">
+      {% if participant.avatar_url %}
+      <img src="{{ participant.avatar_url }}" alt="">
+      {% else %}
+      {{ participant.name[:1] }}
+      {% end %}
+    </a>
+    {% end %}
+  </div>
+  {% end %}
   {% if latest_post %}
   <div class="elbysodic-latest">
     <span class="chirpui-text-muted">Latest</span>
@@ -58,7 +84,7 @@
       <a class="chirpui-link" href="/characters/{{ latest_post.author.slug }}">
         {{ latest_post.author.name }}
       </a>
-      · writer {{ latest_post.author_membership.username }}
+      · writer <a class="chirpui-link" href="/members/{{ latest_post.author_membership.username }}">{{ latest_post.author_membership.username }}</a>
       · {{ latest_post.updated_at_label }}
     </span>
   </div>
@@ -89,6 +115,7 @@
     <a class="chirpui-link" href="/characters/{{ post.author.slug }}">
       {{ post.author.name }}
     </a>
+    · writer <a class="chirpui-link" href="/members/{{ post.author_membership.username }}">{{ post.author_membership.username }}</a>
     <span class="chirpui-text-muted">
       in
       <a class="chirpui-link" href="/boards/{{ board.slug }}">{{ board.name }}</a>

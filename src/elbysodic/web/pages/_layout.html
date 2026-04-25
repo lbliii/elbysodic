@@ -6,8 +6,8 @@
 {% block title %}Elbysodic{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=shell-counts">
-    <script defer src="/elbysodic-static/elbysodic-composer.js?v=shell-counts"></script>
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=mention-picker">
+    <script defer src="/elbysodic-static/elbysodic-composer.js?v=mention-picker"></script>
 {% end %}
 
 {% block title_oob %}
@@ -66,6 +66,7 @@
       <span class="elbysodic-sidebar-count">{{ viewer.unread_notification_count }}</span>
       {% end %}
     </a>
+    <a class="chirpui-sidebar__link" href="/members">Members</a>
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
     {% if viewer %}
     {% for item in viewer.navigation_boards %}
@@ -92,6 +93,7 @@
       <span class="elbysodic-sidebar-count">{{ viewer.unread_notification_count }}</span>
       {% end %}
     </a>
+    <a class="chirpui-sidebar__link" href="/members">Members</a>
     <a class="chirpui-sidebar__link" href="/characters">Characters</a>
     {% if viewer %}
     {% for item in viewer.navigation_boards %}

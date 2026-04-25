@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 from pathlib import Path
 from urllib.parse import urlencode
@@ -75,8 +76,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Latest" in index.text
             assert "Recent activity" in index.text
             assert "#post-" in index.text
-            assert "new replies" in index.text
-            assert "writer starlane" in index.text
+            assert "/members/starlane" in index.text
             assert _sidebar_board_count(index.text, "plotting") == 1
 
             board = await client.get("/boards/plotting")
@@ -96,7 +96,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Drop your available characters here" in thread.text
             assert "Rogue" in thread.text
             assert "Magneto" in thread.text
-            assert "writer starlane" in thread.text
+            assert "/members/starlane" in thread.text
             assert "caught up" in thread.text
             assert _sidebar_board_count(thread.text, "plotting") == 0
 
@@ -421,6 +421,108 @@ def test_mentions_notify_character_owner_without_thread_watch() -> None:
     asyncio.run(run())
 
 
+def test_writer_mentions_notify_membership_without_thread_watch() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        outsider_services, outsider_character_id = _outsider_services(
+            services,
+            prefix="writermention",
+        )
+        outsider_services.reply_to_thread(
+            "plotting",
+            "open-thread-roster",
+            outsider_character_id,
+            "Looping in @starlane for the OOC planning bit.",
+        )
+
+        async with TestClient(app) as client:
+            notifications = await client.get("/notifications")
+            assert notifications.status == 200
+            assert "Mention" in notifications.text
+            assert "Looping in @starlane for the OOC planning bit." in notifications.text
+            assert "Writermention Face" in notifications.text
+
+    asyncio.run(run())
+
+
+def test_members_directory_and_profile_show_visible_community_cast() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        viewer = services.viewer()
+        character = viewer.current_character
+        assert character is not None
+        private_board = repo.create_board(
+            community.id,
+            "private-lab",
+            "Private Lab",
+            is_private=True,
+        )
+        private_thread = repo.create_thread(
+            community.id,
+            private_board.id,
+            character.id,
+            "private-notes",
+            "Private notes",
+        )
+        repo.create_post(
+            community.id,
+            private_thread.id,
+            character.id,
+            "Private activity should stay private.",
+        )
+
+        async with TestClient(app) as client:
+            directory = await client.get("/members")
+            assert directory.status == 200
+            assert "Members" in directory.text
+            assert "Lane" in directory.text
+            assert "@starlane" in directory.text
+            assert "Rogue" in directory.text
+            assert "/members/starlane" in directory.text
+            assert "Private activity should stay private." not in directory.text
+
+            profile = await client.get("/members/starlane")
+            assert profile.status == 200
+            assert "Current face: Rogue" in profile.text
+            assert "Visible posts" in profile.text
+            assert "Open thread roster" in profile.text
+            assert "/characters/rogue" in profile.text
+            assert "Private notes" not in profile.text
+            assert "Private activity should stay private." not in profile.text
+
+            missing = await client.get("/members/nope")
+            assert missing.status == 404
+
+    asyncio.run(run())
+
+
+def test_external_character_profile_links_to_owning_member_without_edit_controls() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        outsider_services, outsider_character_id = _outsider_services(
+            services,
+            prefix="castmate",
+        )
+        assert outsider_services is not None
+        assert outsider_character_id > 0
+
+        async with TestClient(app) as client:
+            profile = await client.get("/characters/castmate-face")
+            assert profile.status == 200
+            assert "Castmate Face" in profile.text
+            assert "/members/castmate" in profile.text
+            assert "Edit character" not in profile.text
+            assert "Set current face" not in profile.text
+            assert "View writer" in profile.text
+
+    asyncio.run(run())
+
+
 def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
     async def run() -> None:
         app = _app()
@@ -635,7 +737,7 @@ def test_my_threads_tracks_obligations_after_threads_are_read() -> None:
             assert "needs reply" in dashboard.text
             assert "Sentinel drill after midnight" in dashboard.text
             assert "waiting" in dashboard.text
-            assert "Welcome to the rebuild" in dashboard.text
+            assert "Welcome to the rebuild" not in dashboard.text
             assert "/boards/plotting/threads/open-thread-roster#post-" in dashboard.text
 
     asyncio.run(run())
@@ -951,7 +1053,7 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
             assert "Revision 1" in revisions.text
             assert "Original typo." in revisions.text
             assert "**Updated** line." in revisions.text
-            assert "writer starlane" in revisions.text
+            assert "/members/starlane" in revisions.text
 
     asyncio.run(run())
 
@@ -1201,8 +1303,11 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
     async def run() -> None:
         app = _app()
         services = get_services()
-        magneto = next(
-            character for character in services.viewer().roster if character.name == "Magneto"
+        roster = services.viewer().roster
+        magneto = next(character for character in roster if character.name == "Magneto")
+        xavier = services.repo.get_character_by_slug(
+            services.seed.community.id,
+            "charles-xavier",
         )
 
         async with TestClient(app) as client:
@@ -1212,6 +1317,19 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "elbysodicComposer" in form.text
             assert "thread-composer-config" in form.text
             assert "Posting as" in form.text
+            assert "Scene summary" in form.text
+            assert "Tag cast" in form.text
+            assert "elbysodicMentionPicker" in form.text
+            assert "/mentionables/search" in form.text
+            assert (
+                re.search(
+                    rf'<input type="checkbox"\s+name="participant_ids"\s+value="{magneto.id}"',
+                    form.text,
+                )
+                is None
+            )
+            assert "Open to join" in form.text
+            assert "Posting order" in form.text
             assert 'role="toolbar"' in form.text
             assert 'aria-label="Bold"' in form.text
             assert 'aria-label="Italic"' in form.text
@@ -1221,10 +1339,19 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
 
             response = await client.post(
                 "/boards/danger-room/threads/new",
-                body=(
-                    f"character_id={magneto.id}"
-                    "&title=Metal+and+Memory"
-                    "&body=Magneto+sets+the+simulation+to+unfair."
+                body=urlencode(
+                    {
+                        "character_id": magneto.id,
+                        "participant_ids": [xavier.id],
+                        "title": "Metal and Memory",
+                        "status": "open",
+                        "location": "Sublevel 3",
+                        "timeline": "Before breakfast",
+                        "summary": "Magneto tags Xavier into an unreasonable simulation.",
+                        "posting_mode": "posting_order",
+                        "body": "Magneto sets the simulation to unfair.",
+                    },
+                    doseq=True,
                 ).encode(),
                 headers=_FORM,
             )
@@ -1238,12 +1365,149 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "Metal and Memory" in thread.text
             assert "Magneto sets the simulation to unfair." in thread.text
             assert "Magneto" in thread.text
+            assert "Scene details" in thread.text
+            assert "open to join" in thread.text
+            assert "Sublevel 3" in thread.text
+            assert "Before breakfast" in thread.text
+            assert "Magneto tags Xavier into an unreasonable simulation." in thread.text
+            assert "/characters/charles-xavier" in thread.text
 
             board = await client.get("/boards/danger-room")
             assert "Metal and Memory" in board.text
             assert "Started by" in board.text
+            assert "open to join" in board.text
+            assert "Sublevel 3" in board.text
             assert "Latest" in board.text
-            assert "writer starlane" in board.text
+            assert "/members/starlane" in board.text
+
+    asyncio.run(run())
+
+
+def test_mentionable_search_supports_character_and_writer_scopes() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            cast = await client.get("/mentionables/search?q=char&scope=cast")
+            assert cast.status == 200
+            cast_payload = json.loads(cast.body)
+            assert cast_payload["items"][0]["kind"] == "character"
+            assert cast_payload["items"][0]["handle"] == "charles-xavier"
+
+            own_roster = await client.get("/mentionables/search?q=rogue&scope=cast")
+            assert own_roster.status == 200
+            assert json.loads(own_roster.body)["items"] == []
+
+            ooc = await client.get("/mentionables/search?q=star&scope=ooc")
+            assert ooc.status == 200
+            ooc_payload = json.loads(ooc.body)
+            assert ooc_payload["items"][0]["kind"] == "writer"
+            assert ooc_payload["items"][0]["handle"] == "starlane"
+
+    asyncio.run(run())
+
+
+def test_thread_view_hides_unspecified_scene_metadata() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        role = repo.get_role_by_slug(community.id, "member")
+        author_user = repo.create_user("quiet-scene-author@example.com", "hash")
+        author_membership = repo.create_membership(
+            community.id,
+            author_user.id,
+            role.id,
+            "quietauthor",
+            "Quiet Author",
+        )
+        author = repo.create_character(
+            community.id,
+            author_membership.id,
+            "quiet-author-face",
+            "Quiet Author Face",
+        )
+        board = repo.get_board_by_slug(community.id, "danger-room")
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            author.id,
+            "quiet-default-scene",
+            "Quiet default scene",
+        )
+        repo.create_post(
+            community.id,
+            thread.id,
+            author.id,
+            "Rogue waits for someone else to make the first bad decision.",
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/quiet-default-scene")
+            assert page.status == 200
+            assert "Scene details" in page.text
+            assert "Scene management" not in page.text
+            assert "Unspecified" not in page.text
+            assert "Freeform" not in page.text
+            assert "open to join" not in page.text
+
+    asyncio.run(run())
+
+
+def test_thread_starter_can_manage_scene_cast() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "danger-room")
+        thread = repo.get_thread_by_slug(community.id, board.id, "sentinel-drill")
+        kitty = repo.get_character_by_slug(community.id, "kitty-pryde")
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+            assert page.status == 200
+            assert "Scene management" in page.text
+            assert "Tag cast" in page.text
+            assert "Charles Xavier" in page.text
+
+            response = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "intent": "scene",
+                        "status": "paused",
+                        "posting_mode": "freeform",
+                        "location": "West lawn",
+                        "timeline": "After inspection",
+                        "summary": "Rogue calls a timeout before the simulation gets personal.",
+                        "participant_ids": str(kitty.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert response.status in {302, 303}
+
+            updated = repo.get_thread(community.id, thread.id)
+            assert updated.status == "paused"
+            assert updated.location == "West lawn"
+            assert updated.timeline == "After inspection"
+            assert updated.summary == "Rogue calls a timeout before the simulation gets personal."
+            assert updated.posting_mode == "freeform"
+            assert {
+                character.slug
+                for character in repo.list_thread_participants(community.id, thread.id)
+            } == {"rogue", "kitty-pryde"}
+            assert xavier.id not in repo.list_thread_participant_ids(community.id, thread.id)
+
+            rendered = await client.get("/boards/danger-room/threads/sentinel-drill")
+            assert rendered.status == 200
+            assert "paused" in rendered.text
+            assert "West lawn" in rendered.text
+            assert "After inspection" in rendered.text
+            assert "Rogue calls a timeout before the simulation gets personal." in rendered.text
 
     asyncio.run(run())
 

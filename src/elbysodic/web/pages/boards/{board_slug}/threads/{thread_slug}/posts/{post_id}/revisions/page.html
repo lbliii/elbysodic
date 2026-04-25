@@ -26,7 +26,7 @@
       <div>
         <h2>{{ history.post.author.name }}</h2>
         <p class="chirpui-text-muted">
-          Posted by writer {{ history.post.author_membership.username }}
+          Posted by writer <a class="chirpui-link" href="/members/{{ history.post.author_membership.username }}">{{ history.post.author_membership.username }}</a>
           · {{ history.post.created_at_label }}
         </p>
       </div>
@@ -49,7 +49,7 @@
       <div>
         <h2>Revision {{ history.revisions | length - loop.index0 }}</h2>
         <p class="chirpui-text-muted">
-          Edited by writer {{ item.editor_membership.username }}
+          Edited by writer <a class="chirpui-link" href="/members/{{ item.editor_membership.username }}">{{ item.editor_membership.username }}</a>
           · {{ item.created_at_label }}
         </p>
       </div>

@@ -1,0 +1,132 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/thread_summary.html" import thread_card %}
+{% end %}
+
+{% def profile_thread_item(item) %}
+{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h3", True, False) }}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/members">← Members</a>
+
+  {% call surface(variant="elevated") %}
+  <article class="elbysodic-profile-hero chirpui-stack chirpui-stack--md">
+    <div class="elbysodic-member-card__header">
+      <div class="elbysodic-character-avatar elbysodic-character-avatar--lg" aria-hidden="true">
+        {% if profile.default_character and profile.default_character.avatar_url %}
+        <img src="{{ profile.default_character.avatar_url }}" alt="">
+        {% else %}
+        {{ profile.membership.display_name[:1] }}
+        {% end %}
+      </div>
+      <div>
+        <div class="chirpui-cluster chirpui-cluster--sm">
+          <h2>{{ profile.membership.display_name }}</h2>
+          {{ badge("you", variant="success") if profile.is_current_member else "" }}
+          {{ badge(profile.role.name, variant="warning" if profile.role.is_admin else "muted") }}
+        </div>
+        <p class="chirpui-text-muted">@{{ profile.membership.username }}</p>
+        {% if profile.default_character %}
+        <p class="chirpui-text-muted">Current face: {{ profile.default_character.name }}</p>
+        {% end %}
+      </div>
+    </div>
+    {% call cluster(gap="sm") %}
+      {{ stat(value=profile.roster | length, label="Faces") }}
+      {{ stat(value=profile.visible_post_count, label="Visible posts") }}
+      {{ stat(value=profile.visible_thread_count, label="Active") }}
+      {{ stat(value=profile.started_threads | length, label="Started") }}
+    {% end %}
+  </article>
+  {% end %}
+
+  {% call section_header("Roster") %}
+  Public faces in this community.
+  {% end %}
+  <div class="elbysodic-character-grid">
+    {% for character in profile.roster %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm">
+      <div class="elbysodic-character-card__identity">
+        <a class="elbysodic-character-avatar" href="/characters/{{ character.slug }}" aria-label="{{ character.name }}">
+          {% if character.avatar_url %}
+          <img src="{{ character.avatar_url }}" alt="">
+          {% else %}
+          {{ character.name[:1] }}
+          {% end %}
+        </a>
+        <div>
+          <h2><a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
+          <p class="chirpui-text-muted">{{ character.summary }}</p>
+        </div>
+      </div>
+      {% if profile.default_character and profile.default_character.id == character.id %}
+      {{ badge("current face", variant="success") }}
+      {% end %}
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+
+  {% call section_header("Active threads") %}
+  Threads this roster has touched.
+  {% end %}
+  <div class="chirpui-stack chirpui-stack--sm">
+    {% if profile.active_threads %}
+    {% for item in profile.active_threads %}
+      {{ profile_thread_item(item) }}
+    {% end %}
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No visible active threads yet.</p>
+    {% end %}
+    {% end %}
+  </div>
+
+  {% call section_header("Recent posts") %}
+  Latest visible writing from this roster.
+  {% end %}
+  <div class="chirpui-stack chirpui-stack--sm">
+    {% if profile.recent_posts %}
+    {% for item in profile.recent_posts %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-activity-item">
+      <div class="elbysodic-activity-item__meta">
+        <a class="chirpui-link" href="/characters/{{ item.post.author.slug }}">{{ item.post.author.name }}</a>
+        <span class="chirpui-text-muted">
+          in
+          <a class="chirpui-link" href="/boards/{{ item.board.slug }}">{{ item.board.name }}</a>
+          · {{ item.post.created_at_label }}
+        </span>
+      </div>
+      <h2>
+        <a class="chirpui-link"
+           href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.post.anchor }}">
+          {{ item.thread.title }}
+        </a>
+      </h2>
+      <p class="chirpui-text-muted">{{ item.post.snippet }}</p>
+    </article>
+    {% end %}
+    {% end %}
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No visible posts yet.</p>
+    {% end %}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

@@ -73,3 +73,24 @@ The MVP should prove the loop that makes PBP feel alive:
 Everything else should grow from that loop: thread states, archives, drafts,
 plotting tools, wanted ads, ship/relationship trackers, notifications, member
 directories, moderation, theming, and export.
+
+## Current Product Understanding
+
+The early prototype is already proving more than a generic board index. The
+core product shape is:
+
+- The member enters one community and their community-specific roster activates.
+- One character can be the current "face" of the writer in that community.
+- Posts and threads are visibly authored by characters while still retaining
+  membership ownership for permissions and auditability.
+- Boards and thread cards should tell a writer where they have new material,
+  where they owe a reply, and where they are waiting on someone else.
+- Reading should carry the writer forward with first-unread jumps, next-unread
+  navigation, and caught-up state.
+- Writing should preserve flow with a focused composer, safe markup, preview,
+  drafts, and character context.
+- Notifications should point at meaningful creative obligations: watched
+  threads and direct character mentions.
+
+Future work should keep sharpening this loop before expanding into large hosted
+platform features.
