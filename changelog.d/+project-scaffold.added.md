@@ -1,0 +1,1 @@
+Established the initial Chirp and Chirp-UI project scaffold with tenant-aware forum persistence, membership-owned character posting identities, a dev-seeded board/thread/reply slice, and a PBP-native product mission.

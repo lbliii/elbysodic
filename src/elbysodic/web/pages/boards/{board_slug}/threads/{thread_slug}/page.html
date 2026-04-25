@@ -1,0 +1,145 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/boards/{{ thread_view.board.slug }}">← {{ thread_view.board.name }}</a>
+
+  {% call section_header(thread_view.thread.title) %}
+  {{ badge(thread_view.board.name) }}
+  {{ badge("pinned", variant="warning") if thread_view.thread.is_pinned else "" }}
+  {{ badge("locked", variant="muted") if thread_view.thread.is_locked else "" }}
+  {% end %}
+
+  <div class="chirpui-stack chirpui-stack--md">
+    {% for item in thread_view.posts %}
+    {% call surface(variant="elevated") %}
+    <article id="{{ item.anchor }}" class="elbysodic-post">
+      <aside class="elbysodic-post__author">
+        <a class="elbysodic-character-avatar elbysodic-character-avatar--lg"
+           href="/characters/{{ item.author.slug }}"
+           aria-label="{{ item.author.name }}">
+          {% if item.author.avatar_url %}
+          <img src="{{ item.author.avatar_url }}" alt="">
+          {% else %}
+          {{ item.author.name[:1] }}
+          {% end %}
+        </a>
+        <div>
+          <h2><a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a></h2>
+          <p class="chirpui-text-muted">writer {{ item.author_membership.username }}</p>
+        </div>
+        <p class="chirpui-text-muted">{{ item.author.summary }}</p>
+        <div class="elbysodic-post__author-stats">
+          <span>{{ item.author_membership.post_count }} posts</span>
+        </div>
+      </aside>
+      <div class="elbysodic-post__body">
+        <header class="elbysodic-post__meta">
+          <span>{{ item.created_at_label }}</span>
+        </header>
+        <p>{{ item.post.body }}</p>
+      </div>
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+
+  {% if thread_view.can_reply %}
+    {% call surface(variant="elevated") %}
+    {{ alpine_json_config(composer_config_id, composer_config) }}
+    <form method="post"
+          hx-boost="false"
+          class="chirpui-stack chirpui-stack--md"
+          x-data="elbysodicComposer('{{ composer_config_id }}')"
+          @submit="clearDraft()">
+      <div class="elbysodic-composer-heading">
+        <div>
+          <h2>Reply</h2>
+          <p class="chirpui-text-muted">Add the next beat as a community character.</p>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="reply-character">Posting as</label>
+          <select id="reply-character"
+                  name="character_id"
+                  class="chirpui-field__input"
+                  x-model="selectedCharacterId">
+            {% for character in viewer.roster %}
+            <option value="{{ character.id }}" {{ "selected" if character.id == selected_character.id else "" }}>
+              {{ character.name }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+      <div class="elbysodic-composer-character">
+        <div class="elbysodic-character-avatar" aria-hidden="true">
+          <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
+          <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
+        </div>
+        <div>
+          <strong x-text="character().name">{{ selected_character.name }}</strong>
+          <p class="chirpui-text-muted" x-text="character().summary">{{ selected_character.summary }}</p>
+        </div>
+      </div>
+      {% if error %}
+      <p class="chirpui-field__error">{{ error }}</p>
+      {% end %}
+      <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
+        <label>
+          <input type="radio"
+                 name="reply-composer-view"
+                 value="write"
+                 x-model="viewMode">
+          <span>Write</span>
+        </label>
+        <label>
+          <input type="radio"
+                 name="reply-composer-view"
+                 value="preview"
+                 x-model="viewMode">
+          <span>Preview</span>
+        </label>
+      </div>
+      <div x-show="!previewMode">
+        <label class="chirpui-visually-hidden" for="reply-body">Reply body</label>
+        <textarea id="reply-body"
+                  name="body"
+                  class="chirpui-field__input"
+                  rows="6"
+                  placeholder="Write the next beat..."
+                  x-model="body">{{ body }}</textarea>
+      </div>
+      <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
+        <p x-show="hasPreview()" x-text="body"></p>
+        <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Post reply</button>
+      </div>
+    </form>
+    {% end %}
+  {% else %}
+    {% call surface(variant="elevated") %}
+    <div class="chirpui-stack chirpui-stack--sm">
+      <h2>Thread locked</h2>
+      <p class="chirpui-text-muted">Replies are closed for this thread.</p>
+      {% if error %}
+      <p class="chirpui-field__error">{{ error }}</p>
+      {% end %}
+    </div>
+    {% end %}
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

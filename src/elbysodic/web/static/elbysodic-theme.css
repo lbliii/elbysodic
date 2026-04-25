@@ -1,0 +1,445 @@
+/* Elbysodic app theme.
+ *
+ * Chirp-UI owns component structure and the pre-paint data-theme script.
+ * This file supplies Elbysodic's product tokens for light, dark, and system.
+ */
+
+:root {
+    color-scheme: dark;
+
+    --elbysodic-ink-0: #0f1110;
+    --elbysodic-ink-1: #171916;
+    --elbysodic-ink-2: #20231f;
+    --elbysodic-ink-3: #2b302a;
+    --elbysodic-paper-0: #fbf8f1;
+    --elbysodic-paper-1: #f3eee3;
+    --elbysodic-paper-2: #ebe2d5;
+    --elbysodic-paper-3: #ddd0bf;
+    --elbysodic-rose: #c75b67;
+    --elbysodic-rose-strong: #e57984;
+    --elbysodic-moss: #79a889;
+    --elbysodic-gold: #c99a46;
+
+    --chirpui-font-xs: 0.75rem;
+    --chirpui-font-sm: 0.875rem;
+    --chirpui-font-base: 1rem;
+    --chirpui-font-lg: 1.125rem;
+    --chirpui-font-xl: 1.375rem;
+    --chirpui-font-2xl: 1.75rem;
+    --chirpui-prose-3xl: 2rem;
+    --chirpui-prose-4xl: 2.5rem;
+    --chirpui-display-letter-spacing: 0;
+
+    --chirpui-ui-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --chirpui-prose-font-family: var(--chirpui-ui-font-family);
+    --chirpui-code-font-family: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
+    --chirpui-mono-font-family: var(--chirpui-code-font-family);
+    --chirpui-font-family: var(--chirpui-prose-font-family);
+
+    --chirpui-bg: var(--elbysodic-ink-0);
+    --chirpui-bg-subtle: var(--elbysodic-ink-1);
+    --chirpui-surface: var(--elbysodic-ink-1);
+    --chirpui-surface-alt: var(--elbysodic-ink-2);
+    --chirpui-surface-elevated: var(--elbysodic-ink-2);
+    --chirpui-border: #3d433a;
+    --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 64%, transparent);
+    --chirpui-text: #f2ece3;
+    --chirpui-text-muted: #bcb0a5;
+    --chirpui-accent: var(--elbysodic-rose-strong);
+    --chirpui-accent-hover: #f09aa1;
+    --chirpui-accent-dim: #9e454f;
+    --chirpui-accent-secondary: var(--elbysodic-moss);
+    --chirpui-link: #7bc8ee;
+    --chirpui-link-hover: #a7dbf4;
+    --chirpui-link-visited: #c7a4e3;
+    --chirpui-primary: var(--chirpui-accent);
+    --chirpui-success: var(--elbysodic-moss);
+    --chirpui-warning: var(--elbysodic-gold);
+    --chirpui-error: #f28b82;
+    --chirpui-muted: var(--chirpui-text-muted);
+    --chirpui-focus-ring: color-mix(in srgb, var(--chirpui-accent) 34%, transparent);
+    --chirpui-card-header-color: var(--chirpui-text);
+    --chirpui-card-hover-border: color-mix(in srgb, var(--chirpui-accent) 64%, var(--chirpui-border));
+    --chirpui-card-hover-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    --chirpui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --chirpui-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.28);
+    --chirpui-radius: 0.5rem;
+    --chirpui-radius-sm: 0.25rem;
+}
+
+[data-theme="light"] {
+    color-scheme: light;
+
+    --chirpui-bg: var(--elbysodic-paper-0);
+    --chirpui-bg-subtle: var(--elbysodic-paper-1);
+    --chirpui-surface: #fffdf8;
+    --chirpui-surface-alt: var(--elbysodic-paper-1);
+    --chirpui-surface-elevated: #fffaf1;
+    --chirpui-border: var(--elbysodic-paper-3);
+    --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+    --chirpui-text: #26221d;
+    --chirpui-text-muted: #71685d;
+    --chirpui-accent: #a3424d;
+    --chirpui-accent-hover: #7f2f39;
+    --chirpui-accent-dim: #c47a84;
+    --chirpui-accent-secondary: #4f8465;
+    --chirpui-link: #0f7097;
+    --chirpui-link-hover: #0b536f;
+    --chirpui-link-visited: #6d4f8d;
+    --chirpui-primary: var(--chirpui-accent);
+    --chirpui-success: #477b5e;
+    --chirpui-warning: #9d6f24;
+    --chirpui-error: #b23b45;
+    --chirpui-card-hover-shadow: 0 10px 24px rgba(71, 55, 34, 0.12);
+    --chirpui-shadow-sm: 0 1px 2px rgba(58, 44, 28, 0.08);
+    --chirpui-shadow-md: 0 8px 22px rgba(58, 44, 28, 0.1);
+}
+
+[data-theme="system"] {
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: light) {
+    [data-theme="system"] {
+        --chirpui-bg: var(--elbysodic-paper-0);
+        --chirpui-bg-subtle: var(--elbysodic-paper-1);
+        --chirpui-surface: #fffdf8;
+        --chirpui-surface-alt: var(--elbysodic-paper-1);
+        --chirpui-surface-elevated: #fffaf1;
+        --chirpui-border: var(--elbysodic-paper-3);
+        --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+        --chirpui-text: #26221d;
+        --chirpui-text-muted: #71685d;
+        --chirpui-accent: #a3424d;
+        --chirpui-accent-hover: #7f2f39;
+        --chirpui-accent-dim: #c47a84;
+        --chirpui-accent-secondary: #4f8465;
+        --chirpui-link: #0f7097;
+        --chirpui-link-hover: #0b536f;
+        --chirpui-link-visited: #6d4f8d;
+        --chirpui-primary: var(--chirpui-accent);
+        --chirpui-success: #477b5e;
+        --chirpui-warning: #9d6f24;
+        --chirpui-error: #b23b45;
+        --chirpui-card-hover-shadow: 0 10px 24px rgba(71, 55, 34, 0.12);
+        --chirpui-shadow-sm: 0 1px 2px rgba(58, 44, 28, 0.08);
+        --chirpui-shadow-md: 0 8px 22px rgba(58, 44, 28, 0.1);
+    }
+}
+
+html,
+body {
+    background: var(--chirpui-bg);
+    color: var(--chirpui-text);
+}
+
+body {
+    font-family: var(--chirpui-ui-font-family);
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--chirpui-accent) 30%, transparent);
+}
+
+.chirpui-app-shell,
+.chirpui-app-shell__main,
+.chirpui-app-shell__content {
+    background: var(--chirpui-bg);
+    color: var(--chirpui-text);
+}
+
+.chirpui-app-shell__topbar,
+.chirpui-app-shell__sidebar {
+    background: var(--chirpui-bg-subtle);
+    border-color: var(--chirpui-border);
+    color: var(--chirpui-text);
+}
+
+.chirpui-sidebar__link {
+    color: var(--chirpui-text-muted);
+}
+
+.chirpui-sidebar__link:hover,
+.chirpui-sidebar__link[aria-current="page"] {
+    color: var(--chirpui-text);
+}
+
+.chirpui-surface {
+    border-color: var(--chirpui-border-subtle);
+}
+
+.chirpui-field__input {
+    background: var(--chirpui-surface);
+    border-color: var(--chirpui-border);
+    color: var(--chirpui-text);
+}
+
+.chirpui-theme-toggle {
+    border-color: var(--chirpui-border);
+}
+
+.elbysodic-board-card__header,
+.elbysodic-thread-card__header {
+    align-items: flex-start;
+}
+
+.elbysodic-latest {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.25rem;
+    padding-top: 0.875rem;
+}
+
+.elbysodic-thread-card {
+    display: grid;
+    gap: 0.875rem;
+}
+
+.elbysodic-thread-card--unread {
+    border-color: color-mix(in srgb, var(--chirpui-accent) 42%, var(--chirpui-border));
+}
+
+.elbysodic-thread-card__meta,
+.elbysodic-empty-state {
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-thread-card__meta {
+    font-size: var(--chirpui-font-sm);
+    margin-top: 0.25rem;
+}
+
+.elbysodic-activity-list {
+    margin-top: -0.25rem;
+}
+
+.elbysodic-activity-item {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.elbysodic-activity-item h2,
+.elbysodic-activity-item p {
+    margin: 0;
+}
+
+.elbysodic-activity-item__meta {
+    align-items: center;
+    color: var(--chirpui-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.35rem;
+}
+
+.elbysodic-character-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.elbysodic-character-card {
+    min-height: 8.5rem;
+}
+
+.elbysodic-character-card__header,
+.elbysodic-character-card__identity {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+}
+
+.elbysodic-character-card__header {
+    justify-content: space-between;
+}
+
+.elbysodic-character-card__identity {
+    min-width: 0;
+}
+
+.elbysodic-character-avatar {
+    align-items: center;
+    aspect-ratio: 1;
+    background: color-mix(in srgb, var(--chirpui-accent) 18%, var(--chirpui-surface));
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius);
+    color: var(--chirpui-text);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+    font-weight: var(--chirpui-ui-font-weight-bold);
+    justify-content: center;
+    text-decoration: none;
+    width: 3.25rem;
+}
+
+.elbysodic-character-avatar img {
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.elbysodic-character-avatar--lg {
+    font-size: 2rem;
+    width: 5rem;
+}
+
+.elbysodic-form-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.elbysodic-checkbox {
+    align-items: center;
+    color: var(--chirpui-text-muted);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.elbysodic-checkbox input {
+    accent-color: var(--chirpui-accent);
+}
+
+.elbysodic-composer-heading {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.elbysodic-composer-character {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 6%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius);
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.elbysodic-composer-character p {
+    margin: 0.15rem 0 0;
+}
+
+.elbysodic-composer-toggle {
+    align-items: center;
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.2rem;
+    width: fit-content;
+}
+
+.elbysodic-composer-toggle input {
+    position: absolute;
+    opacity: 0;
+}
+
+.elbysodic-composer-toggle label {
+    cursor: pointer;
+}
+
+.elbysodic-composer-toggle span {
+    border-radius: var(--chirpui-radius-sm);
+    display: block;
+    font-size: var(--chirpui-font-sm);
+    padding: 0.35rem 0.65rem;
+}
+
+.elbysodic-composer-toggle input:focus-visible + span {
+    outline: 2px solid var(--chirpui-focus-ring);
+    outline-offset: 2px;
+}
+
+.elbysodic-composer-toggle input:checked + span {
+    background: var(--chirpui-accent);
+    color: var(--chirpui-bg);
+}
+
+.elbysodic-composer-preview {
+    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius);
+    min-height: 8rem;
+    padding: 1rem;
+}
+
+.elbysodic-composer-preview h2,
+.elbysodic-composer-preview p {
+    margin: 0;
+}
+
+.elbysodic-composer-preview h2 + p {
+    margin-top: 0.75rem;
+}
+
+.elbysodic-post {
+    scroll-margin-top: 5rem;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(11rem, 14rem) 1fr;
+}
+
+.elbysodic-post__author {
+    border-right: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.75rem;
+    padding-right: 1rem;
+}
+
+.elbysodic-post__author h2,
+.elbysodic-post__author p,
+.elbysodic-post__body p {
+    margin: 0;
+}
+
+.elbysodic-post__author-stats {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+}
+
+.elbysodic-post__body {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.elbysodic-post__body p {
+    font-size: var(--chirpui-font-lg);
+    line-height: var(--chirpui-line-height-relaxed);
+}
+
+.elbysodic-post__meta {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+}
+
+@media (max-width: 48rem) {
+    .elbysodic-composer-heading {
+        display: grid;
+    }
+
+    .elbysodic-board-card__header,
+    .elbysodic-thread-card__header {
+        display: grid;
+    }
+
+    .elbysodic-post {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-post__author {
+        border-bottom: 1px solid var(--chirpui-border-subtle);
+        border-right: 0;
+        padding-bottom: 1rem;
+        padding-right: 0;
+    }
+}

@@ -1,0 +1,102 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Your roster") %}
+  {{ badge(viewer.community.name) }}
+  {% end %}
+
+  {% call cluster(gap="sm") %}
+    {{ stat(value=viewer.roster | length, label="Characters") }}
+    {{ stat(value=viewer.current_character.name, label="Current face") }}
+    {{ stat(value=viewer.membership.post_count, label="Posts") }}
+  {% end %}
+
+  <div class="elbysodic-character-grid">
+    {% for character in viewer.roster %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm">
+      <div class="elbysodic-character-card__header">
+        <div class="elbysodic-character-card__identity">
+          <div class="elbysodic-character-avatar" aria-hidden="true">
+            {% if character.avatar_url %}
+            <img src="{{ character.avatar_url }}" alt="">
+            {% else %}
+            {{ character.name[:1] }}
+            {% end %}
+          </div>
+          <div>
+            <h2>
+              <a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a>
+            </h2>
+            <p class="chirpui-text-muted">{{ character.summary }}</p>
+          </div>
+        </div>
+        {% if viewer.current_character.id == character.id %}
+        {{ badge("current", variant="success") }}
+        {% end %}
+      </div>
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+
+  {% call surface(variant="elevated") %}
+  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+    <div>
+      <h2>Add character</h2>
+      <p class="chirpui-text-muted">Community identity for {{ viewer.community.name }}</p>
+    </div>
+    {% if error %}
+    <p class="chirpui-field__error">{{ error }}</p>
+    {% end %}
+    <div class="elbysodic-form-grid">
+      <div>
+        <label class="chirpui-field__label" for="character-name">Name</label>
+        <input id="character-name"
+               class="chirpui-field__input"
+               name="name"
+               value="{{ name }}"
+               autocomplete="off"
+               required>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-avatar">Avatar URL</label>
+        <input id="character-avatar"
+               class="chirpui-field__input"
+               name="avatar_url"
+               value="{{ avatar_url }}"
+               autocomplete="off">
+      </div>
+    </div>
+    <div>
+      <label class="chirpui-field__label" for="character-summary">Summary</label>
+      <textarea id="character-summary"
+                class="chirpui-field__input"
+                name="summary"
+                rows="4">{{ summary }}</textarea>
+    </div>
+    <label class="elbysodic-checkbox">
+      <input type="checkbox" name="make_default" {{ "checked" if make_default else "" }}>
+      <span>Set as current face</span>
+    </label>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Add character</button>
+    </div>
+  </form>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

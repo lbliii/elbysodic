@@ -1,0 +1,80 @@
+{# target: body #}
+{% extends "chirpui/app_shell_layout.html" %}
+{% from "chirpui/sidebar.html" import sidebar, sidebar_link, sidebar_section %}
+{% from "chirpui/theme_toggle.html" import theme_toggle %}
+
+{% block title %}Elbysodic{% end %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=composer-radio-toggle">
+<script defer src="/elbysodic-static/elbysodic-composer.js?v=composer-radio-toggle"></script>
+{% end %}
+
+{% block title_oob %}
+<title id="chirpui-document-title">Elbysodic</title>
+{% end %}
+
+{% block brand %}Elbysodic{% end %}
+
+{% block topbar_center %}
+<span class="chirpui-text-muted chirpui-font-sm">
+  X-Men Apocalypse
+</span>
+{% end %}
+
+{% block breadcrumbs_oob %}
+<span class="chirpui-text-muted chirpui-font-sm">
+  X-Men Apocalypse
+</span>
+{% end %}
+
+{% block topbar_end %}
+{% if viewer %}
+<form action="/identity" method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--sm">
+  <input type="hidden" name="next" value="{{ current_path or "/" }}">
+  <label class="chirpui-visually-hidden" for="active-character">Active character</label>
+  <select id="active-character"
+          name="character_id"
+          class="chirpui-field__input"
+          onchange="this.form.submit()">
+    {% for character in viewer.roster %}
+    <option value="{{ character.id }}" {{ "selected" if character.id == viewer.current_character.id else "" }}>
+      {{ character.name }}
+    </option>
+    {% end %}
+  </select>
+</form>
+{% end %}
+{{ theme_toggle() }}
+{% end %}
+
+{% block shell_actions_oob %}
+{% from "chirpui/shell_actions.html" import shell_actions_bar %}
+{% if shell_actions %}
+{{ shell_actions_bar(shell_actions) }}
+{% end %}
+{% end %}
+
+{% block sidebar %}
+{% call sidebar() %}
+  {% call sidebar_section("Forum") %}
+    {{ sidebar_link(url_for("index"), "Overview", icon="grid") }}
+    <a class="chirpui-sidebar__link" href="/characters">Characters</a>
+    <a class="chirpui-sidebar__link" href="/boards/announcements">Announcements</a>
+    <a class="chirpui-sidebar__link" href="/boards/plotting">Plotting</a>
+    <a class="chirpui-sidebar__link" href="/boards/danger-room">Danger Room</a>
+  {% end %}
+{% end %}
+{% end %}
+
+{% block sidebar_oob %}
+{% call sidebar() %}
+  {% call sidebar_section("Forum") %}
+    {{ sidebar_link(url_for("index"), "Overview", icon="grid") }}
+    <a class="chirpui-sidebar__link" href="/characters">Characters</a>
+    <a class="chirpui-sidebar__link" href="/boards/announcements">Announcements</a>
+    <a class="chirpui-sidebar__link" href="/boards/plotting">Plotting</a>
+    <a class="chirpui-sidebar__link" href="/boards/danger-room">Danger Room</a>
+  {% end %}
+{% end %}
+{% end %}

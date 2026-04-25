@@ -1,0 +1,238 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elbysodic"
+version = "0.1.0"
+description = "A modern, ergonomic play-by-post community forum built on Chirp and Chirp-UI"
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+authors = [{ name = "Elbysodic Contributors" }]
+keywords = [
+    "play-by-post",
+    "forum",
+    "roleplay",
+    "chirp",
+    "htmx",
+    "sqlite",
+    "multi-tenant",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Typing :: Typed",
+]
+dependencies = [
+    "bengal-chirp[config,forms,sessions,ui]>=0.5.0",
+    "chirp-ui>=0.5.0",
+]
+
+[project.scripts]
+elbysodic = "elbysodic.cli:main"
+
+[project.urls]
+Repository = "https://github.com/lbliii/elbysodic"
+Changelog = "https://github.com/lbliii/elbysodic/blob/main/CHANGELOG.md"
+
+[tool.uv.sources]
+bengal-chirp = { path = "../python/b-stack/chirp", editable = true }
+chirp-ui = { path = "../python/chirp-ui", editable = true }
+kida-templates = { path = "../python/b-stack/kida", editable = true }
+bengal-pounce = { path = "../python/b-stack/pounce", editable = true }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+elbysodic = ["py.typed", "web/pages/**/*.html", "web/static/*"]
+
+# =============================================================================
+# Ruff - Linter & Formatter
+# =============================================================================
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "I",    # isort
+    "N",    # pep8-naming
+    "PIE",  # misc lints
+    "PERF", # perflint
+    "C4",   # unnecessary comprehensions
+    "RUF",  # Ruff-specific rules
+    "PT",   # pytest style
+    "T20",  # no stray print statements
+    "A",    # builtin shadowing
+    "S",    # bandit
+    "TRY",  # exception handling
+    "LOG",  # logging
+]
+ignore = [
+    "E501",   # line length handled by formatter
+    "TRY003", # inline detail strings are clearer for this app
+    "TRY300", # check-then-return patterns are intentional
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["S101"]
+"scripts/**/*.py" = ["T20"]
+"src/elbysodic/db/repository.py" = ["S608"]
+
+# =============================================================================
+# ty - Type Checker
+# =============================================================================
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+exclude = ["dist/", "build/", "tests/"]
+
+[tool.ty.rules]
+unused-ignore-comment = "warn"
+
+# =============================================================================
+# Pytest
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = ["-ra", "-q", "--strict-markers", "--import-mode=importlib"]
+markers = [
+    "integration: integration tests requiring full app setup",
+]
+
+# =============================================================================
+# Coverage
+# =============================================================================
+
+[tool.coverage.run]
+source = ["src/elbysodic"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+precision = 1
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+    "def __repr__",
+]
+
+[dependency-groups]
+docs = [
+    "bengal>=0.3.0",
+    "lunr>=0.7.0",
+]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=6.0.0",
+    "pytest-timeout>=2.3.0",
+    "pytest-xdist>=3.5.0",
+    "ty>=0.0.11",
+    "ruff>=0.15.1",
+    "towncrier>=24.8.0",
+    "prek>=0.3.2",
+    "poethepoet>=0.32.0",
+]
+
+# =============================================================================
+# Task Runner (poethepoet)
+# =============================================================================
+
+[tool.poe.tasks]
+test = { cmd = "pytest", help = "Run the test suite" }
+test-fast = { cmd = "pytest tests/ -x -q --timeout=10", help = "Fast feedback loop" }
+test-cov = { cmd = "pytest tests/ --cov=elbysodic --cov-report=term-missing", help = "Run tests with coverage" }
+
+ty = { cmd = "ty check src/elbysodic/", help = "Run ty type checker" }
+ty-strict = { cmd = "ty check src/elbysodic/ --error-on-warning", help = "Strict type checking" }
+
+lint = { cmd = "ruff check .", help = "Run ruff linter" }
+lint-fix = { cmd = "ruff check . --fix", help = "Run ruff linter with auto-fix" }
+format = { cmd = "ruff format .", help = "Format code with ruff" }
+format-check = { cmd = "ruff format . --check", help = "Check formatting" }
+
+hooks = { cmd = "prek run --all-files", help = "Run all pre-commit hooks" }
+hooks-install = { cmd = "prek install", help = "Install pre-commit hooks" }
+
+ci = { sequence = ["lint", "format-check", "ty", "test"], help = "Full CI check" }
+check = { sequence = ["lint", "format-check", "ty"], help = "Quick check without tests" }
+
+dist = { shell = "rm -rf dist/ && uv build && ls -la dist/", help = "Build distribution" }
+
+changelog = { cmd = "towncrier build --yes", help = "Compile changelog fragments" }
+changelog-draft = { cmd = "towncrier build --draft", help = "Preview changelog" }
+changelog-check = { cmd = "towncrier check --compare-with origin/main", help = "Verify a changelog fragment exists" }
+
+clean.shell = """
+rm -rf dist build .pytest_cache .coverage htmlcov .ruff_cache .ty_cache
+find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+"""
+clean.help = "Remove build artifacts and caches"
+
+# =============================================================================
+# Towncrier - Changelog Fragments
+# =============================================================================
+
+[tool.towncrier]
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+package = "elbysodic"
+package_dir = "src"
+title_format = "## [{version}] - {project_date}"
+issue_format = "[#{issue}](https://github.com/lbliii/elbysodic/issues/{issue})"
+underlines = ["", "", ""]
+
+[[tool.towncrier.type]]
+directory = "added"
+name = "Added"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "changed"
+name = "Changed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecated"
+name = "Deprecated"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removed"
+name = "Removed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "fixed"
+name = "Fixed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "security"
+name = "Security"
+showcontent = true

@@ -1,0 +1,69 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/characters">← Characters</a>
+
+  {% call surface(variant="elevated") %}
+  <article class="elbysodic-profile-hero chirpui-stack chirpui-stack--md">
+    <div class="elbysodic-character-card__header">
+      <div class="elbysodic-character-card__identity">
+        <div class="elbysodic-character-avatar elbysodic-character-avatar--lg" aria-hidden="true">
+          {% if profile.character.avatar_url %}
+          <img src="{{ profile.character.avatar_url }}" alt="">
+          {% else %}
+          {{ profile.character.name[:1] }}
+          {% end %}
+        </div>
+        <div>
+          {% call section_header(profile.character.name) %}
+          {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
+          {% end %}
+          <p class="chirpui-text-muted">{{ profile.character.summary }}</p>
+        </div>
+      </div>
+    </div>
+    {% call cluster(gap="sm") %}
+      {{ stat(value=profile.post_count, label="Posts") }}
+      {{ stat(value=profile.thread_count, label="Threads started") }}
+      {{ stat(value=viewer.membership.username, label="Writer") }}
+    {% end %}
+  </article>
+  {% end %}
+
+  <div class="chirpui-stack chirpui-stack--md">
+    <h2>Recent posts</h2>
+    {% for item in profile.recent_posts %}
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm">
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <div>
+          <h3>
+            <a class="chirpui-link"
+               href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}">
+              {{ item.thread.title }}
+            </a>
+          </h3>
+          <p class="chirpui-text-muted">{{ item.board.name }} · {{ item.post.created_at }}</p>
+        </div>
+      </div>
+      <p>{{ item.post.body }}</p>
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}
