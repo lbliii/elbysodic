@@ -41,6 +41,19 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
         return Redirect(f"/wanted/{wanted_slug}")
+    if intent == "create_reserve":
+        try:
+            services.create_reserve_for_wanted_interest(
+                wanted_slug,
+                _parse_interest_id(form.get("interest_id")),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/wanted/{wanted_slug}")
     raise HTTPError(status=400, detail=f"unknown wanted intent: {intent}")
 
 

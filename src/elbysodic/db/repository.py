@@ -9,6 +9,7 @@ from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLU
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterReserve,
     Community,
     CommunityMembership,
     Facet,
@@ -335,6 +336,7 @@ class ForumRepository:
         avatar_url: str | None = None,
         summary: str = "",
         *,
+        application_status: str = "accepted",
         make_default: bool = False,
     ) -> Character:
         self.get_membership(community_id, membership_id)
@@ -342,11 +344,29 @@ class ForumRepository:
         cursor = self.connection.execute(
             """
             INSERT INTO characters (
-                community_id, membership_id, slug, name, avatar_url, summary, created_at, updated_at
+                community_id,
+                membership_id,
+                slug,
+                name,
+                avatar_url,
+                summary,
+                application_status,
+                created_at,
+                updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (community_id, membership_id, slug, name, avatar_url, summary, now, now),
+            (
+                community_id,
+                membership_id,
+                slug,
+                name,
+                avatar_url,
+                summary,
+                application_status,
+                now,
+                now,
+            ),
         )
         character = self.get_character(community_id, _last_id(cursor))
         if make_default:
@@ -366,6 +386,7 @@ class ForumRepository:
                 slug,
                 avatar_url,
                 summary,
+                application_status,
                 created_at,
                 updated_at
             FROM characters
@@ -388,6 +409,7 @@ class ForumRepository:
                 slug,
                 avatar_url,
                 summary,
+                application_status,
                 created_at,
                 updated_at
             FROM characters
@@ -421,6 +443,24 @@ class ForumRepository:
         self.connection.commit()
         return self.get_character(community_id, character_id)
 
+    def update_character_application_status(
+        self,
+        community_id: int,
+        character_id: int,
+        application_status: str,
+    ) -> Character:
+        self.get_character(community_id, character_id)
+        self.connection.execute(
+            """
+            UPDATE characters
+            SET application_status = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (application_status, _utc_now(), community_id, character_id),
+        )
+        self.connection.commit()
+        return self.get_character(community_id, character_id)
+
     def list_characters(self, community_id: int, membership_id: int) -> list[Character]:
         self.get_membership(community_id, membership_id)
         rows = self.connection.execute(
@@ -433,6 +473,7 @@ class ForumRepository:
                 slug,
                 avatar_url,
                 summary,
+                application_status,
                 created_at,
                 updated_at
             FROM characters
@@ -454,6 +495,7 @@ class ForumRepository:
                 slug,
                 avatar_url,
                 summary,
+                application_status,
                 created_at,
                 updated_at
             FROM characters
@@ -496,6 +538,7 @@ class ForumRepository:
                 characters.slug,
                 characters.avatar_url,
                 characters.summary,
+                characters.application_status,
                 characters.created_at,
                 characters.updated_at
             FROM characters
@@ -1407,6 +1450,7 @@ class ForumRepository:
                 characters.slug,
                 characters.avatar_url,
                 characters.summary,
+                characters.application_status,
                 characters.created_at,
                 characters.updated_at
             FROM wanted_ad_related_characters
@@ -1596,6 +1640,254 @@ class ForumRepository:
         )
         self.connection.commit()
         return self.get_wanted_ad_interest(community_id, interest_id)
+
+    def create_character_reserve(
+        self,
+        community_id: int,
+        membership_id: int,
+        character_id: int,
+        title: str,
+        *,
+        wanted_ad_id: int | None = None,
+        wanted_ad_interest_id: int | None = None,
+        reserve_type: str = "wanted",
+        notes: str = "",
+        status: str = "active",
+    ) -> CharacterReserve:
+        self.get_membership(community_id, membership_id)
+        character = self.get_character(community_id, character_id)
+        if character.membership_id != membership_id:
+            raise TenantBoundaryError(
+                f"character {character_id} does not belong to membership {membership_id}"
+            )
+        if wanted_ad_id is not None:
+            self.get_wanted_ad(community_id, wanted_ad_id)
+        if wanted_ad_interest_id is not None:
+            interest = self.get_wanted_ad_interest(community_id, wanted_ad_interest_id)
+            if interest.membership_id != membership_id or interest.character_id != character_id:
+                raise TenantBoundaryError(
+                    f"wanted interest {wanted_ad_interest_id} does not belong to reserve owner"
+                )
+            if wanted_ad_id is not None and interest.wanted_ad_id != wanted_ad_id:
+                raise TenantBoundaryError(
+                    f"wanted interest {wanted_ad_interest_id} does not belong to wanted ad {wanted_ad_id}"
+                )
+        now = _utc_now()
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO character_reserves (
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        if wanted_ad_interest_id is not None:
+            return self.get_character_reserve_for_wanted_interest(
+                community_id,
+                wanted_ad_interest_id,
+            )
+        row = self.connection.execute(
+            """
+            SELECT MAX(id) AS id
+            FROM character_reserves
+            WHERE community_id = ? AND membership_id = ? AND character_id = ?
+            """,
+            (community_id, membership_id, character_id),
+        ).fetchone()
+        return self.get_character_reserve(community_id, int(row["id"]))
+
+    def get_character_reserve(
+        self,
+        community_id: int,
+        reserve_id: int,
+    ) -> CharacterReserve:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                created_at,
+                updated_at
+            FROM character_reserves
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, reserve_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"character reserve not found in community {community_id}: {reserve_id}"
+            )
+        return _character_reserve_from_row(row)
+
+    def get_character_reserve_for_wanted_interest(
+        self,
+        community_id: int,
+        wanted_ad_interest_id: int,
+    ) -> CharacterReserve:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                created_at,
+                updated_at
+            FROM character_reserves
+            WHERE community_id = ? AND wanted_ad_interest_id = ?
+            """,
+            (community_id, wanted_ad_interest_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"character reserve not found in community {community_id}: {wanted_ad_interest_id}"
+            )
+        return _character_reserve_from_row(row)
+
+    def list_character_reserves(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = "active",
+    ) -> list[CharacterReserve]:
+        self.get_character(community_id, character_id)
+        where = "WHERE community_id = ? AND character_id = ?"
+        params: tuple[object, ...] = (community_id, character_id)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                created_at,
+                updated_at
+            FROM character_reserves
+            {where}
+            ORDER BY created_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_character_reserve_from_row(row) for row in rows]
+
+    def list_character_reserves_for_wanted_ad(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        *,
+        status: str | None = "active",
+    ) -> list[CharacterReserve]:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        where = "WHERE community_id = ? AND wanted_ad_id = ?"
+        params: tuple[object, ...] = (community_id, wanted_ad_id)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                created_at,
+                updated_at
+            FROM character_reserves
+            {where}
+            ORDER BY created_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_character_reserve_from_row(row) for row in rows]
+
+    def list_character_reserves_for_community(
+        self,
+        community_id: int,
+        *,
+        status: str | None = "active",
+    ) -> list[CharacterReserve]:
+        self.get_community(community_id)
+        where = "WHERE community_id = ?"
+        params: tuple[object, ...] = (community_id,)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                reserve_type,
+                title,
+                notes,
+                status,
+                created_at,
+                updated_at
+            FROM character_reserves
+            {where}
+            ORDER BY updated_at DESC, created_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_character_reserve_from_row(row) for row in rows]
 
     def create_thread(
         self,
@@ -1947,6 +2239,7 @@ class ForumRepository:
                 characters.slug,
                 characters.avatar_url,
                 characters.summary,
+                characters.application_status,
                 characters.created_at,
                 characters.updated_at
             FROM thread_participants
@@ -2321,6 +2614,7 @@ class ForumRepository:
         post_id: int | None = None,
         wanted_ad_id: int | None = None,
         wanted_ad_interest_id: int | None = None,
+        character_id: int | None = None,
         actor_membership_id: int,
         actor_character_id: int,
     ) -> Notification:
@@ -2333,10 +2627,14 @@ class ForumRepository:
             )
         post_target_id: int | None = None
         wanted_interest_target_id: int | None = None
+        character_target_id: int | None = None
         has_post_target = thread_id is not None and post_id is not None
         has_wanted_target = wanted_ad_id is not None and wanted_ad_interest_id is not None
-        if has_post_target == has_wanted_target:
-            raise ValueError("notification must target exactly one post or wanted interest")
+        has_character_target = character_id is not None
+        if sum((has_post_target, has_wanted_target, has_character_target)) != 1:
+            raise ValueError(
+                "notification must target exactly one post, wanted interest, or character"
+            )
         if thread_id is not None and post_id is not None:
             post_target_id = post_id
             thread = self.get_thread(community_id, thread_id)
@@ -2351,6 +2649,9 @@ class ForumRepository:
                 raise TenantBoundaryError(
                     f"wanted interest {wanted_ad_interest_id} does not belong to wanted ad {wanted_ad_id}"
                 )
+        elif character_id is not None:
+            character_target_id = character_id
+            self.get_character(community_id, character_target_id)
         now = _utc_now()
         self.connection.execute(
             """
@@ -2362,11 +2663,12 @@ class ForumRepository:
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_id,
                 actor_membership_id,
                 actor_character_id,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -2376,6 +2678,7 @@ class ForumRepository:
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_id,
                 actor_membership_id,
                 actor_character_id,
                 now,
@@ -2384,13 +2687,22 @@ class ForumRepository:
         self.connection.commit()
         if post_target_id is not None:
             return self.get_notification_for_post(community_id, membership_id, kind, post_target_id)
-        if wanted_interest_target_id is None:
-            raise ValueError("notification must target exactly one post or wanted interest")
-        return self.get_notification_for_wanted_interest(
+        if wanted_interest_target_id is not None:
+            return self.get_notification_for_wanted_interest(
+                community_id,
+                membership_id,
+                kind,
+                wanted_interest_target_id,
+            )
+        if character_target_id is None:
+            raise ValueError(
+                "notification must target exactly one post, wanted interest, or character"
+            )
+        return self.get_notification_for_character(
             community_id,
             membership_id,
             kind,
-            wanted_interest_target_id,
+            character_target_id,
         )
 
     def get_notification(self, community_id: int, notification_id: int) -> Notification:
@@ -2405,6 +2717,7 @@ class ForumRepository:
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -2438,6 +2751,7 @@ class ForumRepository:
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -2471,6 +2785,7 @@ class ForumRepository:
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -2486,6 +2801,45 @@ class ForumRepository:
         if row is None:
             raise LookupError(
                 f"notification not found in community {community_id}: {membership_id}/{kind}/{wanted_ad_interest_id}"
+            )
+        return _notification_from_row(row)
+
+    def get_notification_for_character(
+        self,
+        community_id: int,
+        membership_id: int,
+        kind: str,
+        character_id: int,
+    ) -> Notification:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                character_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND kind = ?
+              AND character_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (community_id, membership_id, kind, character_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"notification not found in community {community_id}: {membership_id}/{kind}/{character_id}"
             )
         return _notification_from_row(row)
 
@@ -2508,6 +2862,7 @@ class ForumRepository:
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_id,
                 actor_membership_id,
                 actor_character_id,
                 read_at,
@@ -2655,6 +3010,7 @@ def _character_from_row(row: sqlite3.Row) -> Character:
         slug=row["slug"],
         avatar_url=row["avatar_url"],
         summary=row["summary"],
+        application_status=row["application_status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -2739,6 +3095,23 @@ def _wanted_ad_interest_from_row(row: sqlite3.Row) -> WantedAdInterest:
     )
 
 
+def _character_reserve_from_row(row: sqlite3.Row) -> CharacterReserve:
+    return CharacterReserve(
+        id=row["id"],
+        community_id=row["community_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        wanted_ad_id=row["wanted_ad_id"],
+        wanted_ad_interest_id=row["wanted_ad_interest_id"],
+        reserve_type=row["reserve_type"],
+        title=row["title"],
+        notes=row["notes"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
 def _thread_from_row(row: sqlite3.Row) -> Thread:
     return Thread(
         id=row["id"],
@@ -2815,6 +3188,7 @@ def _notification_from_row(row: sqlite3.Row) -> Notification:
         post_id=row["post_id"],
         wanted_ad_id=row["wanted_ad_id"],
         wanted_ad_interest_id=row["wanted_ad_interest_id"],
+        character_id=row["character_id"],
         actor_membership_id=row["actor_membership_id"],
         actor_character_id=row["actor_character_id"],
         read_at=row["read_at"],

@@ -84,10 +84,13 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
         make_default=True,
     )
     magneto = repo.create_character(hosted.id, hosted_membership.id, "magneto", "Magneto")
+    draft = repo.update_character_application_status(default.id, rogue.id, "draft")
 
+    assert draft.application_status == "draft"
+    assert repo.get_character(default.id, rogue.id).application_status == "draft"
     assert repo.get_membership(default.id, default_membership.id).default_character_id == rogue.id
     assert repo.get_membership(hosted.id, hosted_membership.id).default_character_id is None
-    assert repo.list_characters(default.id, default_membership.id) == [rogue]
+    assert repo.list_characters(default.id, default_membership.id) == [draft]
     assert repo.list_characters(hosted.id, hosted_membership.id) == [magneto]
 
     with pytest.raises(LookupError):
@@ -293,12 +296,34 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
     reserved_wanted = repo.update_wanted_ad_status(default.id, wanted.id, "reserved")
     assert reserved_interest.status == "reserved"
     assert reserved_wanted.status == "reserved"
+    reserve = repo.create_character_reserve(
+        default.id,
+        default_membership.id,
+        magneto.id,
+        "Rogue rival",
+        wanted_ad_id=wanted.id,
+        wanted_ad_interest_id=interest.id,
+        notes="Reserved from wanted hook: Rogue rival",
+    )
+    assert repo.get_character_reserve_for_wanted_interest(default.id, interest.id) == reserve
+    assert repo.list_character_reserves(default.id, magneto.id) == [reserve]
+    assert repo.list_character_reserves_for_wanted_ad(default.id, wanted.id) == [reserve]
+    assert repo.list_character_reserves_for_community(default.id) == [reserve]
+    assert repo.list_character_reserves_for_community(hosted.id) == []
 
     with pytest.raises(LookupError):
         repo.assign_wanted_ad_facet(hosted.id, wanted.id, x_men.id)
     with pytest.raises(LookupError):
         repo.create_wanted_ad_interest(
             hosted.id, wanted.id, hosted_membership.id, hosted_character.id
+        )
+    with pytest.raises(LookupError):
+        repo.create_character_reserve(
+            hosted.id,
+            hosted_membership.id,
+            hosted_character.id,
+            "Wrong forum",
+            wanted_ad_id=wanted.id,
         )
 
 

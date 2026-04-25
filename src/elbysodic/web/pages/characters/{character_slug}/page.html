@@ -39,6 +39,7 @@
           <div class="chirpui-cluster chirpui-cluster--sm">
             <h2>{{ profile.character.name }}</h2>
             {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
+            {{ badge(profile.application_status_label, variant=profile.application_status_variant) }}
           </div>
           <p class="chirpui-text-muted">{{ profile.character.summary }}</p>
           <p class="chirpui-text-muted">
@@ -60,6 +61,17 @@
     {% end %}
     {% if profile.can_manage %}
     <div class="chirpui-cluster chirpui-cluster--end">
+      {% if profile.character.application_status == "draft" %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="submit_application">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
+      </form>
+      {% elif profile.character.application_status == "revision_requested" %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="submit_application">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
+      </form>
+      {% end %}
       {% if not profile.is_default %}
       <form method="post" hx-boost="false">
         <input type="hidden" name="intent" value="set_default">
@@ -90,6 +102,38 @@
       <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
     </div>
   </section>
+
+  {% if profile.reserves %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Reserves") %}
+    Claims and hooks currently tied to {{ profile.character.name }}.
+    {% end %}
+    <div class="elbysodic-interest-list">
+      {% for item in profile.reserves %}
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-interest-card">
+        <div>
+          {% if item.wanted_ad %}
+          <h3>
+            <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">{{ item.reserve.title }}</a>
+          </h3>
+          {% else %}
+          <h3>{{ item.reserve.title }}</h3>
+          {% end %}
+          {% if item.reserve.notes %}
+          <p class="chirpui-text-muted">{{ item.reserve.notes }}</p>
+          {% end %}
+        </div>
+        <div class="elbysodic-interest-card__meta">
+          {{ badge(item.reserve.status, variant="success") }}
+          <span>{{ item.created_at_label }}</span>
+        </div>
+      </article>
+      {% end %}
+      {% end %}
+    </div>
+  </section>
+  {% end %}
 
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Tracker") %}

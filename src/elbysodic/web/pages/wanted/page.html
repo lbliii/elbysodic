@@ -1,5 +1,5 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
@@ -12,6 +12,9 @@
 {% call stack(gap="lg") %}
   {% call section_header("Wanted") %}
   Character connections, event roles, faction needs, and plot hooks.
+  {% end %}
+  {% call cluster(gap="sm") %}
+    <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Open casting desk</a>
   {% end %}
 
   {% if board.open_ads %}

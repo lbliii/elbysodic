@@ -1,0 +1,166 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% def application_card(item) %}
+{% call surface(variant="elevated") %}
+<article class="elbysodic-interest-card">
+  <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+    <span class="elbysodic-character-avatar" aria-hidden="true">
+      {% if item.character.avatar_url %}
+      <img src="{{ item.character.avatar_url }}" alt="">
+      {% else %}
+      {{ item.character.name[:1] }}
+      {% end %}
+    </span>
+    <span>{{ item.character.name }}</span>
+  </a>
+  <div>
+    <h3><a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h3>
+    <p class="chirpui-text-muted">
+      {{ item.character.summary if item.character.summary else "No application summary yet." }}
+    </p>
+    <p class="chirpui-text-muted">
+      writer
+      <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
+    </p>
+    {{ facet_pills(item.facets) }}
+  </div>
+  <div class="elbysodic-interest-card__meta">
+    {{ badge(item.status_label, variant=item.status_variant) }}
+    {{ badge("yours", variant="success") if item.is_owned_by_viewer else "" }}
+    {{ badge(item.reserves | length ~ " reserves", variant="info") if item.reserves else "" }}
+  </div>
+  <div class="chirpui-cluster chirpui-cluster--end">
+    {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
+    <form method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="submit_application">
+      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
+    </form>
+    {% elif item.is_owned_by_viewer and item.character.application_status == "revision_requested" %}
+    <form method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="submit_application">
+      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
+    </form>
+    {% end %}
+    {% if desk.can_review and item.character.application_status == "submitted" %}
+    <form method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="accept_application">
+      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Accept</button>
+    </form>
+    <form method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="request_revision">
+      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
+    </form>
+    {% end %}
+  </div>
+</article>
+{% end %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Applications") %}
+  Character drafts, submissions, and review queues for {{ viewer.community.name }}.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <h2>Application pipeline</h2>
+        <p class="chirpui-text-muted">
+          Characters can exist before approval, but their status now travels with the face.
+        </p>
+      </div>
+      {% call cluster(gap="sm") %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/world/application-guide">Open guide</a>
+        <a class="chirpui-btn chirpui-btn--primary" href="/characters">Open roster</a>
+      {% end %}
+    </div>
+    {% call cluster(gap="sm") %}
+      {{ stat(value=desk.my_applications | length, label="My applications") }}
+      {{ stat(value=desk.review_queue | length, label="Review queue") }}
+      {{ stat(value=desk.accepted_characters | length, label="Accepted cast") }}
+    {% end %}
+  </article>
+  {% end %}
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("My Applications") %}
+    Your roster, including drafts and submitted faces.
+    {% end %}
+    {% if desk.my_applications %}
+    <div class="elbysodic-interest-list">
+      {% for item in desk.my_applications %}
+      {{ application_card(item) }}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No character applications yet.</p>
+    {% end %}
+    {% end %}
+  </section>
+
+  {% if desk.can_review %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Review Queue") %}
+    Submitted or revision-requested characters that need director attention.
+    {% end %}
+    {% if desk.review_queue %}
+    <div class="elbysodic-interest-list">
+      {% for item in desk.review_queue %}
+      {{ application_card(item) }}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No characters are waiting on review.</p>
+    {% end %}
+    {% end %}
+  </section>
+  {% end %}
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Application Materials") %}
+    Board-defined guidance for what a character submission should cover.
+    {% end %}
+    {% if desk.application_materials %}
+    <div class="elbysodic-wanted-grid">
+      {% for item in desk.application_materials %}
+      {% call surface(variant="elevated") %}
+      <article class="chirpui-stack chirpui-stack--sm">
+        <div class="chirpui-cluster chirpui-cluster--between">
+          <h3><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h3>
+          {{ badge(item.type_label, variant="info") }}
+        </div>
+        <p class="chirpui-text-muted">{{ item.rendered_summary }}</p>
+      </article>
+      {% end %}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No application materials have been published yet.</p>
+    {% end %}
+    {% end %}
+  </section>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

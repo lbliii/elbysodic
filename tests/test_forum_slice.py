@@ -152,6 +152,179 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
     asyncio.run(run())
 
 
+def test_applications_desk_tracks_character_statuses() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            applications = await client.get("/applications")
+            assert applications.status == 200
+            assert "Applications" in applications.text
+            assert "Application pipeline" in applications.text
+            assert "Rogue" in applications.text
+            assert "Accepted" in applications.text
+            assert "Application Guide" in applications.text
+            assert 'href="/world/application-guide"' in applications.text
+
+            roster = await client.get("/characters")
+            assert roster.status == 200
+            assert "Accepted" in roster.text
+            assert "Start a draft application" in roster.text
+
+            response = await client.post(
+                "/characters",
+                body=urlencode(
+                    {
+                        "name": "Jubilee",
+                        "summary": "Fireworks, mall instincts, and a very loud jacket.",
+                        "avatar_url": "",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+            services = get_services()
+            character = services.repo.get_character_by_slug(
+                services.seed.community.id,
+                "jubilee",
+            )
+            assert character.application_status == "draft"
+
+            draft_view = await client.get("/applications")
+            assert draft_view.status == 200
+            assert "Jubilee" in draft_view.text
+            assert "Draft" in draft_view.text
+            assert "Submit application" in draft_view.text
+
+            submit_response = await client.post(
+                "/applications",
+                body=urlencode(
+                    {
+                        "intent": "submit_application",
+                        "character_slug": "jubilee",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert submit_response.status == 302
+            assert (
+                services.repo.get_character_by_slug(
+                    services.seed.community.id,
+                    "jubilee",
+                ).application_status
+                == "submitted"
+            )
+
+            alex_membership = services.repo.get_membership_by_username(
+                services.seed.community.id,
+                "alex",
+            )
+            alex_user = services.repo.get_user(alex_membership.user_id)
+            cyclops = services.repo.get_character_by_slug(
+                services.seed.community.id,
+                "cyclops",
+            )
+            alex_services = AppServices(
+                services.repo,
+                DemoSeed(services.seed.community, alex_user, alex_membership, cyclops),
+            )
+            assert any(
+                item.label == "Application submitted" and item.title == "Jubilee"
+                for item in alex_services.notifications().items
+            )
+
+            alex_app = create_app(debug=False, services=alex_services)
+            async with TestClient(alex_app) as alex_client:
+                review = await alex_client.get("/applications")
+                assert review.status == 200
+                assert "Review Queue" in review.text
+                assert "Jubilee" in review.text
+                assert "Accept" in review.text
+                assert "Request revisions" in review.text
+
+                accept_response = await alex_client.post(
+                    "/applications",
+                    body=urlencode(
+                        {
+                            "intent": "accept_application",
+                            "character_slug": "jubilee",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+                assert accept_response.status == 302
+
+                revision_response = await alex_client.post(
+                    "/applications",
+                    body=urlencode(
+                        {
+                            "intent": "request_revision",
+                            "character_slug": "kitty-pryde",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+                assert revision_response.status == 302
+
+            assert (
+                services.repo.get_character_by_slug(
+                    services.seed.community.id,
+                    "jubilee",
+                ).application_status
+                == "accepted"
+            )
+            assert any(
+                item.label == "Application accepted" and item.title == "Jubilee"
+                for item in services.notifications().items
+            )
+
+            mira_membership = services.repo.get_membership_by_username(
+                services.seed.community.id,
+                "mira",
+            )
+            mira_user = services.repo.get_user(mira_membership.user_id)
+            kitty = services.repo.get_character_by_slug(
+                services.seed.community.id,
+                "kitty-pryde",
+            )
+            assert kitty.application_status == "revision_requested"
+            mira_services = AppServices(
+                services.repo,
+                DemoSeed(services.seed.community, mira_user, mira_membership, kitty),
+            )
+            assert any(
+                item.label == "Revisions requested" and item.title == "Kitty Pryde"
+                for item in mira_services.notifications().items
+            )
+
+            mira_app = create_app(debug=False, services=mira_services)
+            async with TestClient(mira_app) as mira_client:
+                mira_applications = await mira_client.get("/applications")
+                assert mira_applications.status == 200
+                assert "Resubmit application" in mira_applications.text
+
+                resubmit_response = await mira_client.post(
+                    "/applications",
+                    body=urlencode(
+                        {
+                            "intent": "submit_application",
+                            "character_slug": "kitty-pryde",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+                assert resubmit_response.status == 302
+            assert (
+                services.repo.get_character_by_slug(
+                    services.seed.community.id,
+                    "kitty-pryde",
+                ).application_status
+                == "submitted"
+            )
+
+    asyncio.run(run())
+
+
 def test_wanted_ads_render_board_detail_and_character_hub() -> None:
     async def run() -> None:
         app = _app()
@@ -231,7 +404,24 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 reserved_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
                 assert reserved_view.status == 200
                 assert "reserved" in reserved_view.text
+                assert "Create reserve" in reserved_view.text
                 assert "Reserve for Rogue" not in reserved_view.text
+
+                reserve_create = await charlie_client.post(
+                    "/wanted/human-un-liaison-for-b24",
+                    body=f"intent=create_reserve&interest_id={interest.id}".encode(),
+                    headers=_FORM,
+                )
+                assert reserve_create.status == 302
+
+                reserve_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+                assert reserve_view.status == 200
+                assert "Reserve created" in reserve_view.text
+                assert "Reserves" in reserve_view.text
+                assert (
+                    "Reserved from wanted hook: Human UN liaison for B-24 talks"
+                    in reserve_view.text
+                )
 
             assert (
                 repo.get_wanted_ad_interest_for_character(
@@ -242,9 +432,27 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 == "reserved"
             )
             assert repo.get_wanted_ad(community.id, wanted_ad.id).status == "reserved"
+            reserve = repo.get_character_reserve_for_wanted_interest(community.id, interest.id)
+            assert reserve.character_id == rogue.id
 
             lane_inbox = AppServices(repo, services.seed).notifications()
             assert any(item.label == "Wanted reserved" for item in lane_inbox.items)
+            assert any(item.label == "Reserve created" for item in lane_inbox.items)
+
+            profile_app = create_app(debug=False, services=AppServices(repo, services.seed))
+            async with TestClient(profile_app) as profile_client:
+                profile = await profile_client.get("/characters/rogue")
+                assert profile.status == 200
+                assert "Reserves" in profile.text
+                assert "Human UN liaison for B-24 talks" in profile.text
+                casting = await profile_client.get("/casting")
+                assert casting.status == 200
+                assert "Casting Desk" in casting.text
+                assert "Browsing as Rogue" in casting.text
+                assert "Wanted With Interest" in casting.text
+                assert "Active Reserves" in casting.text
+                assert "Human UN liaison for B-24 talks" in casting.text
+                assert "Rogue&#39;s Reserves" in casting.text
 
             missing = await client.get("/wanted/not-a-hook")
             assert missing.status == 404

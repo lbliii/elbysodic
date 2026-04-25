@@ -132,6 +132,47 @@
           Reserve for {{ item.character.name }}
         </button>
       </form>
+      {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and item.interest.id not in wanted.reserve_interest_ids %}
+      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        <input type="hidden" name="intent" value="create_reserve">
+        <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          Create reserve
+        </button>
+      </form>
+      {% elif item.interest.id in wanted.reserve_interest_ids %}
+      <p class="chirpui-text-muted">Reserve created</p>
+      {% end %}
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+  {% end %}
+
+  {% if wanted.reserves %}
+  {% call section_header("Reserves") %}
+  Structured records created from this hook.
+  {% end %}
+  <div class="elbysodic-interest-list">
+    {% for item in wanted.reserves %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-interest-card">
+      <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+        <span class="elbysodic-character-avatar" aria-hidden="true">
+          {% if item.character.avatar_url %}
+          <img src="{{ item.character.avatar_url }}" alt="">
+          {% else %}
+          {{ item.character.name[:1] }}
+          {% end %}
+        </span>
+        <span>{{ item.character.name }}</span>
+      </a>
+      <div class="elbysodic-interest-card__meta">
+        {{ badge(item.reserve.status, variant="success") }}
+        <span>{{ item.created_at_label }}</span>
+      </div>
+      {% if item.reserve.notes %}
+      <p class="chirpui-text-muted">{{ item.reserve.notes }}</p>
       {% end %}
     </article>
     {% end %}

@@ -37,6 +37,14 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc
         return Redirect(f"/characters/{profile.character.slug}")
+    if intent == "submit_application":
+        try:
+            character = services.submit_character_application(character_slug)
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/characters/{character.slug}")
 
     name = str(form.get("name") or "")
     summary = str(form.get("summary") or "")

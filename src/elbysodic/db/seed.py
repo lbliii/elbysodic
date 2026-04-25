@@ -208,6 +208,14 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             make_default=True,
         ),
     )
+    rogue = repo.update_character_application_status(community.id, rogue.id, "accepted")
+    storm = repo.update_character_application_status(community.id, storm.id, "accepted")
+    magneto = repo.update_character_application_status(community.id, magneto.id, "accepted")
+    xavier = repo.update_character_application_status(community.id, xavier.id, "accepted")
+    kitty = repo.update_character_application_status(community.id, kitty.id, "submitted")
+    cyclops = repo.update_character_application_status(community.id, cyclops.id, "accepted")
+    moira = repo.update_character_application_status(community.id, moira.id, "accepted")
+    trask = repo.update_character_application_status(community.id, trask.id, "revision_requested")
 
     membership = repo.get_membership(community.id, membership.id)
     if membership.default_character_id is None:

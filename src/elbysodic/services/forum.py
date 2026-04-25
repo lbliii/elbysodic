@@ -14,6 +14,7 @@ from elbysodic.db.seed import DemoSeed, seed_demo_forum
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterReserve,
     Community,
     CommunityMembership,
     Facet,
@@ -37,6 +38,13 @@ type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "
 type PostingMode = Literal["freeform", "posting_order"]
 type MentionableKind = Literal["character", "writer"]
 type MentionableScope = Literal["all", "cast", "characters", "writers", "ooc"]
+type ApplicationStatus = Literal[
+    "draft",
+    "submitted",
+    "accepted",
+    "revision_requested",
+    "rejected",
+]
 
 THREAD_STATUSES: tuple[ThreadStatus, ...] = (
     "open",
@@ -47,6 +55,20 @@ THREAD_STATUSES: tuple[ThreadStatus, ...] = (
     "archived",
 )
 POSTING_MODES: tuple[PostingMode, ...] = ("freeform", "posting_order")
+APPLICATION_STATUS_LABELS: dict[str, str] = {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "accepted": "Accepted",
+    "revision_requested": "Revision requested",
+    "rejected": "Rejected",
+}
+APPLICATION_STATUS_VARIANTS: dict[str, str] = {
+    "draft": "muted",
+    "submitted": "info",
+    "accepted": "success",
+    "revision_requested": "warning",
+    "rejected": "muted",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -280,11 +302,33 @@ class CharacterRosterCard:
     character: Character
     is_default: bool
     activity: CharacterThreadActivity
+    application_status_label: str
+    application_status_variant: str
 
 
 @dataclass(frozen=True, slots=True)
 class CharacterRosterDashboard:
     cards: list[CharacterRosterCard]
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationCharacterView:
+    character: Character
+    membership: CommunityMembership
+    facets: list[FacetTag]
+    reserves: list[CharacterReserveView]
+    status_label: str
+    status_variant: str
+    is_owned_by_viewer: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationsDesk:
+    my_applications: list[ApplicationCharacterView]
+    review_queue: list[ApplicationCharacterView]
+    accepted_characters: list[ApplicationCharacterView]
+    application_materials: list[MaterialSummary]
+    can_review: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -419,6 +463,15 @@ class WantedAdInterestView:
 
 
 @dataclass(frozen=True, slots=True)
+class CharacterReserveView:
+    reserve: CharacterReserve
+    membership: CommunityMembership
+    character: Character
+    wanted_ad: WantedAd | None
+    created_at_label: str
+
+
+@dataclass(frozen=True, slots=True)
 class WantedAdDetail:
     wanted_ad: WantedAd
     creator_membership: CommunityMembership
@@ -427,6 +480,8 @@ class WantedAdDetail:
     related_characters: list[Character]
     facets: list[FacetTag]
     interests: list[WantedAdInterestView]
+    reserves: list[CharacterReserveView]
+    reserve_interest_ids: set[int]
     viewer_interest: WantedAdInterestView | None
     can_express_interest: bool
     is_created_by_viewer: bool
@@ -439,6 +494,23 @@ class WantedAdDetail:
 @dataclass(frozen=True, slots=True)
 class WantedBoard:
     open_ads: list[WantedAdSummary]
+
+
+@dataclass(frozen=True, slots=True)
+class CastingWantedItem:
+    wanted_ad: WantedAdSummary
+    interests: list[WantedAdInterestView]
+    reserves: list[CharacterReserveView]
+    is_created_by_viewer: bool
+
+
+@dataclass(frozen=True, slots=True)
+class CastingDesk:
+    active_face: Character | None
+    active_face_reserves: list[CharacterReserveView]
+    my_reserves: list[CharacterReserveView]
+    active_reserves: list[CharacterReserveView]
+    wanted_with_interest: list[CastingWantedItem]
 
 
 @dataclass(frozen=True, slots=True)
@@ -464,6 +536,9 @@ class CharacterProfile:
     owner_membership: CommunityMembership
     facets: list[FacetTag]
     wanted_ads: list[WantedAdSummary]
+    reserves: list[CharacterReserveView]
+    application_status_label: str
+    application_status_variant: str
     is_default: bool
     can_manage: bool
     post_count: int
@@ -693,9 +768,48 @@ class AppServices:
                     character=character,
                     is_default=viewer.membership.default_character_id == character.id,
                     activity=self._character_activity(viewer, character),
+                    application_status_label=_application_status_label(
+                        character.application_status
+                    ),
+                    application_status_variant=_application_status_variant(
+                        character.application_status
+                    ),
                 )
                 for character in viewer.roster
             ]
+        )
+
+    def applications_desk(self) -> ApplicationsDesk:
+        viewer = self.viewer()
+        characters = self.repo.list_community_characters(viewer.community.id)
+        character_views = [
+            _application_character_view(self.repo, viewer, character) for character in characters
+        ]
+        materials = [
+            _material_summary(self.repo, viewer.community.id, material)
+            for material in self.repo.list_materials(viewer.community.id)
+            if material.material_type == "application"
+        ]
+        return ApplicationsDesk(
+            my_applications=[
+                item
+                for item in character_views
+                if item.character.membership_id == viewer.membership.id
+            ],
+            review_queue=(
+                [
+                    item
+                    for item in character_views
+                    if item.character.application_status == "submitted"
+                ]
+                if viewer.role.is_admin
+                else []
+            ),
+            accepted_characters=[
+                item for item in character_views if item.character.application_status == "accepted"
+            ],
+            application_materials=materials,
+            can_review=viewer.role.is_admin,
         )
 
     def members_directory(self) -> MemberDirectory:
@@ -1096,6 +1210,55 @@ class AppServices:
             ]
         )
 
+    def casting_desk(self) -> CastingDesk:
+        viewer = self.viewer()
+        active_reserves = [
+            _character_reserve_view(self.repo, viewer.community.id, reserve)
+            for reserve in self.repo.list_character_reserves_for_community(viewer.community.id)
+        ]
+        wanted_with_interest: list[CastingWantedItem] = []
+        for wanted_ad in self.repo.list_wanted_ads(viewer.community.id, status=None):
+            if wanted_ad.status == "archived":
+                continue
+            interests = [
+                _wanted_ad_interest_view(self.repo, viewer.community.id, interest)
+                for interest in self.repo.list_wanted_ad_interests(
+                    viewer.community.id,
+                    wanted_ad.id,
+                )
+            ]
+            reserves = [
+                reserve
+                for reserve in active_reserves
+                if reserve.reserve.wanted_ad_id == wanted_ad.id
+            ]
+            if not interests and not reserves:
+                continue
+            wanted_with_interest.append(
+                CastingWantedItem(
+                    wanted_ad=_wanted_ad_summary(self.repo, viewer.community.id, wanted_ad),
+                    interests=interests,
+                    reserves=reserves,
+                    is_created_by_viewer=wanted_ad.creator_membership_id == viewer.membership.id,
+                )
+            )
+        return CastingDesk(
+            active_face=viewer.current_character,
+            active_face_reserves=[
+                reserve
+                for reserve in active_reserves
+                if viewer.current_character is not None
+                and reserve.reserve.character_id == viewer.current_character.id
+            ],
+            my_reserves=[
+                reserve
+                for reserve in active_reserves
+                if reserve.reserve.membership_id == viewer.membership.id
+            ],
+            active_reserves=active_reserves,
+            wanted_with_interest=wanted_with_interest,
+        )
+
     def read_wanted_ad(self, wanted_slug: str) -> WantedAdDetail:
         viewer = self.viewer()
         wanted_ad = self.repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
@@ -1124,6 +1287,13 @@ class AppServices:
         interests = [
             _wanted_ad_interest_view(self.repo, viewer.community.id, interest)
             for interest in self.repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id)
+        ]
+        reserves = [
+            _character_reserve_view(self.repo, viewer.community.id, reserve)
+            for reserve in self.repo.list_character_reserves_for_wanted_ad(
+                viewer.community.id,
+                wanted_ad.id,
+            )
         ]
         viewer_interest = None
         if viewer.current_character is not None:
@@ -1158,6 +1328,12 @@ class AppServices:
             ),
             facets=facets,
             interests=interests,
+            reserves=reserves,
+            reserve_interest_ids={
+                reserve.reserve.wanted_ad_interest_id
+                for reserve in reserves
+                if reserve.reserve.wanted_ad_interest_id is not None
+            },
             viewer_interest=viewer_interest,
             can_express_interest=(
                 wanted_ad.status == "open"
@@ -1241,6 +1417,49 @@ class AppServices:
             )
         return reserved
 
+    def create_reserve_for_wanted_interest(
+        self,
+        wanted_slug: str,
+        interest_id: int,
+    ) -> CharacterReserve:
+        viewer = self.viewer()
+        wanted_ad = self.repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
+        if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
+            )
+        if wanted_ad.status != "reserved":
+            raise ValueError(f"wanted hook {wanted_ad.id} is not reserved")
+        interest = self.repo.get_wanted_ad_interest(viewer.community.id, interest_id)
+        if interest.wanted_ad_id != wanted_ad.id:
+            raise LookupError(
+                f"wanted interest {interest_id} not found for wanted hook {wanted_ad.id}"
+            )
+        if interest.status != "reserved":
+            raise ValueError(f"wanted interest {interest.id} is not reserved")
+        reserve = self.repo.create_character_reserve(
+            viewer.community.id,
+            interest.membership_id,
+            interest.character_id,
+            wanted_ad.title,
+            wanted_ad_id=wanted_ad.id,
+            wanted_ad_interest_id=interest.id,
+            reserve_type="wanted",
+            notes=f"Reserved from wanted hook: {wanted_ad.title}",
+        )
+        actor_character_id = _wanted_actor_character_id(self.repo, viewer, wanted_ad)
+        if reserve.membership_id != viewer.membership.id:
+            self.repo.create_notification(
+                viewer.community.id,
+                reserve.membership_id,
+                kind="reserve_created",
+                wanted_ad_id=wanted_ad.id,
+                wanted_ad_interest_id=interest.id,
+                actor_membership_id=viewer.membership.id,
+                actor_character_id=actor_character_id,
+            )
+        return reserve
+
     def notifications(self, *, limit: int = 50) -> NotificationInbox:
         viewer = self.viewer()
         items: list[NotificationItem] = []
@@ -1322,6 +1541,59 @@ class AppServices:
         self.repo.set_default_character(viewer.community.id, viewer.membership.id, character_id)
         return self.viewer()
 
+    def submit_character_application(self, character_slug: str) -> Character:
+        viewer = self.viewer()
+        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
+        if not policies.can_post_as(viewer.membership, character):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot submit character {character.id}"
+            )
+        if character.application_status not in {"draft", "revision_requested"}:
+            raise ValueError(
+                f"character {character.id} cannot be submitted from {character.application_status}"
+            )
+        character = self.repo.update_character_application_status(
+            viewer.community.id,
+            character.id,
+            "submitted",
+        )
+        self._notify_application_directors(viewer, character)
+        return character
+
+    def accept_character_application(self, character_slug: str) -> Character:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
+        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
+        if character.application_status != "submitted":
+            raise ValueError(
+                f"character {character.id} cannot be accepted from {character.application_status}"
+            )
+        character = self.repo.update_character_application_status(
+            viewer.community.id,
+            character.id,
+            "accepted",
+        )
+        self._notify_application_owner(viewer, character, "application_accepted")
+        return character
+
+    def request_character_application_revision(self, character_slug: str) -> Character:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
+        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
+        if character.application_status != "submitted":
+            raise ValueError(
+                f"character {character.id} cannot be revised from {character.application_status}"
+            )
+        character = self.repo.update_character_application_status(
+            viewer.community.id,
+            character.id,
+            "revision_requested",
+        )
+        self._notify_application_owner(viewer, character, "application_revision_requested")
+        return character
+
     def read_character(self, character_slug: str) -> CharacterProfile:
         viewer = self.viewer()
         character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
@@ -1349,6 +1621,15 @@ class AppServices:
                     character.id,
                 )
             ],
+            reserves=[
+                _character_reserve_view(self.repo, viewer.community.id, reserve)
+                for reserve in self.repo.list_character_reserves(
+                    viewer.community.id,
+                    character.id,
+                )
+            ],
+            application_status_label=_application_status_label(character.application_status),
+            application_status_variant=_application_status_variant(character.application_status),
             is_default=can_manage and viewer.membership.default_character_id == character.id,
             can_manage=can_manage,
             post_count=len(_visible_character_posts(self.repo, viewer, {character.id})),
@@ -1419,6 +1700,7 @@ class AppServices:
             cleaned_name,
             avatar_url=cleaned_avatar_url,
             summary=cleaned_summary,
+            application_status="draft",
             make_default=make_default,
         )
 
@@ -1794,6 +2076,38 @@ class AppServices:
             )
         return character
 
+    def _notify_application_directors(self, viewer: ForumView, character: Character) -> None:
+        for membership in self.repo.list_memberships(viewer.community.id):
+            role = self.repo.get_role(viewer.community.id, membership.role_id)
+            if not role.is_admin or membership.id == viewer.membership.id:
+                continue
+            self.repo.create_notification(
+                viewer.community.id,
+                membership.id,
+                kind="application_submitted",
+                character_id=character.id,
+                actor_membership_id=viewer.membership.id,
+                actor_character_id=character.id,
+            )
+
+    def _notify_application_owner(
+        self,
+        viewer: ForumView,
+        character: Character,
+        kind: str,
+    ) -> None:
+        actor_character_id = _application_actor_character_id(viewer, character)
+        if character.membership_id == viewer.membership.id:
+            return
+        self.repo.create_notification(
+            viewer.community.id,
+            character.membership_id,
+            kind=kind,
+            character_id=character.id,
+            actor_membership_id=viewer.membership.id,
+            actor_character_id=actor_character_id,
+        )
+
     def _character_activity(
         self,
         viewer: ForumView,
@@ -2165,6 +2479,71 @@ def _wanted_ad_interest_view(
         character=repo.get_character(community_id, interest.character_id),
         created_at_label=_timestamp_label(interest.created_at),
     )
+
+
+def _character_reserve_view(
+    repo: ForumRepository,
+    community_id: int,
+    reserve: CharacterReserve,
+) -> CharacterReserveView:
+    return CharacterReserveView(
+        reserve=reserve,
+        membership=repo.get_membership(community_id, reserve.membership_id),
+        character=repo.get_character(community_id, reserve.character_id),
+        wanted_ad=(
+            repo.get_wanted_ad(community_id, reserve.wanted_ad_id)
+            if reserve.wanted_ad_id is not None
+            else None
+        ),
+        created_at_label=_timestamp_label(reserve.created_at),
+    )
+
+
+def _application_character_view(
+    repo: ForumRepository,
+    viewer: ForumView,
+    character: Character,
+) -> ApplicationCharacterView:
+    return ApplicationCharacterView(
+        character=character,
+        membership=repo.get_membership(viewer.community.id, character.membership_id),
+        facets=_facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_character_facets(viewer.community.id, character.id),
+        ),
+        reserves=[
+            _character_reserve_view(repo, viewer.community.id, reserve)
+            for reserve in repo.list_character_reserves(
+                viewer.community.id,
+                character.id,
+            )
+        ],
+        status_label=_application_status_label(character.application_status),
+        status_variant=_application_status_variant(character.application_status),
+        is_owned_by_viewer=character.membership_id == viewer.membership.id,
+    )
+
+
+def _application_status_label(status: str) -> str:
+    return APPLICATION_STATUS_LABELS.get(status, status.replace("_", " ").title())
+
+
+def _application_status_variant(status: str) -> str:
+    return APPLICATION_STATUS_VARIANTS.get(status, "muted")
+
+
+def _application_actor_character_id(viewer: ForumView, target_character: Character) -> int:
+    if (
+        viewer.current_character is not None
+        and viewer.current_character.membership_id == viewer.membership.id
+    ):
+        return viewer.current_character.id
+    if viewer.roster:
+        return viewer.roster[0].id
+    if target_character.membership_id == viewer.membership.id:
+        return target_character.id
+    raise ValueError("application actor needs a character")
 
 
 def _wanted_actor_character_id(
@@ -2574,6 +2953,31 @@ def _notification_item(
         viewer.community.id,
         notification.actor_membership_id,
     )
+    if notification.character_id is not None:
+        character = repo.get_character(viewer.community.id, notification.character_id)
+        match notification.kind:
+            case "application_submitted":
+                snippet = f"{actor.name} submitted this character for review."
+            case "application_accepted":
+                snippet = f"{actor.name} accepted this character application."
+            case "application_revision_requested":
+                snippet = f"{actor.name} requested revisions for this character application."
+            case _:
+                snippet = f"{actor.name} updated this character application."
+        return NotificationItem(
+            notification=notification,
+            board=None,
+            thread=None,
+            post=None,
+            wanted_ad=None,
+            actor=actor,
+            actor_membership=actor_membership,
+            label=_notification_label(notification.kind),
+            title=character.name,
+            created_at_label=_timestamp_label(notification.created_at),
+            snippet=snippet,
+            href=f"/characters/{character.slug}",
+        )
     if notification.wanted_ad_id is not None:
         wanted_ad = repo.get_wanted_ad(viewer.community.id, notification.wanted_ad_id)
         interest = (
@@ -2586,6 +2990,8 @@ def _notification_item(
         )
         if notification.kind == "wanted_reserved":
             snippet = f"{actor.name} reserved this wanted hook."
+        elif notification.kind == "reserve_created":
+            snippet = f"{actor.name} created a reserve from this wanted hook."
         else:
             snippet = f"{actor.name} is interested in this wanted hook."
         if interest is not None and interest.note:
@@ -2638,6 +3044,14 @@ def _notification_label(kind: str) -> str:
             return "Wanted interest"
         case "wanted_reserved":
             return "Wanted reserved"
+        case "reserve_created":
+            return "Reserve created"
+        case "application_submitted":
+            return "Application submitted"
+        case "application_accepted":
+            return "Application accepted"
+        case "application_revision_requested":
+            return "Revisions requested"
         case _:
             return "Notification"
 

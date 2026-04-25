@@ -48,6 +48,7 @@
         {% if card.is_default %}
         {{ badge("current", variant="success") }}
         {% end %}
+        {{ badge(card.application_status_label, variant=card.application_status_variant) }}
       </div>
       <div class="elbysodic-character-activity">
         {{ stat(value=card.activity.needs_reply | length, label="Needs reply") }}
@@ -87,7 +88,7 @@
   <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
     <div>
       <h2>Add character</h2>
-      <p class="chirpui-text-muted">Community identity for {{ viewer.community.name }}</p>
+      <p class="chirpui-text-muted">Start a draft application for {{ viewer.community.name }}</p>
     </div>
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>

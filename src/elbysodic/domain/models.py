@@ -72,6 +72,7 @@ class Character:
     slug: str
     avatar_url: str | None
     summary: str
+    application_status: str
     created_at: str
     updated_at: str
 
@@ -151,6 +152,22 @@ class WantedAdInterest:
 
 
 @dataclass(frozen=True, slots=True)
+class CharacterReserve:
+    id: int
+    community_id: int
+    membership_id: int
+    character_id: int
+    wanted_ad_id: int | None
+    wanted_ad_interest_id: int | None
+    reserve_type: str
+    title: str
+    notes: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class Thread:
     id: int
     community_id: int
@@ -221,6 +238,7 @@ class Notification:
     post_id: int | None
     wanted_ad_id: int | None
     wanted_ad_interest_id: int | None
+    character_id: int | None
     actor_membership_id: int
     actor_character_id: int
     read_at: str | None

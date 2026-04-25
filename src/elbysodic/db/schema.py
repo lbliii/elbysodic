@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS characters (
     slug TEXT NOT NULL,
     avatar_url TEXT,
     summary TEXT NOT NULL DEFAULT '',
+    application_status TEXT NOT NULL DEFAULT 'accepted',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     UNIQUE (community_id, slug)
@@ -198,6 +199,22 @@ CREATE TABLE IF NOT EXISTS wanted_ad_interests (
     UNIQUE (community_id, wanted_ad_id, membership_id, character_id)
 );
 
+CREATE TABLE IF NOT EXISTS character_reserves (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE SET NULL,
+    wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE SET NULL,
+    reserve_type TEXT NOT NULL DEFAULT 'wanted',
+    title TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, wanted_ad_interest_id)
+);
+
 CREATE TABLE IF NOT EXISTS threads (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -305,6 +322,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE CASCADE,
     wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE CASCADE,
+    character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
     actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
     actor_character_id INTEGER NOT NULL REFERENCES characters(id),
     read_at TEXT,
@@ -335,6 +353,8 @@ CREATE INDEX IF NOT EXISTS idx_wanted_ad_facets_ad ON wanted_ad_facets(community
 CREATE INDEX IF NOT EXISTS idx_wanted_ad_related_characters_character ON wanted_ad_related_characters(community_id, character_id, wanted_ad_id);
 CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_ad ON wanted_ad_interests(community_id, wanted_ad_id, status);
 CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_character ON wanted_ad_interests(community_id, character_id, status);
+CREATE INDEX IF NOT EXISTS idx_character_reserves_character ON character_reserves(community_id, character_id, status);
+CREATE INDEX IF NOT EXISTS idx_character_reserves_wanted ON character_reserves(community_id, wanted_ad_id, status);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id, facet_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);
@@ -357,6 +377,19 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
 
 def _migrate_schema(connection: sqlite3.Connection) -> None:
+    character_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(characters)").fetchall()
+    }
+    if "application_status" not in character_columns:
+        connection.execute(
+            "ALTER TABLE characters ADD COLUMN application_status TEXT NOT NULL DEFAULT 'accepted'"
+        )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_characters_application_status
+        ON characters(community_id, application_status, updated_at)
+        """
+    )
     columns = {row["name"] for row in connection.execute("PRAGMA table_info(threads)").fetchall()}
     for name, definition in {
         "status": "TEXT NOT NULL DEFAULT 'active'",
@@ -397,6 +430,7 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
     if (
         "wanted_ad_id" in columns
         and "wanted_ad_interest_id" in columns
+        and "character_id" in columns
         and not columns["thread_id"]["notnull"]
         and not columns["post_id"]["notnull"]
     ):
@@ -414,6 +448,7 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
             post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
             wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE CASCADE,
             wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE CASCADE,
+            character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
             actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
             actor_character_id INTEGER NOT NULL REFERENCES characters(id),
             read_at TEXT,
@@ -423,38 +458,65 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
         )
         """
     )
-    connection.execute(
-        """
-        INSERT INTO notifications_new (
-            id,
-            community_id,
-            membership_id,
-            kind,
-            thread_id,
-            post_id,
-            wanted_ad_id,
-            wanted_ad_interest_id,
-            actor_membership_id,
-            actor_character_id,
-            read_at,
-            created_at
-        )
-        SELECT
-            id,
-            community_id,
-            membership_id,
-            kind,
-            thread_id,
-            post_id,
-            NULL,
-            NULL,
-            actor_membership_id,
-            actor_character_id,
-            read_at,
-            created_at
-        FROM notifications
-        """
+    notification_insert = """
+    INSERT INTO notifications_new (
+        id,
+        community_id,
+        membership_id,
+        kind,
+        thread_id,
+        post_id,
+        wanted_ad_id,
+        wanted_ad_interest_id,
+        character_id,
+        actor_membership_id,
+        actor_character_id,
+        read_at,
+        created_at
     )
+    """
+    if "wanted_ad_id" in columns and "wanted_ad_interest_id" in columns:
+        connection.execute(
+            notification_insert
+            + """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                NULL,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            """
+        )
+    else:
+        connection.execute(
+            notification_insert
+            + """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                NULL,
+                NULL,
+                NULL,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            """
+        )
     connection.execute("DROP TABLE notifications")
     connection.execute("ALTER TABLE notifications_new RENAME TO notifications")
     connection.execute(
