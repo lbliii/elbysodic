@@ -41,23 +41,12 @@ from elbysodic.services.casting import read_wanted_ad as _read_wanted_ad
 from elbysodic.services.casting import reserve_wanted_interest as _reserve_wanted_interest
 from elbysodic.services.casting import wanted_ad_summary as _wanted_ad_summary
 from elbysodic.services.casting import wanted_board as _wanted_board
-from elbysodic.services.facets import (
-    clean_facet_slugs as _clean_facet_slugs,
-)
+from elbysodic.services.discovery import discover_plots as _discover_plots
 from elbysodic.services.facets import (
     current_character_facet_ids as _current_character_facet_ids,
 )
 from elbysodic.services.facets import (
-    current_character_facet_tags as _current_character_facet_tags,
-)
-from elbysodic.services.facets import (
-    facet_filter_groups as _facet_filter_groups,
-)
-from elbysodic.services.facets import (
     facet_tags as _facet_tags,
-)
-from elbysodic.services.facets import (
-    resolve_facets as _resolve_facets,
 )
 from elbysodic.services.identity import character_profile as _character_profile
 from elbysodic.services.identity import (
@@ -95,8 +84,6 @@ from elbysodic.services.read_models import (
     CharacterRosterDashboard,
     CreatedThread,
     DirectorStudio,
-    DiscoveryCharacterResult,
-    DiscoveryThreadResult,
     EditablePostView,
     FacetTag,
     ForumView,
@@ -425,56 +412,7 @@ class AppServices:
         self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
 
     def discover_plots(self, *, facet_slugs: list[str] | None = None) -> PlotDiscovery:
-        viewer = self.viewer()
-        active_face_facets = _current_character_facet_tags(self.repo, viewer)
-        requested_slugs = _clean_facet_slugs(facet_slugs or [])
-        used_active_face_lens = False
-        if not requested_slugs and active_face_facets:
-            requested_slugs = [
-                tag.facet.slug
-                for tag in active_face_facets
-                if tag.group.slug in {"species", "affiliation", "location"}
-            ][:3]
-            used_active_face_lens = bool(requested_slugs)
-        selected_facets = _resolve_facets(self.repo, viewer.community.id, requested_slugs)
-        requested_slugs = [facet.slug for facet in selected_facets]
-        selected_ids = [facet.id for facet in selected_facets]
-        selected_tags = _facet_tags(self.repo, viewer.community.id, selected_facets)
-        character_ids = (
-            self.repo.list_character_ids_for_facets(viewer.community.id, selected_ids)
-            if selected_ids
-            else {
-                character.id
-                for character in self.repo.list_community_characters(viewer.community.id)
-            }
-        )
-        thread_ids = (
-            self.repo.list_thread_ids_for_facets(viewer.community.id, selected_ids)
-            if selected_ids
-            else {thread.id for thread in self.repo.list_threads(viewer.community.id)}
-        )
-        return PlotDiscovery(
-            selected_facets=selected_tags,
-            active_face_facets=active_face_facets,
-            filter_groups=_facet_filter_groups(
-                self.repo,
-                viewer.community.id,
-                requested_slugs,
-            ),
-            characters=_discovery_characters(
-                self.repo,
-                viewer,
-                character_ids,
-                selected_ids,
-            ),
-            open_threads=_discovery_open_threads(
-                self.repo,
-                viewer,
-                thread_ids,
-                selected_ids,
-            ),
-            used_active_face_lens=used_active_face_lens,
-        )
+        return _discover_plots(self.repo, self.viewer(), facet_slugs=facet_slugs)
 
     def world_hub(self) -> WorldHub:
         viewer = self.viewer()
@@ -1294,92 +1232,6 @@ def _board_summary(
             current_facet_ids
             and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
         ),
-    )
-
-
-def _discovery_characters(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character_ids: set[int],
-    selected_facet_ids: list[int],
-) -> list[DiscoveryCharacterResult]:
-    selected = set(selected_facet_ids)
-    results = []
-    for character in repo.list_community_characters(viewer.community.id):
-        if character.id not in character_ids:
-            continue
-        owner = repo.get_membership(viewer.community.id, character.membership_id)
-        if not owner.is_active:
-            continue
-        facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_character_facets(viewer.community.id, character.id),
-        )
-        matching_facets = [tag for tag in facets if tag.facet.id in selected]
-        results.append(
-            DiscoveryCharacterResult(
-                character=character,
-                owner_membership=owner,
-                facets=facets,
-                matching_facets=matching_facets,
-            )
-        )
-    return sorted(
-        results,
-        key=lambda item: (
-            -len(item.matching_facets),
-            item.character.name,
-            item.character.id,
-        ),
-    )
-
-
-def _discovery_open_threads(
-    repo: ForumRepository,
-    viewer: ForumView,
-    thread_ids: set[int],
-    selected_facet_ids: list[int],
-) -> list[DiscoveryThreadResult]:
-    selected = set(selected_facet_ids)
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    results = []
-    for thread in repo.list_threads(viewer.community.id):
-        if thread.id not in thread_ids or thread.status != "open" or thread.is_locked:
-            continue
-        board = visible_boards.get(thread.board_id)
-        if board is None:
-            continue
-        facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_thread_facets(viewer.community.id, thread.id),
-        )
-        matching_facets = [tag for tag in facets if tag.facet.id in selected]
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        results.append(
-            DiscoveryThreadResult(
-                board=board,
-                thread=thread,
-                author=repo.get_character(viewer.community.id, thread.author_character_id),
-                participants=repo.list_thread_participants(viewer.community.id, thread.id),
-                facets=facets,
-                matching_facets=matching_facets,
-                reply_count=max(0, len(posts) - 1),
-            )
-        )
-    return sorted(
-        results,
-        key=lambda item: (
-            -len(item.matching_facets),
-            _timestamp_key(item.thread.updated_at),
-            item.thread.id,
-        ),
-        reverse=True,
     )
 
 
