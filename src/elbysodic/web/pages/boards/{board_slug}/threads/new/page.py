@@ -8,7 +8,8 @@ from chirp.templating.returns import Page
 
 from elbysodic.domain import Character
 from elbysodic.services import Mentionable
-from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES, taggable_characters
+from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
+from elbysodic.services.threads import taggable_characters
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
 

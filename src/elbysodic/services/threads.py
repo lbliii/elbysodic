@@ -1,0 +1,563 @@
+"""Thread and scene read-model helpers."""
+
+from __future__ import annotations
+
+from typing import Protocol, cast
+
+from elbysodic.domain.models import (
+    Board,
+    Character,
+    CommunityMembership,
+    Facet,
+    FacetGroup,
+    Post,
+    Thread,
+)
+from elbysodic.services import policies
+from elbysodic.services.episodes import EpisodeCreditsRepository, episode_credits
+from elbysodic.services.facets import (
+    FacetReadRepository,
+    current_character_facet_ids,
+    facet_tags,
+)
+from elbysodic.services.posts import PostViewRepository, post_view
+from elbysodic.services.read_models import (
+    POSTING_MODES,
+    THREAD_STATUSES,
+    BoardThreadFilter,
+    ForumView,
+    PostingMode,
+    ThreadNavigationItem,
+    ThreadObligationItem,
+    ThreadStatus,
+    ThreadSummary,
+    ThreadView,
+)
+from elbysodic.services.timestamps import timestamp_key
+
+
+class ThreadReadRepository(
+    EpisodeCreditsRepository,
+    FacetReadRepository,
+    PostViewRepository,
+    Protocol,
+):
+    def get_board(self, community_id: int, board_id: int) -> Board: ...
+
+    def list_boards(self, community_id: int) -> list[Board]: ...
+
+    def list_threads(self, community_id: int, board_id: int | None = None) -> list[Thread]: ...
+
+    def get_thread_read_at(
+        self,
+        community_id: int,
+        thread_id: int,
+        membership_id: int,
+    ) -> str | None: ...
+
+    def list_posts(self, community_id: int, thread_id: int) -> list[Post]: ...
+
+    def get_character(self, community_id: int, character_id: int) -> Character: ...
+
+    def get_membership(
+        self,
+        community_id: int,
+        membership_id: int,
+    ) -> CommunityMembership: ...
+
+    def list_thread_participants(self, community_id: int, thread_id: int) -> list[Character]: ...
+
+    def list_thread_participant_ids(self, community_id: int, thread_id: int) -> set[int]: ...
+
+    def list_facet_groups(self, community_id: int) -> list[FacetGroup]: ...
+
+    def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
+
+    def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]: ...
+
+    def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]: ...
+
+    def list_community_characters(self, community_id: int) -> list[Character]: ...
+
+    def is_thread_watched(
+        self,
+        community_id: int,
+        thread_id: int,
+        membership_id: int,
+    ) -> bool: ...
+
+
+def board_thread_summaries(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    board: Board,
+    *,
+    filter_by: BoardThreadFilter = "all",
+) -> list[ThreadSummary]:
+    summaries = []
+    current_facet_ids = current_character_facet_ids(repo, viewer)
+    roster_character_ids = {character.id for character in viewer.roster}
+    for thread in repo.list_threads(viewer.community.id, board.id):
+        summary = thread_summary(
+            repo,
+            viewer,
+            thread,
+            current_facet_ids=current_facet_ids,
+            roster_character_ids=roster_character_ids,
+        )
+        if thread_matches_filter(summary, filter_by):
+            summaries.append(summary)
+    return summaries
+
+
+def thread_summary(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    thread: Thread,
+    *,
+    current_facet_ids: set[int],
+    roster_character_ids: set[int],
+) -> ThreadSummary:
+    posts = repo.list_posts(viewer.community.id, thread.id)
+    participants = repo.list_thread_participants(viewer.community.id, thread.id)
+    participant_ids = {character.id for character in participants}
+    thread_facets = facet_tags(
+        repo,
+        viewer.community.id,
+        repo.list_thread_facets(viewer.community.id, thread.id),
+    )
+    latest_post = posts[-1] if posts else None
+    first_unread = first_unread_post(
+        repo,
+        viewer.community.id,
+        viewer.membership.id,
+        thread,
+        posts,
+    )
+    return ThreadSummary(
+        thread=thread,
+        author=repo.get_character(viewer.community.id, thread.author_character_id),
+        author_membership=repo.get_membership(
+            viewer.community.id,
+            thread.author_membership_id,
+        ),
+        participants=participants,
+        facets=thread_facets,
+        is_relevant_to_current_face=bool(
+            current_facet_ids
+            and {tag.facet.id for tag in thread_facets}.intersection(current_facet_ids)
+        ),
+        reply_count=max(0, len(posts) - 1),
+        latest_post=post_view(repo, viewer.community.id, latest_post) if latest_post else None,
+        first_unread_post=(
+            post_view(repo, viewer.community.id, first_unread) if first_unread else None
+        ),
+        episode=episode_credits(repo, viewer.community.id, posts),
+        is_unread=is_unread(
+            repo,
+            viewer.community.id,
+            viewer.membership.id,
+            thread,
+        ),
+        is_mine=thread_belongs_to_roster(
+            thread,
+            posts,
+            roster_character_ids,
+            participant_ids,
+        ),
+        needs_attention=(
+            latest_post is not None
+            and is_live_queue_thread(thread)
+            and thread_needs_attention(
+                repo,
+                viewer.community.id,
+                viewer.membership.id,
+                thread,
+                latest_post,
+                roster_character_ids,
+            )
+        ),
+    )
+
+
+def next_unread_thread(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    board: Board,
+) -> ThreadNavigationItem | None:
+    for thread in repo.list_threads(viewer.community.id, board.id):
+        if is_unread(repo, viewer.community.id, viewer.membership.id, thread):
+            return thread_navigation_item(
+                repo,
+                viewer.community.id,
+                viewer.membership.id,
+                board,
+                thread,
+            )
+    return None
+
+
+def read_thread_view(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    board: Board,
+    thread: Thread,
+) -> ThreadView:
+    board_threads = repo.list_threads(viewer.community.id, board.id)
+    previous_thread, next_thread, next_unread = thread_navigation(
+        repo,
+        viewer.community.id,
+        viewer.membership.id,
+        board,
+        board_threads,
+        thread,
+    )
+    unread = is_unread(repo, viewer.community.id, viewer.membership.id, thread)
+    posts = [
+        post_view(
+            repo,
+            viewer.community.id,
+            post,
+            viewer_membership=viewer.membership,
+            viewer_role=viewer.role,
+        )
+        for post in repo.list_posts(viewer.community.id, thread.id)
+    ]
+    can_moderate = policies.can_moderate_thread(
+        viewer.membership,
+        thread,
+        viewer.role,
+    )
+    can_manage_scene = can_moderate or thread.author_membership_id == viewer.membership.id
+    participants = repo.list_thread_participants(viewer.community.id, thread.id)
+    participant_ids = {character.id for character in participants}
+    posted_character_ids = {item.post.author_character_id for item in posts}
+    can_reply = policies.can_reply(viewer.membership, thread, viewer.role)
+    return ThreadView(
+        board=board,
+        thread=thread,
+        participants=participants,
+        board_facets=facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_board_facets(viewer.community.id, board.id),
+        ),
+        thread_facets=facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_thread_facets(viewer.community.id, thread.id),
+        ),
+        taggable_characters=taggable_characters(
+            repo.list_community_characters(viewer.community.id),
+            viewer.roster,
+        ),
+        tagged_character_ids=repo.list_thread_participant_ids(
+            viewer.community.id,
+            thread.id,
+        )
+        - posted_character_ids
+        - {thread.author_character_id},
+        posts=posts,
+        latest_post=posts[-1] if posts else None,
+        episode=episode_credits(
+            repo,
+            viewer.community.id,
+            [item.post for item in posts],
+        ),
+        reply_count=max(0, len(posts) - 1),
+        can_reply=can_reply,
+        can_join_scene=(
+            viewer.current_character is not None
+            and thread.status == "open"
+            and not thread.is_locked
+            and can_reply
+            and viewer.current_character.id not in participant_ids
+        ),
+        can_moderate=can_moderate,
+        can_manage_scene=can_manage_scene,
+        moderation_boards=(
+            [
+                candidate
+                for candidate in repo.list_boards(viewer.community.id)
+                if policies.can_view_board(viewer.membership, candidate, viewer.role)
+            ]
+            if can_moderate
+            else []
+        ),
+        is_unread=unread,
+        previous_thread=previous_thread,
+        next_thread=next_thread,
+        next_unread_thread=next_unread,
+        is_watched=repo.is_thread_watched(
+            viewer.community.id,
+            thread.id,
+            viewer.membership.id,
+        ),
+    )
+
+
+def thread_obligations(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    target_character_ids: set[int],
+) -> list[ThreadObligationItem]:
+    if not target_character_ids:
+        return []
+    visible_boards = {
+        board.id: board
+        for board in repo.list_boards(viewer.community.id)
+        if policies.can_view_board(viewer.membership, board, viewer.role)
+    }
+    items = []
+    for thread in repo.list_threads(viewer.community.id):
+        board = visible_boards.get(thread.board_id)
+        if board is None or not is_live_queue_thread(thread):
+            continue
+        posts = repo.list_posts(viewer.community.id, thread.id)
+        participants = repo.list_thread_participants(viewer.community.id, thread.id)
+        participant_ids = {character.id for character in participants}
+        if not thread_belongs_to_roster(
+            thread,
+            posts,
+            target_character_ids,
+            participant_ids,
+        ):
+            continue
+        latest_post = posts[-1] if posts else None
+        first_unread = first_unread_post(
+            repo,
+            viewer.community.id,
+            viewer.membership.id,
+            thread,
+            posts,
+        )
+        last_own_post = last_roster_post(posts, target_character_ids)
+        needs_reply = (
+            latest_post is not None
+            and latest_post.author_character_id not in target_character_ids
+            and is_reply_obligation_thread(thread)
+        )
+        waiting_on_others = (
+            latest_post is not None
+            and latest_post.author_character_id in target_character_ids
+            and is_reply_obligation_thread(thread)
+        )
+        items.append(
+            ThreadObligationItem(
+                board=board,
+                thread=thread,
+                author=repo.get_character(
+                    viewer.community.id,
+                    thread.author_character_id,
+                ),
+                author_membership=repo.get_membership(
+                    viewer.community.id,
+                    thread.author_membership_id,
+                ),
+                participants=participants,
+                latest_post=(
+                    post_view(repo, viewer.community.id, latest_post) if latest_post else None
+                ),
+                first_unread_post=(
+                    post_view(repo, viewer.community.id, first_unread) if first_unread else None
+                ),
+                last_own_post=(
+                    post_view(repo, viewer.community.id, last_own_post) if last_own_post else None
+                ),
+                episode=episode_credits(repo, viewer.community.id, posts),
+                reply_count=max(0, len(posts) - 1),
+                is_unread=is_unread(
+                    repo,
+                    viewer.community.id,
+                    viewer.membership.id,
+                    thread,
+                ),
+                is_started_by_roster=thread.author_character_id in target_character_ids,
+                needs_reply=needs_reply,
+                waiting_on_others=waiting_on_others,
+            )
+        )
+    return sorted(
+        items,
+        key=lambda item: (timestamp_key(item.thread.updated_at), item.thread.id),
+        reverse=True,
+    )
+
+
+def is_unread(
+    repo: ThreadReadRepository,
+    community_id: int,
+    membership_id: int,
+    thread: Thread,
+) -> bool:
+    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
+    if read_at is None:
+        return True
+    return timestamp_key(read_at) < timestamp_key(thread.updated_at)
+
+
+def first_unread_post(
+    repo: ThreadReadRepository,
+    community_id: int,
+    membership_id: int,
+    thread: Thread,
+    posts: list[Post],
+) -> Post | None:
+    if not posts or not is_unread(repo, community_id, membership_id, thread):
+        return None
+    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
+    if read_at is None:
+        return posts[0]
+    read_stamp = timestamp_key(read_at)
+    for post in posts:
+        if timestamp_key(post.created_at) > read_stamp:
+            return post
+    return posts[-1]
+
+
+def thread_navigation(
+    repo: ThreadReadRepository,
+    community_id: int,
+    membership_id: int,
+    board: Board,
+    threads: list[Thread],
+    current: Thread,
+) -> tuple[ThreadNavigationItem | None, ThreadNavigationItem | None, ThreadNavigationItem | None]:
+    current_index = _thread_index(threads, current.id)
+    if current_index is None:
+        return None, None, None
+    previous_thread = (
+        thread_navigation_item(repo, community_id, membership_id, board, threads[current_index - 1])
+        if current_index > 0
+        else None
+    )
+    next_thread = (
+        thread_navigation_item(repo, community_id, membership_id, board, threads[current_index + 1])
+        if current_index + 1 < len(threads)
+        else None
+    )
+    ordered_candidates = threads[current_index + 1 :] + threads[:current_index]
+    next_unread = None
+    for thread in ordered_candidates:
+        if is_unread(repo, community_id, membership_id, thread):
+            next_unread = thread_navigation_item(
+                repo,
+                community_id,
+                membership_id,
+                board,
+                thread,
+            )
+            break
+    return previous_thread, next_thread, next_unread
+
+
+def thread_navigation_item(
+    repo: ThreadReadRepository,
+    community_id: int,
+    membership_id: int,
+    board: Board,
+    thread: Thread,
+) -> ThreadNavigationItem:
+    posts = repo.list_posts(community_id, thread.id)
+    jump_post = first_unread_post(repo, community_id, membership_id, thread, posts)
+    if jump_post is None and posts:
+        jump_post = posts[-1]
+    return ThreadNavigationItem(
+        board=board,
+        thread=thread,
+        jump_post=post_view(repo, community_id, jump_post) if jump_post else None,
+    )
+
+
+def thread_belongs_to_roster(
+    thread: Thread,
+    posts: list[Post],
+    roster_character_ids: set[int],
+    participant_ids: set[int] | None = None,
+) -> bool:
+    if thread.author_character_id in roster_character_ids:
+        return True
+    if participant_ids and participant_ids.intersection(roster_character_ids):
+        return True
+    return any(post.author_character_id in roster_character_ids for post in posts)
+
+
+def last_roster_post(posts: list[Post], roster_character_ids: set[int]) -> Post | None:
+    for post in reversed(posts):
+        if post.author_character_id in roster_character_ids:
+            return post
+    return None
+
+
+def thread_needs_attention(
+    repo: ThreadReadRepository,
+    community_id: int,
+    membership_id: int,
+    thread: Thread,
+    latest_post: Post,
+    roster_character_ids: set[int],
+) -> bool:
+    return (
+        is_unread(repo, community_id, membership_id, thread)
+        and latest_post.author_character_id not in roster_character_ids
+    )
+
+
+def thread_matches_filter(summary: ThreadSummary, filter_by: BoardThreadFilter) -> bool:
+    match filter_by:
+        case "all":
+            return True
+        case "unread":
+            return summary.is_unread
+        case "attention":
+            return summary.needs_attention
+        case "mine":
+            return summary.is_mine
+        case "pinned":
+            return summary.thread.is_pinned
+        case "locked":
+            return summary.thread.is_locked
+
+
+def is_live_queue_thread(thread: Thread) -> bool:
+    return thread.status in {"open", "active"} and not thread.is_locked
+
+
+def is_reply_obligation_thread(thread: Thread) -> bool:
+    return is_live_queue_thread(thread)
+
+
+def clean_thread_status(value: str) -> ThreadStatus:
+    status = value.strip().lower().replace("-", "_")
+    if status not in THREAD_STATUSES:
+        raise ValueError("choose a valid thread status")
+    return cast(ThreadStatus, status)
+
+
+def clean_posting_mode(value: str) -> PostingMode:
+    mode = value.strip().lower().replace("-", "_")
+    if mode not in POSTING_MODES:
+        raise ValueError("choose a valid posting mode")
+    return cast(PostingMode, mode)
+
+
+def clean_participant_ids(character_ids: list[int]) -> list[int]:
+    cleaned: list[int] = []
+    for character_id in character_ids:
+        if character_id not in cleaned:
+            cleaned.append(character_id)
+    return cleaned
+
+
+def taggable_characters(characters: list[Character], roster: list[Character]) -> list[Character]:
+    own_membership_ids = {character.membership_id for character in roster}
+    return [
+        character for character in characters if character.membership_id not in own_membership_ids
+    ]
+
+
+def _thread_index(threads: list[Thread], thread_id: int) -> int | None:
+    for index, thread in enumerate(threads):
+        if thread.id == thread_id:
+            return index
+    return None

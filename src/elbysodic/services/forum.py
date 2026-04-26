@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal, cast
 
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, seed_demo_forum
@@ -16,728 +13,121 @@ from elbysodic.domain.models import (
     Board,
     Character,
     CharacterReserve,
-    Community,
     CommunityMembership,
-    Facet,
-    FacetGroup,
     Material,
-    Notification,
     Post,
-    PostRevision,
     Role,
     Thread,
-    WantedAd,
     WantedAdInterest,
 )
 from elbysodic.services import policies
-from elbysodic.services.markup import MentionLink, post_snippet, render_post_body
+from elbysodic.services.applications import (
+    accept_character_application as _accept_character_application,
+)
+from elbysodic.services.applications import applications_desk as _applications_desk
+from elbysodic.services.applications import (
+    request_character_application_revision as _request_character_application_revision,
+)
+from elbysodic.services.applications import (
+    submit_character_application as _submit_character_application,
+)
+from elbysodic.services.casting import casting_desk as _casting_desk
+from elbysodic.services.casting import (
+    create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
+)
+from elbysodic.services.casting import express_wanted_interest as _express_wanted_interest
+from elbysodic.services.casting import read_wanted_ad as _read_wanted_ad
+from elbysodic.services.casting import reserve_wanted_interest as _reserve_wanted_interest
+from elbysodic.services.casting import wanted_ad_summary as _wanted_ad_summary
+from elbysodic.services.casting import wanted_board as _wanted_board
+from elbysodic.services.discovery import discover_plots as _discover_plots
+from elbysodic.services.facets import (
+    current_character_facet_ids as _current_character_facet_ids,
+)
+from elbysodic.services.facets import (
+    facet_tags as _facet_tags,
+)
+from elbysodic.services.identity import character_profile as _character_profile
+from elbysodic.services.identity import (
+    character_roster_dashboard as _character_roster_dashboard,
+)
+from elbysodic.services.identity import member_directory as _member_directory
+from elbysodic.services.identity import member_profile as _member_profile
+from elbysodic.services.identity import roster_activity as _roster_activity
+from elbysodic.services.identity import selected_character as _selected_character
+from elbysodic.services.markup import post_snippet
+from elbysodic.services.materials import (
+    current_event_for_facet_ids as _current_event_for_facet_ids,
+)
+from elbysodic.services.materials import material_detail as _material_detail
+from elbysodic.services.materials import material_summary as _material_summary
+from elbysodic.services.notifications import (
+    mark_all_notifications_read as _mark_all_notifications_read,
+)
+from elbysodic.services.notifications import notification_inbox as _notification_inbox
+from elbysodic.services.notifications import open_notification as _open_notification
+from elbysodic.services.posting import join_thread_as_current_character as _join_thread
+from elbysodic.services.posting import read_post_editor as _read_post_editor
+from elbysodic.services.posting import read_post_revisions as _read_post_revisions
+from elbysodic.services.posting import reply_to_thread as _reply_to_thread
+from elbysodic.services.posting import search_mentionables as _search_mentionables
+from elbysodic.services.posting import start_thread as _start_thread
+from elbysodic.services.posting import update_post as _update_post
+from elbysodic.services.posting import update_thread_scene as _update_thread_scene
+from elbysodic.services.posts import post_view as _post_view
+from elbysodic.services.read_models import (
+    MATERIAL_STATUSES,
+    MATERIAL_TYPES,
+    ActivityItem,
+    ApplicationsDesk,
+    AttentionItem,
+    BoardNavigationItem,
+    BoardSummary,
+    BoardThreadFilter,
+    CastingDesk,
+    CharacterProfile,
+    CharacterRosterDashboard,
+    CreatedThread,
+    DirectorStudio,
+    EditablePostView,
+    FacetTag,
+    ForumView,
+    LocationNavigationGroup,
+    MaterialDetail,
+    MaterialSummary,
+    MemberDirectory,
+    MemberProfile,
+    Mentionable,
+    MyThreadsDashboard,
+    NotificationInbox,
+    PlotDiscovery,
+    PostRevisionHistory,
+    ThreadNavigationItem,
+    ThreadSummary,
+    ThreadView,
+    WantedAdDetail,
+    WantedBoard,
+    WorldHub,
+)
+from elbysodic.services.read_models import (
+    POSTING_MODES as POSTING_MODES,
+)
+from elbysodic.services.read_models import (
+    THREAD_STATUSES as THREAD_STATUSES,
+)
+from elbysodic.services.threads import (
+    board_thread_summaries as _board_thread_summaries,
+)
+from elbysodic.services.threads import is_live_queue_thread as _is_live_queue_thread
+from elbysodic.services.threads import is_unread as _is_unread
+from elbysodic.services.threads import next_unread_thread as _next_unread_thread
+from elbysodic.services.threads import read_thread_view as _read_thread_view
+from elbysodic.services.threads import thread_needs_attention as _thread_needs_attention
+from elbysodic.services.threads import thread_obligations as _thread_obligations
+from elbysodic.services.timestamps import timestamp_key as _timestamp_key
 
 DEFAULT_DATABASE_PATH = Path("var/elbysodic.sqlite3")
 DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
-type BoardThreadFilter = Literal["all", "unread", "attention", "mine", "pinned", "locked"]
-type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "archived"]
-type PostingMode = Literal["freeform", "posting_order"]
-type MentionableKind = Literal["character", "writer"]
-type MentionableScope = Literal["all", "cast", "characters", "writers", "ooc"]
-type ApplicationStatus = Literal[
-    "draft",
-    "submitted",
-    "accepted",
-    "revision_requested",
-    "rejected",
-]
-
-THREAD_STATUSES: tuple[ThreadStatus, ...] = (
-    "open",
-    "active",
-    "paused",
-    "complete",
-    "private",
-    "archived",
-)
-POSTING_MODES: tuple[PostingMode, ...] = ("freeform", "posting_order")
-APPLICATION_STATUS_LABELS: dict[str, str] = {
-    "draft": "Draft",
-    "submitted": "Submitted",
-    "accepted": "Accepted",
-    "revision_requested": "Revision requested",
-    "rejected": "Rejected",
-}
-APPLICATION_STATUS_VARIANTS: dict[str, str] = {
-    "draft": "muted",
-    "submitted": "info",
-    "accepted": "success",
-    "revision_requested": "warning",
-    "rejected": "muted",
-}
-MATERIAL_TYPES = ("premise", "guide", "factions", "application", "event")
-MATERIAL_STATUSES = ("published", "draft")
-
-
-@dataclass(frozen=True, slots=True)
-class BoardSummary:
-    board: Board
-    child_boards: list[Board]
-    thread_count: int
-    post_count: int
-    unread_thread_count: int
-    latest_thread: Thread | None
-    latest_board: Board | None
-    latest_post: PostView | None
-    facets: list[FacetTag]
-    is_relevant_to_current_face: bool
-
-    @property
-    def href(self) -> str:
-        return f"/boards/{self.board.slug}"
-
-    @property
-    def latest_href(self) -> str | None:
-        if self.latest_thread is None:
-            return None
-        board = self.latest_board or self.board
-        anchor = f"#{self.latest_post.anchor}" if self.latest_post else ""
-        return f"/boards/{board.slug}/threads/{self.latest_thread.slug}{anchor}"
-
-    @property
-    def display_tagline(self) -> str:
-        return self.board.tagline or self.board.board_kind
-
-    @property
-    def has_children(self) -> bool:
-        return bool(self.child_boards)
-
-
-@dataclass(frozen=True, slots=True)
-class BoardNavigationItem:
-    board: Board
-    unread_thread_count: int
-
-
-@dataclass(frozen=True, slots=True)
-class LocationNavigationGroup:
-    parent: BoardNavigationItem
-    children: list[BoardNavigationItem]
-
-    @property
-    def unread_thread_count(self) -> int:
-        return self.parent.unread_thread_count + sum(
-            child.unread_thread_count for child in self.children
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class ThreadCardBadge:
-    label: str
-    variant: str
-
-
-@dataclass(frozen=True, slots=True)
-class EpisodeCredits:
-    word_count: int
-    read_minutes: int
-    read_estimate_label: str
-    post_count: int
-    writer_memberships: list[CommunityMembership]
-
-    @property
-    def writer_count(self) -> int:
-        return len(self.writer_memberships)
-
-
-@dataclass(frozen=True, slots=True)
-class ThreadSummary:
-    thread: Thread
-    author: Character
-    author_membership: CommunityMembership
-    participants: list[Character]
-    facets: list[FacetTag]
-    is_relevant_to_current_face: bool
-    reply_count: int
-    latest_post: PostView | None
-    first_unread_post: PostView | None
-    episode: EpisodeCredits
-    is_unread: bool
-    is_mine: bool
-    needs_attention: bool
-
-    @property
-    def badges(self) -> tuple[ThreadCardBadge, ...]:
-        badges: list[ThreadCardBadge] = []
-        if self.needs_attention:
-            badges.append(ThreadCardBadge("needs reply", "warning"))
-        elif self.is_unread:
-            badges.append(ThreadCardBadge("new replies", "info"))
-        if self.is_mine:
-            badges.append(ThreadCardBadge("mine", "success"))
-        badges.extend(_thread_state_badges(self.thread))
-        return tuple(badges)
-
-    @property
-    def jump_post(self) -> PostView | None:
-        return self.first_unread_post or self.latest_post
-
-    @property
-    def jump_label(self) -> str:
-        if self.first_unread_post is not None:
-            return "First unread"
-        return "Jump to latest"
-
-
-@dataclass(frozen=True, slots=True)
-class PostView:
-    post: Post
-    author: Character
-    author_membership: CommunityMembership
-    rendered_body: str
-    snippet: str
-    can_edit: bool
-    is_edited: bool
-    created_at_label: str
-    created_at_relative_label: str
-    updated_at_label: str
-    updated_at_relative_label: str
-    anchor: str
-
-
-@dataclass(frozen=True, slots=True)
-class ActivityItem:
-    board: Board
-    thread: Thread
-    post: PostView
-    snippet: str
-    is_unread: bool
-
-
-@dataclass(frozen=True, slots=True)
-class AttentionItem:
-    board: Board
-    thread: Thread
-    latest_post: PostView
-    reply_count: int
-    snippet: str
-
-
-@dataclass(frozen=True, slots=True)
-class NotificationItem:
-    notification: Notification
-    board: Board | None
-    thread: Thread | None
-    post: PostView | None
-    wanted_ad: WantedAd | None
-    actor: Character
-    actor_membership: CommunityMembership
-    label: str
-    title: str
-    created_at_label: str
-    snippet: str
-    href: str
-
-    @property
-    def is_unread(self) -> bool:
-        return self.notification.read_at is None
-
-
-@dataclass(frozen=True, slots=True)
-class NotificationInbox:
-    items: list[NotificationItem]
-    unread_count: int
-
-
-@dataclass(frozen=True, slots=True)
-class Mentionable:
-    kind: MentionableKind
-    id: int
-    handle: str
-    label: str
-    detail: str
-    avatar_url: str | None
-    href: str
-
-    @property
-    def tag(self) -> str:
-        return f"@{self.handle}"
-
-    def to_dict(self) -> dict[str, object]:
-        return {
-            "kind": self.kind,
-            "id": self.id,
-            "handle": self.handle,
-            "tag": self.tag,
-            "label": self.label,
-            "detail": self.detail,
-            "avatar_url": self.avatar_url,
-            "href": self.href,
-            "initial": self.label[:1],
-        }
-
-
-@dataclass(frozen=True, slots=True)
-class CreatedThread:
-    thread: Thread
-    post: Post
-
-
-@dataclass(frozen=True, slots=True)
-class EditablePostView:
-    board: Board
-    thread: Thread
-    post: PostView
-
-
-@dataclass(frozen=True, slots=True)
-class PostRevisionView:
-    revision: PostRevision
-    editor_membership: CommunityMembership
-    created_at_label: str
-
-
-@dataclass(frozen=True, slots=True)
-class PostRevisionHistory:
-    board: Board
-    thread: Thread
-    post: PostView
-    revisions: list[PostRevisionView]
-
-
-@dataclass(frozen=True, slots=True)
-class ThreadObligationItem:
-    board: Board
-    thread: Thread
-    author: Character
-    author_membership: CommunityMembership
-    participants: list[Character]
-    latest_post: PostView | None
-    first_unread_post: PostView | None
-    last_own_post: PostView | None
-    episode: EpisodeCredits
-    reply_count: int
-    is_unread: bool
-    is_started_by_roster: bool
-    needs_reply: bool
-    waiting_on_others: bool
-
-    @property
-    def badges(self) -> tuple[ThreadCardBadge, ...]:
-        badges: list[ThreadCardBadge] = []
-        if self.needs_reply:
-            badges.append(ThreadCardBadge("needs reply", "warning"))
-        if self.waiting_on_others:
-            badges.append(ThreadCardBadge("waiting", "info"))
-        if self.is_started_by_roster:
-            badges.append(ThreadCardBadge("started by me", "success"))
-        if self.is_unread and not self.needs_reply:
-            badges.append(ThreadCardBadge("new replies", "info"))
-        badges.extend(_thread_state_badges(self.thread))
-        return tuple(badges)
-
-    @property
-    def jump_post(self) -> PostView | None:
-        return self.first_unread_post or self.latest_post
-
-    @property
-    def jump_label(self) -> str:
-        if self.first_unread_post is not None:
-            return "First unread"
-        return "Jump to latest"
-
-
-@dataclass(frozen=True, slots=True)
-class CharacterThreadActivity:
-    character: Character
-    needs_reply: list[ThreadObligationItem]
-    waiting_on_others: list[ThreadObligationItem]
-    started_by_character: list[ThreadObligationItem]
-    participated: list[ThreadObligationItem]
-
-
-@dataclass(frozen=True, slots=True)
-class CharacterRosterCard:
-    character: Character
-    is_default: bool
-    activity: CharacterThreadActivity
-    application_status_label: str
-    application_status_variant: str
-
-
-@dataclass(frozen=True, slots=True)
-class CharacterRosterDashboard:
-    cards: list[CharacterRosterCard]
-
-
-@dataclass(frozen=True, slots=True)
-class ApplicationCharacterView:
-    character: Character
-    membership: CommunityMembership
-    facets: list[FacetTag]
-    reserves: list[CharacterReserveView]
-    status_label: str
-    status_variant: str
-    is_owned_by_viewer: bool
-
-
-@dataclass(frozen=True, slots=True)
-class ApplicationsDesk:
-    my_applications: list[ApplicationCharacterView]
-    review_queue: list[ApplicationCharacterView]
-    accepted_characters: list[ApplicationCharacterView]
-    application_materials: list[MaterialSummary]
-    can_review: bool
-
-
-@dataclass(frozen=True, slots=True)
-class MemberDirectoryCard:
-    membership: CommunityMembership
-    role: Role
-    roster: list[Character]
-    default_character: Character | None
-    known_for: list[Character]
-    visible_post_count: int
-    active_thread_count: int
-    latest_post: CharacterAppearance | None
-    is_current_member: bool
-
-
-@dataclass(frozen=True, slots=True)
-class MemberDirectory:
-    cards: list[MemberDirectoryCard]
-
-
-@dataclass(frozen=True, slots=True)
-class WriterCollaborator:
-    membership: CommunityMembership
-    shared_thread_count: int
-    latest_thread: Thread
-    latest_board: Board
-
-
-@dataclass(frozen=True, slots=True)
-class MemberProfile:
-    membership: CommunityMembership
-    role: Role
-    roster: list[Character]
-    default_character: Character | None
-    known_for: list[Character]
-    collaborators: list[WriterCollaborator]
-    visible_post_count: int
-    visible_thread_count: int
-    active_threads: list[ThreadObligationItem]
-    started_threads: list[ThreadObligationItem]
-    recent_posts: list[CharacterAppearance]
-    is_current_member: bool
-
-
-@dataclass(frozen=True, slots=True)
-class FacetTag:
-    group: FacetGroup
-    facet: Facet
-
-    @property
-    def label(self) -> str:
-        return self.facet.name
-
-    @property
-    def group_label(self) -> str:
-        return self.group.name
-
-
-@dataclass(frozen=True, slots=True)
-class FacetFilterOption:
-    tag: FacetTag
-    href: str
-    is_selected: bool
-
-
-@dataclass(frozen=True, slots=True)
-class FacetFilterGroup:
-    group: FacetGroup
-    options: list[FacetFilterOption]
-
-
-@dataclass(frozen=True, slots=True)
-class DiscoveryCharacterResult:
-    character: Character
-    owner_membership: CommunityMembership
-    facets: list[FacetTag]
-    matching_facets: list[FacetTag]
-
-
-@dataclass(frozen=True, slots=True)
-class DiscoveryThreadResult:
-    board: Board
-    thread: Thread
-    author: Character
-    participants: list[Character]
-    facets: list[FacetTag]
-    matching_facets: list[FacetTag]
-    reply_count: int
-
-
-@dataclass(frozen=True, slots=True)
-class PlotDiscovery:
-    selected_facets: list[FacetTag]
-    active_face_facets: list[FacetTag]
-    filter_groups: list[FacetFilterGroup]
-    characters: list[DiscoveryCharacterResult]
-    open_threads: list[DiscoveryThreadResult]
-    used_active_face_lens: bool
-
-
-@dataclass(frozen=True, slots=True)
-class MaterialSummary:
-    material: Material
-    facets: list[FacetTag]
-    rendered_summary: str
-    type_label: str
-
-
-@dataclass(frozen=True, slots=True)
-class ContinuityBeat:
-    title: str
-    date_label: str
-    content: str
-    href: str | None = None
-    variant: str = ""
-
-
-@dataclass(frozen=True, slots=True)
-class EventAction:
-    kind: str
-    label: str
-    title: str
-    description: str
-    href: str
-    cta: str
-
-
-@dataclass(frozen=True, slots=True)
-class MaterialDetail:
-    material: Material
-    facets: list[FacetTag]
-    rendered_body: object
-    type_label: str
-    related_materials: list[MaterialSummary]
-    related_locations: list[BoardSummary]
-    related_scenes: list[DiscoveryThreadResult]
-    related_wanted_ads: list[WantedAdSummary]
-    continuity_beats: list[ContinuityBeat]
-    event_actions: list[EventAction]
-    can_manage: bool
-
-
-@dataclass(frozen=True, slots=True)
-class WorldHub:
-    featured: list[MaterialSummary]
-    guides: list[MaterialSummary]
-    events: list[MaterialSummary]
-    application_materials: list[MaterialSummary]
-    can_manage: bool
-
-
-@dataclass(frozen=True, slots=True)
-class DirectorStudio:
-    can_manage: bool
-    materials: list[MaterialSummary]
-    draft_materials: list[MaterialSummary]
-    featured_materials: list[MaterialSummary]
-    events: list[MaterialSummary]
-    current_event: MaterialSummary | None
-    application_materials: list[MaterialSummary]
-    location_boards: list[BoardSummary]
-    sublocation_boards: list[BoardSummary]
-    wanted_ads: list[WantedAdSummary]
-    open_wanted_ads: list[WantedAdSummary]
-    applications: ApplicationsDesk
-
-    @property
-    def material_count(self) -> int:
-        return len(self.materials)
-
-    @property
-    def location_count(self) -> int:
-        return len(self.location_boards)
-
-    @property
-    def sublocation_count(self) -> int:
-        return len(self.sublocation_boards)
-
-    @property
-    def wanted_count(self) -> int:
-        return len(self.wanted_ads)
-
-    @property
-    def open_wanted_count(self) -> int:
-        return len(self.open_wanted_ads)
-
-    @property
-    def review_queue_count(self) -> int:
-        return len(self.applications.review_queue)
-
-    @property
-    def featured_material_titles(self) -> list[str]:
-        return [item.material.title for item in self.featured_materials]
-
-    @property
-    def event_titles(self) -> list[str]:
-        return [item.material.title for item in self.events]
-
-    @property
-    def application_material_titles(self) -> list[str]:
-        return [item.material.title for item in self.application_materials]
-
-    @property
-    def location_board_names(self) -> list[str]:
-        return [item.board.name for item in self.location_boards]
-
-
-@dataclass(frozen=True, slots=True)
-class WantedAdSummary:
-    wanted_ad: WantedAd
-    creator_membership: CommunityMembership
-    creator_character: Character | None
-    related_material: Material | None
-    related_characters: list[Character]
-    facets: list[FacetTag]
-    type_label: str
-
-
-@dataclass(frozen=True, slots=True)
-class WantedAdInterestView:
-    interest: WantedAdInterest
-    membership: CommunityMembership
-    character: Character
-    created_at_label: str
-
-
-@dataclass(frozen=True, slots=True)
-class CharacterReserveView:
-    reserve: CharacterReserve
-    membership: CommunityMembership
-    character: Character
-    wanted_ad: WantedAd | None
-    created_at_label: str
-
-
-@dataclass(frozen=True, slots=True)
-class WantedAdDetail:
-    wanted_ad: WantedAd
-    creator_membership: CommunityMembership
-    creator_character: Character | None
-    related_material: Material | None
-    related_characters: list[Character]
-    facets: list[FacetTag]
-    interests: list[WantedAdInterestView]
-    reserves: list[CharacterReserveView]
-    reserve_interest_ids: set[int]
-    viewer_interest: WantedAdInterestView | None
-    can_express_interest: bool
-    is_created_by_viewer: bool
-    can_manage: bool
-    rendered_body: object
-    type_label: str
-    related_ads: list[WantedAdSummary]
-
-
-@dataclass(frozen=True, slots=True)
-class WantedBoard:
-    open_ads: list[WantedAdSummary]
-
-
-@dataclass(frozen=True, slots=True)
-class CastingWantedItem:
-    wanted_ad: WantedAdSummary
-    interests: list[WantedAdInterestView]
-    reserves: list[CharacterReserveView]
-    is_created_by_viewer: bool
-
-
-@dataclass(frozen=True, slots=True)
-class CastingDesk:
-    active_face: Character | None
-    active_face_reserves: list[CharacterReserveView]
-    my_reserves: list[CharacterReserveView]
-    active_reserves: list[CharacterReserveView]
-    wanted_with_interest: list[CastingWantedItem]
-
-
-@dataclass(frozen=True, slots=True)
-class MyThreadsDashboard:
-    needs_reply: list[ThreadObligationItem]
-    waiting_on_others: list[ThreadObligationItem]
-    started_by_me: list[ThreadObligationItem]
-    participated: list[ThreadObligationItem]
-    selected_character: Character | None
-    roster_activity: list[CharacterThreadActivity]
-
-
-@dataclass(frozen=True, slots=True)
-class CharacterAppearance:
-    post: PostView
-    thread: Thread
-    board: Board
-
-
-@dataclass(frozen=True, slots=True)
-class CharacterProfile:
-    character: Character
-    owner_membership: CommunityMembership
-    facets: list[FacetTag]
-    wanted_ads: list[WantedAdSummary]
-    reserves: list[CharacterReserveView]
-    application_status_label: str
-    application_status_variant: str
-    is_default: bool
-    can_manage: bool
-    post_count: int
-    thread_count: int
-    activity: CharacterThreadActivity
-    recent_posts: list[CharacterAppearance]
-
-
-@dataclass(frozen=True, slots=True)
-class ThreadNavigationItem:
-    board: Board
-    thread: Thread
-    jump_post: PostView | None
-
-
-@dataclass(frozen=True, slots=True)
-class ThreadView:
-    board: Board
-    thread: Thread
-    participants: list[Character]
-    board_facets: list[FacetTag]
-    thread_facets: list[FacetTag]
-    taggable_characters: list[Character]
-    tagged_character_ids: set[int]
-    posts: list[PostView]
-    latest_post: PostView | None
-    episode: EpisodeCredits
-    reply_count: int
-    can_reply: bool
-    can_join_scene: bool
-    can_moderate: bool
-    can_manage_scene: bool
-    moderation_boards: list[Board]
-    is_unread: bool
-    previous_thread: ThreadNavigationItem | None
-    next_thread: ThreadNavigationItem | None
-    next_unread_thread: ThreadNavigationItem | None
-    is_watched: bool
-
-
-@dataclass(frozen=True, slots=True)
-class ForumView:
-    community: Community
-    membership: CommunityMembership
-    role: Role
-    current_character: Character | None
-    roster: list[Character]
-    navigation_boards: list[BoardNavigationItem]
-    location_navigation_boards: list[BoardNavigationItem]
-    location_navigation_groups: list[LocationNavigationGroup]
-    community_navigation_boards: list[BoardNavigationItem]
-    unread_notification_count: int
 
 
 class AppServices:
@@ -908,119 +298,37 @@ class AppServices:
 
     def my_threads(self, *, character_slug: str | None = None) -> MyThreadsDashboard:
         viewer = self.viewer()
-        selected_character = self._selected_character(viewer, character_slug)
+        selected_character = _selected_character(self.repo, viewer, character_slug)
         target_ids = (
             {selected_character.id}
             if selected_character is not None
             else {character.id for character in viewer.roster}
         )
-        sorted_items = self._thread_obligations(viewer, target_ids)
+        sorted_items = _thread_obligations(self.repo, viewer, target_ids)
         return MyThreadsDashboard(
             needs_reply=[item for item in sorted_items if item.needs_reply],
             waiting_on_others=[item for item in sorted_items if item.waiting_on_others],
             started_by_me=[item for item in sorted_items if item.is_started_by_roster],
             participated=sorted_items,
             selected_character=selected_character,
-            roster_activity=self._roster_activity(viewer),
+            roster_activity=_roster_activity(self.repo, viewer),
         )
 
     def character_roster(self) -> CharacterRosterDashboard:
         viewer = self.viewer()
-        return CharacterRosterDashboard(
-            cards=[
-                CharacterRosterCard(
-                    character=character,
-                    is_default=viewer.membership.default_character_id == character.id,
-                    activity=self._character_activity(viewer, character),
-                    application_status_label=_application_status_label(
-                        character.application_status
-                    ),
-                    application_status_variant=_application_status_variant(
-                        character.application_status
-                    ),
-                )
-                for character in viewer.roster
-            ]
-        )
+        return _character_roster_dashboard(self.repo, viewer)
 
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
-        characters = self.repo.list_community_characters(viewer.community.id)
-        character_views = [
-            _application_character_view(self.repo, viewer, character) for character in characters
-        ]
-        materials = [
-            _material_summary(self.repo, viewer.community.id, material)
-            for material in self.repo.list_materials(viewer.community.id)
-            if material.material_type == "application"
-        ]
-        return ApplicationsDesk(
-            my_applications=[
-                item
-                for item in character_views
-                if item.character.membership_id == viewer.membership.id
-            ],
-            review_queue=(
-                [
-                    item
-                    for item in character_views
-                    if item.character.application_status == "submitted"
-                ]
-                if viewer.role.is_admin
-                else []
-            ),
-            accepted_characters=[
-                item for item in character_views if item.character.application_status == "accepted"
-            ],
-            application_materials=materials,
-            can_review=viewer.role.is_admin,
-        )
+        return _applications_desk(self.repo, viewer)
 
     def members_directory(self) -> MemberDirectory:
         viewer = self.viewer()
-        cards = [
-            self._member_directory_card(viewer, membership)
-            for membership in self.repo.list_memberships(viewer.community.id)
-            if membership.is_active
-        ]
-        return MemberDirectory(cards=cards)
+        return _member_directory(self.repo, viewer)
 
     def read_member(self, username: str) -> MemberProfile:
         viewer = self.viewer()
-        membership = self.repo.get_membership_by_username(viewer.community.id, username)
-        if not membership.is_active:
-            raise LookupError(
-                f"membership not found in community {viewer.community.id}: {username}"
-            )
-        roster = self.repo.list_characters(viewer.community.id, membership.id)
-        roster_ids = {character.id for character in roster}
-        active_threads = self._thread_obligations(viewer, roster_ids)
-        recent_posts = _recent_character_posts(
-            self.repo,
-            viewer,
-            roster_ids,
-            limit=8,
-        )
-        return MemberProfile(
-            membership=membership,
-            role=self.repo.get_role(viewer.community.id, membership.role_id),
-            roster=roster,
-            default_character=_default_character(roster, membership.default_character_id),
-            known_for=_known_for_characters(self.repo, viewer, roster, limit=3),
-            collaborators=_writer_collaborators(
-                self.repo,
-                viewer,
-                membership,
-                roster_ids,
-                limit=4,
-            ),
-            visible_post_count=len(_visible_character_posts(self.repo, viewer, roster_ids)),
-            visible_thread_count=len(active_threads),
-            active_threads=active_threads,
-            started_threads=[item for item in active_threads if item.is_started_by_roster],
-            recent_posts=recent_posts,
-            is_current_member=membership.id == viewer.membership.id,
-        )
+        return _member_profile(self.repo, viewer, username)
 
     def board_threads(
         self,
@@ -1032,96 +340,19 @@ class AppServices:
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-
-        summaries = []
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        roster_character_ids = {character.id for character in viewer.roster}
-        for thread in self.repo.list_threads(viewer.community.id, board.id):
-            posts = self.repo.list_posts(viewer.community.id, thread.id)
-            participants = self.repo.list_thread_participants(viewer.community.id, thread.id)
-            participant_ids = {character.id for character in participants}
-            thread_facets = _facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_thread_facets(viewer.community.id, thread.id),
-            )
-            is_unread = _is_unread(
-                self.repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-            )
-            is_mine = _thread_belongs_to_roster(
-                thread,
-                posts,
-                roster_character_ids,
-                participant_ids,
-            )
-            latest_post = posts[-1] if posts else None
-            first_unread_post = _first_unread_post(
-                self.repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-                posts,
-            )
-            summary = ThreadSummary(
-                thread=thread,
-                author=self.repo.get_character(viewer.community.id, thread.author_character_id),
-                author_membership=self.repo.get_membership(
-                    viewer.community.id,
-                    thread.author_membership_id,
-                ),
-                participants=participants,
-                facets=thread_facets,
-                is_relevant_to_current_face=bool(
-                    current_facet_ids
-                    and {tag.facet.id for tag in thread_facets}.intersection(current_facet_ids)
-                ),
-                reply_count=max(0, len(posts) - 1),
-                latest_post=(
-                    _post_view(self.repo, viewer.community.id, latest_post) if latest_post else None
-                ),
-                first_unread_post=(
-                    _post_view(self.repo, viewer.community.id, first_unread_post)
-                    if first_unread_post
-                    else None
-                ),
-                episode=_episode_credits(self.repo, viewer.community.id, posts),
-                is_unread=is_unread,
-                is_mine=is_mine,
-                needs_attention=(
-                    latest_post is not None
-                    and _is_live_queue_thread(thread)
-                    and _thread_needs_attention(
-                        self.repo,
-                        viewer.community.id,
-                        viewer.membership.id,
-                        thread,
-                        latest_post,
-                        roster_character_ids,
-                    )
-                ),
-            )
-            if _thread_matches_filter(summary, filter_by):
-                summaries.append(summary)
-        return board, summaries
+        return board, _board_thread_summaries(
+            self.repo,
+            viewer,
+            board,
+            filter_by=filter_by,
+        )
 
     def next_unread_thread(self, board_slug: str) -> ThreadNavigationItem | None:
         viewer = self.viewer()
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        for thread in self.repo.list_threads(viewer.community.id, board.id):
-            if _is_unread(self.repo, viewer.community.id, viewer.membership.id, thread):
-                return _thread_navigation_item(
-                    self.repo,
-                    viewer.community.id,
-                    viewer.membership.id,
-                    board,
-                    thread,
-                )
-        return None
+        return _next_unread_thread(self.repo, viewer, board)
 
     def can_start_thread(self, board: Board) -> bool:
         viewer = self.viewer()
@@ -1144,98 +375,9 @@ class AppServices:
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
-        board_threads = self.repo.list_threads(viewer.community.id, board.id)
-        previous_thread, next_thread, next_unread_thread = _thread_navigation(
-            self.repo,
-            viewer.community.id,
-            viewer.membership.id,
-            board,
-            board_threads,
-            thread,
-        )
-        is_unread = _is_unread(self.repo, viewer.community.id, viewer.membership.id, thread)
-        posts = [
-            _post_view(
-                self.repo,
-                viewer.community.id,
-                post,
-                viewer_membership=viewer.membership,
-                viewer_role=viewer.role,
-            )
-            for post in self.repo.list_posts(viewer.community.id, thread.id)
-        ]
+        thread_view = _read_thread_view(self.repo, viewer, board, thread)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
-        can_moderate = policies.can_moderate_thread(
-            viewer.membership,
-            thread,
-            viewer.role,
-        )
-        can_manage_scene = can_moderate or thread.author_membership_id == viewer.membership.id
-        participants = self.repo.list_thread_participants(viewer.community.id, thread.id)
-        participant_ids = {character.id for character in participants}
-        posted_character_ids = {post.post.author_character_id for post in posts}
-        can_reply = policies.can_reply(viewer.membership, thread, viewer.role)
-        return ThreadView(
-            board=board,
-            thread=thread,
-            participants=participants,
-            board_facets=_facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_board_facets(viewer.community.id, board.id),
-            ),
-            thread_facets=_facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_thread_facets(viewer.community.id, thread.id),
-            ),
-            taggable_characters=taggable_characters(
-                self.repo.list_community_characters(viewer.community.id),
-                viewer.roster,
-            ),
-            tagged_character_ids=self.repo.list_thread_participant_ids(
-                viewer.community.id,
-                thread.id,
-            )
-            - posted_character_ids
-            - {thread.author_character_id},
-            posts=posts,
-            latest_post=posts[-1] if posts else None,
-            episode=_episode_credits(
-                self.repo,
-                viewer.community.id,
-                [post.post for post in posts],
-            ),
-            reply_count=max(0, len(posts) - 1),
-            can_reply=can_reply,
-            can_join_scene=(
-                viewer.current_character is not None
-                and thread.status == "open"
-                and not thread.is_locked
-                and can_reply
-                and viewer.current_character.id not in participant_ids
-            ),
-            can_moderate=can_moderate,
-            can_manage_scene=can_manage_scene,
-            moderation_boards=(
-                [
-                    board
-                    for board in self.repo.list_boards(viewer.community.id)
-                    if policies.can_view_board(viewer.membership, board, viewer.role)
-                ]
-                if can_moderate
-                else []
-            ),
-            is_unread=is_unread,
-            previous_thread=previous_thread,
-            next_thread=next_thread,
-            next_unread_thread=next_unread_thread,
-            is_watched=self.repo.is_thread_watched(
-                viewer.community.id,
-                thread.id,
-                viewer.membership.id,
-            ),
-        )
+        return thread_view
 
     def watch_thread(self, board_slug: str, thread_slug: str) -> None:
         viewer = self.viewer()
@@ -1248,78 +390,10 @@ class AppServices:
         self.repo.unwatch_thread(viewer.community.id, thread.id, viewer.membership.id)
 
     def join_thread_as_current_character(self, board_slug: str, thread_slug: str) -> None:
-        viewer = self.viewer()
-        if viewer.current_character is None:
-            raise ValueError("create a character before joining a scene")
-        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
-        if thread.status != "open" or thread.is_locked:
-            raise PermissionError(f"thread {thread.id} is not open to join")
-        if not policies.can_reply(viewer.membership, thread, viewer.role):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot join thread {thread.id}"
-            )
-        if not policies.can_post_as(viewer.membership, viewer.current_character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot use character {viewer.current_character.id}"
-            )
-        self.repo.add_thread_participant(
-            viewer.community.id,
-            thread.id,
-            viewer.current_character.id,
-        )
-        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
+        _join_thread(self.repo, self.viewer(), board_slug, thread_slug)
 
     def discover_plots(self, *, facet_slugs: list[str] | None = None) -> PlotDiscovery:
-        viewer = self.viewer()
-        active_face_facets = _current_character_facet_tags(self.repo, viewer)
-        requested_slugs = _clean_facet_slugs(facet_slugs or [])
-        used_active_face_lens = False
-        if not requested_slugs and active_face_facets:
-            requested_slugs = [
-                tag.facet.slug
-                for tag in active_face_facets
-                if tag.group.slug in {"species", "affiliation", "location"}
-            ][:3]
-            used_active_face_lens = bool(requested_slugs)
-        selected_facets = _resolve_facets(self.repo, viewer.community.id, requested_slugs)
-        requested_slugs = [facet.slug for facet in selected_facets]
-        selected_ids = [facet.id for facet in selected_facets]
-        selected_tags = _facet_tags(self.repo, viewer.community.id, selected_facets)
-        character_ids = (
-            self.repo.list_character_ids_for_facets(viewer.community.id, selected_ids)
-            if selected_ids
-            else {
-                character.id
-                for character in self.repo.list_community_characters(viewer.community.id)
-            }
-        )
-        thread_ids = (
-            self.repo.list_thread_ids_for_facets(viewer.community.id, selected_ids)
-            if selected_ids
-            else {thread.id for thread in self.repo.list_threads(viewer.community.id)}
-        )
-        return PlotDiscovery(
-            selected_facets=selected_tags,
-            active_face_facets=active_face_facets,
-            filter_groups=_facet_filter_groups(
-                self.repo,
-                viewer.community.id,
-                requested_slugs,
-            ),
-            characters=_discovery_characters(
-                self.repo,
-                viewer,
-                character_ids,
-                selected_ids,
-            ),
-            open_threads=_discovery_open_threads(
-                self.repo,
-                viewer,
-                thread_ids,
-                selected_ids,
-            ),
-            used_active_face_lens=used_active_face_lens,
-        )
+        return _discover_plots(self.repo, self.viewer(), facet_slugs=facet_slugs)
 
     def world_hub(self) -> WorldHub:
         viewer = self.viewer()
@@ -1399,68 +473,21 @@ class AppServices:
             raise LookupError(
                 f"material not found in community {viewer.community.id}: {material_slug}"
             )
-        facets = _facet_tags(
+        return _material_detail(
             self.repo,
-            viewer.community.id,
-            self.repo.list_material_facets(viewer.community.id, material.id),
-        )
-        facet_ids = {tag.facet.id for tag in facets}
-        related = []
-        for candidate in self.repo.list_materials(viewer.community.id):
-            if candidate.id == material.id:
-                continue
-            candidate_facets = _facet_tags(
+            viewer,
+            material,
+            board_summary_factory=lambda board: _board_summary(
+                self.repo,
+                viewer,
+                board,
+                _current_character_facet_ids(self.repo, viewer),
+            ),
+            wanted_summary_factory=lambda wanted_ad: _wanted_ad_summary(
                 self.repo,
                 viewer.community.id,
-                self.repo.list_material_facets(viewer.community.id, candidate.id),
-            )
-            if facet_ids and not facet_ids.intersection({tag.facet.id for tag in candidate_facets}):
-                continue
-            related.append(_material_summary(self.repo, viewer.community.id, candidate))
-        related_wanted_ads = _material_related_wanted_ads(
-            self.repo,
-            viewer,
-            material,
-            facet_ids,
-        )[:4]
-        related_locations = _material_related_locations(
-            self.repo,
-            viewer,
-            material,
-            facet_ids,
-        )[:4]
-        related_scenes = _material_related_scenes(
-            self.repo,
-            viewer,
-            material,
-            facet_ids,
-        )[:4]
-        return MaterialDetail(
-            material=material,
-            facets=facets,
-            rendered_body=render_post_body(
-                material.body,
-                mentions=_post_mention_links(self.repo, viewer.community.id),
+                wanted_ad,
             ),
-            type_label=_material_type_label(material.material_type),
-            related_materials=related[:4],
-            related_locations=related_locations,
-            related_scenes=related_scenes,
-            related_wanted_ads=related_wanted_ads,
-            continuity_beats=_material_continuity_beats(
-                material,
-                related_locations,
-                related_scenes,
-                related_wanted_ads,
-            ),
-            event_actions=_material_event_actions(
-                material,
-                facets,
-                related_locations,
-                related_scenes,
-                related_wanted_ads,
-            ),
-            can_manage=viewer.role.is_admin,
         )
 
     def current_event_for_board(self, board: Board) -> MaterialSummary | None:
@@ -1519,282 +546,38 @@ class AppServices:
         )
 
     def wanted_ads(self) -> WantedBoard:
-        viewer = self.viewer()
-        return WantedBoard(
-            open_ads=[
-                _wanted_ad_summary(self.repo, viewer.community.id, wanted_ad)
-                for wanted_ad in self.repo.list_wanted_ads(viewer.community.id)
-            ]
-        )
+        return _wanted_board(self.repo, self.viewer())
 
     def casting_desk(self) -> CastingDesk:
-        viewer = self.viewer()
-        active_reserves = [
-            _character_reserve_view(self.repo, viewer.community.id, reserve)
-            for reserve in self.repo.list_character_reserves_for_community(viewer.community.id)
-        ]
-        wanted_with_interest: list[CastingWantedItem] = []
-        for wanted_ad in self.repo.list_wanted_ads(viewer.community.id, status=None):
-            if wanted_ad.status == "archived":
-                continue
-            interests = [
-                _wanted_ad_interest_view(self.repo, viewer.community.id, interest)
-                for interest in self.repo.list_wanted_ad_interests(
-                    viewer.community.id,
-                    wanted_ad.id,
-                )
-            ]
-            reserves = [
-                reserve
-                for reserve in active_reserves
-                if reserve.reserve.wanted_ad_id == wanted_ad.id
-            ]
-            if not interests and not reserves:
-                continue
-            wanted_with_interest.append(
-                CastingWantedItem(
-                    wanted_ad=_wanted_ad_summary(self.repo, viewer.community.id, wanted_ad),
-                    interests=interests,
-                    reserves=reserves,
-                    is_created_by_viewer=wanted_ad.creator_membership_id == viewer.membership.id,
-                )
-            )
-        return CastingDesk(
-            active_face=viewer.current_character,
-            active_face_reserves=[
-                reserve
-                for reserve in active_reserves
-                if viewer.current_character is not None
-                and reserve.reserve.character_id == viewer.current_character.id
-            ],
-            my_reserves=[
-                reserve
-                for reserve in active_reserves
-                if reserve.reserve.membership_id == viewer.membership.id
-            ],
-            active_reserves=active_reserves,
-            wanted_with_interest=wanted_with_interest,
-        )
+        return _casting_desk(self.repo, self.viewer())
 
     def read_wanted_ad(self, wanted_slug: str) -> WantedAdDetail:
-        viewer = self.viewer()
-        wanted_ad = self.repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-        if wanted_ad.status == "archived":
-            raise LookupError(
-                f"wanted ad not found in community {viewer.community.id}: {wanted_slug}"
-            )
-        facets = _facet_tags(
-            self.repo,
-            viewer.community.id,
-            self.repo.list_wanted_ad_facets(viewer.community.id, wanted_ad.id),
-        )
-        facet_ids = {tag.facet.id for tag in facets}
-        related = []
-        for candidate in self.repo.list_wanted_ads(viewer.community.id):
-            if candidate.id == wanted_ad.id:
-                continue
-            candidate_facets = _facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_wanted_ad_facets(viewer.community.id, candidate.id),
-            )
-            if facet_ids and not facet_ids.intersection({tag.facet.id for tag in candidate_facets}):
-                continue
-            related.append(_wanted_ad_summary(self.repo, viewer.community.id, candidate))
-        interests = [
-            _wanted_ad_interest_view(self.repo, viewer.community.id, interest)
-            for interest in self.repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id)
-        ]
-        reserves = [
-            _character_reserve_view(self.repo, viewer.community.id, reserve)
-            for reserve in self.repo.list_character_reserves_for_wanted_ad(
-                viewer.community.id,
-                wanted_ad.id,
-            )
-        ]
-        viewer_interest = None
-        if viewer.current_character is not None:
-            viewer_interest = next(
-                (
-                    interest
-                    for interest in interests
-                    if interest.interest.character_id == viewer.current_character.id
-                ),
-                None,
-            )
-        is_created_by_viewer = wanted_ad.creator_membership_id == viewer.membership.id
-        return WantedAdDetail(
-            wanted_ad=wanted_ad,
-            creator_membership=self.repo.get_membership(
-                viewer.community.id,
-                wanted_ad.creator_membership_id,
-            ),
-            creator_character=(
-                self.repo.get_character(viewer.community.id, wanted_ad.creator_character_id)
-                if wanted_ad.creator_character_id is not None
-                else None
-            ),
-            related_material=(
-                self.repo.get_material(viewer.community.id, wanted_ad.related_material_id)
-                if wanted_ad.related_material_id is not None
-                else None
-            ),
-            related_characters=self.repo.list_wanted_ad_related_characters(
-                viewer.community.id,
-                wanted_ad.id,
-            ),
-            facets=facets,
-            interests=interests,
-            reserves=reserves,
-            reserve_interest_ids={
-                reserve.reserve.wanted_ad_interest_id
-                for reserve in reserves
-                if reserve.reserve.wanted_ad_interest_id is not None
-            },
-            viewer_interest=viewer_interest,
-            can_express_interest=(
-                wanted_ad.status == "open"
-                and viewer.current_character is not None
-                and viewer_interest is None
-                and not is_created_by_viewer
-            ),
-            is_created_by_viewer=is_created_by_viewer,
-            can_manage=is_created_by_viewer or viewer.role.is_admin,
-            rendered_body=render_post_body(
-                wanted_ad.body,
-                mentions=_post_mention_links(self.repo, viewer.community.id),
-            ),
-            type_label=_wanted_type_label(wanted_ad.wanted_type),
-            related_ads=related[:4],
-        )
+        return _read_wanted_ad(self.repo, self.viewer(), wanted_slug)
 
     def express_wanted_interest(self, wanted_slug: str) -> WantedAdInterest:
-        viewer = self.viewer()
-        if viewer.current_character is None:
-            raise ValueError("create a character before expressing interest")
-        wanted_ad = self.repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-        if wanted_ad.status != "open":
-            raise ValueError(f"wanted hook {wanted_ad.id} is not open")
-        if wanted_ad.creator_membership_id == viewer.membership.id:
-            raise ValueError("you cannot express interest in your own wanted hook")
-        interest = self.repo.create_wanted_ad_interest(
-            viewer.community.id,
-            wanted_ad.id,
-            viewer.membership.id,
-            viewer.current_character.id,
-        )
-        if wanted_ad.creator_membership_id != viewer.membership.id:
-            self.repo.create_notification(
-                viewer.community.id,
-                wanted_ad.creator_membership_id,
-                kind="wanted_interest",
-                wanted_ad_id=wanted_ad.id,
-                wanted_ad_interest_id=interest.id,
-                actor_membership_id=viewer.membership.id,
-                actor_character_id=viewer.current_character.id,
-            )
-        return interest
+        return _express_wanted_interest(self.repo, self.viewer(), wanted_slug)
 
     def reserve_wanted_interest(
         self,
         wanted_slug: str,
         interest_id: int,
     ) -> WantedAdInterest:
-        viewer = self.viewer()
-        wanted_ad = self.repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-        if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
-            )
-        if wanted_ad.status != "open":
-            raise ValueError(f"wanted hook {wanted_ad.id} is not open")
-        interest = self.repo.get_wanted_ad_interest(viewer.community.id, interest_id)
-        if interest.wanted_ad_id != wanted_ad.id:
-            raise LookupError(
-                f"wanted interest {interest_id} not found for wanted hook {wanted_ad.id}"
-            )
-        if interest.status != "interested":
-            raise ValueError(f"wanted interest {interest.id} is already {interest.status}")
-        actor_character_id = _wanted_actor_character_id(self.repo, viewer, wanted_ad)
-        reserved = self.repo.update_wanted_ad_interest_status(
-            viewer.community.id,
-            interest.id,
-            "reserved",
-        )
-        self.repo.update_wanted_ad_status(viewer.community.id, wanted_ad.id, "reserved")
-        if reserved.membership_id != viewer.membership.id:
-            self.repo.create_notification(
-                viewer.community.id,
-                reserved.membership_id,
-                kind="wanted_reserved",
-                wanted_ad_id=wanted_ad.id,
-                wanted_ad_interest_id=reserved.id,
-                actor_membership_id=viewer.membership.id,
-                actor_character_id=actor_character_id,
-            )
-        return reserved
+        return _reserve_wanted_interest(self.repo, self.viewer(), wanted_slug, interest_id)
 
     def create_reserve_for_wanted_interest(
         self,
         wanted_slug: str,
         interest_id: int,
     ) -> CharacterReserve:
-        viewer = self.viewer()
-        wanted_ad = self.repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-        if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
-            )
-        if wanted_ad.status != "reserved":
-            raise ValueError(f"wanted hook {wanted_ad.id} is not reserved")
-        interest = self.repo.get_wanted_ad_interest(viewer.community.id, interest_id)
-        if interest.wanted_ad_id != wanted_ad.id:
-            raise LookupError(
-                f"wanted interest {interest_id} not found for wanted hook {wanted_ad.id}"
-            )
-        if interest.status != "reserved":
-            raise ValueError(f"wanted interest {interest.id} is not reserved")
-        reserve = self.repo.create_character_reserve(
-            viewer.community.id,
-            interest.membership_id,
-            interest.character_id,
-            wanted_ad.title,
-            wanted_ad_id=wanted_ad.id,
-            wanted_ad_interest_id=interest.id,
-            reserve_type="wanted",
-            notes=f"Reserved from wanted hook: {wanted_ad.title}",
+        return _create_reserve_for_wanted_interest(
+            self.repo,
+            self.viewer(),
+            wanted_slug,
+            interest_id,
         )
-        actor_character_id = _wanted_actor_character_id(self.repo, viewer, wanted_ad)
-        if reserve.membership_id != viewer.membership.id:
-            self.repo.create_notification(
-                viewer.community.id,
-                reserve.membership_id,
-                kind="reserve_created",
-                wanted_ad_id=wanted_ad.id,
-                wanted_ad_interest_id=interest.id,
-                actor_membership_id=viewer.membership.id,
-                actor_character_id=actor_character_id,
-            )
-        return reserve
 
     def notifications(self, *, limit: int = 50) -> NotificationInbox:
-        viewer = self.viewer()
-        items: list[NotificationItem] = []
-        for notification in self.repo.list_notifications(
-            viewer.community.id,
-            viewer.membership.id,
-            limit=limit,
-        ):
-            item = _notification_item(self.repo, viewer, notification)
-            if item is not None:
-                items.append(item)
-        return NotificationInbox(
-            items=items,
-            unread_count=self.repo.count_unread_notifications(
-                viewer.community.id,
-                viewer.membership.id,
-            ),
-        )
+        return _notification_inbox(self.repo, self.viewer(), limit=limit)
 
     def search_mentionables(
         self,
@@ -1803,50 +586,13 @@ class AppServices:
         scope: str = "all",
         limit: int = 8,
     ) -> list[Mentionable]:
-        viewer = self.viewer()
-        mention_scope = _clean_mentionable_scope(scope)
-        cleaned_query = query.strip().lstrip("@")
-        if not cleaned_query:
-            return []
-
-        items: list[Mentionable] = []
-        if mention_scope in {"all", "cast", "characters"}:
-            excluded_memberships = [viewer.membership.id] if mention_scope == "cast" else []
-            characters = self.repo.search_characters(
-                viewer.community.id,
-                cleaned_query,
-                limit=limit,
-                exclude_membership_ids=excluded_memberships,
-            )
-            items.extend(_character_mentionable(character) for character in characters)
-
-        remaining = max(0, limit - len(items))
-        if remaining and mention_scope in {"all", "writers", "ooc"}:
-            memberships = self.repo.search_memberships(
-                viewer.community.id,
-                cleaned_query,
-                limit=remaining,
-            )
-            items.extend(_membership_mentionable(membership) for membership in memberships)
-
-        return items[:limit]
+        return _search_mentionables(self.repo, self.viewer(), query, scope=scope, limit=limit)
 
     def open_notification(self, notification_id: int) -> str:
-        viewer = self.viewer()
-        notification = self.repo.get_notification(viewer.community.id, notification_id)
-        if notification.membership_id != viewer.membership.id:
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot read notification {notification.id}"
-            )
-        item = _notification_item(self.repo, viewer, notification)
-        if item is None:
-            raise LookupError(f"notification target not found: {notification.id}")
-        self.repo.mark_notification_read(viewer.community.id, notification.id)
-        return item.href
+        return _open_notification(self.repo, self.viewer(), notification_id)
 
     def mark_all_notifications_read(self) -> None:
-        viewer = self.viewer()
-        self.repo.mark_all_notifications_read(viewer.community.id, viewer.membership.id)
+        _mark_all_notifications_read(self.repo, self.viewer())
 
     def set_default_character(self, character_id: int) -> ForumView:
         viewer = self.viewer()
@@ -1860,115 +606,22 @@ class AppServices:
 
     def submit_character_application(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if not policies.can_post_as(viewer.membership, character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot submit character {character.id}"
-            )
-        if character.application_status not in {"draft", "revision_requested"}:
-            raise ValueError(
-                f"character {character.id} cannot be submitted from {character.application_status}"
-            )
-        character = self.repo.update_character_application_status(
-            viewer.community.id,
-            character.id,
-            "submitted",
-        )
-        self._notify_application_directors(viewer, character)
-        return character
+        return _submit_character_application(self.repo, viewer, character_slug)
 
     def accept_character_application(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
-            raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if character.application_status != "submitted":
-            raise ValueError(
-                f"character {character.id} cannot be accepted from {character.application_status}"
-            )
-        character = self.repo.update_character_application_status(
-            viewer.community.id,
-            character.id,
-            "accepted",
-        )
-        self._notify_application_owner(viewer, character, "application_accepted")
-        return character
+        return _accept_character_application(self.repo, viewer, character_slug)
 
     def request_character_application_revision(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
-            raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if character.application_status != "submitted":
-            raise ValueError(
-                f"character {character.id} cannot be revised from {character.application_status}"
-            )
-        character = self.repo.update_character_application_status(
-            viewer.community.id,
-            character.id,
-            "revision_requested",
-        )
-        self._notify_application_owner(viewer, character, "application_revision_requested")
-        return character
+        return _request_character_application_revision(self.repo, viewer, character_slug)
 
     def read_character(self, character_slug: str) -> CharacterProfile:
         viewer = self.viewer()
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        owner_membership = self.repo.get_membership(viewer.community.id, character.membership_id)
-        can_manage = character.membership_id == viewer.membership.id
-        recent_posts = _recent_character_posts(
-            self.repo,
-            viewer,
-            {character.id},
-            limit=5,
-        )
-        activity = self._character_activity(viewer, character)
-        return CharacterProfile(
-            character=character,
-            owner_membership=owner_membership,
-            facets=_facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_character_facets(viewer.community.id, character.id),
-            ),
-            wanted_ads=[
-                _wanted_ad_summary(self.repo, viewer.community.id, wanted_ad)
-                for wanted_ad in self.repo.list_wanted_ads_for_character(
-                    viewer.community.id,
-                    character.id,
-                )
-            ],
-            reserves=[
-                _character_reserve_view(self.repo, viewer.community.id, reserve)
-                for reserve in self.repo.list_character_reserves(
-                    viewer.community.id,
-                    character.id,
-                )
-            ],
-            application_status_label=_application_status_label(character.application_status),
-            application_status_variant=_application_status_variant(character.application_status),
-            is_default=can_manage and viewer.membership.default_character_id == character.id,
-            can_manage=can_manage,
-            post_count=len(_visible_character_posts(self.repo, viewer, {character.id})),
-            thread_count=len(activity.started_by_character),
-            activity=activity,
-            recent_posts=recent_posts,
-        )
+        return _character_profile(self.repo, viewer, character_slug)
 
     def read_post_editor(self, board_slug: str, thread_slug: str, post_id: int) -> EditablePostView:
-        viewer = self.viewer()
-        board, thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
-        return EditablePostView(
-            board=board,
-            thread=thread,
-            post=_post_view(
-                self.repo,
-                viewer.community.id,
-                post,
-                viewer_membership=viewer.membership,
-                viewer_role=viewer.role,
-            ),
-        )
+        return _read_post_editor(self.repo, self.viewer(), board_slug, thread_slug, post_id)
 
     def read_post_revisions(
         self,
@@ -1976,24 +629,7 @@ class AppServices:
         thread_slug: str,
         post_id: int,
     ) -> PostRevisionHistory:
-        viewer = self.viewer()
-        board, thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
-        revisions = [
-            _post_revision_view(self.repo, viewer.community.id, revision)
-            for revision in self.repo.list_post_revisions(viewer.community.id, post.id)
-        ]
-        return PostRevisionHistory(
-            board=board,
-            thread=thread,
-            post=_post_view(
-                self.repo,
-                viewer.community.id,
-                post,
-                viewer_membership=viewer.membership,
-                viewer_role=viewer.role,
-            ),
-            revisions=revisions,
-        )
+        return _read_post_revisions(self.repo, self.viewer(), board_slug, thread_slug, post_id)
 
     def create_character(
         self,
@@ -2082,21 +718,7 @@ class AppServices:
         )
 
     def update_post(self, board_slug: str, thread_slug: str, post_id: int, body: str) -> Post:
-        viewer = self.viewer()
-        _board, _thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
-        cleaned = body.strip()
-        if not cleaned:
-            raise ValueError("post body is required")
-        if cleaned == post.body:
-            return post
-        self.repo.create_post_revision(
-            viewer.community.id,
-            post.id,
-            viewer.membership.id,
-            post.body,
-            cleaned,
-        )
-        return self.repo.update_post_body(viewer.community.id, post_id, cleaned)
+        return _update_post(self.repo, self.viewer(), board_slug, thread_slug, post_id, body)
 
     def update_thread_state(
         self,
@@ -2134,46 +756,18 @@ class AppServices:
         posting_mode: str = "freeform",
         participant_ids: list[int] | None = None,
     ) -> Thread:
-        viewer = self.viewer()
-        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
-        if not self._can_manage_scene(viewer, thread):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot manage scene {thread.id}"
-            )
-        cleaned_status = _clean_thread_status(status)
-        cleaned_posting_mode = _clean_posting_mode(posting_mode)
-        self.repo.update_thread_scene(
-            viewer.community.id,
-            thread.id,
-            status=cleaned_status,
-            location=location.strip(),
-            timeline=timeline.strip(),
-            summary=summary.strip(),
-            posting_mode=cleaned_posting_mode,
+        return _update_thread_scene(
+            self.repo,
+            self.viewer(),
+            board_slug,
+            thread_slug,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            participant_ids=participant_ids,
         )
-        posted_character_ids = {
-            post.author_character_id
-            for post in self.repo.list_posts(viewer.community.id, thread.id)
-        }
-        required_ids = [thread.author_character_id, *posted_character_ids]
-        taggable_ids = {
-            character.id
-            for character in taggable_characters(
-                self.repo.list_community_characters(viewer.community.id),
-                viewer.roster,
-            )
-        }
-        tag_ids = [
-            character_id
-            for character_id in _clean_participant_ids(participant_ids or [])
-            if character_id in taggable_ids
-        ]
-        self.repo.set_thread_participants(
-            viewer.community.id,
-            thread.id,
-            _clean_participant_ids([*required_ids, *tag_ids]),
-        )
-        return self.repo.get_thread(viewer.community.id, thread.id)
 
     def move_thread(
         self,
@@ -2215,28 +809,9 @@ class AppServices:
     def reply_to_thread(
         self, board_slug: str, thread_slug: str, character_id: int, body: str
     ) -> Post:
-        viewer = self.viewer()
-        character = self.repo.get_character(viewer.community.id, character_id)
-        if not policies.can_post_as(viewer.membership, character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot use character {character_id}"
-            )
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        if not policies.can_reply(viewer.membership, thread, viewer.role):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot reply to thread {thread.id}"
-            )
-        cleaned = body.strip()
-        if not cleaned:
-            raise ValueError("reply body is required")
-        post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned)
-        self._notify_post_created(viewer, thread, post)
-        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
-        self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
-        return post
+        return _reply_to_thread(
+            self.repo, self.viewer(), board_slug, thread_slug, character_id, body
+        )
 
     def start_thread(
         self,
@@ -2279,54 +854,20 @@ class AppServices:
         posting_mode: str = "freeform",
         participant_ids: list[int] | None = None,
     ) -> CreatedThread:
-        viewer = self.viewer()
-        character = self.repo.get_character(viewer.community.id, character_id)
-        if not policies.can_post_as(viewer.membership, character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot use character {character_id}"
-            )
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        if not policies.can_start_thread(viewer.membership, board, viewer.role):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot start threads in board {board.id}"
-            )
-        cleaned_title = title.strip()
-        if not cleaned_title:
-            raise ValueError("thread title is required")
-        cleaned_body = body.strip()
-        if not cleaned_body:
-            raise ValueError("opening post is required")
-        cleaned_status = _clean_thread_status(status)
-        cleaned_posting_mode = _clean_posting_mode(posting_mode)
-        cleaned_location = location.strip()
-        cleaned_timeline = timeline.strip()
-        cleaned_summary = summary.strip()
-        cleaned_participant_ids = _clean_participant_ids([character.id, *(participant_ids or [])])
-        for participant_id in cleaned_participant_ids:
-            self.repo.get_character(viewer.community.id, participant_id)
-        slug = _unique_thread_slug(self.repo, viewer.community.id, board.id, cleaned_title)
-        thread = self.repo.create_thread(
-            viewer.community.id,
-            board.id,
-            character.id,
-            slug,
-            cleaned_title,
-            status=cleaned_status,
-            location=cleaned_location,
-            timeline=cleaned_timeline,
-            summary=cleaned_summary,
-            posting_mode=cleaned_posting_mode,
+        return _start_thread(
+            self.repo,
+            self.viewer(),
+            board_slug=board_slug,
+            character_id=character_id,
+            title=title,
+            body=body,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            participant_ids=participant_ids,
         )
-        self.repo.set_thread_participants(
-            viewer.community.id,
-            thread.id,
-            cleaned_participant_ids,
-        )
-        post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned_body)
-        thread = self.repo.get_thread(viewer.community.id, thread.id)
-        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
-        self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
-        return CreatedThread(thread=thread, post=post)
 
     def _visible_thread(
         self,
@@ -2339,248 +880,6 @@ class AppServices:
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
         return board, thread
-
-    def _can_manage_scene(self, viewer: ForumView, thread: Thread) -> bool:
-        return thread.author_membership_id == viewer.membership.id or policies.can_moderate_thread(
-            viewer.membership,
-            thread,
-            viewer.role,
-        )
-
-    def _notify_post_created(
-        self,
-        viewer: ForumView,
-        thread: Thread,
-        post: Post,
-    ) -> None:
-        mentioned_memberships = _mentioned_membership_ids(
-            self.repo,
-            viewer.community.id,
-            post.body,
-        )
-        watch_memberships = set(
-            self.repo.list_thread_watch_membership_ids(viewer.community.id, thread.id)
-        )
-        actor_membership_id = viewer.membership.id
-        for membership_id in mentioned_memberships:
-            if membership_id != actor_membership_id:
-                self.repo.create_notification(
-                    viewer.community.id,
-                    membership_id,
-                    kind="mention",
-                    thread_id=thread.id,
-                    post_id=post.id,
-                    actor_membership_id=actor_membership_id,
-                    actor_character_id=post.author_character_id,
-                )
-        for membership_id in watch_memberships - mentioned_memberships:
-            if membership_id != actor_membership_id:
-                self.repo.create_notification(
-                    viewer.community.id,
-                    membership_id,
-                    kind="thread_reply",
-                    thread_id=thread.id,
-                    post_id=post.id,
-                    actor_membership_id=actor_membership_id,
-                    actor_character_id=post.author_character_id,
-                )
-
-    def _editable_post(
-        self,
-        viewer: ForumView,
-        board_slug: str,
-        thread_slug: str,
-        post_id: int,
-    ) -> tuple[Board, Thread, Post]:
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
-        post = self.repo.get_post(viewer.community.id, post_id)
-        if post.thread_id != thread.id:
-            raise LookupError(f"post {post_id} does not belong to thread {thread.id}")
-        if not policies.can_edit_post(viewer.membership, post, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot edit post {post.id}")
-        return board, thread, post
-
-    def _selected_character(
-        self,
-        viewer: ForumView,
-        character_slug: str | None,
-    ) -> Character | None:
-        if not character_slug:
-            return None
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if character.membership_id != viewer.membership.id:
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot filter by character {character.id}"
-            )
-        return character
-
-    def _notify_application_directors(self, viewer: ForumView, character: Character) -> None:
-        for membership in self.repo.list_memberships(viewer.community.id):
-            role = self.repo.get_role(viewer.community.id, membership.role_id)
-            if not role.is_admin or membership.id == viewer.membership.id:
-                continue
-            self.repo.create_notification(
-                viewer.community.id,
-                membership.id,
-                kind="application_submitted",
-                character_id=character.id,
-                actor_membership_id=viewer.membership.id,
-                actor_character_id=character.id,
-            )
-
-    def _notify_application_owner(
-        self,
-        viewer: ForumView,
-        character: Character,
-        kind: str,
-    ) -> None:
-        actor_character_id = _application_actor_character_id(viewer, character)
-        if character.membership_id == viewer.membership.id:
-            return
-        self.repo.create_notification(
-            viewer.community.id,
-            character.membership_id,
-            kind=kind,
-            character_id=character.id,
-            actor_membership_id=viewer.membership.id,
-            actor_character_id=actor_character_id,
-        )
-
-    def _character_activity(
-        self,
-        viewer: ForumView,
-        character: Character,
-    ) -> CharacterThreadActivity:
-        items = self._thread_obligations(viewer, {character.id})
-        return CharacterThreadActivity(
-            character=character,
-            needs_reply=[item for item in items if item.needs_reply],
-            waiting_on_others=[item for item in items if item.waiting_on_others],
-            started_by_character=[item for item in items if item.is_started_by_roster],
-            participated=items,
-        )
-
-    def _roster_activity(self, viewer: ForumView) -> list[CharacterThreadActivity]:
-        return [self._character_activity(viewer, character) for character in viewer.roster]
-
-    def _member_directory_card(
-        self,
-        viewer: ForumView,
-        membership: CommunityMembership,
-    ) -> MemberDirectoryCard:
-        roster = self.repo.list_characters(viewer.community.id, membership.id)
-        roster_ids = {character.id for character in roster}
-        active_threads = self._thread_obligations(viewer, roster_ids)
-        latest_posts = _recent_character_posts(self.repo, viewer, roster_ids, limit=1)
-        return MemberDirectoryCard(
-            membership=membership,
-            role=self.repo.get_role(viewer.community.id, membership.role_id),
-            roster=roster,
-            default_character=_default_character(roster, membership.default_character_id),
-            known_for=_known_for_characters(self.repo, viewer, roster, limit=2),
-            visible_post_count=len(_visible_character_posts(self.repo, viewer, roster_ids)),
-            active_thread_count=len(active_threads),
-            latest_post=latest_posts[0] if latest_posts else None,
-            is_current_member=membership.id == viewer.membership.id,
-        )
-
-    def _thread_obligations(
-        self,
-        viewer: ForumView,
-        target_character_ids: set[int],
-    ) -> list[ThreadObligationItem]:
-        if not target_character_ids:
-            return []
-        visible_boards = {
-            board.id: board
-            for board in self.repo.list_boards(viewer.community.id)
-            if policies.can_view_board(viewer.membership, board, viewer.role)
-        }
-        items = []
-        for thread in self.repo.list_threads(viewer.community.id):
-            board = visible_boards.get(thread.board_id)
-            if board is None:
-                continue
-            if not _is_live_queue_thread(thread):
-                continue
-            posts = self.repo.list_posts(viewer.community.id, thread.id)
-            participants = self.repo.list_thread_participants(viewer.community.id, thread.id)
-            participant_ids = {character.id for character in participants}
-            if not _thread_belongs_to_roster(
-                thread,
-                posts,
-                target_character_ids,
-                participant_ids,
-            ):
-                continue
-            latest_post = posts[-1] if posts else None
-            first_unread_post = _first_unread_post(
-                self.repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-                posts,
-            )
-            last_own_post = _last_roster_post(posts, target_character_ids)
-            needs_reply = (
-                latest_post is not None
-                and latest_post.author_character_id not in target_character_ids
-                and _is_reply_obligation_thread(thread)
-            )
-            waiting_on_others = (
-                latest_post is not None
-                and latest_post.author_character_id in target_character_ids
-                and _is_reply_obligation_thread(thread)
-            )
-            items.append(
-                ThreadObligationItem(
-                    board=board,
-                    thread=thread,
-                    author=self.repo.get_character(
-                        viewer.community.id,
-                        thread.author_character_id,
-                    ),
-                    author_membership=self.repo.get_membership(
-                        viewer.community.id,
-                        thread.author_membership_id,
-                    ),
-                    participants=participants,
-                    latest_post=(
-                        _post_view(self.repo, viewer.community.id, latest_post)
-                        if latest_post
-                        else None
-                    ),
-                    first_unread_post=(
-                        _post_view(self.repo, viewer.community.id, first_unread_post)
-                        if first_unread_post
-                        else None
-                    ),
-                    last_own_post=(
-                        _post_view(self.repo, viewer.community.id, last_own_post)
-                        if last_own_post
-                        else None
-                    ),
-                    episode=_episode_credits(self.repo, viewer.community.id, posts),
-                    reply_count=max(0, len(posts) - 1),
-                    is_unread=_is_unread(
-                        self.repo,
-                        viewer.community.id,
-                        viewer.membership.id,
-                        thread,
-                    ),
-                    is_started_by_roster=thread.author_character_id in target_character_ids,
-                    needs_reply=needs_reply,
-                    waiting_on_others=waiting_on_others,
-                )
-            )
-        return sorted(
-            items,
-            key=lambda item: (_timestamp_key(item.thread.updated_at), item.thread.id),
-            reverse=True,
-        )
 
 
 def create_services(path: str | Path | None = None) -> AppServices:
@@ -2742,1309 +1041,10 @@ def _board_summary(
     )
 
 
-def _default_character(
-    roster: list[Character],
-    default_character_id: int | None,
-) -> Character | None:
-    if default_character_id is None:
-        return roster[0] if roster else None
-    return next(
-        (character for character in roster if character.id == default_character_id),
-        roster[0] if roster else None,
-    )
-
-
-def _current_character_facet_tags(repo: ForumRepository, viewer: ForumView) -> list[FacetTag]:
-    if viewer.current_character is None:
-        return []
-    return _facet_tags(
-        repo,
-        viewer.community.id,
-        repo.list_character_facets(viewer.community.id, viewer.current_character.id),
-    )
-
-
-def _current_character_facet_ids(repo: ForumRepository, viewer: ForumView) -> set[int]:
-    return {tag.facet.id for tag in _current_character_facet_tags(repo, viewer)}
-
-
-def _facet_tags(repo: ForumRepository, community_id: int, facets: list[Facet]) -> list[FacetTag]:
-    groups = {group.id: group for group in repo.list_facet_groups(community_id)}
-    return [
-        FacetTag(group=groups[facet.facet_group_id], facet=facet)
-        for facet in facets
-        if facet.facet_group_id in groups
-    ]
-
-
-def _resolve_facets(repo: ForumRepository, community_id: int, slugs: list[str]) -> list[Facet]:
-    facets = []
-    for slug in _clean_facet_slugs(slugs):
-        try:
-            facets.append(repo.get_facet_by_slug(community_id, slug))
-        except LookupError:
-            continue
-    return facets
-
-
-def _clean_facet_slugs(values: list[str]) -> list[str]:
-    slugs: list[str] = []
-    for value in values:
-        for part in value.split(","):
-            slug = part.strip().lower()
-            if slug and slug not in slugs:
-                slugs.append(slug)
-    return slugs
-
-
-def _facet_filter_groups(
-    repo: ForumRepository,
-    community_id: int,
-    selected_slugs: list[str],
-) -> list[FacetFilterGroup]:
-    selected = set(selected_slugs)
-    selected_order = [slug for slug in selected_slugs if slug in selected]
-    tags = _facet_tags(repo, community_id, repo.list_facets(community_id))
-    groups = repo.list_facet_groups(community_id)
-    return [
-        FacetFilterGroup(
-            group=group,
-            options=[
-                FacetFilterOption(
-                    tag=tag,
-                    href=_facet_filter_href(selected_order, tag.facet.slug),
-                    is_selected=tag.facet.slug in selected,
-                )
-                for tag in tags
-                if tag.group.id == group.id
-            ],
-        )
-        for group in groups
-        if group.visibility == "public"
-    ]
-
-
-def _facet_filter_href(selected_slugs: list[str], slug: str) -> str:
-    if slug in selected_slugs:
-        next_slugs = [selected_slug for selected_slug in selected_slugs if selected_slug != slug]
-    else:
-        next_slugs = [*selected_slugs, slug]
-    if not next_slugs:
-        return "/discover?facets=none"
-    return f"/discover?facets={','.join(next_slugs)}"
-
-
-def _material_summary(
-    repo: ForumRepository,
-    community_id: int,
-    material: Material,
-) -> MaterialSummary:
-    return MaterialSummary(
-        material=material,
-        facets=_facet_tags(
-            repo,
-            community_id,
-            repo.list_material_facets(community_id, material.id),
-        ),
-        rendered_summary=material.summary or post_snippet(material.body, limit=160),
-        type_label=_material_type_label(material.material_type),
-    )
-
-
-def _material_type_label(material_type: str) -> str:
-    return {
-        "premise": "Premise",
-        "guide": "Guide",
-        "factions": "Factions",
-        "application": "Application",
-        "event": "Event",
-    }.get(material_type, material_type.replace("_", " ").title())
-
-
-def _material_related_locations(
-    repo: ForumRepository,
-    viewer: ForumView,
-    material: Material,
-    facet_ids: set[int],
-) -> list[BoardSummary]:
-    if not facet_ids:
-        return []
-    current_facet_ids = _current_character_facet_ids(repo, viewer)
-    summaries: list[BoardSummary] = []
-    for board in repo.list_boards(viewer.community.id):
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            continue
-        board_facet_ids = {
-            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
-        }
-        if not facet_ids.intersection(board_facet_ids):
-            continue
-        summaries.append(_board_summary(repo, viewer, board, current_facet_ids))
-    return sorted(
-        summaries,
-        key=lambda item: (
-            not item.is_relevant_to_current_face,
-            item.board.sort_order,
-            item.board.name,
-            item.board.id,
-        ),
-    )
-
-
-def _material_related_scenes(
-    repo: ForumRepository,
-    viewer: ForumView,
-    material: Material,
-    facet_ids: set[int],
-) -> list[DiscoveryThreadResult]:
-    if not facet_ids:
-        return []
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    results: list[DiscoveryThreadResult] = []
-    for thread in repo.list_threads(viewer.community.id):
-        board = visible_boards.get(thread.board_id)
-        if board is None:
-            continue
-        thread_facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_thread_facets(viewer.community.id, thread.id),
-        )
-        thread_facet_ids = {tag.facet.id for tag in thread_facets}
-        board_facet_ids = {
-            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
-        }
-        matching_facets = [tag for tag in thread_facets if tag.facet.id in facet_ids]
-        if not facet_ids.intersection(thread_facet_ids | board_facet_ids):
-            continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        results.append(
-            DiscoveryThreadResult(
-                board=board,
-                thread=thread,
-                author=repo.get_character(viewer.community.id, thread.author_character_id),
-                participants=repo.list_thread_participants(viewer.community.id, thread.id),
-                facets=thread_facets,
-                matching_facets=matching_facets,
-                reply_count=max(0, len(posts) - 1),
-            )
-        )
-    return sorted(
-        results,
-        key=lambda item: (_timestamp_key(item.thread.updated_at), item.thread.id),
-        reverse=True,
-    )
-
-
-def _material_related_wanted_ads(
-    repo: ForumRepository,
-    viewer: ForumView,
-    material: Material,
-    facet_ids: set[int],
-) -> list[WantedAdSummary]:
-    results: list[WantedAdSummary] = []
-    for wanted_ad in repo.list_wanted_ads(viewer.community.id):
-        wanted_facet_ids = {
-            facet.id for facet in repo.list_wanted_ad_facets(viewer.community.id, wanted_ad.id)
-        }
-        if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
-            wanted_facet_ids
-        ):
-            continue
-        results.append(_wanted_ad_summary(repo, viewer.community.id, wanted_ad))
-    return sorted(
-        results,
-        key=lambda item: (
-            item.wanted_ad.related_material_id != material.id,
-            _timestamp_key(item.wanted_ad.updated_at),
-            item.wanted_ad.id,
-        ),
-        reverse=True,
-    )
-
-
-def _current_event_for_facet_ids(
-    repo: ForumRepository,
-    community_id: int,
-    facet_ids: set[int],
-) -> MaterialSummary | None:
-    if not facet_ids:
-        return None
-    matches: list[Material] = []
-    for material in repo.list_materials(community_id):
-        if material.material_type != "event" or material.status != "published":
-            continue
-        material_facet_ids = {
-            facet.id for facet in repo.list_material_facets(community_id, material.id)
-        }
-        if facet_ids.intersection(material_facet_ids):
-            matches.append(material)
-    if not matches:
-        return None
-    current = sorted(
-        matches,
-        key=lambda item: (
-            not item.is_featured,
-            item.sort_order,
-            _timestamp_key(item.updated_at),
-            item.id,
-        ),
-    )[0]
-    return _material_summary(repo, community_id, current)
-
-
-def _material_event_actions(
-    material: Material,
-    facets: list[FacetTag],
-    related_locations: list[BoardSummary],
-    related_scenes: list[DiscoveryThreadResult],
-    related_wanted_ads: list[WantedAdSummary],
-) -> list[EventAction]:
-    if material.material_type != "event":
-        return []
-    actions: list[EventAction] = []
-    open_scene = next(
-        (scene for scene in related_scenes if scene.thread.status == "open"),
-        related_scenes[0] if related_scenes else None,
-    )
-    if open_scene is not None:
-        actions.append(
-            EventAction(
-                kind="scene",
-                label="Scene to write",
-                title=open_scene.thread.title,
-                description=open_scene.thread.summary
-                or f"{open_scene.board.name} is carrying this event into play.",
-                href=f"/boards/{open_scene.board.slug}/threads/{open_scene.thread.slug}",
-                cta="Enter scene",
-            )
-        )
-    open_wanted = next(
-        (item for item in related_wanted_ads if item.wanted_ad.status == "open"),
-        related_wanted_ads[0] if related_wanted_ads else None,
-    )
-    if open_wanted is not None:
-        actions.append(
-            EventAction(
-                kind="wanted",
-                label=open_wanted.type_label,
-                title=open_wanted.wanted_ad.title,
-                description=open_wanted.wanted_ad.summary
-                or "A writer-facing hook connected to this event.",
-                href=f"/wanted/{open_wanted.wanted_ad.slug}",
-                cta="Answer hook",
-            )
-        )
-    if related_locations:
-        location = related_locations[0]
-        actions.append(
-            EventAction(
-                kind="location",
-                label="Affected location",
-                title=location.board.name,
-                description=location.board.tagline or location.board.description,
-                href=f"/boards/{location.board.slug}",
-                cta="Explore location",
-            )
-        )
-    facet_slugs = [tag.facet.slug for tag in facets[:4]]
-    if facet_slugs:
-        actions.append(
-            EventAction(
-                kind="discover",
-                label="Plot lens",
-                title="Find cast by event facets",
-                description="Use this event's world lenses to find characters, writers, and open scenes.",
-                href=f"/discover?facets={','.join(facet_slugs)}",
-                cta="Open discovery",
-            )
-        )
-    return actions[:4]
-
-
-def _material_continuity_beats(
-    material: Material,
-    related_locations: list[BoardSummary],
-    related_scenes: list[DiscoveryThreadResult],
-    related_wanted_ads: list[WantedAdSummary],
-) -> list[ContinuityBeat]:
-    beats = [
-        ContinuityBeat(
-            title=f"{_material_type_label(material.material_type)} opened",
-            date_label=_timestamp_label(material.created_at),
-            content=material.summary
-            or "Directors published this world material for writers to carry into play.",
-            variant="info",
-        )
-    ]
-    if _timestamp_key(material.updated_at) > _timestamp_key(material.created_at):
-        beats.append(
-            ContinuityBeat(
-                title="Canon updated",
-                date_label=_timestamp_label(material.updated_at),
-                content="Directors revised this material as the board state changed.",
-            )
-        )
-    if related_locations:
-        location = related_locations[0].board
-        beats.append(
-            ContinuityBeat(
-                title="Pressure reaches the map",
-                date_label="Now",
-                content=(
-                    f"{len(related_locations)} relevant location"
-                    f"{'' if len(related_locations) == 1 else 's'} are carrying this material, "
-                    f"starting with {location.name}."
-                ),
-                href=f"/boards/{location.slug}",
-                variant="success",
-            )
-        )
-    beats.extend(
-        ContinuityBeat(
-            title=f"Scene: {scene.thread.title}",
-            date_label=_timestamp_label(scene.thread.updated_at),
-            content=(
-                f"{scene.board.name} · {scene.reply_count} "
-                f"{'reply' if scene.reply_count == 1 else 'replies'} · "
-                f"{len(scene.participants)} in the cast"
-            ),
-            href=f"/boards/{scene.board.slug}/threads/{scene.thread.slug}",
-            variant="info",
-        )
-        for scene in related_scenes[:2]
-    )
-    beats.extend(
-        ContinuityBeat(
-            title=f"Open hook: {wanted_ad.wanted_ad.title}",
-            date_label=_timestamp_label(wanted_ad.wanted_ad.updated_at),
-            content=f"{wanted_ad.type_label}: {wanted_ad.wanted_ad.summary}",
-            href=f"/wanted/{wanted_ad.wanted_ad.slug}",
-            variant="warning",
-        )
-        for wanted_ad in related_wanted_ads[:2]
-    )
-    return beats[:6]
-
-
-def _wanted_ad_summary(
-    repo: ForumRepository,
-    community_id: int,
-    wanted_ad: WantedAd,
-) -> WantedAdSummary:
-    return WantedAdSummary(
-        wanted_ad=wanted_ad,
-        creator_membership=repo.get_membership(community_id, wanted_ad.creator_membership_id),
-        creator_character=(
-            repo.get_character(community_id, wanted_ad.creator_character_id)
-            if wanted_ad.creator_character_id is not None
-            else None
-        ),
-        related_material=(
-            repo.get_material(community_id, wanted_ad.related_material_id)
-            if wanted_ad.related_material_id is not None
-            else None
-        ),
-        related_characters=repo.list_wanted_ad_related_characters(community_id, wanted_ad.id),
-        facets=_facet_tags(
-            repo,
-            community_id,
-            repo.list_wanted_ad_facets(community_id, wanted_ad.id),
-        ),
-        type_label=_wanted_type_label(wanted_ad.wanted_type),
-    )
-
-
-def _wanted_type_label(wanted_type: str) -> str:
-    return {
-        "canon": "Canon",
-        "connection": "Connection",
-        "event_role": "Event Role",
-        "faction_need": "Faction Need",
-        "plot_role": "Plot Role",
-        "rival": "Rival",
-    }.get(wanted_type, wanted_type.replace("_", " ").title())
-
-
-def _wanted_ad_interest_view(
-    repo: ForumRepository,
-    community_id: int,
-    interest: WantedAdInterest,
-) -> WantedAdInterestView:
-    return WantedAdInterestView(
-        interest=interest,
-        membership=repo.get_membership(community_id, interest.membership_id),
-        character=repo.get_character(community_id, interest.character_id),
-        created_at_label=_timestamp_label(interest.created_at),
-    )
-
-
-def _character_reserve_view(
-    repo: ForumRepository,
-    community_id: int,
-    reserve: CharacterReserve,
-) -> CharacterReserveView:
-    return CharacterReserveView(
-        reserve=reserve,
-        membership=repo.get_membership(community_id, reserve.membership_id),
-        character=repo.get_character(community_id, reserve.character_id),
-        wanted_ad=(
-            repo.get_wanted_ad(community_id, reserve.wanted_ad_id)
-            if reserve.wanted_ad_id is not None
-            else None
-        ),
-        created_at_label=_timestamp_label(reserve.created_at),
-    )
-
-
-def _application_character_view(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character: Character,
-) -> ApplicationCharacterView:
-    return ApplicationCharacterView(
-        character=character,
-        membership=repo.get_membership(viewer.community.id, character.membership_id),
-        facets=_facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_character_facets(viewer.community.id, character.id),
-        ),
-        reserves=[
-            _character_reserve_view(repo, viewer.community.id, reserve)
-            for reserve in repo.list_character_reserves(
-                viewer.community.id,
-                character.id,
-            )
-        ],
-        status_label=_application_status_label(character.application_status),
-        status_variant=_application_status_variant(character.application_status),
-        is_owned_by_viewer=character.membership_id == viewer.membership.id,
-    )
-
-
-def _application_status_label(status: str) -> str:
-    return APPLICATION_STATUS_LABELS.get(status, status.replace("_", " ").title())
-
-
-def _application_status_variant(status: str) -> str:
-    return APPLICATION_STATUS_VARIANTS.get(status, "muted")
-
-
-def _application_actor_character_id(viewer: ForumView, target_character: Character) -> int:
-    if (
-        viewer.current_character is not None
-        and viewer.current_character.membership_id == viewer.membership.id
-    ):
-        return viewer.current_character.id
-    if viewer.roster:
-        return viewer.roster[0].id
-    if target_character.membership_id == viewer.membership.id:
-        return target_character.id
-    raise ValueError("application actor needs a character")
-
-
-def _wanted_actor_character_id(
-    repo: ForumRepository,
-    viewer: ForumView,
-    wanted_ad: WantedAd,
-) -> int:
-    if (
-        viewer.current_character is not None
-        and viewer.current_character.membership_id == viewer.membership.id
-    ):
-        return viewer.current_character.id
-    if wanted_ad.creator_character_id is not None:
-        creator_character = repo.get_character(viewer.community.id, wanted_ad.creator_character_id)
-        if creator_character.membership_id == viewer.membership.id:
-            return creator_character.id
-    roster = repo.list_characters(viewer.community.id, viewer.membership.id)
-    if roster:
-        return roster[0].id
-    raise ValueError("create a character before managing wanted hooks")
-
-
-def _discovery_characters(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character_ids: set[int],
-    selected_facet_ids: list[int],
-) -> list[DiscoveryCharacterResult]:
-    selected = set(selected_facet_ids)
-    results = []
-    for character in repo.list_community_characters(viewer.community.id):
-        if character.id not in character_ids:
-            continue
-        owner = repo.get_membership(viewer.community.id, character.membership_id)
-        if not owner.is_active:
-            continue
-        facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_character_facets(viewer.community.id, character.id),
-        )
-        matching_facets = [tag for tag in facets if tag.facet.id in selected]
-        results.append(
-            DiscoveryCharacterResult(
-                character=character,
-                owner_membership=owner,
-                facets=facets,
-                matching_facets=matching_facets,
-            )
-        )
-    return sorted(
-        results,
-        key=lambda item: (
-            -len(item.matching_facets),
-            item.character.name,
-            item.character.id,
-        ),
-    )
-
-
-def _discovery_open_threads(
-    repo: ForumRepository,
-    viewer: ForumView,
-    thread_ids: set[int],
-    selected_facet_ids: list[int],
-) -> list[DiscoveryThreadResult]:
-    selected = set(selected_facet_ids)
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    results = []
-    for thread in repo.list_threads(viewer.community.id):
-        if thread.id not in thread_ids or thread.status != "open" or thread.is_locked:
-            continue
-        board = visible_boards.get(thread.board_id)
-        if board is None:
-            continue
-        facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_thread_facets(viewer.community.id, thread.id),
-        )
-        matching_facets = [tag for tag in facets if tag.facet.id in selected]
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        results.append(
-            DiscoveryThreadResult(
-                board=board,
-                thread=thread,
-                author=repo.get_character(viewer.community.id, thread.author_character_id),
-                participants=repo.list_thread_participants(viewer.community.id, thread.id),
-                facets=facets,
-                matching_facets=matching_facets,
-                reply_count=max(0, len(posts) - 1),
-            )
-        )
-    return sorted(
-        results,
-        key=lambda item: (
-            -len(item.matching_facets),
-            _timestamp_key(item.thread.updated_at),
-            item.thread.id,
-        ),
-        reverse=True,
-    )
-
-
-def _visible_character_posts(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character_ids: set[int],
-) -> list[CharacterAppearance]:
-    if not character_ids:
-        return []
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    items: list[CharacterAppearance] = []
-    for character_id in character_ids:
-        for post in repo.list_posts_by_character(viewer.community.id, character_id):
-            thread = repo.get_thread(viewer.community.id, post.thread_id)
-            board = visible_boards.get(thread.board_id)
-            if board is None:
-                continue
-            items.append(
-                CharacterAppearance(
-                    post=_post_view(repo, viewer.community.id, post),
-                    thread=thread,
-                    board=board,
-                )
-            )
-    return sorted(
-        items,
-        key=lambda item: (_timestamp_key(item.post.post.created_at), item.post.post.id),
-        reverse=True,
-    )
-
-
-def _recent_character_posts(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character_ids: set[int],
-    *,
-    limit: int,
-) -> list[CharacterAppearance]:
-    return _visible_character_posts(repo, viewer, character_ids)[:limit]
-
-
-def _known_for_characters(
-    repo: ForumRepository,
-    viewer: ForumView,
-    roster: list[Character],
-    *,
-    limit: int,
-) -> list[Character]:
-    if not roster:
-        return []
-    appearances = _visible_character_posts(
-        repo,
-        viewer,
-        {character.id for character in roster},
-    )
-    counts: dict[int, int] = {}
-    latest: dict[int, tuple[str, int]] = {}
-    for appearance in appearances:
-        character_id = appearance.post.author.id
-        counts[character_id] = counts.get(character_id, 0) + 1
-        latest[character_id] = max(
-            latest.get(character_id, ("", 0)),
-            (
-                appearance.post.post.created_at,
-                appearance.post.post.id,
-            ),
-        )
-    ranked = sorted(
-        roster,
-        key=lambda character: (
-            counts.get(character.id, 0),
-            latest.get(character.id, ("", 0)),
-            character.name.lower(),
-        ),
-        reverse=True,
-    )
-    return ranked[:limit]
-
-
-def _writer_collaborators(
-    repo: ForumRepository,
-    viewer: ForumView,
-    membership: CommunityMembership,
-    roster_ids: set[int],
-    *,
-    limit: int,
-) -> list[WriterCollaborator]:
-    if not roster_ids:
-        return []
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    counts: dict[int, int] = {}
-    latest: dict[int, tuple[str, int, Thread, Board]] = {}
-    for thread in repo.list_threads(viewer.community.id):
-        board = visible_boards.get(thread.board_id)
-        if board is None:
-            continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        if not any(
-            post.author_membership_id == membership.id or post.author_character_id in roster_ids
-            for post in posts
-        ):
-            continue
-        other_membership_ids = {
-            post.author_membership_id
-            for post in posts
-            if post.author_membership_id != membership.id
-        }
-        for other_id in other_membership_ids:
-            counts[other_id] = counts.get(other_id, 0) + 1
-            candidate = (thread.updated_at, thread.id, thread, board)
-            if candidate[:2] > latest.get(other_id, ("", 0, thread, board))[:2]:
-                latest[other_id] = candidate
-    collaborators: list[WriterCollaborator] = []
-    for membership_id, shared_thread_count in counts.items():
-        try:
-            collaborator = repo.get_membership(viewer.community.id, membership_id)
-        except LookupError:
-            continue
-        if not collaborator.is_active:
-            continue
-        _stamp, _thread_id, latest_thread, latest_board = latest[membership_id]
-        collaborators.append(
-            WriterCollaborator(
-                membership=collaborator,
-                shared_thread_count=shared_thread_count,
-                latest_thread=latest_thread,
-                latest_board=latest_board,
-            )
-        )
-    return sorted(
-        collaborators,
-        key=lambda item: (
-            item.shared_thread_count,
-            _timestamp_key(item.latest_thread.updated_at),
-            item.membership.display_name.lower(),
-        ),
-        reverse=True,
-    )[:limit]
-
-
 def _latest_thread(threads: list[Thread]) -> Thread | None:
     if not threads:
         return None
     return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
-
-
-def _is_unread(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    thread: Thread,
-) -> bool:
-    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
-    if read_at is None:
-        return True
-    return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
-
-
-def _first_unread_post(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    thread: Thread,
-    posts: list[Post],
-) -> Post | None:
-    if not posts or not _is_unread(repo, community_id, membership_id, thread):
-        return None
-    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
-    if read_at is None:
-        return posts[0]
-    read_stamp = _timestamp_key(read_at)
-    for post in posts:
-        if _timestamp_key(post.created_at) > read_stamp:
-            return post
-    return posts[-1]
-
-
-def _thread_navigation(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    board: Board,
-    threads: list[Thread],
-    current: Thread,
-) -> tuple[ThreadNavigationItem | None, ThreadNavigationItem | None, ThreadNavigationItem | None]:
-    current_index = _thread_index(threads, current.id)
-    if current_index is None:
-        return None, None, None
-    previous_thread = (
-        _thread_navigation_item(
-            repo, community_id, membership_id, board, threads[current_index - 1]
-        )
-        if current_index > 0
-        else None
-    )
-    next_thread = (
-        _thread_navigation_item(
-            repo, community_id, membership_id, board, threads[current_index + 1]
-        )
-        if current_index + 1 < len(threads)
-        else None
-    )
-    ordered_candidates = threads[current_index + 1 :] + threads[:current_index]
-    next_unread_thread = None
-    for thread in ordered_candidates:
-        if _is_unread(repo, community_id, membership_id, thread):
-            next_unread_thread = _thread_navigation_item(
-                repo,
-                community_id,
-                membership_id,
-                board,
-                thread,
-            )
-            break
-    return previous_thread, next_thread, next_unread_thread
-
-
-def _thread_index(threads: list[Thread], thread_id: int) -> int | None:
-    for index, thread in enumerate(threads):
-        if thread.id == thread_id:
-            return index
-    return None
-
-
-def _thread_navigation_item(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    board: Board,
-    thread: Thread,
-) -> ThreadNavigationItem:
-    posts = repo.list_posts(community_id, thread.id)
-    jump_post = _first_unread_post(repo, community_id, membership_id, thread, posts)
-    if jump_post is None and posts:
-        jump_post = posts[-1]
-    return ThreadNavigationItem(
-        board=board,
-        thread=thread,
-        jump_post=_post_view(repo, community_id, jump_post) if jump_post else None,
-    )
-
-
-def _thread_belongs_to_roster(
-    thread: Thread,
-    posts: list[Post],
-    roster_character_ids: set[int],
-    participant_ids: set[int] | None = None,
-) -> bool:
-    if thread.author_character_id in roster_character_ids:
-        return True
-    if participant_ids and participant_ids.intersection(roster_character_ids):
-        return True
-    return any(post.author_character_id in roster_character_ids for post in posts)
-
-
-def _last_roster_post(posts: list[Post], roster_character_ids: set[int]) -> Post | None:
-    for post in reversed(posts):
-        if post.author_character_id in roster_character_ids:
-            return post
-    return None
-
-
-def _thread_needs_attention(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    thread: Thread,
-    latest_post: Post,
-    roster_character_ids: set[int],
-) -> bool:
-    return (
-        _is_unread(repo, community_id, membership_id, thread)
-        and latest_post.author_character_id not in roster_character_ids
-    )
-
-
-def _thread_matches_filter(summary: ThreadSummary, filter_by: BoardThreadFilter) -> bool:
-    match filter_by:
-        case "all":
-            return True
-        case "unread":
-            return summary.is_unread
-        case "attention":
-            return summary.needs_attention
-        case "mine":
-            return summary.is_mine
-        case "pinned":
-            return summary.thread.is_pinned
-        case "locked":
-            return summary.thread.is_locked
-
-
-def _thread_state_badges(thread: Thread) -> tuple[ThreadCardBadge, ...]:
-    badges: list[ThreadCardBadge] = []
-    status_badge = _thread_status_badge(thread.status)
-    if status_badge is not None:
-        badges.append(status_badge)
-    if thread.is_pinned:
-        badges.append(ThreadCardBadge("pinned", "warning"))
-    if thread.is_locked:
-        badges.append(ThreadCardBadge("locked", "muted"))
-    return tuple(badges)
-
-
-def _thread_status_badge(status: str) -> ThreadCardBadge | None:
-    match status:
-        case "open":
-            return ThreadCardBadge("open to join", "info")
-        case "paused":
-            return ThreadCardBadge("paused", "warning")
-        case "complete":
-            return ThreadCardBadge("complete", "muted")
-        case "private":
-            return ThreadCardBadge("private scene", "muted")
-        case "archived":
-            return ThreadCardBadge("archived", "muted")
-        case _:
-            return None
-
-
-def _is_live_queue_thread(thread: Thread) -> bool:
-    return thread.status in {"open", "active"} and not thread.is_locked
-
-
-def _is_reply_obligation_thread(thread: Thread) -> bool:
-    return _is_live_queue_thread(thread)
-
-
-def _clean_thread_status(value: str) -> ThreadStatus:
-    status = value.strip().lower().replace("-", "_")
-    if status not in THREAD_STATUSES:
-        raise ValueError("choose a valid thread status")
-    return cast(ThreadStatus, status)
-
-
-def _clean_posting_mode(value: str) -> PostingMode:
-    mode = value.strip().lower().replace("-", "_")
-    if mode not in POSTING_MODES:
-        raise ValueError("choose a valid posting mode")
-    return cast(PostingMode, mode)
-
-
-def _clean_participant_ids(character_ids: list[int]) -> list[int]:
-    cleaned: list[int] = []
-    for character_id in character_ids:
-        if character_id not in cleaned:
-            cleaned.append(character_id)
-    return cleaned
-
-
-def _clean_mentionable_scope(value: str) -> MentionableScope:
-    scope = value.strip().lower().replace("-", "_")
-    if scope not in {"all", "cast", "characters", "writers", "ooc"}:
-        return "all"
-    return cast(MentionableScope, scope)
-
-
-def _character_mentionable(character: Character) -> Mentionable:
-    return Mentionable(
-        kind="character",
-        id=character.id,
-        handle=character.slug,
-        label=character.name,
-        detail="Character",
-        avatar_url=character.avatar_url,
-        href=f"/characters/{character.slug}",
-    )
-
-
-def _membership_mentionable(membership: CommunityMembership) -> Mentionable:
-    return Mentionable(
-        kind="writer",
-        id=membership.id,
-        handle=membership.username,
-        label=membership.display_name,
-        detail=f"Writer @{membership.username}",
-        avatar_url=membership.avatar_url,
-        href=f"/members/{membership.username}",
-    )
-
-
-def taggable_characters(characters: list[Character], roster: list[Character]) -> list[Character]:
-    own_membership_ids = {character.membership_id for character in roster}
-    return [
-        character for character in characters if character.membership_id not in own_membership_ids
-    ]
-
-
-def _notification_item(
-    repo: ForumRepository,
-    viewer: ForumView,
-    notification: Notification,
-) -> NotificationItem | None:
-    actor = repo.get_character(viewer.community.id, notification.actor_character_id)
-    actor_membership = repo.get_membership(
-        viewer.community.id,
-        notification.actor_membership_id,
-    )
-    if notification.character_id is not None:
-        character = repo.get_character(viewer.community.id, notification.character_id)
-        match notification.kind:
-            case "application_submitted":
-                snippet = f"{actor.name} submitted this character for review."
-            case "application_accepted":
-                snippet = f"{actor.name} accepted this character application."
-            case "application_revision_requested":
-                snippet = f"{actor.name} requested revisions for this character application."
-            case _:
-                snippet = f"{actor.name} updated this character application."
-        return NotificationItem(
-            notification=notification,
-            board=None,
-            thread=None,
-            post=None,
-            wanted_ad=None,
-            actor=actor,
-            actor_membership=actor_membership,
-            label=_notification_label(notification.kind),
-            title=character.name,
-            created_at_label=_timestamp_label(notification.created_at),
-            snippet=snippet,
-            href=f"/characters/{character.slug}",
-        )
-    if notification.wanted_ad_id is not None:
-        wanted_ad = repo.get_wanted_ad(viewer.community.id, notification.wanted_ad_id)
-        interest = (
-            repo.get_wanted_ad_interest(
-                viewer.community.id,
-                notification.wanted_ad_interest_id,
-            )
-            if notification.wanted_ad_interest_id is not None
-            else None
-        )
-        if notification.kind == "wanted_reserved":
-            snippet = f"{actor.name} reserved this wanted hook."
-        elif notification.kind == "reserve_created":
-            snippet = f"{actor.name} created a reserve from this wanted hook."
-        else:
-            snippet = f"{actor.name} is interested in this wanted hook."
-        if interest is not None and interest.note:
-            snippet = interest.note
-        return NotificationItem(
-            notification=notification,
-            board=None,
-            thread=None,
-            post=None,
-            wanted_ad=wanted_ad,
-            actor=actor,
-            actor_membership=actor_membership,
-            label=_notification_label(notification.kind),
-            title=wanted_ad.title,
-            created_at_label=_timestamp_label(notification.created_at),
-            snippet=snippet,
-            href=f"/wanted/{wanted_ad.slug}",
-        )
-    if notification.thread_id is None or notification.post_id is None:
-        return None
-    thread = repo.get_thread(viewer.community.id, notification.thread_id)
-    board = repo.get_board(viewer.community.id, thread.board_id)
-    if not policies.can_view_board(viewer.membership, board, viewer.role):
-        return None
-    post = repo.get_post(viewer.community.id, notification.post_id)
-    post_view = _post_view(repo, viewer.community.id, post)
-    return NotificationItem(
-        notification=notification,
-        board=board,
-        thread=thread,
-        post=post_view,
-        wanted_ad=None,
-        actor=actor,
-        actor_membership=actor_membership,
-        label=_notification_label(notification.kind),
-        title=thread.title,
-        created_at_label=post_view.created_at_label,
-        snippet=post_view.snippet,
-        href=f"/boards/{board.slug}/threads/{thread.slug}#{post_view.anchor}",
-    )
-
-
-def _notification_label(kind: str) -> str:
-    match kind:
-        case "mention":
-            return "Mention"
-        case "thread_reply":
-            return "Watched thread"
-        case "wanted_interest":
-            return "Wanted interest"
-        case "wanted_reserved":
-            return "Wanted reserved"
-        case "reserve_created":
-            return "Reserve created"
-        case "application_submitted":
-            return "Application submitted"
-        case "application_accepted":
-            return "Application accepted"
-        case "application_revision_requested":
-            return "Revisions requested"
-        case _:
-            return "Notification"
-
-
-def _mentioned_membership_ids(
-    repo: ForumRepository,
-    community_id: int,
-    body: str,
-) -> set[int]:
-    mentioned: set[int] = set()
-    for character in repo.list_community_characters(community_id):
-        if _mentions_character(body, character):
-            mentioned.add(character.membership_id)
-    for membership in repo.list_memberships(community_id):
-        if membership.is_active and _mentions_membership(body, membership):
-            mentioned.add(membership.id)
-    return mentioned
-
-
-def _mentions_character(body: str, character: Character) -> bool:
-    for label in {character.slug, character.name}:
-        if re.search(rf"(?<![\w-])@{re.escape(label)}(?![\w-])", body, re.IGNORECASE):
-            return True
-    return False
-
-
-def _mentions_membership(body: str, membership: CommunityMembership) -> bool:
-    return bool(
-        re.search(
-            rf"(?<![\w-])@{re.escape(membership.username)}(?![\w-])",
-            body,
-            re.IGNORECASE,
-        )
-    )
-
-
-def _post_mention_links(repo: ForumRepository, community_id: int) -> list[MentionLink]:
-    links: list[MentionLink] = []
-    seen: set[str] = set()
-    for character in repo.list_community_characters(community_id):
-        for handle in _character_mention_handles(character):
-            if handle.lower() in seen:
-                continue
-            links.append(
-                MentionLink(
-                    handle=handle,
-                    href=f"/characters/{character.slug}",
-                    label=character.name,
-                    kind="character",
-                )
-            )
-            seen.add(handle.lower())
-    for membership in repo.list_memberships(community_id):
-        if not membership.is_active or membership.username.lower() in seen:
-            continue
-        links.append(
-            MentionLink(
-                handle=membership.username,
-                href=f"/members/{membership.username}",
-                label=membership.display_name,
-                kind="writer",
-            )
-        )
-        seen.add(membership.username.lower())
-    return links
-
-
-def _character_mention_handles(character: Character) -> set[str]:
-    handles = {character.slug}
-    if re.fullmatch(r"[\w-]+", character.name):
-        handles.add(character.name)
-    return handles
-
-
-def _episode_credits(
-    repo: ForumRepository,
-    community_id: int,
-    posts: list[Post],
-) -> EpisodeCredits:
-    word_count = sum(_body_word_count(post.body) for post in posts)
-    read_minutes = max(1, (word_count + 224) // 225)
-    writer_memberships: list[CommunityMembership] = []
-    seen_membership_ids: set[int] = set()
-    for post in posts:
-        if post.author_membership_id in seen_membership_ids:
-            continue
-        seen_membership_ids.add(post.author_membership_id)
-        writer_memberships.append(repo.get_membership(community_id, post.author_membership_id))
-    return EpisodeCredits(
-        word_count=word_count,
-        read_minutes=read_minutes,
-        read_estimate_label=f"~{read_minutes} min read",
-        post_count=len(posts),
-        writer_memberships=writer_memberships,
-    )
-
-
-def _body_word_count(body: str) -> int:
-    return len(re.findall(r"[A-Za-z0-9][A-Za-z0-9'-]*", body))
-
-
-def _post_view(
-    repo: ForumRepository,
-    community_id: int,
-    post: Post,
-    *,
-    viewer_membership: CommunityMembership | None = None,
-    viewer_role: Role | None = None,
-) -> PostView:
-    return PostView(
-        post=post,
-        author=repo.get_character(community_id, post.author_character_id),
-        author_membership=repo.get_membership(
-            community_id,
-            post.author_membership_id,
-        ),
-        rendered_body=render_post_body(
-            post.body,
-            mentions=_post_mention_links(repo, community_id),
-        ),
-        snippet=post_snippet(post.body),
-        can_edit=(
-            viewer_membership is not None
-            and policies.can_edit_post(viewer_membership, post, viewer_role)
-        ),
-        is_edited=_timestamp_key(post.updated_at) > _timestamp_key(post.created_at),
-        created_at_label=_timestamp_label(post.created_at),
-        created_at_relative_label=_relative_timestamp_label(post.created_at),
-        updated_at_label=_timestamp_label(post.updated_at),
-        updated_at_relative_label=_relative_timestamp_label(post.updated_at),
-        anchor=f"post-{post.id}",
-    )
-
-
-def _post_revision_view(
-    repo: ForumRepository,
-    community_id: int,
-    revision: PostRevision,
-) -> PostRevisionView:
-    return PostRevisionView(
-        revision=revision,
-        editor_membership=repo.get_membership(community_id, revision.editor_membership_id),
-        created_at_label=_timestamp_label(revision.created_at),
-    )
-
-
-def _timestamp_key(value: str) -> datetime:
-    try:
-        return datetime.fromisoformat(value)
-    except ValueError:
-        return datetime.min
-
-
-def _timestamp_label(value: str) -> str:
-    try:
-        stamp = datetime.fromisoformat(value)
-    except ValueError:
-        return value
-    hour = stamp.hour % 12 or 12
-    meridiem = "AM" if stamp.hour < 12 else "PM"
-    zone = stamp.tzname() or "UTC"
-    return f"{stamp:%b} {stamp.day}, {stamp.year} {hour}:{stamp.minute:02d} {meridiem} {zone}"
-
-
-def _timestamp_time_label(stamp: datetime) -> str:
-    hour = stamp.hour % 12 or 12
-    meridiem = "AM" if stamp.hour < 12 else "PM"
-    return f"{hour}:{stamp.minute:02d} {meridiem}"
-
-
-def _relative_timestamp_label(value: str) -> str:
-    try:
-        stamp = datetime.fromisoformat(value)
-    except ValueError:
-        return value
-    now = datetime.now(stamp.tzinfo or UTC)
-    if stamp.tzinfo is None:
-        now = now.replace(tzinfo=None)
-    days = (now.date() - stamp.date()).days
-    if days == 0:
-        return f"Today, {_timestamp_time_label(stamp)}"
-    if days == 1:
-        return f"Yesterday, {_timestamp_time_label(stamp)}"
-    if 1 < days <= 6:
-        return f"This week, {stamp:%a}"
-    if stamp.year == now.year:
-        return f"{stamp:%b} {stamp.day}"
-    return f"{stamp:%b} {stamp.day}, {stamp.year}"
 
 
 def _unique_character_slug(
@@ -4063,24 +1063,6 @@ def _unique_character_slug(
         except LookupError:
             return slug
         if existing.id == current_character_id:
-            return slug
-        slug = f"{base}-{suffix}"
-        suffix += 1
-
-
-def _unique_thread_slug(
-    repo: ForumRepository,
-    community_id: int,
-    board_id: int,
-    title: str,
-) -> str:
-    base = _slugify(title)
-    slug = base
-    suffix = 2
-    while True:
-        try:
-            repo.get_thread_by_slug(community_id, board_id, slug)
-        except LookupError:
             return slug
         slug = f"{base}-{suffix}"
         suffix += 1

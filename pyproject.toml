@@ -93,6 +93,7 @@ ignore = [
 "tests/**/*.py" = ["S101"]
 "scripts/**/*.py" = ["T20"]
 "src/elbysodic/db/repository.py" = ["S608"]
+"src/elbysodic/db/repositories/facets.py" = ["S608"]
 
 # =============================================================================
 # ty - Type Checker

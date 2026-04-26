@@ -1,12 +1,17 @@
 """Application service APIs for Elbysodic."""
 
 from elbysodic.services.forum import (
+    AppServices,
+    create_services,
+    default_database_path,
+    initialize_database,
+)
+from elbysodic.services.read_models import (
     POSTING_MODES,
     THREAD_STATUSES,
     ActivityItem,
     ApplicationCharacterView,
     ApplicationsDesk,
-    AppServices,
     AttentionItem,
     BoardNavigationItem,
     BoardSummary,
@@ -52,9 +57,6 @@ from elbysodic.services.forum import (
     WantedBoard,
     WorldHub,
     WriterCollaborator,
-    create_services,
-    default_database_path,
-    initialize_database,
 )
 
 __all__ = [
