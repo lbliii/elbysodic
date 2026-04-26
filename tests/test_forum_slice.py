@@ -80,6 +80,23 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Latest details:" in index.text
             assert "Relevant for Rogue:" in index.text
             assert "elbysodic-board-poster__face-signal-hint" in index.text
+            assert "elbysodic-face-switcher" in index.text
+            assert "elbysodic-community-table" in index.text
+            assert "elbysodic-community-row" in index.text
+            assert "✉" in index.text
+            assert "✏" in index.text
+            assert "◉" in index.text
+            assert "⟳" in index.text
+            assert "elbysodic-activity-log" in index.text
+            assert "elbysodic-activity-log-item" in index.text
+            assert re.search(
+                r">\s*(?:Today|Yesterday), \d{1,2}:\d{2} [AP]M\s*</time>",
+                index.text,
+            )
+            assert re.search(
+                r'<time class="elbysodic-activity-log-item__time"\s+datetime="[^"]+"\s+title="[A-Z][a-z]{2} \d{1,2}, 2026 \d{1,2}:\d{2} [AP]M UTC">',
+                index.text,
+            )
             assert _sidebar_board_count(index.text, "plotting") == 1
 
             board = await client.get("/boards/plotting")
@@ -93,12 +110,17 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "First unread" in board.text
             assert "#post-" in board.text
             assert "new replies" in board.text
+            assert "min read" in board.text
+            assert "written by" in board.text
             assert "Next unread" in board.text
             assert "Magneto" in board.text
 
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread.status == 200
             assert 'id="post-' in thread.text
+            assert "Runtime" in thread.text
+            assert "Credits" in thread.text
+            assert "min read" in thread.text
             assert "Drop your available characters here" in thread.text
             assert "Rogue" in thread.text
             assert "Magneto" in thread.text
@@ -172,6 +194,27 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
     asyncio.run(run())
 
 
+def test_director_studio_surfaces_community_production_work() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+
+            assert studio.status == 200
+            assert "Director Studio" in studio.text
+            assert "Shape X-Men Apocalypse" in studio.text
+            assert "World Bible" in studio.text
+            assert "Location Studio" in studio.text
+            assert "Event Studio" in studio.text
+            assert "Applications and hooks" in studio.text
+            assert 'href="/world/b-24-winter"' in studio.text
+            assert 'href="/applications"' in studio.text
+            assert 'href="/wanted"' in studio.text
+            assert "Current Event" in studio.text
+
+    asyncio.run(run())
+
+
 def test_sidebar_modes_follow_major_product_paths() -> None:
     async def run() -> None:
         app = _app()
@@ -183,9 +226,27 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Sublocations" in world.text
             assert "Wanted board" not in world.text
             assert "data-elbysodic-sidebar-toggle" in world.text
+            assert "chirpui-app-shell__sidebar-resize" in world.text
+            assert "elbysodic-sidebar-destination" in world.text
+            assert 'href="/locations"' in world.text
+            assert 'href="/community"' in world.text
             assert 'class="chirpui-sidebar elbysodic-sidebar"' in world.text
             assert "elbysodic-mobile-nav-trigger" in world.text
             assert "elbysodic-mobile-shell-drawer" in world.text
+
+            locations = await client.get("/locations")
+            assert locations.status == 200
+            assert "Playable world map" in locations.text
+            assert "Major locations" in locations.text
+            assert "/boards/xavier-institute" in locations.text
+            assert "Community table" not in locations.text
+
+            community = await client.get("/community")
+            assert community.status == 200
+            assert "Writer room and record" in community.text
+            assert "Community table" in community.text
+            assert "Announcements" in community.text
+            assert "Playable world map" not in community.text
 
             guidebook = await client.get("/world")
             assert guidebook.status == 200
@@ -200,6 +261,14 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "My threads" in desk.text
             assert "World Map" not in desk.text
             assert '<h2 class="chirpui-drawer__title">Desk</h2>' in desk.text
+
+            studio = await client.get("/studio")
+            assert studio.status == 200
+            assert "Director Studio" in studio.text
+            assert "Production" in studio.text
+            assert "Wanted board" in studio.text
+            assert "World Map" not in studio.text
+            assert '<h2 class="chirpui-drawer__title">Studio</h2>' in studio.text
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
@@ -302,6 +371,14 @@ def test_topbar_marks_active_product_realm() -> None:
                 r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
                 r'\s+href="/wanted"',
                 wanted.text,
+            )
+
+            studio = await client.get("/studio")
+            assert studio.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/studio"',
+                studio.text,
             )
 
     asyncio.run(run())
@@ -1140,6 +1217,7 @@ def test_members_directory_and_profile_show_visible_community_cast() -> None:
             assert "Members" in directory.text
             assert "Lane" in directory.text
             assert "@starlane" in directory.text
+            assert "Known for" in directory.text
             assert "Rogue" in directory.text
             assert "/members/starlane" in directory.text
             assert "Private activity should stay private." not in directory.text
@@ -1147,6 +1225,9 @@ def test_members_directory_and_profile_show_visible_community_cast() -> None:
             profile = await client.get("/members/starlane")
             assert profile.status == 200
             assert "Current face: Rogue" in profile.text
+            assert "Known For" in profile.text
+            assert "Current Roles" in profile.text
+            assert "Collaborators" in profile.text
             assert "Visible posts" in profile.text
             assert "Open thread roster" in profile.text
             assert "/characters/rogue" in profile.text

@@ -1,0 +1,202 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% def studio_signal(label, value, href=None) %}
+<div class="elbysodic-director-signal">
+  <span>{{ label }}</span>
+  {% if href %}
+  <a href="{{ href }}">{{ value }}</a>
+  {% else %}
+  <strong>{{ value }}</strong>
+  {% end %}
+</div>
+{% end %}
+
+{% def studio_lane(kicker, title, summary, href, cta, count, items) %}
+{% call surface(variant="elevated") %}
+<article class="elbysodic-director-lane">
+  <div class="elbysodic-director-lane__header">
+    <div>
+      <p class="elbysodic-kicker">{{ kicker }}</p>
+      <h2><a class="chirpui-link" href="{{ href }}">{{ title }}</a></h2>
+    </div>
+    <span class="elbysodic-director-lane__count">{{ count }}</span>
+  </div>
+  <p>{{ summary }}</p>
+  {% if items %}
+  <ul class="elbysodic-director-list">
+    {% for item in items[:3] %}
+    <li>{{ item }}</li>
+    {% end %}
+  </ul>
+  {% end %}
+  <a class="elbysodic-director-action" href="{{ href }}">{{ cta }}</a>
+</article>
+{% end %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="76rem") %}
+{% call stack(gap="lg") %}
+  <section class="elbysodic-director-hero">
+    <div>
+      <p class="elbysodic-kicker">Director Studio</p>
+      <h1>Shape {{ viewer.community.name }}</h1>
+      <p>
+        A production room for the canon, locations, applications, and hooks that make
+        this board feel authored instead of merely configured.
+      </p>
+    </div>
+    <aside class="elbysodic-director-hero__signals" aria-label="Studio pulse">
+      {{ studio_signal("Materials", studio.material_count, "/world") }}
+      {{ studio_signal("Locations", studio.location_count, "/") }}
+      {{ studio_signal("Open hooks", studio.open_wanted_count, "/wanted") }}
+      {{ studio_signal("Review queue", studio.review_queue_count, "/applications") }}
+    </aside>
+  </section>
+
+  {% if not studio.can_manage %}
+  {% call surface(variant="elevated") %}
+  <p class="elbysodic-empty-state">
+    Director Studio is visible as a preview, but only staff memberships can manage
+    community canon and queues.
+  </p>
+  {% end %}
+  {% end %}
+
+  <section class="elbysodic-director-grid" aria-label="Director work lanes">
+    {% set current_event_href = "/world/" ~ studio.current_event.material.slug if studio.current_event else "/world" %}
+    {{ studio_lane(
+      "World Bible",
+      "Guidebook",
+      "Premise, rules, faction lenses, and application guidance.",
+      "/world",
+      "Open guidebook",
+      studio.material_count,
+      studio.featured_material_titles or ["No featured materials yet."]
+    ) }}
+    {{ studio_lane(
+      "Location Studio",
+      "World map",
+      "The playable geography writers browse when they are looking for a scene.",
+      "/",
+      "Map locations",
+      studio.location_count,
+      studio.location_board_names or ["No IC locations yet."]
+    ) }}
+    {{ studio_lane(
+      "Event Studio",
+      "Current pressure",
+      "Events that turn static lore into scene prompts, crisis pages, and shared momentum.",
+      current_event_href,
+      "Open event",
+      studio.events | length,
+      studio.event_titles or ["No events yet."]
+    ) }}
+    {{ studio_lane(
+      "Casting",
+      "Applications and hooks",
+      "Templates, wanted ads, reserves, and the review flow around new characters.",
+      "/applications",
+      "Review pipeline",
+      studio.review_queue_count,
+      studio.application_material_titles or ["No application guides yet."]
+    ) }}
+  </section>
+
+  {% call section_header("Director Queue") %}
+  The most useful next places to look before opening an editor.
+  {% end %}
+
+  <section class="elbysodic-director-queue">
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm">
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <p class="elbysodic-kicker">Canon</p>
+        {{ badge(studio.draft_materials | length ~ " drafts", variant="warning") if studio.draft_materials else "" }}
+      </div>
+      <h2>World materials</h2>
+      <p class="chirpui-text-muted">
+        Featured pillars should explain the board quickly; drafts are director-only until published.
+      </p>
+      {% if studio.draft_materials %}
+      <ul class="elbysodic-director-list">
+        {% for item in studio.draft_materials[:4] %}
+        <li><a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></li>
+        {% end %}
+      </ul>
+      {% else %}
+      <p class="elbysodic-director-note">No draft materials are waiting.</p>
+      {% end %}
+    </article>
+    {% end %}
+
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-kicker">Casting</p>
+      <h2>Open wants</h2>
+      <p class="chirpui-text-muted">
+        Wanted ads are studio prompts: they turn character gaps into story invitations.
+      </p>
+      {% if studio.open_wanted_ads %}
+      <ul class="elbysodic-director-list">
+        {% for item in studio.open_wanted_ads[:4] %}
+        <li><a href="/wanted/{{ item.wanted_ad.slug }}">{{ item.wanted_ad.title }}</a></li>
+        {% end %}
+      </ul>
+      {% else %}
+      <p class="elbysodic-director-note">No open wanted ads right now.</p>
+      {% end %}
+    </article>
+    {% end %}
+
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-kicker">Map</p>
+      <h2>Location coverage</h2>
+      <p class="chirpui-text-muted">
+        Major places are the emotional surface; sublocations add the browsable file-tree depth.
+      </p>
+      <div class="elbysodic-director-mini-grid">
+        {{ studio_signal("Major", studio.location_count) }}
+        {{ studio_signal("Nested", studio.sublocation_count) }}
+      </div>
+      {% if studio.location_boards %}
+      <div class="elbysodic-director-facets">
+        {% for item in studio.location_boards[:3] %}
+        <a href="{{ item.href }}">{{ item.board.name }}</a>
+        {% end %}
+      </div>
+      {% end %}
+    </article>
+    {% end %}
+  </section>
+
+  {% if studio.current_event %}
+  {% call section_header("Current Event") %}
+  The active canon pressure Studio should keep feeding into scenes, wants, and location copy.
+  {% end %}
+  {% call surface(variant="elevated") %}
+  <article class="elbysodic-director-event">
+    <div>
+      <p class="elbysodic-kicker">{{ studio.current_event.type_label }}</p>
+      <h2><a class="chirpui-link" href="/world/{{ studio.current_event.material.slug }}">{{ studio.current_event.material.title }}</a></h2>
+      <p>{{ studio.current_event.rendered_summary }}</p>
+    </div>
+    {{ facet_pills(studio.current_event.facets) }}
+  </article>
+  {% end %}
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

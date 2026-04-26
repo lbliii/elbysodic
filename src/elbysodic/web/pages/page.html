@@ -3,8 +3,8 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/boards.html" import board_signal %}
-  {% from "_components/thread_summary.html" import activity_item %}
+  {% from "_components/boards.html" import board_signal, community_board_row %}
+  {% from "_components/thread_summary.html" import activity_item, activity_log_item %}
 {% end %}
 
 {% block page_root %}
@@ -54,9 +54,9 @@
   The director notes, plotting boards, OOC room, and continuity shelves behind the story.
   {% end %}
 
-  <div class="elbysodic-community-grid">
+  <div class="elbysodic-community-table">
     {% for summary in community_boards %}
-    {{ board_signal(summary, viewer, "h3") }}
+    {{ community_board_row(summary, viewer) }}
     {% end %}
   </div>
 
@@ -80,9 +80,9 @@
   Latest visible posts across the forum.
   {% end %}
 
-  <div class="chirpui-stack chirpui-stack--sm elbysodic-activity-list">
+  <div class="elbysodic-activity-log">
     {% for item in activity %}
-    {{ activity_item(item.board, item.thread, item.post, item.snippet, "new replies" if item.is_unread else "", "info") }}
+    {{ activity_log_item(item.board, item.thread, item.post, item.snippet, "new" if item.is_unread else "", "info") }}
     {% end %}
   </div>
 {% end %}

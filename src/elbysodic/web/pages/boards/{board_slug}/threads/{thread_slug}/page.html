@@ -78,6 +78,14 @@
           <strong>Posting order</strong>
         </div>
         {% end %}
+        <div>
+          <span>Runtime</span>
+          <strong>{{ thread_view.episode.read_estimate_label }}</strong>
+        </div>
+        <div>
+          <span>Credits</span>
+          <strong>{{ thread_view.episode.writer_count }} writers</strong>
+        </div>
       </div>
       {% if thread_view.thread_facets %}
       {{ facet_pills(thread_view.thread_facets) }}
@@ -96,6 +104,10 @@
           <strong>{{ thread_view.reply_count }}</strong>
         </div>
         <div>
+          <span>Runtime</span>
+          <strong>{{ thread_view.episode.read_minutes }}m</strong>
+        </div>
+        <div>
           <span>Cast</span>
           <strong>{{ thread_view.participants | length }}</strong>
         </div>
@@ -110,6 +122,14 @@
         <p>{{ thread_view.thread.summary }}</p>
         {% else %}
         <p>No scene brief has been added yet.</p>
+        {% end %}
+        {% if thread_view.episode.writer_memberships %}
+        <p class="elbysodic-thread-stage__credits">
+          Credits:
+          {% for writer in thread_view.episode.writer_memberships %}
+          <a href="/members/{{ writer.username }}">{{ writer.display_name }}</a>{{ ", " if not loop.last else "" }}
+          {% end %}
+        </p>
         {% end %}
         {% if thread_view.latest_post %}
         <p class="elbysodic-thread-stage__last-beat">

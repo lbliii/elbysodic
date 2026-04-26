@@ -25,8 +25,8 @@
 {% end %}
 {% end %}
 
-{% def material_section(title, description, items, empty_text) %}
-<section class="chirpui-stack chirpui-stack--md">
+{% def material_section(title, description, items, empty_text, section_id="") %}
+<section class="chirpui-stack chirpui-stack--md" {% if section_id %}id="{{ section_id }}"{% end %}>
   {% call section_header(title) %}
   {{ description }}
   {% end %}
@@ -84,15 +84,15 @@
   </a>
   {% end %}
 
-  {{ material_section("Start here", "The board's highest-signal pillars.", hub.featured, "No featured materials yet.") }}
+  {{ material_section("Start here", "The board's highest-signal pillars.", hub.featured, "No featured materials yet.", "start-here") }}
   {% if hub.guides %}
-  {{ material_section("Guides", "Premise, rules, faction context, and setting reference.", hub.guides, "No guides yet.") }}
+  {{ material_section("Guides", "Premise, rules, faction context, and setting reference.", hub.guides, "No guides yet.", "guides") }}
   {% end %}
   {% if hub.events %}
-  {{ material_section("Events", "Current plot pressure that should inspire threads.", hub.events, "No events yet.") }}
+  {{ material_section("Events", "Current plot pressure that should inspire threads.", hub.events, "No events yet.", "events") }}
   {% end %}
   {% if hub.application_materials %}
-  {{ material_section("Applications", "Character submission guidance outside the thread format.", hub.application_materials, "No application materials yet.") }}
+  {{ material_section("Applications", "Character submission guidance outside the thread format.", hub.application_materials, "No application materials yet.", "applications") }}
   {% end %}
 {% end %}
 {% end %}

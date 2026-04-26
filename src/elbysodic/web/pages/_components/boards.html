@@ -84,6 +84,45 @@
 {% end %}
 {% end %}
 
+{% def community_board_icon(summary) %}
+{% if summary.board.slug == "announcements" %}
+{{ "envelope" | icon }}
+{% elif summary.board.slug == "plotting" %}
+{{ "pencil" | icon }}
+{% elif summary.board.slug == "out-of-character" %}
+{{ "chat" | icon }}
+{% elif summary.board.board_kind == "archive" %}
+{{ "logs" | icon }}
+{% elif summary.board.board_kind == "desk" %}
+{{ "user" | icon }}
+{% else %}
+{{ "grid" | icon }}
+{% end %}
+{% end %}
+
+{% def community_board_row(summary, viewer) %}
+<article class="elbysodic-community-row">
+  <a class="elbysodic-community-row__mark" href="{{ summary.href }}" aria-label="{{ summary.board.name }}">
+    {{ ascii_icon(community_board_icon(summary), size="sm") }}
+  </a>
+  <div class="elbysodic-community-row__main">
+    <div>
+      <h3><a href="{{ summary.href }}">{{ summary.board.name }}</a></h3>
+      <p>{{ summary.board.description }}</p>
+    </div>
+    {% if summary.facets %}
+    {{ facet_pills(summary.facets) }}
+    {% end %}
+  </div>
+  <div class="elbysodic-community-row__stats">
+    {{ board_stat_row(summary, viewer, False) }}
+  </div>
+  <div class="elbysodic-community-row__latest">
+    {{ board_latest(summary, False) }}
+  </div>
+</article>
+{% end %}
+
 {% def subboard_card(summary, viewer) %}
 {% call surface(variant="elevated") %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-subboard-card">

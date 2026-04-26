@@ -537,12 +537,18 @@
 })();
 
 (function () {
-  const STORAGE_KEY = "elbysodic:sidebar-collapsed";
+  const STORAGE_KEY = "chirpui-sidebar-collapsed";
+  const LEGACY_STORAGE_KEY = "elbysodic:sidebar-collapsed";
   const COLLAPSED_CLASS = "elbysodic-app-shell--sidebar-collapsed";
+  const CHIRPUI_COLLAPSED_CLASS = "chirpui-app-shell--sidebar-collapsed";
+  const CHIRPUI_COLLAPSIBLE_CLASS = "chirpui-app-shell--sidebar-collapsible";
 
   function readCollapsedPreference() {
     try {
-      return window.localStorage.getItem(STORAGE_KEY) === "true";
+      const value =
+        window.localStorage.getItem(STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_STORAGE_KEY);
+      return value === "true";
     } catch (_error) {
       return false;
     }
@@ -558,27 +564,74 @@
 
   function setSidebarState(shell, button, collapsed) {
     shell.classList.toggle(COLLAPSED_CLASS, collapsed);
+    shell.classList.toggle(CHIRPUI_COLLAPSED_CLASS, collapsed);
+    shell.classList.add(CHIRPUI_COLLAPSIBLE_CLASS);
     button.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    button.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
-    const icon = button.querySelector("[aria-hidden='true']");
-    if (icon) {
-      icon.textContent = collapsed ? ">" : "<";
-    }
+    button.setAttribute(
+      "aria-label",
+      collapsed ? "Expand sidebar" : "Collapse sidebar",
+    );
   }
 
   function setupSidebarToggle() {
     const shell = document.querySelector(".chirpui-app-shell");
-    const button = document.querySelector("[data-elbysodic-sidebar-toggle]");
-    if (!shell || !button || button.dataset.elbysodicSidebarReady === "true") {
+    const handle = document.querySelector("[data-elbysodic-sidebar-toggle]");
+    if (!shell || !handle || handle.dataset.elbysodicSidebarReady === "true") {
       return;
     }
 
-    button.dataset.elbysodicSidebarReady = "true";
-    setSidebarState(shell, button, readCollapsedPreference());
-    button.addEventListener("click", () => {
+    let dragging = false;
+    let startX = 0;
+    let lastX = 0;
+    let startCollapsed = false;
+
+    function toggle() {
       const collapsed = !shell.classList.contains(COLLAPSED_CLASS);
-      setSidebarState(shell, button, collapsed);
+      setSidebarState(shell, handle, collapsed);
       writeCollapsedPreference(collapsed);
+    }
+
+    handle.dataset.elbysodicSidebarReady = "true";
+    setSidebarState(shell, handle, readCollapsedPreference());
+    handle.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      dragging = true;
+      startX = event.clientX;
+      lastX = event.clientX;
+      startCollapsed = shell.classList.contains(COLLAPSED_CLASS);
+      document.body.style.userSelect = "none";
+    });
+    handle.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      event.preventDefault();
+      toggle();
+    });
+    window.addEventListener("mousemove", (event) => {
+      if (!dragging) {
+        return;
+      }
+      lastX = event.clientX;
+    });
+    window.addEventListener("mouseup", () => {
+      if (!dragging) {
+        return;
+      }
+      dragging = false;
+      document.body.style.userSelect = "";
+      const delta = lastX - startX;
+      if (Math.abs(delta) < 5) {
+        toggle();
+        return;
+      }
+      if (delta < 0 && !startCollapsed) {
+        setSidebarState(shell, handle, true);
+        writeCollapsedPreference(true);
+      } else if (delta > 0 && startCollapsed) {
+        setSidebarState(shell, handle, false);
+        writeCollapsedPreference(false);
+      }
     });
   }
 

@@ -12,7 +12,7 @@
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
   {% call section_header("Members") %}
-  Writers and rosters active in {{ viewer.community.name }}.
+  Writer studio profiles and active rosters in {{ viewer.community.name }}.
   {% end %}
 
   {% call cluster(gap="sm") %}
@@ -50,9 +50,10 @@
         {{ stat(value=card.visible_post_count, label="Visible posts") }}
         {{ stat(value=card.active_thread_count, label="Active") }}
       {% end %}
-      {% if card.roster %}
+      {% if card.known_for %}
       <p class="elbysodic-member-card__roster">
-        {% for character in card.roster %}
+        <span>Known for</span>
+        {% for character in card.known_for %}
         <a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a>
         {% end %}
       </p>

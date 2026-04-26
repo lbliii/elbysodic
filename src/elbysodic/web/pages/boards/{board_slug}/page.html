@@ -112,7 +112,7 @@
     <div class="chirpui-stack chirpui-stack--md elbysodic-thread-list">
       {% if threads %}
       {% for item in threads %}
-      {{ thread_card(board, item.thread, item.author, item.author_membership, item.participants, item.facets, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h2", False, False) }}
+      {{ thread_card(board, item.thread, item.author, item.author_membership, item.participants, item.facets, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h2", False, False, item.episode) }}
       {% end %}
       {% else %}
       {% call surface(variant="elevated") %}

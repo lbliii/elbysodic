@@ -9,7 +9,7 @@
 {% end %}
 
 {% def character_thread_item(item) %}
-{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item?.facets ?? [], item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h3", True, False) }}
+{{ thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item?.facets ?? [], item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h3", True, False, item.episode) }}
 {% end %}
 
 {% block page_root %}

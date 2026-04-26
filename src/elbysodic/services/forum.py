@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
@@ -133,6 +133,19 @@ class ThreadCardBadge:
 
 
 @dataclass(frozen=True, slots=True)
+class EpisodeCredits:
+    word_count: int
+    read_minutes: int
+    read_estimate_label: str
+    post_count: int
+    writer_memberships: list[CommunityMembership]
+
+    @property
+    def writer_count(self) -> int:
+        return len(self.writer_memberships)
+
+
+@dataclass(frozen=True, slots=True)
 class ThreadSummary:
     thread: Thread
     author: Character
@@ -143,6 +156,7 @@ class ThreadSummary:
     reply_count: int
     latest_post: PostView | None
     first_unread_post: PostView | None
+    episode: EpisodeCredits
     is_unread: bool
     is_mine: bool
     needs_attention: bool
@@ -180,7 +194,9 @@ class PostView:
     can_edit: bool
     is_edited: bool
     created_at_label: str
+    created_at_relative_label: str
     updated_at_label: str
+    updated_at_relative_label: str
     anchor: str
 
 
@@ -294,6 +310,7 @@ class ThreadObligationItem:
     latest_post: PostView | None
     first_unread_post: PostView | None
     last_own_post: PostView | None
+    episode: EpisodeCredits
     reply_count: int
     is_unread: bool
     is_started_by_roster: bool
@@ -374,6 +391,7 @@ class MemberDirectoryCard:
     role: Role
     roster: list[Character]
     default_character: Character | None
+    known_for: list[Character]
     visible_post_count: int
     active_thread_count: int
     latest_post: CharacterAppearance | None
@@ -386,11 +404,21 @@ class MemberDirectory:
 
 
 @dataclass(frozen=True, slots=True)
+class WriterCollaborator:
+    membership: CommunityMembership
+    shared_thread_count: int
+    latest_thread: Thread
+    latest_board: Board
+
+
+@dataclass(frozen=True, slots=True)
 class MemberProfile:
     membership: CommunityMembership
     role: Role
     roster: list[Character]
     default_character: Character | None
+    known_for: list[Character]
+    collaborators: list[WriterCollaborator]
     visible_post_count: int
     visible_thread_count: int
     active_threads: list[ThreadObligationItem]
@@ -504,6 +532,62 @@ class WorldHub:
     events: list[MaterialSummary]
     application_materials: list[MaterialSummary]
     can_manage: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DirectorStudio:
+    can_manage: bool
+    materials: list[MaterialSummary]
+    draft_materials: list[MaterialSummary]
+    featured_materials: list[MaterialSummary]
+    events: list[MaterialSummary]
+    current_event: MaterialSummary | None
+    application_materials: list[MaterialSummary]
+    location_boards: list[BoardSummary]
+    sublocation_boards: list[BoardSummary]
+    wanted_ads: list[WantedAdSummary]
+    open_wanted_ads: list[WantedAdSummary]
+    applications: ApplicationsDesk
+
+    @property
+    def material_count(self) -> int:
+        return len(self.materials)
+
+    @property
+    def location_count(self) -> int:
+        return len(self.location_boards)
+
+    @property
+    def sublocation_count(self) -> int:
+        return len(self.sublocation_boards)
+
+    @property
+    def wanted_count(self) -> int:
+        return len(self.wanted_ads)
+
+    @property
+    def open_wanted_count(self) -> int:
+        return len(self.open_wanted_ads)
+
+    @property
+    def review_queue_count(self) -> int:
+        return len(self.applications.review_queue)
+
+    @property
+    def featured_material_titles(self) -> list[str]:
+        return [item.material.title for item in self.featured_materials]
+
+    @property
+    def event_titles(self) -> list[str]:
+        return [item.material.title for item in self.events]
+
+    @property
+    def application_material_titles(self) -> list[str]:
+        return [item.material.title for item in self.application_materials]
+
+    @property
+    def location_board_names(self) -> list[str]:
+        return [item.board.name for item in self.location_boards]
 
 
 @dataclass(frozen=True, slots=True)
@@ -628,6 +712,7 @@ class ThreadView:
     tagged_character_ids: set[int]
     posts: list[PostView]
     latest_post: PostView | None
+    episode: EpisodeCredits
     reply_count: int
     can_reply: bool
     can_join_scene: bool
@@ -921,6 +1006,14 @@ class AppServices:
             role=self.repo.get_role(viewer.community.id, membership.role_id),
             roster=roster,
             default_character=_default_character(roster, membership.default_character_id),
+            known_for=_known_for_characters(self.repo, viewer, roster, limit=3),
+            collaborators=_writer_collaborators(
+                self.repo,
+                viewer,
+                membership,
+                roster_ids,
+                limit=4,
+            ),
             visible_post_count=len(_visible_character_posts(self.repo, viewer, roster_ids)),
             visible_thread_count=len(active_threads),
             active_threads=active_threads,
@@ -994,6 +1087,7 @@ class AppServices:
                     if first_unread_post
                     else None
                 ),
+                episode=_episode_credits(self.repo, viewer.community.id, posts),
                 is_unread=is_unread,
                 is_mine=is_mine,
                 needs_attention=(
@@ -1107,6 +1201,11 @@ class AppServices:
             - {thread.author_character_id},
             posts=posts,
             latest_post=posts[-1] if posts else None,
+            episode=_episode_credits(
+                self.repo,
+                viewer.community.id,
+                [post.post for post in posts],
+            ),
             reply_count=max(0, len(posts) - 1),
             can_reply=can_reply,
             can_join_scene=(
@@ -1243,6 +1342,54 @@ class AppServices:
                 if item.material.material_type == "application"
             ],
             can_manage=viewer.role.is_admin,
+        )
+
+    def director_studio(self) -> DirectorStudio:
+        viewer = self.viewer()
+        material_status = None if viewer.role.is_admin else "published"
+        materials = [
+            _material_summary(self.repo, viewer.community.id, material)
+            for material in self.repo.list_materials(
+                viewer.community.id,
+                status=material_status,
+            )
+        ]
+        board_summaries = self.list_boards()
+        location_boards = [
+            item
+            for item in board_summaries
+            if item.board.parent_board_id is None and item.board.board_kind == "location"
+        ]
+        sublocation_boards = [
+            item for item in board_summaries if item.board.board_kind == "sublocation"
+        ]
+        wanted_status = None if viewer.role.is_admin else "open"
+        wanted_ads = [
+            _wanted_ad_summary(self.repo, viewer.community.id, wanted_ad)
+            for wanted_ad in self.repo.list_wanted_ads(
+                viewer.community.id,
+                status=wanted_status,
+            )
+        ]
+        events = [item for item in materials if item.material.material_type == "event"]
+        current_event = next((item for item in events if item.material.is_featured), None)
+        if current_event is None:
+            current_event = events[0] if events else None
+        return DirectorStudio(
+            can_manage=viewer.role.is_admin,
+            materials=materials,
+            draft_materials=[item for item in materials if item.material.status == "draft"],
+            featured_materials=[item for item in materials if item.material.is_featured],
+            events=events,
+            current_event=current_event,
+            application_materials=[
+                item for item in materials if item.material.material_type == "application"
+            ],
+            location_boards=location_boards,
+            sublocation_boards=sublocation_boards,
+            wanted_ads=wanted_ads,
+            open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
+            applications=self.applications_desk(),
         )
 
     def read_material(self, material_slug: str) -> MaterialDetail:
@@ -2333,6 +2480,7 @@ class AppServices:
             role=self.repo.get_role(viewer.community.id, membership.role_id),
             roster=roster,
             default_character=_default_character(roster, membership.default_character_id),
+            known_for=_known_for_characters(self.repo, viewer, roster, limit=2),
             visible_post_count=len(_visible_character_posts(self.repo, viewer, roster_ids)),
             active_thread_count=len(active_threads),
             latest_post=latest_posts[0] if latest_posts else None,
@@ -2415,6 +2563,7 @@ class AppServices:
                         if last_own_post
                         else None
                     ),
+                    episode=_episode_credits(self.repo, viewer.community.id, posts),
                     reply_count=max(0, len(posts) - 1),
                     is_unread=_is_unread(
                         self.repo,
@@ -3248,6 +3397,109 @@ def _recent_character_posts(
     return _visible_character_posts(repo, viewer, character_ids)[:limit]
 
 
+def _known_for_characters(
+    repo: ForumRepository,
+    viewer: ForumView,
+    roster: list[Character],
+    *,
+    limit: int,
+) -> list[Character]:
+    if not roster:
+        return []
+    appearances = _visible_character_posts(
+        repo,
+        viewer,
+        {character.id for character in roster},
+    )
+    counts: dict[int, int] = {}
+    latest: dict[int, tuple[str, int]] = {}
+    for appearance in appearances:
+        character_id = appearance.post.author.id
+        counts[character_id] = counts.get(character_id, 0) + 1
+        latest[character_id] = max(
+            latest.get(character_id, ("", 0)),
+            (
+                appearance.post.post.created_at,
+                appearance.post.post.id,
+            ),
+        )
+    ranked = sorted(
+        roster,
+        key=lambda character: (
+            counts.get(character.id, 0),
+            latest.get(character.id, ("", 0)),
+            character.name.lower(),
+        ),
+        reverse=True,
+    )
+    return ranked[:limit]
+
+
+def _writer_collaborators(
+    repo: ForumRepository,
+    viewer: ForumView,
+    membership: CommunityMembership,
+    roster_ids: set[int],
+    *,
+    limit: int,
+) -> list[WriterCollaborator]:
+    if not roster_ids:
+        return []
+    visible_boards = {
+        board.id: board
+        for board in repo.list_boards(viewer.community.id)
+        if policies.can_view_board(viewer.membership, board, viewer.role)
+    }
+    counts: dict[int, int] = {}
+    latest: dict[int, tuple[str, int, Thread, Board]] = {}
+    for thread in repo.list_threads(viewer.community.id):
+        board = visible_boards.get(thread.board_id)
+        if board is None:
+            continue
+        posts = repo.list_posts(viewer.community.id, thread.id)
+        if not any(
+            post.author_membership_id == membership.id or post.author_character_id in roster_ids
+            for post in posts
+        ):
+            continue
+        other_membership_ids = {
+            post.author_membership_id
+            for post in posts
+            if post.author_membership_id != membership.id
+        }
+        for other_id in other_membership_ids:
+            counts[other_id] = counts.get(other_id, 0) + 1
+            candidate = (thread.updated_at, thread.id, thread, board)
+            if candidate[:2] > latest.get(other_id, ("", 0, thread, board))[:2]:
+                latest[other_id] = candidate
+    collaborators: list[WriterCollaborator] = []
+    for membership_id, shared_thread_count in counts.items():
+        try:
+            collaborator = repo.get_membership(viewer.community.id, membership_id)
+        except LookupError:
+            continue
+        if not collaborator.is_active:
+            continue
+        _stamp, _thread_id, latest_thread, latest_board = latest[membership_id]
+        collaborators.append(
+            WriterCollaborator(
+                membership=collaborator,
+                shared_thread_count=shared_thread_count,
+                latest_thread=latest_thread,
+                latest_board=latest_board,
+            )
+        )
+    return sorted(
+        collaborators,
+        key=lambda item: (
+            item.shared_thread_count,
+            _timestamp_key(item.latest_thread.updated_at),
+            item.membership.display_name.lower(),
+        ),
+        reverse=True,
+    )[:limit]
+
+
 def _latest_thread(threads: list[Thread]) -> Thread | None:
     if not threads:
         return None
@@ -3679,6 +3931,33 @@ def _character_mention_handles(character: Character) -> set[str]:
     return handles
 
 
+def _episode_credits(
+    repo: ForumRepository,
+    community_id: int,
+    posts: list[Post],
+) -> EpisodeCredits:
+    word_count = sum(_body_word_count(post.body) for post in posts)
+    read_minutes = max(1, (word_count + 224) // 225)
+    writer_memberships: list[CommunityMembership] = []
+    seen_membership_ids: set[int] = set()
+    for post in posts:
+        if post.author_membership_id in seen_membership_ids:
+            continue
+        seen_membership_ids.add(post.author_membership_id)
+        writer_memberships.append(repo.get_membership(community_id, post.author_membership_id))
+    return EpisodeCredits(
+        word_count=word_count,
+        read_minutes=read_minutes,
+        read_estimate_label=f"~{read_minutes} min read",
+        post_count=len(posts),
+        writer_memberships=writer_memberships,
+    )
+
+
+def _body_word_count(body: str) -> int:
+    return len(re.findall(r"[A-Za-z0-9][A-Za-z0-9'-]*", body))
+
+
 def _post_view(
     repo: ForumRepository,
     community_id: int,
@@ -3705,7 +3984,9 @@ def _post_view(
         ),
         is_edited=_timestamp_key(post.updated_at) > _timestamp_key(post.created_at),
         created_at_label=_timestamp_label(post.created_at),
+        created_at_relative_label=_relative_timestamp_label(post.created_at),
         updated_at_label=_timestamp_label(post.updated_at),
+        updated_at_relative_label=_relative_timestamp_label(post.updated_at),
         anchor=f"post-{post.id}",
     )
 
@@ -3738,6 +4019,32 @@ def _timestamp_label(value: str) -> str:
     meridiem = "AM" if stamp.hour < 12 else "PM"
     zone = stamp.tzname() or "UTC"
     return f"{stamp:%b} {stamp.day}, {stamp.year} {hour}:{stamp.minute:02d} {meridiem} {zone}"
+
+
+def _timestamp_time_label(stamp: datetime) -> str:
+    hour = stamp.hour % 12 or 12
+    meridiem = "AM" if stamp.hour < 12 else "PM"
+    return f"{hour}:{stamp.minute:02d} {meridiem}"
+
+
+def _relative_timestamp_label(value: str) -> str:
+    try:
+        stamp = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    now = datetime.now(stamp.tzinfo or UTC)
+    if stamp.tzinfo is None:
+        now = now.replace(tzinfo=None)
+    days = (now.date() - stamp.date()).days
+    if days == 0:
+        return f"Today, {_timestamp_time_label(stamp)}"
+    if days == 1:
+        return f"Yesterday, {_timestamp_time_label(stamp)}"
+    if 1 < days <= 6:
+        return f"This week, {stamp:%a}"
+    if stamp.year == now.year:
+        return f"{stamp:%b} {stamp.day}"
+    return f"{stamp:%b} {stamp.day}, {stamp.year}"
 
 
 def _unique_character_slug(
