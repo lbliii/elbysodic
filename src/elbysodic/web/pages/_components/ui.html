@@ -1,16 +1,39 @@
 {% imports %}
   {% from "chirpui/avatar.html" import avatar %}
+  {% from "chirpui/avatar_stack.html" import avatar_stack %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/description_list.html" import description_item, description_list %}
-  {% from "chirpui/timeline.html" import timeline, timeline_item %}
+  {% from "chirpui/timeline.html" import timeline %}
 {% end %}
 
 {% def counter(mark, value, label) %}
 <span class="elbysodic-counter" title="{{ value }} {{ label }}" aria-label="{{ value }} {{ label }}">
   <span class="elbysodic-counter__mark" aria-hidden="true">{{ mark }}</span>
   <span class="elbysodic-counter__value">{{ value }}</span>
-  <span class="elbysodic-counter__label">{{ label }}</span>
+  <span class="elbysodic-counter__label chirpui-visually-hidden">{{ label }}</span>
 </span>
+{% end %}
+
+{% def inline_nav(label, cls="") %}
+<nav class="elbysodic-filter-bar{{ " " ~ cls if cls else "" }}" aria-label="{{ label }}">
+  {% slot %}
+</nav>
+{% end %}
+
+{% def inline_nav_link(label, href, active=false, hx_target=none, hx_select=none, hx_swap="innerHTML show:none", hx_push_url=false) %}
+<a class="elbysodic-filter-link{{ " elbysodic-filter-link--active" if active else "" }}"
+   href="{{ href }}"
+   {% if active %}aria-current="page"{% end %}
+   {% if hx_target %}
+   hx-boost="false"
+   hx-get="{{ href }}"
+   hx-target="{{ hx_target }}"
+   hx-swap="{{ hx_swap }}"
+   {% if hx_select %}hx-select="{{ hx_select }}"{% end %}
+   {% if hx_push_url %}hx-push-url="true"{% end %}
+   {% end %}>
+  {{ label }}
+</a>
 {% end %}
 
 {% def meta_hint(hint, position="top", cls="") %}
@@ -63,15 +86,58 @@
 {% if beats %}
 {% call timeline(hoverable=true, cls="elbysodic-continuity-timeline") %}
   {% for beat in beats %}
-  {{ timeline_item(beat.title, beat.date_label, beat.content, variant=beat.variant, href=beat.href) }}
+  {% set variant_class = " chirpui-timeline__item--" ~ beat.variant if beat.variant else "" %}
+  {% set link_class = " chirpui-timeline__item--link" if beat.href else "" %}
+  <div class="chirpui-timeline__item{{ variant_class }}{{ link_class }}">
+    <div class="chirpui-timeline__dot" aria-hidden="true"></div>
+    <div class="chirpui-timeline__content">
+      <div class="chirpui-timeline__header">
+        {% if beat.href %}
+        <a class="chirpui-link elbysodic-continuity-timeline__title-link" href="{{ beat.href }}">
+          {{ beat.title }}
+        </a>
+        {% else %}
+        <span class="chirpui-timeline__title">{{ beat.title }}</span>
+        {% end %}
+        <span class="chirpui-timeline__date">{{ beat.date_label }}</span>
+      </div>
+      <div class="chirpui-timeline__body">{{ beat.content }}</div>
+    </div>
+  </div>
   {% end %}
 {% end %}
 {% end %}
 {% end %}
 
-{% def cast_faces(characters, label="Scene participants") %}
+{% def event_bridge(event, label="Current event") %}
+{% if event %}
+<aside class="elbysodic-event-bridge" aria-label="{{ label }}">
+  <span class="elbysodic-event-bridge__label">{{ label }}</span>
+  <a class="elbysodic-event-bridge__title" href="/world/{{ event.material.slug }}">
+    {{ event.material.title }}
+  </a>
+  <span class="elbysodic-event-bridge__summary">{{ event.rendered_summary }}</span>
+</aside>
+{% end %}
+{% end %}
+
+{% def cast_faces(characters, label="Scene participants", stacked=false) %}
 {% if characters %}
-<div class="elbysodic-scene-cast" aria-label="{{ label }}">
+<div class="elbysodic-scene-cast {{ "elbysodic-scene-cast--stacked" if stacked else "" }}" aria-label="{{ label }}">
+  {% if stacked %}
+  {% call avatar_stack(max_visible=4, total=characters | length, cls="elbysodic-scene-cast__stack") %}
+    {% for character in characters %}
+    {% if loop.index <= 4 %}
+    <a class="elbysodic-scene-cast__face"
+       href="/characters/{{ character.slug }}"
+       title="{{ character.name }}"
+       aria-label="{{ character.name }}">
+      {{ avatar(src=character.avatar_url, initials=character.name[:1], alt=character.name, size="sm") }}
+    </a>
+    {% end %}
+    {% end %}
+  {% end %}
+  {% else %}
   {% for character in characters %}
   <a class="elbysodic-scene-cast__face"
      href="/characters/{{ character.slug }}"
@@ -79,6 +145,7 @@
      aria-label="{{ character.name }}">
     {{ avatar(src=character.avatar_url, initials=character.name[:1], alt=character.name, size="sm") }}
   </a>
+  {% end %}
   {% end %}
 </div>
 {% end %}

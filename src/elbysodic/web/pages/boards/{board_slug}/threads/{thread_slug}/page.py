@@ -147,6 +147,10 @@ def _render_thread(
             selected_character=None,
             thread_view=thread_view,
             parent_board=services.parent_board(thread_view.board),
+            current_event=services.current_event_for_thread(
+                thread_view.thread,
+                thread_view.board,
+            ),
             error=error,
             body=body,
             composer_config={},
@@ -170,6 +174,10 @@ def _render_thread(
         selected_character=selected_character,
         thread_view=thread_view,
         parent_board=services.parent_board(thread_view.board),
+        current_event=services.current_event_for_thread(
+            thread_view.thread,
+            thread_view.board,
+        ),
         error=error,
         body=body,
         composer_config=composer_config(

@@ -7,8 +7,8 @@
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=mobile-shell-drawer">
-    <script defer src="/elbysodic-static/elbysodic-composer.js?v=inline-mentions"></script>
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=scene-slate-cards-counter-timeline-polish">
+    <script defer src="/elbysodic-static/elbysodic-composer.js?v=collapsible-shell-sidebar"></script>
 {% end %}
 
 {% block title_oob %}
@@ -16,6 +16,13 @@
 {% end %}
 
 {% block brand_link %}
+<button type="button"
+        class="elbysodic-sidebar-toggle"
+        data-elbysodic-sidebar-toggle
+        aria-label="Collapse sidebar"
+        aria-expanded="true">
+  <span aria-hidden="true">&lt;</span>
+</button>
 {% call shell_brand_link(href="/", cls="elbysodic-community-brand") %}
   <span class="elbysodic-community-brand__name">{{ viewer.community.name if viewer else "Elbysodic" }}</span>
 {% end %}
@@ -91,7 +98,7 @@
 {% end %}
 
 {% def sidebar_count_link(href, label, count) %}
-<a class="chirpui-sidebar__link elbysodic-sidebar-link" href="{{ href }}">
+<a class="chirpui-sidebar__link elbysodic-sidebar-link" href="{{ href }}" title="{{ label }}">
   <span>{{ label }}</span>
   {% if count %}
   <span class="elbysodic-sidebar-count">{{ count }}</span>
@@ -102,6 +109,7 @@
 {% def location_tree_link(item, count, is_active=False, is_branch=False, is_child=False) %}
 <a class="chirpui-sidebar__link elbysodic-sidebar-link elbysodic-sidebar-tree__link{{ " elbysodic-sidebar-tree__link--child" if is_child else "" }}{{ " elbysodic-sidebar-tree__link--branch" if is_branch else "" }}{{ " elbysodic-sidebar-tree__link--active" if is_active else "" }}"
    href="/boards/{{ item.board.slug }}"
+   title="{{ item.board.name }}"
    {% if is_active %}aria-current="page"{% end %}>
   <span>{{ item.board.name }}</span>
   {% if count %}
@@ -144,7 +152,7 @@
   {% end %}
 
   {% call sidebar_section("Community") %}
-    <a class="chirpui-sidebar__link" href="/members">Members</a>
+    <a class="chirpui-sidebar__link" href="/members" title="Members">Members</a>
     {% if viewer %}
     {% for item in viewer.community_navigation_boards %}
     {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
@@ -155,46 +163,46 @@
 
 {% def guidebook_sidebar() %}
   {% call sidebar_section("Guidebook") %}
-    <a class="chirpui-sidebar__link" href="/world">Overview</a>
+    <a class="chirpui-sidebar__link" href="/world" title="Overview">Overview</a>
   {% end %}
 
   {% if guidebook is defined %}
     {% if guidebook.featured %}
     {% call sidebar_section("Start Here") %}
       {% for item in guidebook.featured %}
-      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}" title="{{ item.material.title }}">{{ item.material.title }}</a>
       {% end %}
     {% end %}
     {% end %}
     {% if guidebook.guides %}
     {% call sidebar_section("Guides") %}
       {% for item in guidebook.guides %}
-      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}" title="{{ item.material.title }}">{{ item.material.title }}</a>
       {% end %}
     {% end %}
     {% end %}
     {% if guidebook.events %}
     {% call sidebar_section("Events") %}
       {% for item in guidebook.events %}
-      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}" title="{{ item.material.title }}">{{ item.material.title }}</a>
       {% end %}
     {% end %}
     {% end %}
     {% if guidebook.application_materials %}
     {% call sidebar_section("Applications") %}
       {% for item in guidebook.application_materials %}
-      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}" title="{{ item.material.title }}">{{ item.material.title }}</a>
       {% end %}
     {% end %}
     {% end %}
   {% elif material is defined %}
     {% call sidebar_section("Current Material") %}
-      <a class="chirpui-sidebar__link" href="/world/{{ material.material.slug }}">{{ material.material.title }}</a>
+      <a class="chirpui-sidebar__link" href="/world/{{ material.material.slug }}" title="{{ material.material.title }}">{{ material.material.title }}</a>
     {% end %}
     {% if material.related_materials %}
     {% call sidebar_section("Related") %}
       {% for item in material.related_materials %}
-      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+      <a class="chirpui-sidebar__link" href="/world/{{ item.material.slug }}" title="{{ item.material.title }}">{{ item.material.title }}</a>
       {% end %}
     {% end %}
     {% end %}
@@ -203,38 +211,38 @@
 
 {% def desk_sidebar() %}
   {% call sidebar_section("Writer Desk") %}
-    <a class="chirpui-sidebar__link" href="/desk">Overview</a>
-    <a class="chirpui-sidebar__link" href="/my/threads">My threads</a>
+    <a class="chirpui-sidebar__link" href="/desk" title="Overview">Overview</a>
+    <a class="chirpui-sidebar__link" href="/my/threads" title="My threads">My threads</a>
     {{ sidebar_count_link("/notifications", "Notifications", viewer.unread_notification_count if viewer else 0) }}
-    <a class="chirpui-sidebar__link" href="/characters">Characters</a>
-    <a class="chirpui-sidebar__link" href="/applications">Applications</a>
-    <a class="chirpui-sidebar__link" href="/discover">Discover</a>
+    <a class="chirpui-sidebar__link" href="/characters" title="Characters">Characters</a>
+    <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
+    <a class="chirpui-sidebar__link" href="/discover" title="Discover">Discover</a>
   {% end %}
 {% end %}
 
 {% def casting_sidebar() %}
   {% call sidebar_section("Casting") %}
-    <a class="chirpui-sidebar__link" href="/wanted">Wanted board</a>
-    <a class="chirpui-sidebar__link" href="/casting">Casting desk</a>
-    <a class="chirpui-sidebar__link" href="/applications">Applications</a>
+    <a class="chirpui-sidebar__link" href="/wanted" title="Wanted board">Wanted board</a>
+    <a class="chirpui-sidebar__link" href="/casting" title="Casting desk">Casting desk</a>
+    <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
   {% end %}
 
   {% if viewer and viewer.current_character %}
   {% call sidebar_section("Active Face") %}
-    <a class="chirpui-sidebar__link" href="/characters/{{ viewer.current_character.slug }}">{{ viewer.current_character.name }}</a>
+    <a class="chirpui-sidebar__link" href="/characters/{{ viewer.current_character.slug }}" title="{{ viewer.current_character.name }}">{{ viewer.current_character.name }}</a>
   {% end %}
   {% end %}
 
   {% if board is defined and board.open_ads is defined and board.open_ads %}
   {% call sidebar_section("Open Wants") %}
     {% for item in board.open_ads %}
-    <a class="chirpui-sidebar__link" href="/wanted/{{ item.wanted_ad.slug }}">{{ item.wanted_ad.title }}</a>
+    <a class="chirpui-sidebar__link" href="/wanted/{{ item.wanted_ad.slug }}" title="{{ item.wanted_ad.title }}">{{ item.wanted_ad.title }}</a>
     {% end %}
   {% end %}
   {% elif wanted is defined and wanted.related_ads %}
   {% call sidebar_section("Related Wants") %}
     {% for item in wanted.related_ads %}
-    <a class="chirpui-sidebar__link" href="/wanted/{{ item.wanted_ad.slug }}">{{ item.wanted_ad.title }}</a>
+    <a class="chirpui-sidebar__link" href="/wanted/{{ item.wanted_ad.slug }}" title="{{ item.wanted_ad.title }}">{{ item.wanted_ad.title }}</a>
     {% end %}
   {% end %}
   {% end %}
@@ -245,7 +253,7 @@
 {% set is_guidebook = sidebar_path == "/world" or sidebar_path.startswith("/world/") %}
 {% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") %}
 {% set is_desk = sidebar_path == "/desk" or sidebar_path.startswith("/desk/") or sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads") or sidebar_path == "/notifications" or sidebar_path.startswith("/notifications") or sidebar_path == "/characters" or sidebar_path.startswith("/characters/") or sidebar_path == "/applications" or sidebar_path.startswith("/applications") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
-{% call sidebar() %}
+{% call sidebar(cls="elbysodic-sidebar") %}
   {% slot footer %}
   {{ sidebar_footer() }}
   {% end %}

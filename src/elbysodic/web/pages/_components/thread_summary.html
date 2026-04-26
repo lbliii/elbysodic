@@ -8,6 +8,11 @@
 {% def thread_card(board, thread, author, author_membership, participants, facets, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post) %}
 {% call surface(variant="elevated") %}
 <article class="elbysodic-thread-card {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
+  <a class="elbysodic-thread-card__poster elbysodic-board-media--{{ board.slug }}"
+     href="/boards/{{ board.slug }}/threads/{{ thread.slug }}"
+     aria-label="{{ thread.title }}">
+    <span class="elbysodic-thread-card__poster-label">{{ board.name }}</span>
+  </a>
   <div class="elbysodic-thread-card__main">
     <div class="elbysodic-thread-card__identity">
       <p class="elbysodic-thread-card__eyebrow">
@@ -58,12 +63,19 @@
       {% for item_badge in badges %}
       {{ badge(item_badge.label, variant=item_badge.variant) }}
       {% end %}
-      {{ counter("R", reply_count, "replies") if reply_count else "" }}
     </div>
   </div>
 
   <aside class="elbysodic-thread-card__aside" aria-label="Scene activity">
-    {{ cast_faces(participants, label="Cast") }}
+    <div class="elbysodic-thread-card__cast">
+      <span>Cast</span>
+      {{ cast_faces(participants, label="Cast", stacked=true) }}
+    </div>
+    {% if reply_count %}
+    <div class="elbysodic-thread-card__metrics">
+      {{ counter("chat" | icon, reply_count, "replies") }}
+    </div>
+    {% end %}
     {% if facets %}
     {{ facet_pills(facets) }}
     {% end %}

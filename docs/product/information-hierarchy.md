@@ -183,6 +183,23 @@ Route tabs are page chrome. They should not replace the topbar's global
 navigation, bridge broad feature areas, or replace the sidebar's world
 orientation.
 
+### InlineFilterRail
+
+Use the compact underline rail for local filters and long-page jumps: thread
+list filters, roster slices, material-page sections, and future event indexes.
+It is intentionally quieter than tabs. It should feel like a reading aid or
+collection control, not a new page mode.
+
+Use this rail when the object stays the same and the writer is narrowing or
+jumping within nearby content. For server-filtered lists, swap only the local
+region with HTMX and preserve scroll position. For long pages, use same-page
+anchor links with clear section IDs.
+
+Use route tabs instead when each item is a stable subsection route with its own
+mental model, such as profile sections, director settings, or guidebook admin
+views. Tabs say "different view of this object." Filter rails say "same object,
+smaller slice or nearby section."
+
 ### ThreadByline
 
 Use when explaining authorship: started by character, writer username, updated
@@ -196,6 +213,11 @@ surfaces. A thread is a scene, so the card should scan like an episode in a
 place: location/timeline eyebrow, scene title, started-by face, short premise,
 state/activity signals, cast, facets, and latest jump target.
 
+Use the `Scene Slate` treatment for full cards: a stable place-media poster at
+the left, title/premise as the main reading lane, and cast/activity in a quieter
+footer rail. This borrows from story/event browsing patterns: the card is
+primarily an entry point into a scene, not a miniature database row.
+
 The title and premise are primary. Workflow signals such as needs reply, new
 replies, pinned, locked, and reply counts are secondary. Cast, facets, and
 latest activity are tertiary unless the current surface is specifically a
@@ -204,6 +226,11 @@ queue.
 Do not make every fact a pill. Use badges for workflow state, counters for
 small quantities, cast faces for participants, facets for director-defined
 world lenses, and latest lines for jumps.
+
+Avoid repeating a state in multiple places on the same card. If a scene is
+already labeled `open to join`, the poster does not also need to say `open`.
+Hide zero counters, and prefer ChirpUI avatar stacks for cast when space is
+tight so the card keeps its story shape.
 
 ### SceneHeader
 
@@ -300,6 +327,16 @@ shared Elbysodic helper and should read as story continuity, not project
 management activity. The first pass may derive beats from material metadata,
 related locations, active scenes, and wanted hooks before dedicated event-beat
 editing exists.
+
+Use event action cards near the top of event pages to answer the writer's most
+important question: "What can I do with this right now?" Derive the first pass
+from open scenes, wanted hooks, affected locations, and discovery facets. These
+cards are campaign prompts, not generic dashboard stats.
+
+When a board or thread shares facets with a current event, surface a compact
+event bridge back to the event page. This gives locations and scenes a sense of
+seasonal pressure without requiring directors to manually wire every thread to
+an event before the event model exists.
 
 ### CharacterPoster
 

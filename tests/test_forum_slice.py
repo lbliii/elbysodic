@@ -21,7 +21,7 @@ _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
 def _sidebar_board_count(html: str, board_slug: str) -> int:
     match = re.search(
-        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*" href="/boards/{re.escape(board_slug)}">'
+        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*" href="/boards/{re.escape(board_slug)}"[^>]*>'
         r"(?P<body>.*?)</a>",
         html,
         re.DOTALL,
@@ -87,6 +87,9 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Open thread roster" in board.text
             assert "Started by" in board.text
             assert "Latest" in board.text
+            assert 'id="board-thread-region"' in board.text
+            assert 'hx-target="#board-thread-region"' in board.text
+            assert 'hx-swap="outerHTML show:none"' in board.text
             assert "First unread" in board.text
             assert "#post-" in board.text
             assert "new replies" in board.text
@@ -179,6 +182,8 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Locations" in world.text
             assert "Sublocations" in world.text
             assert "Wanted board" not in world.text
+            assert "data-elbysodic-sidebar-toggle" in world.text
+            assert 'class="chirpui-sidebar elbysodic-sidebar"' in world.text
             assert "elbysodic-mobile-nav-trigger" in world.text
             assert "elbysodic-mobile-shell-drawer" in world.text
 
@@ -409,9 +414,29 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "Related materials" in event.text
             assert "elbysodic-studio-facts" in event.text
             assert "Featured" in event.text
+            assert "Carry this event into play" in event.text
+            assert 'aria-label="Material sections"' in event.text
+            assert 'href="#event-actions"' in event.text
+            assert 'id="canon"' in event.text
+            assert "Enter scene" in event.text
+            assert "Answer hook" in event.text
+            assert "Explore location" in event.text
+            assert "Open discovery" in event.text
             assert "Event progression" in event.text
             assert "elbysodic-continuity-timeline" in event.text
+            assert "elbysodic-continuity-timeline__title-link" in event.text
             assert "Event opened" in event.text
+            assert "elbysodic-counter__label chirpui-visually-hidden" in event.text
+
+            location = await client.get("/boards/frozen-midtown")
+            assert location.status == 200
+            assert "Current event in this location" in location.text
+            assert 'href="/world/b-24-winter"' in location.text
+
+            scene = await client.get("/boards/frozen-midtown/threads/frozen-avenue-evacuation")
+            assert scene.status == 200
+            assert "Current event shaping this scene" in scene.text
+            assert 'href="/world/b-24-winter"' in scene.text
 
             missing = await client.get("/world/not-a-material")
             assert missing.status == 404
@@ -1368,6 +1393,10 @@ def test_my_threads_tracks_obligations_after_threads_are_read() -> None:
             assert "All participated" in dashboard.text
             assert "Open thread roster" in dashboard.text
             assert "Obligation Face" in dashboard.text
+            assert "elbysodic-thread-card__poster" in dashboard.text
+            assert "elbysodic-scene-cast--stacked" in dashboard.text
+            assert "elbysodic-thread-card__metrics" in dashboard.text
+            assert "scene-slate-cards" in dashboard.text
             assert "needs reply" in dashboard.text
             assert "Sentinel drill after midnight" in dashboard.text
             assert "waiting" in dashboard.text

@@ -535,3 +535,57 @@
     };
   });
 })();
+
+(function () {
+  const STORAGE_KEY = "elbysodic:sidebar-collapsed";
+  const COLLAPSED_CLASS = "elbysodic-app-shell--sidebar-collapsed";
+
+  function readCollapsedPreference() {
+    try {
+      return window.localStorage.getItem(STORAGE_KEY) === "true";
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function writeCollapsedPreference(collapsed) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, collapsed ? "true" : "false");
+    } catch (_error) {
+      // Persistence is a convenience; the shell still works without storage.
+    }
+  }
+
+  function setSidebarState(shell, button, collapsed) {
+    shell.classList.toggle(COLLAPSED_CLASS, collapsed);
+    button.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    button.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+    const icon = button.querySelector("[aria-hidden='true']");
+    if (icon) {
+      icon.textContent = collapsed ? ">" : "<";
+    }
+  }
+
+  function setupSidebarToggle() {
+    const shell = document.querySelector(".chirpui-app-shell");
+    const button = document.querySelector("[data-elbysodic-sidebar-toggle]");
+    if (!shell || !button || button.dataset.elbysodicSidebarReady === "true") {
+      return;
+    }
+
+    button.dataset.elbysodicSidebarReady = "true";
+    setSidebarState(shell, button, readCollapsedPreference());
+    button.addEventListener("click", () => {
+      const collapsed = !shell.classList.contains(COLLAPSED_CLASS);
+      setSidebarState(shell, button, collapsed);
+      writeCollapsedPreference(collapsed);
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupSidebarToggle);
+  } else {
+    setupSidebarToggle();
+  }
+  document.body.addEventListener("htmx:afterSettle", setupSidebarToggle);
+})();

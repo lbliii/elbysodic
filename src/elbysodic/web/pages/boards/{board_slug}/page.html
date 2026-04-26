@@ -4,6 +4,7 @@
   {% from "_components/boards.html" import board_stat_row, subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
+  {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link %}
 {% end %}
 
 {% def next_unread_link(item) %}
@@ -59,6 +60,8 @@
     </div>
   </section>
 
+  {{ event_bridge(current_event, "Current event in this location") }}
+
   {% if subboards %}
   <section class="elbysodic-place-section elbysodic-place-section--sublocations">
     <header class="elbysodic-place-section__header">
@@ -93,20 +96,18 @@
   </section>
   {% end %}
 
-  <section class="elbysodic-place-section elbysodic-place-section--scenes">
+  <section id="board-thread-region"
+           class="elbysodic-place-section elbysodic-place-section--scenes">
     <header class="elbysodic-place-section__header">
       <p class="elbysodic-kicker">Scenes here</p>
       <h2>{{ board.name }} threads</h2>
       <p>Direct threads in this location. Parent location totals include sublocations above.</p>
     </header>
-    <nav class="elbysodic-filter-bar" aria-label="Thread filters">
+    {% call inline_nav("Thread filters") %}
       {% for option in filter_options %}
-      <a class="elbysodic-filter-link{{ " elbysodic-filter-link--active" if option.is_active else "" }}"
-         href="{{ option.href }}">
-        {{ option.label }}
-      </a>
+      {{ inline_nav_link(option.label, option.href, option.is_active, "#board-thread-region", "#board-thread-region", "outerHTML show:none", true) }}
       {% end %}
-    </nav>
+    {% end %}
 
     <div class="chirpui-stack chirpui-stack--md elbysodic-thread-list">
       {% if threads %}

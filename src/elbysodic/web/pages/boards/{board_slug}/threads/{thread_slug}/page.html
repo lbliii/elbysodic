@@ -4,7 +4,7 @@
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/posts.html" import post_frame %}
-  {% from "_components/ui.html" import cast_faces, scene_state_badges %}
+  {% from "_components/ui.html" import cast_faces, event_bridge, scene_state_badges %}
 {% end %}
 
 {% def thread_nav_link(item, label) %}
@@ -141,6 +141,8 @@
       </div>
     </aside>
   </section>
+
+  {{ event_bridge(current_event, "Current event shaping this scene") }}
 
   {% if thread_view.can_manage_scene %}
   {% call surface(variant="elevated") %}

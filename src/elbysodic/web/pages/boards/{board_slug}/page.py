@@ -48,6 +48,7 @@ def get(request: Request, board_slug: str) -> Page:
         board_facets=services.board_facets(board.slug),
         subboards=services.child_board_summaries(board),
         sibling_boards=services.sibling_board_summaries(board),
+        current_event=services.current_event_for_board(board),
         threads=threads,
         active_filter=active_filter,
         filter_options=_filter_options(board.slug, active_filter),

@@ -3,7 +3,7 @@
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_signal %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import cast_faces, continuity_timeline, counter, scene_state_badges, studio_facts %}
+  {% from "_components/ui.html" import cast_faces, continuity_timeline, counter, inline_nav, inline_nav_link, scene_state_badges, studio_facts %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -30,6 +30,16 @@
 {% end %}
 {% end %}
 
+{% def event_action_card(action) %}
+<a class="elbysodic-event-action-card elbysodic-event-action-card--{{ action.kind }}"
+   href="{{ action.href }}">
+  <span class="elbysodic-event-action-card__label">{{ action.label }}</span>
+  <strong>{{ action.title }}</strong>
+  <span>{{ action.description }}</span>
+  <em>{{ action.cta }} -&gt;</em>
+</a>
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
@@ -52,8 +62,45 @@
     </aside>
   </article>
 
+  {% call inline_nav("Material sections", cls="elbysodic-section-jump") %}
+    {% if material.event_actions %}
+    {{ inline_nav_link("Write now", "#event-actions") }}
+    {% end %}
+    {{ inline_nav_link("Canon", "#canon") }}
+    {% if material.continuity_beats %}
+    {{ inline_nav_link("Progression", "#event-progression") }}
+    {% end %}
+    {% if material.related_wanted_ads %}
+    {{ inline_nav_link("Wanted", "#wanted-hooks") }}
+    {% end %}
+    {% if material.related_scenes %}
+    {{ inline_nav_link("Scenes", "#active-scenes") }}
+    {% end %}
+    {% if material.related_locations %}
+    {{ inline_nav_link("Locations", "#locations") }}
+    {% end %}
+    {% if material.related_materials %}
+    {{ inline_nav_link("Related", "#related-materials") }}
+    {% end %}
+  {% end %}
+
+  {% if material.event_actions %}
+  <section id="event-actions" class="elbysodic-event-actions" aria-labelledby="event-actions-title">
+    <div>
+      <p class="elbysodic-kicker">Write now</p>
+      <h2 id="event-actions-title">Carry this event into play</h2>
+      <p>Scenes, hooks, places, and discovery routes that turn this canon pressure into posts.</p>
+    </div>
+    <div class="elbysodic-event-action-grid">
+      {% for action in material.event_actions %}
+      {{ event_action_card(action) }}
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
   {% call surface(variant="elevated") %}
-  <article class="chirpui-stack chirpui-stack--md elbysodic-material-detail">
+  <article id="canon" class="chirpui-stack chirpui-stack--md elbysodic-material-detail">
     <div class="elbysodic-post-content">
       {{ material.rendered_body }}
     </div>
@@ -61,14 +108,16 @@
   {% end %}
 
   {% if material.continuity_beats %}
+  <section id="event-progression" class="chirpui-stack chirpui-stack--md">
   {% call section_header("Event progression") %}
   Continuity beats showing how this material is moving from canon into scenes, hooks, and playable locations.
   {% end %}
   {% call surface(variant="elevated") %}
-  <section class="elbysodic-material-continuity" aria-label="Event progression">
+  <div class="elbysodic-material-continuity" aria-label="Event progression">
     {{ continuity_timeline(material.continuity_beats) }}
-  </section>
+  </div>
   {% end %}
+  </section>
   {% end %}
 
   {% if material.can_manage %}
@@ -139,6 +188,7 @@
   {% end %}
 
   {% if material.related_wanted_ads %}
+  <section id="wanted-hooks" class="chirpui-stack chirpui-stack--md">
   {% call section_header("Wanted hooks") %}
   Roles, rivals, and connections this material is actively asking writers to fill.
   {% end %}
@@ -147,9 +197,11 @@
     {{ wanted_card(item) }}
     {% end %}
   </div>
+  </section>
   {% end %}
 
   {% if material.related_scenes %}
+  <section id="active-scenes" class="chirpui-stack chirpui-stack--md">
   {% call section_header("Active scenes") %}
   Threads currently carrying this canon into play.
   {% end %}
@@ -158,9 +210,11 @@
     {{ scene_link(item) }}
     {% end %}
   </div>
+  </section>
   {% end %}
 
   {% if material.related_locations %}
+  <section id="locations" class="chirpui-stack chirpui-stack--md">
   {% call section_header("Locations") %}
   Places where this world material is especially relevant.
   {% end %}
@@ -169,9 +223,11 @@
     {{ board_signal(item, viewer, "h3") }}
     {% end %}
   </div>
+  </section>
   {% end %}
 
   {% if material.related_materials %}
+  <section id="related-materials" class="chirpui-stack chirpui-stack--md">
   {% call section_header("Related materials") %}
   More creator-authored context that shares this lens.
   {% end %}
@@ -187,6 +243,7 @@
     {% end %}
     {% end %}
   </div>
+  </section>
   {% end %}
 {% end %}
 {% end %}

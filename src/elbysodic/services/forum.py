@@ -473,6 +473,16 @@ class ContinuityBeat:
 
 
 @dataclass(frozen=True, slots=True)
+class EventAction:
+    kind: str
+    label: str
+    title: str
+    description: str
+    href: str
+    cta: str
+
+
+@dataclass(frozen=True, slots=True)
 class MaterialDetail:
     material: Material
     facets: list[FacetTag]
@@ -483,6 +493,7 @@ class MaterialDetail:
     related_scenes: list[DiscoveryThreadResult]
     related_wanted_ads: list[WantedAdSummary]
     continuity_beats: list[ContinuityBeat]
+    event_actions: list[EventAction]
     can_manage: bool
 
 
@@ -1295,8 +1306,32 @@ class AppServices:
                 related_scenes,
                 related_wanted_ads,
             ),
+            event_actions=_material_event_actions(
+                material,
+                facets,
+                related_locations,
+                related_scenes,
+                related_wanted_ads,
+            ),
             can_manage=viewer.role.is_admin,
         )
+
+    def current_event_for_board(self, board: Board) -> MaterialSummary | None:
+        viewer = self.viewer()
+        facet_ids = {
+            facet.id for facet in self.repo.list_board_facets(viewer.community.id, board.id)
+        }
+        return _current_event_for_facet_ids(self.repo, viewer.community.id, facet_ids)
+
+    def current_event_for_thread(self, thread: Thread, board: Board) -> MaterialSummary | None:
+        viewer = self.viewer()
+        facet_ids = {
+            facet.id for facet in self.repo.list_thread_facets(viewer.community.id, thread.id)
+        }
+        facet_ids.update(
+            facet.id for facet in self.repo.list_board_facets(viewer.community.id, board.id)
+        )
+        return _current_event_for_facet_ids(self.repo, viewer.community.id, facet_ids)
 
     def update_material(
         self,
@@ -2781,6 +2816,105 @@ def _material_related_wanted_ads(
         ),
         reverse=True,
     )
+
+
+def _current_event_for_facet_ids(
+    repo: ForumRepository,
+    community_id: int,
+    facet_ids: set[int],
+) -> MaterialSummary | None:
+    if not facet_ids:
+        return None
+    matches: list[Material] = []
+    for material in repo.list_materials(community_id):
+        if material.material_type != "event" or material.status != "published":
+            continue
+        material_facet_ids = {
+            facet.id for facet in repo.list_material_facets(community_id, material.id)
+        }
+        if facet_ids.intersection(material_facet_ids):
+            matches.append(material)
+    if not matches:
+        return None
+    current = sorted(
+        matches,
+        key=lambda item: (
+            not item.is_featured,
+            item.sort_order,
+            _timestamp_key(item.updated_at),
+            item.id,
+        ),
+    )[0]
+    return _material_summary(repo, community_id, current)
+
+
+def _material_event_actions(
+    material: Material,
+    facets: list[FacetTag],
+    related_locations: list[BoardSummary],
+    related_scenes: list[DiscoveryThreadResult],
+    related_wanted_ads: list[WantedAdSummary],
+) -> list[EventAction]:
+    if material.material_type != "event":
+        return []
+    actions: list[EventAction] = []
+    open_scene = next(
+        (scene for scene in related_scenes if scene.thread.status == "open"),
+        related_scenes[0] if related_scenes else None,
+    )
+    if open_scene is not None:
+        actions.append(
+            EventAction(
+                kind="scene",
+                label="Scene to write",
+                title=open_scene.thread.title,
+                description=open_scene.thread.summary
+                or f"{open_scene.board.name} is carrying this event into play.",
+                href=f"/boards/{open_scene.board.slug}/threads/{open_scene.thread.slug}",
+                cta="Enter scene",
+            )
+        )
+    open_wanted = next(
+        (item for item in related_wanted_ads if item.wanted_ad.status == "open"),
+        related_wanted_ads[0] if related_wanted_ads else None,
+    )
+    if open_wanted is not None:
+        actions.append(
+            EventAction(
+                kind="wanted",
+                label=open_wanted.type_label,
+                title=open_wanted.wanted_ad.title,
+                description=open_wanted.wanted_ad.summary
+                or "A writer-facing hook connected to this event.",
+                href=f"/wanted/{open_wanted.wanted_ad.slug}",
+                cta="Answer hook",
+            )
+        )
+    if related_locations:
+        location = related_locations[0]
+        actions.append(
+            EventAction(
+                kind="location",
+                label="Affected location",
+                title=location.board.name,
+                description=location.board.tagline or location.board.description,
+                href=f"/boards/{location.board.slug}",
+                cta="Explore location",
+            )
+        )
+    facet_slugs = [tag.facet.slug for tag in facets[:4]]
+    if facet_slugs:
+        actions.append(
+            EventAction(
+                kind="discover",
+                label="Plot lens",
+                title="Find cast by event facets",
+                description="Use this event's world lenses to find characters, writers, and open scenes.",
+                href=f"/discover?facets={','.join(facet_slugs)}",
+                cta="Open discovery",
+            )
+        )
+    return actions[:4]
 
 
 def _material_continuity_beats(
