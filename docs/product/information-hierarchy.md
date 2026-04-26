@@ -31,6 +31,11 @@ facets, child-place links, and latest activity.
 The place name is primary. Counts and facets are secondary. Latest activity is
 tertiary.
 
+On board pages, parent locations should read as playable hubs. Use the hero for
+identity and emotional framing, then use clear section rhythm for sublocations,
+nearby places, and scenes. Avoid making counters, facets, latest activity, and
+child links all compete at the same weight.
+
 The short line on the image is the place tagline, or logline. It is the
 emotional hook: a poster-line that tells the writer why the location matters.
 The description below the image is explanatory body copy: it can give practical
@@ -86,7 +91,8 @@ card.
 The visible line should stay compact. Prefer showing the target and the
 story-facing character, then move writer ownership and exact updated time into a
 hover/focus disclosure. The disclosure is additive context, not required for the
-basic action.
+basic action. Use ChirpUI's `tooltip` primitive for compact, non-interactive
+metadata disclosure before adding a bespoke hovercard.
 
 Example:
 
@@ -143,11 +149,102 @@ should use avatars or initials and link to character hubs.
 
 Writer names belong in metadata. Character faces belong in cast.
 
+Cast should compose ChirpUI's `avatar` primitive so status, sizing, fallback
+initials, and future avatar-stack behavior stay consistent across thread cards,
+wanted hooks, casting, and character hubs.
+
+### LocationTree
+
+Use for the world map sidebar and nested board orientation. LocationTree is not
+a generic tool menu; it is the reader's map of the setting. Parent locations
+must remain direct links. Sublocations should reveal only for the current
+branch so the sidebar orients the writer without spoiling the atmospheric board
+surface.
+
+Top-level locations should stay legible as places. Sublocations should be
+visible enough to communicate depth, but the tree should not become the primary
+atmospheric surface; PlaceTile and board pages still carry the world feeling.
+
+### RouteTabs
+
+Use ChirpUI `route_tabs` for local subsection navigation where two or more
+closely related routes are views of the same object or workspace: future
+character profile sections, future guidebook sections, or director tools.
+
+Route tabs are page chrome. They should not replace the topbar's global
+navigation, bridge broad feature areas, or replace the sidebar's world
+orientation.
+
 ### ThreadByline
 
 Use when explaining authorship: started by character, writer username, updated
 time, and optional board/location. ThreadByline should distinguish public face
 from writer ownership without making every card feel administrative.
+
+### SceneCard
+
+Use for thread list rows/cards on board, character, member, and writer-desk
+surfaces. A thread is a scene, so the card should scan like an episode in a
+place: location/timeline eyebrow, scene title, started-by face, short premise,
+state/activity signals, cast, facets, and latest jump target.
+
+The title and premise are primary. Workflow signals such as needs reply, new
+replies, pinned, locked, and reply counts are secondary. Cast, facets, and
+latest activity are tertiary unless the current surface is specifically a
+queue.
+
+Do not make every fact a pill. Use badges for workflow state, counters for
+small quantities, cast faces for participants, facets for director-defined
+world lenses, and latest lines for jumps.
+
+### SceneHeader
+
+Use at the top of thread pages. A thread is a scene in a place, so the header
+should carry place path, title, state, cast, location/timeline, and the primary
+writer action together. The header should answer "where am I, who is here, and
+what can I do next?" before the reader reaches the post list.
+
+Keep prose posts visually distinct from scene metadata. Character identity
+belongs beside each post; writer ownership and edit/revision controls should
+stay quieter than the writing itself.
+
+### ComposerShell
+
+Use for new-thread, reply, and edit writing surfaces. The composer should feel
+like a calm writing room, not a generic form. Separate scene setup from the
+writing area when starting a thread. On replies, keep the setup minimal and let
+the active face carry the context.
+
+Composer controls should stay close to the writing surface: view toggle,
+formatting toolbar, draft status, and submit action. Character selectors should
+remain available, but active-face defaults should reduce the need to think
+about them.
+
+### PostFrame
+
+Use for individual posts inside a thread. A post is the place where the
+character becomes most present, so it should carry both prose and identity. The
+prose remains the primary object. The character poster rail provides emotional
+presence, avatar/art space, writer attribution, and a compact profile cue.
+
+Alternate the poster rail left and right on desktop so the thread feels like
+characters are facing one another. Do not alternate or zig-zag the prose itself;
+long-form reading needs a stable column. On small screens, collapse posts into
+a single column with the poster above the prose.
+
+The character name, writer, summary, and post permalink should remain visible.
+Hover/focus profile detail can add texture, but it must not be required to
+understand who wrote the post or what action is available.
+
+### CharacterPoster
+
+Use for the large visual identity area inside a post. Prefer real character
+avatars when supplied. When no avatar exists, use a stable, character-specific
+poster treatment with initials so the space still feels intentional rather than
+empty.
+
+The poster is atmosphere and identity. It is not a navigation menu, not a badge
+collection, and not a replacement for readable prose.
 
 ## Size Strategy
 
@@ -180,6 +277,7 @@ Shared Elbysodic vocabulary lives in:
 ```text
 src/elbysodic/web/pages/_components/ui.html
 src/elbysodic/web/pages/_components/boards.html
+src/elbysodic/web/pages/_components/posts.html
 src/elbysodic/web/pages/_components/thread_summary.html
 src/elbysodic/web/pages/_components/facets.html
 src/elbysodic/web/pages/_components/wanted.html
@@ -192,8 +290,10 @@ src/elbysodic/web/static/elbysodic-theme.css
 ```
 
 ChirpUI remains the primitive layer. Elbysodic components should compose
-ChirpUI surfaces, badges, buttons, layout helpers, and tokens rather than
-creating page-local component systems.
+ChirpUI surfaces, badges, buttons, layout helpers, `tooltip`, `avatar`, and
+tokens rather than creating page-local component systems. Use heavier
+navigation primitives such as `route_tabs` sparingly, only when their
+interaction model fits the product surface.
 
 ## Next Audit Targets
 

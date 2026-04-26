@@ -33,13 +33,14 @@
   {{ alpine_json_config(composer_config_id, composer_config) }}
   <form method="post"
         hx-boost="false"
-        class="chirpui-stack chirpui-stack--md"
+        class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--opening"
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="clearDraft()">
     <div class="elbysodic-composer-heading">
       <div>
+        <p class="elbysodic-kicker">Scene draft</p>
         <h2>Opening post</h2>
-        <p class="chirpui-text-muted">Start a scene as one of your {{ viewer.community.name }} characters.</p>
+        <p class="chirpui-text-muted">Set the hook, tag the cast, and write the first beat.</p>
       </div>
       <div>
         <label class="chirpui-field__label" for="thread-character">Posting as</label>
@@ -55,7 +56,7 @@
         </select>
       </div>
     </div>
-    <div class="elbysodic-composer-character">
+    <div class="elbysodic-composer-character" aria-label="Active face for this post">
       <div class="elbysodic-character-avatar" aria-hidden="true">
         <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
         <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
@@ -68,17 +69,22 @@
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>
     {% end %}
-    <div>
-      <label class="chirpui-field__label" for="thread-title">Title</label>
-      <input id="thread-title"
-             class="chirpui-field__input"
-             name="title"
-             value="{{ title }}"
-             autocomplete="off"
-             x-model="title"
-             required>
-    </div>
-    <div class="elbysodic-scene-form-grid">
+    <section class="elbysodic-composer-panel" aria-labelledby="thread-scene-setup">
+      <div class="elbysodic-composer-panel__header">
+        <h3 id="thread-scene-setup">Scene setup</h3>
+        <p>Short signals that help other writers understand the invitation.</p>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="thread-title">Title</label>
+        <input id="thread-title"
+               class="chirpui-field__input"
+               name="title"
+               value="{{ title }}"
+               autocomplete="off"
+               x-model="title"
+               required>
+      </div>
+      <div class="elbysodic-scene-form-grid">
       <div>
         <label class="chirpui-field__label" for="thread-status">Status</label>
         <select id="thread-status" name="status" class="chirpui-field__input">
@@ -117,89 +123,98 @@
                autocomplete="off"
                placeholder="After curfew">
       </div>
-    </div>
-    <div>
-      <label class="chirpui-field__label" for="thread-summary">Scene summary</label>
-      <textarea id="thread-summary"
-                class="chirpui-field__input"
-                name="summary"
-                rows="3"
-                placeholder="A short premise for the scene.">{{ summary }}</textarea>
-    </div>
-    {{ alpine_json_config(cast_picker_config_id, cast_picker_config) }}
-    <div class="elbysodic-mention-picker"
-         x-data="elbysodicMentionPicker('{{ cast_picker_config_id }}')"
-         @click.outside="close()">
-      <label class="chirpui-field__label" for="thread-cast-search">Tag cast</label>
-      <div class="elbysodic-mention-picker__control" @click="$refs.search.focus()">
-        <template x-for="item in selected" :key="item.kind + ':' + item.id">
-          <span class="elbysodic-mention-token">
-            <input type="hidden" :name="config.hiddenName" :value="item.id">
-            <span x-text="item.tag"></span>
-            <button type="button" :aria-label="'Remove ' + item.label" @click.stop="remove(item)">&times;</button>
-          </span>
-        </template>
-        <input id="thread-cast-search"
-               x-ref="search"
-               type="text"
-               class="elbysodic-mention-picker__input"
-               x-model="query"
-               :placeholder="selected.length ? '@character' : config.placeholder"
-               autocomplete="off"
-               @input.debounce.150ms="search()"
-               @focus="search()"
-               @keydown.arrow-down.prevent="move(1)"
-               @keydown.arrow-up.prevent="move(-1)"
-               @keydown.enter.prevent="chooseHighlighted()"
-               @keydown.escape.prevent="close()">
       </div>
-      <div class="elbysodic-mention-picker__list"
-           role="listbox"
-           x-show="open"
-           x-cloak>
-        <template x-for="(item, index) in results" :key="item.kind + ':' + item.id">
-          <button type="button"
-                  class="elbysodic-mention-picker__result"
-                  :class="{ 'is-active': index === highlightedIndex }"
-                  role="option"
-                  @click="select(item)">
-            <span class="elbysodic-character-avatar" aria-hidden="true">
-              <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
-              <span x-show="!item.avatar_url" x-text="item.initial"></span>
+      <div>
+        <label class="chirpui-field__label" for="thread-summary">Scene summary</label>
+        <textarea id="thread-summary"
+                  class="chirpui-field__input"
+                  name="summary"
+                  rows="3"
+                  placeholder="A short premise for the scene.">{{ summary }}</textarea>
+      </div>
+      {{ alpine_json_config(cast_picker_config_id, cast_picker_config) }}
+      <div class="elbysodic-mention-picker"
+           x-data="elbysodicMentionPicker('{{ cast_picker_config_id }}')"
+           @click.outside="close()">
+        <label class="chirpui-field__label" for="thread-cast-search">Tag cast</label>
+        <div class="elbysodic-mention-picker__control" @click="$refs.search.focus()">
+          <template x-for="item in selected" :key="item.kind + ':' + item.id">
+            <span class="elbysodic-mention-token">
+              <input type="hidden" :name="config.hiddenName" :value="item.id">
+              <span x-text="item.tag"></span>
+              <button type="button" :aria-label="'Remove ' + item.label" @click.stop="remove(item)">&times;</button>
             </span>
-            <span>
-              <strong x-text="item.tag"></strong>
-              <small x-text="item.detail"></small>
-            </span>
-          </button>
-        </template>
-        <p class="chirpui-text-muted" x-show="!loading && query.trim() && results.length === 0">No matches.</p>
+          </template>
+          <input id="thread-cast-search"
+                 x-ref="search"
+                 type="text"
+                 class="elbysodic-mention-picker__input"
+                 x-model="query"
+                 :placeholder="selected.length ? '@character' : config.placeholder"
+                 autocomplete="off"
+                 @input.debounce.150ms="search()"
+                 @focus="search()"
+                 @keydown.arrow-down.prevent="move(1)"
+                 @keydown.arrow-up.prevent="move(-1)"
+                 @keydown.enter.prevent="chooseHighlighted()"
+                 @keydown.escape.prevent="close()">
+        </div>
+        <div class="elbysodic-mention-picker__list"
+             role="listbox"
+             x-show="open"
+             x-cloak>
+          <template x-for="(item, index) in results" :key="item.kind + ':' + item.id">
+            <button type="button"
+                    class="elbysodic-mention-picker__result"
+                    :class="{ 'is-active': index === highlightedIndex }"
+                    role="option"
+                    @click="select(item)">
+              <span class="elbysodic-character-avatar" aria-hidden="true">
+                <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+                <span x-show="!item.avatar_url" x-text="item.initial"></span>
+              </span>
+              <span>
+                <strong x-text="item.tag"></strong>
+                <small x-text="item.detail"></small>
+              </span>
+            </button>
+          </template>
+          <p class="chirpui-text-muted" x-show="!loading && query.trim() && results.length === 0">No matches.</p>
+        </div>
       </div>
-    </div>
-    <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
-      <label>
-        <input type="radio"
-               name="thread-composer-view"
-               value="write"
-               x-model="viewMode">
-        <span>Write</span>
-      </label>
-      <label>
-        <input type="radio"
-               name="thread-composer-view"
-               value="preview"
-               x-model="viewMode">
-        <span>Preview</span>
-      </label>
-    </div>
-    <div class="elbysodic-composer-body" x-show="!previewMode">
-      <label class="chirpui-field__label" for="thread-body">Opening post</label>
-      <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
-        <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'thread-body')">B</button>
-        <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'thread-body')">I</button>
-        <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'thread-body')">&gt;</button>
-        <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'thread-body')">[]</button>
+    </section>
+
+    <section class="elbysodic-composer-panel elbysodic-composer-panel--writing" aria-labelledby="thread-writing">
+      <div class="elbysodic-composer-panel__bar">
+        <div>
+          <h3 id="thread-writing">Writing</h3>
+          <p class="chirpui-text-muted">Drafts save locally in this browser.</p>
+        </div>
+        <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
+          <label>
+            <input type="radio"
+                   name="thread-composer-view"
+                   value="write"
+                   x-model="viewMode">
+            <span>Write</span>
+          </label>
+          <label>
+            <input type="radio"
+                   name="thread-composer-view"
+                   value="preview"
+                   x-model="viewMode">
+            <span>Preview</span>
+          </label>
+        </div>
       </div>
+      <div class="elbysodic-composer-body" x-show="!previewMode">
+        <label class="chirpui-field__label" for="thread-body">Opening post</label>
+        <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
+          <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'thread-body')">B</button>
+          <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'thread-body')">I</button>
+          <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'thread-body')">&gt;</button>
+          <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'thread-body')">[]</button>
+        </div>
       <textarea id="thread-body"
                 class="chirpui-field__input"
                 name="body"
@@ -231,12 +246,13 @@
           </button>
         </template>
       </div>
-    </div>
-    <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
-      <h2 x-show="title.trim()" x-text="title"></h2>
-      <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
-      <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
-    </div>
+      </div>
+      <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
+        <h2 x-show="title.trim()" x-text="title"></h2>
+        <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
+        <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
+      </div>
+    </section>
     <div class="chirpui-cluster chirpui-cluster--end">
       <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
       <button type="submit" class="chirpui-btn chirpui-btn--primary">Start thread</button>

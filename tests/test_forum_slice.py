@@ -238,8 +238,8 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert academy.status == 200
             assert "elbysodic-board-stage" in academy.text
             assert "elbysodic-board-media--xavier-institute" in academy.text
-            assert "Sublocations in Xavier Institute" in academy.text
-            assert "Scenes in Xavier Institute" in academy.text
+            assert "Choose a door inside Xavier Institute" in academy.text
+            assert "Xavier Institute threads" in academy.text
             assert "No direct scenes here yet." in academy.text
             assert "Sublocations" in academy.text
             assert "elbysodic-board-poster--tile" in academy.text

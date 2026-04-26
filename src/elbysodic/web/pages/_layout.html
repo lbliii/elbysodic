@@ -6,7 +6,7 @@
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=poster-loglines">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=post-frame">
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=inline-mentions"></script>
 {% end %}
 
@@ -124,9 +124,8 @@
     {% for group in viewer.location_navigation_groups %}
       {% set parent_active = current_board_id == group.parent.board.id %}
       {% set branch_active = parent_active or current_parent_id == group.parent.board.id %}
-      {% set expanded = branch_active or group.unread_thread_count %}
       {{ location_tree_link(group.parent, group.unread_thread_count, parent_active, branch_active) }}
-      {% if expanded and group.children %}
+      {% if branch_active and group.children %}
       <div class="elbysodic-sidebar-tree__children">
         {% for child in group.children %}
         {{ location_tree_link(child, child.unread_thread_count, current_board_id == child.board.id, branch_active, True) }}

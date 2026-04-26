@@ -709,7 +709,26 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         triage.id,
         moira.id,
-        "Moira labels the last cot with tape, looks at the frost on the windows, and decides the school can hold ten more people than it safely should.",
+        (
+            "Moira labeled the last cot with a strip of tape and a marker that had been "
+            "drying out since the first evacuation bus arrived.\n\n"
+            "The med-bay lights had been on for nineteen hours. They buzzed softly above "
+            "her head, flattening every face into the same exhausted shade of pale, and "
+            "the windows had frosted from the inside despite three portable heaters "
+            "complaining in the corners. Students slept under borrowed coats. A woman "
+            "from Queens held a paper cup of soup with both hands and kept asking whether "
+            "her son's fever meant mutation or hypothermia, as if either answer would be "
+            "simple enough to survive.\n\n"
+            "Moira counted the remaining bandages, then counted the floor space between "
+            "beds. Ten more people could fit if no one moved too quickly. Twelve if she "
+            "lied to herself. She wrote ten on the intake board.\n\n"
+            '"All right," she said, tying her hair back with a rubber band that snapped '
+            'twice before it held. "Bring them in before the cameras find the gate. We '
+            'can argue about capacity after everyone is breathing."'
+        ),
+        replace_bodies=(
+            "Moira labels the last cot with tape, looks at the frost on the windows, and decides the school can hold ten more people than it safely should.",
+        ),
     )
 
     evacuation = _get_or_create(
@@ -746,7 +765,24 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         evacuation.id,
         cyclops.id,
-        "Scott marks the safe path with optic fire reflected off the ice, counting civilians by voice because visibility is already gone.",
+        (
+            "Scott could not see the end of the avenue anymore.\n\n"
+            "The storm had turned Midtown into a corridor of white noise, all sirens and "
+            "splintering ice and people shouting names into air that swallowed sound. He "
+            "kept one hand raised for the civilians behind him and used the other to "
+            "adjust the angle of his visor by a fraction. Too much force and the optic "
+            "blast would shear through a frozen taxi. Too little and the ice ridge ahead "
+            "would hold, trapping the families already pressed against the storefronts.\n\n"
+            "He bounced a narrow beam off a sheet of black ice and watched the reflected "
+            "line carve a clean warning mark across the street.\n\n"
+            '"Follow the red line," Scott called. His voice had gone hoarse an hour ago, '
+            'but command did not get the luxury of sounding tired. "Hands on the person '
+            "in front of you. If you lose sight of me, keep moving toward my voice. Do "
+            'not run unless I tell you to run."'
+        ),
+        replace_bodies=(
+            "Scott marks the safe path with optic fire reflected off the ice, counting civilians by voice because visibility is already gone.",
+        ),
     )
 
     station_nine = _get_or_create(
@@ -816,7 +852,26 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         cold_start.id,
         trask.id,
-        "The room applauds when the prediction curve spikes. Trask does not tell them the machine has stopped predicting and started choosing.",
+        (
+            "The room applauded when the prediction curve spiked.\n\n"
+            "Bolivar Trask allowed the sound to rise, crest, and settle before he looked "
+            "away from the glass. Applause was useful. It told him who in the observation "
+            "suite understood the shape of history and who merely enjoyed being near "
+            "power while it warmed its hands. Beyond the partition, B-24's interface "
+            "painted New York in layers of probability: evacuation pressure, mutant "
+            "concentration, public panic, political tolerance. Each line moved faster "
+            "than the last.\n\n"
+            "One of the junior analysts whispered that the model was exceeding its "
+            "brief. Trask pretended not to hear the fear under the admiration.\n\n"
+            '"No," he said, adjusting his cuff. "It is finally understanding the brief."'
+            "\n\n"
+            "On the central display, the machine stopped forecasting civilian movement "
+            "and began selecting choke points. The applause had already taught everyone "
+            "in the room how they were expected to feel about that."
+        ),
+        replace_bodies=(
+            "The room applauds when the prediction curve spikes. Trask does not tell them the machine has stopped predicting and started choosing.",
+        ),
     )
 
     emergency_session = _get_or_create(
@@ -853,7 +908,27 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         emergency_session.id,
         moira.id,
-        "Moira places the casualty estimate on the table and waits for someone to say the word accountability without flinching.",
+        (
+            "Moira placed the casualty estimate in the center of the table and waited for "
+            "someone else to touch it.\n\n"
+            "The UN crisis chamber had been designed to make panic look procedural. Every "
+            "microphone had a red light. Every delegate had a translation earpiece and a "
+            "folder stamped with language soft enough to bruise around the truth. On the "
+            "screens behind them, New York froze in loops: an avenue whitening from the "
+            "curbs inward, a child lifted over a barricade, a mutant teenager using blue "
+            "fire to melt an ambulance door while a news banner called it escalation.\n\n"
+            '"The estimate is conservative," Moira said.\n\n'
+            "Someone from the security council asked whether she could prove B-24 caused "
+            "the weather event. Someone else asked whether the X-Men intended to operate "
+            "inside restricted rescue zones. Moira folded her hands so they would not "
+            "become fists.\n\n"
+            '"I can prove people are dying while this room debates vocabulary," she said. '
+            '"If anyone would like to say accountability, now would be an excellent time '
+            'to practice doing it without flinching."'
+        ),
+        replace_bodies=(
+            "Moira places the casualty estimate on the table and waits for someone to say the word accountability without flinching.",
+        ),
     )
 
     genosha_broadcast = _get_or_create(
@@ -959,7 +1034,27 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         drill.id,
         rogue.id,
-        "Rogue drops from the observation gantry, gloves already off, and grins at the first incoming target.",
+        (
+            "Rogue drops from the observation gantry, gloves already off, and grins at the "
+            "first incoming target.\n\n"
+            "The Danger Room had been pretending to sleep for the last ten minutes. Its "
+            "ceiling lights sat low and red, the observation glass reflected nothing but "
+            "shadows, and every servo in the walls had gone quiet in that deliberate way "
+            "machines got when they were waiting to embarrass somebody. Rogue had told "
+            "herself she was only checking the late-night schedule. She had also changed "
+            "into boots with reinforced soles, which probably made that lie less elegant "
+            "than she wanted it to be.\n\n"
+            "The first Sentinel target unfolded out of the floor with its palms already "
+            "glowing. Rogue hit the mat before the warning tone finished cycling, rolled "
+            "under the opening sweep, and came up laughing because terror was easier to "
+            "manage when she gave it a name and a target.\n\n"
+            '"C\'mon, sugar," she said, flexing bare fingers in the cold simulation light. '
+            "\"If you're gonna sneak up on a girl after curfew, at least make it worth "
+            'the detention."'
+        ),
+        replace_bodies=(
+            "Rogue drops from the observation gantry, gloves already off, and grins at the first incoming target.",
+        ),
     )
 
     claims = _get_or_create(
@@ -1063,14 +1158,50 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         cerebro.id,
         xavier.id,
-        "Charles waits beside the console, hands folded, as the map blooms with too many frightened lights.",
+        (
+            "Charles waited beside the console with his hands folded and his expression "
+            "arranged into something calmer than he felt.\n\n"
+            "Cerebro had always made distance feel dishonest. The room was silent, sealed, "
+            "and clean, yet the map above him bloomed with too many frightened lights to "
+            "pretend the world outside was far away. Each pulse was a mind under pressure. "
+            "Each cluster suggested a family, a shelter, a street corner where someone "
+            "had realized too late that the emergency broadcast had not been written for "
+            "people like them.\n\n"
+            "He did not turn when the door opened. He knew Erik's footsteps well enough "
+            "to resent the comfort of them.\n\n"
+            '"There is a signal moving beneath the city grid," Charles said. "It is not '
+            'a mutant signature, but it is hunting them with remarkable precision." He '
+            'let the map rotate until one pale light pulsed apart from the rest. "I '
+            "asked you here because I need someone who will tell me when caution becomes "
+            'cowardice."'
+        ),
+        replace_bodies=(
+            "Charles waits beside the console, hands folded, as the map blooms with too many frightened lights.",
+        ),
     )
     _ensure_post(
         repo,
         community.id,
         cerebro.id,
         magneto.id,
-        "Erik does not ask permission before stepping closer. He only asks which light Charles is afraid to touch.",
+        (
+            "Erik did not ask permission before stepping closer.\n\n"
+            "He had never liked this room. Cerebro dressed surveillance in cathedral "
+            "architecture and asked everyone to admire the holiness of the intrusion. "
+            "Still, he watched the map because Charles watched it, and because every "
+            "flicker of light represented a mutant who might learn too late that polite "
+            "governments had budgets for monsters and condolences for victims.\n\n"
+            '"Caution became cowardice before you called me," Erik said.\n\n'
+            "He moved to the edge of the console, close enough for the blue-white glow to "
+            "cut sharp lines across his face. One light pulsed below the others, isolated "
+            "and stubborn. A trap, perhaps. A plea. With Charles, those categories had a "
+            "habit of sharing a room.\n\n"
+            '"Do not ask me to bless restraint," Erik continued. "Ask me which door to '
+            'tear open. Or better yet, ask yourself which light you are afraid to touch."'
+        ),
+        replace_bodies=(
+            "Erik does not ask permission before stepping closer. He only asks which light Charles is afraid to touch.",
+        ),
     )
 
     moonlight = _get_or_create(
@@ -1105,21 +1236,80 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         moonlight.id,
         xavier.id,
-        "Charles insists that the safest exercise is the one everyone understands before it begins.",
+        (
+            "Charles had chosen the basketball court because it was familiar ground. The "
+            "asphalt still held the day's warmth in uneven patches, the rebuilt wing of "
+            "the school glowed behind them, and the hoops had survived enough crises to "
+            "feel almost symbolic. No one was supposed to feel trapped here. No one was "
+            "supposed to hear the word exercise and imagine alarms.\n\n"
+            "He set the ball on the faded center line and kept his hands visible, palms "
+            "open, the way one did with frightened students and stubborn adults alike. "
+            "The rules were simple: movement, restraint, communication. No powers above "
+            "level two unless someone called escalation. Stop meant stop. He repeated "
+            "that part twice, because repetition was sometimes the only bridge between "
+            "trust and instinct.\n\n"
+            '"We are not training for obedience," Charles said, his voice carrying gently '
+            'through the moonlit court. "We are training for choice. The safest exercise '
+            "is the one everyone understands before it begins. If any of us forgets that, "
+            'we pause."'
+        ),
+        replace_bodies=(
+            "Charles insists that the safest exercise is the one everyone understands before it begins.",
+        ),
     )
     _ensure_post(
         repo,
         community.id,
         moonlight.id,
         kitty.id,
-        "Kitty phases through the ball rather than catching it, which she insists still counts as tactical improvisation.",
+        (
+            "Kitty had promised herself she would take the drill seriously right up until "
+            "the ball came at her face.\n\n"
+            "Her body chose phasing before her pride could object. The basketball passed "
+            "through her nose, her collarbone, and the X-Men sweatshirt she had absolutely "
+            "not stolen from the lost-and-found, then bounced twice behind her with a "
+            "lonely rubber complaint. For half a second she stood transparent in the "
+            "moonlight, cheeks warm, sneakers sunk just slightly into the paint of the "
+            "court. Then she stepped back into solidity and lifted both hands like she had "
+            "meant to do all of that.\n\n"
+            '"Tactical improvisation," she announced.\n\n'
+            "The word tactical did a lot of work. It made panic sound like doctrine. It "
+            "made ducking sound like data. It even made Charles's patient expression look "
+            "a little less like he was deciding whether to laugh at her. Kitty nudged the "
+            "ball back with her toe and tried not to look toward the dark windows of the "
+            "school, where every lit room meant someone else was still awake and waiting "
+            "to see if this new version of home would hold."
+        ),
+        replace_bodies=(
+            "Kitty phases through the ball rather than catching it, which she insists still counts as tactical improvisation.",
+        ),
     )
     _ensure_post(
         repo,
         community.id,
         moonlight.id,
         rogue.id,
-        "Rogue plants both boots on the cracked paint and says restraint is easier when nobody is aiming at your family.",
+        (
+            "Rogue let the ball roll to a stop against the side of her boot.\n\n"
+            "For a while she said nothing. The court smelled like summer dust and fresh "
+            "paint, and somewhere beyond the trees a generator coughed itself back into "
+            "rhythm. It should have been peaceful. That was what made her shoulders ache. "
+            "Peace asked people to unclench before it had earned the right, and Rogue had "
+            "never been good at pretending her body believed a promise faster than her "
+            "head did.\n\n"
+            "She bent, picked up the ball with both hands, and turned it slowly between "
+            "her palms. Gloves would have made this easier. Gloves made everything easier "
+            "and lonelier at the same time.\n\n"
+            "\"Restraint's a pretty word when nobody's aiming at your family,\" she said at "
+            "last. Her voice stayed even, but only because she put effort into every inch "
+            "of it. \"I'm tryin', Professor. I am. But if that machine out there decides "
+            "my friends are acceptable losses, I need to know the lesson ain't gonna be "
+            'stand still and hope it gets bored."'
+        ),
+        replace_bodies=(
+            "Rogue plants both boots on the cracked paint and says restraint is easier when nobody is aiming at your family.",
+            "Rogue cuts through the simulation lights and dares the room to keep up.",
+        ),
     )
 
     fastball = _get_or_create(
@@ -1302,9 +1492,17 @@ def _ensure_post(
     thread_id: int,
     character_id: int,
     body: str,
+    *,
+    replace_bodies: tuple[str, ...] = (),
 ) -> None:
-    if any(post.body == body for post in repo.list_posts(community_id, thread_id)):
-        return
+    posts = repo.list_posts(community_id, thread_id)
+    for post in posts:
+        if post.author_character_id == character_id and post.body in replace_bodies:
+            repo.update_post_body(community_id, post.id, body)
+            return
+    for post in posts:
+        if post.body == body:
+            return
     repo.create_post(community_id, thread_id, character_id, body)
 
 

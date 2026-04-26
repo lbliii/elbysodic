@@ -7,7 +7,7 @@
 {% end %}
 
 {% def next_unread_link(item) %}
-<a class="chirpui-btn chirpui-btn--secondary"
+<a class="chirpui-btn chirpui-btn--secondary elbysodic-place-action"
    href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}{{ "#" ~ item.jump_post.anchor if item.jump_post else "" }}">
   Next unread
 </a>
@@ -19,7 +19,7 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
-  <div class="chirpui-cluster chirpui-cluster--between">
+  <div class="elbysodic-place-toolbar">
     <nav class="elbysodic-place-path" aria-label="Place path">
       <a href="/">World</a>
       {% if parent_board %}
@@ -34,7 +34,7 @@
       {{ next_unread_link(next_unread_thread) }}
       {% end %}
     {% if can_start_thread %}
-    <a class="chirpui-btn chirpui-btn--primary" href="/boards/{{ board.slug }}/threads/new">Start thread</a>
+    <a class="chirpui-btn chirpui-btn--primary elbysodic-place-action" href="/boards/{{ board.slug }}/threads/new">Start thread</a>
     {% end %}
     </div>
   </div>
@@ -48,49 +48,60 @@
       <p class="elbysodic-kicker">Location hub</p>
       {% end %}
       <h1>{{ board.name }}</h1>
-      <p>{{ board.description }}</p>
-      {{ board_stat_row(board_summary, viewer) }}
-      {{ facet_pills(board_facets) }}
+      {% if board.tagline %}
+      <p class="elbysodic-board-stage__logline">{{ board.tagline }}</p>
+      {% end %}
+      <p class="elbysodic-board-stage__description">{{ board.description }}</p>
+      <div class="elbysodic-board-stage__signals">
+        {{ board_stat_row(board_summary, viewer) }}
+        {{ facet_pills(board_facets) }}
+      </div>
     </div>
   </section>
 
   {% if subboards %}
-  {% set sublocations_title = "Sublocations in " ~ board.name %}
-  {% call section_header(sublocations_title) %}
-  Rooms, districts, and pressure points that make this location playable.
-  {% end %}
-  <div class="elbysodic-subboard-grid">
-    {% for summary in subboards %}
-    {{ subboard_card(summary, viewer) }}
-    {% end %}
-  </div>
+  <section class="elbysodic-place-section elbysodic-place-section--sublocations">
+    <header class="elbysodic-place-section__header">
+      <p class="elbysodic-kicker">Sublocations</p>
+      <h2>Choose a door inside {{ board.name }}</h2>
+      <p>Rooms, districts, and pressure points that make this location playable.</p>
+    </header>
+    <div class="elbysodic-subboard-grid">
+      {% for summary in subboards %}
+      {{ subboard_card(summary, viewer) }}
+      {% end %}
+    </div>
+  </section>
   {% end %}
 
   {% if sibling_boards %}
-  {% if parent_board %}
-  {% call section_header("Nearby") %}
-  Other playable places inside {{ parent_board.name }}.
-  {% end %}
-  {% else %}
-  {% call section_header("Other world locations") %}
-  Other major hubs in the current world map.
-  {% end %}
-  {% end %}
-  <nav class="elbysodic-subboard-strip elbysodic-subboard-strip--nearby" aria-label="Nearby locations">
-    {% for summary in sibling_boards %}
-    <a href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a>
-    {% end %}
-  </nav>
+  <section class="elbysodic-place-section elbysodic-place-section--nearby">
+    <header class="elbysodic-place-section__header elbysodic-place-section__header--compact">
+      {% if parent_board %}
+      <p class="elbysodic-kicker">Nearby</p>
+      <h2>Other places inside {{ parent_board.name }}</h2>
+      {% else %}
+      <p class="elbysodic-kicker">World map</p>
+      <h2>Other major locations</h2>
+      {% end %}
+    </header>
+    <nav class="elbysodic-subboard-strip elbysodic-subboard-strip--nearby" aria-label="Nearby locations">
+      {% for summary in sibling_boards %}
+      <a href="/boards/{{ summary.board.slug }}">{{ summary.board.name }}</a>
+      {% end %}
+    </nav>
+  </section>
   {% end %}
 
-  <section class="chirpui-stack chirpui-stack--md">
-    {% set scenes_title = "Scenes in " ~ board.name %}
-    {% call section_header(scenes_title) %}
-    Direct threads in this location. Parent location totals include sublocations above.
-    {% end %}
+  <section class="elbysodic-place-section elbysodic-place-section--scenes">
+    <header class="elbysodic-place-section__header">
+      <p class="elbysodic-kicker">Scenes here</p>
+      <h2>{{ board.name }} threads</h2>
+      <p>Direct threads in this location. Parent location totals include sublocations above.</p>
+    </header>
     <nav class="elbysodic-filter-bar" aria-label="Thread filters">
       {% for option in filter_options %}
-      <a class="chirpui-btn {{ "chirpui-btn--primary" if option.is_active else "chirpui-btn--secondary" }}"
+      <a class="elbysodic-filter-link{{ " elbysodic-filter-link--active" if option.is_active else "" }}"
          href="{{ option.href }}">
         {{ option.label }}
       </a>
@@ -100,7 +111,7 @@
     <div class="chirpui-stack chirpui-stack--md elbysodic-thread-list">
       {% if threads %}
       {% for item in threads %}
-      {{ thread_card(board, item.thread, item.author, item.author_membership, item.participants, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h2", False, False) }}
+      {{ thread_card(board, item.thread, item.author, item.author_membership, item.participants, item.facets, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h2", False, False) }}
       {% end %}
       {% else %}
       {% call surface(variant="elevated") %}

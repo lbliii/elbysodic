@@ -146,6 +146,7 @@ def _render_thread(
             viewer=viewer,
             selected_character=None,
             thread_view=thread_view,
+            parent_board=services.parent_board(thread_view.board),
             error=error,
             body=body,
             composer_config={},
@@ -168,6 +169,7 @@ def _render_thread(
         viewer=viewer,
         selected_character=selected_character,
         thread_view=thread_view,
+        parent_board=services.parent_board(thread_view.board),
         error=error,
         body=body,
         composer_config=composer_config(

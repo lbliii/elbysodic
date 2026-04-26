@@ -87,10 +87,14 @@
 {% call surface(variant="elevated") %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-subboard-card">
   {{ board_poster(summary, viewer, True, True, "h3") }}
-  <p class="elbysodic-board-card__description">{{ summary.board.description }}</p>
-  {{ facet_pills(summary.facets) }}
-  {{ board_stat_row(summary, viewer, False) }}
-  {{ board_latest(summary, False) if summary.latest_thread else "" }}
+  <div class="elbysodic-subboard-card__body">
+    <p class="elbysodic-board-card__description">{{ summary.board.description }}</p>
+    <div class="elbysodic-subboard-card__signals">
+      {{ board_stat_row(summary, viewer, False) }}
+      {{ facet_pills(summary.facets) }}
+    </div>
+    {{ board_latest(summary, False) if summary.latest_thread else "" }}
+  </div>
 </article>
 {% end %}
 {% end %}

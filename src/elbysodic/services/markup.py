@@ -127,7 +127,7 @@ def _render_mentions(value: str, mentions: dict[str, MentionLink]) -> str:
             rendered.append(_render_emphasis(html.escape(match.group(0), quote=True)))
         else:
             rendered.append(
-                '<a class="elbysodic-mention-link" '
+                '<a class="chirpui-mention elbysodic-mention-link" '
                 f'data-mention-kind="{html.escape(mention.kind, quote=True)}" '
                 f'href="{html.escape(mention.href, quote=True)}" '
                 f'title="{html.escape(mention.label, quote=True)}">'

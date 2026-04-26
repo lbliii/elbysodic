@@ -1,0 +1,77 @@
+{% imports %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def post_frame(item, board, thread) %}
+{% call surface(variant="elevated") %}
+<article id="{{ item.anchor }}"
+         class="elbysodic-post elbysodic-post--{{ item.author.slug }}">
+  <aside class="elbysodic-post__poster" aria-label="{{ item.author.name }} profile">
+    <a class="elbysodic-post__poster-media elbysodic-character-poster--{{ item.author.slug }}"
+       href="/characters/{{ item.author.slug }}"
+       aria-label="{{ item.author.name }}">
+      {% if item.author.avatar_url %}
+      <img src="{{ item.author.avatar_url }}" alt="">
+      {% else %}
+      <span aria-hidden="true">{{ item.author.name[:1] }}</span>
+      {% end %}
+    </a>
+    <div class="elbysodic-post__poster-card">
+      <div class="elbysodic-post__poster-name">
+        <h2>
+          <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
+        </h2>
+        <p>
+          writer <a class="chirpui-link" href="/members/{{ item.author_membership.username }}">{{ item.author_membership.username }}</a>
+        </p>
+      </div>
+      <p class="elbysodic-post__poster-summary">{{ item.author.summary }}</p>
+      <dl class="elbysodic-post__poster-stats">
+        <div>
+          <dt>Posts</dt>
+          <dd>{{ item.author_membership.post_count }}</dd>
+        </div>
+        <div>
+          <dt>Face</dt>
+          <dd>{{ item.author.name[:1] }}</dd>
+        </div>
+      </dl>
+      <div class="elbysodic-post__quick-profile" role="note">
+        <strong>{{ item.author.name }}</strong>
+        <span>{{ item.author.summary }}</span>
+        <span>Written by {{ item.author_membership.display_name }}</span>
+      </div>
+    </div>
+  </aside>
+  <div class="elbysodic-post__body">
+    <header class="elbysodic-post__meta">
+      <div class="elbysodic-post__meta-line">
+        <a class="chirpui-link" href="#{{ item.anchor }}" aria-label="Permalink to post {{ item.post.id }}">
+          #{{ item.post.id }}
+        </a>
+        <span>{{ item.created_at_label }}</span>
+        {% if item.is_edited %}
+        {% if item.can_edit %}
+        <a class="chirpui-link"
+           href="/boards/{{ board.slug }}/threads/{{ thread.slug }}/posts/{{ item.post.id }}/revisions">
+          edited {{ item.updated_at_label }}
+        </a>
+        {% else %}
+        <span>edited {{ item.updated_at_label }}</span>
+        {% end %}
+        {% end %}
+      </div>
+      <div class="elbysodic-post__meta-actions">
+        {% if item.can_edit %}
+        <a class="chirpui-link"
+           href="/boards/{{ board.slug }}/threads/{{ thread.slug }}/posts/{{ item.post.id }}/edit">
+          Edit
+        </a>
+        {% end %}
+      </div>
+    </header>
+    <div class="elbysodic-post-content">{{ item.rendered_body }}</div>
+  </div>
+</article>
+{% end %}
+{% end %}
