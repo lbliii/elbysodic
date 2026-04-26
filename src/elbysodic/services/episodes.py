@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 import re
+from typing import Protocol
 
-from elbysodic.db import ForumRepository
 from elbysodic.domain.models import CommunityMembership, Post
 from elbysodic.services.read_models import EpisodeCredits
 
 
+class EpisodeCreditsRepository(Protocol):
+    def get_membership(
+        self,
+        community_id: int,
+        membership_id: int,
+    ) -> CommunityMembership: ...
+
+
 def episode_credits(
-    repo: ForumRepository,
+    repo: EpisodeCreditsRepository,
     community_id: int,
     posts: list[Post],
 ) -> EpisodeCredits:

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from elbysodic.db import ForumRepository
-from elbysodic.domain.models import Facet
+from typing import Protocol
+
+from elbysodic.domain.models import Facet, FacetGroup
 from elbysodic.services.read_models import (
     FacetFilterGroup,
     FacetFilterOption,
@@ -12,7 +13,19 @@ from elbysodic.services.read_models import (
 )
 
 
-def current_character_facet_tags(repo: ForumRepository, viewer: ForumView) -> list[FacetTag]:
+class FacetReadRepository(Protocol):
+    def get_facet_by_slug(self, community_id: int, slug: str) -> Facet: ...
+
+    def list_facet_groups(self, community_id: int) -> list[FacetGroup]: ...
+
+    def list_facets(self, community_id: int) -> list[Facet]: ...
+
+    def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
+
+    def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]: ...
+
+
+def current_character_facet_tags(repo: FacetReadRepository, viewer: ForumView) -> list[FacetTag]:
     if viewer.current_character is None:
         return []
     return facet_tags(
@@ -22,11 +35,11 @@ def current_character_facet_tags(repo: ForumRepository, viewer: ForumView) -> li
     )
 
 
-def current_character_facet_ids(repo: ForumRepository, viewer: ForumView) -> set[int]:
+def current_character_facet_ids(repo: FacetReadRepository, viewer: ForumView) -> set[int]:
     return {tag.facet.id for tag in current_character_facet_tags(repo, viewer)}
 
 
-def facet_tags(repo: ForumRepository, community_id: int, facets: list[Facet]) -> list[FacetTag]:
+def facet_tags(repo: FacetReadRepository, community_id: int, facets: list[Facet]) -> list[FacetTag]:
     groups = {group.id: group for group in repo.list_facet_groups(community_id)}
     return [
         FacetTag(group=groups[facet.facet_group_id], facet=facet)
@@ -35,7 +48,7 @@ def facet_tags(repo: ForumRepository, community_id: int, facets: list[Facet]) ->
     ]
 
 
-def resolve_facets(repo: ForumRepository, community_id: int, slugs: list[str]) -> list[Facet]:
+def resolve_facets(repo: FacetReadRepository, community_id: int, slugs: list[str]) -> list[Facet]:
     facets = []
     for slug in clean_facet_slugs(slugs):
         try:
@@ -56,7 +69,7 @@ def clean_facet_slugs(values: list[str]) -> list[str]:
 
 
 def facet_filter_groups(
-    repo: ForumRepository,
+    repo: FacetReadRepository,
     community_id: int,
     selected_slugs: list[str],
 ) -> list[FacetFilterGroup]:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import re
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -19,14 +18,12 @@ from elbysodic.domain.models import (
     Material,
     Notification,
     Post,
-    PostRevision,
     Role,
     Thread,
     WantedAd,
     WantedAdInterest,
 )
 from elbysodic.services import policies
-from elbysodic.services.episodes import episode_credits
 from elbysodic.services.facets import (
     clean_facet_slugs as _clean_facet_slugs,
 )
@@ -45,14 +42,15 @@ from elbysodic.services.facets import (
 from elbysodic.services.facets import (
     resolve_facets as _resolve_facets,
 )
-from elbysodic.services.markup import MentionLink, post_snippet, render_post_body
+from elbysodic.services.markup import post_snippet, render_post_body
+from elbysodic.services.posts import post_mention_links as _post_mention_links
+from elbysodic.services.posts import post_revision_view as _post_revision_view
+from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     APPLICATION_STATUS_LABELS,
     APPLICATION_STATUS_VARIANTS,
     MATERIAL_STATUSES,
     MATERIAL_TYPES,
-    POSTING_MODES,
-    THREAD_STATUSES,
     ActivityItem,
     ApplicationCharacterView,
     ApplicationsDesk,
@@ -89,13 +87,8 @@ from elbysodic.services.read_models import (
     NotificationInbox,
     NotificationItem,
     PlotDiscovery,
-    PostingMode,
     PostRevisionHistory,
-    PostRevisionView,
-    PostView,
     ThreadNavigationItem,
-    ThreadObligationItem,
-    ThreadStatus,
     ThreadSummary,
     ThreadView,
     WantedAdDetail,
@@ -105,6 +98,27 @@ from elbysodic.services.read_models import (
     WorldHub,
     WriterCollaborator,
 )
+from elbysodic.services.read_models import (
+    POSTING_MODES as POSTING_MODES,
+)
+from elbysodic.services.read_models import (
+    THREAD_STATUSES as THREAD_STATUSES,
+)
+from elbysodic.services.threads import (
+    board_thread_summaries as _board_thread_summaries,
+)
+from elbysodic.services.threads import clean_participant_ids as _clean_participant_ids
+from elbysodic.services.threads import clean_posting_mode as _clean_posting_mode
+from elbysodic.services.threads import clean_thread_status as _clean_thread_status
+from elbysodic.services.threads import is_live_queue_thread as _is_live_queue_thread
+from elbysodic.services.threads import is_unread as _is_unread
+from elbysodic.services.threads import next_unread_thread as _next_unread_thread
+from elbysodic.services.threads import read_thread_view as _read_thread_view
+from elbysodic.services.threads import taggable_characters
+from elbysodic.services.threads import thread_needs_attention as _thread_needs_attention
+from elbysodic.services.threads import thread_obligations as _thread_obligations
+from elbysodic.services.timestamps import timestamp_key as _timestamp_key
+from elbysodic.services.timestamps import timestamp_label as _timestamp_label
 
 DEFAULT_DATABASE_PATH = Path("var/elbysodic.sqlite3")
 DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
@@ -284,7 +298,7 @@ class AppServices:
             if selected_character is not None
             else {character.id for character in viewer.roster}
         )
-        sorted_items = self._thread_obligations(viewer, target_ids)
+        sorted_items = _thread_obligations(self.repo, viewer, target_ids)
         return MyThreadsDashboard(
             needs_reply=[item for item in sorted_items if item.needs_reply],
             waiting_on_others=[item for item in sorted_items if item.waiting_on_others],
@@ -364,7 +378,7 @@ class AppServices:
             )
         roster = self.repo.list_characters(viewer.community.id, membership.id)
         roster_ids = {character.id for character in roster}
-        active_threads = self._thread_obligations(viewer, roster_ids)
+        active_threads = _thread_obligations(self.repo, viewer, roster_ids)
         recent_posts = _recent_character_posts(
             self.repo,
             viewer,
@@ -402,96 +416,19 @@ class AppServices:
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-
-        summaries = []
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        roster_character_ids = {character.id for character in viewer.roster}
-        for thread in self.repo.list_threads(viewer.community.id, board.id):
-            posts = self.repo.list_posts(viewer.community.id, thread.id)
-            participants = self.repo.list_thread_participants(viewer.community.id, thread.id)
-            participant_ids = {character.id for character in participants}
-            thread_facets = _facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_thread_facets(viewer.community.id, thread.id),
-            )
-            is_unread = _is_unread(
-                self.repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-            )
-            is_mine = _thread_belongs_to_roster(
-                thread,
-                posts,
-                roster_character_ids,
-                participant_ids,
-            )
-            latest_post = posts[-1] if posts else None
-            first_unread_post = _first_unread_post(
-                self.repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-                posts,
-            )
-            summary = ThreadSummary(
-                thread=thread,
-                author=self.repo.get_character(viewer.community.id, thread.author_character_id),
-                author_membership=self.repo.get_membership(
-                    viewer.community.id,
-                    thread.author_membership_id,
-                ),
-                participants=participants,
-                facets=thread_facets,
-                is_relevant_to_current_face=bool(
-                    current_facet_ids
-                    and {tag.facet.id for tag in thread_facets}.intersection(current_facet_ids)
-                ),
-                reply_count=max(0, len(posts) - 1),
-                latest_post=(
-                    _post_view(self.repo, viewer.community.id, latest_post) if latest_post else None
-                ),
-                first_unread_post=(
-                    _post_view(self.repo, viewer.community.id, first_unread_post)
-                    if first_unread_post
-                    else None
-                ),
-                episode=episode_credits(self.repo, viewer.community.id, posts),
-                is_unread=is_unread,
-                is_mine=is_mine,
-                needs_attention=(
-                    latest_post is not None
-                    and _is_live_queue_thread(thread)
-                    and _thread_needs_attention(
-                        self.repo,
-                        viewer.community.id,
-                        viewer.membership.id,
-                        thread,
-                        latest_post,
-                        roster_character_ids,
-                    )
-                ),
-            )
-            if _thread_matches_filter(summary, filter_by):
-                summaries.append(summary)
-        return board, summaries
+        return board, _board_thread_summaries(
+            self.repo,
+            viewer,
+            board,
+            filter_by=filter_by,
+        )
 
     def next_unread_thread(self, board_slug: str) -> ThreadNavigationItem | None:
         viewer = self.viewer()
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        for thread in self.repo.list_threads(viewer.community.id, board.id):
-            if _is_unread(self.repo, viewer.community.id, viewer.membership.id, thread):
-                return _thread_navigation_item(
-                    self.repo,
-                    viewer.community.id,
-                    viewer.membership.id,
-                    board,
-                    thread,
-                )
-        return None
+        return _next_unread_thread(self.repo, viewer, board)
 
     def can_start_thread(self, board: Board) -> bool:
         viewer = self.viewer()
@@ -514,98 +451,9 @@ class AppServices:
         if not policies.can_view_board(viewer.membership, board, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
-        board_threads = self.repo.list_threads(viewer.community.id, board.id)
-        previous_thread, next_thread, next_unread_thread = _thread_navigation(
-            self.repo,
-            viewer.community.id,
-            viewer.membership.id,
-            board,
-            board_threads,
-            thread,
-        )
-        is_unread = _is_unread(self.repo, viewer.community.id, viewer.membership.id, thread)
-        posts = [
-            _post_view(
-                self.repo,
-                viewer.community.id,
-                post,
-                viewer_membership=viewer.membership,
-                viewer_role=viewer.role,
-            )
-            for post in self.repo.list_posts(viewer.community.id, thread.id)
-        ]
+        thread_view = _read_thread_view(self.repo, viewer, board, thread)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
-        can_moderate = policies.can_moderate_thread(
-            viewer.membership,
-            thread,
-            viewer.role,
-        )
-        can_manage_scene = can_moderate or thread.author_membership_id == viewer.membership.id
-        participants = self.repo.list_thread_participants(viewer.community.id, thread.id)
-        participant_ids = {character.id for character in participants}
-        posted_character_ids = {post.post.author_character_id for post in posts}
-        can_reply = policies.can_reply(viewer.membership, thread, viewer.role)
-        return ThreadView(
-            board=board,
-            thread=thread,
-            participants=participants,
-            board_facets=_facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_board_facets(viewer.community.id, board.id),
-            ),
-            thread_facets=_facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_thread_facets(viewer.community.id, thread.id),
-            ),
-            taggable_characters=taggable_characters(
-                self.repo.list_community_characters(viewer.community.id),
-                viewer.roster,
-            ),
-            tagged_character_ids=self.repo.list_thread_participant_ids(
-                viewer.community.id,
-                thread.id,
-            )
-            - posted_character_ids
-            - {thread.author_character_id},
-            posts=posts,
-            latest_post=posts[-1] if posts else None,
-            episode=episode_credits(
-                self.repo,
-                viewer.community.id,
-                [post.post for post in posts],
-            ),
-            reply_count=max(0, len(posts) - 1),
-            can_reply=can_reply,
-            can_join_scene=(
-                viewer.current_character is not None
-                and thread.status == "open"
-                and not thread.is_locked
-                and can_reply
-                and viewer.current_character.id not in participant_ids
-            ),
-            can_moderate=can_moderate,
-            can_manage_scene=can_manage_scene,
-            moderation_boards=(
-                [
-                    board
-                    for board in self.repo.list_boards(viewer.community.id)
-                    if policies.can_view_board(viewer.membership, board, viewer.role)
-                ]
-                if can_moderate
-                else []
-            ),
-            is_unread=is_unread,
-            previous_thread=previous_thread,
-            next_thread=next_thread,
-            next_unread_thread=next_unread_thread,
-            is_watched=self.repo.is_thread_watched(
-                viewer.community.id,
-                thread.id,
-                viewer.membership.id,
-            ),
-        )
+        return thread_view
 
     def watch_thread(self, board_slug: str, thread_slug: str) -> None:
         viewer = self.viewer()
@@ -1824,7 +1672,7 @@ class AppServices:
         viewer: ForumView,
         character: Character,
     ) -> CharacterThreadActivity:
-        items = self._thread_obligations(viewer, {character.id})
+        items = _thread_obligations(self.repo, viewer, {character.id})
         return CharacterThreadActivity(
             character=character,
             needs_reply=[item for item in items if item.needs_reply],
@@ -1843,7 +1691,7 @@ class AppServices:
     ) -> MemberDirectoryCard:
         roster = self.repo.list_characters(viewer.community.id, membership.id)
         roster_ids = {character.id for character in roster}
-        active_threads = self._thread_obligations(viewer, roster_ids)
+        active_threads = _thread_obligations(self.repo, viewer, roster_ids)
         latest_posts = _recent_character_posts(self.repo, viewer, roster_ids, limit=1)
         return MemberDirectoryCard(
             membership=membership,
@@ -1855,101 +1703,6 @@ class AppServices:
             active_thread_count=len(active_threads),
             latest_post=latest_posts[0] if latest_posts else None,
             is_current_member=membership.id == viewer.membership.id,
-        )
-
-    def _thread_obligations(
-        self,
-        viewer: ForumView,
-        target_character_ids: set[int],
-    ) -> list[ThreadObligationItem]:
-        if not target_character_ids:
-            return []
-        visible_boards = {
-            board.id: board
-            for board in self.repo.list_boards(viewer.community.id)
-            if policies.can_view_board(viewer.membership, board, viewer.role)
-        }
-        items = []
-        for thread in self.repo.list_threads(viewer.community.id):
-            board = visible_boards.get(thread.board_id)
-            if board is None:
-                continue
-            if not _is_live_queue_thread(thread):
-                continue
-            posts = self.repo.list_posts(viewer.community.id, thread.id)
-            participants = self.repo.list_thread_participants(viewer.community.id, thread.id)
-            participant_ids = {character.id for character in participants}
-            if not _thread_belongs_to_roster(
-                thread,
-                posts,
-                target_character_ids,
-                participant_ids,
-            ):
-                continue
-            latest_post = posts[-1] if posts else None
-            first_unread_post = _first_unread_post(
-                self.repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-                posts,
-            )
-            last_own_post = _last_roster_post(posts, target_character_ids)
-            needs_reply = (
-                latest_post is not None
-                and latest_post.author_character_id not in target_character_ids
-                and _is_reply_obligation_thread(thread)
-            )
-            waiting_on_others = (
-                latest_post is not None
-                and latest_post.author_character_id in target_character_ids
-                and _is_reply_obligation_thread(thread)
-            )
-            items.append(
-                ThreadObligationItem(
-                    board=board,
-                    thread=thread,
-                    author=self.repo.get_character(
-                        viewer.community.id,
-                        thread.author_character_id,
-                    ),
-                    author_membership=self.repo.get_membership(
-                        viewer.community.id,
-                        thread.author_membership_id,
-                    ),
-                    participants=participants,
-                    latest_post=(
-                        _post_view(self.repo, viewer.community.id, latest_post)
-                        if latest_post
-                        else None
-                    ),
-                    first_unread_post=(
-                        _post_view(self.repo, viewer.community.id, first_unread_post)
-                        if first_unread_post
-                        else None
-                    ),
-                    last_own_post=(
-                        _post_view(self.repo, viewer.community.id, last_own_post)
-                        if last_own_post
-                        else None
-                    ),
-                    episode=episode_credits(self.repo, viewer.community.id, posts),
-                    reply_count=max(0, len(posts) - 1),
-                    is_unread=_is_unread(
-                        self.repo,
-                        viewer.community.id,
-                        viewer.membership.id,
-                        thread,
-                    ),
-                    is_started_by_roster=thread.author_character_id in target_character_ids,
-                    needs_reply=needs_reply,
-                    waiting_on_others=waiting_on_others,
-                )
-            )
-        return sorted(
-            items,
-            key=lambda item: (_timestamp_key(item.thread.updated_at), item.thread.id),
-            reverse=True,
         )
 
 
@@ -2796,182 +2549,6 @@ def _latest_thread(threads: list[Thread]) -> Thread | None:
     return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
 
 
-def _is_unread(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    thread: Thread,
-) -> bool:
-    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
-    if read_at is None:
-        return True
-    return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
-
-
-def _first_unread_post(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    thread: Thread,
-    posts: list[Post],
-) -> Post | None:
-    if not posts or not _is_unread(repo, community_id, membership_id, thread):
-        return None
-    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
-    if read_at is None:
-        return posts[0]
-    read_stamp = _timestamp_key(read_at)
-    for post in posts:
-        if _timestamp_key(post.created_at) > read_stamp:
-            return post
-    return posts[-1]
-
-
-def _thread_navigation(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    board: Board,
-    threads: list[Thread],
-    current: Thread,
-) -> tuple[ThreadNavigationItem | None, ThreadNavigationItem | None, ThreadNavigationItem | None]:
-    current_index = _thread_index(threads, current.id)
-    if current_index is None:
-        return None, None, None
-    previous_thread = (
-        _thread_navigation_item(
-            repo, community_id, membership_id, board, threads[current_index - 1]
-        )
-        if current_index > 0
-        else None
-    )
-    next_thread = (
-        _thread_navigation_item(
-            repo, community_id, membership_id, board, threads[current_index + 1]
-        )
-        if current_index + 1 < len(threads)
-        else None
-    )
-    ordered_candidates = threads[current_index + 1 :] + threads[:current_index]
-    next_unread_thread = None
-    for thread in ordered_candidates:
-        if _is_unread(repo, community_id, membership_id, thread):
-            next_unread_thread = _thread_navigation_item(
-                repo,
-                community_id,
-                membership_id,
-                board,
-                thread,
-            )
-            break
-    return previous_thread, next_thread, next_unread_thread
-
-
-def _thread_index(threads: list[Thread], thread_id: int) -> int | None:
-    for index, thread in enumerate(threads):
-        if thread.id == thread_id:
-            return index
-    return None
-
-
-def _thread_navigation_item(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    board: Board,
-    thread: Thread,
-) -> ThreadNavigationItem:
-    posts = repo.list_posts(community_id, thread.id)
-    jump_post = _first_unread_post(repo, community_id, membership_id, thread, posts)
-    if jump_post is None and posts:
-        jump_post = posts[-1]
-    return ThreadNavigationItem(
-        board=board,
-        thread=thread,
-        jump_post=_post_view(repo, community_id, jump_post) if jump_post else None,
-    )
-
-
-def _thread_belongs_to_roster(
-    thread: Thread,
-    posts: list[Post],
-    roster_character_ids: set[int],
-    participant_ids: set[int] | None = None,
-) -> bool:
-    if thread.author_character_id in roster_character_ids:
-        return True
-    if participant_ids and participant_ids.intersection(roster_character_ids):
-        return True
-    return any(post.author_character_id in roster_character_ids for post in posts)
-
-
-def _last_roster_post(posts: list[Post], roster_character_ids: set[int]) -> Post | None:
-    for post in reversed(posts):
-        if post.author_character_id in roster_character_ids:
-            return post
-    return None
-
-
-def _thread_needs_attention(
-    repo: ForumRepository,
-    community_id: int,
-    membership_id: int,
-    thread: Thread,
-    latest_post: Post,
-    roster_character_ids: set[int],
-) -> bool:
-    return (
-        _is_unread(repo, community_id, membership_id, thread)
-        and latest_post.author_character_id not in roster_character_ids
-    )
-
-
-def _thread_matches_filter(summary: ThreadSummary, filter_by: BoardThreadFilter) -> bool:
-    match filter_by:
-        case "all":
-            return True
-        case "unread":
-            return summary.is_unread
-        case "attention":
-            return summary.needs_attention
-        case "mine":
-            return summary.is_mine
-        case "pinned":
-            return summary.thread.is_pinned
-        case "locked":
-            return summary.thread.is_locked
-
-
-def _is_live_queue_thread(thread: Thread) -> bool:
-    return thread.status in {"open", "active"} and not thread.is_locked
-
-
-def _is_reply_obligation_thread(thread: Thread) -> bool:
-    return _is_live_queue_thread(thread)
-
-
-def _clean_thread_status(value: str) -> ThreadStatus:
-    status = value.strip().lower().replace("-", "_")
-    if status not in THREAD_STATUSES:
-        raise ValueError("choose a valid thread status")
-    return cast(ThreadStatus, status)
-
-
-def _clean_posting_mode(value: str) -> PostingMode:
-    mode = value.strip().lower().replace("-", "_")
-    if mode not in POSTING_MODES:
-        raise ValueError("choose a valid posting mode")
-    return cast(PostingMode, mode)
-
-
-def _clean_participant_ids(character_ids: list[int]) -> list[int]:
-    cleaned: list[int] = []
-    for character_id in character_ids:
-        if character_id not in cleaned:
-            cleaned.append(character_id)
-    return cleaned
-
-
 def _clean_mentionable_scope(value: str) -> MentionableScope:
     scope = value.strip().lower().replace("-", "_")
     if scope not in {"all", "cast", "characters", "writers", "ooc"}:
@@ -3001,13 +2578,6 @@ def _membership_mentionable(membership: CommunityMembership) -> Mentionable:
         avatar_url=membership.avatar_url,
         href=f"/members/{membership.username}",
     )
-
-
-def taggable_characters(characters: list[Character], roster: list[Character]) -> list[Character]:
-    own_membership_ids = {character.membership_id for character in roster}
-    return [
-        character for character in characters if character.membership_id not in own_membership_ids
-    ]
 
 
 def _notification_item(
@@ -3153,133 +2723,6 @@ def _mentions_membership(body: str, membership: CommunityMembership) -> bool:
             re.IGNORECASE,
         )
     )
-
-
-def _post_mention_links(repo: ForumRepository, community_id: int) -> list[MentionLink]:
-    links: list[MentionLink] = []
-    seen: set[str] = set()
-    for character in repo.list_community_characters(community_id):
-        for handle in _character_mention_handles(character):
-            if handle.lower() in seen:
-                continue
-            links.append(
-                MentionLink(
-                    handle=handle,
-                    href=f"/characters/{character.slug}",
-                    label=character.name,
-                    kind="character",
-                )
-            )
-            seen.add(handle.lower())
-    for membership in repo.list_memberships(community_id):
-        if not membership.is_active or membership.username.lower() in seen:
-            continue
-        links.append(
-            MentionLink(
-                handle=membership.username,
-                href=f"/members/{membership.username}",
-                label=membership.display_name,
-                kind="writer",
-            )
-        )
-        seen.add(membership.username.lower())
-    return links
-
-
-def _character_mention_handles(character: Character) -> set[str]:
-    handles = {character.slug}
-    if re.fullmatch(r"[\w-]+", character.name):
-        handles.add(character.name)
-    return handles
-
-
-def _post_view(
-    repo: ForumRepository,
-    community_id: int,
-    post: Post,
-    *,
-    viewer_membership: CommunityMembership | None = None,
-    viewer_role: Role | None = None,
-) -> PostView:
-    return PostView(
-        post=post,
-        author=repo.get_character(community_id, post.author_character_id),
-        author_membership=repo.get_membership(
-            community_id,
-            post.author_membership_id,
-        ),
-        rendered_body=render_post_body(
-            post.body,
-            mentions=_post_mention_links(repo, community_id),
-        ),
-        snippet=post_snippet(post.body),
-        can_edit=(
-            viewer_membership is not None
-            and policies.can_edit_post(viewer_membership, post, viewer_role)
-        ),
-        is_edited=_timestamp_key(post.updated_at) > _timestamp_key(post.created_at),
-        created_at_label=_timestamp_label(post.created_at),
-        created_at_relative_label=_relative_timestamp_label(post.created_at),
-        updated_at_label=_timestamp_label(post.updated_at),
-        updated_at_relative_label=_relative_timestamp_label(post.updated_at),
-        anchor=f"post-{post.id}",
-    )
-
-
-def _post_revision_view(
-    repo: ForumRepository,
-    community_id: int,
-    revision: PostRevision,
-) -> PostRevisionView:
-    return PostRevisionView(
-        revision=revision,
-        editor_membership=repo.get_membership(community_id, revision.editor_membership_id),
-        created_at_label=_timestamp_label(revision.created_at),
-    )
-
-
-def _timestamp_key(value: str) -> datetime:
-    try:
-        return datetime.fromisoformat(value)
-    except ValueError:
-        return datetime.min
-
-
-def _timestamp_label(value: str) -> str:
-    try:
-        stamp = datetime.fromisoformat(value)
-    except ValueError:
-        return value
-    hour = stamp.hour % 12 or 12
-    meridiem = "AM" if stamp.hour < 12 else "PM"
-    zone = stamp.tzname() or "UTC"
-    return f"{stamp:%b} {stamp.day}, {stamp.year} {hour}:{stamp.minute:02d} {meridiem} {zone}"
-
-
-def _timestamp_time_label(stamp: datetime) -> str:
-    hour = stamp.hour % 12 or 12
-    meridiem = "AM" if stamp.hour < 12 else "PM"
-    return f"{hour}:{stamp.minute:02d} {meridiem}"
-
-
-def _relative_timestamp_label(value: str) -> str:
-    try:
-        stamp = datetime.fromisoformat(value)
-    except ValueError:
-        return value
-    now = datetime.now(stamp.tzinfo or UTC)
-    if stamp.tzinfo is None:
-        now = now.replace(tzinfo=None)
-    days = (now.date() - stamp.date()).days
-    if days == 0:
-        return f"Today, {_timestamp_time_label(stamp)}"
-    if days == 1:
-        return f"Yesterday, {_timestamp_time_label(stamp)}"
-    if 1 < days <= 6:
-        return f"This week, {stamp:%a}"
-    if stamp.year == now.year:
-        return f"{stamp:%b} {stamp.day}"
-    return f"{stamp:%b} {stamp.day}, {stamp.year}"
 
 
 def _unique_character_slug(
