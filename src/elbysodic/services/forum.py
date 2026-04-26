@@ -16,7 +16,6 @@ from elbysodic.domain.models import (
     CharacterReserve,
     CommunityMembership,
     Material,
-    Notification,
     Post,
     Role,
     Thread,
@@ -74,6 +73,12 @@ from elbysodic.services.materials import (
 )
 from elbysodic.services.materials import material_detail as _material_detail
 from elbysodic.services.materials import material_summary as _material_summary
+from elbysodic.services.notifications import (
+    mark_all_notifications_read as _mark_all_notifications_read,
+)
+from elbysodic.services.notifications import notification_inbox as _notification_inbox
+from elbysodic.services.notifications import notify_post_created as _notify_post_created
+from elbysodic.services.notifications import open_notification as _open_notification
 from elbysodic.services.posts import post_revision_view as _post_revision_view
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
@@ -104,7 +109,6 @@ from elbysodic.services.read_models import (
     MentionableScope,
     MyThreadsDashboard,
     NotificationInbox,
-    NotificationItem,
     PlotDiscovery,
     PostRevisionHistory,
     ThreadNavigationItem,
@@ -134,7 +138,6 @@ from elbysodic.services.threads import taggable_characters
 from elbysodic.services.threads import thread_needs_attention as _thread_needs_attention
 from elbysodic.services.threads import thread_obligations as _thread_obligations
 from elbysodic.services.timestamps import timestamp_key as _timestamp_key
-from elbysodic.services.timestamps import timestamp_label as _timestamp_label
 
 DEFAULT_DATABASE_PATH = Path("var/elbysodic.sqlite3")
 DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
@@ -655,23 +658,7 @@ class AppServices:
         )
 
     def notifications(self, *, limit: int = 50) -> NotificationInbox:
-        viewer = self.viewer()
-        items: list[NotificationItem] = []
-        for notification in self.repo.list_notifications(
-            viewer.community.id,
-            viewer.membership.id,
-            limit=limit,
-        ):
-            item = _notification_item(self.repo, viewer, notification)
-            if item is not None:
-                items.append(item)
-        return NotificationInbox(
-            items=items,
-            unread_count=self.repo.count_unread_notifications(
-                viewer.community.id,
-                viewer.membership.id,
-            ),
-        )
+        return _notification_inbox(self.repo, self.viewer(), limit=limit)
 
     def search_mentionables(
         self,
@@ -709,21 +696,10 @@ class AppServices:
         return items[:limit]
 
     def open_notification(self, notification_id: int) -> str:
-        viewer = self.viewer()
-        notification = self.repo.get_notification(viewer.community.id, notification_id)
-        if notification.membership_id != viewer.membership.id:
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot read notification {notification.id}"
-            )
-        item = _notification_item(self.repo, viewer, notification)
-        if item is None:
-            raise LookupError(f"notification target not found: {notification.id}")
-        self.repo.mark_notification_read(viewer.community.id, notification.id)
-        return item.href
+        return _open_notification(self.repo, self.viewer(), notification_id)
 
     def mark_all_notifications_read(self) -> None:
-        viewer = self.viewer()
-        self.repo.mark_all_notifications_read(viewer.community.id, viewer.membership.id)
+        _mark_all_notifications_read(self.repo, self.viewer())
 
     def set_default_character(self, character_id: int) -> ForumView:
         viewer = self.viewer()
@@ -1029,7 +1005,7 @@ class AppServices:
         if not cleaned:
             raise ValueError("reply body is required")
         post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned)
-        self._notify_post_created(viewer, thread, post)
+        _notify_post_created(self.repo, viewer, thread, post)
         self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
         return post
@@ -1142,44 +1118,6 @@ class AppServices:
             thread,
             viewer.role,
         )
-
-    def _notify_post_created(
-        self,
-        viewer: ForumView,
-        thread: Thread,
-        post: Post,
-    ) -> None:
-        mentioned_memberships = _mentioned_membership_ids(
-            self.repo,
-            viewer.community.id,
-            post.body,
-        )
-        watch_memberships = set(
-            self.repo.list_thread_watch_membership_ids(viewer.community.id, thread.id)
-        )
-        actor_membership_id = viewer.membership.id
-        for membership_id in mentioned_memberships:
-            if membership_id != actor_membership_id:
-                self.repo.create_notification(
-                    viewer.community.id,
-                    membership_id,
-                    kind="mention",
-                    thread_id=thread.id,
-                    post_id=post.id,
-                    actor_membership_id=actor_membership_id,
-                    actor_character_id=post.author_character_id,
-                )
-        for membership_id in watch_memberships - mentioned_memberships:
-            if membership_id != actor_membership_id:
-                self.repo.create_notification(
-                    viewer.community.id,
-                    membership_id,
-                    kind="thread_reply",
-                    thread_id=thread.id,
-                    post_id=post.id,
-                    actor_membership_id=actor_membership_id,
-                    actor_character_id=post.author_character_id,
-                )
 
     def _editable_post(
         self,
@@ -1479,151 +1417,6 @@ def _membership_mentionable(membership: CommunityMembership) -> Mentionable:
         detail=f"Writer @{membership.username}",
         avatar_url=membership.avatar_url,
         href=f"/members/{membership.username}",
-    )
-
-
-def _notification_item(
-    repo: ForumRepository,
-    viewer: ForumView,
-    notification: Notification,
-) -> NotificationItem | None:
-    actor = repo.get_character(viewer.community.id, notification.actor_character_id)
-    actor_membership = repo.get_membership(
-        viewer.community.id,
-        notification.actor_membership_id,
-    )
-    if notification.character_id is not None:
-        character = repo.get_character(viewer.community.id, notification.character_id)
-        match notification.kind:
-            case "application_submitted":
-                snippet = f"{actor.name} submitted this character for review."
-            case "application_accepted":
-                snippet = f"{actor.name} accepted this character application."
-            case "application_revision_requested":
-                snippet = f"{actor.name} requested revisions for this character application."
-            case _:
-                snippet = f"{actor.name} updated this character application."
-        return NotificationItem(
-            notification=notification,
-            board=None,
-            thread=None,
-            post=None,
-            wanted_ad=None,
-            actor=actor,
-            actor_membership=actor_membership,
-            label=_notification_label(notification.kind),
-            title=character.name,
-            created_at_label=_timestamp_label(notification.created_at),
-            snippet=snippet,
-            href=f"/characters/{character.slug}",
-        )
-    if notification.wanted_ad_id is not None:
-        wanted_ad = repo.get_wanted_ad(viewer.community.id, notification.wanted_ad_id)
-        interest = (
-            repo.get_wanted_ad_interest(
-                viewer.community.id,
-                notification.wanted_ad_interest_id,
-            )
-            if notification.wanted_ad_interest_id is not None
-            else None
-        )
-        if notification.kind == "wanted_reserved":
-            snippet = f"{actor.name} reserved this wanted hook."
-        elif notification.kind == "reserve_created":
-            snippet = f"{actor.name} created a reserve from this wanted hook."
-        else:
-            snippet = f"{actor.name} is interested in this wanted hook."
-        if interest is not None and interest.note:
-            snippet = interest.note
-        return NotificationItem(
-            notification=notification,
-            board=None,
-            thread=None,
-            post=None,
-            wanted_ad=wanted_ad,
-            actor=actor,
-            actor_membership=actor_membership,
-            label=_notification_label(notification.kind),
-            title=wanted_ad.title,
-            created_at_label=_timestamp_label(notification.created_at),
-            snippet=snippet,
-            href=f"/wanted/{wanted_ad.slug}",
-        )
-    if notification.thread_id is None or notification.post_id is None:
-        return None
-    thread = repo.get_thread(viewer.community.id, notification.thread_id)
-    board = repo.get_board(viewer.community.id, thread.board_id)
-    if not policies.can_view_board(viewer.membership, board, viewer.role):
-        return None
-    post = repo.get_post(viewer.community.id, notification.post_id)
-    post_view = _post_view(repo, viewer.community.id, post)
-    return NotificationItem(
-        notification=notification,
-        board=board,
-        thread=thread,
-        post=post_view,
-        wanted_ad=None,
-        actor=actor,
-        actor_membership=actor_membership,
-        label=_notification_label(notification.kind),
-        title=thread.title,
-        created_at_label=post_view.created_at_label,
-        snippet=post_view.snippet,
-        href=f"/boards/{board.slug}/threads/{thread.slug}#{post_view.anchor}",
-    )
-
-
-def _notification_label(kind: str) -> str:
-    match kind:
-        case "mention":
-            return "Mention"
-        case "thread_reply":
-            return "Watched thread"
-        case "wanted_interest":
-            return "Wanted interest"
-        case "wanted_reserved":
-            return "Wanted reserved"
-        case "reserve_created":
-            return "Reserve created"
-        case "application_submitted":
-            return "Application submitted"
-        case "application_accepted":
-            return "Application accepted"
-        case "application_revision_requested":
-            return "Revisions requested"
-        case _:
-            return "Notification"
-
-
-def _mentioned_membership_ids(
-    repo: ForumRepository,
-    community_id: int,
-    body: str,
-) -> set[int]:
-    mentioned: set[int] = set()
-    for character in repo.list_community_characters(community_id):
-        if _mentions_character(body, character):
-            mentioned.add(character.membership_id)
-    for membership in repo.list_memberships(community_id):
-        if membership.is_active and _mentions_membership(body, membership):
-            mentioned.add(membership.id)
-    return mentioned
-
-
-def _mentions_character(body: str, character: Character) -> bool:
-    for label in {character.slug, character.name}:
-        if re.search(rf"(?<![\w-])@{re.escape(label)}(?![\w-])", body, re.IGNORECASE):
-            return True
-    return False
-
-
-def _mentions_membership(body: str, membership: CommunityMembership) -> bool:
-    return bool(
-        re.search(
-            rf"(?<![\w-])@{re.escape(membership.username)}(?![\w-])",
-            body,
-            re.IGNORECASE,
-        )
     )
 
 
