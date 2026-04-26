@@ -464,6 +464,15 @@ class MaterialSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class ContinuityBeat:
+    title: str
+    date_label: str
+    content: str
+    href: str | None = None
+    variant: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class MaterialDetail:
     material: Material
     facets: list[FacetTag]
@@ -473,6 +482,7 @@ class MaterialDetail:
     related_locations: list[BoardSummary]
     related_scenes: list[DiscoveryThreadResult]
     related_wanted_ads: list[WantedAdSummary]
+    continuity_beats: list[ContinuityBeat]
     can_manage: bool
 
 
@@ -1254,7 +1264,19 @@ class AppServices:
             viewer,
             material,
             facet_ids,
-        )
+        )[:4]
+        related_locations = _material_related_locations(
+            self.repo,
+            viewer,
+            material,
+            facet_ids,
+        )[:4]
+        related_scenes = _material_related_scenes(
+            self.repo,
+            viewer,
+            material,
+            facet_ids,
+        )[:4]
         return MaterialDetail(
             material=material,
             facets=facets,
@@ -1264,19 +1286,15 @@ class AppServices:
             ),
             type_label=_material_type_label(material.material_type),
             related_materials=related[:4],
-            related_locations=_material_related_locations(
-                self.repo,
-                viewer,
+            related_locations=related_locations,
+            related_scenes=related_scenes,
+            related_wanted_ads=related_wanted_ads,
+            continuity_beats=_material_continuity_beats(
                 material,
-                facet_ids,
-            )[:4],
-            related_scenes=_material_related_scenes(
-                self.repo,
-                viewer,
-                material,
-                facet_ids,
-            )[:4],
-            related_wanted_ads=related_wanted_ads[:4],
+                related_locations,
+                related_scenes,
+                related_wanted_ads,
+            ),
             can_manage=viewer.role.is_admin,
         )
 
@@ -2763,6 +2781,71 @@ def _material_related_wanted_ads(
         ),
         reverse=True,
     )
+
+
+def _material_continuity_beats(
+    material: Material,
+    related_locations: list[BoardSummary],
+    related_scenes: list[DiscoveryThreadResult],
+    related_wanted_ads: list[WantedAdSummary],
+) -> list[ContinuityBeat]:
+    beats = [
+        ContinuityBeat(
+            title=f"{_material_type_label(material.material_type)} opened",
+            date_label=_timestamp_label(material.created_at),
+            content=material.summary
+            or "Directors published this world material for writers to carry into play.",
+            variant="info",
+        )
+    ]
+    if _timestamp_key(material.updated_at) > _timestamp_key(material.created_at):
+        beats.append(
+            ContinuityBeat(
+                title="Canon updated",
+                date_label=_timestamp_label(material.updated_at),
+                content="Directors revised this material as the board state changed.",
+            )
+        )
+    if related_locations:
+        location = related_locations[0].board
+        beats.append(
+            ContinuityBeat(
+                title="Pressure reaches the map",
+                date_label="Now",
+                content=(
+                    f"{len(related_locations)} relevant location"
+                    f"{'' if len(related_locations) == 1 else 's'} are carrying this material, "
+                    f"starting with {location.name}."
+                ),
+                href=f"/boards/{location.slug}",
+                variant="success",
+            )
+        )
+    beats.extend(
+        ContinuityBeat(
+            title=f"Scene: {scene.thread.title}",
+            date_label=_timestamp_label(scene.thread.updated_at),
+            content=(
+                f"{scene.board.name} · {scene.reply_count} "
+                f"{'reply' if scene.reply_count == 1 else 'replies'} · "
+                f"{len(scene.participants)} in the cast"
+            ),
+            href=f"/boards/{scene.board.slug}/threads/{scene.thread.slug}",
+            variant="info",
+        )
+        for scene in related_scenes[:2]
+    )
+    beats.extend(
+        ContinuityBeat(
+            title=f"Open hook: {wanted_ad.wanted_ad.title}",
+            date_label=_timestamp_label(wanted_ad.wanted_ad.updated_at),
+            content=f"{wanted_ad.type_label}: {wanted_ad.wanted_ad.summary}",
+            href=f"/wanted/{wanted_ad.wanted_ad.slug}",
+            variant="warning",
+        )
+        for wanted_ad in related_wanted_ads[:2]
+    )
+    return beats[:6]
 
 
 def _wanted_ad_summary(

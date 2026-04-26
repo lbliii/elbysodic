@@ -77,6 +77,9 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Recent activity" in index.text
             assert "#post-" in index.text
             assert "/members/starlane" in index.text
+            assert "Latest details:" in index.text
+            assert "Relevant for Rogue:" in index.text
+            assert "elbysodic-board-poster__face-signal-hint" in index.text
             assert _sidebar_board_count(index.text, "plotting") == 1
 
             board = await client.get("/boards/plotting")
@@ -176,18 +179,22 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Locations" in world.text
             assert "Sublocations" in world.text
             assert "Wanted board" not in world.text
+            assert "elbysodic-mobile-nav-trigger" in world.text
+            assert "elbysodic-mobile-shell-drawer" in world.text
 
             guidebook = await client.get("/world")
             assert guidebook.status == 200
             assert "Guidebook" in guidebook.text
             assert "Start Here" in guidebook.text
             assert "World Map" not in guidebook.text
+            assert '<h2 class="chirpui-drawer__title">Guidebook</h2>' in guidebook.text
 
             desk = await client.get("/desk")
             assert desk.status == 200
             assert "Writer Desk" in desk.text
             assert "My threads" in desk.text
             assert "World Map" not in desk.text
+            assert '<h2 class="chirpui-drawer__title">Desk</h2>' in desk.text
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
@@ -195,6 +202,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Wanted board" in wanted.text
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
+            assert '<h2 class="chirpui-drawer__title">Casting</h2>' in wanted.text
 
     asyncio.run(run())
 
@@ -399,6 +407,11 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "Active scenes" in event.text
             assert "Locations" in event.text
             assert "Related materials" in event.text
+            assert "elbysodic-studio-facts" in event.text
+            assert "Featured" in event.text
+            assert "Event progression" in event.text
+            assert "elbysodic-continuity-timeline" in event.text
+            assert "Event opened" in event.text
 
             missing = await client.get("/world/not-a-material")
             assert missing.status == 404

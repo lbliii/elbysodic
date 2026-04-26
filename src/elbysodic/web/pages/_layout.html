@@ -1,12 +1,13 @@
 {# target: body #}
 {% extends "chirpui/app_shell_layout.html" %}
+{% from "chirpui/drawer.html" import drawer, drawer_trigger %}
 {% from "chirpui/sidebar.html" import shell_brand_link, sidebar, sidebar_link, sidebar_section %}
 {% from "chirpui/theme_toggle.html" import theme_toggle %}
 
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=world-authoring">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=mobile-shell-drawer">
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=inline-mentions"></script>
 {% end %}
 
@@ -44,6 +45,8 @@
 {% set wanted_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") %}
 {% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
+{% set mobile_nav_label = "Guidebook" if guidebook_active else ("Casting" if wanted_active else ("Desk" if desk_active or notifications_active else "Map")) %}
+{{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
 <nav class="elbysodic-topnav" aria-label="Primary">
   {{ topnav_link("/", "World", world_active) }}
   {{ topnav_link("/world", "Guidebook", guidebook_active) }}
@@ -52,6 +55,9 @@
   {{ topnav_link("/desk", "Writer Desk", desk_active) }}
   {{ topnav_count_link("/notifications", "Notifications", viewer.unread_notification_count if viewer else 0, notifications_active) }}
 </nav>
+{% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
+  {{ elbysodic_sidebar() }}
+{% end %}
 {% end %}
 
 {% block breadcrumbs_oob %}

@@ -52,7 +52,9 @@ Active-face relevance, such as `Relevant for Magneto`, is a smart contextual
 signal. It belongs on the image as a compact ASCII/icon overlay because it is
 about the relationship between the current face and the place, not a count,
 facet, or generic status. Keep the visible mark small and expose the full
-meaning through `title` and `aria-label`.
+meaning through hover/focus disclosure and `aria-label`. Use the shared
+`meta_hint()` helper for this disclosure so the visible mark stays quiet while
+the explanation remains available.
 
 ### Counter
 
@@ -165,6 +167,12 @@ Top-level locations should stay legible as places. Sublocations should be
 visible enough to communicate depth, but the tree should not become the primary
 atmospheric surface; PlaceTile and board pages still carry the world feeling.
 
+On small screens, keep the same contextual navigation in a ChirpUI drawer
+rather than turning the sidebar into a horizontal strip. The drawer should
+reuse the current major-mode sidebar content: World Map, Guidebook, Casting, or
+Writer Desk. This preserves orientation without making the world compete with
+mobile navigation chrome.
+
 ### RouteTabs
 
 Use ChirpUI `route_tabs` for local subsection navigation where two or more
@@ -270,6 +278,11 @@ Material pages may surface:
 - Locations where the material matters.
 - Related materials that share facets.
 
+Use a compact `StudioFacts` treatment for structured production metadata such
+as status, featured state, related scenes, wanted hooks, and relevant locations.
+This should compose ChirpUI's `description_list` primitive through the shared
+Elbysodic helper rather than custom key-value markup.
+
 Director editing belongs in a collapsed `Material studio` disclosure on the
 page for now. This proves the authoring loop without turning the guidebook into
 a full admin app too early.
@@ -280,6 +293,13 @@ An event is a material with higher urgency. Use it when a board-wide plot
 pressure should generate scenes, wanted roles, faction decisions, and location
 stakes. Event pages should emphasize the current hook, open roles, related
 locations, and active scenes before general related reading.
+
+Use `ContinuityTimeline` when an event needs to show how canon pressure is
+moving into play. It should compose ChirpUI's `timeline` primitive through the
+shared Elbysodic helper and should read as story continuity, not project
+management activity. The first pass may derive beats from material metadata,
+related locations, active scenes, and wanted hooks before dedicated event-beat
+editing exists.
 
 ### CharacterPoster
 
@@ -349,6 +369,15 @@ ChirpUI surfaces, badges, buttons, layout helpers, `tooltip`, `avatar`, and
 tokens rather than creating page-local component systems. Use heavier
 navigation primitives such as `route_tabs` sparingly, only when their
 interaction model fits the product surface.
+
+For compact disclosures, prefer `_components/ui.html` `meta_hint()` before
+adding page-local tooltip markup. It follows the ChirpUI tooltip contract while
+keeping the PBP meaning in Elbysodic's vocabulary layer.
+
+For compact studio metadata, prefer `_components/ui.html` `studio_facts()`
+before adding page-local description-list markup. It follows the ChirpUI
+description-list contract while keeping director-facing material facts visually
+secondary to canon and atmosphere.
 
 ## Next Audit Targets
 

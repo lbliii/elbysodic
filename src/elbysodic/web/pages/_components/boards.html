@@ -3,7 +3,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import counter, latest_line %}
+  {% from "_components/ui.html" import counter, latest_line, meta_hint %}
 {% end %}
 
 {% def board_poster(summary, viewer=None, compact=False, tile=False, title_level="h2") %}
@@ -12,11 +12,12 @@
    aria-label="{{ summary.board.name }}"
    {% if summary.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.82)), url('{{ summary.board.image_url }}');"{% end %}>
   {% if viewer and summary.is_relevant_to_current_face and viewer.current_character %}
-  <span class="elbysodic-board-poster__face-signal"
-        title="Relevant for {{ viewer.current_character.name }}"
-        aria-label="Relevant for {{ viewer.current_character.name }}">
-    {{ ascii_icon("user" | icon, size="sm", cls="elbysodic-board-poster__face-icon") }}
-  </span>
+  {% call meta_hint("Relevant for " ~ viewer.current_character.name ~ ": this location shares one of their world lenses.", position="left", cls="elbysodic-board-poster__face-signal-hint") %}
+    <span class="elbysodic-board-poster__face-signal"
+          aria-label="Relevant for {{ viewer.current_character.name }}">
+      {{ ascii_icon("user" | icon, size="sm", cls="elbysodic-board-poster__face-icon") }}
+    </span>
+  {% end %}
   {% end %}
   {% if tile %}
   {% if title_level == "h3" %}

@@ -1,10 +1,9 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_signal %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import cast_faces, counter, scene_state_badges %}
+  {% from "_components/ui.html" import cast_faces, continuity_timeline, counter, scene_state_badges, studio_facts %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -49,20 +48,7 @@
       {{ facet_pills(material.facets) }}
     </div>
     <aside class="elbysodic-material-hero__pulse">
-      {{ badge("featured", variant="success") if material.material.is_featured else "" }}
-      {{ badge(material.material.status, variant="muted") if material.material.status != "published" else "" }}
-      <div>
-        <span>Related scenes</span>
-        <strong>{{ material.related_scenes | length }}</strong>
-      </div>
-      <div>
-        <span>Wanted hooks</span>
-        <strong>{{ material.related_wanted_ads | length }}</strong>
-      </div>
-      <div>
-        <span>Locations</span>
-        <strong>{{ material.related_locations | length }}</strong>
-      </div>
+      {{ studio_facts(material) }}
     </aside>
   </article>
 
@@ -72,6 +58,17 @@
       {{ material.rendered_body }}
     </div>
   </article>
+  {% end %}
+
+  {% if material.continuity_beats %}
+  {% call section_header("Event progression") %}
+  Continuity beats showing how this material is moving from canon into scenes, hooks, and playable locations.
+  {% end %}
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-material-continuity" aria-label="Event progression">
+    {{ continuity_timeline(material.continuity_beats) }}
+  </section>
+  {% end %}
   {% end %}
 
   {% if material.can_manage %}
