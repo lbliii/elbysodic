@@ -15,6 +15,10 @@ from elbysodic.domain.models import (
     WantedAd,
 )
 from elbysodic.services import policies
+from elbysodic.services.applications import (
+    application_status_label,
+    application_status_variant,
+)
 from elbysodic.services.casting import (
     CastingReadRepository,
     character_reserve_view,
@@ -23,8 +27,6 @@ from elbysodic.services.casting import (
 from elbysodic.services.facets import facet_tags
 from elbysodic.services.posts import post_view
 from elbysodic.services.read_models import (
-    APPLICATION_STATUS_LABELS,
-    APPLICATION_STATUS_VARIANTS,
     CharacterAppearance,
     CharacterProfile,
     CharacterRosterCard,
@@ -233,14 +235,6 @@ def default_character(
         (character for character in roster if character.id == default_character_id),
         roster[0] if roster else None,
     )
-
-
-def application_status_label(status: str) -> str:
-    return APPLICATION_STATUS_LABELS.get(status, status.replace("_", " ").title())
-
-
-def application_status_variant(status: str) -> str:
-    return APPLICATION_STATUS_VARIANTS.get(status, "muted")
 
 
 def visible_character_posts(

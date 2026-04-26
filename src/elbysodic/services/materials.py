@@ -36,10 +36,12 @@ type BoardSummaryFactory = Callable[[Board], BoardSummary]
 type WantedAdSummaryFactory = Callable[[WantedAd], WantedAdSummary]
 
 
-class MaterialReadRepository(FacetReadRepository, PostViewRepository, Protocol):
-    def list_materials(self, community_id: int, *, status: str | None = None) -> list[Material]: ...
-
+class MaterialSummaryRepository(FacetReadRepository, Protocol):
     def list_material_facets(self, community_id: int, material_id: int) -> list[Facet]: ...
+
+
+class MaterialReadRepository(MaterialSummaryRepository, PostViewRepository, Protocol):
+    def list_materials(self, community_id: int, *, status: str | None = None) -> list[Material]: ...
 
     def list_boards(self, community_id: int) -> list[Board]: ...
 
@@ -63,7 +65,7 @@ class MaterialReadRepository(FacetReadRepository, PostViewRepository, Protocol):
 
 
 def material_summary(
-    repo: MaterialReadRepository,
+    repo: MaterialSummaryRepository,
     community_id: int,
     material: Material,
 ) -> MaterialSummary:

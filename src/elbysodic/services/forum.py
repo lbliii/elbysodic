@@ -23,8 +23,17 @@ from elbysodic.domain.models import (
     WantedAdInterest,
 )
 from elbysodic.services import policies
+from elbysodic.services.applications import (
+    accept_character_application as _accept_character_application,
+)
+from elbysodic.services.applications import applications_desk as _applications_desk
+from elbysodic.services.applications import (
+    request_character_application_revision as _request_character_application_revision,
+)
+from elbysodic.services.applications import (
+    submit_character_application as _submit_character_application,
+)
 from elbysodic.services.casting import casting_desk as _casting_desk
-from elbysodic.services.casting import character_reserve_view as _character_reserve_view
 from elbysodic.services.casting import (
     create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
 )
@@ -51,12 +60,6 @@ from elbysodic.services.facets import (
 from elbysodic.services.facets import (
     resolve_facets as _resolve_facets,
 )
-from elbysodic.services.identity import (
-    application_status_label as _application_status_label,
-)
-from elbysodic.services.identity import (
-    application_status_variant as _application_status_variant,
-)
 from elbysodic.services.identity import character_profile as _character_profile
 from elbysodic.services.identity import (
     character_roster_dashboard as _character_roster_dashboard,
@@ -77,7 +80,6 @@ from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
     MATERIAL_TYPES,
     ActivityItem,
-    ApplicationCharacterView,
     ApplicationsDesk,
     AttentionItem,
     BoardNavigationItem,
@@ -328,36 +330,7 @@ class AppServices:
 
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
-        characters = self.repo.list_community_characters(viewer.community.id)
-        character_views = [
-            _application_character_view(self.repo, viewer, character) for character in characters
-        ]
-        materials = [
-            _material_summary(self.repo, viewer.community.id, material)
-            for material in self.repo.list_materials(viewer.community.id)
-            if material.material_type == "application"
-        ]
-        return ApplicationsDesk(
-            my_applications=[
-                item
-                for item in character_views
-                if item.character.membership_id == viewer.membership.id
-            ],
-            review_queue=(
-                [
-                    item
-                    for item in character_views
-                    if item.character.application_status == "submitted"
-                ]
-                if viewer.role.is_admin
-                else []
-            ),
-            accepted_characters=[
-                item for item in character_views if item.character.application_status == "accepted"
-            ],
-            application_materials=materials,
-            can_review=viewer.role.is_admin,
-        )
+        return _applications_desk(self.repo, viewer)
 
     def members_directory(self) -> MemberDirectory:
         viewer = self.viewer()
@@ -764,56 +737,15 @@ class AppServices:
 
     def submit_character_application(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if not policies.can_post_as(viewer.membership, character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot submit character {character.id}"
-            )
-        if character.application_status not in {"draft", "revision_requested"}:
-            raise ValueError(
-                f"character {character.id} cannot be submitted from {character.application_status}"
-            )
-        character = self.repo.update_character_application_status(
-            viewer.community.id,
-            character.id,
-            "submitted",
-        )
-        self._notify_application_directors(viewer, character)
-        return character
+        return _submit_character_application(self.repo, viewer, character_slug)
 
     def accept_character_application(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
-            raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if character.application_status != "submitted":
-            raise ValueError(
-                f"character {character.id} cannot be accepted from {character.application_status}"
-            )
-        character = self.repo.update_character_application_status(
-            viewer.community.id,
-            character.id,
-            "accepted",
-        )
-        self._notify_application_owner(viewer, character, "application_accepted")
-        return character
+        return _accept_character_application(self.repo, viewer, character_slug)
 
     def request_character_application_revision(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
-            raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if character.application_status != "submitted":
-            raise ValueError(
-                f"character {character.id} cannot be revised from {character.application_status}"
-            )
-        character = self.repo.update_character_application_status(
-            viewer.community.id,
-            character.id,
-            "revision_requested",
-        )
-        self._notify_application_owner(viewer, character, "application_revision_requested")
-        return character
+        return _request_character_application_revision(self.repo, viewer, character_slug)
 
     def read_character(self, character_slug: str) -> CharacterProfile:
         viewer = self.viewer()
@@ -1267,38 +1199,6 @@ class AppServices:
             raise PermissionError(f"membership {viewer.membership.id} cannot edit post {post.id}")
         return board, thread, post
 
-    def _notify_application_directors(self, viewer: ForumView, character: Character) -> None:
-        for membership in self.repo.list_memberships(viewer.community.id):
-            role = self.repo.get_role(viewer.community.id, membership.role_id)
-            if not role.is_admin or membership.id == viewer.membership.id:
-                continue
-            self.repo.create_notification(
-                viewer.community.id,
-                membership.id,
-                kind="application_submitted",
-                character_id=character.id,
-                actor_membership_id=viewer.membership.id,
-                actor_character_id=character.id,
-            )
-
-    def _notify_application_owner(
-        self,
-        viewer: ForumView,
-        character: Character,
-        kind: str,
-    ) -> None:
-        actor_character_id = _application_actor_character_id(viewer, character)
-        if character.membership_id == viewer.membership.id:
-            return
-        self.repo.create_notification(
-            viewer.community.id,
-            character.membership_id,
-            kind=kind,
-            character_id=character.id,
-            actor_membership_id=viewer.membership.id,
-            actor_character_id=actor_character_id,
-        )
-
 
 def create_services(path: str | Path | None = None) -> AppServices:
     database_path = _resolve_database_path(path)
@@ -1457,45 +1357,6 @@ def _board_summary(
             and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
         ),
     )
-
-
-def _application_character_view(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character: Character,
-) -> ApplicationCharacterView:
-    return ApplicationCharacterView(
-        character=character,
-        membership=repo.get_membership(viewer.community.id, character.membership_id),
-        facets=_facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_character_facets(viewer.community.id, character.id),
-        ),
-        reserves=[
-            _character_reserve_view(repo, viewer.community.id, reserve)
-            for reserve in repo.list_character_reserves(
-                viewer.community.id,
-                character.id,
-            )
-        ],
-        status_label=_application_status_label(character.application_status),
-        status_variant=_application_status_variant(character.application_status),
-        is_owned_by_viewer=character.membership_id == viewer.membership.id,
-    )
-
-
-def _application_actor_character_id(viewer: ForumView, target_character: Character) -> int:
-    if (
-        viewer.current_character is not None
-        and viewer.current_character.membership_id == viewer.membership.id
-    ):
-        return viewer.current_character.id
-    if viewer.roster:
-        return viewer.roster[0].id
-    if target_character.membership_id == viewer.membership.id:
-        return target_character.id
-    raise ValueError("application actor needs a character")
 
 
 def _discovery_characters(
