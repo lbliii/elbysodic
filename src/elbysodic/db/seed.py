@@ -6,7 +6,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from elbysodic.db.repository import ForumRepository
-from elbysodic.domain.models import Board, Character, Community, CommunityMembership, Facet, User
+from elbysodic.domain.models import (
+    Board,
+    Character,
+    Community,
+    CommunityMembership,
+    Facet,
+    Material,
+    User,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,6 +224,63 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     cyclops = repo.update_character_application_status(community.id, cyclops.id, "accepted")
     moira = repo.update_character_application_status(community.id, moira.id, "accepted")
     trask = repo.update_character_application_status(community.id, trask.id, "revision_requested")
+
+    rogue = _ensure_character_identity(
+        repo,
+        community.id,
+        rogue,
+        tagline="Careful hands, reckless heart.",
+        accent_color="#79a889",
+    )
+    storm = _ensure_character_identity(
+        repo,
+        community.id,
+        storm,
+        tagline="The calm eye of the storm.",
+        accent_color="#9fb7ff",
+    )
+    magneto = _ensure_character_identity(
+        repo,
+        community.id,
+        magneto,
+        tagline="A revolution with metal in its voice.",
+        accent_color="#c75b67",
+    )
+    xavier = _ensure_character_identity(
+        repo,
+        community.id,
+        xavier,
+        tagline="Hope, even when it hurts.",
+        accent_color="#7bc8ee",
+    )
+    kitty = _ensure_character_identity(
+        repo,
+        community.id,
+        kitty,
+        tagline="Through walls, into trouble.",
+        accent_color="#c99a46",
+    )
+    cyclops = _ensure_character_identity(
+        repo,
+        community.id,
+        cyclops,
+        tagline="Order under pressure.",
+        accent_color="#e57984",
+    )
+    moira = _ensure_character_identity(
+        repo,
+        community.id,
+        moira,
+        tagline="The file nobody wanted opened.",
+        accent_color="#79a889",
+    )
+    trask = _ensure_character_identity(
+        repo,
+        community.id,
+        trask,
+        tagline="Progress with teeth.",
+        accent_color="#c99a46",
+    )
 
     membership = repo.get_membership(community.id, membership.id)
     if membership.default_character_id is None:
@@ -1440,6 +1505,37 @@ def _get_or_create[T](get: Callable[[], T], create: Callable[[], T]) -> T:
         return create()
 
 
+def _ensure_character_identity(
+    repo: ForumRepository,
+    community_id: int,
+    character: Character,
+    *,
+    poster_url: str | None = None,
+    poster_alt: str = "",
+    tagline: str = "",
+    accent_color: str = "",
+) -> Character:
+    if (
+        character.poster_url == poster_url
+        and character.poster_alt == poster_alt
+        and character.tagline == tagline
+        and character.accent_color == accent_color
+    ):
+        return character
+    return repo.update_character(
+        community_id,
+        character.id,
+        slug=character.slug,
+        name=character.name,
+        avatar_url=character.avatar_url,
+        poster_url=poster_url,
+        poster_alt=poster_alt,
+        tagline=tagline,
+        accent_color=accent_color,
+        summary=character.summary,
+    )
+
+
 def _ensure_board(
     repo: ForumRepository,
     community_id: int,
@@ -1486,6 +1582,46 @@ def _ensure_board(
     )
 
 
+def _ensure_material(
+    repo: ForumRepository,
+    community_id: int,
+    slug: str,
+    title: str,
+    *,
+    material_type: str = "guide",
+    summary: str = "",
+    body: str = "",
+    status: str = "published",
+    sort_order: int = 0,
+    is_featured: bool = False,
+) -> Material:
+    material = _get_or_create(
+        lambda: repo.get_material_by_slug(community_id, slug),
+        lambda: repo.create_material(
+            community_id,
+            slug,
+            title,
+            material_type=material_type,
+            summary=summary,
+            body=body,
+            status=status,
+            sort_order=sort_order,
+            is_featured=is_featured,
+        ),
+    )
+    return repo.update_material(
+        community_id,
+        material.id,
+        title=title,
+        material_type=material_type,
+        summary=summary,
+        body=body,
+        status=status,
+        sort_order=sort_order,
+        is_featured=is_featured,
+    )
+
+
 def _ensure_post(
     repo: ForumRepository,
     community_id: int,
@@ -1511,28 +1647,26 @@ def _seed_materials(
     community_id: int,
     facets: dict[str, Facet],
 ) -> None:
-    premise = _get_or_create(
-        lambda: repo.get_material_by_slug(community_id, "premise"),
-        lambda: repo.create_material(
-            community_id,
-            "premise",
-            "Premise",
-            material_type="premise",
-            summary="Human institutions are turning AGI into a mutant-control weapon.",
-            body=(
-                "**X-Men Apocalypse** begins after the school has reopened under a fragile "
-                "truce. Mutants are visible, frightened, and organized enough to scare the "
-                "people who profit from fear.\n\n"
-                "The United Nations has quietly funded B-24, a defensive artificial "
-                "intelligence trained to predict mutant escalation. Its public face is risk "
-                "modeling. Its private purpose is containment.\n\n"
-                "Writers are invited to play the pressure points: school life under "
-                "surveillance, human politics, mutant solidarity, rival factions, and the "
-                "ethics of building a future while everyone is already preparing for war."
-            ),
-            is_featured=True,
-            sort_order=10,
+    premise = _ensure_material(
+        repo,
+        community_id,
+        "premise",
+        "Premise",
+        material_type="premise",
+        summary="Human institutions are turning AGI into a mutant-control weapon.",
+        body=(
+            "**X-Men Apocalypse** begins after the school has reopened under a fragile "
+            "truce. Mutants are visible, frightened, and organized enough to scare the "
+            "people who profit from fear.\n\n"
+            "The United Nations has quietly funded B-24, a defensive artificial "
+            "intelligence trained to predict mutant escalation. Its public face is risk "
+            "modeling. Its private purpose is containment.\n\n"
+            "Writers are invited to play the pressure points: school life under "
+            "surveillance, human politics, mutant solidarity, rival factions, and the "
+            "ethics of building a future while everyone is already preparing for war."
         ),
+        is_featured=True,
+        sort_order=10,
     )
     _assign_material_facets(
         repo,
@@ -1542,48 +1676,44 @@ def _seed_materials(
         ["mutant", "human", "x-men", "united-nations", "political", "science"],
     )
 
-    rules = _get_or_create(
-        lambda: repo.get_material_by_slug(community_id, "rules"),
-        lambda: repo.create_material(
-            community_id,
-            "rules",
-            "Rules",
-            material_type="guide",
-            summary="The director contract for collaborative, consent-forward play.",
-            body=(
-                "**Write generously.** Leave openings for your partners and ask before "
-                "making irreversible choices for someone else's character.\n\n"
-                "**Use facets honestly.** If a scene is tagged X-Men, United Nations, or "
-                "Evil Lab, those tags should help other writers understand what kind of "
-                "story they are entering.\n\n"
-                "**Escalate with care.** Big harm, romance shifts, identity revelations, "
-                "and faction betrayals should be discussed before they land in-character."
-            ),
-            sort_order=20,
+    rules = _ensure_material(
+        repo,
+        community_id,
+        "rules",
+        "Rules",
+        material_type="guide",
+        summary="The director contract for collaborative, consent-forward play.",
+        body=(
+            "**Write generously.** Leave openings for your partners and ask before "
+            "making irreversible choices for someone else's character.\n\n"
+            "**Use facets honestly.** If a scene is tagged X-Men, United Nations, or "
+            "Evil Lab, those tags should help other writers understand what kind of "
+            "story they are entering.\n\n"
+            "**Escalate with care.** Big harm, romance shifts, identity revelations, "
+            "and faction betrayals should be discussed before they land in-character."
         ),
+        sort_order=20,
     )
     _assign_material_facets(repo, community_id, rules.id, facets, ["community"])
 
-    factions = _get_or_create(
-        lambda: repo.get_material_by_slug(community_id, "factions"),
-        lambda: repo.create_material(
-            community_id,
-            "factions",
-            "Factions",
-            material_type="factions",
-            summary="The core groups shaping the board's conflicts and plot discovery.",
-            body=(
-                "**X-Men** protect the school, respond to public crises, and carry the "
-                "burden of being visible symbols.\n\n"
-                "**Brotherhood** characters push harder against human institutions and "
-                "often agree with the X-Men only after the argument has already exploded.\n\n"
-                "**United Nations** characters sit inside the machinery of diplomacy, "
-                "funding, containment, and plausible deniability.\n\n"
-                "**Evil Lab** characters are tied to B-24 research, field tests, and the "
-                "question of whether a machine can inherit human prejudice."
-            ),
-            sort_order=30,
+    factions = _ensure_material(
+        repo,
+        community_id,
+        "factions",
+        "Factions",
+        material_type="factions",
+        summary="The core groups shaping the board's conflicts and plot discovery.",
+        body=(
+            "**X-Men** protect the school, respond to public crises, and carry the "
+            "burden of being visible symbols.\n\n"
+            "**Brotherhood** characters push harder against human institutions and "
+            "often agree with the X-Men only after the argument has already exploded.\n\n"
+            "**United Nations** characters sit inside the machinery of diplomacy, "
+            "funding, containment, and plausible deniability.\n\n"
+            "**Evil Lab** characters are tied to B-24 research, field tests, and the "
+            "question of whether a machine can inherit human prejudice."
         ),
+        sort_order=30,
     )
     _assign_material_facets(
         repo,
@@ -1593,26 +1723,24 @@ def _seed_materials(
         ["x-men", "brotherhood", "united-nations", "evil-lab", "political"],
     )
 
-    application_guide = _get_or_create(
-        lambda: repo.get_material_by_slug(community_id, "application-guide"),
-        lambda: repo.create_material(
-            community_id,
-            "application-guide",
-            "Application Guide",
-            material_type="application",
-            summary="What directors want to know before approving a new character.",
-            body=(
-                "Applications should tell staff what kind of story the character creates, "
-                "not only what powers they have.\n\n"
-                "Cover identity, faction fit, relationships wanted, boundaries, and at "
-                "least one open hook another writer could pick up immediately.\n\n"
-                "Future Elbysodic applications should become structured submissions with "
-                "director-defined fields, facet choices, private review notes, and a clean "
-                "acceptance path into the roster."
-            ),
-            is_featured=True,
-            sort_order=40,
+    application_guide = _ensure_material(
+        repo,
+        community_id,
+        "application-guide",
+        "Application Guide",
+        material_type="application",
+        summary="What directors want to know before approving a new character.",
+        body=(
+            "Applications should tell staff what kind of story the character creates, "
+            "not only what powers they have.\n\n"
+            "Cover identity, faction fit, relationships wanted, boundaries, and at "
+            "least one open hook another writer could pick up immediately.\n\n"
+            "Future Elbysodic applications should become structured submissions with "
+            "director-defined fields, facet choices, private review notes, and a clean "
+            "acceptance path into the roster."
         ),
+        is_featured=True,
+        sort_order=40,
     )
     _assign_material_facets(
         repo,
@@ -1622,27 +1750,25 @@ def _seed_materials(
         ["casting", "plotting", "community"],
     )
 
-    event = _get_or_create(
-        lambda: repo.get_material_by_slug(community_id, "b-24-winter"),
-        lambda: repo.create_material(
-            community_id,
-            "b-24-winter",
-            "Current Event: B-24 Winter",
-            material_type="event",
-            summary="Iceman is infected with B-24 and New York is freezing around him.",
-            body=(
-                "B-24 was supposed to predict mutant escalation. Instead, it has infected "
-                "Iceman's powers and turned New York into a widening emergency zone.\n\n"
-                "X-Men can run rescue and containment scenes. United Nations characters "
-                "can argue over jurisdiction. Evil Lab characters can decide whether this "
-                "was a failure, a field test, or both.\n\n"
-                "Open hooks: evacuation routes, frozen infrastructure, school triage, "
-                "media panic, back-channel diplomacy, and anyone brave enough to ask what "
-                "B-24 learned from the first day."
-            ),
-            is_featured=True,
-            sort_order=50,
+    event = _ensure_material(
+        repo,
+        community_id,
+        "b-24-winter",
+        "Current Event: B-24 Winter",
+        material_type="event",
+        summary="Iceman is infected with B-24 and New York is freezing around him.",
+        body=(
+            "B-24 was supposed to predict mutant escalation. Instead, it has infected "
+            "Iceman's powers and turned New York into a widening emergency zone.\n\n"
+            "X-Men can run rescue and containment scenes. United Nations characters "
+            "can argue over jurisdiction. Evil Lab characters can decide whether this "
+            "was a failure, a field test, or both.\n\n"
+            "Open hooks: evacuation routes, frozen infrastructure, school triage, "
+            "media panic, back-channel diplomacy, and anyone brave enough to ask what "
+            "B-24 learned from the first day."
         ),
+        is_featured=True,
+        sort_order=50,
     )
     _assign_material_facets(
         repo,

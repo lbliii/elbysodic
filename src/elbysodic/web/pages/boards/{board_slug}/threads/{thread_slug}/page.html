@@ -51,8 +51,11 @@
 
   <section class="elbysodic-thread-stage elbysodic-board-media--{{ thread_view.board.slug }}" aria-labelledby="scene-title">
     <div class="elbysodic-thread-stage__copy">
-      <p class="elbysodic-kicker">{{ thread_view.board.name }}</p>
+      <p class="elbysodic-kicker">Scene in {{ thread_view.board.name }}</p>
       <h1 id="scene-title">{{ thread_view.thread.title }}</h1>
+      {% if thread_view.thread.summary %}
+      <p class="elbysodic-thread-stage__logline">{{ thread_view.thread.summary }}</p>
+      {% end %}
       <div class="elbysodic-thread-stage__state">
         {{ scene_state_badges(thread_view.thread, None, True, thread_view.is_watched) }}
       </div>
@@ -87,6 +90,20 @@
       {% end %}
     </div>
     <aside class="elbysodic-thread-stage__aside">
+      <div class="elbysodic-scene-pulse" aria-label="Scene pulse">
+        <div>
+          <span>Replies</span>
+          <strong>{{ thread_view.reply_count }}</strong>
+        </div>
+        <div>
+          <span>Cast</span>
+          <strong>{{ thread_view.participants | length }}</strong>
+        </div>
+        <div>
+          <span>Mode</span>
+          <strong>{{ "Order" if thread_view.thread.posting_mode == "posting_order" else "Free" }}</strong>
+        </div>
+      </div>
       <div class="elbysodic-thread-stage__summary">
         <h2>Scene details</h2>
         {% if thread_view.thread.summary %}
@@ -94,38 +111,47 @@
         {% else %}
         <p>No scene brief has been added yet.</p>
         {% end %}
+        {% if thread_view.latest_post %}
+        <p class="elbysodic-thread-stage__last-beat">
+          Last beat:
+          <a href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
+          · {{ thread_view.latest_post.created_at_label }}
+        </p>
+        {% end %}
       </div>
       <div class="elbysodic-thread-stage__actions">
-        <form method="post" hx-boost="false">
-          <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
-          <button type="submit" class="chirpui-btn {{ "chirpui-btn--secondary" if thread_view.is_watched else "chirpui-btn--primary" }}">
-            {{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}
-          </button>
-        </form>
         {% if thread_view.can_join_scene and viewer.current_character %}
         <form method="post" hx-boost="false">
           <input type="hidden" name="intent" value="join_scene">
-          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">
             Join as {{ viewer.current_character.name }}
           </button>
         </form>
         {% elif thread_view.can_reply and selected_character %}
-        <a class="chirpui-btn chirpui-btn--secondary" href="#reply-composer">
+        <a class="chirpui-btn chirpui-btn--primary" href="#reply-composer">
           Reply as {{ selected_character.name }}
         </a>
         {% end %}
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+            {{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}
+          </button>
+        </form>
       </div>
     </aside>
   </section>
 
   {% if thread_view.can_manage_scene %}
   {% call surface(variant="elevated") %}
-  <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="scene-management">
-    <div>
-      <h2 id="scene-management">Scene management</h2>
+  <details class="elbysodic-management-disclosure">
+    <summary>
+      <span id="scene-management">Scene management</span>
+      <small>Signal, cast, and scene brief</small>
+    </summary>
+    <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="scene-management">
       <p class="chirpui-text-muted">Update the scene signal and tag other writers into the cast.</p>
-    </div>
-    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
       <input type="hidden" name="intent" value="scene">
       <div class="elbysodic-scene-form-grid">
         <div>
@@ -225,19 +251,22 @@
       <div class="chirpui-cluster chirpui-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save scene</button>
       </div>
-    </form>
-  </section>
+      </form>
+    </section>
+  </details>
   {% end %}
   {% end %}
 
   {% if thread_view.can_moderate %}
   {% call surface(variant="elevated") %}
-  <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="thread-staff-controls">
-    <div>
-      <h2 id="thread-staff-controls">Staff controls</h2>
+  <details class="elbysodic-management-disclosure">
+    <summary>
+      <span id="thread-staff-controls">Staff controls</span>
+      <small>Pin, lock, or move thread</small>
+    </summary>
+    <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="thread-staff-controls">
       <p class="chirpui-text-muted">Manage this thread's visibility in the community queue.</p>
-    </div>
-    <div class="elbysodic-staff-panel__controls">
+      <div class="elbysodic-staff-panel__controls">
       <div class="chirpui-cluster chirpui-cluster--sm">
         <form method="post" hx-boost="false">
           <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
@@ -264,10 +293,24 @@
         </select>
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Move thread</button>
       </form>
+      </div>
+    </section>
+  </details>
+  {% end %}
+  {% end %}
+
+  <section class="elbysodic-scene-transcript" aria-labelledby="scene-transcript-title">
+    <div>
+      <p class="elbysodic-kicker">Transcript</p>
+      <h2 id="scene-transcript-title">Scene posts</h2>
     </div>
+    <p>
+      {{ thread_view.posts | length }} posts
+      {% if thread_view.latest_post %}
+      · latest by <a class="chirpui-link" href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
+      {% end %}
+    </p>
   </section>
-  {% end %}
-  {% end %}
 
   <div class="elbysodic-post-list" aria-label="Scene posts">
     {% for item in thread_view.posts %}
@@ -301,11 +344,11 @@
       <div class="elbysodic-composer-heading">
         <div>
           <p class="elbysodic-kicker">Next beat</p>
-          <h2>Reply</h2>
+          <h2>Reply as {{ selected_character.name }}</h2>
           <p class="chirpui-text-muted">Continue the scene as the face you are wearing.</p>
         </div>
         <div>
-          <label class="chirpui-field__label" for="reply-character">Posting as</label>
+          <label class="chirpui-field__label" for="reply-character">Change face</label>
           <select id="reply-character"
                   name="character_id"
                   class="chirpui-field__input"

@@ -236,12 +236,67 @@ The character name, writer, summary, and post permalink should remain visible.
 Hover/focus profile detail can add texture, but it must not be required to
 understand who wrote the post or what action is available.
 
+### SceneSurface
+
+Use for the top of a thread page. A scene surface should answer, in order:
+where this is happening, what the scene is called, what state it is in, who is
+in it, what the last beat was, and what the viewer can do next.
+
+Scene metadata should be split by job:
+
+- Status badges: state such as open, active, paused, private, caught up, or
+  watched.
+- Scene pulse: compact counts and modes such as replies, cast, and freeform or
+  posting order.
+- Last beat: the latest character and timestamp as a re-entry cue.
+- Facets: world lenses, not action controls.
+- Primary action: usually `Reply as <active face>` or `Join as <active face>`.
+
+Director and staff controls should be available without becoming the emotional
+surface of the thread. Prefer collapsed management disclosures unless the user
+is already inside a dedicated admin or desk workflow.
+
+### MaterialPage
+
+Use for director-authored canon: premise, rules, factions, application guidance,
+events, and other production material. A material page should feel like a studio
+document, not a forum thread. The hierarchy is title, summary, facets, canon
+body, then story affordances.
+
+Material pages may surface:
+
+- Wanted hooks tied to the same material or world lens.
+- Active scenes carrying the material into play.
+- Locations where the material matters.
+- Related materials that share facets.
+
+Director editing belongs in a collapsed `Material studio` disclosure on the
+page for now. This proves the authoring loop without turning the guidebook into
+a full admin app too early.
+
+### EventPage
+
+An event is a material with higher urgency. Use it when a board-wide plot
+pressure should generate scenes, wanted roles, faction decisions, and location
+stakes. Event pages should emphasize the current hook, open roles, related
+locations, and active scenes before general related reading.
+
 ### CharacterPoster
 
 Use for the large visual identity area inside a post. Prefer real character
-avatars when supplied. When no avatar exists, use a stable, character-specific
-poster treatment with initials so the space still feels intentional rather than
-empty.
+poster art when supplied. Avatars remain the small navigational face used in
+chips, nav, and compact mentions; posters are the cinematic identity surface for
+posts and profile heroes. When no poster exists, use a stable,
+character-specific poster treatment with initials so the space still feels
+intentional rather than empty.
+
+Character identity fields are:
+
+- `avatar_url`: compact face for chips and menus.
+- `poster_url` and `poster_alt`: large post/profile visual.
+- `tagline`: short emotional handle, not a badge or facet.
+- `accent_color`: character-specific highlight for poster frames and compact
+  signals.
 
 The poster is atmosphere and identity. It is not a navigation menu, not a badge
 collection, and not a replacement for readable prose.

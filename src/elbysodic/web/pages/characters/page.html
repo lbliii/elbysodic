@@ -28,7 +28,20 @@
   <div class="elbysodic-character-grid">
     {% for card in roster_dashboard.cards %}
     {% call surface(variant="elevated") %}
-    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm">
+    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm"
+             {% if card.character.accent_color %}style="--elbysodic-character-accent: {{ card.character.accent_color }}"{% end %}>
+      <a class="elbysodic-character-card__poster elbysodic-character-poster--{{ card.character.slug }}"
+         href="/characters/{{ card.character.slug }}"
+         aria-label="{{ card.character.name }}">
+        {% if card.character.poster_url %}
+        <img src="{{ card.character.poster_url }}" alt="{{ card.character.poster_alt or card.character.name }}">
+        {% else %}
+        <span aria-hidden="true">{{ card.character.name[:1] }}</span>
+        {% end %}
+        {% if card.character.tagline %}
+        <em>{{ card.character.tagline }}</em>
+        {% end %}
+      </a>
       <div class="elbysodic-character-card__header">
         <div class="elbysodic-character-card__identity">
           <div class="elbysodic-character-avatar" aria-hidden="true">
@@ -42,6 +55,9 @@
             <h2>
               <a class="chirpui-link" href="/characters/{{ card.character.slug }}">{{ card.character.name }}</a>
             </h2>
+            {% if card.character.tagline %}
+            <p class="elbysodic-character-card__tagline">{{ card.character.tagline }}</p>
+            {% end %}
             <p class="chirpui-text-muted">{{ card.character.summary }}</p>
           </div>
         </div>
@@ -109,6 +125,39 @@
                class="chirpui-field__input"
                name="avatar_url"
                value="{{ avatar_url }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-poster">Poster URL</label>
+        <input id="character-poster"
+               class="chirpui-field__input"
+               name="poster_url"
+               value="{{ poster_url }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-poster-alt">Poster alt text</label>
+        <input id="character-poster-alt"
+               class="chirpui-field__input"
+               name="poster_alt"
+               value="{{ poster_alt }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-tagline">Tagline</label>
+        <input id="character-tagline"
+               class="chirpui-field__input"
+               name="tagline"
+               value="{{ tagline }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-accent">Accent color</label>
+        <input id="character-accent"
+               class="chirpui-field__input"
+               name="accent_color"
+               value="{{ accent_color }}"
+               placeholder="#79a889"
                autocomplete="off">
       </div>
     </div>

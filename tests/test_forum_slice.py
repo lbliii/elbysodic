@@ -382,10 +382,11 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
         async with TestClient(app) as client:
             world = await client.get("/world")
             assert world.status == 200
-            assert "World" in world.text
+            assert "World studio" in world.text
             assert "Premise" in world.text
             assert "Application Guide" in world.text
             assert "Current Event: B-24 Winter" in world.text
+            assert "Guidebook pulse" in world.text
             assert 'href="/world/premise"' in world.text
             assert 'href="/world/b-24-winter"' in world.text
             assert "United Nations" in world.text
@@ -394,6 +395,9 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert event.status == 200
             assert "Iceman is infected with B-24" in event.text
             assert "Evil Lab" in event.text
+            assert "Wanted hooks" in event.text
+            assert "Active scenes" in event.text
+            assert "Locations" in event.text
             assert "Related materials" in event.text
 
             missing = await client.get("/world/not-a-material")

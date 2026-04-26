@@ -78,6 +78,10 @@ class Character:
     name: str
     slug: str
     avatar_url: str | None
+    poster_url: str | None
+    poster_alt: str
+    tagline: str
+    accent_color: str
     summary: str
     application_status: str
     created_at: str

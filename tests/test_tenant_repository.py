@@ -189,12 +189,20 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
         default_membership.id,
         "rogue",
         "Rogue",
+        poster_url="https://example.test/rogue-poster.png",
+        poster_alt="Rogue standing in the Danger Room",
+        tagline="Careful hands, reckless heart.",
+        accent_color="#79a889",
         make_default=True,
     )
     magneto = repo.create_character(hosted.id, hosted_membership.id, "magneto", "Magneto")
     draft = repo.update_character_application_status(default.id, rogue.id, "draft")
 
     assert draft.application_status == "draft"
+    assert draft.poster_url == "https://example.test/rogue-poster.png"
+    assert draft.poster_alt == "Rogue standing in the Danger Room"
+    assert draft.tagline == "Careful hands, reckless heart."
+    assert draft.accent_color == "#79a889"
     assert repo.get_character(default.id, rogue.id).application_status == "draft"
     assert repo.get_membership(default.id, default_membership.id).default_character_id == rogue.id
     assert repo.get_membership(hosted.id, hosted_membership.id).default_character_id is None
@@ -234,12 +242,20 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
         slug="rogue-prime",
         name="Rogue Prime",
         avatar_url="https://example.test/rogue.png",
+        poster_url="https://example.test/rogue-prime-poster.png",
+        poster_alt="Rogue Prime portrait",
+        tagline="Nobody touches the plot without consequence.",
+        accent_color="#79a889",
         summary="Still carrying the whole plot.",
     )
 
     assert updated.slug == "rogue-prime"
     assert updated.name == "Rogue Prime"
     assert updated.avatar_url == "https://example.test/rogue.png"
+    assert updated.poster_url == "https://example.test/rogue-prime-poster.png"
+    assert updated.poster_alt == "Rogue Prime portrait"
+    assert updated.tagline == "Nobody touches the plot without consequence."
+    assert updated.accent_color == "#79a889"
     assert updated.summary == "Still carrying the whole plot."
     assert repo.get_character_by_slug(hosted.id, "rogue").name == "Rogue Elsewhere"
 
@@ -315,10 +331,24 @@ def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepositor
         summary="Different world.",
     )
     repo.assign_material_facet(default.id, premise.id, x_men.id)
+    updated = repo.update_material(
+        default.id,
+        premise.id,
+        title="Updated Premise",
+        material_type="premise",
+        summary="Sharper hook.",
+        body="Mutants face a machine with a budget.",
+        status="published",
+        sort_order=5,
+        is_featured=False,
+    )
 
-    assert repo.get_material_by_slug(default.id, "premise").title == "Premise"
+    assert updated.title == "Updated Premise"
+    assert updated.summary == "Sharper hook."
+    assert updated.is_featured is False
+    assert repo.get_material_by_slug(default.id, "premise").title == "Updated Premise"
     assert repo.get_material_by_slug(hosted.id, "premise").title == "Hosted Premise"
-    assert [material.title for material in repo.list_materials(default.id)] == ["Premise"]
+    assert [material.title for material in repo.list_materials(default.id)] == ["Updated Premise"]
     assert [facet.slug for facet in repo.list_material_facets(default.id, premise.id)] == ["x-men"]
 
     with pytest.raises(LookupError):

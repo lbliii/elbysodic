@@ -50,8 +50,38 @@
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("World") %}
-  Director-authored materials for the premise, rules, factions, applications, and current events.
+  <section class="elbysodic-material-studio-hero">
+    <div>
+      <p class="elbysodic-kicker">Guidebook</p>
+      <h1>World studio</h1>
+      <p>
+        Director-authored canon, events, applications, and story lenses that turn a forum
+        into a playable world.
+      </p>
+    </div>
+    <div class="elbysodic-material-studio-hero__pulse" aria-label="Guidebook pulse">
+      <div>
+        <span>Pillars</span>
+        <strong>{{ hub.featured | length }}</strong>
+      </div>
+      <div>
+        <span>Guides</span>
+        <strong>{{ hub.guides | length }}</strong>
+      </div>
+      <div>
+        <span>Events</span>
+        <strong>{{ hub.events | length }}</strong>
+      </div>
+    </div>
+  </section>
+
+  {% if hub.events %}
+  {% set current_event = hub.events[0] %}
+  <a class="elbysodic-current-event-card" href="/world/{{ current_event.material.slug }}">
+    <span class="elbysodic-material-card__type">{{ current_event.type_label }}</span>
+    <strong>{{ current_event.material.title }}</strong>
+    <span>{{ current_event.rendered_summary }}</span>
+  </a>
   {% end %}
 
   {{ material_section("Start here", "The board's highest-signal pillars.", hub.featured, "No featured materials yet.") }}

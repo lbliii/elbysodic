@@ -8,12 +8,16 @@
          class="elbysodic-post elbysodic-post--{{ item.author.slug }}">
   <aside class="elbysodic-post__poster" aria-label="{{ item.author.name }} profile">
     <a class="elbysodic-post__poster-media elbysodic-character-poster--{{ item.author.slug }}"
+       {% if item.author.accent_color %}style="--elbysodic-character-accent: {{ item.author.accent_color }}"{% end %}
        href="/characters/{{ item.author.slug }}"
        aria-label="{{ item.author.name }}">
-      {% if item.author.avatar_url %}
-      <img src="{{ item.author.avatar_url }}" alt="">
+      {% if item.author.poster_url %}
+      <img src="{{ item.author.poster_url }}" alt="{{ item.author.poster_alt or item.author.name }}">
       {% else %}
       <span aria-hidden="true">{{ item.author.name[:1] }}</span>
+      {% end %}
+      {% if item.author.tagline %}
+      <em>{{ item.author.tagline }}</em>
       {% end %}
     </a>
     <div class="elbysodic-post__poster-card">
@@ -25,6 +29,9 @@
           writer <a class="chirpui-link" href="/members/{{ item.author_membership.username }}">{{ item.author_membership.username }}</a>
         </p>
       </div>
+      {% if item.author.tagline %}
+      <p class="elbysodic-post__poster-tagline">{{ item.author.tagline }}</p>
+      {% end %}
       <p class="elbysodic-post__poster-summary">{{ item.author.summary }}</p>
       <dl class="elbysodic-post__poster-stats">
         <div>

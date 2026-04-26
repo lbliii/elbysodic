@@ -70,6 +70,8 @@ APPLICATION_STATUS_VARIANTS: dict[str, str] = {
     "revision_requested": "warning",
     "rejected": "muted",
 }
+MATERIAL_TYPES = ("premise", "guide", "factions", "application", "event")
+MATERIAL_STATUSES = ("published", "draft")
 
 
 @dataclass(frozen=True, slots=True)
@@ -468,6 +470,10 @@ class MaterialDetail:
     rendered_body: object
     type_label: str
     related_materials: list[MaterialSummary]
+    related_locations: list[BoardSummary]
+    related_scenes: list[DiscoveryThreadResult]
+    related_wanted_ads: list[WantedAdSummary]
+    can_manage: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -476,6 +482,7 @@ class WorldHub:
     guides: list[MaterialSummary]
     events: list[MaterialSummary]
     application_materials: list[MaterialSummary]
+    can_manage: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -599,6 +606,8 @@ class ThreadView:
     taggable_characters: list[Character]
     tagged_character_ids: set[int]
     posts: list[PostView]
+    latest_post: PostView | None
+    reply_count: int
     can_reply: bool
     can_join_scene: bool
     can_moderate: bool
@@ -1076,6 +1085,8 @@ class AppServices:
             - posted_character_ids
             - {thread.author_character_id},
             posts=posts,
+            latest_post=posts[-1] if posts else None,
+            reply_count=max(0, len(posts) - 1),
             can_reply=can_reply,
             can_join_scene=(
                 viewer.current_character is not None
@@ -1204,20 +1215,19 @@ class AppServices:
                 for item in additional_materials
                 if item.material.material_type in {"premise", "guide", "factions"}
             ],
-            events=[
-                item for item in additional_materials if item.material.material_type == "event"
-            ],
+            events=[item for item in materials if item.material.material_type == "event"],
             application_materials=[
                 item
                 for item in additional_materials
                 if item.material.material_type == "application"
             ],
+            can_manage=viewer.role.is_admin,
         )
 
     def read_material(self, material_slug: str) -> MaterialDetail:
         viewer = self.viewer()
         material = self.repo.get_material_by_slug(viewer.community.id, material_slug)
-        if material.status != "published":
+        if material.status != "published" and not viewer.role.is_admin:
             raise LookupError(
                 f"material not found in community {viewer.community.id}: {material_slug}"
             )
@@ -1239,6 +1249,12 @@ class AppServices:
             if facet_ids and not facet_ids.intersection({tag.facet.id for tag in candidate_facets}):
                 continue
             related.append(_material_summary(self.repo, viewer.community.id, candidate))
+        related_wanted_ads = _material_related_wanted_ads(
+            self.repo,
+            viewer,
+            material,
+            facet_ids,
+        )
         return MaterialDetail(
             material=material,
             facets=facets,
@@ -1248,6 +1264,58 @@ class AppServices:
             ),
             type_label=_material_type_label(material.material_type),
             related_materials=related[:4],
+            related_locations=_material_related_locations(
+                self.repo,
+                viewer,
+                material,
+                facet_ids,
+            )[:4],
+            related_scenes=_material_related_scenes(
+                self.repo,
+                viewer,
+                material,
+                facet_ids,
+            )[:4],
+            related_wanted_ads=related_wanted_ads[:4],
+            can_manage=viewer.role.is_admin,
+        )
+
+    def update_material(
+        self,
+        material_slug: str,
+        *,
+        title: str,
+        material_type: str,
+        summary: str,
+        body: str,
+        status: str = "published",
+        is_featured: bool = False,
+    ) -> Material:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage world materials"
+            )
+        material = self.repo.get_material_by_slug(viewer.community.id, material_slug)
+        cleaned_title = title.strip()
+        cleaned_material_type = material_type.strip()
+        cleaned_status = status.strip()
+        if not cleaned_title:
+            raise ValueError("material title is required")
+        if cleaned_material_type not in MATERIAL_TYPES:
+            raise ValueError("choose a supported material type")
+        if cleaned_status not in MATERIAL_STATUSES:
+            raise ValueError("choose a supported material status")
+        return self.repo.update_material(
+            viewer.community.id,
+            material.id,
+            title=cleaned_title,
+            material_type=cleaned_material_type,
+            summary=summary.strip(),
+            body=body.strip(),
+            status=cleaned_status,
+            sort_order=material.sort_order,
+            is_featured=is_featured,
         )
 
     def wanted_ads(self) -> WantedBoard:
@@ -1733,6 +1801,10 @@ class AppServices:
         name: str,
         summary: str = "",
         avatar_url: str | None = None,
+        poster_url: str | None = None,
+        poster_alt: str = "",
+        tagline: str = "",
+        accent_color: str = "",
         make_default: bool = False,
     ) -> Character:
         viewer = self.viewer()
@@ -1741,6 +1813,10 @@ class AppServices:
             raise ValueError("character name is required")
         cleaned_summary = summary.strip()
         cleaned_avatar_url = (avatar_url or "").strip() or None
+        cleaned_poster_url = (poster_url or "").strip() or None
+        cleaned_poster_alt = poster_alt.strip()
+        cleaned_tagline = tagline.strip()
+        cleaned_accent_color = accent_color.strip()
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
         return self.repo.create_character(
             viewer.community.id,
@@ -1748,6 +1824,10 @@ class AppServices:
             slug,
             cleaned_name,
             avatar_url=cleaned_avatar_url,
+            poster_url=cleaned_poster_url,
+            poster_alt=cleaned_poster_alt,
+            tagline=cleaned_tagline,
+            accent_color=cleaned_accent_color,
             summary=cleaned_summary,
             application_status="draft",
             make_default=make_default,
@@ -1760,6 +1840,10 @@ class AppServices:
         name: str,
         summary: str = "",
         avatar_url: str | None = None,
+        poster_url: str | None = None,
+        poster_alt: str = "",
+        tagline: str = "",
+        accent_color: str = "",
     ) -> Character:
         viewer = self.viewer()
         character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
@@ -1772,6 +1856,10 @@ class AppServices:
             raise ValueError("character name is required")
         cleaned_summary = summary.strip()
         cleaned_avatar_url = (avatar_url or "").strip() or None
+        cleaned_poster_url = (poster_url or "").strip() or None
+        cleaned_poster_alt = poster_alt.strip()
+        cleaned_tagline = tagline.strip()
+        cleaned_accent_color = accent_color.strip()
         slug = character.slug
         if cleaned_name != character.name:
             slug = _unique_character_slug(
@@ -1786,6 +1874,10 @@ class AppServices:
             slug=slug,
             name=cleaned_name,
             avatar_url=cleaned_avatar_url,
+            poster_url=cleaned_poster_url,
+            poster_alt=cleaned_poster_alt,
+            tagline=cleaned_tagline,
+            accent_color=cleaned_accent_color,
             summary=cleaned_summary,
         )
 
@@ -2565,6 +2657,112 @@ def _material_type_label(material_type: str) -> str:
         "application": "Application",
         "event": "Event",
     }.get(material_type, material_type.replace("_", " ").title())
+
+
+def _material_related_locations(
+    repo: ForumRepository,
+    viewer: ForumView,
+    material: Material,
+    facet_ids: set[int],
+) -> list[BoardSummary]:
+    if not facet_ids:
+        return []
+    current_facet_ids = _current_character_facet_ids(repo, viewer)
+    summaries: list[BoardSummary] = []
+    for board in repo.list_boards(viewer.community.id):
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            continue
+        board_facet_ids = {
+            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
+        }
+        if not facet_ids.intersection(board_facet_ids):
+            continue
+        summaries.append(_board_summary(repo, viewer, board, current_facet_ids))
+    return sorted(
+        summaries,
+        key=lambda item: (
+            not item.is_relevant_to_current_face,
+            item.board.sort_order,
+            item.board.name,
+            item.board.id,
+        ),
+    )
+
+
+def _material_related_scenes(
+    repo: ForumRepository,
+    viewer: ForumView,
+    material: Material,
+    facet_ids: set[int],
+) -> list[DiscoveryThreadResult]:
+    if not facet_ids:
+        return []
+    visible_boards = {
+        board.id: board
+        for board in repo.list_boards(viewer.community.id)
+        if policies.can_view_board(viewer.membership, board, viewer.role)
+    }
+    results: list[DiscoveryThreadResult] = []
+    for thread in repo.list_threads(viewer.community.id):
+        board = visible_boards.get(thread.board_id)
+        if board is None:
+            continue
+        thread_facets = _facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_thread_facets(viewer.community.id, thread.id),
+        )
+        thread_facet_ids = {tag.facet.id for tag in thread_facets}
+        board_facet_ids = {
+            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
+        }
+        matching_facets = [tag for tag in thread_facets if tag.facet.id in facet_ids]
+        if not facet_ids.intersection(thread_facet_ids | board_facet_ids):
+            continue
+        posts = repo.list_posts(viewer.community.id, thread.id)
+        results.append(
+            DiscoveryThreadResult(
+                board=board,
+                thread=thread,
+                author=repo.get_character(viewer.community.id, thread.author_character_id),
+                participants=repo.list_thread_participants(viewer.community.id, thread.id),
+                facets=thread_facets,
+                matching_facets=matching_facets,
+                reply_count=max(0, len(posts) - 1),
+            )
+        )
+    return sorted(
+        results,
+        key=lambda item: (_timestamp_key(item.thread.updated_at), item.thread.id),
+        reverse=True,
+    )
+
+
+def _material_related_wanted_ads(
+    repo: ForumRepository,
+    viewer: ForumView,
+    material: Material,
+    facet_ids: set[int],
+) -> list[WantedAdSummary]:
+    results: list[WantedAdSummary] = []
+    for wanted_ad in repo.list_wanted_ads(viewer.community.id):
+        wanted_facet_ids = {
+            facet.id for facet in repo.list_wanted_ad_facets(viewer.community.id, wanted_ad.id)
+        }
+        if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
+            wanted_facet_ids
+        ):
+            continue
+        results.append(_wanted_ad_summary(repo, viewer.community.id, wanted_ad))
+    return sorted(
+        results,
+        key=lambda item: (
+            item.wanted_ad.related_material_id != material.id,
+            _timestamp_key(item.wanted_ad.updated_at),
+            item.wanted_ad.id,
+        ),
+        reverse=True,
+    )
 
 
 def _wanted_ad_summary(

@@ -25,16 +25,22 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  <article class="elbysodic-profile-hero chirpui-stack chirpui-stack--md">
-    <div class="elbysodic-character-card__header">
-      <div class="elbysodic-character-card__identity">
-        <div class="elbysodic-character-avatar elbysodic-character-avatar--lg" aria-hidden="true">
-          {% if profile.character.avatar_url %}
-          <img src="{{ profile.character.avatar_url }}" alt="">
-        {% else %}
-        {{ profile.character.name[:1] }}
-        {% end %}
-        </div>
+  <article class="elbysodic-profile-hero"
+           {% if profile.character.accent_color %}style="--elbysodic-character-accent: {{ profile.character.accent_color }}"{% end %}>
+    <a class="elbysodic-profile-hero__poster elbysodic-character-poster--{{ profile.character.slug }}"
+       href="#recent-posts"
+       aria-label="{{ profile.character.name }} posts">
+      {% if profile.character.poster_url %}
+      <img src="{{ profile.character.poster_url }}" alt="{{ profile.character.poster_alt or profile.character.name }}">
+      {% else %}
+      <span aria-hidden="true">{{ profile.character.name[:1] }}</span>
+      {% end %}
+      {% if profile.character.tagline %}
+      <em>{{ profile.character.tagline }}</em>
+      {% end %}
+    </a>
+    <div class="elbysodic-profile-hero__body chirpui-stack chirpui-stack--md">
+      <div class="elbysodic-character-card__header">
         <div>
           <div class="chirpui-cluster chirpui-cluster--sm">
             <h2>{{ profile.character.name }}</h2>
@@ -51,35 +57,35 @@
           {{ facet_pills(profile.facets) }}
         </div>
       </div>
-    </div>
-    {% call cluster(gap="sm") %}
-      {{ stat(value=profile.post_count, label="Posts") }}
-      {{ stat(value=profile.thread_count, label="Threads started") }}
-      {{ stat(value=profile.activity.needs_reply | length, label="Needs reply") }}
-      {{ stat(value=profile.activity.participated | length, label="Active") }}
-      {{ stat(value=profile.owner_membership.display_name, label="Writer") }}
-    {% end %}
-    {% if profile.can_manage %}
-    <div class="chirpui-cluster chirpui-cluster--end">
-      {% if profile.character.application_status == "draft" %}
-      <form method="post" hx-boost="false">
-        <input type="hidden" name="intent" value="submit_application">
-        <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
-      </form>
-      {% elif profile.character.application_status == "revision_requested" %}
-      <form method="post" hx-boost="false">
-        <input type="hidden" name="intent" value="submit_application">
-        <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
-      </form>
+      {% call cluster(gap="sm") %}
+        {{ stat(value=profile.post_count, label="Posts") }}
+        {{ stat(value=profile.thread_count, label="Threads started") }}
+        {{ stat(value=profile.activity.needs_reply | length, label="Needs reply") }}
+        {{ stat(value=profile.activity.participated | length, label="Active") }}
+        {{ stat(value=profile.owner_membership.display_name, label="Writer") }}
       {% end %}
-      {% if not profile.is_default %}
-      <form method="post" hx-boost="false">
-        <input type="hidden" name="intent" value="set_default">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Set current face</button>
-      </form>
+      {% if profile.can_manage %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        {% if profile.character.application_status == "draft" %}
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="submit_application">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
+        </form>
+        {% elif profile.character.application_status == "revision_requested" %}
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="submit_application">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
+        </form>
+        {% end %}
+        {% if not profile.is_default %}
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="set_default">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Set current face</button>
+        </form>
+        {% end %}
+      </div>
       {% end %}
     </div>
-    {% end %}
   </article>
   {% end %}
 
@@ -186,6 +192,39 @@
                value="{{ avatar_url }}"
                autocomplete="off">
       </div>
+      <div>
+        <label class="chirpui-field__label" for="character-poster">Poster URL</label>
+        <input id="character-poster"
+               class="chirpui-field__input"
+               name="poster_url"
+               value="{{ poster_url }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-poster-alt">Poster alt text</label>
+        <input id="character-poster-alt"
+               class="chirpui-field__input"
+               name="poster_alt"
+               value="{{ poster_alt }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-tagline">Tagline</label>
+        <input id="character-tagline"
+               class="chirpui-field__input"
+               name="tagline"
+               value="{{ tagline }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-accent">Accent color</label>
+        <input id="character-accent"
+               class="chirpui-field__input"
+               name="accent_color"
+               value="{{ accent_color }}"
+               placeholder="#79a889"
+               autocomplete="off">
+      </div>
     </div>
     <div>
       <label class="chirpui-field__label" for="character-summary">Summary</label>
@@ -201,7 +240,7 @@
   {% end %}
   {% end %}
 
-  <div class="chirpui-stack chirpui-stack--md">
+  <div id="recent-posts" class="chirpui-stack chirpui-stack--md">
     <h2>Recent posts</h2>
     {% for item in profile.recent_posts %}
     {% call surface(variant="elevated") %}

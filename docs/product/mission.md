@@ -20,6 +20,12 @@ It should feel familiar to people from Jcink, InvisionFree, all things roleplay
 directories, Tumblr roleplay, and adjacent PBP spaces, while removing the
 rituals and friction that old platforms forced players to perform manually.
 
+Elbysodic should feel like the studio of PBP: a place where directors can shape
+the world, writers can find scenes and obligations, characters can become
+present, and community canon can move naturally into play. Older forum products
+made communities build that studio by hand out of boards, templates, lists, and
+staff posts. Elbysodic should make those production materials native.
+
 ## What PBP Needs
 
 Characters are not profile decorations. They are public identities, writing
@@ -47,6 +53,12 @@ rules, events, application guidance, canons, claims, and reserves can be
 surfaced as first-class pages or workflows when that better supports the board's
 rituals than a standard thread.
 
+The forum is still the beating heart, but it is not the whole product. Boards,
+subboards, and threads carry play. The studio layer carries the conditions that
+make play possible: premise, atmosphere, event pressure, casting needs,
+applications, claims, reserves, relationship hooks, continuity, and director
+intent.
+
 Writing flow matters. The composer should respect long-form posting, drafts,
 formatting, previews, character voice, and the quiet concentration needed to
 write a good reply.
@@ -66,6 +78,9 @@ the trust model, not afterthoughts.
   or any other facet that helps writers find story.
 - Preserve the creative rituals that people love, but automate the tedious
   ones.
+- Make the community's world the primary emotional surface; keep writer and
+  director tooling available without letting it flatten the atmosphere into a
+  dashboard.
 - Treat privacy, pseudonymity, and identity exploration as normal use cases.
 - Make communities portable enough that people do not feel trapped.
 - Make the interface ergonomic for both quick check-ins and long writing

@@ -18,6 +18,10 @@ class CharacterProfileForm:
     intent: str
     name: str
     avatar_url: str
+    poster_url: str
+    poster_alt: str
+    tagline: str
+    accent_color: str
     summary: str
 
 
@@ -49,12 +53,20 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
     name = str(form.get("name") or "")
     summary = str(form.get("summary") or "")
     avatar_url = str(form.get("avatar_url") or "")
+    poster_url = str(form.get("poster_url") or "")
+    poster_alt = str(form.get("poster_alt") or "")
+    tagline = str(form.get("tagline") or "")
+    accent_color = str(form.get("accent_color") or "")
     try:
         character = services.update_character(
             character_slug,
             name=name,
             summary=summary,
             avatar_url=avatar_url,
+            poster_url=poster_url,
+            poster_alt=poster_alt,
+            tagline=tagline,
+            accent_color=accent_color,
         )
     except ValueError as exc:
         return _render_profile(
@@ -64,6 +76,10 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
             name=name,
             summary=summary,
             avatar_url=avatar_url,
+            poster_url=poster_url,
+            poster_alt=poster_alt,
+            tagline=tagline,
+            accent_color=accent_color,
         )
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
@@ -78,6 +94,10 @@ def _render_profile(
     name: str | None = None,
     summary: str | None = None,
     avatar_url: str | None = None,
+    poster_url: str | None = None,
+    poster_alt: str | None = None,
+    tagline: str | None = None,
+    accent_color: str | None = None,
 ) -> Page:
     services = get_services()
     viewer = services.viewer()
@@ -93,4 +113,8 @@ def _render_profile(
         name=profile.character.name if name is None else name,
         summary=profile.character.summary if summary is None else summary,
         avatar_url=profile.character.avatar_url or "" if avatar_url is None else avatar_url,
+        poster_url=profile.character.poster_url or "" if poster_url is None else poster_url,
+        poster_alt=profile.character.poster_alt if poster_alt is None else poster_alt,
+        tagline=profile.character.tagline if tagline is None else tagline,
+        accent_color=profile.character.accent_color if accent_color is None else accent_color,
     )

@@ -803,6 +803,50 @@ class ForumRepository(
             raise LookupError(f"material not found in community {community_id}: {slug}")
         return _material_from_row(row)
 
+    def update_material(
+        self,
+        community_id: int,
+        material_id: int,
+        *,
+        title: str,
+        material_type: str,
+        summary: str,
+        body: str,
+        status: str = "published",
+        sort_order: int = 0,
+        is_featured: bool = False,
+    ) -> Material:
+        self.get_material(community_id, material_id)
+        self.connection.execute(
+            """
+            UPDATE materials
+            SET
+                title = ?,
+                material_type = ?,
+                summary = ?,
+                body = ?,
+                status = ?,
+                sort_order = ?,
+                is_featured = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                int(is_featured),
+                _utc_now(),
+                community_id,
+                material_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_material(community_id, material_id)
+
     def list_materials(
         self, community_id: int, *, status: str | None = "published"
     ) -> list[Material]:
@@ -1064,6 +1108,10 @@ class ForumRepository(
                 characters.name,
                 characters.slug,
                 characters.avatar_url,
+                characters.poster_url,
+                characters.poster_alt,
+                characters.tagline,
+                characters.accent_color,
                 characters.summary,
                 characters.application_status,
                 characters.created_at,
@@ -1853,6 +1901,10 @@ class ForumRepository(
                 characters.name,
                 characters.slug,
                 characters.avatar_url,
+                characters.poster_url,
+                characters.poster_alt,
+                characters.tagline,
+                characters.accent_color,
                 characters.summary,
                 characters.application_status,
                 characters.created_at,

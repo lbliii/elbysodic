@@ -59,6 +59,10 @@ CREATE TABLE IF NOT EXISTS characters (
     name TEXT NOT NULL,
     slug TEXT NOT NULL,
     avatar_url TEXT,
+    poster_url TEXT,
+    poster_alt TEXT NOT NULL DEFAULT '',
+    tagline TEXT NOT NULL DEFAULT '',
+    accent_color TEXT NOT NULL DEFAULT '',
     summary TEXT NOT NULL DEFAULT '',
     application_status TEXT NOT NULL DEFAULT 'accepted',
     created_at TEXT NOT NULL,
@@ -408,6 +412,14 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         connection.execute(
             "ALTER TABLE characters ADD COLUMN application_status TEXT NOT NULL DEFAULT 'accepted'"
         )
+    for name, definition in {
+        "poster_url": "TEXT",
+        "poster_alt": "TEXT NOT NULL DEFAULT ''",
+        "tagline": "TEXT NOT NULL DEFAULT ''",
+        "accent_color": "TEXT NOT NULL DEFAULT ''",
+    }.items():
+        if name not in character_columns:
+            connection.execute(f"ALTER TABLE characters ADD COLUMN {name} {definition}")
     connection.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_characters_application_status

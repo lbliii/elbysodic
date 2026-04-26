@@ -10,6 +10,12 @@ forum skin. The product should understand the culture of Jcink, InvisionFree,
 all things roleplay directories, Tumblr roleplay, and long-form collaborative
 fiction communities.
 
+Elbysodic is becoming the studio layer for PBP. Treat a community as a small
+creative production with directors, writers, characters, scenes, locations,
+events, canon, casting needs, and continuity. The product should make those
+ideas native to the code instead of forcing communities to fake them with
+generic forums, templates, and manual lists.
+
 The north star is to give PBP a new lease on life: preserve character identity,
 thread continuity, community aesthetic control, and the emotional safety of
 pseudonymous writing spaces, while removing the repetitive manual work older
@@ -85,6 +91,8 @@ The current prototype already has:
 
 ## Product Shape To Preserve
 
+- The world should be the default emotional surface. Writer/admin tooling should
+  support the fiction without visually outshouting the community's atmosphere.
 - Character pages should continue moving toward a hub model: identity at the
   top, plotter and wanted material near the character, tracker/queue below it,
   and world/facet context where it helps.
@@ -98,6 +106,9 @@ The current prototype already has:
   compatible people, open scenes, event roles, and faction pressure.
 - Keep visual and cognitive load low by using the current face, current lens,
   and director-authored structure to choose sensible defaults.
+- When a feature feels like board production material, consider whether it
+  belongs in the studio layer: world materials, events, applications, claims,
+  reserves, casting, wanted hooks, and future director tools.
 
 ## Architecture Rules
 
