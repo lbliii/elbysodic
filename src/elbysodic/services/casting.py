@@ -29,7 +29,7 @@ from elbysodic.services.read_models import (
 from elbysodic.services.timestamps import timestamp_label
 
 
-class CastingRepository(FacetReadRepository, PostViewRepository, Protocol):
+class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
     def get_character(self, community_id: int, character_id: int) -> Character: ...
 
     def list_characters(self, community_id: int, membership_id: int) -> list[Character]: ...
@@ -51,13 +51,6 @@ class CastingRepository(FacetReadRepository, PostViewRepository, Protocol):
 
     def get_wanted_ad_by_slug(self, community_id: int, slug: str) -> WantedAd: ...
 
-    def update_wanted_ad_status(
-        self,
-        community_id: int,
-        wanted_ad_id: int,
-        status: str,
-    ) -> WantedAd: ...
-
     def list_wanted_ad_facets(self, community_id: int, wanted_ad_id: int) -> list[Facet]: ...
 
     def list_wanted_ad_related_characters(
@@ -76,21 +69,6 @@ class CastingRepository(FacetReadRepository, PostViewRepository, Protocol):
         self,
         community_id: int,
         interest_id: int,
-    ) -> WantedAdInterest: ...
-
-    def create_wanted_ad_interest(
-        self,
-        community_id: int,
-        wanted_ad_id: int,
-        membership_id: int,
-        character_id: int,
-    ) -> WantedAdInterest: ...
-
-    def update_wanted_ad_interest_status(
-        self,
-        community_id: int,
-        interest_id: int,
-        status: str,
     ) -> WantedAdInterest: ...
 
     def list_character_reserves_for_community(
@@ -126,6 +104,30 @@ class CastingRepository(FacetReadRepository, PostViewRepository, Protocol):
 
     def get_wanted_ad(self, community_id: int, wanted_ad_id: int) -> WantedAd: ...
 
+
+class CastingRepository(CastingReadRepository, Protocol):
+    def update_wanted_ad_status(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        status: str,
+    ) -> WantedAd: ...
+
+    def create_wanted_ad_interest(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        membership_id: int,
+        character_id: int,
+    ) -> WantedAdInterest: ...
+
+    def update_wanted_ad_interest_status(
+        self,
+        community_id: int,
+        interest_id: int,
+        status: str,
+    ) -> WantedAdInterest: ...
+
     def create_notification(
         self,
         community_id: int,
@@ -142,7 +144,7 @@ class CastingRepository(FacetReadRepository, PostViewRepository, Protocol):
     ): ...
 
 
-def wanted_board(repo: CastingRepository, viewer: ForumView) -> WantedBoard:
+def wanted_board(repo: CastingReadRepository, viewer: ForumView) -> WantedBoard:
     return WantedBoard(
         open_ads=[
             wanted_ad_summary(repo, viewer.community.id, wanted_ad)
@@ -151,7 +153,7 @@ def wanted_board(repo: CastingRepository, viewer: ForumView) -> WantedBoard:
     )
 
 
-def casting_desk(repo: CastingRepository, viewer: ForumView) -> CastingDesk:
+def casting_desk(repo: CastingReadRepository, viewer: ForumView) -> CastingDesk:
     active_reserves = [
         character_reserve_view(repo, viewer.community.id, reserve)
         for reserve in repo.list_character_reserves_for_community(viewer.community.id)
@@ -198,7 +200,11 @@ def casting_desk(repo: CastingRepository, viewer: ForumView) -> CastingDesk:
     )
 
 
-def read_wanted_ad(repo: CastingRepository, viewer: ForumView, wanted_slug: str) -> WantedAdDetail:
+def read_wanted_ad(
+    repo: CastingReadRepository,
+    viewer: ForumView,
+    wanted_slug: str,
+) -> WantedAdDetail:
     wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
     if wanted_ad.status == "archived":
         raise LookupError(f"wanted ad not found in community {viewer.community.id}: {wanted_slug}")
@@ -400,7 +406,7 @@ def create_reserve_for_wanted_interest(
 
 
 def wanted_ad_summary(
-    repo: CastingRepository,
+    repo: CastingReadRepository,
     community_id: int,
     wanted_ad: WantedAd,
 ) -> WantedAdSummary:
@@ -439,7 +445,7 @@ def wanted_type_label(wanted_type: str) -> str:
 
 
 def wanted_ad_interest_view(
-    repo: CastingRepository,
+    repo: CastingReadRepository,
     community_id: int,
     interest: WantedAdInterest,
 ) -> WantedAdInterestView:
@@ -452,7 +458,7 @@ def wanted_ad_interest_view(
 
 
 def character_reserve_view(
-    repo: CastingRepository,
+    repo: CastingReadRepository,
     community_id: int,
     reserve: CharacterReserve,
 ) -> CharacterReserveView:

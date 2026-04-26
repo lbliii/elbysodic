@@ -51,6 +51,20 @@ from elbysodic.services.facets import (
 from elbysodic.services.facets import (
     resolve_facets as _resolve_facets,
 )
+from elbysodic.services.identity import (
+    application_status_label as _application_status_label,
+)
+from elbysodic.services.identity import (
+    application_status_variant as _application_status_variant,
+)
+from elbysodic.services.identity import character_profile as _character_profile
+from elbysodic.services.identity import (
+    character_roster_dashboard as _character_roster_dashboard,
+)
+from elbysodic.services.identity import member_directory as _member_directory
+from elbysodic.services.identity import member_profile as _member_profile
+from elbysodic.services.identity import roster_activity as _roster_activity
+from elbysodic.services.identity import selected_character as _selected_character
 from elbysodic.services.markup import post_snippet
 from elbysodic.services.materials import (
     current_event_for_facet_ids as _current_event_for_facet_ids,
@@ -60,8 +74,6 @@ from elbysodic.services.materials import material_summary as _material_summary
 from elbysodic.services.posts import post_revision_view as _post_revision_view
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
-    APPLICATION_STATUS_LABELS,
-    APPLICATION_STATUS_VARIANTS,
     MATERIAL_STATUSES,
     MATERIAL_TYPES,
     ActivityItem,
@@ -72,11 +84,8 @@ from elbysodic.services.read_models import (
     BoardSummary,
     BoardThreadFilter,
     CastingDesk,
-    CharacterAppearance,
     CharacterProfile,
-    CharacterRosterCard,
     CharacterRosterDashboard,
-    CharacterThreadActivity,
     CreatedThread,
     DirectorStudio,
     DiscoveryCharacterResult,
@@ -88,7 +97,6 @@ from elbysodic.services.read_models import (
     MaterialDetail,
     MaterialSummary,
     MemberDirectory,
-    MemberDirectoryCard,
     MemberProfile,
     Mentionable,
     MentionableScope,
@@ -103,7 +111,6 @@ from elbysodic.services.read_models import (
     WantedAdDetail,
     WantedBoard,
     WorldHub,
-    WriterCollaborator,
 )
 from elbysodic.services.read_models import (
     POSTING_MODES as POSTING_MODES,
@@ -299,7 +306,7 @@ class AppServices:
 
     def my_threads(self, *, character_slug: str | None = None) -> MyThreadsDashboard:
         viewer = self.viewer()
-        selected_character = self._selected_character(viewer, character_slug)
+        selected_character = _selected_character(self.repo, viewer, character_slug)
         target_ids = (
             {selected_character.id}
             if selected_character is not None
@@ -312,27 +319,12 @@ class AppServices:
             started_by_me=[item for item in sorted_items if item.is_started_by_roster],
             participated=sorted_items,
             selected_character=selected_character,
-            roster_activity=self._roster_activity(viewer),
+            roster_activity=_roster_activity(self.repo, viewer),
         )
 
     def character_roster(self) -> CharacterRosterDashboard:
         viewer = self.viewer()
-        return CharacterRosterDashboard(
-            cards=[
-                CharacterRosterCard(
-                    character=character,
-                    is_default=viewer.membership.default_character_id == character.id,
-                    activity=self._character_activity(viewer, character),
-                    application_status_label=_application_status_label(
-                        character.application_status
-                    ),
-                    application_status_variant=_application_status_variant(
-                        character.application_status
-                    ),
-                )
-                for character in viewer.roster
-            ]
-        )
+        return _character_roster_dashboard(self.repo, viewer)
 
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
@@ -369,49 +361,11 @@ class AppServices:
 
     def members_directory(self) -> MemberDirectory:
         viewer = self.viewer()
-        cards = [
-            self._member_directory_card(viewer, membership)
-            for membership in self.repo.list_memberships(viewer.community.id)
-            if membership.is_active
-        ]
-        return MemberDirectory(cards=cards)
+        return _member_directory(self.repo, viewer)
 
     def read_member(self, username: str) -> MemberProfile:
         viewer = self.viewer()
-        membership = self.repo.get_membership_by_username(viewer.community.id, username)
-        if not membership.is_active:
-            raise LookupError(
-                f"membership not found in community {viewer.community.id}: {username}"
-            )
-        roster = self.repo.list_characters(viewer.community.id, membership.id)
-        roster_ids = {character.id for character in roster}
-        active_threads = _thread_obligations(self.repo, viewer, roster_ids)
-        recent_posts = _recent_character_posts(
-            self.repo,
-            viewer,
-            roster_ids,
-            limit=8,
-        )
-        return MemberProfile(
-            membership=membership,
-            role=self.repo.get_role(viewer.community.id, membership.role_id),
-            roster=roster,
-            default_character=_default_character(roster, membership.default_character_id),
-            known_for=_known_for_characters(self.repo, viewer, roster, limit=3),
-            collaborators=_writer_collaborators(
-                self.repo,
-                viewer,
-                membership,
-                roster_ids,
-                limit=4,
-            ),
-            visible_post_count=len(_visible_character_posts(self.repo, viewer, roster_ids)),
-            visible_thread_count=len(active_threads),
-            active_threads=active_threads,
-            started_threads=[item for item in active_threads if item.is_started_by_roster],
-            recent_posts=recent_posts,
-            is_current_member=membership.id == viewer.membership.id,
-        )
+        return _member_profile(self.repo, viewer, username)
 
     def board_threads(
         self,
@@ -863,47 +817,7 @@ class AppServices:
 
     def read_character(self, character_slug: str) -> CharacterProfile:
         viewer = self.viewer()
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        owner_membership = self.repo.get_membership(viewer.community.id, character.membership_id)
-        can_manage = character.membership_id == viewer.membership.id
-        recent_posts = _recent_character_posts(
-            self.repo,
-            viewer,
-            {character.id},
-            limit=5,
-        )
-        activity = self._character_activity(viewer, character)
-        return CharacterProfile(
-            character=character,
-            owner_membership=owner_membership,
-            facets=_facet_tags(
-                self.repo,
-                viewer.community.id,
-                self.repo.list_character_facets(viewer.community.id, character.id),
-            ),
-            wanted_ads=[
-                _wanted_ad_summary(self.repo, viewer.community.id, wanted_ad)
-                for wanted_ad in self.repo.list_wanted_ads_for_character(
-                    viewer.community.id,
-                    character.id,
-                )
-            ],
-            reserves=[
-                _character_reserve_view(self.repo, viewer.community.id, reserve)
-                for reserve in self.repo.list_character_reserves(
-                    viewer.community.id,
-                    character.id,
-                )
-            ],
-            application_status_label=_application_status_label(character.application_status),
-            application_status_variant=_application_status_variant(character.application_status),
-            is_default=can_manage and viewer.membership.default_character_id == character.id,
-            can_manage=can_manage,
-            post_count=len(_visible_character_posts(self.repo, viewer, {character.id})),
-            thread_count=len(activity.started_by_character),
-            activity=activity,
-            recent_posts=recent_posts,
-        )
+        return _character_profile(self.repo, viewer, character_slug)
 
     def read_post_editor(self, board_slug: str, thread_slug: str, post_id: int) -> EditablePostView:
         viewer = self.viewer()
@@ -1353,20 +1267,6 @@ class AppServices:
             raise PermissionError(f"membership {viewer.membership.id} cannot edit post {post.id}")
         return board, thread, post
 
-    def _selected_character(
-        self,
-        viewer: ForumView,
-        character_slug: str | None,
-    ) -> Character | None:
-        if not character_slug:
-            return None
-        character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
-        if character.membership_id != viewer.membership.id:
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot filter by character {character.id}"
-            )
-        return character
-
     def _notify_application_directors(self, viewer: ForumView, character: Character) -> None:
         for membership in self.repo.list_memberships(viewer.community.id):
             role = self.repo.get_role(viewer.community.id, membership.role_id)
@@ -1397,44 +1297,6 @@ class AppServices:
             character_id=character.id,
             actor_membership_id=viewer.membership.id,
             actor_character_id=actor_character_id,
-        )
-
-    def _character_activity(
-        self,
-        viewer: ForumView,
-        character: Character,
-    ) -> CharacterThreadActivity:
-        items = _thread_obligations(self.repo, viewer, {character.id})
-        return CharacterThreadActivity(
-            character=character,
-            needs_reply=[item for item in items if item.needs_reply],
-            waiting_on_others=[item for item in items if item.waiting_on_others],
-            started_by_character=[item for item in items if item.is_started_by_roster],
-            participated=items,
-        )
-
-    def _roster_activity(self, viewer: ForumView) -> list[CharacterThreadActivity]:
-        return [self._character_activity(viewer, character) for character in viewer.roster]
-
-    def _member_directory_card(
-        self,
-        viewer: ForumView,
-        membership: CommunityMembership,
-    ) -> MemberDirectoryCard:
-        roster = self.repo.list_characters(viewer.community.id, membership.id)
-        roster_ids = {character.id for character in roster}
-        active_threads = _thread_obligations(self.repo, viewer, roster_ids)
-        latest_posts = _recent_character_posts(self.repo, viewer, roster_ids, limit=1)
-        return MemberDirectoryCard(
-            membership=membership,
-            role=self.repo.get_role(viewer.community.id, membership.role_id),
-            roster=roster,
-            default_character=_default_character(roster, membership.default_character_id),
-            known_for=_known_for_characters(self.repo, viewer, roster, limit=2),
-            visible_post_count=len(_visible_character_posts(self.repo, viewer, roster_ids)),
-            active_thread_count=len(active_threads),
-            latest_post=latest_posts[0] if latest_posts else None,
-            is_current_member=membership.id == viewer.membership.id,
         )
 
 
@@ -1597,18 +1459,6 @@ def _board_summary(
     )
 
 
-def _default_character(
-    roster: list[Character],
-    default_character_id: int | None,
-) -> Character | None:
-    if default_character_id is None:
-        return roster[0] if roster else None
-    return next(
-        (character for character in roster if character.id == default_character_id),
-        roster[0] if roster else None,
-    )
-
-
 def _application_character_view(
     repo: ForumRepository,
     viewer: ForumView,
@@ -1633,14 +1483,6 @@ def _application_character_view(
         status_variant=_application_status_variant(character.application_status),
         is_owned_by_viewer=character.membership_id == viewer.membership.id,
     )
-
-
-def _application_status_label(status: str) -> str:
-    return APPLICATION_STATUS_LABELS.get(status, status.replace("_", " ").title())
-
-
-def _application_status_variant(status: str) -> str:
-    return APPLICATION_STATUS_VARIANTS.get(status, "muted")
 
 
 def _application_actor_character_id(viewer: ForumView, target_character: Character) -> int:
@@ -1740,152 +1582,6 @@ def _discovery_open_threads(
         ),
         reverse=True,
     )
-
-
-def _visible_character_posts(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character_ids: set[int],
-) -> list[CharacterAppearance]:
-    if not character_ids:
-        return []
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    items: list[CharacterAppearance] = []
-    for character_id in character_ids:
-        for post in repo.list_posts_by_character(viewer.community.id, character_id):
-            thread = repo.get_thread(viewer.community.id, post.thread_id)
-            board = visible_boards.get(thread.board_id)
-            if board is None:
-                continue
-            items.append(
-                CharacterAppearance(
-                    post=_post_view(repo, viewer.community.id, post),
-                    thread=thread,
-                    board=board,
-                )
-            )
-    return sorted(
-        items,
-        key=lambda item: (_timestamp_key(item.post.post.created_at), item.post.post.id),
-        reverse=True,
-    )
-
-
-def _recent_character_posts(
-    repo: ForumRepository,
-    viewer: ForumView,
-    character_ids: set[int],
-    *,
-    limit: int,
-) -> list[CharacterAppearance]:
-    return _visible_character_posts(repo, viewer, character_ids)[:limit]
-
-
-def _known_for_characters(
-    repo: ForumRepository,
-    viewer: ForumView,
-    roster: list[Character],
-    *,
-    limit: int,
-) -> list[Character]:
-    if not roster:
-        return []
-    appearances = _visible_character_posts(
-        repo,
-        viewer,
-        {character.id for character in roster},
-    )
-    counts: dict[int, int] = {}
-    latest: dict[int, tuple[str, int]] = {}
-    for appearance in appearances:
-        character_id = appearance.post.author.id
-        counts[character_id] = counts.get(character_id, 0) + 1
-        latest[character_id] = max(
-            latest.get(character_id, ("", 0)),
-            (
-                appearance.post.post.created_at,
-                appearance.post.post.id,
-            ),
-        )
-    ranked = sorted(
-        roster,
-        key=lambda character: (
-            counts.get(character.id, 0),
-            latest.get(character.id, ("", 0)),
-            character.name.lower(),
-        ),
-        reverse=True,
-    )
-    return ranked[:limit]
-
-
-def _writer_collaborators(
-    repo: ForumRepository,
-    viewer: ForumView,
-    membership: CommunityMembership,
-    roster_ids: set[int],
-    *,
-    limit: int,
-) -> list[WriterCollaborator]:
-    if not roster_ids:
-        return []
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    counts: dict[int, int] = {}
-    latest: dict[int, tuple[str, int, Thread, Board]] = {}
-    for thread in repo.list_threads(viewer.community.id):
-        board = visible_boards.get(thread.board_id)
-        if board is None:
-            continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        if not any(
-            post.author_membership_id == membership.id or post.author_character_id in roster_ids
-            for post in posts
-        ):
-            continue
-        other_membership_ids = {
-            post.author_membership_id
-            for post in posts
-            if post.author_membership_id != membership.id
-        }
-        for other_id in other_membership_ids:
-            counts[other_id] = counts.get(other_id, 0) + 1
-            candidate = (thread.updated_at, thread.id, thread, board)
-            if candidate[:2] > latest.get(other_id, ("", 0, thread, board))[:2]:
-                latest[other_id] = candidate
-    collaborators: list[WriterCollaborator] = []
-    for membership_id, shared_thread_count in counts.items():
-        try:
-            collaborator = repo.get_membership(viewer.community.id, membership_id)
-        except LookupError:
-            continue
-        if not collaborator.is_active:
-            continue
-        _stamp, _thread_id, latest_thread, latest_board = latest[membership_id]
-        collaborators.append(
-            WriterCollaborator(
-                membership=collaborator,
-                shared_thread_count=shared_thread_count,
-                latest_thread=latest_thread,
-                latest_board=latest_board,
-            )
-        )
-    return sorted(
-        collaborators,
-        key=lambda item: (
-            item.shared_thread_count,
-            _timestamp_key(item.latest_thread.updated_at),
-            item.membership.display_name.lower(),
-        ),
-        reverse=True,
-    )[:limit]
 
 
 def _latest_thread(threads: list[Thread]) -> Thread | None:
