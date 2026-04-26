@@ -43,6 +43,11 @@ from elbysodic.services.facets import (
     resolve_facets as _resolve_facets,
 )
 from elbysodic.services.markup import post_snippet, render_post_body
+from elbysodic.services.materials import (
+    current_event_for_facet_ids as _current_event_for_facet_ids,
+)
+from elbysodic.services.materials import material_detail as _material_detail
+from elbysodic.services.materials import material_summary as _material_summary
 from elbysodic.services.posts import post_mention_links as _post_mention_links
 from elbysodic.services.posts import post_revision_view as _post_revision_view
 from elbysodic.services.posts import post_view as _post_view
@@ -66,13 +71,11 @@ from elbysodic.services.read_models import (
     CharacterRosterCard,
     CharacterRosterDashboard,
     CharacterThreadActivity,
-    ContinuityBeat,
     CreatedThread,
     DirectorStudio,
     DiscoveryCharacterResult,
     DiscoveryThreadResult,
     EditablePostView,
-    EventAction,
     FacetTag,
     ForumView,
     LocationNavigationGroup,
@@ -617,68 +620,21 @@ class AppServices:
             raise LookupError(
                 f"material not found in community {viewer.community.id}: {material_slug}"
             )
-        facets = _facet_tags(
+        return _material_detail(
             self.repo,
-            viewer.community.id,
-            self.repo.list_material_facets(viewer.community.id, material.id),
-        )
-        facet_ids = {tag.facet.id for tag in facets}
-        related = []
-        for candidate in self.repo.list_materials(viewer.community.id):
-            if candidate.id == material.id:
-                continue
-            candidate_facets = _facet_tags(
+            viewer,
+            material,
+            board_summary_factory=lambda board: _board_summary(
+                self.repo,
+                viewer,
+                board,
+                _current_character_facet_ids(self.repo, viewer),
+            ),
+            wanted_summary_factory=lambda wanted_ad: _wanted_ad_summary(
                 self.repo,
                 viewer.community.id,
-                self.repo.list_material_facets(viewer.community.id, candidate.id),
-            )
-            if facet_ids and not facet_ids.intersection({tag.facet.id for tag in candidate_facets}):
-                continue
-            related.append(_material_summary(self.repo, viewer.community.id, candidate))
-        related_wanted_ads = _material_related_wanted_ads(
-            self.repo,
-            viewer,
-            material,
-            facet_ids,
-        )[:4]
-        related_locations = _material_related_locations(
-            self.repo,
-            viewer,
-            material,
-            facet_ids,
-        )[:4]
-        related_scenes = _material_related_scenes(
-            self.repo,
-            viewer,
-            material,
-            facet_ids,
-        )[:4]
-        return MaterialDetail(
-            material=material,
-            facets=facets,
-            rendered_body=render_post_body(
-                material.body,
-                mentions=_post_mention_links(self.repo, viewer.community.id),
+                wanted_ad,
             ),
-            type_label=_material_type_label(material.material_type),
-            related_materials=related[:4],
-            related_locations=related_locations,
-            related_scenes=related_scenes,
-            related_wanted_ads=related_wanted_ads,
-            continuity_beats=_material_continuity_beats(
-                material,
-                related_locations,
-                related_scenes,
-                related_wanted_ads,
-            ),
-            event_actions=_material_event_actions(
-                material,
-                facets,
-                related_locations,
-                related_scenes,
-                related_wanted_ads,
-            ),
-            can_manage=viewer.role.is_admin,
         )
 
     def current_event_for_board(self, board: Board) -> MaterialSummary | None:
@@ -1875,303 +1831,6 @@ def _default_character(
         (character for character in roster if character.id == default_character_id),
         roster[0] if roster else None,
     )
-
-
-def _material_summary(
-    repo: ForumRepository,
-    community_id: int,
-    material: Material,
-) -> MaterialSummary:
-    return MaterialSummary(
-        material=material,
-        facets=_facet_tags(
-            repo,
-            community_id,
-            repo.list_material_facets(community_id, material.id),
-        ),
-        rendered_summary=material.summary or post_snippet(material.body, limit=160),
-        type_label=_material_type_label(material.material_type),
-    )
-
-
-def _material_type_label(material_type: str) -> str:
-    return {
-        "premise": "Premise",
-        "guide": "Guide",
-        "factions": "Factions",
-        "application": "Application",
-        "event": "Event",
-    }.get(material_type, material_type.replace("_", " ").title())
-
-
-def _material_related_locations(
-    repo: ForumRepository,
-    viewer: ForumView,
-    material: Material,
-    facet_ids: set[int],
-) -> list[BoardSummary]:
-    if not facet_ids:
-        return []
-    current_facet_ids = _current_character_facet_ids(repo, viewer)
-    summaries: list[BoardSummary] = []
-    for board in repo.list_boards(viewer.community.id):
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            continue
-        board_facet_ids = {
-            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
-        }
-        if not facet_ids.intersection(board_facet_ids):
-            continue
-        summaries.append(_board_summary(repo, viewer, board, current_facet_ids))
-    return sorted(
-        summaries,
-        key=lambda item: (
-            not item.is_relevant_to_current_face,
-            item.board.sort_order,
-            item.board.name,
-            item.board.id,
-        ),
-    )
-
-
-def _material_related_scenes(
-    repo: ForumRepository,
-    viewer: ForumView,
-    material: Material,
-    facet_ids: set[int],
-) -> list[DiscoveryThreadResult]:
-    if not facet_ids:
-        return []
-    visible_boards = {
-        board.id: board
-        for board in repo.list_boards(viewer.community.id)
-        if policies.can_view_board(viewer.membership, board, viewer.role)
-    }
-    results: list[DiscoveryThreadResult] = []
-    for thread in repo.list_threads(viewer.community.id):
-        board = visible_boards.get(thread.board_id)
-        if board is None:
-            continue
-        thread_facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_thread_facets(viewer.community.id, thread.id),
-        )
-        thread_facet_ids = {tag.facet.id for tag in thread_facets}
-        board_facet_ids = {
-            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
-        }
-        matching_facets = [tag for tag in thread_facets if tag.facet.id in facet_ids]
-        if not facet_ids.intersection(thread_facet_ids | board_facet_ids):
-            continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        results.append(
-            DiscoveryThreadResult(
-                board=board,
-                thread=thread,
-                author=repo.get_character(viewer.community.id, thread.author_character_id),
-                participants=repo.list_thread_participants(viewer.community.id, thread.id),
-                facets=thread_facets,
-                matching_facets=matching_facets,
-                reply_count=max(0, len(posts) - 1),
-            )
-        )
-    return sorted(
-        results,
-        key=lambda item: (_timestamp_key(item.thread.updated_at), item.thread.id),
-        reverse=True,
-    )
-
-
-def _material_related_wanted_ads(
-    repo: ForumRepository,
-    viewer: ForumView,
-    material: Material,
-    facet_ids: set[int],
-) -> list[WantedAdSummary]:
-    results: list[WantedAdSummary] = []
-    for wanted_ad in repo.list_wanted_ads(viewer.community.id):
-        wanted_facet_ids = {
-            facet.id for facet in repo.list_wanted_ad_facets(viewer.community.id, wanted_ad.id)
-        }
-        if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
-            wanted_facet_ids
-        ):
-            continue
-        results.append(_wanted_ad_summary(repo, viewer.community.id, wanted_ad))
-    return sorted(
-        results,
-        key=lambda item: (
-            item.wanted_ad.related_material_id != material.id,
-            _timestamp_key(item.wanted_ad.updated_at),
-            item.wanted_ad.id,
-        ),
-        reverse=True,
-    )
-
-
-def _current_event_for_facet_ids(
-    repo: ForumRepository,
-    community_id: int,
-    facet_ids: set[int],
-) -> MaterialSummary | None:
-    if not facet_ids:
-        return None
-    matches: list[Material] = []
-    for material in repo.list_materials(community_id):
-        if material.material_type != "event" or material.status != "published":
-            continue
-        material_facet_ids = {
-            facet.id for facet in repo.list_material_facets(community_id, material.id)
-        }
-        if facet_ids.intersection(material_facet_ids):
-            matches.append(material)
-    if not matches:
-        return None
-    current = sorted(
-        matches,
-        key=lambda item: (
-            not item.is_featured,
-            item.sort_order,
-            _timestamp_key(item.updated_at),
-            item.id,
-        ),
-    )[0]
-    return _material_summary(repo, community_id, current)
-
-
-def _material_event_actions(
-    material: Material,
-    facets: list[FacetTag],
-    related_locations: list[BoardSummary],
-    related_scenes: list[DiscoveryThreadResult],
-    related_wanted_ads: list[WantedAdSummary],
-) -> list[EventAction]:
-    if material.material_type != "event":
-        return []
-    actions: list[EventAction] = []
-    open_scene = next(
-        (scene for scene in related_scenes if scene.thread.status == "open"),
-        related_scenes[0] if related_scenes else None,
-    )
-    if open_scene is not None:
-        actions.append(
-            EventAction(
-                kind="scene",
-                label="Scene to write",
-                title=open_scene.thread.title,
-                description=open_scene.thread.summary
-                or f"{open_scene.board.name} is carrying this event into play.",
-                href=f"/boards/{open_scene.board.slug}/threads/{open_scene.thread.slug}",
-                cta="Enter scene",
-            )
-        )
-    open_wanted = next(
-        (item for item in related_wanted_ads if item.wanted_ad.status == "open"),
-        related_wanted_ads[0] if related_wanted_ads else None,
-    )
-    if open_wanted is not None:
-        actions.append(
-            EventAction(
-                kind="wanted",
-                label=open_wanted.type_label,
-                title=open_wanted.wanted_ad.title,
-                description=open_wanted.wanted_ad.summary
-                or "A writer-facing hook connected to this event.",
-                href=f"/wanted/{open_wanted.wanted_ad.slug}",
-                cta="Answer hook",
-            )
-        )
-    if related_locations:
-        location = related_locations[0]
-        actions.append(
-            EventAction(
-                kind="location",
-                label="Affected location",
-                title=location.board.name,
-                description=location.board.tagline or location.board.description,
-                href=f"/boards/{location.board.slug}",
-                cta="Explore location",
-            )
-        )
-    facet_slugs = [tag.facet.slug for tag in facets[:4]]
-    if facet_slugs:
-        actions.append(
-            EventAction(
-                kind="discover",
-                label="Plot lens",
-                title="Find cast by event facets",
-                description="Use this event's world lenses to find characters, writers, and open scenes.",
-                href=f"/discover?facets={','.join(facet_slugs)}",
-                cta="Open discovery",
-            )
-        )
-    return actions[:4]
-
-
-def _material_continuity_beats(
-    material: Material,
-    related_locations: list[BoardSummary],
-    related_scenes: list[DiscoveryThreadResult],
-    related_wanted_ads: list[WantedAdSummary],
-) -> list[ContinuityBeat]:
-    beats = [
-        ContinuityBeat(
-            title=f"{_material_type_label(material.material_type)} opened",
-            date_label=_timestamp_label(material.created_at),
-            content=material.summary
-            or "Directors published this world material for writers to carry into play.",
-            variant="info",
-        )
-    ]
-    if _timestamp_key(material.updated_at) > _timestamp_key(material.created_at):
-        beats.append(
-            ContinuityBeat(
-                title="Canon updated",
-                date_label=_timestamp_label(material.updated_at),
-                content="Directors revised this material as the board state changed.",
-            )
-        )
-    if related_locations:
-        location = related_locations[0].board
-        beats.append(
-            ContinuityBeat(
-                title="Pressure reaches the map",
-                date_label="Now",
-                content=(
-                    f"{len(related_locations)} relevant location"
-                    f"{'' if len(related_locations) == 1 else 's'} are carrying this material, "
-                    f"starting with {location.name}."
-                ),
-                href=f"/boards/{location.slug}",
-                variant="success",
-            )
-        )
-    beats.extend(
-        ContinuityBeat(
-            title=f"Scene: {scene.thread.title}",
-            date_label=_timestamp_label(scene.thread.updated_at),
-            content=(
-                f"{scene.board.name} · {scene.reply_count} "
-                f"{'reply' if scene.reply_count == 1 else 'replies'} · "
-                f"{len(scene.participants)} in the cast"
-            ),
-            href=f"/boards/{scene.board.slug}/threads/{scene.thread.slug}",
-            variant="info",
-        )
-        for scene in related_scenes[:2]
-    )
-    beats.extend(
-        ContinuityBeat(
-            title=f"Open hook: {wanted_ad.wanted_ad.title}",
-            date_label=_timestamp_label(wanted_ad.wanted_ad.updated_at),
-            content=f"{wanted_ad.type_label}: {wanted_ad.wanted_ad.summary}",
-            href=f"/wanted/{wanted_ad.wanted_ad.slug}",
-            variant="warning",
-        )
-        for wanted_ad in related_wanted_ads[:2]
-    )
-    return beats[:6]
 
 
 def _wanted_ad_summary(
