@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import cast
 
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, seed_demo_forum
@@ -66,9 +65,15 @@ from elbysodic.services.notifications import (
     mark_all_notifications_read as _mark_all_notifications_read,
 )
 from elbysodic.services.notifications import notification_inbox as _notification_inbox
-from elbysodic.services.notifications import notify_post_created as _notify_post_created
 from elbysodic.services.notifications import open_notification as _open_notification
-from elbysodic.services.posts import post_revision_view as _post_revision_view
+from elbysodic.services.posting import join_thread_as_current_character as _join_thread
+from elbysodic.services.posting import read_post_editor as _read_post_editor
+from elbysodic.services.posting import read_post_revisions as _read_post_revisions
+from elbysodic.services.posting import reply_to_thread as _reply_to_thread
+from elbysodic.services.posting import search_mentionables as _search_mentionables
+from elbysodic.services.posting import start_thread as _start_thread
+from elbysodic.services.posting import update_post as _update_post
+from elbysodic.services.posting import update_thread_scene as _update_thread_scene
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
@@ -93,7 +98,6 @@ from elbysodic.services.read_models import (
     MemberDirectory,
     MemberProfile,
     Mentionable,
-    MentionableScope,
     MyThreadsDashboard,
     NotificationInbox,
     PlotDiscovery,
@@ -114,14 +118,10 @@ from elbysodic.services.read_models import (
 from elbysodic.services.threads import (
     board_thread_summaries as _board_thread_summaries,
 )
-from elbysodic.services.threads import clean_participant_ids as _clean_participant_ids
-from elbysodic.services.threads import clean_posting_mode as _clean_posting_mode
-from elbysodic.services.threads import clean_thread_status as _clean_thread_status
 from elbysodic.services.threads import is_live_queue_thread as _is_live_queue_thread
 from elbysodic.services.threads import is_unread as _is_unread
 from elbysodic.services.threads import next_unread_thread as _next_unread_thread
 from elbysodic.services.threads import read_thread_view as _read_thread_view
-from elbysodic.services.threads import taggable_characters
 from elbysodic.services.threads import thread_needs_attention as _thread_needs_attention
 from elbysodic.services.threads import thread_obligations as _thread_obligations
 from elbysodic.services.timestamps import timestamp_key as _timestamp_key
@@ -390,26 +390,7 @@ class AppServices:
         self.repo.unwatch_thread(viewer.community.id, thread.id, viewer.membership.id)
 
     def join_thread_as_current_character(self, board_slug: str, thread_slug: str) -> None:
-        viewer = self.viewer()
-        if viewer.current_character is None:
-            raise ValueError("create a character before joining a scene")
-        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
-        if thread.status != "open" or thread.is_locked:
-            raise PermissionError(f"thread {thread.id} is not open to join")
-        if not policies.can_reply(viewer.membership, thread, viewer.role):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot join thread {thread.id}"
-            )
-        if not policies.can_post_as(viewer.membership, viewer.current_character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot use character {viewer.current_character.id}"
-            )
-        self.repo.add_thread_participant(
-            viewer.community.id,
-            thread.id,
-            viewer.current_character.id,
-        )
-        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
+        _join_thread(self.repo, self.viewer(), board_slug, thread_slug)
 
     def discover_plots(self, *, facet_slugs: list[str] | None = None) -> PlotDiscovery:
         return _discover_plots(self.repo, self.viewer(), facet_slugs=facet_slugs)
@@ -605,33 +586,7 @@ class AppServices:
         scope: str = "all",
         limit: int = 8,
     ) -> list[Mentionable]:
-        viewer = self.viewer()
-        mention_scope = _clean_mentionable_scope(scope)
-        cleaned_query = query.strip().lstrip("@")
-        if not cleaned_query:
-            return []
-
-        items: list[Mentionable] = []
-        if mention_scope in {"all", "cast", "characters"}:
-            excluded_memberships = [viewer.membership.id] if mention_scope == "cast" else []
-            characters = self.repo.search_characters(
-                viewer.community.id,
-                cleaned_query,
-                limit=limit,
-                exclude_membership_ids=excluded_memberships,
-            )
-            items.extend(_character_mentionable(character) for character in characters)
-
-        remaining = max(0, limit - len(items))
-        if remaining and mention_scope in {"all", "writers", "ooc"}:
-            memberships = self.repo.search_memberships(
-                viewer.community.id,
-                cleaned_query,
-                limit=remaining,
-            )
-            items.extend(_membership_mentionable(membership) for membership in memberships)
-
-        return items[:limit]
+        return _search_mentionables(self.repo, self.viewer(), query, scope=scope, limit=limit)
 
     def open_notification(self, notification_id: int) -> str:
         return _open_notification(self.repo, self.viewer(), notification_id)
@@ -666,19 +621,7 @@ class AppServices:
         return _character_profile(self.repo, viewer, character_slug)
 
     def read_post_editor(self, board_slug: str, thread_slug: str, post_id: int) -> EditablePostView:
-        viewer = self.viewer()
-        board, thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
-        return EditablePostView(
-            board=board,
-            thread=thread,
-            post=_post_view(
-                self.repo,
-                viewer.community.id,
-                post,
-                viewer_membership=viewer.membership,
-                viewer_role=viewer.role,
-            ),
-        )
+        return _read_post_editor(self.repo, self.viewer(), board_slug, thread_slug, post_id)
 
     def read_post_revisions(
         self,
@@ -686,24 +629,7 @@ class AppServices:
         thread_slug: str,
         post_id: int,
     ) -> PostRevisionHistory:
-        viewer = self.viewer()
-        board, thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
-        revisions = [
-            _post_revision_view(self.repo, viewer.community.id, revision)
-            for revision in self.repo.list_post_revisions(viewer.community.id, post.id)
-        ]
-        return PostRevisionHistory(
-            board=board,
-            thread=thread,
-            post=_post_view(
-                self.repo,
-                viewer.community.id,
-                post,
-                viewer_membership=viewer.membership,
-                viewer_role=viewer.role,
-            ),
-            revisions=revisions,
-        )
+        return _read_post_revisions(self.repo, self.viewer(), board_slug, thread_slug, post_id)
 
     def create_character(
         self,
@@ -792,21 +718,7 @@ class AppServices:
         )
 
     def update_post(self, board_slug: str, thread_slug: str, post_id: int, body: str) -> Post:
-        viewer = self.viewer()
-        _board, _thread, post = self._editable_post(viewer, board_slug, thread_slug, post_id)
-        cleaned = body.strip()
-        if not cleaned:
-            raise ValueError("post body is required")
-        if cleaned == post.body:
-            return post
-        self.repo.create_post_revision(
-            viewer.community.id,
-            post.id,
-            viewer.membership.id,
-            post.body,
-            cleaned,
-        )
-        return self.repo.update_post_body(viewer.community.id, post_id, cleaned)
+        return _update_post(self.repo, self.viewer(), board_slug, thread_slug, post_id, body)
 
     def update_thread_state(
         self,
@@ -844,46 +756,18 @@ class AppServices:
         posting_mode: str = "freeform",
         participant_ids: list[int] | None = None,
     ) -> Thread:
-        viewer = self.viewer()
-        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
-        if not self._can_manage_scene(viewer, thread):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot manage scene {thread.id}"
-            )
-        cleaned_status = _clean_thread_status(status)
-        cleaned_posting_mode = _clean_posting_mode(posting_mode)
-        self.repo.update_thread_scene(
-            viewer.community.id,
-            thread.id,
-            status=cleaned_status,
-            location=location.strip(),
-            timeline=timeline.strip(),
-            summary=summary.strip(),
-            posting_mode=cleaned_posting_mode,
+        return _update_thread_scene(
+            self.repo,
+            self.viewer(),
+            board_slug,
+            thread_slug,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            participant_ids=participant_ids,
         )
-        posted_character_ids = {
-            post.author_character_id
-            for post in self.repo.list_posts(viewer.community.id, thread.id)
-        }
-        required_ids = [thread.author_character_id, *posted_character_ids]
-        taggable_ids = {
-            character.id
-            for character in taggable_characters(
-                self.repo.list_community_characters(viewer.community.id),
-                viewer.roster,
-            )
-        }
-        tag_ids = [
-            character_id
-            for character_id in _clean_participant_ids(participant_ids or [])
-            if character_id in taggable_ids
-        ]
-        self.repo.set_thread_participants(
-            viewer.community.id,
-            thread.id,
-            _clean_participant_ids([*required_ids, *tag_ids]),
-        )
-        return self.repo.get_thread(viewer.community.id, thread.id)
 
     def move_thread(
         self,
@@ -925,28 +809,9 @@ class AppServices:
     def reply_to_thread(
         self, board_slug: str, thread_slug: str, character_id: int, body: str
     ) -> Post:
-        viewer = self.viewer()
-        character = self.repo.get_character(viewer.community.id, character_id)
-        if not policies.can_post_as(viewer.membership, character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot use character {character_id}"
-            )
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        if not policies.can_reply(viewer.membership, thread, viewer.role):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot reply to thread {thread.id}"
-            )
-        cleaned = body.strip()
-        if not cleaned:
-            raise ValueError("reply body is required")
-        post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned)
-        _notify_post_created(self.repo, viewer, thread, post)
-        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
-        self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
-        return post
+        return _reply_to_thread(
+            self.repo, self.viewer(), board_slug, thread_slug, character_id, body
+        )
 
     def start_thread(
         self,
@@ -989,54 +854,20 @@ class AppServices:
         posting_mode: str = "freeform",
         participant_ids: list[int] | None = None,
     ) -> CreatedThread:
-        viewer = self.viewer()
-        character = self.repo.get_character(viewer.community.id, character_id)
-        if not policies.can_post_as(viewer.membership, character):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot use character {character_id}"
-            )
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        if not policies.can_start_thread(viewer.membership, board, viewer.role):
-            raise PermissionError(
-                f"membership {viewer.membership.id} cannot start threads in board {board.id}"
-            )
-        cleaned_title = title.strip()
-        if not cleaned_title:
-            raise ValueError("thread title is required")
-        cleaned_body = body.strip()
-        if not cleaned_body:
-            raise ValueError("opening post is required")
-        cleaned_status = _clean_thread_status(status)
-        cleaned_posting_mode = _clean_posting_mode(posting_mode)
-        cleaned_location = location.strip()
-        cleaned_timeline = timeline.strip()
-        cleaned_summary = summary.strip()
-        cleaned_participant_ids = _clean_participant_ids([character.id, *(participant_ids or [])])
-        for participant_id in cleaned_participant_ids:
-            self.repo.get_character(viewer.community.id, participant_id)
-        slug = _unique_thread_slug(self.repo, viewer.community.id, board.id, cleaned_title)
-        thread = self.repo.create_thread(
-            viewer.community.id,
-            board.id,
-            character.id,
-            slug,
-            cleaned_title,
-            status=cleaned_status,
-            location=cleaned_location,
-            timeline=cleaned_timeline,
-            summary=cleaned_summary,
-            posting_mode=cleaned_posting_mode,
+        return _start_thread(
+            self.repo,
+            self.viewer(),
+            board_slug=board_slug,
+            character_id=character_id,
+            title=title,
+            body=body,
+            status=status,
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            participant_ids=participant_ids,
         )
-        self.repo.set_thread_participants(
-            viewer.community.id,
-            thread.id,
-            cleaned_participant_ids,
-        )
-        post = self.repo.create_post(viewer.community.id, thread.id, character.id, cleaned_body)
-        thread = self.repo.get_thread(viewer.community.id, thread.id)
-        self.repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
-        self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
-        return CreatedThread(thread=thread, post=post)
 
     def _visible_thread(
         self,
@@ -1049,31 +880,6 @@ class AppServices:
             raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
         return board, thread
-
-    def _can_manage_scene(self, viewer: ForumView, thread: Thread) -> bool:
-        return thread.author_membership_id == viewer.membership.id or policies.can_moderate_thread(
-            viewer.membership,
-            thread,
-            viewer.role,
-        )
-
-    def _editable_post(
-        self,
-        viewer: ForumView,
-        board_slug: str,
-        thread_slug: str,
-        post_id: int,
-    ) -> tuple[Board, Thread, Post]:
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
-        post = self.repo.get_post(viewer.community.id, post_id)
-        if post.thread_id != thread.id:
-            raise LookupError(f"post {post_id} does not belong to thread {thread.id}")
-        if not policies.can_edit_post(viewer.membership, post, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot edit post {post.id}")
-        return board, thread, post
 
 
 def create_services(path: str | Path | None = None) -> AppServices:
@@ -1241,37 +1047,6 @@ def _latest_thread(threads: list[Thread]) -> Thread | None:
     return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
 
 
-def _clean_mentionable_scope(value: str) -> MentionableScope:
-    scope = value.strip().lower().replace("-", "_")
-    if scope not in {"all", "cast", "characters", "writers", "ooc"}:
-        return "all"
-    return cast(MentionableScope, scope)
-
-
-def _character_mentionable(character: Character) -> Mentionable:
-    return Mentionable(
-        kind="character",
-        id=character.id,
-        handle=character.slug,
-        label=character.name,
-        detail="Character",
-        avatar_url=character.avatar_url,
-        href=f"/characters/{character.slug}",
-    )
-
-
-def _membership_mentionable(membership: CommunityMembership) -> Mentionable:
-    return Mentionable(
-        kind="writer",
-        id=membership.id,
-        handle=membership.username,
-        label=membership.display_name,
-        detail=f"Writer @{membership.username}",
-        avatar_url=membership.avatar_url,
-        href=f"/members/{membership.username}",
-    )
-
-
 def _unique_character_slug(
     repo: ForumRepository,
     community_id: int,
@@ -1288,24 +1063,6 @@ def _unique_character_slug(
         except LookupError:
             return slug
         if existing.id == current_character_id:
-            return slug
-        slug = f"{base}-{suffix}"
-        suffix += 1
-
-
-def _unique_thread_slug(
-    repo: ForumRepository,
-    community_id: int,
-    board_id: int,
-    title: str,
-) -> str:
-    base = _slugify(title)
-    slug = base
-    suffix = 2
-    while True:
-        try:
-            repo.get_thread_by_slug(community_id, board_id, slug)
-        except LookupError:
             return slug
         slug = f"{base}-{suffix}"
         suffix += 1
