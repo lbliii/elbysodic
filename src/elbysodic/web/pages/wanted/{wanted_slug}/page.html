@@ -80,10 +80,12 @@
     <div class="elbysodic-wanted-action">
       {% if wanted.viewer_interest %}
       <p class="elbysodic-wanted-action__note">
-        {% if wanted.viewer_interest.interest.status == "reserved" %}
+        {% if wanted.viewer_interest.character and wanted.viewer_interest.interest.status == "reserved" %}
         {{ wanted.viewer_interest.character.name }} is reserved for this hook.
-        {% else %}
+        {% elif wanted.viewer_interest.character %}
         {{ wanted.viewer_interest.character.name }} is interested in this hook.
+        {% else %}
+        You are interested in creating {{ wanted.viewer_interest.interest.prospective_character_name }} for this hook.
         {% end %}
       </p>
       {% elif wanted.can_express_interest and viewer.current_character %}
@@ -98,6 +100,32 @@
       {% elif wanted.wanted_ad.status != "open" %}
       <p class="chirpui-text-muted">This hook is {{ wanted.wanted_ad.status }}.</p>
       {% end %}
+      {% if wanted.can_express_prospective_interest %}
+      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm elbysodic-prospective-interest">
+        <input type="hidden" name="intent" value="express_prospective_interest">
+        <div>
+          <label class="chirpui-field__label" for="prospective-character-name">Character concept</label>
+          <input id="prospective-character-name"
+                 class="chirpui-field__input"
+                 name="prospective_character_name"
+                 placeholder="A face I would create"
+                 autocomplete="off"
+                 required>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="prospective-note">Pitch</label>
+          <textarea id="prospective-note"
+                    class="chirpui-field__input"
+                    name="note"
+                    rows="3"></textarea>
+        </div>
+        <div class="chirpui-cluster chirpui-cluster--end">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+            I'd create a new character for this
+          </button>
+        </div>
+      </form>
+      {% end %}
     </div>
   </article>
   {% end %}
@@ -110,6 +138,7 @@
     {% for item in wanted.interests %}
     {% call surface(variant="elevated") %}
     <article class="elbysodic-interest-card">
+      {% if item.character %}
       <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
         <span class="elbysodic-character-avatar" aria-hidden="true">
           {% if item.character.avatar_url %}
@@ -120,19 +149,41 @@
         </span>
         <span>{{ item.character.name }}</span>
       </a>
+      {% else %}
+      <div>
+        <h3>{{ item.interest.prospective_character_name }}</h3>
+        <p class="chirpui-text-muted">
+          proposed by <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.username }}</a>
+        </p>
+      </div>
+      {% end %}
       <div class="elbysodic-interest-card__meta">
         {{ badge(item.interest.status, variant="warning" if item.interest.status == "reserved" else "info") }}
         <span>{{ item.created_at_label }}</span>
       </div>
+      {% if item.interest.note %}
+      <p class="chirpui-text-muted">{{ item.interest.note }}</p>
+      {% end %}
       {% if wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
-      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
-        <input type="hidden" name="intent" value="reserve_interest">
-        <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-          Reserve for {{ item.character.name }}
-        </button>
-      </form>
-      {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and item.interest.id not in wanted.reserve_interest_ids %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="start_plotting_room">
+          <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">
+            Start plotting room
+          </button>
+        </form>
+        <form method="post" hx-boost="false">
+          <input type="hidden" name="intent" value="reserve_interest">
+          <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+            Reserve for {{ item.display_name }}
+          </button>
+        </form>
+      </div>
+      {% elif wanted.can_manage and item.interest.status == "plotting" %}
+      <p class="chirpui-text-muted">Plotting room started.</p>
+      {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and item.interest.id not in wanted.reserve_interest_ids and item.character %}
       <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
         <input type="hidden" name="intent" value="create_reserve">
         <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
@@ -140,6 +191,8 @@
           Create reserve
         </button>
       </form>
+      {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and not item.character %}
+      <p class="chirpui-text-muted">Create the character before making a reserve record.</p>
       {% elif item.interest.id in wanted.reserve_interest_ids %}
       <p class="chirpui-text-muted">Reserve created</p>
       {% end %}

@@ -28,6 +28,20 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
         return Redirect(f"/wanted/{wanted_slug}")
+    if intent == "express_prospective_interest":
+        try:
+            services.express_prospective_wanted_interest(
+                wanted_slug,
+                prospective_character_name=str(form.get("prospective_character_name") or ""),
+                note=str(form.get("note") or ""),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/wanted/{wanted_slug}")
     if intent == "reserve_interest":
         try:
             services.reserve_wanted_interest(
@@ -41,6 +55,19 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
         return Redirect(f"/wanted/{wanted_slug}")
+    if intent == "start_plotting_room":
+        try:
+            room = services.create_plotting_room_from_wanted_interest(
+                wanted_slug,
+                _parse_interest_id(form.get("interest_id")),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/plotting/{room.id}")
     if intent == "create_reserve":
         try:
             services.create_reserve_for_wanted_interest(

@@ -1,0 +1,42 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% def plot_hook_card(item) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-plot-hook-card">
+  <div class="chirpui-cluster chirpui-cluster--between">
+    <div>
+      <p class="elbysodic-wanted-card__type">{{ item.hook_type_label }}</p>
+      <h2>
+        <a class="chirpui-link" href="/characters/{{ item.character.slug }}/hooks/{{ item.plot_hook.slug }}">
+          {{ item.plot_hook.title }}
+        </a>
+      </h2>
+    </div>
+    {{ badge(item.plot_hook.status, variant="success" if item.plot_hook.status == "open" else "muted") }}
+  </div>
+  {% if item.plot_hook.summary %}
+  <p class="chirpui-text-muted">{{ item.plot_hook.summary }}</p>
+  {% end %}
+  <div class="elbysodic-wanted-card__meta">
+    <span>
+      plotted by
+      <a class="chirpui-link" href="/characters/{{ item.character.slug }}">
+        {{ item.character.name }}
+      </a>
+    </span>
+    {% if item.related_material %}
+    <span>
+      <a class="chirpui-link" href="/world/{{ item.related_material.slug }}">
+        {{ item.related_material.title }}
+      </a>
+    </span>
+    {% end %}
+  </div>
+  {{ facet_pills(item.facets) }}
+</article>
+{% end %}
+{% end %}

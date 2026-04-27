@@ -33,6 +33,7 @@ def get(request: Request) -> Page:
         DeskLink(
             "/applications", "Applications", "Draft, submit, and review character applications."
         ),
+        DeskLink("/plotting", "Plotting", "Raised hands, rooms, and pre-scene planning."),
         DeskLink("/casting", "Casting", "Reserves, claims, wanted interest, and open hooks."),
         DeskLink(
             "/discover", "Discover", "Find scenes, writers, and characters through world facets."

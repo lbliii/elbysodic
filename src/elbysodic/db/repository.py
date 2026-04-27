@@ -11,8 +11,12 @@ from elbysodic.db.repositories.base import (
 from elbysodic.db.repositories.facets import FacetRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _character_from_row,
+    _character_plot_hook_from_row,
+    _character_plot_hook_interest_from_row,
     _character_reserve_from_row,
     _material_from_row,
+    _plotting_room_from_row,
+    _plotting_room_participant_from_row,
     _post_from_row,
     _post_revision_from_row,
     _thread_from_row,
@@ -23,8 +27,12 @@ from elbysodic.db.repositories.rows import (
 )
 from elbysodic.domain.models import (
     Character,
+    CharacterPlotHook,
+    CharacterPlotHookInterest,
     CharacterReserve,
     Material,
+    PlottingRoom,
+    PlottingRoomParticipant,
     Post,
     PostRevision,
     Thread,
@@ -482,17 +490,252 @@ class ForumRepository(
         self.connection.commit()
         return self.get_wanted_ad(community_id, wanted_ad_id)
 
-    def create_wanted_ad_interest(
+    def create_character_plot_hook(
         self,
         community_id: int,
-        wanted_ad_id: int,
+        author_membership_id: int,
+        character_id: int,
+        slug: str,
+        title: str,
+        *,
+        related_material_id: int | None = None,
+        hook_type: str = "scene",
+        summary: str = "",
+        body: str = "",
+        status: str = "open",
+    ) -> CharacterPlotHook:
+        self.get_membership(community_id, author_membership_id)
+        character = self.get_character(community_id, character_id)
+        if character.membership_id != author_membership_id:
+            raise TenantBoundaryError("plot hook character must belong to author membership")
+        if related_material_id is not None:
+            self.get_material(community_id, related_material_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO character_plot_hooks (
+                community_id,
+                author_membership_id,
+                character_id,
+                related_material_id,
+                slug,
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                author_membership_id,
+                character_id,
+                related_material_id,
+                slug,
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_character_plot_hook(community_id, _last_id(cursor))
+
+    def update_character_plot_hook(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+        *,
+        title: str,
+        hook_type: str,
+        summary: str,
+        body: str,
+        status: str,
+        related_material_id: int | None = None,
+    ) -> CharacterPlotHook:
+        self.get_character_plot_hook(community_id, plot_hook_id)
+        if related_material_id is not None:
+            self.get_material(community_id, related_material_id)
+        self.connection.execute(
+            """
+            UPDATE character_plot_hooks
+            SET
+                title = ?,
+                hook_type = ?,
+                summary = ?,
+                body = ?,
+                status = ?,
+                related_material_id = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                related_material_id,
+                _utc_now(),
+                community_id,
+                plot_hook_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_character_plot_hook(community_id, plot_hook_id)
+
+    def get_character_plot_hook(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> CharacterPlotHook:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                author_membership_id,
+                character_id,
+                related_material_id,
+                slug,
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hooks
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, plot_hook_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"character plot hook not found in community {community_id}: {plot_hook_id}"
+            )
+        return _character_plot_hook_from_row(row)
+
+    def get_character_plot_hook_by_slug(
+        self,
+        community_id: int,
+        character_id: int,
+        slug: str,
+    ) -> CharacterPlotHook:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                author_membership_id,
+                character_id,
+                related_material_id,
+                slug,
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hooks
+            WHERE community_id = ? AND character_id = ? AND slug = ?
+            """,
+            (community_id, character_id, slug),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"character plot hook not found in community {community_id}: {slug}")
+        return _character_plot_hook_from_row(row)
+
+    def list_character_plot_hooks(
+        self,
+        community_id: int,
+        *,
+        status: str | None = "open",
+    ) -> list[CharacterPlotHook]:
+        where = "WHERE community_id = ?"
+        params: tuple[object, ...] = (community_id,)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (community_id, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                author_membership_id,
+                character_id,
+                related_material_id,
+                slug,
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hooks
+            {where}
+            ORDER BY updated_at DESC, title, id
+            """,
+            params,
+        ).fetchall()
+        return [_character_plot_hook_from_row(row) for row in rows]
+
+    def list_character_plot_hooks_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = "open",
+    ) -> list[CharacterPlotHook]:
+        self.get_character(community_id, character_id)
+        where = "WHERE community_id = ? AND character_id = ?"
+        params: tuple[object, ...] = (community_id, character_id)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                author_membership_id,
+                character_id,
+                related_material_id,
+                slug,
+                title,
+                hook_type,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hooks
+            {where}
+            ORDER BY updated_at DESC, title, id
+            """,
+            params,
+        ).fetchall()
+        return [_character_plot_hook_from_row(row) for row in rows]
+
+    def create_character_plot_hook_interest(
+        self,
+        community_id: int,
+        plot_hook_id: int,
         membership_id: int,
         character_id: int,
         *,
         note: str = "",
         status: str = "interested",
-    ) -> WantedAdInterest:
-        self.get_wanted_ad(community_id, wanted_ad_id)
+    ) -> CharacterPlotHookInterest:
+        self.get_character_plot_hook(community_id, plot_hook_id)
         self.get_membership(community_id, membership_id)
         character = self.get_character(community_id, character_id)
         if character.membership_id != membership_id:
@@ -502,9 +745,9 @@ class ForumRepository(
         now = _utc_now()
         self.connection.execute(
             """
-            INSERT OR IGNORE INTO wanted_ad_interests (
+            INSERT OR IGNORE INTO character_plot_hook_interests (
                 community_id,
-                wanted_ad_id,
+                plot_hook_id,
                 membership_id,
                 character_id,
                 note,
@@ -516,7 +759,7 @@ class ForumRepository(
             """,
             (
                 community_id,
-                wanted_ad_id,
+                plot_hook_id,
                 membership_id,
                 character_id,
                 note,
@@ -526,10 +769,178 @@ class ForumRepository(
             ),
         )
         self.connection.commit()
-        return self.get_wanted_ad_interest_for_character(
+        return self.get_character_plot_hook_interest_for_character(
+            community_id,
+            plot_hook_id,
+            character_id,
+        )
+
+    def get_character_plot_hook_interest(
+        self,
+        community_id: int,
+        interest_id: int,
+    ) -> CharacterPlotHookInterest:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                plot_hook_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hook_interests
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, interest_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plot hook interest not found in community {community_id}: {interest_id}"
+            )
+        return _character_plot_hook_interest_from_row(row)
+
+    def get_character_plot_hook_interest_for_character(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+        character_id: int,
+    ) -> CharacterPlotHookInterest:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                plot_hook_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hook_interests
+            WHERE community_id = ? AND plot_hook_id = ? AND character_id = ?
+            """,
+            (community_id, plot_hook_id, character_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plot hook interest not found in community {community_id}: {plot_hook_id}/{character_id}"
+            )
+        return _character_plot_hook_interest_from_row(row)
+
+    def list_character_plot_hook_interests(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[CharacterPlotHookInterest]:
+        self.get_character_plot_hook(community_id, plot_hook_id)
+        where = "WHERE community_id = ? AND plot_hook_id = ?"
+        params: tuple[object, ...] = (community_id, plot_hook_id)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                plot_hook_id,
+                membership_id,
+                character_id,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM character_plot_hook_interests
+            {where}
+            ORDER BY created_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_character_plot_hook_interest_from_row(row) for row in rows]
+
+    def update_character_plot_hook_interest_status(
+        self,
+        community_id: int,
+        interest_id: int,
+        status: str,
+    ) -> CharacterPlotHookInterest:
+        self.get_character_plot_hook_interest(community_id, interest_id)
+        self.connection.execute(
+            """
+            UPDATE character_plot_hook_interests
+            SET status = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, _utc_now(), community_id, interest_id),
+        )
+        self.connection.commit()
+        return self.get_character_plot_hook_interest(community_id, interest_id)
+
+    def create_wanted_ad_interest(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        membership_id: int,
+        character_id: int | None = None,
+        *,
+        prospective_character_name: str = "",
+        note: str = "",
+        status: str = "interested",
+    ) -> WantedAdInterest:
+        self.get_wanted_ad(community_id, wanted_ad_id)
+        self.get_membership(community_id, membership_id)
+        if character_id is not None:
+            character = self.get_character(community_id, character_id)
+            if character.membership_id != membership_id:
+                raise TenantBoundaryError(
+                    f"character {character_id} does not belong to membership {membership_id}"
+                )
+        now = _utc_now()
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO wanted_ad_interests (
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                note,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                note,
+                status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        if character_id is not None:
+            return self.get_wanted_ad_interest_for_character(
+                community_id,
+                wanted_ad_id,
+                character_id,
+            )
+        return self.get_prospective_wanted_ad_interest_for_membership(
             community_id,
             wanted_ad_id,
-            character_id,
+            membership_id,
         )
 
     def get_wanted_ad_interest(
@@ -545,6 +956,7 @@ class ForumRepository(
                 wanted_ad_id,
                 membership_id,
                 character_id,
+                prospective_character_name,
                 note,
                 status,
                 created_at,
@@ -574,6 +986,7 @@ class ForumRepository(
                 wanted_ad_id,
                 membership_id,
                 character_id,
+                prospective_character_name,
                 note,
                 status,
                 created_at,
@@ -586,6 +999,39 @@ class ForumRepository(
         if row is None:
             raise LookupError(
                 f"wanted interest not found in community {community_id}: {wanted_ad_id}/{character_id}"
+            )
+        return _wanted_ad_interest_from_row(row)
+
+    def get_prospective_wanted_ad_interest_for_membership(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        membership_id: int,
+    ) -> WantedAdInterest:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                wanted_ad_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                note,
+                status,
+                created_at,
+                updated_at
+            FROM wanted_ad_interests
+            WHERE community_id = ?
+              AND wanted_ad_id = ?
+              AND membership_id = ?
+              AND character_id IS NULL
+            """,
+            (community_id, wanted_ad_id, membership_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"prospective wanted interest not found in community {community_id}: {wanted_ad_id}/{membership_id}"
             )
         return _wanted_ad_interest_from_row(row)
 
@@ -610,6 +1056,7 @@ class ForumRepository(
                 wanted_ad_id,
                 membership_id,
                 character_id,
+                prospective_character_name,
                 note,
                 status,
                 created_at,
@@ -640,6 +1087,392 @@ class ForumRepository(
         self.connection.commit()
         return self.get_wanted_ad_interest(community_id, interest_id)
 
+    def create_plotting_room(
+        self,
+        community_id: int,
+        owner_membership_id: int,
+        title: str,
+        *,
+        source_plot_hook_id: int | None = None,
+        source_plot_hook_interest_id: int | None = None,
+        source_wanted_ad_id: int | None = None,
+        source_wanted_ad_interest_id: int | None = None,
+        summary: str = "",
+        status: str = "brainstorming",
+    ) -> PlottingRoom:
+        self.get_membership(community_id, owner_membership_id)
+        has_plot_source = (
+            source_plot_hook_id is not None or source_plot_hook_interest_id is not None
+        )
+        has_wanted_source = (
+            source_wanted_ad_id is not None or source_wanted_ad_interest_id is not None
+        )
+        if has_plot_source == has_wanted_source:
+            raise ValueError("plotting room must have exactly one source")
+        if source_plot_hook_id is not None and source_plot_hook_interest_id is not None:
+            hook = self.get_character_plot_hook(community_id, source_plot_hook_id)
+            interest = self.get_character_plot_hook_interest(
+                community_id,
+                source_plot_hook_interest_id,
+            )
+            if interest.plot_hook_id != hook.id:
+                raise TenantBoundaryError(
+                    f"plot hook interest {interest.id} does not belong to hook {hook.id}"
+                )
+        elif has_plot_source:
+            raise ValueError("plotting room plot source requires hook and interest")
+        if source_wanted_ad_id is not None and source_wanted_ad_interest_id is not None:
+            wanted_ad = self.get_wanted_ad(community_id, source_wanted_ad_id)
+            interest = self.get_wanted_ad_interest(community_id, source_wanted_ad_interest_id)
+            if interest.wanted_ad_id != wanted_ad.id:
+                raise TenantBoundaryError(
+                    f"wanted interest {interest.id} does not belong to wanted hook {wanted_ad.id}"
+                )
+        elif has_wanted_source:
+            raise ValueError("plotting room wanted source requires hook and interest")
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT OR IGNORE INTO plotting_rooms (
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        if source_plot_hook_interest_id is not None:
+            return self.get_plotting_room_for_plot_hook_interest(
+                community_id,
+                source_plot_hook_interest_id,
+            )
+        if source_wanted_ad_interest_id is not None:
+            return self.get_plotting_room_for_wanted_interest(
+                community_id,
+                source_wanted_ad_interest_id,
+            )
+        return self.get_plotting_room(community_id, _last_id(cursor))
+
+    def get_plotting_room(self, community_id: int, plotting_room_id: int) -> PlottingRoom:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                status,
+                created_at,
+                updated_at
+            FROM plotting_rooms
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, plotting_room_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plotting room not found in community {community_id}: {plotting_room_id}"
+            )
+        return _plotting_room_from_row(row)
+
+    def get_plotting_room_for_plot_hook_interest(
+        self,
+        community_id: int,
+        interest_id: int,
+    ) -> PlottingRoom:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                status,
+                created_at,
+                updated_at
+            FROM plotting_rooms
+            WHERE community_id = ? AND source_plot_hook_interest_id = ?
+            """,
+            (community_id, interest_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plotting room not found in community {community_id}: plot hook interest {interest_id}"
+            )
+        return _plotting_room_from_row(row)
+
+    def get_plotting_room_for_wanted_interest(
+        self,
+        community_id: int,
+        interest_id: int,
+    ) -> PlottingRoom:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                status,
+                created_at,
+                updated_at
+            FROM plotting_rooms
+            WHERE community_id = ? AND source_wanted_ad_interest_id = ?
+            """,
+            (community_id, interest_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plotting room not found in community {community_id}: wanted interest {interest_id}"
+            )
+        return _plotting_room_from_row(row)
+
+    def list_plotting_rooms(
+        self,
+        community_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[PlottingRoom]:
+        where = "WHERE community_id = ?"
+        params: tuple[object, ...] = (community_id,)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                status,
+                created_at,
+                updated_at
+            FROM plotting_rooms
+            {where}
+            ORDER BY updated_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_plotting_room_from_row(row) for row in rows]
+
+    def list_plotting_rooms_for_membership(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[PlottingRoom]:
+        self.get_membership(community_id, membership_id)
+        where = "WHERE rooms.community_id = ? AND participants.membership_id = ?"
+        params: tuple[object, ...] = (community_id, membership_id)
+        if status is not None:
+            where = f"{where} AND rooms.status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT DISTINCT
+                rooms.id,
+                rooms.community_id,
+                rooms.owner_membership_id,
+                rooms.source_plot_hook_id,
+                rooms.source_plot_hook_interest_id,
+                rooms.source_wanted_ad_id,
+                rooms.source_wanted_ad_interest_id,
+                rooms.title,
+                rooms.summary,
+                rooms.status,
+                rooms.created_at,
+                rooms.updated_at
+            FROM plotting_rooms AS rooms
+            JOIN plotting_room_participants AS participants
+              ON participants.community_id = rooms.community_id
+             AND participants.plotting_room_id = rooms.id
+            {where}
+            ORDER BY rooms.updated_at DESC, rooms.id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_plotting_room_from_row(row) for row in rows]
+
+    def list_plotting_rooms_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[PlottingRoom]:
+        self.get_character(community_id, character_id)
+        where = "WHERE rooms.community_id = ? AND participants.character_id = ?"
+        params: tuple[object, ...] = (community_id, character_id)
+        if status is not None:
+            where = f"{where} AND rooms.status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT DISTINCT
+                rooms.id,
+                rooms.community_id,
+                rooms.owner_membership_id,
+                rooms.source_plot_hook_id,
+                rooms.source_plot_hook_interest_id,
+                rooms.source_wanted_ad_id,
+                rooms.source_wanted_ad_interest_id,
+                rooms.title,
+                rooms.summary,
+                rooms.status,
+                rooms.created_at,
+                rooms.updated_at
+            FROM plotting_rooms AS rooms
+            JOIN plotting_room_participants AS participants
+              ON participants.community_id = rooms.community_id
+             AND participants.plotting_room_id = rooms.id
+            {where}
+            ORDER BY rooms.updated_at DESC, rooms.id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_plotting_room_from_row(row) for row in rows]
+
+    def create_plotting_room_participant(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        membership_id: int,
+        *,
+        character_id: int | None = None,
+        prospective_character_name: str = "",
+        participant_role: str = "participant",
+    ) -> PlottingRoomParticipant:
+        self.get_plotting_room(community_id, plotting_room_id)
+        self.get_membership(community_id, membership_id)
+        if character_id is not None:
+            character = self.get_character(community_id, character_id)
+            if character.membership_id != membership_id:
+                raise TenantBoundaryError(
+                    f"character {character_id} does not belong to membership {membership_id}"
+                )
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO plotting_room_participants (
+                community_id,
+                plotting_room_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                participant_role,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                plotting_room_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                participant_role,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_plotting_room_participant(community_id, _last_id(cursor))
+
+    def get_plotting_room_participant(
+        self,
+        community_id: int,
+        participant_id: int,
+    ) -> PlottingRoomParticipant:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                plotting_room_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                participant_role,
+                created_at
+            FROM plotting_room_participants
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, participant_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plotting room participant not found in community {community_id}: {participant_id}"
+            )
+        return _plotting_room_participant_from_row(row)
+
+    def list_plotting_room_participants(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+    ) -> list[PlottingRoomParticipant]:
+        self.get_plotting_room(community_id, plotting_room_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                plotting_room_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                participant_role,
+                created_at
+            FROM plotting_room_participants
+            WHERE community_id = ? AND plotting_room_id = ?
+            ORDER BY participant_role, id
+            """,
+            (community_id, plotting_room_id),
+        ).fetchall()
+        return [_plotting_room_participant_from_row(row) for row in rows]
+
     def create_character_reserve(
         self,
         community_id: int,
@@ -663,6 +1496,10 @@ class ForumRepository(
             self.get_wanted_ad(community_id, wanted_ad_id)
         if wanted_ad_interest_id is not None:
             interest = self.get_wanted_ad_interest(community_id, wanted_ad_interest_id)
+            if interest.character_id is None:
+                raise TenantBoundaryError(
+                    f"wanted interest {wanted_ad_interest_id} has no reserved character yet"
+                )
             if interest.membership_id != membership_id or interest.character_id != character_id:
                 raise TenantBoundaryError(
                     f"wanted interest {wanted_ad_interest_id} does not belong to reserve owner"

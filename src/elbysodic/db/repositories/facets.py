@@ -5,7 +5,7 @@ from __future__ import annotations
 from elbysodic.db.repositories.base import _last_id, _utc_now
 from elbysodic.db.repositories.boards import BoardRepositoryMixin
 from elbysodic.db.repositories.rows import _facet_from_row, _facet_group_from_row
-from elbysodic.domain.models import Facet, FacetGroup, Material, Thread, WantedAd
+from elbysodic.domain.models import CharacterPlotHook, Facet, FacetGroup, Material, Thread, WantedAd
 
 
 class FacetRepositoryMixin(BoardRepositoryMixin):
@@ -16,6 +16,13 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
         raise NotImplementedError
 
     def get_wanted_ad(self, community_id: int, wanted_ad_id: int) -> WantedAd:
+        raise NotImplementedError
+
+    def get_character_plot_hook(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> CharacterPlotHook:
         raise NotImplementedError
 
     def create_facet_group(
@@ -290,6 +297,19 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             wanted_ad_id,
         )
 
+    def list_character_plot_hook_facets(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> list[Facet]:
+        self.get_character_plot_hook(community_id, plot_hook_id)
+        return self._list_facets_for_assignment(
+            "character_plot_hook_facets",
+            "plot_hook_id",
+            community_id,
+            plot_hook_id,
+        )
+
     def list_character_ids_for_facets(
         self,
         community_id: int,
@@ -310,6 +330,18 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
         return self._list_entity_ids_for_facets(
             "thread_facets",
             "thread_id",
+            community_id,
+            facet_ids,
+        )
+
+    def list_character_plot_hook_ids_for_facets(
+        self,
+        community_id: int,
+        facet_ids: list[int],
+    ) -> set[int]:
+        return self._list_entity_ids_for_facets(
+            "character_plot_hook_facets",
+            "plot_hook_id",
             community_id,
             facet_ids,
         )
@@ -355,6 +387,50 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             wanted_ad_id,
             facet_id,
         )
+
+    def assign_character_plot_hook_facet(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+        facet_id: int,
+    ) -> None:
+        self.get_character_plot_hook(community_id, plot_hook_id)
+        self.get_facet(community_id, facet_id)
+        self._assign_facet(
+            "character_plot_hook_facets",
+            "plot_hook_id",
+            community_id,
+            plot_hook_id,
+            facet_id,
+        )
+
+    def set_character_plot_hook_facets(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+        facet_ids: list[int],
+    ) -> None:
+        self.get_character_plot_hook(community_id, plot_hook_id)
+        cleaned_facet_ids = list(dict.fromkeys(facet_ids))
+        for facet_id in cleaned_facet_ids:
+            self.get_facet(community_id, facet_id)
+        self.connection.execute(
+            """
+            DELETE FROM character_plot_hook_facets
+            WHERE community_id = ? AND plot_hook_id = ?
+            """,
+            (community_id, plot_hook_id),
+        )
+        for facet_id in cleaned_facet_ids:
+            self._assign_facet(
+                "character_plot_hook_facets",
+                "plot_hook_id",
+                community_id,
+                plot_hook_id,
+                facet_id,
+            )
+        if not cleaned_facet_ids:
+            self.connection.commit()
 
     def _list_facets_for_assignment(
         self,

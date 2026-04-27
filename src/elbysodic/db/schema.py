@@ -195,17 +195,85 @@ CREATE TABLE IF NOT EXISTS wanted_ad_related_characters (
     UNIQUE (community_id, wanted_ad_id, character_id)
 );
 
-CREATE TABLE IF NOT EXISTS wanted_ad_interests (
+CREATE TABLE IF NOT EXISTS character_plot_hooks (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
-    wanted_ad_id INTEGER NOT NULL REFERENCES wanted_ads(id) ON DELETE CASCADE,
+    author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    related_material_id INTEGER REFERENCES materials(id) ON DELETE SET NULL,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    hook_type TEXT NOT NULL DEFAULT 'scene',
+    summary TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, character_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS character_plot_hook_facets (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    plot_hook_id INTEGER NOT NULL REFERENCES character_plot_hooks(id) ON DELETE CASCADE,
+    facet_id INTEGER NOT NULL REFERENCES facets(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, plot_hook_id, facet_id)
+);
+
+CREATE TABLE IF NOT EXISTS character_plot_hook_interests (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    plot_hook_id INTEGER NOT NULL REFERENCES character_plot_hooks(id) ON DELETE CASCADE,
     membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
     character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
     note TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'interested',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    UNIQUE (community_id, wanted_ad_id, membership_id, character_id)
+    UNIQUE (community_id, plot_hook_id, membership_id, character_id)
+);
+
+CREATE TABLE IF NOT EXISTS wanted_ad_interests (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    wanted_ad_id INTEGER NOT NULL REFERENCES wanted_ads(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
+    prospective_character_name TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'interested',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS plotting_rooms (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    owner_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    source_plot_hook_id INTEGER REFERENCES character_plot_hooks(id) ON DELETE SET NULL,
+    source_plot_hook_interest_id INTEGER REFERENCES character_plot_hook_interests(id) ON DELETE SET NULL,
+    source_wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE SET NULL,
+    source_wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'brainstorming',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, source_plot_hook_interest_id),
+    UNIQUE (community_id, source_wanted_ad_interest_id)
+);
+
+CREATE TABLE IF NOT EXISTS plotting_room_participants (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    plotting_room_id INTEGER NOT NULL REFERENCES plotting_rooms(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    prospective_character_name TEXT NOT NULL DEFAULT '',
+    participant_role TEXT NOT NULL DEFAULT 'participant',
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, plotting_room_id, membership_id, character_id)
 );
 
 CREATE TABLE IF NOT EXISTS character_reserves (
@@ -331,13 +399,17 @@ CREATE TABLE IF NOT EXISTS notifications (
     post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE CASCADE,
     wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE CASCADE,
+    character_plot_hook_id INTEGER REFERENCES character_plot_hooks(id) ON DELETE CASCADE,
+    plotting_room_id INTEGER REFERENCES plotting_rooms(id) ON DELETE CASCADE,
     character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
     actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
-    actor_character_id INTEGER NOT NULL REFERENCES characters(id),
+    actor_character_id INTEGER REFERENCES characters(id),
     read_at TEXT,
     created_at TEXT NOT NULL,
     UNIQUE (community_id, membership_id, kind, post_id),
-    UNIQUE (community_id, membership_id, kind, wanted_ad_interest_id)
+    UNIQUE (community_id, membership_id, kind, wanted_ad_interest_id),
+    UNIQUE (community_id, membership_id, kind, character_plot_hook_id),
+    UNIQUE (community_id, membership_id, kind, plotting_room_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_boards_community_sort ON boards(community_id, sort_order, name);
@@ -362,6 +434,20 @@ CREATE INDEX IF NOT EXISTS idx_wanted_ad_facets_ad ON wanted_ad_facets(community
 CREATE INDEX IF NOT EXISTS idx_wanted_ad_related_characters_character ON wanted_ad_related_characters(community_id, character_id, wanted_ad_id);
 CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_ad ON wanted_ad_interests(community_id, wanted_ad_id, status);
 CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_character ON wanted_ad_interests(community_id, character_id, status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_wanted_ad_interests_unique_character
+ON wanted_ad_interests(community_id, wanted_ad_id, character_id)
+WHERE character_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_wanted_ad_interests_unique_prospective
+ON wanted_ad_interests(community_id, wanted_ad_id, membership_id)
+WHERE character_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_character_plot_hooks_community_status ON character_plot_hooks(community_id, status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_character_plot_hooks_character ON character_plot_hooks(community_id, character_id, status);
+CREATE INDEX IF NOT EXISTS idx_character_plot_hook_facets_hook ON character_plot_hook_facets(community_id, plot_hook_id, facet_id);
+CREATE INDEX IF NOT EXISTS idx_character_plot_hook_facets_facet ON character_plot_hook_facets(community_id, facet_id, plot_hook_id);
+CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_hook ON character_plot_hook_interests(community_id, plot_hook_id, status);
+CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_character ON character_plot_hook_interests(community_id, character_id, status);
+CREATE INDEX IF NOT EXISTS idx_plotting_rooms_owner ON plotting_rooms(community_id, owner_membership_id, status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_plotting_room_participants_membership ON plotting_room_participants(community_id, membership_id, plotting_room_id);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_character ON character_reserves(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_wanted ON character_reserves(community_id, wanted_ad_id, status);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
@@ -455,7 +541,104 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         GROUP BY community_id, thread_id, author_character_id
         """
     )
+    _migrate_wanted_ad_interests_schema(connection)
     _migrate_notifications_schema(connection)
+
+
+def _migrate_wanted_ad_interests_schema(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]: row
+        for row in connection.execute("PRAGMA table_info(wanted_ad_interests)").fetchall()
+    }
+    if "prospective_character_name" in columns and not columns["character_id"]["notnull"]:
+        _ensure_wanted_ad_interest_indexes(connection)
+        return
+
+    connection.execute("PRAGMA foreign_keys = OFF")
+    if "prospective_character_name" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE wanted_ad_interests
+            ADD COLUMN prospective_character_name TEXT NOT NULL DEFAULT ''
+            """
+        )
+    connection.execute(
+        """
+        CREATE TABLE wanted_ad_interests_new (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            wanted_ad_id INTEGER NOT NULL REFERENCES wanted_ads(id) ON DELETE CASCADE,
+            membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
+            prospective_character_name TEXT NOT NULL DEFAULT '',
+            note TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'interested',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO wanted_ad_interests_new (
+            id,
+            community_id,
+            wanted_ad_id,
+            membership_id,
+            character_id,
+            prospective_character_name,
+            note,
+            status,
+            created_at,
+            updated_at
+        )
+        SELECT
+            id,
+            community_id,
+            wanted_ad_id,
+            membership_id,
+            character_id,
+            prospective_character_name,
+            note,
+            status,
+            created_at,
+            updated_at
+        FROM wanted_ad_interests
+        """
+    )
+    connection.execute("DROP TABLE wanted_ad_interests")
+    connection.execute("ALTER TABLE wanted_ad_interests_new RENAME TO wanted_ad_interests")
+    _ensure_wanted_ad_interest_indexes(connection)
+    connection.execute("PRAGMA foreign_keys = ON")
+
+
+def _ensure_wanted_ad_interest_indexes(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_ad
+        ON wanted_ad_interests(community_id, wanted_ad_id, status)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_wanted_ad_interests_character
+        ON wanted_ad_interests(community_id, character_id, status)
+        """
+    )
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_wanted_ad_interests_unique_character
+        ON wanted_ad_interests(community_id, wanted_ad_id, character_id)
+        WHERE character_id IS NOT NULL
+        """
+    )
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_wanted_ad_interests_unique_prospective
+        ON wanted_ad_interests(community_id, wanted_ad_id, membership_id)
+        WHERE character_id IS NULL
+        """
+    )
 
 
 def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
@@ -466,13 +649,25 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
     if (
         "wanted_ad_id" in columns
         and "wanted_ad_interest_id" in columns
+        and "character_plot_hook_id" in columns
+        and "plotting_room_id" in columns
         and "character_id" in columns
+        and not columns["actor_character_id"]["notnull"]
         and not columns["thread_id"]["notnull"]
         and not columns["post_id"]["notnull"]
     ):
         return
 
     connection.execute("PRAGMA foreign_keys = OFF")
+    for name in (
+        "wanted_ad_id",
+        "wanted_ad_interest_id",
+        "character_plot_hook_id",
+        "plotting_room_id",
+        "character_id",
+    ):
+        if name not in columns:
+            connection.execute(f"ALTER TABLE notifications ADD COLUMN {name} INTEGER")
     connection.execute(
         """
         CREATE TABLE notifications_new (
@@ -484,13 +679,17 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
             post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
             wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE CASCADE,
             wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE CASCADE,
+            character_plot_hook_id INTEGER REFERENCES character_plot_hooks(id) ON DELETE CASCADE,
+            plotting_room_id INTEGER REFERENCES plotting_rooms(id) ON DELETE CASCADE,
             character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
             actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
-            actor_character_id INTEGER NOT NULL REFERENCES characters(id),
+            actor_character_id INTEGER REFERENCES characters(id),
             read_at TEXT,
             created_at TEXT NOT NULL,
             UNIQUE (community_id, membership_id, kind, post_id),
-            UNIQUE (community_id, membership_id, kind, wanted_ad_interest_id)
+            UNIQUE (community_id, membership_id, kind, wanted_ad_interest_id),
+            UNIQUE (community_id, membership_id, kind, character_plot_hook_id),
+            UNIQUE (community_id, membership_id, kind, plotting_room_id)
         )
         """
     )
@@ -504,6 +703,8 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
         post_id,
         wanted_ad_id,
         wanted_ad_interest_id,
+        character_plot_hook_id,
+        plotting_room_id,
         character_id,
         actor_membership_id,
         actor_character_id,
@@ -511,48 +712,28 @@ def _migrate_notifications_schema(connection: sqlite3.Connection) -> None:
         created_at
     )
     """
-    if "wanted_ad_id" in columns and "wanted_ad_interest_id" in columns:
-        connection.execute(
-            notification_insert
-            + """
-            SELECT
-                id,
-                community_id,
-                membership_id,
-                kind,
-                thread_id,
-                post_id,
-                wanted_ad_id,
-                wanted_ad_interest_id,
-                NULL,
-                actor_membership_id,
-                actor_character_id,
-                read_at,
-                created_at
-            FROM notifications
-            """
-        )
-    else:
-        connection.execute(
-            notification_insert
-            + """
-            SELECT
-                id,
-                community_id,
-                membership_id,
-                kind,
-                thread_id,
-                post_id,
-                NULL,
-                NULL,
-                NULL,
-                actor_membership_id,
-                actor_character_id,
-                read_at,
-                created_at
-            FROM notifications
-            """
-        )
+    connection.execute(
+        notification_insert
+        + """
+        SELECT
+            id,
+            community_id,
+            membership_id,
+            kind,
+            thread_id,
+            post_id,
+            wanted_ad_id,
+            wanted_ad_interest_id,
+            character_plot_hook_id,
+            plotting_room_id,
+            character_id,
+            actor_membership_id,
+            actor_character_id,
+            read_at,
+            created_at
+        FROM notifications
+        """
+    )
     connection.execute("DROP TABLE notifications")
     connection.execute("ALTER TABLE notifications_new RENAME TO notifications")
     connection.execute(

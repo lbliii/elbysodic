@@ -8,6 +8,8 @@ from elbysodic.domain.boards import normalize_board_kind
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterPlotHook,
+    CharacterPlotHookInterest,
     CharacterReserve,
     Community,
     CommunityMembership,
@@ -15,6 +17,8 @@ from elbysodic.domain.models import (
     FacetGroup,
     Material,
     Notification,
+    PlottingRoom,
+    PlottingRoomParticipant,
     Post,
     PostRevision,
     Role,
@@ -179,6 +183,38 @@ def _wanted_ad_from_row(row: sqlite3.Row) -> WantedAd:
     )
 
 
+def _character_plot_hook_from_row(row: sqlite3.Row) -> CharacterPlotHook:
+    return CharacterPlotHook(
+        id=row["id"],
+        community_id=row["community_id"],
+        author_membership_id=row["author_membership_id"],
+        character_id=row["character_id"],
+        related_material_id=row["related_material_id"],
+        slug=row["slug"],
+        title=row["title"],
+        hook_type=row["hook_type"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _character_plot_hook_interest_from_row(row: sqlite3.Row) -> CharacterPlotHookInterest:
+    return CharacterPlotHookInterest(
+        id=row["id"],
+        community_id=row["community_id"],
+        plot_hook_id=row["plot_hook_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        note=row["note"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
 def _wanted_ad_interest_from_row(row: sqlite3.Row) -> WantedAdInterest:
     return WantedAdInterest(
         id=row["id"],
@@ -186,10 +222,41 @@ def _wanted_ad_interest_from_row(row: sqlite3.Row) -> WantedAdInterest:
         wanted_ad_id=row["wanted_ad_id"],
         membership_id=row["membership_id"],
         character_id=row["character_id"],
+        prospective_character_name=row["prospective_character_name"],
         note=row["note"],
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+    )
+
+
+def _plotting_room_from_row(row: sqlite3.Row) -> PlottingRoom:
+    return PlottingRoom(
+        id=row["id"],
+        community_id=row["community_id"],
+        owner_membership_id=row["owner_membership_id"],
+        source_plot_hook_id=row["source_plot_hook_id"],
+        source_plot_hook_interest_id=row["source_plot_hook_interest_id"],
+        source_wanted_ad_id=row["source_wanted_ad_id"],
+        source_wanted_ad_interest_id=row["source_wanted_ad_interest_id"],
+        title=row["title"],
+        summary=row["summary"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _plotting_room_participant_from_row(row: sqlite3.Row) -> PlottingRoomParticipant:
+    return PlottingRoomParticipant(
+        id=row["id"],
+        community_id=row["community_id"],
+        plotting_room_id=row["plotting_room_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        prospective_character_name=row["prospective_character_name"],
+        participant_role=row["participant_role"],
+        created_at=row["created_at"],
     )
 
 
@@ -286,6 +353,8 @@ def _notification_from_row(row: sqlite3.Row) -> Notification:
         post_id=row["post_id"],
         wanted_ad_id=row["wanted_ad_id"],
         wanted_ad_interest_id=row["wanted_ad_interest_id"],
+        character_plot_hook_id=row["character_plot_hook_id"],
+        plotting_room_id=row["plotting_room_id"],
         character_id=row["character_id"],
         actor_membership_id=row["actor_membership_id"],
         actor_character_id=row["actor_character_id"],

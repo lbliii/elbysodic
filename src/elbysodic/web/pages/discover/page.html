@@ -51,6 +51,46 @@
   </nav>
   {% end %}
 
+  {% call section_header("Plot hooks") %}
+  {{ discovery.plot_hooks | length }} matches
+  {% end %}
+  <div class="elbysodic-discovery-grid">
+    {% for result in discovery.plot_hooks %}
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm elbysodic-discovery-card">
+      <div class="elbysodic-character-card__identity">
+        <a class="elbysodic-character-avatar" href="/characters/{{ result.character.slug }}" aria-label="{{ result.character.name }}">
+          {% if result.character.avatar_url %}
+          <img src="{{ result.character.avatar_url }}" alt="">
+          {% else %}
+          {{ result.character.name[:1] }}
+          {% end %}
+        </a>
+        <div>
+          <h2>
+            <a class="chirpui-link" href="/characters/{{ result.character.slug }}/hooks/{{ result.plot_hook.slug }}">
+              {{ result.plot_hook.title }}
+            </a>
+          </h2>
+          <p class="chirpui-text-muted">
+            plotted by <a class="chirpui-link" href="/characters/{{ result.character.slug }}">{{ result.character.name }}</a>
+          </p>
+        </div>
+      </div>
+      {% if result.plot_hook.summary %}
+      <p class="chirpui-text-muted">{{ result.plot_hook.summary }}</p>
+      {% end %}
+      {{ facet_pills(result.facets) }}
+    </article>
+    {% end %}
+    {% end %}
+    {% if not discovery.plot_hooks %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No plot hooks match this lens yet.</p>
+    {% end %}
+    {% end %}
+  </div>
+
   {% call section_header("Characters") %}
   {{ discovery.characters | length }} matches
   {% end %}

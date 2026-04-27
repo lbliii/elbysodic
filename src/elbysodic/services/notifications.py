@@ -8,8 +8,10 @@ from typing import Protocol
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterPlotHook,
     CommunityMembership,
     Notification,
+    PlottingRoom,
     Post,
     Thread,
     WantedAd,
@@ -35,6 +37,14 @@ class NotificationRepository(PostViewRepository, Protocol):
         community_id: int,
         interest_id: int,
     ) -> WantedAdInterest: ...
+
+    def get_character_plot_hook(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> CharacterPlotHook: ...
+
+    def get_plotting_room(self, community_id: int, plotting_room_id: int) -> PlottingRoom: ...
 
     def get_notification(self, community_id: int, notification_id: int) -> Notification: ...
 
@@ -68,9 +78,11 @@ class NotificationRepository(PostViewRepository, Protocol):
         post_id: int | None = None,
         wanted_ad_id: int | None = None,
         wanted_ad_interest_id: int | None = None,
+        character_plot_hook_id: int | None = None,
+        plotting_room_id: int | None = None,
         character_id: int | None = None,
         actor_membership_id: int,
-        actor_character_id: int,
+        actor_character_id: int | None,
     ) -> Notification: ...
 
 
@@ -157,28 +169,35 @@ def notification_item(
     viewer: ForumView,
     notification: Notification,
 ) -> NotificationItem | None:
-    actor = repo.get_character(viewer.community.id, notification.actor_character_id)
     actor_membership = repo.get_membership(
         viewer.community.id,
         notification.actor_membership_id,
     )
+    actor = (
+        repo.get_character(viewer.community.id, notification.actor_character_id)
+        if notification.actor_character_id is not None
+        else None
+    )
+    actor_label = actor.name if actor is not None else actor_membership.display_name
     if notification.character_id is not None:
         character = repo.get_character(viewer.community.id, notification.character_id)
         match notification.kind:
             case "application_submitted":
-                snippet = f"{actor.name} submitted this character for review."
+                snippet = f"{actor_label} submitted this character for review."
             case "application_accepted":
-                snippet = f"{actor.name} accepted this character application."
+                snippet = f"{actor_label} accepted this character application."
             case "application_revision_requested":
-                snippet = f"{actor.name} requested revisions for this character application."
+                snippet = f"{actor_label} requested revisions for this character application."
             case _:
-                snippet = f"{actor.name} updated this character application."
+                snippet = f"{actor_label} updated this character application."
         return NotificationItem(
             notification=notification,
             board=None,
             thread=None,
             post=None,
             wanted_ad=None,
+            plot_hook=None,
+            plotting_room=None,
             actor=actor,
             actor_membership=actor_membership,
             label=notification_label(notification.kind),
@@ -198,11 +217,16 @@ def notification_item(
             else None
         )
         if notification.kind == "wanted_reserved":
-            snippet = f"{actor.name} reserved this wanted hook."
+            snippet = f"{actor_label} reserved this wanted hook."
         elif notification.kind == "reserve_created":
-            snippet = f"{actor.name} created a reserve from this wanted hook."
+            snippet = f"{actor_label} created a reserve from this wanted hook."
         else:
-            snippet = f"{actor.name} is interested in this wanted hook."
+            snippet = f"{actor_label} is interested in this wanted hook."
+        if interest is not None and interest.character_id is None:
+            snippet = (
+                f"{actor_membership.display_name} would create "
+                f"{interest.prospective_character_name} for this hook."
+            )
         if interest is not None and interest.note:
             snippet = interest.note
         return NotificationItem(
@@ -211,6 +235,8 @@ def notification_item(
             thread=None,
             post=None,
             wanted_ad=wanted_ad,
+            plot_hook=None,
+            plotting_room=None,
             actor=actor,
             actor_membership=actor_membership,
             label=notification_label(notification.kind),
@@ -218,6 +244,46 @@ def notification_item(
             created_at_label=timestamp_label(notification.created_at),
             snippet=snippet,
             href=f"/wanted/{wanted_ad.slug}",
+        )
+    if notification.character_plot_hook_id is not None:
+        plot_hook = repo.get_character_plot_hook(
+            viewer.community.id,
+            notification.character_plot_hook_id,
+        )
+        character = repo.get_character(viewer.community.id, plot_hook.character_id)
+        return NotificationItem(
+            notification=notification,
+            board=None,
+            thread=None,
+            post=None,
+            wanted_ad=None,
+            plot_hook=plot_hook,
+            plotting_room=None,
+            actor=actor,
+            actor_membership=actor_membership,
+            label=notification_label(notification.kind),
+            title=plot_hook.title,
+            created_at_label=timestamp_label(notification.created_at),
+            snippet=f"{actor_label} is interested in this plot hook.",
+            href=f"/characters/{character.slug}/hooks/{plot_hook.slug}",
+        )
+    if notification.plotting_room_id is not None:
+        room = repo.get_plotting_room(viewer.community.id, notification.plotting_room_id)
+        return NotificationItem(
+            notification=notification,
+            board=None,
+            thread=None,
+            post=None,
+            wanted_ad=None,
+            plot_hook=None,
+            plotting_room=room,
+            actor=actor,
+            actor_membership=actor_membership,
+            label=notification_label(notification.kind),
+            title=room.title,
+            created_at_label=timestamp_label(notification.created_at),
+            snippet=f"{actor_label} started a plotting room with you.",
+            href=f"/plotting/{room.id}",
         )
     if notification.thread_id is None or notification.post_id is None:
         return None
@@ -233,6 +299,8 @@ def notification_item(
         thread=thread,
         post=rendered_post,
         wanted_ad=None,
+        plot_hook=None,
+        plotting_room=None,
         actor=actor,
         actor_membership=actor_membership,
         label=notification_label(notification.kind),
@@ -251,6 +319,10 @@ def notification_label(kind: str) -> str:
             return "Watched thread"
         case "wanted_interest":
             return "Wanted interest"
+        case "plot_hook_interest":
+            return "Plot hook interest"
+        case "plotting_room_created":
+            return "Plotting room"
         case "wanted_reserved":
             return "Wanted reserved"
         case "reserve_created":

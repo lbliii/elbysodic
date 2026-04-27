@@ -1,0 +1,200 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/characters/{{ hook.character.slug }}">← {{ hook.character.name }}</a>
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md elbysodic-wanted-detail">
+    <div>
+      <p class="elbysodic-wanted-card__type">{{ hook.hook_type_label }}</p>
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <h2>{{ hook.plot_hook.title }}</h2>
+        {{ badge(hook.plot_hook.status, variant="success" if hook.plot_hook.status == "open" else "muted") }}
+      </div>
+      {% if hook.plot_hook.summary %}
+      <p class="chirpui-text-muted">{{ hook.plot_hook.summary }}</p>
+      {% end %}
+    </div>
+    <div class="elbysodic-wanted-card__meta">
+      <span>
+        plotted by
+        <a class="chirpui-link" href="/characters/{{ hook.character.slug }}">
+          {{ hook.character.name }}
+        </a>
+      </span>
+      <span>
+        writer
+        <a class="chirpui-link" href="/members/{{ hook.author_membership.username }}">
+          {{ hook.author_membership.username }}
+        </a>
+      </span>
+      {% if hook.related_material %}
+      <span>
+        tied to
+        <a class="chirpui-link" href="/world/{{ hook.related_material.slug }}">
+          {{ hook.related_material.title }}
+        </a>
+      </span>
+      {% end %}
+    </div>
+    {{ facet_pills(hook.facets) }}
+    <div class="elbysodic-post-content">
+      {{ hook.rendered_body }}
+    </div>
+    <div class="elbysodic-wanted-action">
+      {% if hook.viewer_interest %}
+      <p class="elbysodic-wanted-action__note">
+        {{ hook.viewer_interest.character.name }} is interested in this plot hook.
+      </p>
+      {% elif hook.can_express_interest and viewer.current_character %}
+      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        <input type="hidden" name="intent" value="express_interest">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">
+          I'm interested as {{ viewer.current_character.name }}
+        </button>
+      </form>
+      {% elif hook.can_manage %}
+      <p class="chirpui-text-muted">You created this hook.</p>
+      {% elif hook.plot_hook.status != "open" %}
+      <p class="chirpui-text-muted">This hook is {{ hook.plot_hook.status }}.</p>
+      {% end %}
+    </div>
+  </article>
+  {% end %}
+
+  {% if hook.interests %}
+  {% call section_header("Interested faces") %}
+  Writers who have raised a hand for this hook.
+  {% end %}
+  <div class="elbysodic-interest-list">
+    {% for item in hook.interests %}
+    {% call surface(variant="elevated") %}
+    <article class="elbysodic-interest-card">
+      <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+        <span class="elbysodic-character-avatar" aria-hidden="true">
+          {% if item.character.avatar_url %}
+          <img src="{{ item.character.avatar_url }}" alt="">
+          {% else %}
+          {{ item.character.name[:1] }}
+          {% end %}
+        </span>
+        <span>{{ item.character.name }}</span>
+      </a>
+      <div class="elbysodic-interest-card__meta">
+        {{ badge(item.interest.status, variant="info") }}
+        <span>{{ item.created_at_label }}</span>
+      </div>
+      {% if hook.can_manage and item.interest.status == "interested" %}
+      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        <input type="hidden" name="intent" value="start_plotting_room">
+        <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">
+          Start plotting room
+        </button>
+      </form>
+      {% elif hook.can_manage and item.interest.status == "plotting" %}
+      <p class="chirpui-text-muted">Plotting room started.</p>
+      {% end %}
+    </article>
+    {% end %}
+    {% end %}
+  </div>
+  {% end %}
+
+  {% if hook.can_manage %}
+  {% call surface(variant="elevated") %}
+  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+    <div>
+      <h2>Edit plot hook</h2>
+      <p class="chirpui-text-muted">Keep the invitation current as the story moves.</p>
+    </div>
+    <div class="elbysodic-form-grid">
+      <div>
+        <label class="chirpui-field__label" for="hook-title">Title</label>
+        <input id="hook-title"
+               class="chirpui-field__input"
+               name="title"
+               value="{{ hook.plot_hook.title }}"
+               autocomplete="off"
+               required>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="hook-type">Type</label>
+        <select id="hook-type" class="chirpui-field__input" name="hook_type">
+          {% for hook_type in plot_hook_types %}
+          <option value="{{ hook_type }}" {{ "selected" if hook_type == hook.plot_hook.hook_type else "" }}>
+            {{ hook_type.replace("_", " ").title() }}
+          </option>
+          {% end %}
+        </select>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="hook-status">Status</label>
+        <select id="hook-status" class="chirpui-field__input" name="status">
+          {% for status in plot_hook_statuses %}
+          <option value="{{ status }}" {{ "selected" if status == hook.plot_hook.status else "" }}>
+            {{ status.replace("_", " ").title() }}
+          </option>
+          {% end %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="chirpui-field__label" for="hook-summary">Summary</label>
+      <input id="hook-summary"
+             class="chirpui-field__input"
+             name="summary"
+             value="{{ hook.plot_hook.summary }}"
+             autocomplete="off">
+    </div>
+    <div>
+      <label class="chirpui-field__label" for="hook-body">Pitch</label>
+      <textarea id="hook-body"
+                class="chirpui-field__input"
+                name="body"
+                rows="5">{{ hook.plot_hook.body }}</textarea>
+    </div>
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="chirpui-field__label">World lenses</p>
+      {% for group in hook.facet_choices %}
+      {% if group.choices %}
+      <fieldset class="elbysodic-facet-choice-group">
+        <legend>{{ group.group.name }}</legend>
+        <div class="elbysodic-facet-filter-row">
+          {% for choice in group.choices %}
+          <label class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if choice.is_selected else "" }}">
+            <input type="checkbox"
+                   name="facets"
+                   value="{{ choice.tag.facet.slug }}"
+                   {{ "checked" if choice.is_selected else "" }}>
+            {{ choice.tag.label }}
+          </label>
+          {% end %}
+        </div>
+      </fieldset>
+      {% end %}
+      {% end %}
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <button type="submit" name="intent" value="save" class="chirpui-btn chirpui-btn--primary">Save plot hook</button>
+      <button type="submit" name="intent" value="archive" class="chirpui-btn chirpui-btn--secondary">Archive</button>
+    </div>
+  </form>
+  {% end %}
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

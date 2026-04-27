@@ -7,8 +7,12 @@ from typing import Protocol
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterPlotHook,
     CharacterReserve,
     CommunityMembership,
+    Facet,
+    PlottingRoom,
+    PlottingRoomParticipant,
     Post,
     Role,
     Thread,
@@ -24,7 +28,9 @@ from elbysodic.services.casting import (
     character_reserve_view,
     wanted_ad_summary,
 )
-from elbysodic.services.facets import facet_tags
+from elbysodic.services.facets import facet_choice_groups, facet_tags
+from elbysodic.services.plot_hooks import plot_hook_summary
+from elbysodic.services.plotting import plotting_room_summary
 from elbysodic.services.posts import post_view
 from elbysodic.services.read_models import (
     CharacterAppearance,
@@ -63,11 +69,45 @@ class IdentityRepository(CastingReadRepository, ThreadReadRepository, Protocol):
         character_id: int,
     ) -> list[WantedAd]: ...
 
+    def list_character_plot_hooks_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = "open",
+    ) -> list[CharacterPlotHook]: ...
+
+    def get_character_plot_hook(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> CharacterPlotHook: ...
+
+    def list_character_plot_hook_facets(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> list[Facet]: ...
+
     def list_character_reserves(
         self,
         community_id: int,
         character_id: int,
     ) -> list[CharacterReserve]: ...
+
+    def list_plotting_rooms_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[PlottingRoom]: ...
+
+    def list_plotting_room_participants(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+    ) -> list[PlottingRoomParticipant]: ...
 
 
 def selected_character(
@@ -151,14 +191,33 @@ def character_profile(
     owner_membership = repo.get_membership(viewer.community.id, character.membership_id)
     can_manage = character.membership_id == viewer.membership.id
     activity = character_activity(repo, viewer, character)
+    character_facets = repo.list_character_facets(viewer.community.id, character.id)
     return CharacterProfile(
         character=character,
         owner_membership=owner_membership,
-        facets=facet_tags(
+        facets=facet_tags(repo, viewer.community.id, character_facets),
+        facet_choices=facet_choice_groups(
             repo,
             viewer.community.id,
-            repo.list_character_facets(viewer.community.id, character.id),
+            {facet.id for facet in character_facets},
         ),
+        plotting_rooms=[
+            plotting_room_summary(repo, viewer.community.id, room)
+            for room in repo.list_plotting_rooms_for_character(
+                viewer.community.id,
+                character.id,
+            )
+            if room.status != "done"
+        ],
+        plot_hooks=[
+            plot_hook_summary(repo, viewer.community.id, plot_hook)
+            for plot_hook in repo.list_character_plot_hooks_for_character(
+                viewer.community.id,
+                character.id,
+                status=None if can_manage else "open",
+            )
+            if plot_hook.status != "archived" or can_manage
+        ],
         wanted_ads=[
             wanted_ad_summary(repo, viewer.community.id, wanted_ad)
             for wanted_ad in repo.list_wanted_ads_for_character(

@@ -118,7 +118,11 @@ class CastingRepository(CastingReadRepository, Protocol):
         community_id: int,
         wanted_ad_id: int,
         membership_id: int,
-        character_id: int,
+        character_id: int | None = None,
+        *,
+        prospective_character_name: str = "",
+        note: str = "",
+        status: str = "interested",
     ) -> WantedAdInterest: ...
 
     def update_wanted_ad_interest_status(
@@ -138,9 +142,10 @@ class CastingRepository(CastingReadRepository, Protocol):
         post_id: int | None = None,
         wanted_ad_id: int | None = None,
         wanted_ad_interest_id: int | None = None,
+        character_plot_hook_id: int | None = None,
         character_id: int | None = None,
         actor_membership_id: int,
-        actor_character_id: int,
+        actor_character_id: int | None,
     ): ...
 
 
@@ -243,10 +248,22 @@ def read_wanted_ad(
             (
                 interest
                 for interest in interests
-                if interest.interest.character_id == viewer.current_character.id
+                if interest.character is not None
+                and interest.interest.character_id == viewer.current_character.id
             ),
             None,
         )
+    viewer_prospective_interest = next(
+        (
+            interest
+            for interest in interests
+            if interest.character is None
+            and interest.interest.membership_id == viewer.membership.id
+        ),
+        None,
+    )
+    if viewer_interest is None:
+        viewer_interest = viewer_prospective_interest
     is_created_by_viewer = wanted_ad.creator_membership_id == viewer.membership.id
     return WantedAdDetail(
         wanted_ad=wanted_ad,
@@ -281,6 +298,11 @@ def read_wanted_ad(
             wanted_ad.status == "open"
             and viewer.current_character is not None
             and viewer_interest is None
+            and not is_created_by_viewer
+        ),
+        can_express_prospective_interest=(
+            wanted_ad.status == "open"
+            and viewer_prospective_interest is None
             and not is_created_by_viewer
         ),
         is_created_by_viewer=is_created_by_viewer,
@@ -322,6 +344,44 @@ def express_wanted_interest(
             actor_membership_id=viewer.membership.id,
             actor_character_id=viewer.current_character.id,
         )
+    return interest
+
+
+def express_prospective_wanted_interest(
+    repo: CastingRepository,
+    viewer: ForumView,
+    wanted_slug: str,
+    *,
+    prospective_character_name: str,
+    note: str = "",
+) -> WantedAdInterest:
+    wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
+    if wanted_ad.status != "open":
+        raise ValueError(f"wanted hook {wanted_ad.id} is not open")
+    if wanted_ad.creator_membership_id == viewer.membership.id:
+        raise ValueError("you cannot express interest in your own wanted hook")
+    cleaned_name = prospective_character_name.strip()
+    if not cleaned_name:
+        raise ValueError("prospective character concept is required")
+    interest = repo.create_wanted_ad_interest(
+        viewer.community.id,
+        wanted_ad.id,
+        viewer.membership.id,
+        character_id=None,
+        prospective_character_name=cleaned_name,
+        note=note.strip(),
+    )
+    repo.create_notification(
+        viewer.community.id,
+        wanted_ad.creator_membership_id,
+        kind="wanted_interest",
+        wanted_ad_id=wanted_ad.id,
+        wanted_ad_interest_id=interest.id,
+        actor_membership_id=viewer.membership.id,
+        actor_character_id=(
+            viewer.current_character.id if viewer.current_character is not None else None
+        ),
+    )
     return interest
 
 
@@ -381,6 +441,8 @@ def create_reserve_for_wanted_interest(
         raise LookupError(f"wanted interest {interest_id} not found for wanted hook {wanted_ad.id}")
     if interest.status != "reserved":
         raise ValueError(f"wanted interest {interest.id} is not reserved")
+    if interest.character_id is None:
+        raise ValueError("create a character before creating a reserve")
     reserve = repo.create_character_reserve(
         viewer.community.id,
         interest.membership_id,
@@ -452,7 +514,11 @@ def wanted_ad_interest_view(
     return WantedAdInterestView(
         interest=interest,
         membership=repo.get_membership(community_id, interest.membership_id),
-        character=repo.get_character(community_id, interest.character_id),
+        character=(
+            repo.get_character(community_id, interest.character_id)
+            if interest.character_id is not None
+            else None
+        ),
         created_at_label=timestamp_label(interest.created_at),
     )
 

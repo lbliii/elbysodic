@@ -35,6 +35,9 @@ from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
     create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
 )
+from elbysodic.services.casting import (
+    express_prospective_wanted_interest as _express_prospective_wanted_interest,
+)
 from elbysodic.services.casting import express_wanted_interest as _express_wanted_interest
 from elbysodic.services.casting import read_wanted_ad as _read_wanted_ad
 from elbysodic.services.casting import reserve_wanted_interest as _reserve_wanted_interest
@@ -66,6 +69,20 @@ from elbysodic.services.notifications import (
 )
 from elbysodic.services.notifications import notification_inbox as _notification_inbox
 from elbysodic.services.notifications import open_notification as _open_notification
+from elbysodic.services.plot_hooks import (
+    create_plot_hook as _create_plot_hook,
+)
+from elbysodic.services.plot_hooks import express_plot_hook_interest as _express_plot_hook_interest
+from elbysodic.services.plot_hooks import read_plot_hook as _read_plot_hook
+from elbysodic.services.plot_hooks import update_plot_hook as _update_plot_hook
+from elbysodic.services.plotting import (
+    create_plotting_room_from_plot_hook_interest as _create_plotting_room_from_plot_hook_interest,
+)
+from elbysodic.services.plotting import (
+    create_plotting_room_from_wanted_interest as _create_plotting_room_from_wanted_interest,
+)
+from elbysodic.services.plotting import plotting_desk as _plotting_desk
+from elbysodic.services.plotting import read_plotting_room as _read_plotting_room
 from elbysodic.services.posting import join_thread_as_current_character as _join_thread
 from elbysodic.services.posting import read_post_editor as _read_post_editor
 from elbysodic.services.posting import read_post_revisions as _read_post_revisions
@@ -85,6 +102,7 @@ from elbysodic.services.read_models import (
     BoardSummary,
     BoardThreadFilter,
     CastingDesk,
+    CharacterPlotHookDetail,
     CharacterProfile,
     CharacterRosterDashboard,
     CreatedThread,
@@ -101,6 +119,8 @@ from elbysodic.services.read_models import (
     MyThreadsDashboard,
     NotificationInbox,
     PlotDiscovery,
+    PlottingDesk,
+    PlottingRoomDetail,
     PostRevisionHistory,
     ThreadNavigationItem,
     ThreadSummary,
@@ -557,6 +577,21 @@ class AppServices:
     def express_wanted_interest(self, wanted_slug: str) -> WantedAdInterest:
         return _express_wanted_interest(self.repo, self.viewer(), wanted_slug)
 
+    def express_prospective_wanted_interest(
+        self,
+        wanted_slug: str,
+        *,
+        prospective_character_name: str,
+        note: str = "",
+    ) -> WantedAdInterest:
+        return _express_prospective_wanted_interest(
+            self.repo,
+            self.viewer(),
+            wanted_slug,
+            prospective_character_name=prospective_character_name,
+            note=note,
+        )
+
     def reserve_wanted_interest(
         self,
         wanted_slug: str,
@@ -619,6 +654,86 @@ class AppServices:
     def read_character(self, character_slug: str) -> CharacterProfile:
         viewer = self.viewer()
         return _character_profile(self.repo, viewer, character_slug)
+
+    def read_plot_hook(self, character_slug: str, hook_slug: str) -> CharacterPlotHookDetail:
+        return _read_plot_hook(self.repo, self.viewer(), character_slug, hook_slug)
+
+    def create_plot_hook(
+        self,
+        character_slug: str,
+        *,
+        title: str,
+        hook_type: str,
+        summary: str,
+        body: str,
+        facet_slugs: list[str],
+    ):
+        return _create_plot_hook(
+            self.repo,
+            self.viewer(),
+            character_slug,
+            title=title,
+            hook_type=hook_type,
+            summary=summary,
+            body=body,
+            facet_slugs=facet_slugs,
+        )
+
+    def update_plot_hook(
+        self,
+        character_slug: str,
+        hook_slug: str,
+        *,
+        title: str,
+        hook_type: str,
+        summary: str,
+        body: str,
+        status: str,
+        facet_slugs: list[str],
+    ):
+        return _update_plot_hook(
+            self.repo,
+            self.viewer(),
+            character_slug,
+            hook_slug,
+            title=title,
+            hook_type=hook_type,
+            summary=summary,
+            body=body,
+            status=status,
+            facet_slugs=facet_slugs,
+        )
+
+    def express_plot_hook_interest(self, character_slug: str, hook_slug: str):
+        return _express_plot_hook_interest(self.repo, self.viewer(), character_slug, hook_slug)
+
+    def plotting_desk(self) -> PlottingDesk:
+        return _plotting_desk(self.repo, self.viewer())
+
+    def read_plotting_room(self, room_id: int) -> PlottingRoomDetail:
+        return _read_plotting_room(self.repo, self.viewer(), room_id)
+
+    def create_plotting_room_from_plot_hook_interest(
+        self,
+        character_slug: str,
+        hook_slug: str,
+        interest_id: int,
+    ):
+        return _create_plotting_room_from_plot_hook_interest(
+            self.repo,
+            self.viewer(),
+            character_slug,
+            hook_slug,
+            interest_id,
+        )
+
+    def create_plotting_room_from_wanted_interest(self, wanted_slug: str, interest_id: int):
+        return _create_plotting_room_from_wanted_interest(
+            self.repo,
+            self.viewer(),
+            wanted_slug,
+            interest_id,
+        )
 
     def read_post_editor(self, board_slug: str, thread_slug: str, post_id: int) -> EditablePostView:
         return _read_post_editor(self.repo, self.viewer(), board_slug, thread_slug, post_id)

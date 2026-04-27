@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services.plot_hooks import PLOT_HOOK_TYPES
 from elbysodic.web.state import get_services
 
 
@@ -23,6 +24,11 @@ class CharacterProfileForm:
     tagline: str
     accent_color: str
     summary: str
+    plot_hook_title: str = ""
+    plot_hook_type: str = ""
+    plot_hook_summary: str = ""
+    plot_hook_body: str = ""
+    plot_hook_facets: str = ""
 
 
 def get(request: Request, character_slug: str) -> Page:
@@ -49,6 +55,21 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
         return Redirect(f"/characters/{character.slug}")
+    if intent == "create_plot_hook":
+        try:
+            plot_hook = services.create_plot_hook(
+                character_slug,
+                title=str(form.get("plot_hook_title") or ""),
+                hook_type=str(form.get("plot_hook_type") or "scene"),
+                summary=str(form.get("plot_hook_summary") or ""),
+                body=str(form.get("plot_hook_body") or ""),
+                facet_slugs=_plot_hook_facet_slugs(form),
+            )
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/characters/{character_slug}/hooks/{plot_hook.slug}")
 
     name = str(form.get("name") or "")
     summary = str(form.get("summary") or "")
@@ -117,4 +138,24 @@ def _render_profile(
         poster_alt=profile.character.poster_alt if poster_alt is None else poster_alt,
         tagline=profile.character.tagline if tagline is None else tagline,
         accent_color=profile.character.accent_color if accent_color is None else accent_color,
+        plot_hook_types=PLOT_HOOK_TYPES,
     )
+
+
+def _plot_hook_facet_slugs(form: object) -> list[str]:
+    values: list[object]
+    get_list = getattr(form, "get_list", None)
+    getlist = getattr(form, "getlist", None)
+    if callable(get_list):
+        values = list(get_list("plot_hook_facets"))
+    elif callable(getlist):
+        values = list(getlist("plot_hook_facets"))
+    else:
+        raw = getattr(form, "get", lambda _name: None)("plot_hook_facets")
+        values = [] if raw is None else [raw]
+    slugs: list[str] = []
+    for value in values:
+        slug = str(value or "").strip()
+        if slug and slug not in slugs:
+            slugs.append(slug)
+    return slugs

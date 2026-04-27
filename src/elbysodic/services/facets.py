@@ -6,6 +6,8 @@ from typing import Protocol
 
 from elbysodic.domain.models import Facet, FacetGroup
 from elbysodic.services.read_models import (
+    FacetChoice,
+    FacetChoiceGroup,
     FacetFilterGroup,
     FacetFilterOption,
     FacetTag,
@@ -91,6 +93,26 @@ def facet_filter_groups(
             ],
         )
         for group in groups
+        if group.visibility == "public"
+    ]
+
+
+def facet_choice_groups(
+    repo: FacetReadRepository,
+    community_id: int,
+    selected_facet_ids: set[int],
+) -> list[FacetChoiceGroup]:
+    tags = facet_tags(repo, community_id, repo.list_facets(community_id))
+    return [
+        FacetChoiceGroup(
+            group=group,
+            choices=[
+                FacetChoice(tag=tag, is_selected=tag.facet.id in selected_facet_ids)
+                for tag in tags
+                if tag.group.id == group.id
+            ],
+        )
+        for group in repo.list_facet_groups(community_id)
         if group.visibility == "public"
     ]
 

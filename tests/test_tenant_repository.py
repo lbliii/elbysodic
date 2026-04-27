@@ -86,6 +86,65 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     }
 
 
+def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
+    connection = connect()
+    connection.executescript(
+        """
+        CREATE TABLE wanted_ad_interests (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL,
+            wanted_ad_id INTEGER NOT NULL,
+            membership_id INTEGER NOT NULL,
+            character_id INTEGER NOT NULL,
+            note TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'interested',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, wanted_ad_id, membership_id, character_id)
+        );
+        CREATE TABLE notifications (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL,
+            membership_id INTEGER NOT NULL,
+            kind TEXT NOT NULL,
+            thread_id INTEGER NOT NULL,
+            post_id INTEGER NOT NULL,
+            actor_membership_id INTEGER NOT NULL,
+            actor_character_id INTEGER NOT NULL,
+            read_at TEXT,
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+
+    create_schema(connection)
+
+    wanted_columns = {
+        row["name"]: row
+        for row in connection.execute("PRAGMA table_info(wanted_ad_interests)").fetchall()
+    }
+    notification_columns = {
+        row["name"]: row
+        for row in connection.execute("PRAGMA table_info(notifications)").fetchall()
+    }
+    tables = {
+        row["name"]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+    }
+
+    assert "character_plot_hooks" in tables
+    assert "character_plot_hook_interests" in tables
+    assert "plotting_rooms" in tables
+    assert "plotting_room_participants" in tables
+    assert wanted_columns["character_id"]["notnull"] == 0
+    assert "prospective_character_name" in wanted_columns
+    assert "character_plot_hook_id" in notification_columns
+    assert "plotting_room_id" in notification_columns
+    assert notification_columns["actor_character_id"]["notnull"] == 0
+
+
 def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
@@ -462,6 +521,155 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
             hosted_character.id,
             "Wrong forum",
             wanted_ad_id=wanted.id,
+        )
+
+
+def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    owner_user = repo.create_user("owner@example.com", "hash")
+    prospect_user = repo.create_user("prospect@example.com", "hash")
+    hosted_user = repo.create_user("hosted-prospect@example.com", "hash")
+    owner = repo.create_membership(default.id, owner_user.id, role.id, "owner", "Owner")
+    prospect = repo.create_membership(
+        default.id,
+        prospect_user.id,
+        role.id,
+        "prospect",
+        "Prospect",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "prospect",
+        "Hosted Prospect",
+    )
+    rogue = repo.create_character(default.id, owner.id, "rogue", "Rogue")
+    gambit = repo.create_character(default.id, prospect.id, "gambit", "Gambit")
+    hosted_character = repo.create_character(hosted.id, hosted_membership.id, "rogue", "Rogue")
+    group = repo.create_facet_group(default.id, "affiliation", "Affiliation")
+    x_men = repo.create_facet(default.id, group.id, "x-men", "X-Men")
+
+    hook = repo.create_character_plot_hook(
+        default.id,
+        owner.id,
+        rogue.id,
+        "old-ghosts",
+        "Old ghosts",
+        hook_type="relationship",
+        summary="A pressure point.",
+    )
+    repo.create_character_plot_hook(
+        hosted.id,
+        hosted_membership.id,
+        hosted_character.id,
+        "old-ghosts",
+        "Hosted ghosts",
+    )
+    repo.assign_character_plot_hook_facet(default.id, hook.id, x_men.id)
+    interest = repo.create_character_plot_hook_interest(
+        default.id,
+        hook.id,
+        prospect.id,
+        gambit.id,
+    )
+    notification = repo.create_notification(
+        default.id,
+        owner.id,
+        kind="plot_hook_interest",
+        character_plot_hook_id=hook.id,
+        actor_membership_id=prospect.id,
+        actor_character_id=gambit.id,
+    )
+
+    wanted = repo.create_wanted_ad(
+        default.id,
+        owner.id,
+        "gambit-wanted",
+        "Gambit wanted",
+        creator_character_id=rogue.id,
+    )
+    prospective = repo.create_wanted_ad_interest(
+        default.id,
+        wanted.id,
+        prospect.id,
+        prospective_character_name="Remy LeBeau",
+        note="I would app him for this.",
+    )
+    room = repo.create_plotting_room(
+        default.id,
+        owner.id,
+        "Old ghosts: Gambit",
+        source_plot_hook_id=hook.id,
+        source_plot_hook_interest_id=interest.id,
+        summary="Planning the pressure point.",
+    )
+    owner_participant = repo.create_plotting_room_participant(
+        default.id,
+        room.id,
+        owner.id,
+        character_id=rogue.id,
+        participant_role="owner",
+    )
+    prospect_participant = repo.create_plotting_room_participant(
+        default.id,
+        room.id,
+        prospect.id,
+        character_id=gambit.id,
+    )
+    room_notification = repo.create_notification(
+        default.id,
+        prospect.id,
+        kind="plotting_room_created",
+        plotting_room_id=room.id,
+        actor_membership_id=owner.id,
+        actor_character_id=rogue.id,
+    )
+    duplicate = repo.create_wanted_ad_interest(
+        default.id,
+        wanted.id,
+        prospect.id,
+        prospective_character_name="Remy LeBeau",
+    )
+
+    assert repo.get_character_plot_hook_by_slug(default.id, rogue.id, "old-ghosts") == hook
+    assert (
+        repo.get_character_plot_hook_by_slug(hosted.id, hosted_character.id, "old-ghosts").title
+        == "Hosted ghosts"
+    )
+    assert repo.list_character_plot_hooks_for_character(default.id, rogue.id) == [hook]
+    assert repo.list_character_plot_hook_facets(default.id, hook.id) == [x_men]
+    assert repo.list_character_plot_hook_ids_for_facets(default.id, [x_men.id]) == {hook.id}
+    assert interest.character_id == gambit.id
+    assert notification.character_plot_hook_id == hook.id
+    assert prospective.character_id is None
+    assert prospective.prospective_character_name == "Remy LeBeau"
+    assert duplicate.id == prospective.id
+    assert repo.get_plotting_room_for_plot_hook_interest(default.id, interest.id) == room
+    assert repo.list_plotting_rooms_for_membership(default.id, prospect.id) == [room]
+    assert repo.list_plotting_rooms_for_character(default.id, rogue.id) == [room]
+    assert repo.list_plotting_room_participants(default.id, room.id) == [
+        owner_participant,
+        prospect_participant,
+    ]
+    assert room_notification.plotting_room_id == room.id
+
+    with pytest.raises(LookupError):
+        repo.assign_character_plot_hook_facet(hosted.id, hook.id, x_men.id)
+    with pytest.raises(LookupError):
+        repo.create_wanted_ad_interest(hosted.id, wanted.id, hosted_membership.id)
+    with pytest.raises(LookupError):
+        repo.create_plotting_room(
+            hosted.id,
+            hosted_membership.id,
+            "Crossed room",
+            source_plot_hook_id=hook.id,
+            source_plot_hook_interest_id=interest.id,
         )
 
 

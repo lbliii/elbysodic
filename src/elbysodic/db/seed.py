@@ -707,6 +707,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         moira=moira,
         trask=trask,
     )
+    _seed_plot_hooks(repo, community.id, facets, rogue=rogue, magneto=magneto)
 
     welcome = _get_or_create(
         lambda: repo.get_thread_by_slug(
@@ -1913,6 +1914,75 @@ def _seed_wanted_ads(
     )
 
 
+def _seed_plot_hooks(
+    repo: ForumRepository,
+    community_id: int,
+    facets: dict[str, Facet],
+    *,
+    rogue: Character,
+    magneto: Character,
+) -> None:
+    rogue_hook = _get_or_create(
+        lambda: repo.get_character_plot_hook_by_slug(
+            community_id,
+            rogue.id,
+            "old-ghosts-new-lines",
+        ),
+        lambda: repo.create_character_plot_hook(
+            community_id,
+            rogue.membership_id,
+            rogue.id,
+            "old-ghosts-new-lines",
+            "Old ghosts, new lines",
+            hook_type="relationship",
+            summary="Rogue is looking for complicated history that can walk into the room.",
+            body=(
+                "Rogue has made a home at the school, but old loyalties still know her "
+                "name. I would love connections who can press on the space between "
+                "survival, affection, and politics: former allies, almost-family, a bad "
+                "idea with a familiar voice, or someone who thinks she chose comfort over "
+                "the cause."
+            ),
+        ),
+    )
+    _assign_plot_hook_facets(
+        repo,
+        community_id,
+        rogue_hook.id,
+        facets,
+        ["mutant", "x-men", "brotherhood", "complicated-romance"],
+    )
+
+    magneto_hook = _get_or_create(
+        lambda: repo.get_character_plot_hook_by_slug(
+            community_id,
+            magneto.id,
+            "pressure-at-the-relay-tower",
+        ),
+        lambda: repo.create_character_plot_hook(
+            community_id,
+            magneto.membership_id,
+            magneto.id,
+            "pressure-at-the-relay-tower",
+            "Pressure at the relay tower",
+            hook_type="event",
+            summary="Magneto wants scenes where sanctuary becomes a political weapon.",
+            body=(
+                "Genosha is broadcasting hope and leverage at the same time. Bring me "
+                "people who want to negotiate, defect, challenge the optics, or stand in "
+                "the way when Magneto decides a public signal should become a demand."
+            ),
+        ),
+    )
+    _assign_plot_hook_facets(
+        repo,
+        community_id,
+        magneto_hook.id,
+        facets,
+        ["mutant", "brotherhood", "political", "history"],
+    )
+
+
 def _seed_world_facets(repo: ForumRepository, community_id: int) -> dict[str, Facet]:
     species = _get_or_create(
         lambda: repo.get_facet_group_by_slug(community_id, "species"),
@@ -2050,3 +2120,14 @@ def _assign_wanted_ad_facets(
 ) -> None:
     for slug in slugs:
         repo.assign_wanted_ad_facet(community_id, wanted_ad_id, facets[slug].id)
+
+
+def _assign_plot_hook_facets(
+    repo: ForumRepository,
+    community_id: int,
+    plot_hook_id: int,
+    facets: dict[str, Facet],
+    slugs: list[str],
+) -> None:
+    for slug in slugs:
+        repo.assign_character_plot_hook_facet(community_id, plot_hook_id, facets[slug].id)

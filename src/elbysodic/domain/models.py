@@ -150,16 +150,75 @@ class WantedAd:
 
 
 @dataclass(frozen=True, slots=True)
-class WantedAdInterest:
+class CharacterPlotHook:
     id: int
     community_id: int
-    wanted_ad_id: int
+    author_membership_id: int
+    character_id: int
+    related_material_id: int | None
+    slug: str
+    title: str
+    hook_type: str
+    summary: str
+    body: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterPlotHookInterest:
+    id: int
+    community_id: int
+    plot_hook_id: int
     membership_id: int
     character_id: int
     note: str
     status: str
     created_at: str
     updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class WantedAdInterest:
+    id: int
+    community_id: int
+    wanted_ad_id: int
+    membership_id: int
+    character_id: int | None
+    prospective_character_name: str
+    note: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoom:
+    id: int
+    community_id: int
+    owner_membership_id: int
+    source_plot_hook_id: int | None
+    source_plot_hook_interest_id: int | None
+    source_wanted_ad_id: int | None
+    source_wanted_ad_interest_id: int | None
+    title: str
+    summary: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoomParticipant:
+    id: int
+    community_id: int
+    plotting_room_id: int
+    membership_id: int
+    character_id: int | None
+    prospective_character_name: str
+    participant_role: str
+    created_at: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,8 +308,10 @@ class Notification:
     post_id: int | None
     wanted_ad_id: int | None
     wanted_ad_interest_id: int | None
+    character_plot_hook_id: int | None
+    plotting_room_id: int | None
     character_id: int | None
     actor_membership_id: int
-    actor_character_id: int
+    actor_character_id: int | None
     read_at: str | None
     created_at: str

@@ -35,6 +35,9 @@ platforms forced roleplayers to do.
   `src/elbysodic/web/pages/_components/` before they become page-local CSS.
   Use `docs/product/information-hierarchy.md` for the meaning of counters,
   facets, state badges, latest lines, cast faces, and metadata.
+- Use `docs/product/control-topology.md` before adding, hiding, combining, or
+  changing controls. It is the decision guide for visible actions, disclosure,
+  overflow menus, icon-only buttons, inline editing, and input component choice.
 - Keep frontend controls complete and ergonomic for roleplayers doing real
   writing: stable composer dimensions, previews, drafts, toolbar affordances,
   and clear character context.
@@ -86,6 +89,12 @@ The current prototype already has:
   events outside the forum/thread format.
 - Wanted hooks as first-class plot and casting invitations linked to characters,
   world materials, and facets.
+- Character plot hooks as writer-authored invitations attached to a face,
+  membership, and community, with lightweight interest from active faces.
+- Wanted interest supports both active-face interest and prospective concepts
+  from writers willing to create a new character for the hook.
+- Plotting rooms collect accepted plot-hook and wanted interest into shared
+  planning spaces without forcing that work into ordinary threads.
 - Character profiles are becoming hubs: profile identity, plotter hooks,
   writing tracker, and recent posts.
 
@@ -99,6 +108,13 @@ The current prototype already has:
 - Wanted hooks should stay more structured than ordinary plotter threads. They
   can become claimable/reservable, notify creators, spawn applications, or spawn
   plotting threads, but they should remain a first-class object.
+- Character plot hooks are lighter than wanted hooks: they are invitations to
+  connect with an existing face, not a full casting workflow. Keep prospective
+  "I would make someone new" behavior in wanted/casting unless a future design
+  deliberately expands plot hooks.
+- Plotting rooms are private planning surfaces for turning interest into play.
+  Keep them compact and action-oriented, with clear links back to the character,
+  wanted hook, plot hook, and eventual scene.
 - Applications, claims, reserves, canons, face claims, and wanted ads belong near
   the "materials of running a board." They may integrate with threads, but they
   should not be forced to be threads by default.

@@ -129,6 +129,13 @@ core product shape is:
   pages outside the thread format.
 - Wanted hooks are first-class invitations for connections, faction needs,
   event roles, and plot pressure.
+- Character plot hooks are writer-authored invitations from a specific face,
+  while wanted hooks remain the more structured casting layer.
+- Prospective wanted interest lets a writer say they would create a new
+  character for a hook without pretending they already have one.
+- Plotting rooms are the bridge between lightweight interest and actual play:
+  a planning surface that can later lead to scenes, reserves, claims, or
+  applications.
 - Character pages should become hubs for the character's identity, wanted hooks,
   writing tracker, recent posts, and future relationship or application state.
 

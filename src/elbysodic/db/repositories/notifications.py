@@ -5,7 +5,15 @@ from __future__ import annotations
 from elbysodic.db.repositories.base import TenantBoundaryError, _utc_now
 from elbysodic.db.repositories.characters import CharacterRepositoryMixin
 from elbysodic.db.repositories.rows import _notification_from_row
-from elbysodic.domain.models import Notification, Post, Thread, WantedAd, WantedAdInterest
+from elbysodic.domain.models import (
+    CharacterPlotHook,
+    Notification,
+    PlottingRoom,
+    Post,
+    Thread,
+    WantedAd,
+    WantedAdInterest,
+)
 
 
 class NotificationRepositoryMixin(CharacterRepositoryMixin):
@@ -25,6 +33,16 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
     ) -> WantedAdInterest:
         raise NotImplementedError
 
+    def get_character_plot_hook(
+        self,
+        community_id: int,
+        plot_hook_id: int,
+    ) -> CharacterPlotHook:
+        raise NotImplementedError
+
+    def get_plotting_room(self, community_id: int, plotting_room_id: int) -> PlottingRoom:
+        raise NotImplementedError
+
     def create_notification(
         self,
         community_id: int,
@@ -35,26 +53,44 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
         post_id: int | None = None,
         wanted_ad_id: int | None = None,
         wanted_ad_interest_id: int | None = None,
+        character_plot_hook_id: int | None = None,
+        plotting_room_id: int | None = None,
         character_id: int | None = None,
         actor_membership_id: int,
-        actor_character_id: int,
+        actor_character_id: int | None,
     ) -> Notification:
         self.get_membership(community_id, membership_id)
         self.get_membership(community_id, actor_membership_id)
-        actor = self.get_character(community_id, actor_character_id)
-        if actor.membership_id != actor_membership_id:
-            raise TenantBoundaryError(
-                f"character {actor_character_id} does not belong to membership {actor_membership_id}"
-            )
+        if actor_character_id is not None:
+            actor = self.get_character(community_id, actor_character_id)
+            if actor.membership_id != actor_membership_id:
+                raise TenantBoundaryError(
+                    f"character {actor_character_id} does not belong to membership {actor_membership_id}"
+                )
         post_target_id: int | None = None
         wanted_interest_target_id: int | None = None
+        plot_hook_target_id: int | None = None
+        plotting_room_target_id: int | None = None
         character_target_id: int | None = None
         has_post_target = thread_id is not None and post_id is not None
         has_wanted_target = wanted_ad_id is not None and wanted_ad_interest_id is not None
+        has_plot_hook_target = character_plot_hook_id is not None
+        has_plotting_room_target = plotting_room_id is not None
         has_character_target = character_id is not None
-        if sum((has_post_target, has_wanted_target, has_character_target)) != 1:
+        if (
+            sum(
+                (
+                    has_post_target,
+                    has_wanted_target,
+                    has_plot_hook_target,
+                    has_plotting_room_target,
+                    has_character_target,
+                )
+            )
+            != 1
+        ):
             raise ValueError(
-                "notification must target exactly one post, wanted interest, or character"
+                "notification must target exactly one post, wanted interest, plot hook, plotting room, or character"
             )
         if thread_id is not None and post_id is not None:
             post_target_id = post_id
@@ -70,6 +106,12 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 raise TenantBoundaryError(
                     f"wanted interest {wanted_ad_interest_id} does not belong to wanted ad {wanted_ad_id}"
                 )
+        elif character_plot_hook_id is not None:
+            plot_hook_target_id = character_plot_hook_id
+            self.get_character_plot_hook(community_id, plot_hook_target_id)
+        elif plotting_room_id is not None:
+            plotting_room_target_id = plotting_room_id
+            self.get_plotting_room(community_id, plotting_room_target_id)
         elif character_id is not None:
             character_target_id = character_id
             self.get_character(community_id, character_target_id)
@@ -84,12 +126,14 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -99,6 +143,8 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,
@@ -115,9 +161,23 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 kind,
                 wanted_interest_target_id,
             )
+        if plot_hook_target_id is not None:
+            return self.get_notification_for_plot_hook(
+                community_id,
+                membership_id,
+                kind,
+                plot_hook_target_id,
+            )
+        if plotting_room_target_id is not None:
+            return self.get_notification_for_plotting_room(
+                community_id,
+                membership_id,
+                kind,
+                plotting_room_target_id,
+            )
         if character_target_id is None:
             raise ValueError(
-                "notification must target exactly one post, wanted interest, or character"
+                "notification must target exactly one post, wanted interest, plot hook, plotting room, or character"
             )
         return self.get_notification_for_character(
             community_id,
@@ -138,6 +198,8 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,
@@ -172,6 +234,8 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,
@@ -206,6 +270,8 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,
@@ -222,6 +288,84 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
         if row is None:
             raise LookupError(
                 f"notification not found in community {community_id}: {membership_id}/{kind}/{wanted_ad_interest_id}"
+            )
+        return _notification_from_row(row)
+
+    def get_notification_for_plot_hook(
+        self,
+        community_id: int,
+        membership_id: int,
+        kind: str,
+        plot_hook_id: int,
+    ) -> Notification:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
+                character_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND kind = ?
+              AND character_plot_hook_id = ?
+            """,
+            (community_id, membership_id, kind, plot_hook_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"notification not found in community {community_id}: {membership_id}/{kind}/{plot_hook_id}"
+            )
+        return _notification_from_row(row)
+
+    def get_notification_for_plotting_room(
+        self,
+        community_id: int,
+        membership_id: int,
+        kind: str,
+        plotting_room_id: int,
+    ) -> Notification:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                kind,
+                thread_id,
+                post_id,
+                wanted_ad_id,
+                wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
+                character_id,
+                actor_membership_id,
+                actor_character_id,
+                read_at,
+                created_at
+            FROM notifications
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND kind = ?
+              AND plotting_room_id = ?
+            """,
+            (community_id, membership_id, kind, plotting_room_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"notification not found in community {community_id}: {membership_id}/{kind}/{plotting_room_id}"
             )
         return _notification_from_row(row)
 
@@ -243,6 +387,8 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,
@@ -283,6 +429,8 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 post_id,
                 wanted_ad_id,
                 wanted_ad_interest_id,
+                character_plot_hook_id,
+                plotting_room_id,
                 character_id,
                 actor_membership_id,
                 actor_character_id,

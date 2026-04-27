@@ -132,6 +132,7 @@
           <p class="chirpui-text-muted">Interested faces</p>
           <div class="elbysodic-character-chip-row">
             {% for interest in item.interests %}
+            {% if interest.character %}
             <a class="elbysodic-character-chip" href="/characters/{{ interest.character.slug }}">
               <span class="elbysodic-character-avatar" aria-hidden="true">
                 {% if interest.character.avatar_url %}
@@ -143,6 +144,12 @@
               <span>{{ interest.character.name }}</span>
               {{ badge(interest.interest.status, variant="warning" if interest.interest.status == "reserved" else "info") }}
             </a>
+            {% else %}
+            <span class="elbysodic-character-chip">
+              <span>{{ interest.interest.prospective_character_name }}</span>
+              {{ badge(interest.interest.status, variant="warning" if interest.interest.status == "reserved" else "info") }}
+            </span>
+            {% end %}
             {% end %}
           </div>
         </div>

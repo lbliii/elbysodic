@@ -1,0 +1,174 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def room_card(item) %}
+{% call surface(variant="elevated") %}
+<article class="chirpui-stack chirpui-stack--sm elbysodic-interest-card">
+  <div class="chirpui-cluster chirpui-cluster--between">
+    <div>
+      <p class="elbysodic-wanted-card__type">{{ item.source_label }}</p>
+      <h2><a class="chirpui-link" href="/plotting/{{ item.room.id }}">{{ item.room.title }}</a></h2>
+      {% if item.room.summary %}
+      <p class="chirpui-text-muted">{{ item.room.summary }}</p>
+      {% end %}
+    </div>
+    <div class="elbysodic-interest-card__meta">
+      {{ badge(item.room.status, variant="info" if item.room.status == "brainstorming" else "muted") }}
+      <span>{{ item.created_at_label }}</span>
+    </div>
+  </div>
+  <div class="elbysodic-character-chip-row">
+    {% for participant in item.participants %}
+    {% if participant.character %}
+    <a class="elbysodic-character-chip" href="/characters/{{ participant.character.slug }}">
+      <span class="elbysodic-character-avatar" aria-hidden="true">
+        {% if participant.character.avatar_url %}
+        <img src="{{ participant.character.avatar_url }}" alt="">
+        {% else %}
+        {{ participant.character.name[:1] }}
+        {% end %}
+      </span>
+      <span>{{ participant.character.name }}</span>
+    </a>
+    {% else %}
+    <span class="elbysodic-character-chip">
+      <span>{{ participant.display_name }}</span>
+    </span>
+    {% end %}
+    {% end %}
+  </div>
+  <a class="chirpui-link" href="{{ item.source_href }}">Open source</a>
+</article>
+{% end %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Plotting Rooms") %}
+  Raised hands that have become shared planning space.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md">
+    <div>
+      <p class="elbysodic-kicker">Writer Desk</p>
+      <h2>{{ viewer.current_character.name if viewer.current_character else viewer.membership.display_name }}</h2>
+      <p class="chirpui-text-muted">
+        Turn interest into a private planning lane before it becomes an IC scene.
+      </p>
+    </div>
+    {% call cluster(gap="sm") %}
+      {{ stat(value=desk.rooms | length, label="Rooms") }}
+      {{ stat(value=desk.plot_hook_interests | length, label="Plot hook interest") }}
+      {{ stat(value=desk.wanted_interests | length, label="Wanted interest") }}
+    {% end %}
+  </article>
+  {% end %}
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Active Rooms") %}
+    Planning spaces you are part of.
+    {% end %}
+    {% if desk.rooms %}
+    <div class="elbysodic-interest-list">
+      {% for item in desk.rooms %}
+      {{ room_card(item) }}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No plotting rooms yet.</p>
+    {% end %}
+    {% end %}
+  </section>
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Interest Inbox") %}
+    Raised hands on hooks you can manage.
+    {% end %}
+    {% if desk.plot_hook_interests or desk.wanted_interests %}
+    <div class="elbysodic-interest-list">
+      {% for item in desk.plot_hook_interests %}
+      {% call surface(variant="elevated") %}
+      <article class="chirpui-stack chirpui-stack--sm elbysodic-interest-card">
+        <div class="chirpui-cluster chirpui-cluster--between">
+          <div>
+            <p class="elbysodic-wanted-card__type">Plot hook</p>
+            <h2>
+              <a class="chirpui-link" href="/characters/{{ item.hook.character.slug }}/hooks/{{ item.hook.plot_hook.slug }}">
+                {{ item.hook.plot_hook.title }}
+              </a>
+            </h2>
+            <p class="chirpui-text-muted">{{ item.interest.character.name }} raised a hand.</p>
+          </div>
+          <div class="elbysodic-interest-card__meta">
+            {{ badge(item.interest.interest.status, variant="info") }}
+            <span>{{ item.interest.created_at_label }}</span>
+          </div>
+        </div>
+        {% if item.room %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/plotting/{{ item.room.room.id }}">Open plotting room</a>
+        {% else %}
+        <form method="post"
+              action="/characters/{{ item.hook.character.slug }}/hooks/{{ item.hook.plot_hook.slug }}"
+              hx-boost="false"
+              class="chirpui-cluster chirpui-cluster--end">
+          <input type="hidden" name="intent" value="start_plotting_room">
+          <input type="hidden" name="interest_id" value="{{ item.interest.interest.id }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Start plotting room</button>
+        </form>
+        {% end %}
+      </article>
+      {% end %}
+      {% end %}
+
+      {% for item in desk.wanted_interests %}
+      {% call surface(variant="elevated") %}
+      <article class="chirpui-stack chirpui-stack--sm elbysodic-interest-card">
+        <div class="chirpui-cluster chirpui-cluster--between">
+          <div>
+            <p class="elbysodic-wanted-card__type">Wanted hook</p>
+            <h2><a class="chirpui-link" href="/wanted/{{ item.wanted_ad.wanted_ad.slug }}">{{ item.wanted_ad.wanted_ad.title }}</a></h2>
+            <p class="chirpui-text-muted">{{ item.interest.display_name }} raised a hand.</p>
+          </div>
+          <div class="elbysodic-interest-card__meta">
+            {{ badge(item.interest.interest.status, variant="info") }}
+            <span>{{ item.interest.created_at_label }}</span>
+          </div>
+        </div>
+        {% if item.room %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/plotting/{{ item.room.room.id }}">Open plotting room</a>
+        {% else %}
+        <form method="post"
+              action="/wanted/{{ item.wanted_ad.wanted_ad.slug }}"
+              hx-boost="false"
+              class="chirpui-cluster chirpui-cluster--end">
+          <input type="hidden" name="intent" value="start_plotting_room">
+          <input type="hidden" name="interest_id" value="{{ item.interest.interest.id }}">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Start plotting room</button>
+        </form>
+        {% end %}
+      </article>
+      {% end %}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No incoming interest yet.</p>
+    {% end %}
+    {% end %}
+  </section>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

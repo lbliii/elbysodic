@@ -1,0 +1,101 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/plotting">← Plotting rooms</a>
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-kicker">Plotting room</p>
+        <h2>{{ room.room.title }}</h2>
+        {% if room.room.summary %}
+        <p class="chirpui-text-muted">{{ room.room.summary }}</p>
+        {% end %}
+      </div>
+      <div class="elbysodic-interest-card__meta">
+        {{ badge(room.room.status, variant="info" if room.room.status == "brainstorming" else "muted") }}
+        <span>{{ room.created_at_label }}</span>
+      </div>
+    </div>
+    <div class="elbysodic-wanted-card__meta">
+      <span>owned by <a class="chirpui-link" href="/members/{{ room.owner_membership.username }}">{{ room.owner_membership.username }}</a></span>
+      {% if room.source_plot_hook %}
+      <span>
+        source
+        <a class="chirpui-link" href="/characters/{{ room.source_plot_hook.character.slug }}/hooks/{{ room.source_plot_hook.plot_hook.slug }}">
+          {{ room.source_plot_hook.plot_hook.title }}
+        </a>
+      </span>
+      {% end %}
+      {% if room.source_wanted_ad %}
+      <span>
+        source
+        <a class="chirpui-link" href="/wanted/{{ room.source_wanted_ad.wanted_ad.slug }}">
+          {{ room.source_wanted_ad.wanted_ad.title }}
+        </a>
+      </span>
+      {% end %}
+    </div>
+  </article>
+  {% end %}
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Writers") %}
+    Faces and concepts currently in the room.
+    {% end %}
+    <div class="elbysodic-interest-list">
+      {% for item in room.participants %}
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-interest-card">
+        {% if item.character %}
+        <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+          <span class="elbysodic-character-avatar" aria-hidden="true">
+            {% if item.character.avatar_url %}
+            <img src="{{ item.character.avatar_url }}" alt="">
+            {% else %}
+            {{ item.character.name[:1] }}
+            {% end %}
+          </span>
+          <span>{{ item.character.name }}</span>
+        </a>
+        {% else %}
+        <div>
+          <h3>{{ item.display_name }}</h3>
+          <p class="chirpui-text-muted">prospective character</p>
+        </div>
+        {% end %}
+        <div class="elbysodic-interest-card__meta">
+          {{ badge(item.participant.participant_role, variant="info" if item.participant.participant_role == "owner" else "muted") }}
+          <span>writer <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.username }}</a></span>
+        </div>
+      </article>
+      {% end %}
+      {% end %}
+    </div>
+  </section>
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--sm">
+    <h2>Notes</h2>
+    <p class="chirpui-text-muted">
+      Shared notes and thread conversion come next; for now this room preserves the match,
+      source context, and participants so plotting has somewhere to live.
+    </p>
+  </article>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

@@ -8,6 +8,8 @@ from typing import Literal
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterPlotHook,
+    CharacterPlotHookInterest,
     CharacterReserve,
     Community,
     CommunityMembership,
@@ -15,6 +17,8 @@ from elbysodic.domain.models import (
     FacetGroup,
     Material,
     Notification,
+    PlottingRoom,
+    PlottingRoomParticipant,
     Post,
     PostRevision,
     Role,
@@ -214,7 +218,9 @@ class NotificationItem:
     thread: Thread | None
     post: PostView | None
     wanted_ad: WantedAd | None
-    actor: Character
+    plot_hook: CharacterPlotHook | None
+    plotting_room: PlottingRoom | None
+    actor: Character | None
     actor_membership: CommunityMembership
     label: str
     title: str
@@ -444,6 +450,18 @@ class FacetFilterGroup:
 
 
 @dataclass(frozen=True, slots=True)
+class FacetChoice:
+    tag: FacetTag
+    is_selected: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FacetChoiceGroup:
+    group: FacetGroup
+    choices: list[FacetChoice]
+
+
+@dataclass(frozen=True, slots=True)
 class DiscoveryCharacterResult:
     character: Character
     owner_membership: CommunityMembership
@@ -463,10 +481,20 @@ class DiscoveryThreadResult:
 
 
 @dataclass(frozen=True, slots=True)
+class DiscoveryPlotHookResult:
+    plot_hook: CharacterPlotHook
+    character: Character
+    author_membership: CommunityMembership
+    facets: list[FacetTag]
+    matching_facets: list[FacetTag]
+
+
+@dataclass(frozen=True, slots=True)
 class PlotDiscovery:
     selected_facets: list[FacetTag]
     active_face_facets: list[FacetTag]
     filter_groups: list[FacetFilterGroup]
+    plot_hooks: list[DiscoveryPlotHookResult]
     characters: list[DiscoveryCharacterResult]
     open_threads: list[DiscoveryThreadResult]
     used_active_face_lens: bool
@@ -594,8 +622,14 @@ class WantedAdSummary:
 class WantedAdInterestView:
     interest: WantedAdInterest
     membership: CommunityMembership
-    character: Character
+    character: Character | None
     created_at_label: str
+
+    @property
+    def display_name(self) -> str:
+        if self.character is not None:
+            return self.character.name
+        return self.interest.prospective_character_name
 
 
 @dataclass(frozen=True, slots=True)
@@ -605,6 +639,97 @@ class CharacterReserveView:
     character: Character
     wanted_ad: WantedAd | None
     created_at_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterPlotHookSummary:
+    plot_hook: CharacterPlotHook
+    character: Character
+    author_membership: CommunityMembership
+    related_material: Material | None
+    facets: list[FacetTag]
+    hook_type_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterPlotHookInterestView:
+    interest: CharacterPlotHookInterest
+    membership: CommunityMembership
+    character: Character
+    created_at_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterPlotHookDetail:
+    plot_hook: CharacterPlotHook
+    character: Character
+    author_membership: CommunityMembership
+    related_material: Material | None
+    facets: list[FacetTag]
+    facet_choices: list[FacetChoiceGroup]
+    interests: list[CharacterPlotHookInterestView]
+    viewer_interest: CharacterPlotHookInterestView | None
+    can_express_interest: bool
+    can_manage: bool
+    rendered_body: object
+    hook_type_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoomParticipantView:
+    participant: PlottingRoomParticipant
+    membership: CommunityMembership
+    character: Character | None
+    created_at_label: str
+
+    @property
+    def display_name(self) -> str:
+        if self.character is not None:
+            return self.character.name
+        if self.participant.prospective_character_name:
+            return self.participant.prospective_character_name
+        return self.membership.display_name
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoomSummary:
+    room: PlottingRoom
+    participants: list[PlottingRoomParticipantView]
+    source_label: str
+    source_href: str
+    created_at_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class PlotHookInterestInboxItem:
+    hook: CharacterPlotHookSummary
+    interest: CharacterPlotHookInterestView
+    room: PlottingRoomSummary | None
+
+
+@dataclass(frozen=True, slots=True)
+class WantedInterestInboxItem:
+    wanted_ad: WantedAdSummary
+    interest: WantedAdInterestView
+    room: PlottingRoomSummary | None
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingDesk:
+    rooms: list[PlottingRoomSummary]
+    plot_hook_interests: list[PlotHookInterestInboxItem]
+    wanted_interests: list[WantedInterestInboxItem]
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoomDetail:
+    room: PlottingRoom
+    owner_membership: CommunityMembership
+    participants: list[PlottingRoomParticipantView]
+    source_plot_hook: CharacterPlotHookSummary | None
+    source_wanted_ad: WantedAdSummary | None
+    created_at_label: str
+    can_manage: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -620,6 +745,7 @@ class WantedAdDetail:
     reserve_interest_ids: set[int]
     viewer_interest: WantedAdInterestView | None
     can_express_interest: bool
+    can_express_prospective_interest: bool
     is_created_by_viewer: bool
     can_manage: bool
     rendered_body: object
@@ -671,6 +797,9 @@ class CharacterProfile:
     character: Character
     owner_membership: CommunityMembership
     facets: list[FacetTag]
+    facet_choices: list[FacetChoiceGroup]
+    plotting_rooms: list[PlottingRoomSummary]
+    plot_hooks: list[CharacterPlotHookSummary]
     wanted_ads: list[WantedAdSummary]
     reserves: list[CharacterReserveView]
     application_status_label: str

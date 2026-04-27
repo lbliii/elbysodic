@@ -3390,6 +3390,24 @@ body {
     border-color: color-mix(in srgb, var(--elbysodic-facet-accent) 70%, var(--chirpui-border));
 }
 
+.elbysodic-facet-choice-group {
+    border: 0;
+    margin: 0;
+    min-inline-size: 0;
+    padding: 0;
+}
+
+.elbysodic-facet-choice-group legend {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+
+.elbysodic-facet-filter input {
+    margin: 0;
+}
+
 .elbysodic-discovery-grid {
     display: grid;
     gap: 1rem;
@@ -3692,6 +3710,10 @@ body {
     height: 100%;
 }
 
+.elbysodic-plot-hook-card {
+    height: 100%;
+}
+
 .elbysodic-wanted-card h2,
 .elbysodic-wanted-detail h2 {
     margin: 0;
@@ -3720,6 +3742,8 @@ body {
 }
 
 .elbysodic-wanted-action {
+    display: grid;
+    gap: 0.9rem;
     border-top: 1px solid var(--chirpui-border-subtle);
     padding-top: 1rem;
 }

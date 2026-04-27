@@ -63,6 +63,21 @@ def _outsider_services(
     return AppServices(repo, DemoSeed(community, user, membership, character)), character.id
 
 
+def _faceless_services(services: AppServices, *, prefix: str = "faceless") -> AppServices:
+    repo = services.repo
+    community = services.seed.community
+    role = repo.get_role_by_slug(community.id, "member")
+    user = repo.create_user(f"{prefix}@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        prefix,
+        prefix.title(),
+    )
+    return AppServices(repo, DemoSeed(community, user, membership, None))
+
+
 def test_forum_pages_render_seeded_boards_and_thread() -> None:
     async def run() -> None:
         app = _app()
@@ -825,6 +840,236 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
             missing = await client.get("/wanted/not-a-hook")
             assert missing.status == 404
+
+    asyncio.run(run())
+
+
+def test_character_plot_hooks_render_create_and_notify_interest() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            character = await client.get("/characters/rogue")
+            assert character.status == 200
+            assert "Old ghosts, new lines" in character.text
+            assert "New plot hook" in character.text
+
+            response = await client.post(
+                "/characters/rogue",
+                body=urlencode(
+                    {
+                        "intent": "create_plot_hook",
+                        "plot_hook_title": "Coffee before the crisis",
+                        "plot_hook_type": "scene",
+                        "plot_hook_summary": "A quieter beat before the event pressure.",
+                        "plot_hook_body": "Rogue wants a low-stakes conversation before B-24.",
+                        "plot_hook_facets": "x-men",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+            detail = await client.get("/characters/rogue/hooks/coffee-before-the-crisis")
+            assert detail.status == 200
+            assert "Coffee before the crisis" in detail.text
+            assert "You created this hook." in detail.text
+
+            discover = await client.get("/discover?facets=x-men")
+            assert discover.status == 200
+            assert "Plot hooks" in discover.text
+            assert "Coffee before the crisis" in discover.text
+
+            services = get_services()
+            outsider_services, _character_id = _outsider_services(services, prefix="hookfan")
+            outsider_app = create_app(debug=False, services=outsider_services)
+            async with TestClient(outsider_app) as outsider_client:
+                outsider_detail = await outsider_client.get(
+                    "/characters/rogue/hooks/coffee-before-the-crisis"
+                )
+                assert outsider_detail.status == 200
+                assert "I'm interested as Hookfan Face" in outsider_detail.text
+
+                interest = await outsider_client.post(
+                    "/characters/rogue/hooks/coffee-before-the-crisis",
+                    body=b"intent=express_interest",
+                    headers=_FORM,
+                )
+                assert interest.status == 302
+
+            owner_inbox = AppServices(services.repo, services.seed).notifications()
+            assert any(item.label == "Plot hook interest" for item in owner_inbox.items)
+
+            repo = services.repo
+            community = services.seed.community
+            hook = repo.get_character_plot_hook_by_slug(
+                community.id,
+                repo.get_character_by_slug(community.id, "rogue").id,
+                "coffee-before-the-crisis",
+            )
+            interest = repo.list_character_plot_hook_interests(community.id, hook.id)[0]
+
+            owner_app = create_app(debug=False, services=AppServices(repo, services.seed))
+            async with TestClient(owner_app) as owner_client:
+                creator_detail = await owner_client.get(
+                    "/characters/rogue/hooks/coffee-before-the-crisis"
+                )
+                assert creator_detail.status == 200
+                assert "Start plotting room" in creator_detail.text
+
+                room_response = await owner_client.post(
+                    "/characters/rogue/hooks/coffee-before-the-crisis",
+                    body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                    headers=_FORM,
+                )
+                assert room_response.status == 302
+
+                room = repo.get_plotting_room_for_plot_hook_interest(community.id, interest.id)
+                room_page = await owner_client.get(f"/plotting/{room.id}")
+                assert room_page.status == 200
+                assert "Coffee before the crisis: Hookfan Face" in room_page.text
+                assert "Hookfan Face" in room_page.text
+
+                plotting = await owner_client.get("/plotting")
+                assert plotting.status == 200
+                assert "Plotting Rooms" in plotting.text
+                assert "Open plotting room" in plotting.text
+
+                profile = await owner_client.get("/characters/rogue")
+                assert profile.status == 200
+                assert "Plotting Now" in profile.text
+                assert "Coffee before the crisis: Hookfan Face" in profile.text
+
+            assert (
+                repo.get_character_plot_hook_interest(community.id, interest.id).status
+                == "plotting"
+            )
+
+            outsider_inbox = outsider_services.notifications()
+            assert any(item.label == "Plotting room" for item in outsider_inbox.items)
+
+    asyncio.run(run())
+
+
+def test_wanted_hooks_accept_prospective_character_interest() -> None:
+    async def run() -> None:
+        _app()
+        services = get_services()
+        faceless_services = _faceless_services(services, prefix="newface")
+        faceless_app = create_app(debug=False, services=faceless_services)
+        async with TestClient(faceless_app) as faceless_client:
+            wanted = await faceless_client.get("/wanted/human-un-liaison-for-b24")
+            assert wanted.status == 200
+            assert "I'd create a new character for this" in wanted.text
+
+            response = await faceless_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=urlencode(
+                    {
+                        "intent": "express_prospective_interest",
+                        "prospective_character_name": "Val Cooper",
+                        "note": "I would app her as a UN pressure point.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        newface_membership = repo.get_membership_by_username(community.id, "newface")
+        prospective = repo.get_prospective_wanted_ad_interest_for_membership(
+            community.id,
+            wanted_ad.id,
+            newface_membership.id,
+        )
+        assert prospective.character_id is None
+        assert prospective.prospective_character_name == "Val Cooper"
+
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        creator_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(creator_app) as creator_client:
+            creator_view = await creator_client.get("/wanted/human-un-liaison-for-b24")
+            assert creator_view.status == 200
+            assert "Val Cooper" in creator_view.text
+            assert "I would app her as a UN pressure point." in creator_view.text
+            assert "Reserve for Val Cooper" in creator_view.text
+
+            reserve = await creator_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=reserve_interest&interest_id={prospective.id}".encode(),
+                headers=_FORM,
+            )
+            assert reserve.status == 302
+
+            reserved_view = await creator_client.get("/wanted/human-un-liaison-for-b24")
+            assert reserved_view.status == 200
+            assert "Create the character before making a reserve record." in reserved_view.text
+
+        inbox = charlie_services.notifications()
+        assert any(item.label == "Wanted interest" for item in inbox.items)
+
+    asyncio.run(run())
+
+
+def test_plotting_rooms_start_from_wanted_interest() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            creator_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert creator_view.status == 200
+            assert "Start plotting room" in creator_view.text
+
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+            room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            room_page = await charlie_client.get(f"/plotting/{room.id}")
+            assert room_page.status == 200
+            assert "Human UN liaison for B-24 talks: Rogue" in room_page.text
+            assert "Charles Xavier" in room_page.text
+            assert "Rogue" in room_page.text
+
+            plotting = await charlie_client.get("/plotting")
+            assert plotting.status == 200
+            assert "Interest Inbox" in plotting.text
+            assert "Open plotting room" in plotting.text
+
+        lane_inbox = AppServices(repo, services.seed).notifications()
+        assert any(item.label == "Plotting room" for item in lane_inbox.items)
+        assert repo.get_wanted_ad_interest(community.id, interest.id).status == "plotting"
 
     asyncio.run(run())
 

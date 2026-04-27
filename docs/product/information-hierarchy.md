@@ -5,6 +5,10 @@ top of it. The goal is not to create a second design system. The goal is to
 make repeated PBP concepts read the same way everywhere: scenes, faces, world
 lenses, activity, and writer obligations should have a stable visual grammar.
 
+This document explains what repeated concepts mean visually. Use
+`docs/product/control-topology.md` alongside it when deciding how visible,
+compact, editable, or collapsed a control should be.
+
 ## Audit Baseline
 
 The current app has several information-heavy surfaces:
@@ -373,6 +377,8 @@ collection, and not a replacement for readable prose.
 
 - Prefer active-face defaults over repeated controls when the action is safe:
   "Join as Rogue" beats a roster dropdown.
+- Use `docs/product/control-topology.md` before collapsing a visible action into
+  an icon, overflow menu, disclosure, or inline edit affordance.
 - Hide optional sections when empty unless the empty state teaches the next
   useful action.
 - Do not duplicate the same title above and inside a visual tile.
