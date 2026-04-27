@@ -15,6 +15,11 @@ class Community:
     host: str | None
     default_theme_id: int | None
     identity_accent_facet_group_id: int | None
+    enabled_post_profile_variants: str
+    enabled_post_accent_styles: str
+    enabled_post_border_styles: str
+    enabled_post_title_styles: str
+    enabled_post_densities: str
     created_at: str
     updated_at: str
 

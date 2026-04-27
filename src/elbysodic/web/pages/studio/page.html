@@ -72,6 +72,7 @@
   {% else %}
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--sm" method="post">
+    <input type="hidden" name="intent" value="identity_accent">
     <div class="chirpui-cluster chirpui-cluster--between">
       <div>
         <p class="elbysodic-kicker">Community Direction</p>
@@ -98,6 +99,84 @@
       </select>
     </label>
     <button class="chirpui-btn chirpui-btn--primary" type="submit">Save direction</button>
+  </form>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <form class="chirpui-stack chirpui-stack--md" method="post">
+    <input type="hidden" name="intent" value="post_style_policy">
+    <div>
+      <p class="elbysodic-kicker">Community Direction</p>
+      <h2>Post style vocabulary</h2>
+      <p class="chirpui-text-muted">
+        Choose the approved tokens writers can use when styling character posts.
+      </p>
+    </div>
+    <div class="elbysodic-style-policy-grid">
+      <fieldset class="elbysodic-style-policy-group">
+        <legend>Post rail</legend>
+        {% for value, label in post_profile_variant_labels.items() %}
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="enabled_post_profile_variants"
+                 value="{{ value }}"
+                 {% if value in studio.post_style_policy.enabled_profile_variants %}checked{% end %}>
+          <span>{{ label }}</span>
+        </label>
+        {% end %}
+      </fieldset>
+      <fieldset class="elbysodic-style-policy-group">
+        <legend>Accent</legend>
+        {% for value, label in post_accent_style_labels.items() %}
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="enabled_post_accent_styles"
+                 value="{{ value }}"
+                 {% if value in studio.post_style_policy.enabled_accent_styles %}checked{% end %}>
+          <span>{{ label }}</span>
+        </label>
+        {% end %}
+      </fieldset>
+      <fieldset class="elbysodic-style-policy-group">
+        <legend>Border</legend>
+        {% for value, label in post_border_style_labels.items() %}
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="enabled_post_border_styles"
+                 value="{{ value }}"
+                 {% if value in studio.post_style_policy.enabled_border_styles %}checked{% end %}>
+          <span>{{ label }}</span>
+        </label>
+        {% end %}
+      </fieldset>
+      <fieldset class="elbysodic-style-policy-group">
+        <legend>Identity type</legend>
+        {% for value, label in post_title_style_labels.items() %}
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="enabled_post_title_styles"
+                 value="{{ value }}"
+                 {% if value in studio.post_style_policy.enabled_title_styles %}checked{% end %}>
+          <span>{{ label }}</span>
+        </label>
+        {% end %}
+      </fieldset>
+      <fieldset class="elbysodic-style-policy-group">
+        <legend>Density</legend>
+        {% for value, label in post_density_labels.items() %}
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="enabled_post_densities"
+                 value="{{ value }}"
+                 {% if value in studio.post_style_policy.enabled_densities %}checked{% end %}>
+          <span>{{ label }}</span>
+        </label>
+        {% end %}
+      </fieldset>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Save style vocabulary</button>
+    </div>
   </form>
   {% end %}
   {% end %}

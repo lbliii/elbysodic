@@ -13,6 +13,7 @@ from elbysodic.domain.models import (
     Board,
     Character,
     CharacterReserve,
+    Community,
     CommunityMembership,
     Material,
     Post,
@@ -99,6 +100,7 @@ from elbysodic.services.read_models import (
     POST_BORDER_STYLES,
     POST_DENSITIES,
     POST_PROFILE_VARIANTS,
+    POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
     ActivityItem,
     ApplicationsDesk,
@@ -127,6 +129,7 @@ from elbysodic.services.read_models import (
     PlottingDesk,
     PlottingRoomDetail,
     PostRevisionHistory,
+    PostStylePolicy,
     ThreadNavigationItem,
     ThreadSummary,
     ThreadView,
@@ -487,6 +490,7 @@ class AppServices:
             can_manage=viewer.role.is_admin,
             facet_groups=facet_groups,
             identity_accent_group=identity_accent_group,
+            post_style_policy=_post_style_policy(viewer.community),
             materials=materials,
             draft_materials=[item for item in materials if item.material.status == "draft"],
             featured_materials=[item for item in materials if item.material.is_featured],
@@ -511,6 +515,62 @@ class AppServices:
         self.repo.update_community_identity_accent_group(
             viewer.community.id,
             facet_group_id,
+        )
+
+    def post_style_policy(self) -> PostStylePolicy:
+        return _post_style_policy(self.viewer().community)
+
+    def update_post_style_policy(
+        self,
+        *,
+        enabled_post_profile_variants: list[str],
+        enabled_post_accent_styles: list[str],
+        enabled_post_border_styles: list[str],
+        enabled_post_title_styles: list[str],
+        enabled_post_densities: list[str],
+    ) -> None:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage post style policy"
+            )
+        self.repo.update_community_post_style_policy(
+            viewer.community.id,
+            enabled_post_profile_variants=",".join(
+                _clean_enabled_style_values(
+                    enabled_post_profile_variants,
+                    POST_PROFILE_VARIANTS,
+                    "post profile variants",
+                )
+            ),
+            enabled_post_accent_styles=",".join(
+                _clean_enabled_style_values(
+                    enabled_post_accent_styles,
+                    POST_ACCENT_STYLES,
+                    "post accent styles",
+                )
+            ),
+            enabled_post_border_styles=",".join(
+                _clean_enabled_style_values(
+                    enabled_post_border_styles,
+                    POST_BORDER_STYLES,
+                    "post border styles",
+                )
+            ),
+            enabled_post_title_styles=",".join(
+                _clean_enabled_style_values(
+                    enabled_post_title_styles,
+                    POST_TITLE_STYLES,
+                    "post title styles",
+                )
+            ),
+            enabled_post_densities=",".join(
+                _clean_enabled_style_values(
+                    enabled_post_densities,
+                    POST_DENSITIES,
+                    "post densities",
+                )
+            ),
         )
 
     def read_material(self, material_slug: str) -> MaterialDetail:
@@ -788,9 +848,11 @@ class AppServices:
         post_border_style: str = "hairline",
         post_title_style: str = "standard",
         post_density: str = "calm",
+        post_style_preset: str = "",
         make_default: bool = False,
     ) -> Character:
         viewer = self.viewer()
+        style_policy = _post_style_policy(viewer.community)
         cleaned_name = name.strip()
         if not cleaned_name:
             raise ValueError("character name is required")
@@ -800,21 +862,55 @@ class AppServices:
         cleaned_poster_alt = poster_alt.strip()
         cleaned_tagline = tagline.strip()
         cleaned_accent_color = accent_color.strip()
+        (
+            post_profile_variant,
+            post_accent_style,
+            post_border_style,
+            post_title_style,
+            post_density,
+        ) = _apply_post_style_preset(
+            post_style_preset.strip(),
+            post_profile_variant=post_profile_variant,
+            post_accent_style=post_accent_style,
+            post_border_style=post_border_style,
+            post_title_style=post_title_style,
+            post_density=post_density,
+        )
         cleaned_post_profile_variant = post_profile_variant.strip() or "bio"
-        if cleaned_post_profile_variant not in POST_PROFILE_VARIANTS:
-            raise ValueError("post profile variant is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_profile_variant,
+            style_policy.enabled_profile_variants,
+            POST_PROFILE_VARIANTS,
+            "post profile variant",
+        )
         cleaned_post_accent_style = post_accent_style.strip() or "soft"
-        if cleaned_post_accent_style not in POST_ACCENT_STYLES:
-            raise ValueError("post accent style is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_accent_style,
+            style_policy.enabled_accent_styles,
+            POST_ACCENT_STYLES,
+            "post accent style",
+        )
         cleaned_post_border_style = post_border_style.strip() or "hairline"
-        if cleaned_post_border_style not in POST_BORDER_STYLES:
-            raise ValueError("post border style is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_border_style,
+            style_policy.enabled_border_styles,
+            POST_BORDER_STYLES,
+            "post border style",
+        )
         cleaned_post_title_style = post_title_style.strip() or "standard"
-        if cleaned_post_title_style not in POST_TITLE_STYLES:
-            raise ValueError("post title style is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_title_style,
+            style_policy.enabled_title_styles,
+            POST_TITLE_STYLES,
+            "post title style",
+        )
         cleaned_post_density = post_density.strip() or "calm"
-        if cleaned_post_density not in POST_DENSITIES:
-            raise ValueError("post density is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_density,
+            style_policy.enabled_densities,
+            POST_DENSITIES,
+            "post density",
+        )
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
         return self.repo.create_character(
             viewer.community.id,
@@ -852,8 +948,10 @@ class AppServices:
         post_border_style: str = "hairline",
         post_title_style: str = "standard",
         post_density: str = "calm",
+        post_style_preset: str = "",
     ) -> Character:
         viewer = self.viewer()
+        style_policy = _post_style_policy(viewer.community)
         character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
         if not policies.can_post_as(viewer.membership, character):
             raise PermissionError(
@@ -868,21 +966,60 @@ class AppServices:
         cleaned_poster_alt = poster_alt.strip()
         cleaned_tagline = tagline.strip()
         cleaned_accent_color = accent_color.strip()
+        (
+            post_profile_variant,
+            post_accent_style,
+            post_border_style,
+            post_title_style,
+            post_density,
+        ) = _apply_post_style_preset(
+            post_style_preset.strip(),
+            post_profile_variant=post_profile_variant,
+            post_accent_style=post_accent_style,
+            post_border_style=post_border_style,
+            post_title_style=post_title_style,
+            post_density=post_density,
+        )
         cleaned_post_profile_variant = post_profile_variant.strip() or "bio"
-        if cleaned_post_profile_variant not in POST_PROFILE_VARIANTS:
-            raise ValueError("post profile variant is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_profile_variant,
+            style_policy.enabled_profile_variants,
+            POST_PROFILE_VARIANTS,
+            "post profile variant",
+            current_value=character.post_profile_variant,
+        )
         cleaned_post_accent_style = post_accent_style.strip() or "soft"
-        if cleaned_post_accent_style not in POST_ACCENT_STYLES:
-            raise ValueError("post accent style is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_accent_style,
+            style_policy.enabled_accent_styles,
+            POST_ACCENT_STYLES,
+            "post accent style",
+            current_value=character.post_accent_style,
+        )
         cleaned_post_border_style = post_border_style.strip() or "hairline"
-        if cleaned_post_border_style not in POST_BORDER_STYLES:
-            raise ValueError("post border style is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_border_style,
+            style_policy.enabled_border_styles,
+            POST_BORDER_STYLES,
+            "post border style",
+            current_value=character.post_border_style,
+        )
         cleaned_post_title_style = post_title_style.strip() or "standard"
-        if cleaned_post_title_style not in POST_TITLE_STYLES:
-            raise ValueError("post title style is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_title_style,
+            style_policy.enabled_title_styles,
+            POST_TITLE_STYLES,
+            "post title style",
+            current_value=character.post_title_style,
+        )
         cleaned_post_density = post_density.strip() or "calm"
-        if cleaned_post_density not in POST_DENSITIES:
-            raise ValueError("post density is not supported")
+        _ensure_enabled_style_value(
+            cleaned_post_density,
+            style_policy.enabled_densities,
+            POST_DENSITIES,
+            "post density",
+            current_value=character.post_density,
+        )
         slug = character.slug
         if cleaned_name != character.name:
             slug = _unique_character_slug(
@@ -1237,6 +1374,103 @@ def _latest_thread(threads: list[Thread]) -> Thread | None:
     if not threads:
         return None
     return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
+
+
+def _post_style_policy(community: Community) -> PostStylePolicy:
+    return PostStylePolicy(
+        enabled_profile_variants=tuple(
+            _stored_style_values(
+                community.enabled_post_profile_variants,
+                POST_PROFILE_VARIANTS,
+            )
+        ),
+        enabled_accent_styles=tuple(
+            _stored_style_values(
+                community.enabled_post_accent_styles,
+                POST_ACCENT_STYLES,
+            )
+        ),
+        enabled_border_styles=tuple(
+            _stored_style_values(
+                community.enabled_post_border_styles,
+                POST_BORDER_STYLES,
+            )
+        ),
+        enabled_title_styles=tuple(
+            _stored_style_values(
+                community.enabled_post_title_styles,
+                POST_TITLE_STYLES,
+            )
+        ),
+        enabled_densities=tuple(
+            _stored_style_values(
+                community.enabled_post_densities,
+                POST_DENSITIES,
+            )
+        ),
+    )
+
+
+def _stored_style_values(raw_values: str, allowed_values: tuple[str, ...]) -> list[str]:
+    values = [value.strip() for value in raw_values.split(",") if value.strip()]
+    cleaned = [value for value in values if value in allowed_values]
+    return cleaned or list(allowed_values)
+
+
+def _clean_enabled_style_values(
+    values: list[str],
+    allowed_values: tuple[str, ...],
+    label: str,
+) -> list[str]:
+    cleaned: list[str] = []
+    for value in values:
+        candidate = value.strip()
+        if candidate in allowed_values and candidate not in cleaned:
+            cleaned.append(candidate)
+    if not cleaned:
+        raise ValueError(f"choose at least one {label}")
+    return cleaned
+
+
+def _ensure_enabled_style_value(
+    value: str,
+    enabled_values: tuple[str, ...],
+    allowed_values: tuple[str, ...],
+    label: str,
+    *,
+    current_value: str | None = None,
+) -> None:
+    if value not in allowed_values:
+        raise ValueError(f"{label} is not supported")
+    if value not in enabled_values and value != current_value:
+        raise ValueError(f"{label} is not available in this community")
+
+
+def _apply_post_style_preset(
+    preset_slug: str,
+    *,
+    post_profile_variant: str,
+    post_accent_style: str,
+    post_border_style: str,
+    post_title_style: str,
+    post_density: str,
+) -> tuple[str, str, str, str, str]:
+    preset = POST_STYLE_PRESETS.get(preset_slug)
+    if preset is None:
+        return (
+            post_profile_variant,
+            post_accent_style,
+            post_border_style,
+            post_title_style,
+            post_density,
+        )
+    return (
+        preset["post_profile_variant"],
+        preset["post_accent_style"],
+        preset["post_border_style"],
+        preset["post_title_style"],
+        preset["post_density"],
+    )
 
 
 def _unique_character_slug(

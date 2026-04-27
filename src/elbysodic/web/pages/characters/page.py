@@ -14,6 +14,7 @@ from elbysodic.services.read_models import (
     POST_BORDER_STYLE_LABELS,
     POST_DENSITY_LABELS,
     POST_PROFILE_VARIANT_LABELS,
+    POST_STYLE_PRESETS,
     POST_TITLE_STYLE_LABELS,
 )
 from elbysodic.web.state import get_services
@@ -32,6 +33,8 @@ class CharacterCreateForm:
     post_border_style: str
     post_title_style: str
     post_density: str
+    post_style_preset: str
+    accent_source: str
     summary: str
     make_default: str
 
@@ -55,6 +58,10 @@ async def post(request: Request) -> Page | Redirect:
     post_border_style = str(form.get("post_border_style") or "hairline")
     post_title_style = str(form.get("post_title_style") or "standard")
     post_density = str(form.get("post_density") or "calm")
+    post_style_preset = str(form.get("post_style_preset") or "")
+    accent_source = str(form.get("accent_source") or "inherit")
+    if accent_source != "custom":
+        accent_color = ""
     make_default = str(form.get("make_default") or "") == "on"
 
     try:
@@ -71,6 +78,7 @@ async def post(request: Request) -> Page | Redirect:
             post_border_style=post_border_style,
             post_title_style=post_title_style,
             post_density=post_density,
+            post_style_preset=post_style_preset,
             make_default=make_default,
         )
     except ValueError as exc:
@@ -89,6 +97,8 @@ async def post(request: Request) -> Page | Redirect:
             post_border_style=post_border_style,
             post_title_style=post_title_style,
             post_density=post_density,
+            post_style_preset=post_style_preset,
+            accent_source=accent_source,
             make_default=make_default,
         )
 
@@ -111,10 +121,14 @@ def _render_roster(
     post_border_style: str = "hairline",
     post_title_style: str = "standard",
     post_density: str = "calm",
+    post_style_preset: str = "",
+    accent_source: str = "inherit",
     make_default: bool = False,
 ) -> Page:
     services = get_services()
     viewer = services.viewer()
+    style_policy = services.post_style_policy()
+    post_style_preview_config_id = "character-post-style-preview-config"
     return Page(
         "characters/page.html",
         "page_content",
@@ -135,10 +149,40 @@ def _render_roster(
         post_border_style=post_border_style,
         post_title_style=post_title_style,
         post_density=post_density,
-        post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
-        post_accent_style_labels=POST_ACCENT_STYLE_LABELS,
-        post_border_style_labels=POST_BORDER_STYLE_LABELS,
-        post_title_style_labels=POST_TITLE_STYLE_LABELS,
-        post_density_labels=POST_DENSITY_LABELS,
+        post_style_preset=post_style_preset,
+        accent_source=accent_source,
+        post_profile_variant_labels=style_policy.profile_variant_labels(),
+        post_accent_style_labels=style_policy.accent_style_labels(),
+        post_border_style_labels=style_policy.border_style_labels(),
+        post_title_style_labels=style_policy.title_style_labels(),
+        post_density_labels=style_policy.density_labels(),
+        post_style_presets=POST_STYLE_PRESETS,
+        post_style_preview_config_id=post_style_preview_config_id,
+        post_style_preview_config={
+            "inheritedAccentColor": "",
+            "inheritedAccentLabel": "Inherit from community direction",
+            "initial": {
+                "accentSource": accent_source,
+                "customAccent": accent_color,
+                "name": name or "New face",
+                "postAccentStyle": post_accent_style,
+                "postBorderStyle": post_border_style,
+                "postDensity": post_density,
+                "postProfileVariant": post_profile_variant,
+                "postTitleStyle": post_title_style,
+                "posterAlt": poster_alt,
+                "posterUrl": poster_url,
+                "stylePreset": post_style_preset,
+                "summary": summary,
+                "tagline": tagline,
+                "writer": viewer.membership.username,
+            },
+            "presets": POST_STYLE_PRESETS,
+        },
+        all_post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
+        all_post_accent_style_labels=POST_ACCENT_STYLE_LABELS,
+        all_post_border_style_labels=POST_BORDER_STYLE_LABELS,
+        all_post_title_style_labels=POST_TITLE_STYLE_LABELS,
+        all_post_density_labels=POST_DENSITY_LABELS,
         make_default=make_default,
     )

@@ -48,6 +48,11 @@ class IdentityRepositoryMixin(RepositoryBase):
                 host,
                 default_theme_id,
                 identity_accent_facet_group_id,
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
                 created_at,
                 updated_at
             FROM communities
@@ -85,6 +90,41 @@ class IdentityRepositoryMixin(RepositoryBase):
             WHERE id = ?
             """,
             (facet_group_id, _utc_now(), community_id),
+        )
+        self.connection.commit()
+        return self.get_community(community_id)
+
+    def update_community_post_style_policy(
+        self,
+        community_id: int,
+        *,
+        enabled_post_profile_variants: str,
+        enabled_post_accent_styles: str,
+        enabled_post_border_styles: str,
+        enabled_post_title_styles: str,
+        enabled_post_densities: str,
+    ) -> Community:
+        self.get_community(community_id)
+        self.connection.execute(
+            """
+            UPDATE communities
+            SET enabled_post_profile_variants = ?,
+                enabled_post_accent_styles = ?,
+                enabled_post_border_styles = ?,
+                enabled_post_title_styles = ?,
+                enabled_post_densities = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
+                _utc_now(),
+                community_id,
+            ),
         )
         self.connection.commit()
         return self.get_community(community_id)

@@ -39,6 +39,11 @@ def _community_from_row(row: sqlite3.Row) -> Community:
         host=row["host"],
         default_theme_id=row["default_theme_id"],
         identity_accent_facet_group_id=row["identity_accent_facet_group_id"],
+        enabled_post_profile_variants=row["enabled_post_profile_variants"],
+        enabled_post_accent_styles=row["enabled_post_accent_styles"],
+        enabled_post_border_styles=row["enabled_post_border_styles"],
+        enabled_post_title_styles=row["enabled_post_title_styles"],
+        enabled_post_densities=row["enabled_post_densities"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

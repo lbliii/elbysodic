@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/post_style_preview.html" import post_style_preview %}
 {% end %}
 
 {% block page_root %}
@@ -29,7 +30,7 @@
     {% for card in roster_dashboard.cards %}
     {% call surface(variant="elevated") %}
     <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm"
-             {% if card.character.accent_color %}style="--elbysodic-character-accent: {{ card.character.accent_color }}"{% end %}>
+             {% if card.accent_color %}style="--elbysodic-character-accent: {{ card.accent_color }}"{% end %}>
       <a class="elbysodic-character-card__poster elbysodic-character-poster--{{ card.character.slug }}"
          href="/characters/{{ card.character.slug }}"
          aria-label="{{ card.character.name }}">
@@ -58,6 +59,11 @@
             {% if card.character.tagline %}
             <p class="elbysodic-character-card__tagline">{{ card.character.tagline }}</p>
             {% end %}
+            <p class="elbysodic-accent-source">
+              <span class="elbysodic-accent-source__swatch" aria-hidden="true"
+                    {% if card.accent_color %}style="--elbysodic-accent-source-color: {{ card.accent_color }}"{% end %}></span>
+              <span>{{ card.accent_source_label }}</span>
+            </p>
             <p class="chirpui-text-muted">{{ card.character.summary }}</p>
           </div>
         </div>
@@ -101,7 +107,11 @@
   </div>
 
   {% call surface(variant="elevated") %}
-  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+  {{ alpine_json_config(post_style_preview_config_id, post_style_preview_config) }}
+  <form method="post"
+        hx-boost="false"
+        class="chirpui-stack chirpui-stack--md"
+        x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
     <div>
       <h2>Add character</h2>
       <p class="chirpui-text-muted">Start a draft application for {{ viewer.community.name }}</p>
@@ -116,6 +126,7 @@
                class="chirpui-field__input"
                name="name"
                value="{{ name }}"
+               x-model="name"
                autocomplete="off"
                required>
       </div>
@@ -133,6 +144,7 @@
                class="chirpui-field__input"
                name="poster_url"
                value="{{ poster_url }}"
+               x-model="posterUrl"
                autocomplete="off">
       </div>
       <div>
@@ -141,6 +153,7 @@
                class="chirpui-field__input"
                name="poster_alt"
                value="{{ poster_alt }}"
+               x-model="posterAlt"
                autocomplete="off">
       </div>
       <div>
@@ -149,22 +162,52 @@
                class="chirpui-field__input"
                name="tagline"
                value="{{ tagline }}"
+               x-model="tagline"
                autocomplete="off">
       </div>
       <div>
-        <label class="chirpui-field__label" for="character-accent">Accent color</label>
+        <label class="chirpui-field__label" for="character-accent-source">Accent source</label>
+        <select id="character-accent-source"
+                class="chirpui-field__input"
+                name="accent_source"
+                x-model="accentSource">
+          <option value="inherit" {% if accent_source != "custom" %}selected{% end %}>Inherit from community direction</option>
+          <option value="custom" {% if accent_source == "custom" %}selected{% end %}>Custom color</option>
+        </select>
+      </div>
+      <div x-show="accentSource === 'custom'">
+        <label class="chirpui-field__label" for="character-accent">Custom accent color</label>
         <input id="character-accent"
                class="chirpui-field__input"
                name="accent_color"
                value="{{ accent_color }}"
-               placeholder="#79a889"
+               x-model="customAccent"
+               placeholder="Inherit from community direction"
                autocomplete="off">
+        <p class="elbysodic-field-hint">Leave blank to inherit the community accent once this character has world lenses.</p>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="character-post-style-preset">Style preset</label>
+        <select id="character-post-style-preset"
+                class="chirpui-field__input"
+                name="post_style_preset"
+                x-model="stylePreset"
+                @change="applyPreset()">
+          <option value="">Custom controls</option>
+          {% for value, preset in post_style_presets.items() %}
+          <option value="{{ value }}" {% if post_style_preset == value %}selected{% end %}>
+            {{ preset["label"] }}
+          </option>
+          {% end %}
+        </select>
+        <p class="elbysodic-field-hint">Choosing a preset applies its approved post tokens on save.</p>
       </div>
       <div>
         <label class="chirpui-field__label" for="character-post-profile-variant">Post rail</label>
         <select id="character-post-profile-variant"
                 class="chirpui-field__input"
-                name="post_profile_variant">
+                name="post_profile_variant"
+                x-model="postProfileVariant">
           {% for value, label in post_profile_variant_labels.items() %}
           <option value="{{ value }}" {% if post_profile_variant == value %}selected{% end %}>
             {{ label }}
@@ -176,7 +219,8 @@
         <label class="chirpui-field__label" for="character-post-accent-style">Post accent</label>
         <select id="character-post-accent-style"
                 class="chirpui-field__input"
-                name="post_accent_style">
+                name="post_accent_style"
+                x-model="postAccentStyle">
           {% for value, label in post_accent_style_labels.items() %}
           <option value="{{ value }}" {% if post_accent_style == value %}selected{% end %}>
             {{ label }}
@@ -188,7 +232,8 @@
         <label class="chirpui-field__label" for="character-post-border-style">Post border</label>
         <select id="character-post-border-style"
                 class="chirpui-field__input"
-                name="post_border_style">
+                name="post_border_style"
+                x-model="postBorderStyle">
           {% for value, label in post_border_style_labels.items() %}
           <option value="{{ value }}" {% if post_border_style == value %}selected{% end %}>
             {{ label }}
@@ -200,7 +245,8 @@
         <label class="chirpui-field__label" for="character-post-title-style">Identity type</label>
         <select id="character-post-title-style"
                 class="chirpui-field__input"
-                name="post_title_style">
+                name="post_title_style"
+                x-model="postTitleStyle">
           {% for value, label in post_title_style_labels.items() %}
           <option value="{{ value }}" {% if post_title_style == value %}selected{% end %}>
             {{ label }}
@@ -212,7 +258,8 @@
         <label class="chirpui-field__label" for="character-post-density">Post density</label>
         <select id="character-post-density"
                 class="chirpui-field__input"
-                name="post_density">
+                name="post_density"
+                x-model="postDensity">
           {% for value, label in post_density_labels.items() %}
           <option value="{{ value }}" {% if post_density == value %}selected{% end %}>
             {{ label }}
@@ -221,11 +268,28 @@
         </select>
       </div>
     </div>
+    {{ post_style_preview(
+      name or "New face",
+      viewer.membership.username,
+      tagline,
+      summary,
+      poster_url,
+      poster_alt,
+      accent_color if accent_source == "custom" else "",
+      "Custom accent" if accent_source == "custom" and accent_color else "Inherit from community direction",
+      post_profile_variant,
+      post_accent_style,
+      post_border_style,
+      post_title_style,
+      post_density,
+      True
+    ) }}
     <div>
       <label class="chirpui-field__label" for="character-summary">Summary</label>
       <textarea id="character-summary"
                 class="chirpui-field__input"
                 name="summary"
+                x-model="summary"
                 rows="4">{{ summary }}</textarea>
     </div>
     <label class="elbysodic-checkbox">

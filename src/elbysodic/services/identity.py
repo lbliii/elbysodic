@@ -28,7 +28,11 @@ from elbysodic.services.casting import (
     character_reserve_view,
     wanted_ad_summary,
 )
-from elbysodic.services.facets import facet_choice_groups, facet_tags
+from elbysodic.services.facets import (
+    character_accent_source,
+    facet_choice_groups,
+    facet_tags,
+)
 from elbysodic.services.plot_hooks import plot_hook_summary
 from elbysodic.services.plotting import plotting_room_summary
 from elbysodic.services.posts import post_view
@@ -130,16 +134,25 @@ def character_roster_dashboard(
     viewer: ForumView,
 ) -> CharacterRosterDashboard:
     return CharacterRosterDashboard(
-        cards=[
-            CharacterRosterCard(
-                character=character,
-                is_default=viewer.membership.default_character_id == character.id,
-                activity=character_activity(repo, viewer, character),
-                application_status_label=application_status_label(character.application_status),
-                application_status_variant=application_status_variant(character.application_status),
-            )
-            for character in viewer.roster
-        ]
+        cards=[_character_roster_card(repo, viewer, character) for character in viewer.roster]
+    )
+
+
+def _character_roster_card(
+    repo: IdentityRepository,
+    viewer: ForumView,
+    character: Character,
+) -> CharacterRosterCard:
+    accent = character_accent_source(repo, viewer.community, character)
+    return CharacterRosterCard(
+        character=character,
+        accent_color=accent.color,
+        accent_source_label=accent.label,
+        accent_source_detail=accent.detail,
+        is_default=viewer.membership.default_character_id == character.id,
+        activity=character_activity(repo, viewer, character),
+        application_status_label=application_status_label(character.application_status),
+        application_status_variant=application_status_variant(character.application_status),
     )
 
 
@@ -192,8 +205,12 @@ def character_profile(
     can_manage = character.membership_id == viewer.membership.id
     activity = character_activity(repo, viewer, character)
     character_facets = repo.list_character_facets(viewer.community.id, character.id)
+    accent = character_accent_source(repo, viewer.community, character)
     return CharacterProfile(
         character=character,
+        accent_color=accent.color,
+        accent_source_label=accent.label,
+        accent_source_detail=accent.detail,
         owner_membership=owner_membership,
         facets=facet_tags(repo, viewer.community.id, character_facets),
         facet_choices=facet_choice_groups(

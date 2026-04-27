@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Protocol
 
 from elbysodic.domain.models import Character, Community, Facet, FacetGroup
@@ -31,6 +32,18 @@ class CharacterAccentRepository(Protocol):
     def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
 
 
+class CharacterAccentSourceRepository(CharacterAccentRepository, Protocol):
+    def list_facet_groups(self, community_id: int) -> list[FacetGroup]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterAccentSource:
+    color: str
+    label: str
+    detail: str
+    is_inherited: bool
+
+
 def resolve_character_accent(
     repo: CharacterAccentRepository,
     community: Community,
@@ -46,6 +59,58 @@ def resolve_character_accent(
         if facet.facet_group_id == accent_group_id and facet.accent_color.strip():
             return facet.accent_color.strip()
     return ""
+
+
+def character_accent_source(
+    repo: CharacterAccentSourceRepository,
+    community: Community,
+    character: Character,
+) -> CharacterAccentSource:
+    character_accent = character.accent_color.strip()
+    if character_accent:
+        return CharacterAccentSource(
+            color=character_accent,
+            label="Custom accent",
+            detail="Character override",
+            is_inherited=False,
+        )
+
+    accent_group_id = community.identity_accent_facet_group_id
+    if accent_group_id is None:
+        return CharacterAccentSource(
+            color="",
+            label="Theme default",
+            detail="No community accent lens",
+            is_inherited=False,
+        )
+
+    groups = {group.id: group for group in repo.list_facet_groups(community.id)}
+    group = groups.get(accent_group_id)
+    group_name = group.name if group is not None else "Community lens"
+    for facet in repo.list_character_facets(community.id, character.id):
+        if facet.facet_group_id != accent_group_id:
+            continue
+        color = facet.accent_color.strip()
+        if color:
+            return CharacterAccentSource(
+                color=color,
+                label=f"{group_name}: {facet.name}",
+                detail="Inherited accent",
+                is_inherited=True,
+            )
+        return CharacterAccentSource(
+            color="",
+            label=f"{group_name}: {facet.name}",
+            detail="Facet has no accent color",
+            is_inherited=True,
+        )
+
+    return CharacterAccentSource(
+        color="",
+        label=f"{group_name}: none",
+        detail="No matching character facet",
+        is_inherited=False,
+    )
 
 
 def current_character_facet_tags(repo: FacetReadRepository, viewer: ForumView) -> list[FacetTag]:

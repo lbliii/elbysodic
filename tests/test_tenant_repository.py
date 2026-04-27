@@ -227,6 +227,11 @@ def test_schema_migrates_existing_characters_for_post_profile_variants() -> None
     assert "post_title_style" in columns
     assert "post_density" in columns
     assert "identity_accent_facet_group_id" in community_columns
+    assert "enabled_post_profile_variants" in community_columns
+    assert "enabled_post_accent_styles" in community_columns
+    assert "enabled_post_border_styles" in community_columns
+    assert "enabled_post_title_styles" in community_columns
+    assert "enabled_post_densities" in community_columns
     assert character["post_profile_variant"] == "bio"
     assert character["post_accent_style"] == "soft"
     assert character["post_border_style"] == "hairline"
@@ -245,6 +250,23 @@ def test_community_identity_accent_group_is_tenant_scoped(repo: ForumRepository)
     assert updated.identity_accent_facet_group_id == default_group.id
     with pytest.raises(LookupError):
         repo.update_community_identity_accent_group(default.id, hosted_group.id)
+
+
+def test_community_post_style_policy_is_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+
+    updated = repo.update_community_post_style_policy(
+        default.id,
+        enabled_post_profile_variants="bio,poster",
+        enabled_post_accent_styles="soft,line",
+        enabled_post_border_styles="hairline",
+        enabled_post_title_styles="standard,mono",
+        enabled_post_densities="calm,compact",
+    )
+
+    assert updated.enabled_post_profile_variants == "bio,poster"
+    assert repo.get_community(hosted.id).enabled_post_profile_variants == ""
 
 
 def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:

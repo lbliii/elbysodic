@@ -7,6 +7,13 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services.read_models import (
+    POST_ACCENT_STYLE_LABELS,
+    POST_BORDER_STYLE_LABELS,
+    POST_DENSITY_LABELS,
+    POST_PROFILE_VARIANT_LABELS,
+    POST_TITLE_STYLE_LABELS,
+)
 from elbysodic.web.state import get_services
 
 
@@ -17,10 +24,35 @@ def get(request: Request) -> Page:
 async def post(request: Request) -> Page | Redirect:
     services = get_services()
     form = await request.form()
-    raw_group_id = str(form.get("identity_accent_facet_group_id") or "")
+    intent = str(form.get("intent") or "identity_accent")
     try:
-        facet_group_id = int(raw_group_id) if raw_group_id else None
-        services.update_identity_accent_group(facet_group_id)
+        if intent == "post_style_policy":
+            services.update_post_style_policy(
+                enabled_post_profile_variants=_form_values(
+                    form,
+                    "enabled_post_profile_variants",
+                ),
+                enabled_post_accent_styles=_form_values(
+                    form,
+                    "enabled_post_accent_styles",
+                ),
+                enabled_post_border_styles=_form_values(
+                    form,
+                    "enabled_post_border_styles",
+                ),
+                enabled_post_title_styles=_form_values(
+                    form,
+                    "enabled_post_title_styles",
+                ),
+                enabled_post_densities=_form_values(
+                    form,
+                    "enabled_post_densities",
+                ),
+            )
+        else:
+            raw_group_id = str(form.get("identity_accent_facet_group_id") or "")
+            facet_group_id = int(raw_group_id) if raw_group_id else None
+            services.update_identity_accent_group(facet_group_id)
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except (LookupError, ValueError) as exc:
@@ -39,4 +71,20 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page:
         viewer=services.viewer(),
         studio=studio,
         error=error,
+        post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
+        post_accent_style_labels=POST_ACCENT_STYLE_LABELS,
+        post_border_style_labels=POST_BORDER_STYLE_LABELS,
+        post_title_style_labels=POST_TITLE_STYLE_LABELS,
+        post_density_labels=POST_DENSITY_LABELS,
     )
+
+
+def _form_values(form: object, name: str) -> list[str]:
+    get_list = getattr(form, "get_list", None)
+    getlist = getattr(form, "getlist", None)
+    if callable(get_list):
+        return [str(value) for value in get_list(name)]
+    if callable(getlist):
+        return [str(value) for value in getlist(name)]
+    raw = getattr(form, "get", lambda _name: None)(name)
+    return [] if raw is None else [str(raw)]

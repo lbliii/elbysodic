@@ -190,9 +190,135 @@
     });
   }
 
-  register("elbysodicMentionPicker", function (configId) {
+  function readConfig(configId) {
     const configElement = document.getElementById(configId);
-    const config = configElement ? JSON.parse(configElement.textContent || "{}") : {};
+    return configElement ? JSON.parse(configElement.textContent || "{}") : {};
+  }
+
+  function removeManagedClasses(element, prefixes) {
+    if (!element) {
+      return;
+    }
+    for (const className of Array.from(element.classList)) {
+      if (prefixes.some((prefix) => className.startsWith(prefix))) {
+        element.classList.remove(className);
+      }
+    }
+  }
+
+  register("elbysodicPostStylePreview", function (configId) {
+    const config = readConfig(configId);
+    const initial = config.initial || {};
+
+    return {
+      accentSource: initial.accentSource || "inherit",
+      customAccent: initial.customAccent || "",
+      inheritedAccentColor: config.inheritedAccentColor || "",
+      inheritedAccentLabel: config.inheritedAccentLabel || "Inherit from community direction",
+      name: initial.name || "",
+      postAccentStyle: initial.postAccentStyle || "soft",
+      postBorderStyle: initial.postBorderStyle || "hairline",
+      postDensity: initial.postDensity || "calm",
+      postProfileVariant: initial.postProfileVariant || "bio",
+      postTitleStyle: initial.postTitleStyle || "standard",
+      posterAlt: initial.posterAlt || "",
+      posterUrl: initial.posterUrl || "",
+      presets: config.presets || {},
+      stylePreset: initial.stylePreset || "",
+      summary: initial.summary || "",
+      tagline: initial.tagline || "",
+      writer: initial.writer || "",
+
+      accentLabel() {
+        if (this.accentSource === "custom" && this.customAccent.trim()) {
+          return "Custom accent";
+        }
+        return this.inheritedAccentLabel;
+      },
+
+      applyPreset() {
+        const preset = this.presets[this.stylePreset];
+        if (!preset) {
+          return;
+        }
+        this.postProfileVariant = preset.post_profile_variant || this.postProfileVariant;
+        this.postAccentStyle = preset.post_accent_style || this.postAccentStyle;
+        this.postBorderStyle = preset.post_border_style || this.postBorderStyle;
+        this.postTitleStyle = preset.post_title_style || this.postTitleStyle;
+        this.postDensity = preset.post_density || this.postDensity;
+      },
+
+      displayInitial() {
+        return this.displayName().trim().slice(0, 1) || "?";
+      },
+
+      displayName() {
+        return this.name.trim() || "New face";
+      },
+
+      displaySummary() {
+        return this.summary.trim() || "A quick character note will live here.";
+      },
+
+      hasPoster() {
+        return this.posterUrl.trim().length > 0;
+      },
+
+      previewAccent() {
+        if (this.accentSource === "custom" && this.customAccent.trim()) {
+          return this.customAccent.trim();
+        }
+        return this.inheritedAccentColor;
+      },
+
+      previewAlt() {
+        return this.posterAlt.trim() || this.displayName();
+      },
+
+      previewBodyLead() {
+        return `${this.displayName()} steps into the scene with just enough atmosphere to feel authored, while the prose column keeps its calm reading rhythm.`;
+      },
+
+      syncPreviewClasses(shell) {
+        const accent = this.previewAccent();
+        if (shell) {
+          removeManagedClasses(shell, [
+            "elbysodic-post-accent--",
+            "elbysodic-post-border--",
+            "elbysodic-post-title--",
+            "elbysodic-post-density--",
+          ]);
+          shell.classList.add(
+            `elbysodic-post-accent--${this.postAccentStyle || "soft"}`,
+            `elbysodic-post-border--${this.postBorderStyle || "hairline"}`,
+            `elbysodic-post-title--${this.postTitleStyle || "standard"}`,
+            `elbysodic-post-density--${this.postDensity || "calm"}`,
+          );
+          if (accent) {
+            shell.style.setProperty("--elbysodic-character-accent", accent);
+          } else {
+            shell.style.removeProperty("--elbysodic-character-accent");
+          }
+        }
+        if (this.$refs.previewRail) {
+          removeManagedClasses(this.$refs.previewRail, ["elbysodic-post-profile--"]);
+          this.$refs.previewRail.classList.add(
+            `elbysodic-post-profile--${this.postProfileVariant || "bio"}`,
+          );
+        }
+        if (this.$refs.previewSwatch) {
+          if (accent) {
+            this.$refs.previewSwatch.style.setProperty("--elbysodic-accent-source-color", accent);
+          } else {
+            this.$refs.previewSwatch.style.removeProperty("--elbysodic-accent-source-color");
+          }
+        }
+      },
+    };
+  });
+
+  register("elbysodicMentionPicker", function (configId) {
+    const config = readConfig(configId);
 
     return {
       config: config,
@@ -283,8 +409,7 @@
   });
 
   register("elbysodicComposer", function (configId) {
-    const configElement = document.getElementById(configId);
-    const config = configElement ? JSON.parse(configElement.textContent || "{}") : {};
+    const config = readConfig(configId);
 
     return {
       body: config.initialBody || "",

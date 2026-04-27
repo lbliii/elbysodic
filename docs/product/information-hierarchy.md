@@ -409,9 +409,16 @@ Customization belongs in bounded surfaces:
   art, tagline, and accent color.
 - Communities may eventually decide which token choices are available, but V1
   uses app-approved constants.
+- Directors can curate which approved post tokens are available to writers.
+  Disabled values should disappear from new-character controls, while existing
+  characters that already use a disabled value should still render and remain
+  editable until the writer chooses a different value.
 - A community may choose one facet group as its identity accent source. When a
   character has no explicit accent override, post atmosphere inherits from that
   character's first matching facet color in the chosen group.
+- Roster and profile surfaces should disclose the current accent source with a
+  compact swatch and label so automatic direction feels intentional rather than
+  mysterious.
 - Do not allow arbitrary CSS, raw style blocks, scriptable templates, or layout
   controls that resize the prose column.
 - Required identity stays present in markup even when a visual variant hides it

@@ -1,0 +1,87 @@
+{% imports %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def post_style_preview(name, writer, tagline, summary, poster_url, poster_alt, accent_color, accent_source_label, post_profile_variant, post_accent_style, post_border_style, post_title_style, post_density, live=False) %}
+{% set shell_cls = "elbysodic-post-shell elbysodic-post-style-preview__shell elbysodic-post-accent--" ~ (post_accent_style or "soft") ~ " elbysodic-post-border--" ~ (post_border_style or "hairline") ~ " elbysodic-post-title--" ~ (post_title_style or "standard") ~ " elbysodic-post-density--" ~ (post_density or "calm") %}
+{% set shell_style = "--elbysodic-character-accent: " ~ accent_color if accent_color else "" %}
+<div class="elbysodic-post-style-preview">
+  <div class="elbysodic-post-style-preview__heading">
+    <p class="elbysodic-kicker">Post preview</p>
+    <p class="elbysodic-accent-source">
+      <span class="elbysodic-accent-source__swatch" aria-hidden="true"
+            {% if live %}x-ref="previewSwatch"{% end %}
+            {% if accent_color %}style="--elbysodic-accent-source-color: {{ accent_color }}"{% end %}></span>
+      <span {% if live %}x-text="accentLabel()"{% end %}>{{ accent_source_label }}</span>
+    </p>
+  </div>
+  {% call surface(variant="elevated", cls=shell_cls, style=shell_style) %}
+  <article class="elbysodic-post elbysodic-post--preview"
+           {% if live %}x-effect="syncPreviewClasses($el.closest('.elbysodic-post-style-preview__shell'))"{% end %}>
+    <aside class="elbysodic-post__poster elbysodic-post-profile elbysodic-post-profile--{{ post_profile_variant or 'bio' }}"
+           aria-label="{{ name }} preview profile"
+           {% if live %}x-ref="previewRail" x-bind:aria-label="displayName() + ' preview profile'"{% end %}>
+      <div class="elbysodic-post__poster-media">
+        {% if live %}
+        <img x-show="hasPoster()" x-bind:src="posterUrl" x-bind:alt="previewAlt()" alt="{{ poster_alt or name }}">
+        <span x-show="!hasPoster()" x-text="displayInitial()" aria-hidden="true">{{ name[:1] if name else "?" }}</span>
+        <em x-show="tagline.trim()" x-text="tagline">{{ tagline }}</em>
+        {% else %}
+        {% if poster_url %}
+        <img src="{{ poster_url }}" alt="{{ poster_alt or name }}">
+        {% else %}
+        <span aria-hidden="true">{{ name[:1] if name else "?" }}</span>
+        {% end %}
+        {% if tagline %}
+        <em>{{ tagline }}</em>
+        {% end %}
+        {% end %}
+      </div>
+      <div class="elbysodic-post__poster-card">
+        <div class="elbysodic-post__poster-name">
+          <h2 {% if live %}x-text="displayName()"{% end %}>{{ name or "New face" }}</h2>
+          <p>writer {{ writer }}</p>
+        </div>
+        {% if live %}
+        <p class="elbysodic-post__poster-tagline" x-show="tagline.trim()" x-text="tagline">{{ tagline }}</p>
+        {% else %}
+        {% if tagline %}
+        <p class="elbysodic-post__poster-tagline">{{ tagline }}</p>
+        {% end %}
+        {% end %}
+        <details class="elbysodic-post-profile-disclosure" open>
+          <summary>
+            <span>Profile note</span>
+          </summary>
+          <div class="elbysodic-post-profile-disclosure__body">
+            <p class="elbysodic-post__poster-summary" {% if live %}x-text="displaySummary()"{% end %}>{{ summary or "A quick character note will live here." }}</p>
+            <dl class="elbysodic-post__poster-stats">
+              <div>
+                <dt>Posts</dt>
+                <dd>12</dd>
+              </div>
+              <div>
+                <dt>Face</dt>
+                <dd {% if live %}x-text="displayInitial()"{% end %}>{{ name[:1] if name else "?" }}</dd>
+              </div>
+            </dl>
+          </div>
+        </details>
+      </div>
+    </aside>
+    <div class="elbysodic-post__body">
+      <header class="elbysodic-post__meta">
+        <div class="elbysodic-post__meta-line">
+          <span>#preview</span>
+          <span>Today</span>
+        </div>
+      </header>
+      <div class="elbysodic-post-content">
+        <p {% if live %}x-text="previewBodyLead()"{% end %}>{{ name or "Your character" }} steps into the scene with just enough atmosphere to feel authored, while the prose column keeps its calm reading rhythm.</p>
+        <p>The frame, accent, type, and rail can carry the board's flavor without changing the shape of the thread.</p>
+      </div>
+    </div>
+  </article>
+  {% end %}
+</div>
+{% end %}

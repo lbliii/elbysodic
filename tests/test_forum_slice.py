@@ -1968,6 +1968,8 @@ def test_character_profile_can_edit_owned_character() -> None:
                     b"intent=save"
                     b"&name=Rogue+Prime"
                     b"&avatar_url=https%3A%2F%2Fexample.test%2Frogue.png"
+                    b"&accent_source=custom"
+                    b"&accent_color=%2379a889"
                     b"&post_profile_variant=poster"
                     b"&post_accent_style=line"
                     b"&post_border_style=double"
@@ -1985,6 +1987,8 @@ def test_character_profile_can_edit_owned_character() -> None:
             assert "Rogue Prime" in profile.text
             assert "Still carrying the whole plot." in profile.text
             assert "https://example.test/rogue.png" in profile.text
+            assert "Post preview" in profile.text
+            assert "Custom accent" in profile.text
 
             thread = await client.get("/boards/danger-room/threads/sentinel-drill")
             assert "Rogue Prime" in thread.text
@@ -1998,16 +2002,111 @@ def test_character_profile_can_edit_owned_character() -> None:
     asyncio.run(run())
 
 
+def test_character_style_preset_applies_approved_post_tokens() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/characters",
+                body=urlencode(
+                    {
+                        "name": "Jean Grey",
+                        "summary": "Telepath with a plot-problem.",
+                        "post_style_preset": "faction-dossier",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            profile = await client.get("/characters/jean-grey")
+            assert profile.status == 200
+            assert "Post preview" in profile.text
+            assert 'value="crest" selected' in profile.text
+            assert 'value="block" selected' in profile.text
+            assert 'value="double" selected' in profile.text
+            assert 'value="mono" selected' in profile.text
+            assert 'value="compact" selected' in profile.text
+
+    asyncio.run(run())
+
+
 def test_post_shell_inherits_identity_accent_from_facet_group() -> None:
     async def run() -> None:
         app = _app()
 
         async with TestClient(app) as client:
             thread = await client.get("/boards/danger-room/threads/moonlight-skirmish")
+            roster = await client.get("/characters")
+            profile = await client.get("/characters/storm")
 
             assert thread.status == 200
             assert 'style="--elbysodic-character-accent: #60a5fa"' in thread.text
             assert 'style="--elbysodic-character-accent: #79a889"' in thread.text
+            assert roster.status == 200
+            assert "Affiliation: X-Men" in roster.text
+            assert 'style="--elbysodic-character-accent: #60a5fa"' in roster.text
+            assert profile.status == 200
+            assert "Inherited accent" in profile.text
+            assert "Affiliation: X-Men" in profile.text
+
+    asyncio.run(run())
+
+
+def test_studio_post_style_policy_filters_character_controls() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "post_style_policy",
+                        "enabled_post_profile_variants": "bio",
+                        "enabled_post_accent_styles": "soft",
+                        "enabled_post_border_styles": "hairline",
+                        "enabled_post_title_styles": "standard",
+                        "enabled_post_densities": "calm",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            roster = await client.get("/characters")
+            assert roster.status == 200
+            assert '<option value="bio" selected>' in roster.text
+            assert '<option value="poster"' not in roster.text
+
+            denied = await client.post(
+                "/characters",
+                body=urlencode(
+                    {
+                        "name": "Bobby Drake",
+                        "summary": "Ice and bad timing.",
+                        "post_profile_variant": "poster",
+                        "post_accent_style": "soft",
+                        "post_border_style": "hairline",
+                        "post_title_style": "standard",
+                        "post_density": "calm",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert denied.status == 200
+            assert "post profile variant is not available" in denied.text
 
     asyncio.run(run())
 

@@ -15,6 +15,11 @@ CREATE TABLE IF NOT EXISTS communities (
     host TEXT UNIQUE,
     default_theme_id INTEGER,
     identity_accent_facet_group_id INTEGER REFERENCES facet_groups(id) ON DELETE SET NULL,
+    enabled_post_profile_variants TEXT NOT NULL DEFAULT '',
+    enabled_post_accent_styles TEXT NOT NULL DEFAULT '',
+    enabled_post_border_styles TEXT NOT NULL DEFAULT '',
+    enabled_post_title_styles TEXT NOT NULL DEFAULT '',
+    enabled_post_densities TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -485,6 +490,17 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         connection.execute(
             "ALTER TABLE communities ADD COLUMN identity_accent_facet_group_id INTEGER"
         )
+    for name in {
+        "enabled_post_profile_variants",
+        "enabled_post_accent_styles",
+        "enabled_post_border_styles",
+        "enabled_post_title_styles",
+        "enabled_post_densities",
+    }:
+        if name not in community_columns:
+            connection.execute(
+                f"ALTER TABLE communities ADD COLUMN {name} TEXT NOT NULL DEFAULT ''"
+            )
 
     board_columns = {
         row["name"] for row in connection.execute("PRAGMA table_info(boards)").fetchall()

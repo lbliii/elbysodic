@@ -104,6 +104,77 @@ POST_DENSITY_LABELS: dict[str, str] = {
     "compact": "Compact",
     "dramatic": "Dramatic",
 }
+POST_STYLE_PRESETS: dict[str, dict[str, str]] = {
+    "classic-bio": {
+        "label": "Classic Bio",
+        "post_profile_variant": "bio",
+        "post_accent_style": "soft",
+        "post_border_style": "hairline",
+        "post_title_style": "standard",
+        "post_density": "calm",
+    },
+    "portrait-poster": {
+        "label": "Portrait Poster",
+        "post_profile_variant": "poster",
+        "post_accent_style": "line",
+        "post_border_style": "hairline",
+        "post_title_style": "standard",
+        "post_density": "calm",
+    },
+    "faction-dossier": {
+        "label": "Faction Dossier",
+        "post_profile_variant": "crest",
+        "post_accent_style": "block",
+        "post_border_style": "double",
+        "post_title_style": "mono",
+        "post_density": "compact",
+    },
+    "dramatic-scene": {
+        "label": "Dramatic Scene",
+        "post_profile_variant": "dock",
+        "post_accent_style": "glow",
+        "post_border_style": "bracket",
+        "post_title_style": "serif",
+        "post_density": "dramatic",
+    },
+}
+
+
+@dataclass(frozen=True, slots=True)
+class PostStylePolicy:
+    enabled_profile_variants: tuple[str, ...]
+    enabled_accent_styles: tuple[str, ...]
+    enabled_border_styles: tuple[str, ...]
+    enabled_title_styles: tuple[str, ...]
+    enabled_densities: tuple[str, ...]
+
+    def profile_variant_labels(self, current_value: str | None = None) -> dict[str, str]:
+        return _style_labels(
+            POST_PROFILE_VARIANT_LABELS, self.enabled_profile_variants, current_value
+        )
+
+    def accent_style_labels(self, current_value: str | None = None) -> dict[str, str]:
+        return _style_labels(POST_ACCENT_STYLE_LABELS, self.enabled_accent_styles, current_value)
+
+    def border_style_labels(self, current_value: str | None = None) -> dict[str, str]:
+        return _style_labels(POST_BORDER_STYLE_LABELS, self.enabled_border_styles, current_value)
+
+    def title_style_labels(self, current_value: str | None = None) -> dict[str, str]:
+        return _style_labels(POST_TITLE_STYLE_LABELS, self.enabled_title_styles, current_value)
+
+    def density_labels(self, current_value: str | None = None) -> dict[str, str]:
+        return _style_labels(POST_DENSITY_LABELS, self.enabled_densities, current_value)
+
+
+def _style_labels(
+    all_labels: dict[str, str],
+    enabled_values: tuple[str, ...],
+    current_value: str | None,
+) -> dict[str, str]:
+    values = list(enabled_values)
+    if current_value and current_value in all_labels and current_value not in values:
+        values.append(current_value)
+    return {value: all_labels[value] for value in values if value in all_labels}
 
 
 @dataclass(frozen=True, slots=True)
@@ -389,6 +460,9 @@ class CharacterThreadActivity:
 @dataclass(frozen=True, slots=True)
 class CharacterRosterCard:
     character: Character
+    accent_color: str
+    accent_source_label: str
+    accent_source_detail: str
     is_default: bool
     activity: CharacterThreadActivity
     application_status_label: str
@@ -596,6 +670,7 @@ class DirectorStudio:
     can_manage: bool
     facet_groups: list[FacetGroup]
     identity_accent_group: FacetGroup | None
+    post_style_policy: PostStylePolicy
     materials: list[MaterialSummary]
     draft_materials: list[MaterialSummary]
     featured_materials: list[MaterialSummary]
@@ -837,6 +912,9 @@ class CharacterAppearance:
 @dataclass(frozen=True, slots=True)
 class CharacterProfile:
     character: Character
+    accent_color: str
+    accent_source_label: str
+    accent_source_detail: str
     owner_membership: CommunityMembership
     facets: list[FacetTag]
     facet_choices: list[FacetChoiceGroup]
