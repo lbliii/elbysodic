@@ -113,83 +113,85 @@
 
   {% if hook.can_manage %}
   {% call surface(variant="elevated") %}
-  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
-    <div>
-      <h2>Edit plot hook</h2>
-      <p class="chirpui-text-muted">Keep the invitation current as the story moves.</p>
-    </div>
-    <div class="elbysodic-form-grid">
-      <div>
-        <label class="chirpui-field__label" for="hook-title">Title</label>
-        <input id="hook-title"
-               class="chirpui-field__input"
-               name="title"
-               value="{{ hook.plot_hook.title }}"
-               autocomplete="off"
-               required>
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="hook-type">Type</label>
-        <select id="hook-type" class="chirpui-field__input" name="hook_type">
-          {% for hook_type in plot_hook_types %}
-          <option value="{{ hook_type }}" {{ "selected" if hook_type == hook.plot_hook.hook_type else "" }}>
-            {{ hook_type.replace("_", " ").title() }}
-          </option>
-          {% end %}
-        </select>
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="hook-status">Status</label>
-        <select id="hook-status" class="chirpui-field__input" name="status">
-          {% for status in plot_hook_statuses %}
-          <option value="{{ status }}" {{ "selected" if status == hook.plot_hook.status else "" }}>
-            {{ status.replace("_", " ").title() }}
-          </option>
-          {% end %}
-        </select>
-      </div>
-    </div>
-    <div>
-      <label class="chirpui-field__label" for="hook-summary">Summary</label>
-      <input id="hook-summary"
-             class="chirpui-field__input"
-             name="summary"
-             value="{{ hook.plot_hook.summary }}"
-             autocomplete="off">
-    </div>
-    <div>
-      <label class="chirpui-field__label" for="hook-body">Pitch</label>
-      <textarea id="hook-body"
-                class="chirpui-field__input"
-                name="body"
-                rows="5">{{ hook.plot_hook.body }}</textarea>
-    </div>
-    <div class="chirpui-stack chirpui-stack--sm">
-      <p class="chirpui-field__label">World lenses</p>
-      {% for group in hook.facet_choices %}
-      {% if group.choices %}
-      <fieldset class="elbysodic-facet-choice-group">
-        <legend>{{ group.group.name }}</legend>
-        <div class="elbysodic-facet-filter-row">
-          {% for choice in group.choices %}
-          <label class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if choice.is_selected else "" }}">
-            <input type="checkbox"
-                   name="facets"
-                   value="{{ choice.tag.facet.slug }}"
-                   {{ "checked" if choice.is_selected else "" }}>
-            {{ choice.tag.label }}
-          </label>
-          {% end %}
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure">
+    <summary>
+      <span id="plot-hook-studio">Plot hook studio</span>
+      <small>Edit, retag, pause, or archive this invitation.</small>
+    </summary>
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md" aria-labelledby="plot-hook-studio">
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="hook-title">Title</label>
+          <input id="hook-title"
+                 class="chirpui-field__input"
+                 name="title"
+                 value="{{ hook.plot_hook.title }}"
+                 autocomplete="off"
+                 required>
         </div>
-      </fieldset>
-      {% end %}
-      {% end %}
-    </div>
-    <div class="chirpui-cluster chirpui-cluster--between">
-      <button type="submit" name="intent" value="save" class="chirpui-btn chirpui-btn--primary">Save plot hook</button>
-      <button type="submit" name="intent" value="archive" class="chirpui-btn chirpui-btn--secondary">Archive</button>
-    </div>
-  </form>
+        <div>
+          <label class="chirpui-field__label" for="hook-type">Type</label>
+          <select id="hook-type" class="chirpui-field__input" name="hook_type">
+            {% for hook_type in plot_hook_types %}
+            <option value="{{ hook_type }}" {{ "selected" if hook_type == hook.plot_hook.hook_type else "" }}>
+              {{ hook_type.replace("_", " ").title() }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="hook-status">Status</label>
+          <select id="hook-status" class="chirpui-field__input" name="status">
+            {% for status in plot_hook_statuses %}
+            <option value="{{ status }}" {{ "selected" if status == hook.plot_hook.status else "" }}>
+              {{ status.replace("_", " ").title() }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="hook-summary">Summary</label>
+        <input id="hook-summary"
+               class="chirpui-field__input"
+               name="summary"
+               value="{{ hook.plot_hook.summary }}"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="hook-body">Pitch</label>
+        <textarea id="hook-body"
+                  class="chirpui-field__input"
+                  name="body"
+                  rows="5">{{ hook.plot_hook.body }}</textarea>
+      </div>
+      <div class="chirpui-stack chirpui-stack--sm">
+        <p class="chirpui-field__label">World lenses</p>
+        {% for group in hook.facet_choices %}
+        {% if group.choices %}
+        <fieldset class="elbysodic-facet-choice-group">
+          <legend>{{ group.group.name }}</legend>
+          <div class="elbysodic-facet-filter-row">
+            {% for choice in group.choices %}
+            <label class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if choice.is_selected else "" }}">
+              <input type="checkbox"
+                     name="facets"
+                     value="{{ choice.tag.facet.slug }}"
+                     {{ "checked" if choice.is_selected else "" }}>
+              {{ choice.tag.label }}
+            </label>
+            {% end %}
+          </div>
+        </fieldset>
+        {% end %}
+        {% end %}
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--between">
+        <button type="submit" name="intent" value="save" class="chirpui-btn chirpui-btn--primary">Save plot hook</button>
+        <button type="submit" name="intent" value="archive" class="chirpui-btn chirpui-btn--secondary">Archive</button>
+      </div>
+    </form>
+  </details>
   {% end %}
   {% end %}
 {% end %}

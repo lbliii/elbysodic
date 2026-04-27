@@ -1,11 +1,11 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/plot_hooks.html" import plot_hook_card %}
   {% from "_components/thread_summary.html" import thread_card %}
+  {% from "_components/ui.html" import counter %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -58,13 +58,13 @@
           {{ facet_pills(profile.facets) }}
         </div>
       </div>
-      {% call cluster(gap="sm") %}
-        {{ stat(value=profile.post_count, label="Posts") }}
-        {{ stat(value=profile.thread_count, label="Threads started") }}
-        {{ stat(value=profile.activity.needs_reply | length, label="Needs reply") }}
-        {{ stat(value=profile.activity.participated | length, label="Active") }}
-        {{ stat(value=profile.owner_membership.display_name, label="Writer") }}
-      {% end %}
+      <div class="elbysodic-profile-hero__metrics" aria-label="{{ profile.character.name }} activity">
+        {{ counter("P", profile.post_count, "posts") }}
+        {{ counter("T", profile.thread_count, "threads started") }}
+        {{ counter("!", profile.activity.needs_reply | length, "needs reply") }}
+        {{ counter("R", profile.activity.participated | length, "active threads") }}
+        <span class="elbysodic-meta-line">Writer {{ profile.owner_membership.display_name }}</span>
+      </div>
       {% if profile.can_manage %}
       <div class="chirpui-cluster chirpui-cluster--end">
         {% if profile.character.application_status == "draft" %}
@@ -95,6 +95,7 @@
     Character hooks, wanted hooks, and story invitations.
     {% end %}
     {% if profile.plot_hooks %}
+    <div class="elbysodic-section-kicker">Character hooks</div>
     <div class="elbysodic-wanted-grid">
       {% for item in profile.plot_hooks %}
       {{ plot_hook_card(item) }}
@@ -102,10 +103,11 @@
     </div>
     {% elif profile.can_manage %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No plot hooks for {{ profile.character.name }} yet.</p>
+    <p class="elbysodic-empty-state">No plot hooks for {{ profile.character.name }} yet. Open New plot hook below when you are ready to invite a scene or connection.</p>
     {% end %}
     {% end %}
     {% if profile.wanted_ads %}
+    <div class="elbysodic-section-kicker">Wanted hooks</div>
     <div class="elbysodic-wanted-grid">
       {% for item in profile.wanted_ads %}
       {{ wanted_card(item) }}
@@ -150,69 +152,71 @@
 
   {% if profile.can_manage %}
   {% call surface(variant="elevated") %}
-  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
-    <div>
-      <h2>New plot hook</h2>
-      <p class="chirpui-text-muted">A lightweight invitation for scenes, connections, or relationship plotting.</p>
-    </div>
-    <input type="hidden" name="intent" value="create_plot_hook">
-    <div class="elbysodic-form-grid">
-      <div>
-        <label class="chirpui-field__label" for="plot-hook-title">Title</label>
-        <input id="plot-hook-title"
-               class="chirpui-field__input"
-               name="plot_hook_title"
-               autocomplete="off"
-               required>
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="plot-hook-type">Type</label>
-        <select id="plot-hook-type" class="chirpui-field__input" name="plot_hook_type">
-          {% for hook_type in plot_hook_types %}
-          <option value="{{ hook_type }}">{{ hook_type.replace("_", " ").title() }}</option>
-          {% end %}
-        </select>
-      </div>
-    </div>
-    <div>
-      <label class="chirpui-field__label" for="plot-hook-summary">Summary</label>
-      <input id="plot-hook-summary"
-             class="chirpui-field__input"
-             name="plot_hook_summary"
-             autocomplete="off">
-    </div>
-    <div>
-      <label class="chirpui-field__label" for="plot-hook-body">Pitch</label>
-      <textarea id="plot-hook-body"
-                class="chirpui-field__input"
-                name="plot_hook_body"
-                rows="5"></textarea>
-    </div>
-    <div class="chirpui-stack chirpui-stack--sm">
-      <p class="chirpui-field__label">World lenses</p>
-      {% for group in profile.facet_choices %}
-      {% if group.choices %}
-      <fieldset class="elbysodic-facet-choice-group">
-        <legend>{{ group.group.name }}</legend>
-        <div class="elbysodic-facet-filter-row">
-          {% for choice in group.choices %}
-          <label class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if choice.is_selected else "" }}">
-            <input type="checkbox"
-                   name="plot_hook_facets"
-                   value="{{ choice.tag.facet.slug }}"
-                   {{ "checked" if choice.is_selected else "" }}>
-            {{ choice.tag.label }}
-          </label>
-          {% end %}
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure">
+    <summary>
+      <span id="new-plot-hook">New plot hook</span>
+      <small>A lightweight invitation for scenes, connections, or relationship plotting.</small>
+    </summary>
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md" aria-labelledby="new-plot-hook">
+      <input type="hidden" name="intent" value="create_plot_hook">
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="plot-hook-title">Title</label>
+          <input id="plot-hook-title"
+                 class="chirpui-field__input"
+                 name="plot_hook_title"
+                 autocomplete="off"
+                 required>
         </div>
-      </fieldset>
-      {% end %}
-      {% end %}
-    </div>
-    <div class="chirpui-cluster chirpui-cluster--end">
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Publish plot hook</button>
-    </div>
-  </form>
+        <div>
+          <label class="chirpui-field__label" for="plot-hook-type">Type</label>
+          <select id="plot-hook-type" class="chirpui-field__input" name="plot_hook_type">
+            {% for hook_type in plot_hook_types %}
+            <option value="{{ hook_type }}">{{ hook_type.replace("_", " ").title() }}</option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="plot-hook-summary">Summary</label>
+        <input id="plot-hook-summary"
+               class="chirpui-field__input"
+               name="plot_hook_summary"
+               autocomplete="off">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="plot-hook-body">Pitch</label>
+        <textarea id="plot-hook-body"
+                  class="chirpui-field__input"
+                  name="plot_hook_body"
+                  rows="5"></textarea>
+      </div>
+      <div class="chirpui-stack chirpui-stack--sm">
+        <p class="chirpui-field__label">World lenses</p>
+        {% for group in profile.facet_choices %}
+        {% if group.choices %}
+        <fieldset class="elbysodic-facet-choice-group">
+          <legend>{{ group.group.name }}</legend>
+          <div class="elbysodic-facet-filter-row">
+            {% for choice in group.choices %}
+            <label class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if choice.is_selected else "" }}">
+              <input type="checkbox"
+                     name="plot_hook_facets"
+                     value="{{ choice.tag.facet.slug }}"
+                     {{ "checked" if choice.is_selected else "" }}>
+              {{ choice.tag.label }}
+            </label>
+            {% end %}
+          </div>
+        </fieldset>
+        {% end %}
+        {% end %}
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Publish plot hook</button>
+      </div>
+    </form>
+  </details>
   {% end %}
   {% end %}
 
@@ -272,78 +276,80 @@
 
   {% if profile.can_manage %}
   {% call surface(variant="elevated") %}
-  <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
-    <div>
-      <h2>Edit character</h2>
-      <p class="chirpui-text-muted">Roster identity for {{ viewer.community.name }}</p>
-    </div>
-    {% if error %}
-    <p class="chirpui-field__error">{{ error }}</p>
-    {% end %}
-    <input type="hidden" name="intent" value="save">
-    <div class="elbysodic-form-grid">
-      <div>
-        <label class="chirpui-field__label" for="character-name">Name</label>
-        <input id="character-name"
-               class="chirpui-field__input"
-               name="name"
-               value="{{ name }}"
-               autocomplete="off"
-               required>
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure">
+    <summary>
+      <span id="character-studio">Character studio</span>
+      <small>Edit roster identity for {{ viewer.community.name }}.</small>
+    </summary>
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md" aria-labelledby="character-studio">
+      {% if error %}
+      <p class="chirpui-field__error">{{ error }}</p>
+      {% end %}
+      <input type="hidden" name="intent" value="save">
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="character-name">Name</label>
+          <input id="character-name"
+                 class="chirpui-field__input"
+                 name="name"
+                 value="{{ name }}"
+                 autocomplete="off"
+                 required>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-avatar">Avatar URL</label>
+          <input id="character-avatar"
+                 class="chirpui-field__input"
+                 name="avatar_url"
+                 value="{{ avatar_url }}"
+                 autocomplete="off">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-poster">Poster URL</label>
+          <input id="character-poster"
+                 class="chirpui-field__input"
+                 name="poster_url"
+                 value="{{ poster_url }}"
+                 autocomplete="off">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-poster-alt">Poster alt text</label>
+          <input id="character-poster-alt"
+                 class="chirpui-field__input"
+                 name="poster_alt"
+                 value="{{ poster_alt }}"
+                 autocomplete="off">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-tagline">Tagline</label>
+          <input id="character-tagline"
+                 class="chirpui-field__input"
+                 name="tagline"
+                 value="{{ tagline }}"
+                 autocomplete="off">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-accent">Accent color</label>
+          <input id="character-accent"
+                 class="chirpui-field__input"
+                 name="accent_color"
+                 value="{{ accent_color }}"
+                 placeholder="#79a889"
+                 autocomplete="off">
+        </div>
       </div>
       <div>
-        <label class="chirpui-field__label" for="character-avatar">Avatar URL</label>
-        <input id="character-avatar"
-               class="chirpui-field__input"
-               name="avatar_url"
-               value="{{ avatar_url }}"
-               autocomplete="off">
+        <label class="chirpui-field__label" for="character-summary">Summary</label>
+        <textarea id="character-summary"
+                  class="chirpui-field__input"
+                  name="summary"
+                  rows="4">{{ summary }}</textarea>
       </div>
-      <div>
-        <label class="chirpui-field__label" for="character-poster">Poster URL</label>
-        <input id="character-poster"
-               class="chirpui-field__input"
-               name="poster_url"
-               value="{{ poster_url }}"
-               autocomplete="off">
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Save character</button>
       </div>
-      <div>
-        <label class="chirpui-field__label" for="character-poster-alt">Poster alt text</label>
-        <input id="character-poster-alt"
-               class="chirpui-field__input"
-               name="poster_alt"
-               value="{{ poster_alt }}"
-               autocomplete="off">
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="character-tagline">Tagline</label>
-        <input id="character-tagline"
-               class="chirpui-field__input"
-               name="tagline"
-               value="{{ tagline }}"
-               autocomplete="off">
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="character-accent">Accent color</label>
-        <input id="character-accent"
-               class="chirpui-field__input"
-               name="accent_color"
-               value="{{ accent_color }}"
-               placeholder="#79a889"
-               autocomplete="off">
-      </div>
-    </div>
-    <div>
-      <label class="chirpui-field__label" for="character-summary">Summary</label>
-      <textarea id="character-summary"
-                class="chirpui-field__input"
-                name="summary"
-                rows="4">{{ summary }}</textarea>
-    </div>
-    <div class="chirpui-cluster chirpui-cluster--end">
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Save character</button>
-    </div>
-  </form>
+    </form>
+  </details>
   {% end %}
   {% end %}
 

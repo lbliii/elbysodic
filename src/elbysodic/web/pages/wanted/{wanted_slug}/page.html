@@ -101,30 +101,36 @@
       <p class="chirpui-text-muted">This hook is {{ wanted.wanted_ad.status }}.</p>
       {% end %}
       {% if wanted.can_express_prospective_interest %}
-      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm elbysodic-prospective-interest">
-        <input type="hidden" name="intent" value="express_prospective_interest">
-        <div>
-          <label class="chirpui-field__label" for="prospective-character-name">Character concept</label>
-          <input id="prospective-character-name"
-                 class="chirpui-field__input"
-                 name="prospective_character_name"
-                 placeholder="A face I would create"
-                 autocomplete="off"
-                 required>
-        </div>
-        <div>
-          <label class="chirpui-field__label" for="prospective-note">Pitch</label>
-          <textarea id="prospective-note"
-                    class="chirpui-field__input"
-                    name="note"
-                    rows="3"></textarea>
-        </div>
-        <div class="chirpui-cluster chirpui-cluster--end">
-          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-            I'd create a new character for this
-          </button>
-        </div>
-      </form>
+      <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-prospective-interest">
+        <summary>
+          <span id="prospective-interest">I'd create a new character for this</span>
+          <small>Share a short concept, not a full application.</small>
+        </summary>
+        <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm" aria-labelledby="prospective-interest">
+          <input type="hidden" name="intent" value="express_prospective_interest">
+          <div>
+            <label class="chirpui-field__label" for="prospective-character-name">Character concept</label>
+            <input id="prospective-character-name"
+                   class="chirpui-field__input"
+                   name="prospective_character_name"
+                   placeholder="A face I would create"
+                   autocomplete="off"
+                   required>
+          </div>
+          <div>
+            <label class="chirpui-field__label" for="prospective-note">Pitch</label>
+            <textarea id="prospective-note"
+                      class="chirpui-field__input"
+                      name="note"
+                      rows="3"></textarea>
+          </div>
+          <div class="chirpui-cluster chirpui-cluster--end">
+            <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+              Send concept
+            </button>
+          </div>
+        </form>
+      </details>
       {% end %}
     </div>
   </article>

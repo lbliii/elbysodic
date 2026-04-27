@@ -1,9 +1,9 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/ui.html" import counter %}
 {% end %}
 
 {% block page_root %}
@@ -28,27 +28,33 @@
   {% endif %}
 
   {% call surface(variant="elevated") %}
-  <nav class="elbysodic-discovery-filters" aria-label="World facets">
-    {% for group in discovery.filter_groups %}
-    {% if group.options %}
-    <section class="elbysodic-discovery-filter-group">
-      <h2>{{ group.group.name }}</h2>
-      <div class="elbysodic-facet-filter-row">
-        {% for option in group.options %}
-        <a class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if option.is_selected else "" }}"
-           href="{{ option.href }}"
-           {% if option.tag.facet.accent_color %}style="--elbysodic-facet-accent: {{ option.tag.facet.accent_color }}"{% end %}>
-          {{ option.tag.label }}
-        </a>
-        {% end %}
-      </div>
-    </section>
-    {% end %}
-    {% end %}
-    {% if discovery.selected_facets %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/discover?facets=none">Clear lens</a>
-    {% endif %}
-  </nav>
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-discovery-disclosure">
+    <summary>
+      <span id="discovery-filters">Filter lenses</span>
+      <small>Refine plot hooks, characters, and open scenes by world facet.</small>
+    </summary>
+    <nav class="elbysodic-discovery-filters" aria-label="World facets" aria-labelledby="discovery-filters">
+      {% for group in discovery.filter_groups %}
+      {% if group.options %}
+      <section class="elbysodic-discovery-filter-group">
+        <h2>{{ group.group.name }}</h2>
+        <div class="elbysodic-facet-filter-row">
+          {% for option in group.options %}
+          <a class="elbysodic-facet-filter {{ "elbysodic-facet-filter--selected" if option.is_selected else "" }}"
+             href="{{ option.href }}"
+             {% if option.tag.facet.accent_color %}style="--elbysodic-facet-accent: {{ option.tag.facet.accent_color }}"{% end %}>
+            {{ option.tag.label }}
+          </a>
+          {% end %}
+        </div>
+      </section>
+      {% end %}
+      {% end %}
+      {% if discovery.selected_facets %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/discover?facets=none">Clear lens</a>
+      {% endif %}
+    </nav>
+  </details>
   {% end %}
 
   {% call section_header("Plot hooks") %}
@@ -144,7 +150,7 @@
             <a class="chirpui-link" href="/characters/{{ result.author.slug }}">{{ result.author.name }}</a>
           </p>
         </div>
-        {{ stat(value=result.reply_count, label="Replies") }}
+        {{ counter("R", result.reply_count, "replies") }}
       </div>
       {% if result.thread.summary %}
       <p class="chirpui-text-muted">{{ result.thread.summary }}</p>

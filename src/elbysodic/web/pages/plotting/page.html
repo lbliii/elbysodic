@@ -1,8 +1,8 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/ui.html" import counter %}
 {% end %}
 
 {% def room_card(item) %}
@@ -65,11 +65,11 @@
         Turn interest into a private planning lane before it becomes an IC scene.
       </p>
     </div>
-    {% call cluster(gap="sm") %}
-      {{ stat(value=desk.rooms | length, label="Rooms") }}
-      {{ stat(value=desk.plot_hook_interests | length, label="Plot hook interest") }}
-      {{ stat(value=desk.wanted_interests | length, label="Wanted interest") }}
-    {% end %}
+    <div class="elbysodic-profile-hero__metrics" aria-label="Plotting pulse">
+      {{ counter("R", desk.rooms | length, "rooms") }}
+      {{ counter("!", desk.plot_hook_interests | length, "plot hook interest") }}
+      {{ counter("@", desk.wanted_interests | length, "wanted interest") }}
+    </div>
   </article>
   {% end %}
 
@@ -85,7 +85,15 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No plotting rooms yet.</p>
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-empty-state">No plotting rooms yet.</p>
+      <div class="chirpui-cluster chirpui-cluster--sm">
+        {% if viewer.current_character %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ viewer.current_character.slug }}">Open {{ viewer.current_character.name }}'s plotter</a>
+        {% end %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Discover hooks</a>
+      </div>
+    </div>
     {% end %}
     {% end %}
   </section>
@@ -162,7 +170,13 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No incoming interest yet.</p>
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-empty-state">No incoming interest yet.</p>
+      <div class="chirpui-cluster chirpui-cluster--sm">
+        <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find plot hooks</a>
+      </div>
+    </div>
     {% end %}
     {% end %}
   </section>

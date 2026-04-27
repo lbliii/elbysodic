@@ -926,6 +926,14 @@ body {
     text-transform: uppercase;
 }
 
+.elbysodic-section-kicker {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 850;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
 .elbysodic-location-grid,
 .elbysodic-community-grid {
     display: grid;
@@ -1850,6 +1858,10 @@ body {
     gap: 1rem;
 }
 
+.elbysodic-management-disclosure:not([open]) > :not(summary) {
+    display: none;
+}
+
 .elbysodic-management-disclosure > summary {
     align-items: center;
     cursor: pointer;
@@ -1883,6 +1895,21 @@ body {
 .elbysodic-management-disclosure > summary small {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
+}
+
+.elbysodic-action-disclosure {
+    gap: 0;
+}
+
+.elbysodic-action-disclosure[open] {
+    gap: 1rem;
+}
+
+.elbysodic-action-disclosure > form,
+.elbysodic-action-disclosure > nav {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    margin-top: 1rem;
+    padding-top: 1rem;
 }
 
 .elbysodic-scene-transcript {
@@ -2466,6 +2493,19 @@ body {
 
 .elbysodic-profile-hero__body {
     min-width: 0;
+}
+
+.elbysodic-profile-hero__metrics {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.85rem;
+}
+
+.elbysodic-meta-line {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 750;
 }
 
 .elbysodic-form-grid {
