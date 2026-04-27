@@ -22,6 +22,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         accent_color: str = "",
         summary: str = "",
         post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
         *,
         application_status: str = "accepted",
         make_default: bool = False,
@@ -42,11 +46,15 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 application_status,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -60,6 +68,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 application_status,
                 now,
                 now,
@@ -88,6 +100,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 application_status,
                 created_at,
                 updated_at
@@ -116,6 +132,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 application_status,
                 created_at,
                 updated_at
@@ -142,6 +162,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         accent_color: str = "",
         summary: str = "",
         post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
     ) -> Character:
         self.get_character(community_id, character_id)
         self.connection.execute(
@@ -157,6 +181,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color = ?,
                 summary = ?,
                 post_profile_variant = ?,
+                post_accent_style = ?,
+                post_border_style = ?,
+                post_title_style = ?,
+                post_density = ?,
                 updated_at = ?
             WHERE community_id = ? AND id = ?
             """,
@@ -170,6 +198,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 _utc_now(),
                 community_id,
                 character_id,
@@ -213,6 +245,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 application_status,
                 created_at,
                 updated_at
@@ -240,6 +276,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 accent_color,
                 summary,
                 post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
                 application_status,
                 created_at,
                 updated_at
@@ -281,6 +321,10 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 characters.accent_color,
                 characters.summary,
                 characters.post_profile_variant,
+                characters.post_accent_style,
+                characters.post_border_style,
+                characters.post_title_style,
+                characters.post_density,
                 characters.application_status,
                 characters.created_at,
                 characters.updated_at

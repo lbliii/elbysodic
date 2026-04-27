@@ -53,7 +53,6 @@
 
 {% def post_profile_rail(item) %}
 <aside class="elbysodic-post__poster elbysodic-post-profile elbysodic-post-profile--{{ item.author.post_profile_variant or 'bio' }}"
-       {% if item.author.accent_color %}style="--elbysodic-character-accent: {{ item.author.accent_color }}"{% end %}
        aria-label="{{ item.author.name }} profile">
   {{ post_profile_media(item) }}
   {{ post_profile_card(item) }}
@@ -61,7 +60,9 @@
 {% end %}
 
 {% def post_frame(item, board, thread) %}
-{% call surface(variant="elevated") %}
+{% set post_shell_cls = "elbysodic-post-shell elbysodic-post-accent--" ~ (item.author.post_accent_style or "soft") ~ " elbysodic-post-border--" ~ (item.author.post_border_style or "hairline") ~ " elbysodic-post-title--" ~ (item.author.post_title_style or "standard") ~ " elbysodic-post-density--" ~ (item.author.post_density or "calm") %}
+{% set post_shell_style = "--elbysodic-character-accent: " ~ item.author_accent_color if item.author_accent_color else "" %}
+{% call surface(variant="elevated", cls=post_shell_cls, style=post_shell_style) %}
 <article id="{{ item.anchor }}"
          class="elbysodic-post elbysodic-post--{{ item.author.slug }}">
   {{ post_profile_rail(item) }}

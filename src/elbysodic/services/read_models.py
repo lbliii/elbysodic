@@ -33,6 +33,10 @@ type PostingMode = Literal["freeform", "posting_order"]
 type MentionableKind = Literal["character", "writer"]
 type MentionableScope = Literal["all", "cast", "characters", "writers", "ooc"]
 type PostProfileVariant = Literal["bio", "poster", "dock", "crest"]
+type PostAccentStyle = Literal["soft", "line", "glow", "block"]
+type PostBorderStyle = Literal["none", "hairline", "bracket", "double"]
+type PostTitleStyle = Literal["standard", "serif", "condensed", "mono"]
+type PostDensity = Literal["calm", "compact", "dramatic"]
 type ApplicationStatus = Literal[
     "draft",
     "submitted",
@@ -72,6 +76,33 @@ POST_PROFILE_VARIANT_LABELS: dict[str, str] = {
     "poster": "Poster focus",
     "dock": "Docked profile",
     "crest": "Crest mark",
+}
+POST_ACCENT_STYLES: tuple[PostAccentStyle, ...] = ("soft", "line", "glow", "block")
+POST_ACCENT_STYLE_LABELS: dict[str, str] = {
+    "soft": "Soft wash",
+    "line": "Accent line",
+    "glow": "Low glow",
+    "block": "Color block",
+}
+POST_BORDER_STYLES: tuple[PostBorderStyle, ...] = ("none", "hairline", "bracket", "double")
+POST_BORDER_STYLE_LABELS: dict[str, str] = {
+    "none": "No frame",
+    "hairline": "Hairline",
+    "bracket": "Bracket",
+    "double": "Double line",
+}
+POST_TITLE_STYLES: tuple[PostTitleStyle, ...] = ("standard", "serif", "condensed", "mono")
+POST_TITLE_STYLE_LABELS: dict[str, str] = {
+    "standard": "Standard",
+    "serif": "Literary",
+    "condensed": "Condensed",
+    "mono": "Archive",
+}
+POST_DENSITIES: tuple[PostDensity, ...] = ("calm", "compact", "dramatic")
+POST_DENSITY_LABELS: dict[str, str] = {
+    "calm": "Calm",
+    "compact": "Compact",
+    "dramatic": "Dramatic",
 }
 
 
@@ -189,6 +220,7 @@ class ThreadSummary:
 class PostView:
     post: Post
     author: Character
+    author_accent_color: str
     author_membership: CommunityMembership
     rendered_body: str
     snippet: str
@@ -562,6 +594,8 @@ class WorldHub:
 @dataclass(frozen=True, slots=True)
 class DirectorStudio:
     can_manage: bool
+    facet_groups: list[FacetGroup]
+    identity_accent_group: FacetGroup | None
     materials: list[MaterialSummary]
     draft_materials: list[MaterialSummary]
     featured_materials: list[MaterialSummary]

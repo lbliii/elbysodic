@@ -14,6 +14,7 @@ class Community:
     slug: str
     host: str | None
     default_theme_id: int | None
+    identity_accent_facet_group_id: int | None
     created_at: str
     updated_at: str
 
@@ -84,6 +85,10 @@ class Character:
     accent_color: str
     summary: str
     post_profile_variant: str
+    post_accent_style: str
+    post_border_style: str
+    post_title_style: str
+    post_density: str
     application_status: str
     created_at: str
     updated_at: str

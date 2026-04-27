@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from elbysodic.domain.models import Facet, FacetGroup
+from elbysodic.domain.models import Character, Community, Facet, FacetGroup
 from elbysodic.services.read_models import (
     FacetChoice,
     FacetChoiceGroup,
@@ -25,6 +25,27 @@ class FacetReadRepository(Protocol):
     def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
 
     def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]: ...
+
+
+class CharacterAccentRepository(Protocol):
+    def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
+
+
+def resolve_character_accent(
+    repo: CharacterAccentRepository,
+    community: Community,
+    character: Character,
+) -> str:
+    character_accent = character.accent_color.strip()
+    if character_accent:
+        return character_accent
+    accent_group_id = community.identity_accent_facet_group_id
+    if accent_group_id is None:
+        return ""
+    for facet in repo.list_character_facets(community.id, character.id):
+        if facet.facet_group_id == accent_group_id and facet.accent_color.strip():
+            return facet.accent_color.strip()
+    return ""
 
 
 def current_character_facet_tags(repo: FacetReadRepository, viewer: ForumView) -> list[FacetTag]:

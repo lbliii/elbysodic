@@ -95,7 +95,11 @@ from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
     MATERIAL_TYPES,
+    POST_ACCENT_STYLES,
+    POST_BORDER_STYLES,
+    POST_DENSITIES,
     POST_PROFILE_VARIANTS,
+    POST_TITLE_STYLES,
     ActivityItem,
     ApplicationsDesk,
     AttentionItem,
@@ -159,7 +163,7 @@ class AppServices:
         self.seed = seed
 
     def viewer(self) -> ForumView:
-        community = self.seed.community
+        community = self.repo.get_community(self.seed.community.id)
         membership = self.repo.get_membership(community.id, self.seed.membership.id)
         role = self.repo.get_role(community.id, membership.role_id)
         roster = self.repo.list_characters(community.id, membership.id)
@@ -470,8 +474,19 @@ class AppServices:
         current_event = next((item for item in events if item.material.is_featured), None)
         if current_event is None:
             current_event = events[0] if events else None
+        facet_groups = self.repo.list_facet_groups(viewer.community.id)
+        identity_accent_group = next(
+            (
+                group
+                for group in facet_groups
+                if group.id == viewer.community.identity_accent_facet_group_id
+            ),
+            None,
+        )
         return DirectorStudio(
             can_manage=viewer.role.is_admin,
+            facet_groups=facet_groups,
+            identity_accent_group=identity_accent_group,
             materials=materials,
             draft_materials=[item for item in materials if item.material.status == "draft"],
             featured_materials=[item for item in materials if item.material.is_featured],
@@ -485,6 +500,17 @@ class AppServices:
             wanted_ads=wanted_ads,
             open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
             applications=self.applications_desk(),
+        )
+
+    def update_identity_accent_group(self, facet_group_id: int | None) -> None:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage community direction"
+            )
+        self.repo.update_community_identity_accent_group(
+            viewer.community.id,
+            facet_group_id,
         )
 
     def read_material(self, material_slug: str) -> MaterialDetail:
@@ -758,6 +784,10 @@ class AppServices:
         tagline: str = "",
         accent_color: str = "",
         post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
         make_default: bool = False,
     ) -> Character:
         viewer = self.viewer()
@@ -773,6 +803,18 @@ class AppServices:
         cleaned_post_profile_variant = post_profile_variant.strip() or "bio"
         if cleaned_post_profile_variant not in POST_PROFILE_VARIANTS:
             raise ValueError("post profile variant is not supported")
+        cleaned_post_accent_style = post_accent_style.strip() or "soft"
+        if cleaned_post_accent_style not in POST_ACCENT_STYLES:
+            raise ValueError("post accent style is not supported")
+        cleaned_post_border_style = post_border_style.strip() or "hairline"
+        if cleaned_post_border_style not in POST_BORDER_STYLES:
+            raise ValueError("post border style is not supported")
+        cleaned_post_title_style = post_title_style.strip() or "standard"
+        if cleaned_post_title_style not in POST_TITLE_STYLES:
+            raise ValueError("post title style is not supported")
+        cleaned_post_density = post_density.strip() or "calm"
+        if cleaned_post_density not in POST_DENSITIES:
+            raise ValueError("post density is not supported")
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
         return self.repo.create_character(
             viewer.community.id,
@@ -786,6 +828,10 @@ class AppServices:
             accent_color=cleaned_accent_color,
             summary=cleaned_summary,
             post_profile_variant=cleaned_post_profile_variant,
+            post_accent_style=cleaned_post_accent_style,
+            post_border_style=cleaned_post_border_style,
+            post_title_style=cleaned_post_title_style,
+            post_density=cleaned_post_density,
             application_status="draft",
             make_default=make_default,
         )
@@ -802,6 +848,10 @@ class AppServices:
         tagline: str = "",
         accent_color: str = "",
         post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
     ) -> Character:
         viewer = self.viewer()
         character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
@@ -821,6 +871,18 @@ class AppServices:
         cleaned_post_profile_variant = post_profile_variant.strip() or "bio"
         if cleaned_post_profile_variant not in POST_PROFILE_VARIANTS:
             raise ValueError("post profile variant is not supported")
+        cleaned_post_accent_style = post_accent_style.strip() or "soft"
+        if cleaned_post_accent_style not in POST_ACCENT_STYLES:
+            raise ValueError("post accent style is not supported")
+        cleaned_post_border_style = post_border_style.strip() or "hairline"
+        if cleaned_post_border_style not in POST_BORDER_STYLES:
+            raise ValueError("post border style is not supported")
+        cleaned_post_title_style = post_title_style.strip() or "standard"
+        if cleaned_post_title_style not in POST_TITLE_STYLES:
+            raise ValueError("post title style is not supported")
+        cleaned_post_density = post_density.strip() or "calm"
+        if cleaned_post_density not in POST_DENSITIES:
+            raise ValueError("post density is not supported")
         slug = character.slug
         if cleaned_name != character.name:
             slug = _unique_character_slug(
@@ -841,6 +903,10 @@ class AppServices:
             accent_color=cleaned_accent_color,
             summary=cleaned_summary,
             post_profile_variant=cleaned_post_profile_variant,
+            post_accent_style=cleaned_post_accent_style,
+            post_border_style=cleaned_post_border_style,
+            post_title_style=cleaned_post_title_style,
+            post_density=cleaned_post_density,
         )
 
     def update_post(self, board_slug: str, thread_slug: str, post_id: int, body: str) -> Post:

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS communities (
     slug TEXT NOT NULL UNIQUE,
     host TEXT UNIQUE,
     default_theme_id INTEGER,
+    identity_accent_facet_group_id INTEGER REFERENCES facet_groups(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -65,6 +66,10 @@ CREATE TABLE IF NOT EXISTS characters (
     accent_color TEXT NOT NULL DEFAULT '',
     summary TEXT NOT NULL DEFAULT '',
     post_profile_variant TEXT NOT NULL DEFAULT 'bio',
+    post_accent_style TEXT NOT NULL DEFAULT 'soft',
+    post_border_style TEXT NOT NULL DEFAULT 'hairline',
+    post_title_style TEXT NOT NULL DEFAULT 'standard',
+    post_density TEXT NOT NULL DEFAULT 'calm',
     application_status TEXT NOT NULL DEFAULT 'accepted',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -473,6 +478,14 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
 
 def _migrate_schema(connection: sqlite3.Connection) -> None:
+    community_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+    }
+    if "identity_accent_facet_group_id" not in community_columns:
+        connection.execute(
+            "ALTER TABLE communities ADD COLUMN identity_accent_facet_group_id INTEGER"
+        )
+
     board_columns = {
         row["name"] for row in connection.execute("PRAGMA table_info(boards)").fetchall()
     }
@@ -505,6 +518,10 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         "tagline": "TEXT NOT NULL DEFAULT ''",
         "accent_color": "TEXT NOT NULL DEFAULT ''",
         "post_profile_variant": "TEXT NOT NULL DEFAULT 'bio'",
+        "post_accent_style": "TEXT NOT NULL DEFAULT 'soft'",
+        "post_border_style": "TEXT NOT NULL DEFAULT 'hairline'",
+        "post_title_style": "TEXT NOT NULL DEFAULT 'standard'",
+        "post_density": "TEXT NOT NULL DEFAULT 'calm'",
     }.items():
         if name not in character_columns:
             connection.execute(f"ALTER TABLE characters ADD COLUMN {name} {definition}")

@@ -5,8 +5,17 @@ from __future__ import annotations
 import re
 from typing import Protocol
 
-from elbysodic.domain.models import Character, CommunityMembership, Post, PostRevision, Role
+from elbysodic.domain.models import (
+    Character,
+    Community,
+    CommunityMembership,
+    Facet,
+    Post,
+    PostRevision,
+    Role,
+)
 from elbysodic.services import policies
+from elbysodic.services.facets import resolve_character_accent
 from elbysodic.services.markup import MentionLink, post_snippet, render_post_body
 from elbysodic.services.read_models import PostRevisionView, PostView
 from elbysodic.services.timestamps import (
@@ -17,6 +26,8 @@ from elbysodic.services.timestamps import (
 
 
 class PostViewRepository(Protocol):
+    def get_community(self, community_id: int) -> Community: ...
+
     def get_character(self, community_id: int, character_id: int) -> Character: ...
 
     def get_membership(
@@ -24,6 +35,8 @@ class PostViewRepository(Protocol):
         community_id: int,
         membership_id: int,
     ) -> CommunityMembership: ...
+
+    def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
 
     def list_community_characters(self, community_id: int) -> list[Character]: ...
 
@@ -38,9 +51,12 @@ def post_view(
     viewer_membership: CommunityMembership | None = None,
     viewer_role: Role | None = None,
 ) -> PostView:
+    community = repo.get_community(community_id)
+    author = repo.get_character(community_id, post.author_character_id)
     return PostView(
         post=post,
-        author=repo.get_character(community_id, post.author_character_id),
+        author=author,
+        author_accent_color=resolve_character_accent(repo, community, author),
         author_membership=repo.get_membership(
             community_id,
             post.author_membership_id,

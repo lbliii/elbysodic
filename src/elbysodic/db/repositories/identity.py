@@ -41,7 +41,15 @@ class IdentityRepositoryMixin(RepositoryBase):
     def get_community(self, community_id: int) -> Community:
         row = self.connection.execute(
             """
-            SELECT id, name, slug, host, default_theme_id, created_at, updated_at
+            SELECT
+                id,
+                name,
+                slug,
+                host,
+                default_theme_id,
+                identity_accent_facet_group_id,
+                created_at,
+                updated_at
             FROM communities
             WHERE id = ?
             """,
@@ -50,6 +58,36 @@ class IdentityRepositoryMixin(RepositoryBase):
         if row is None:
             raise LookupError(f"community not found: {community_id}")
         return _community_from_row(row)
+
+    def update_community_identity_accent_group(
+        self,
+        community_id: int,
+        facet_group_id: int | None,
+    ) -> Community:
+        self.get_community(community_id)
+        if facet_group_id is not None:
+            row = self.connection.execute(
+                """
+                SELECT id
+                FROM facet_groups
+                WHERE community_id = ? AND id = ?
+                """,
+                (community_id, facet_group_id),
+            ).fetchone()
+            if row is None:
+                raise LookupError(
+                    f"facet group not found in community {community_id}: {facet_group_id}"
+                )
+        self.connection.execute(
+            """
+            UPDATE communities
+            SET identity_accent_facet_group_id = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (facet_group_id, _utc_now(), community_id),
+        )
+        self.connection.commit()
+        return self.get_community(community_id)
 
     def create_user(self, email: str, password_hash: str) -> User:
         cursor = self.connection.execute(

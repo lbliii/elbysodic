@@ -69,6 +69,37 @@
     community canon and queues.
   </p>
   {% end %}
+  {% else %}
+  {% call surface(variant="elevated") %}
+  <form class="chirpui-stack chirpui-stack--sm" method="post">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-kicker">Community Direction</p>
+        <h2>Inherited accents</h2>
+      </div>
+      {% if studio.identity_accent_group %}
+      {{ badge(studio.identity_accent_group.name, variant="info") }}
+      {% else %}
+      {{ badge("Theme default", variant="muted") }}
+      {% end %}
+    </div>
+    {% if error %}
+    <p class="elbysodic-form-error">{{ error }}</p>
+    {% end %}
+    <label class="elbysodic-form-field">
+      <span>Accent source</span>
+      <select name="identity_accent_facet_group_id">
+        <option value="">Theme default</option>
+        {% for group in studio.facet_groups %}
+        <option value="{{ group.id }}" {% if studio.identity_accent_group and studio.identity_accent_group.id == group.id %}selected{% end %}>
+          {{ group.name }}
+        </option>
+        {% end %}
+      </select>
+    </label>
+    <button class="chirpui-btn chirpui-btn--primary" type="submit">Save direction</button>
+  </form>
+  {% end %}
   {% end %}
 
   <section class="elbysodic-director-grid" aria-label="Director work lanes">

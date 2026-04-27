@@ -9,7 +9,13 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
-from elbysodic.services.read_models import POST_PROFILE_VARIANT_LABELS
+from elbysodic.services.read_models import (
+    POST_ACCENT_STYLE_LABELS,
+    POST_BORDER_STYLE_LABELS,
+    POST_DENSITY_LABELS,
+    POST_PROFILE_VARIANT_LABELS,
+    POST_TITLE_STYLE_LABELS,
+)
 from elbysodic.web.state import get_services
 
 
@@ -22,6 +28,10 @@ class CharacterCreateForm:
     tagline: str
     accent_color: str
     post_profile_variant: str
+    post_accent_style: str
+    post_border_style: str
+    post_title_style: str
+    post_density: str
     summary: str
     make_default: str
 
@@ -41,6 +51,10 @@ async def post(request: Request) -> Page | Redirect:
     tagline = str(form.get("tagline") or "")
     accent_color = str(form.get("accent_color") or "")
     post_profile_variant = str(form.get("post_profile_variant") or "bio")
+    post_accent_style = str(form.get("post_accent_style") or "soft")
+    post_border_style = str(form.get("post_border_style") or "hairline")
+    post_title_style = str(form.get("post_title_style") or "standard")
+    post_density = str(form.get("post_density") or "calm")
     make_default = str(form.get("make_default") or "") == "on"
 
     try:
@@ -53,6 +67,10 @@ async def post(request: Request) -> Page | Redirect:
             tagline=tagline,
             accent_color=accent_color,
             post_profile_variant=post_profile_variant,
+            post_accent_style=post_accent_style,
+            post_border_style=post_border_style,
+            post_title_style=post_title_style,
+            post_density=post_density,
             make_default=make_default,
         )
     except ValueError as exc:
@@ -67,6 +85,10 @@ async def post(request: Request) -> Page | Redirect:
             tagline=tagline,
             accent_color=accent_color,
             post_profile_variant=post_profile_variant,
+            post_accent_style=post_accent_style,
+            post_border_style=post_border_style,
+            post_title_style=post_title_style,
+            post_density=post_density,
             make_default=make_default,
         )
 
@@ -85,6 +107,10 @@ def _render_roster(
     tagline: str = "",
     accent_color: str = "",
     post_profile_variant: str = "bio",
+    post_accent_style: str = "soft",
+    post_border_style: str = "hairline",
+    post_title_style: str = "standard",
+    post_density: str = "calm",
     make_default: bool = False,
 ) -> Page:
     services = get_services()
@@ -105,6 +131,14 @@ def _render_roster(
         tagline=tagline,
         accent_color=accent_color,
         post_profile_variant=post_profile_variant,
+        post_accent_style=post_accent_style,
+        post_border_style=post_border_style,
+        post_title_style=post_title_style,
+        post_density=post_density,
         post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
+        post_accent_style_labels=POST_ACCENT_STYLE_LABELS,
+        post_border_style_labels=POST_BORDER_STYLE_LABELS,
+        post_title_style_labels=POST_TITLE_STYLE_LABELS,
+        post_density_labels=POST_DENSITY_LABELS,
         make_default=make_default,
     )

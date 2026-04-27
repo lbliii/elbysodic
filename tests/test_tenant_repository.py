@@ -205,12 +205,46 @@ def test_schema_migrates_existing_characters_for_post_profile_variants() -> None
     columns = {
         row["name"]: row for row in connection.execute("PRAGMA table_info(characters)").fetchall()
     }
+    community_columns = {
+        row["name"]: row for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+    }
     character = connection.execute(
-        "SELECT post_profile_variant FROM characters WHERE id = 1"
+        """
+        SELECT
+            post_profile_variant,
+            post_accent_style,
+            post_border_style,
+            post_title_style,
+            post_density
+        FROM characters
+        WHERE id = 1
+        """
     ).fetchone()
 
     assert "post_profile_variant" in columns
+    assert "post_accent_style" in columns
+    assert "post_border_style" in columns
+    assert "post_title_style" in columns
+    assert "post_density" in columns
+    assert "identity_accent_facet_group_id" in community_columns
     assert character["post_profile_variant"] == "bio"
+    assert character["post_accent_style"] == "soft"
+    assert character["post_border_style"] == "hairline"
+    assert character["post_title_style"] == "standard"
+    assert character["post_density"] == "calm"
+
+
+def test_community_identity_accent_group_is_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    default_group = repo.create_facet_group(default.id, "house", "House")
+    hosted_group = repo.create_facet_group(hosted.id, "house", "House")
+
+    updated = repo.update_community_identity_accent_group(default.id, default_group.id)
+
+    assert updated.identity_accent_facet_group_id == default_group.id
+    with pytest.raises(LookupError):
+        repo.update_community_identity_accent_group(default.id, hosted_group.id)
 
 
 def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:
@@ -321,6 +355,10 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
         tagline="Careful hands, reckless heart.",
         accent_color="#79a889",
         post_profile_variant="dock",
+        post_accent_style="glow",
+        post_border_style="bracket",
+        post_title_style="serif",
+        post_density="dramatic",
         make_default=True,
     )
     magneto = repo.create_character(hosted.id, hosted_membership.id, "magneto", "Magneto")
@@ -332,6 +370,10 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
     assert draft.tagline == "Careful hands, reckless heart."
     assert draft.accent_color == "#79a889"
     assert draft.post_profile_variant == "dock"
+    assert draft.post_accent_style == "glow"
+    assert draft.post_border_style == "bracket"
+    assert draft.post_title_style == "serif"
+    assert draft.post_density == "dramatic"
     assert repo.get_character(default.id, rogue.id).application_status == "draft"
     assert repo.get_membership(default.id, default_membership.id).default_character_id == rogue.id
     assert repo.get_membership(hosted.id, hosted_membership.id).default_character_id is None
@@ -377,6 +419,10 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
         accent_color="#79a889",
         summary="Still carrying the whole plot.",
         post_profile_variant="poster",
+        post_accent_style="line",
+        post_border_style="double",
+        post_title_style="mono",
+        post_density="compact",
     )
 
     assert updated.slug == "rogue-prime"
@@ -388,6 +434,10 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
     assert updated.accent_color == "#79a889"
     assert updated.summary == "Still carrying the whole plot."
     assert updated.post_profile_variant == "poster"
+    assert updated.post_accent_style == "line"
+    assert updated.post_border_style == "double"
+    assert updated.post_title_style == "mono"
+    assert updated.post_density == "compact"
     assert repo.get_character_by_slug(hosted.id, "rogue").name == "Rogue Elsewhere"
 
     with pytest.raises(LookupError):

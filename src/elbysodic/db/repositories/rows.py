@@ -38,6 +38,7 @@ def _community_from_row(row: sqlite3.Row) -> Community:
         slug=row["slug"],
         host=row["host"],
         default_theme_id=row["default_theme_id"],
+        identity_accent_facet_group_id=row["identity_accent_facet_group_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -113,6 +114,10 @@ def _character_from_row(row: sqlite3.Row) -> Character:
         accent_color=row["accent_color"],
         summary=row["summary"],
         post_profile_variant=row["post_profile_variant"],
+        post_accent_style=row["post_accent_style"],
+        post_border_style=row["post_border_style"],
+        post_title_style=row["post_title_style"],
+        post_density=row["post_density"],
         application_status=row["application_status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],

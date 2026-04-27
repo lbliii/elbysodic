@@ -232,62 +232,94 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         tagline="Careful hands, reckless heart.",
         accent_color="#79a889",
         post_profile_variant="dock",
+        post_accent_style="glow",
+        post_border_style="bracket",
+        post_title_style="serif",
+        post_density="dramatic",
     )
     storm = _ensure_character_identity(
         repo,
         community.id,
         storm,
         tagline="The calm eye of the storm.",
-        accent_color="#9fb7ff",
+        accent_color="",
         post_profile_variant="poster",
+        post_accent_style="line",
+        post_border_style="hairline",
+        post_title_style="standard",
+        post_density="calm",
     )
     magneto = _ensure_character_identity(
         repo,
         community.id,
         magneto,
         tagline="A revolution with metal in its voice.",
-        accent_color="#c75b67",
+        accent_color="",
         post_profile_variant="crest",
+        post_accent_style="block",
+        post_border_style="double",
+        post_title_style="condensed",
+        post_density="compact",
     )
     xavier = _ensure_character_identity(
         repo,
         community.id,
         xavier,
         tagline="Hope, even when it hurts.",
-        accent_color="#7bc8ee",
+        accent_color="",
         post_profile_variant="bio",
+        post_accent_style="soft",
+        post_border_style="hairline",
+        post_title_style="standard",
+        post_density="calm",
     )
     kitty = _ensure_character_identity(
         repo,
         community.id,
         kitty,
         tagline="Through walls, into trouble.",
-        accent_color="#c99a46",
+        accent_color="",
         post_profile_variant="poster",
+        post_accent_style="soft",
+        post_border_style="hairline",
+        post_title_style="mono",
+        post_density="compact",
     )
     cyclops = _ensure_character_identity(
         repo,
         community.id,
         cyclops,
         tagline="Order under pressure.",
-        accent_color="#e57984",
+        accent_color="",
         post_profile_variant="bio",
+        post_accent_style="line",
+        post_border_style="hairline",
+        post_title_style="condensed",
+        post_density="calm",
     )
     moira = _ensure_character_identity(
         repo,
         community.id,
         moira,
         tagline="The file nobody wanted opened.",
-        accent_color="#79a889",
+        accent_color="",
         post_profile_variant="dock",
+        post_accent_style="block",
+        post_border_style="bracket",
+        post_title_style="mono",
+        post_density="compact",
     )
     trask = _ensure_character_identity(
         repo,
         community.id,
         trask,
         tagline="Progress with teeth.",
-        accent_color="#c99a46",
+        accent_color="",
         post_profile_variant="crest",
+        post_accent_style="glow",
+        post_border_style="double",
+        post_title_style="condensed",
+        post_density="dramatic",
     )
 
     membership = repo.get_membership(community.id, membership.id)
@@ -546,6 +578,10 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         tagline="Hope, broadcast loudly.",
     )
     facets = _seed_world_facets(repo, community.id)
+    community = repo.update_community_identity_accent_group(
+        community.id,
+        facets["x-men"].facet_group_id,
+    )
     _assign_facets(
         repo,
         community.id,
@@ -1524,6 +1560,10 @@ def _ensure_character_identity(
     tagline: str = "",
     accent_color: str = "",
     post_profile_variant: str = "bio",
+    post_accent_style: str = "soft",
+    post_border_style: str = "hairline",
+    post_title_style: str = "standard",
+    post_density: str = "calm",
 ) -> Character:
     if (
         character.poster_url == poster_url
@@ -1531,6 +1571,10 @@ def _ensure_character_identity(
         and character.tagline == tagline
         and character.accent_color == accent_color
         and character.post_profile_variant == post_profile_variant
+        and character.post_accent_style == post_accent_style
+        and character.post_border_style == post_border_style
+        and character.post_title_style == post_title_style
+        and character.post_density == post_density
     ):
         return character
     return repo.update_character(
@@ -1545,6 +1589,10 @@ def _ensure_character_identity(
         accent_color=accent_color,
         summary=character.summary,
         post_profile_variant=post_profile_variant,
+        post_accent_style=post_accent_style,
+        post_border_style=post_border_style,
+        post_title_style=post_title_style,
+        post_density=post_density,
     )
 
 

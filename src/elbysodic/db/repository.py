@@ -458,6 +458,10 @@ class ForumRepository(
                 characters.accent_color,
                 characters.summary,
                 characters.post_profile_variant,
+                characters.post_accent_style,
+                characters.post_border_style,
+                characters.post_title_style,
+                characters.post_density,
                 characters.application_status,
                 characters.created_at,
                 characters.updated_at
@@ -2081,6 +2085,10 @@ class ForumRepository(
                 characters.accent_color,
                 characters.summary,
                 characters.post_profile_variant,
+                characters.post_accent_style,
+                characters.post_border_style,
+                characters.post_title_style,
+                characters.post_density,
                 characters.application_status,
                 characters.created_at,
                 characters.updated_at

@@ -395,6 +395,42 @@ Character identity fields are:
 The poster is atmosphere and identity. It is not a navigation menu, not a badge
 collection, and not a replacement for readable prose.
 
+## Expressive Customization Contract
+
+Elbysodic should preserve the expressive pleasure of old-school PBP templates
+without letting character customization break the thread.
+
+Customization belongs in bounded surfaces:
+
+- The system owns grid, spacing, prose readability, mobile behavior, required
+  identity, and contrast.
+- Writers can customize approved character presentation tokens: post profile
+  variant, accent treatment, border treatment, identity type, density, poster
+  art, tagline, and accent color.
+- Communities may eventually decide which token choices are available, but V1
+  uses app-approved constants.
+- A community may choose one facet group as its identity accent source. When a
+  character has no explicit accent override, post atmosphere inherits from that
+  character's first matching facet color in the chosen group.
+- Do not allow arbitrary CSS, raw style blocks, scriptable templates, or layout
+  controls that resize the prose column.
+- Required identity stays present in markup even when a visual variant hides it
+  until hover/focus/tap.
+
+Safe token examples:
+
+- `post_profile_variant`: `bio`, `poster`, `dock`, `crest`.
+- `post_accent_style`: `soft`, `line`, `glow`, `block`.
+- `post_border_style`: `none`, `hairline`, `bracket`, `double`.
+- `post_title_style`: `standard`, `serif`, `condensed`, `mono`.
+- `post_density`: `calm`, `compact`, `dramatic`.
+
+These tokens map to CSS classes and design tokens, not user-authored CSS.
+Post-level atmosphere should attach to the post surface/container when possible;
+the semantic article should remain focused on identity, metadata, and prose.
+This keeps decorative borders and washes outside the reading grid and lets
+Chirp-UI surface padding protect the text from tight custom frames.
+
 ## Size Strategy
 
 - Page title: world, place, thread, or character identity.

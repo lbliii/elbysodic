@@ -349,6 +349,54 @@
             {% end %}
           </select>
         </div>
+        <div>
+          <label class="chirpui-field__label" for="character-post-accent-style">Post accent</label>
+          <select id="character-post-accent-style"
+                  class="chirpui-field__input"
+                  name="post_accent_style">
+            {% for value, label in post_accent_style_labels.items() %}
+            <option value="{{ value }}" {% if post_accent_style == value %}selected{% end %}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-post-border-style">Post border</label>
+          <select id="character-post-border-style"
+                  class="chirpui-field__input"
+                  name="post_border_style">
+            {% for value, label in post_border_style_labels.items() %}
+            <option value="{{ value }}" {% if post_border_style == value %}selected{% end %}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-post-title-style">Identity type</label>
+          <select id="character-post-title-style"
+                  class="chirpui-field__input"
+                  name="post_title_style">
+            {% for value, label in post_title_style_labels.items() %}
+            <option value="{{ value }}" {% if post_title_style == value %}selected{% end %}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="character-post-density">Post density</label>
+          <select id="character-post-density"
+                  class="chirpui-field__input"
+                  name="post_density">
+            {% for value, label in post_density_labels.items() %}
+            <option value="{{ value }}" {% if post_density == value %}selected{% end %}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
       </div>
       <div>
         <label class="chirpui-field__label" for="character-summary">Summary</label>

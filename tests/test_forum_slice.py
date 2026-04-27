@@ -1969,6 +1969,10 @@ def test_character_profile_can_edit_owned_character() -> None:
                     b"&name=Rogue+Prime"
                     b"&avatar_url=https%3A%2F%2Fexample.test%2Frogue.png"
                     b"&post_profile_variant=poster"
+                    b"&post_accent_style=line"
+                    b"&post_border_style=double"
+                    b"&post_title_style=mono"
+                    b"&post_density=compact"
                     b"&summary=Still+carrying+the+whole+plot."
                 ),
                 headers=_FORM,
@@ -1985,7 +1989,54 @@ def test_character_profile_can_edit_owned_character() -> None:
             thread = await client.get("/boards/danger-room/threads/sentinel-drill")
             assert "Rogue Prime" in thread.text
             assert "elbysodic-post-profile--poster" in thread.text
+            assert "elbysodic-post-accent--line" in thread.text
+            assert "elbysodic-post-border--double" in thread.text
+            assert "elbysodic-post-title--mono" in thread.text
+            assert "elbysodic-post-density--compact" in thread.text
             assert "Rogue drops from the observation gantry" in thread.text
+
+    asyncio.run(run())
+
+
+def test_post_shell_inherits_identity_accent_from_facet_group() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            thread = await client.get("/boards/danger-room/threads/moonlight-skirmish")
+
+            assert thread.status == 200
+            assert 'style="--elbysodic-character-accent: #60a5fa"' in thread.text
+            assert 'style="--elbysodic-character-accent: #79a889"' in thread.text
+
+    asyncio.run(run())
+
+
+def test_studio_can_set_identity_accent_source() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        species = repo.get_facet_group_by_slug(community.id, "species")
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=f"identity_accent_facet_group_id={species.id}".encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            assert dict(response.headers)["location"] == "/studio"
+            assert repo.get_community(community.id).identity_accent_facet_group_id == species.id
 
     asyncio.run(run())
 

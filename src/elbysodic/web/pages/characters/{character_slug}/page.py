@@ -11,7 +11,13 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.services.plot_hooks import PLOT_HOOK_TYPES
-from elbysodic.services.read_models import POST_PROFILE_VARIANT_LABELS
+from elbysodic.services.read_models import (
+    POST_ACCENT_STYLE_LABELS,
+    POST_BORDER_STYLE_LABELS,
+    POST_DENSITY_LABELS,
+    POST_PROFILE_VARIANT_LABELS,
+    POST_TITLE_STYLE_LABELS,
+)
 from elbysodic.web.state import get_services
 
 
@@ -25,6 +31,10 @@ class CharacterProfileForm:
     tagline: str
     accent_color: str
     post_profile_variant: str
+    post_accent_style: str
+    post_border_style: str
+    post_title_style: str
+    post_density: str
     summary: str
     plot_hook_title: str = ""
     plot_hook_type: str = ""
@@ -81,6 +91,10 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
     tagline = str(form.get("tagline") or "")
     accent_color = str(form.get("accent_color") or "")
     post_profile_variant = str(form.get("post_profile_variant") or "bio")
+    post_accent_style = str(form.get("post_accent_style") or "soft")
+    post_border_style = str(form.get("post_border_style") or "hairline")
+    post_title_style = str(form.get("post_title_style") or "standard")
+    post_density = str(form.get("post_density") or "calm")
     try:
         character = services.update_character(
             character_slug,
@@ -92,6 +106,10 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
             tagline=tagline,
             accent_color=accent_color,
             post_profile_variant=post_profile_variant,
+            post_accent_style=post_accent_style,
+            post_border_style=post_border_style,
+            post_title_style=post_title_style,
+            post_density=post_density,
         )
     except ValueError as exc:
         return _render_profile(
@@ -106,6 +124,10 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
             tagline=tagline,
             accent_color=accent_color,
             post_profile_variant=post_profile_variant,
+            post_accent_style=post_accent_style,
+            post_border_style=post_border_style,
+            post_title_style=post_title_style,
+            post_density=post_density,
         )
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
@@ -125,6 +147,10 @@ def _render_profile(
     tagline: str | None = None,
     accent_color: str | None = None,
     post_profile_variant: str | None = None,
+    post_accent_style: str | None = None,
+    post_border_style: str | None = None,
+    post_title_style: str | None = None,
+    post_density: str | None = None,
 ) -> Page:
     services = get_services()
     viewer = services.viewer()
@@ -147,7 +173,21 @@ def _render_profile(
         post_profile_variant=profile.character.post_profile_variant
         if post_profile_variant is None
         else post_profile_variant,
+        post_accent_style=profile.character.post_accent_style
+        if post_accent_style is None
+        else post_accent_style,
+        post_border_style=profile.character.post_border_style
+        if post_border_style is None
+        else post_border_style,
+        post_title_style=profile.character.post_title_style
+        if post_title_style is None
+        else post_title_style,
+        post_density=profile.character.post_density if post_density is None else post_density,
         post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
+        post_accent_style_labels=POST_ACCENT_STYLE_LABELS,
+        post_border_style_labels=POST_BORDER_STYLE_LABELS,
+        post_title_style_labels=POST_TITLE_STYLE_LABELS,
+        post_density_labels=POST_DENSITY_LABELS,
         plot_hook_types=PLOT_HOOK_TYPES,
     )
 
