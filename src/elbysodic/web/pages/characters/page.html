@@ -160,6 +160,18 @@
                placeholder="#79a889"
                autocomplete="off">
       </div>
+      <div>
+        <label class="chirpui-field__label" for="character-post-profile-variant">Post rail</label>
+        <select id="character-post-profile-variant"
+                class="chirpui-field__input"
+                name="post_profile_variant">
+          {% for value, label in post_profile_variant_labels.items() %}
+          <option value="{{ value }}" {% if post_profile_variant == value %}selected{% end %}>
+            {{ label }}
+          </option>
+          {% end %}
+        </select>
+      </div>
     </div>
     <div>
       <label class="chirpui-field__label" for="character-summary">Summary</label>

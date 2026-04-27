@@ -1542,18 +1542,85 @@ def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
         )
         repo.connection.commit()
         repo.mark_thread_read(community.id, newer.id, membership.id)
+        role = repo.get_role_by_slug(community.id, "member")
+        attention_user = repo.create_user("nav-attention@example.com", "hash")
+        attention_membership = repo.create_membership(
+            community.id,
+            attention_user.id,
+            role.id,
+            "navattention",
+            "Nav Attention",
+        )
+        attention_character = repo.create_character(
+            community.id,
+            attention_membership.id,
+            "nav-attention-face",
+            "Nav Attention Face",
+        )
+        repo.create_post(
+            community.id,
+            newer.id,
+            attention_character.id,
+            "A nearby scene needs a reply.",
+        )
 
         async with TestClient(app) as client:
             page = await client.get("/boards/navigation/threads/middle")
             assert page.status == 200
             assert "Thread navigation" in page.text
             assert "Previous" in page.text
+            assert "Previous unreplied" in page.text
             assert "Newer thread" in page.text
             assert "/boards/navigation/threads/newer" in page.text
             assert "Next" in page.text
             assert "Older thread" in page.text
             assert "Next unread" in page.text
             assert f"/boards/navigation/threads/older#post-{older_post.id}" in page.text
+
+    asyncio.run(run())
+
+
+def test_thread_page_bottom_next_unread_uses_visible_community_queue() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        membership = services.seed.membership
+        viewer = services.viewer()
+        character = viewer.current_character
+        assert character is not None
+        for existing_thread in repo.list_threads(community.id):
+            repo.mark_thread_read(community.id, existing_thread.id, membership.id)
+        current_board = repo.create_board(community.id, "current-nav", "Current Nav")
+        unread_board = repo.create_board(community.id, "unread-nav", "Unread Nav")
+        current = repo.create_thread(
+            community.id,
+            current_board.id,
+            character.id,
+            "current-scene",
+            "Current scene",
+        )
+        unread = repo.create_thread(
+            community.id,
+            unread_board.id,
+            character.id,
+            "elsewhere-scene",
+            "Elsewhere scene",
+        )
+        repo.create_post(community.id, current.id, character.id, "Current post.")
+        unread_post = repo.create_post(
+            community.id,
+            unread.id,
+            character.id,
+            "Unread elsewhere.",
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/current-nav/threads/current-scene")
+            assert page.status == 200
+            assert "Next unread" in page.text
+            assert f"/boards/unread-nav/threads/elsewhere-scene#post-{unread_post.id}" in page.text
 
     asyncio.run(run())
 
@@ -1722,7 +1789,7 @@ def test_my_threads_tracks_obligations_after_threads_are_read() -> None:
             assert "elbysodic-thread-card__poster" in dashboard.text
             assert "elbysodic-scene-cast--stacked" in dashboard.text
             assert "elbysodic-thread-card__metrics" in dashboard.text
-            assert "scene-slate-cards" in dashboard.text
+            assert "elbysodic-queue-history" in dashboard.text
             assert "needs reply" in dashboard.text
             assert "Sentinel drill after midnight" in dashboard.text
             assert "waiting" in dashboard.text
@@ -1901,6 +1968,7 @@ def test_character_profile_can_edit_owned_character() -> None:
                     b"intent=save"
                     b"&name=Rogue+Prime"
                     b"&avatar_url=https%3A%2F%2Fexample.test%2Frogue.png"
+                    b"&post_profile_variant=poster"
                     b"&summary=Still+carrying+the+whole+plot."
                 ),
                 headers=_FORM,
@@ -1916,6 +1984,7 @@ def test_character_profile_can_edit_owned_character() -> None:
 
             thread = await client.get("/boards/danger-room/threads/sentinel-drill")
             assert "Rogue Prime" in thread.text
+            assert "elbysodic-post-profile--poster" in thread.text
             assert "Rogue drops from the observation gantry" in thread.text
 
     asyncio.run(run())

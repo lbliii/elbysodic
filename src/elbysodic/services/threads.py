@@ -204,12 +204,16 @@ def read_thread_view(
     thread: Thread,
 ) -> ThreadView:
     board_threads = repo.list_threads(viewer.community.id, board.id)
-    previous_thread, next_thread, next_unread = thread_navigation(
+    attention_threads = community_attention_threads(repo, viewer)
+    roster_character_ids = {character.id for character in viewer.roster}
+    previous_thread, next_thread, previous_unreplied, next_unread = thread_navigation(
         repo,
         viewer.community.id,
         viewer.membership.id,
+        roster_character_ids,
         board,
         board_threads,
+        attention_threads,
         thread,
     )
     unread = is_unread(repo, viewer.community.id, viewer.membership.id, thread)
@@ -287,6 +291,7 @@ def read_thread_view(
         is_unread=unread,
         previous_thread=previous_thread,
         next_thread=next_thread,
+        previous_unreplied_thread=previous_unreplied,
         next_unread_thread=next_unread,
         is_watched=repo.is_thread_watched(
             viewer.community.id,
@@ -419,13 +424,20 @@ def thread_navigation(
     repo: ThreadReadRepository,
     community_id: int,
     membership_id: int,
+    roster_character_ids: set[int],
     board: Board,
     threads: list[Thread],
+    attention_threads: list[tuple[Board, Thread]],
     current: Thread,
-) -> tuple[ThreadNavigationItem | None, ThreadNavigationItem | None, ThreadNavigationItem | None]:
+) -> tuple[
+    ThreadNavigationItem | None,
+    ThreadNavigationItem | None,
+    ThreadNavigationItem | None,
+    ThreadNavigationItem | None,
+]:
     current_index = _thread_index(threads, current.id)
     if current_index is None:
-        return None, None, None
+        return None, None, None, None
     previous_thread = (
         thread_navigation_item(repo, community_id, membership_id, board, threads[current_index - 1])
         if current_index > 0
@@ -436,19 +448,72 @@ def thread_navigation(
         if current_index + 1 < len(threads)
         else None
     )
-    ordered_candidates = threads[current_index + 1 :] + threads[:current_index]
+    attention_index = _thread_index(
+        [candidate_thread for _, candidate_thread in attention_threads],
+        current.id,
+    )
+    if attention_index is None:
+        previous_attention_candidates = list(reversed(attention_threads))
+        next_attention_candidates = attention_threads
+    else:
+        previous_attention_candidates = list(
+            reversed(attention_threads[:attention_index]),
+        ) + list(reversed(attention_threads[attention_index + 1 :]))
+        next_attention_candidates = (
+            attention_threads[attention_index + 1 :] + attention_threads[:attention_index]
+        )
+    previous_unreplied = None
+    for candidate_board, thread in previous_attention_candidates:
+        posts = repo.list_posts(community_id, thread.id)
+        latest_post = posts[-1] if posts else None
+        if (
+            latest_post
+            and thread_belongs_to_roster(thread, posts, roster_character_ids)
+            and thread_needs_reply(thread, latest_post, roster_character_ids)
+        ):
+            previous_unreplied = thread_navigation_item(
+                repo,
+                community_id,
+                membership_id,
+                candidate_board,
+                thread,
+            )
+            break
     next_unread = None
-    for thread in ordered_candidates:
+    for candidate_board, thread in next_attention_candidates:
         if is_unread(repo, community_id, membership_id, thread):
             next_unread = thread_navigation_item(
                 repo,
                 community_id,
                 membership_id,
-                board,
+                candidate_board,
                 thread,
             )
             break
-    return previous_thread, next_thread, next_unread
+    return previous_thread, next_thread, previous_unreplied, next_unread
+
+
+def community_attention_threads(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+) -> list[tuple[Board, Thread]]:
+    candidates: list[tuple[Board, Thread]] = []
+    for candidate_board in repo.list_boards(viewer.community.id):
+        if not policies.can_view_board(
+            viewer.membership,
+            candidate_board,
+            viewer.role,
+        ):
+            continue
+        candidates.extend(
+            (candidate_board, thread)
+            for thread in repo.list_threads(viewer.community.id, candidate_board.id)
+        )
+    return sorted(
+        candidates,
+        key=lambda item: (timestamp_key(item[1].updated_at), item[1].id),
+        reverse=True,
+    )
 
 
 def thread_navigation_item(
@@ -499,6 +564,17 @@ def thread_needs_attention(
 ) -> bool:
     return (
         is_unread(repo, community_id, membership_id, thread)
+        and latest_post.author_character_id not in roster_character_ids
+    )
+
+
+def thread_needs_reply(
+    thread: Thread,
+    latest_post: Post,
+    roster_character_ids: set[int],
+) -> bool:
+    return (
+        is_reply_obligation_thread(thread)
         and latest_post.author_character_id not in roster_character_ids
     )
 

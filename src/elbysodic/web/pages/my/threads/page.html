@@ -1,13 +1,15 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/thread_summary.html" import thread_card %}
+  {% from "_components/thread_summary.html" import compact_thread_card, thread_card %}
 {% end %}
 
 {% def thread_item(item) %}
 {{ thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item?.facets ?? [], item.latest_post, item.jump_post, item.jump_label, item.last_own_post, item.reply_count, item.is_unread, item.badges, "h3", True, True, item.episode) }}
+{% end %}
+
+{% def compact_thread_item(item) %}
+{{ compact_thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item?.facets ?? [], item.latest_post, item.jump_post, item.jump_label, item.last_own_post, item.reply_count, item.is_unread, item.badges, "h3", True, True, item.episode) }}
 {% end %}
 
 {% def thread_section(title, subtitle, items, empty_text) %}
@@ -23,6 +25,21 @@
   {% call surface(variant="elevated") %}
   <p class="elbysodic-empty-state">{{ empty_text }}</p>
   {% end %}
+  {% end %}
+</div>
+{% end %}
+
+{% def compact_thread_section(title, subtitle, items, empty_text) %}
+{% call section_header(title) %}
+{{ subtitle }}
+{% end %}
+<div class="chirpui-stack chirpui-stack--sm">
+  {% if items %}
+  {% for item in items %}
+    {{ compact_thread_item(item) }}
+  {% end %}
+  {% else %}
+  <p class="elbysodic-empty-state">{{ empty_text }}</p>
   {% end %}
 </div>
 {% end %}
@@ -43,24 +60,76 @@
   {% end %}
   {% end %}
 
-  <div class="elbysodic-filter-bar">
-    <a class="chirpui-btn {{ "chirpui-btn--primary" if not dashboard.selected_character else "chirpui-btn--secondary" }}"
-       href="/my/threads">
-      Whole roster
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-queue-focus" aria-labelledby="queue-focus-heading">
+    <div class="elbysodic-queue-focus__copy">
+      <p class="elbysodic-section-kicker">Queue focus</p>
+      {% if dashboard.selected_character %}
+      <h2 id="queue-focus-heading">{{ dashboard.selected_character.name }}'s writing lane</h2>
+      <p>Open the scenes that need this face first; use history when you need the broader tracker.</p>
+      {% else %}
+      <h2 id="queue-focus-heading">Roster writing lane</h2>
+      <p>Open scenes that need any of your faces first; use history when you need the broader tracker.</p>
+      {% end %}
+    </div>
+    <div class="elbysodic-queue-focus__metrics" aria-label="Queue totals">
+      <span class="elbysodic-queue-metric">
+        <strong>{{ dashboard.needs_reply | length }}</strong>
+        <span>Needs reply</span>
+      </span>
+      <span class="elbysodic-queue-metric">
+        <strong>{{ dashboard.waiting_on_others | length }}</strong>
+        <span>Waiting</span>
+      </span>
+      <span class="elbysodic-queue-metric">
+        <strong>{{ dashboard.started_by_me | length }}</strong>
+        <span>Started</span>
+      </span>
+      <span class="elbysodic-queue-metric">
+        <strong>{{ dashboard.participated | length }}</strong>
+        <span>All active</span>
+      </span>
+    </div>
+    {% if dashboard.needs_reply %}
+    {% set next_reply = dashboard.needs_reply[0] %}
+    <a class="chirpui-btn chirpui-btn--primary elbysodic-queue-focus__action"
+       href="/boards/{{ next_reply.board.slug }}/threads/{{ next_reply.thread.slug }}{{ "#" ~ next_reply.jump_post.anchor if next_reply.jump_post else "" }}">
+      Open next reply
     </a>
-    {% for activity in dashboard.roster_activity %}
-    <a class="chirpui-btn {{ "chirpui-btn--primary" if dashboard.selected_character and dashboard.selected_character.id == activity.character.id else "chirpui-btn--secondary" }}"
-       href="/my/threads?character={{ activity.character.slug }}">
-      {{ activity.character.name }} · {{ activity.needs_reply | length }}
+    {% elif dashboard.waiting_on_others %}
+    {% set waiting_scene = dashboard.waiting_on_others[0] %}
+    <a class="chirpui-btn chirpui-btn--secondary elbysodic-queue-focus__action"
+       href="/boards/{{ waiting_scene.board.slug }}/threads/{{ waiting_scene.thread.slug }}">
+      Check waiting scene
     </a>
-    {% end %}
-  </div>
+    {% endif %}
+  </section>
+  {% end %}
 
-  {% call cluster(gap="sm") %}
-    {{ stat(value=dashboard.needs_reply | length, label="Needs reply") }}
-    {{ stat(value=dashboard.waiting_on_others | length, label="Waiting") }}
-    {{ stat(value=dashboard.started_by_me | length, label="Started") }}
-    {{ stat(value=dashboard.participated | length, label="All active") }}
+  {% call surface(variant="elevated") %}
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-lens">
+    <summary>
+      {% if dashboard.selected_character %}
+      <span>Queue lens: {{ dashboard.selected_character.name }}</span>
+      <small>Switch faces or return to the whole roster.</small>
+      {% else %}
+      <span>Queue lens: whole roster</span>
+      <small>Switch to one face when you want a tighter writing lane.</small>
+      {% end %}
+    </summary>
+    <nav class="elbysodic-filter-bar" aria-label="Queue lens">
+      <a class="chirpui-btn {{ "chirpui-btn--primary" if not dashboard.selected_character else "chirpui-btn--secondary" }}"
+         href="/my/threads">
+        Whole roster
+      </a>
+      {% for activity in dashboard.roster_activity %}
+      <a class="chirpui-btn {{ "chirpui-btn--primary" if dashboard.selected_character and dashboard.selected_character.id == activity.character.id else "chirpui-btn--secondary" }}"
+         href="/my/threads?character={{ activity.character.slug }}">
+        {{ activity.character.name }} · {{ activity.needs_reply | length }}
+      </a>
+      {% end %}
+    </nav>
+  </details>
   {% end %}
 
   {% if dashboard.selected_character %}
@@ -68,17 +137,37 @@
 
   {{ thread_section("Waiting on others", "Threads where this character currently has the last word.", dashboard.waiting_on_others, "This character is not waiting on active threads yet.") }}
 
-  {{ thread_section("Started by character", "Threads opened by this character.", dashboard.started_by_me, "This character has not started any visible threads yet.") }}
+  {% call surface(variant="elevated") %}
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-history">
+    <summary>
+      <span>Thread history</span>
+      <small>Started scenes and every visible scene touched by this face.</small>
+    </summary>
+    <div class="elbysodic-queue-history__body">
+      {{ compact_thread_section("Started by character", "Threads opened by this character.", dashboard.started_by_me, "This character has not started any visible threads yet.") }}
 
-  {{ thread_section("All participated", "Every visible thread touched by this character.", dashboard.participated, "This character has not joined any visible threads yet.") }}
+      {{ compact_thread_section("All participated", "Every visible thread touched by this character.", dashboard.participated, "This character has not joined any visible threads yet.") }}
+    </div>
+  </details>
+  {% end %}
   {% else %}
   {{ thread_section("Needs reply", "Participated threads where someone outside your roster posted last.", dashboard.needs_reply, "Nothing needs a reply right now.") }}
 
   {{ thread_section("Waiting on others", "Threads where one of your characters currently has the last word.", dashboard.waiting_on_others, "You are not waiting on any active threads yet.") }}
 
-  {{ thread_section("Started by me", "Threads opened by one of your community characters.", dashboard.started_by_me, "No threads started by your roster yet.") }}
+  {% call surface(variant="elevated") %}
+  <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-history">
+    <summary>
+      <span>Thread history</span>
+      <small>Started scenes and every visible scene touched by your roster.</small>
+    </summary>
+    <div class="elbysodic-queue-history__body">
+      {{ compact_thread_section("Started by me", "Threads opened by one of your community characters.", dashboard.started_by_me, "No threads started by your roster yet.") }}
 
-  {{ thread_section("All participated", "Every visible thread touched by your roster.", dashboard.participated, "Your roster has not joined any visible threads yet.") }}
+      {{ compact_thread_section("All participated", "Every visible thread touched by your roster.", dashboard.participated, "Your roster has not joined any visible threads yet.") }}
+    </div>
+  </details>
+  {% end %}
   {% end %}
 {% end %}
 {% end %}

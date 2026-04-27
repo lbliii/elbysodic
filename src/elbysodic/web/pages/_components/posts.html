@@ -2,36 +2,39 @@
   {% from "chirpui/surface.html" import surface %}
 {% end %}
 
-{% def post_frame(item, board, thread) %}
-{% call surface(variant="elevated") %}
-<article id="{{ item.anchor }}"
-         class="elbysodic-post elbysodic-post--{{ item.author.slug }}">
-  <aside class="elbysodic-post__poster" aria-label="{{ item.author.name }} profile">
-    <a class="elbysodic-post__poster-media elbysodic-character-poster--{{ item.author.slug }}"
-       {% if item.author.accent_color %}style="--elbysodic-character-accent: {{ item.author.accent_color }}"{% end %}
-       href="/characters/{{ item.author.slug }}"
-       aria-label="{{ item.author.name }}">
-      {% if item.author.poster_url %}
-      <img src="{{ item.author.poster_url }}" alt="{{ item.author.poster_alt or item.author.name }}">
-      {% else %}
-      <span aria-hidden="true">{{ item.author.name[:1] }}</span>
-      {% end %}
-      {% if item.author.tagline %}
-      <em>{{ item.author.tagline }}</em>
-      {% end %}
-    </a>
-    <div class="elbysodic-post__poster-card">
-      <div class="elbysodic-post__poster-name">
-        <h2>
-          <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
-        </h2>
-        <p>
-          writer <a class="chirpui-link" href="/members/{{ item.author_membership.username }}">{{ item.author_membership.username }}</a>
-        </p>
-      </div>
-      {% if item.author.tagline %}
-      <p class="elbysodic-post__poster-tagline">{{ item.author.tagline }}</p>
-      {% end %}
+{% def post_profile_media(item) %}
+<a class="elbysodic-post__poster-media elbysodic-character-poster--{{ item.author.slug }}"
+   href="/characters/{{ item.author.slug }}"
+   aria-label="{{ item.author.name }}">
+  {% if item.author.poster_url %}
+  <img src="{{ item.author.poster_url }}" alt="{{ item.author.poster_alt or item.author.name }}">
+  {% else %}
+  <span aria-hidden="true">{{ item.author.name[:1] }}</span>
+  {% end %}
+  {% if item.author.tagline %}
+  <em>{{ item.author.tagline }}</em>
+  {% end %}
+</a>
+{% end %}
+
+{% def post_profile_card(item) %}
+<div class="elbysodic-post__poster-card">
+  <div class="elbysodic-post__poster-name">
+    <h2>
+      <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
+    </h2>
+    <p>
+      writer <a class="chirpui-link" href="/members/{{ item.author_membership.username }}">{{ item.author_membership.username }}</a>
+    </p>
+  </div>
+  {% if item.author.tagline %}
+  <p class="elbysodic-post__poster-tagline">{{ item.author.tagline }}</p>
+  {% end %}
+  <details class="elbysodic-post-profile-disclosure">
+    <summary>
+      <span>Profile note</span>
+    </summary>
+    <div class="elbysodic-post-profile-disclosure__body">
       <p class="elbysodic-post__poster-summary">{{ item.author.summary }}</p>
       <dl class="elbysodic-post__poster-stats">
         <div>
@@ -43,13 +46,25 @@
           <dd>{{ item.author.name[:1] }}</dd>
         </div>
       </dl>
-      <div class="elbysodic-post__quick-profile" role="note">
-        <strong>{{ item.author.name }}</strong>
-        <span>{{ item.author.summary }}</span>
-        <span>Written by {{ item.author_membership.display_name }}</span>
-      </div>
     </div>
-  </aside>
+  </details>
+</div>
+{% end %}
+
+{% def post_profile_rail(item) %}
+<aside class="elbysodic-post__poster elbysodic-post-profile elbysodic-post-profile--{{ item.author.post_profile_variant or 'bio' }}"
+       {% if item.author.accent_color %}style="--elbysodic-character-accent: {{ item.author.accent_color }}"{% end %}
+       aria-label="{{ item.author.name }} profile">
+  {{ post_profile_media(item) }}
+  {{ post_profile_card(item) }}
+</aside>
+{% end %}
+
+{% def post_frame(item, board, thread) %}
+{% call surface(variant="elevated") %}
+<article id="{{ item.anchor }}"
+         class="elbysodic-post elbysodic-post--{{ item.author.slug }}">
+  {{ post_profile_rail(item) }}
   <div class="elbysodic-post__body">
     <header class="elbysodic-post__meta">
       <div class="elbysodic-post__meta-line">

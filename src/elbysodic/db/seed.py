@@ -231,6 +231,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         rogue,
         tagline="Careful hands, reckless heart.",
         accent_color="#79a889",
+        post_profile_variant="dock",
     )
     storm = _ensure_character_identity(
         repo,
@@ -238,6 +239,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         storm,
         tagline="The calm eye of the storm.",
         accent_color="#9fb7ff",
+        post_profile_variant="poster",
     )
     magneto = _ensure_character_identity(
         repo,
@@ -245,6 +247,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         magneto,
         tagline="A revolution with metal in its voice.",
         accent_color="#c75b67",
+        post_profile_variant="crest",
     )
     xavier = _ensure_character_identity(
         repo,
@@ -252,6 +255,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         xavier,
         tagline="Hope, even when it hurts.",
         accent_color="#7bc8ee",
+        post_profile_variant="bio",
     )
     kitty = _ensure_character_identity(
         repo,
@@ -259,6 +263,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         kitty,
         tagline="Through walls, into trouble.",
         accent_color="#c99a46",
+        post_profile_variant="poster",
     )
     cyclops = _ensure_character_identity(
         repo,
@@ -266,6 +271,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         cyclops,
         tagline="Order under pressure.",
         accent_color="#e57984",
+        post_profile_variant="bio",
     )
     moira = _ensure_character_identity(
         repo,
@@ -273,6 +279,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         moira,
         tagline="The file nobody wanted opened.",
         accent_color="#79a889",
+        post_profile_variant="dock",
     )
     trask = _ensure_character_identity(
         repo,
@@ -280,6 +287,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         trask,
         tagline="Progress with teeth.",
         accent_color="#c99a46",
+        post_profile_variant="crest",
     )
 
     membership = repo.get_membership(community.id, membership.id)
@@ -1515,12 +1523,14 @@ def _ensure_character_identity(
     poster_alt: str = "",
     tagline: str = "",
     accent_color: str = "",
+    post_profile_variant: str = "bio",
 ) -> Character:
     if (
         character.poster_url == poster_url
         and character.poster_alt == poster_alt
         and character.tagline == tagline
         and character.accent_color == accent_color
+        and character.post_profile_variant == post_profile_variant
     ):
         return character
     return repo.update_character(
@@ -1534,6 +1544,7 @@ def _ensure_character_identity(
         tagline=tagline,
         accent_color=accent_color,
         summary=character.summary,
+        post_profile_variant=post_profile_variant,
     )
 
 

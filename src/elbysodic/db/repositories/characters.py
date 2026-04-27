@@ -21,6 +21,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         tagline: str = "",
         accent_color: str = "",
         summary: str = "",
+        post_profile_variant: str = "bio",
         *,
         application_status: str = "accepted",
         make_default: bool = False,
@@ -40,11 +41,12 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 application_status,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -57,6 +59,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 application_status,
                 now,
                 now,
@@ -84,6 +87,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 application_status,
                 created_at,
                 updated_at
@@ -111,6 +115,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 application_status,
                 created_at,
                 updated_at
@@ -136,6 +141,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         tagline: str = "",
         accent_color: str = "",
         summary: str = "",
+        post_profile_variant: str = "bio",
     ) -> Character:
         self.get_character(community_id, character_id)
         self.connection.execute(
@@ -150,6 +156,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline = ?,
                 accent_color = ?,
                 summary = ?,
+                post_profile_variant = ?,
                 updated_at = ?
             WHERE community_id = ? AND id = ?
             """,
@@ -162,6 +169,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 _utc_now(),
                 community_id,
                 character_id,
@@ -204,6 +212,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 application_status,
                 created_at,
                 updated_at
@@ -230,6 +239,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 tagline,
                 accent_color,
                 summary,
+                post_profile_variant,
                 application_status,
                 created_at,
                 updated_at
@@ -270,6 +280,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 characters.tagline,
                 characters.accent_color,
                 characters.summary,
+                characters.post_profile_variant,
                 characters.application_status,
                 characters.created_at,
                 characters.updated_at

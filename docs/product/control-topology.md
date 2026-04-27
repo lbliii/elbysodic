@@ -16,6 +16,82 @@ Prefer compactness when the action remains discoverable, labeled, reversible,
 and attached to the object it changes. Prefer visibility when hiding the
 control would make the user ask, "What can I do next?"
 
+## Placement Rhythm
+
+Controls should appear where the user naturally becomes ready to use them, not
+only where the data model happens to expose them.
+
+Think of each page as a small journey:
+
+1. **Orient**: where am I, what object am I looking at, and what face am I
+   wearing?
+2. **Read or compare**: what context do I need before acting?
+3. **Act**: what is the next writing, interest, reply, or management move?
+4. **Continue**: where should I go after finishing this object?
+
+Use that journey to decide placement:
+
+- Put orientation controls near the start: breadcrumbs, current lens, active
+  face, current state, and object identity.
+- Put creation and commitment controls at the moment of intent: `Reply as
+  Rogue` near the scene and composer, interest actions on hook detail, reserve
+  actions on wanted detail.
+- Put skim/navigation controls where they support browsing: previous/next
+  scene links belong in the transcript header, after scene context and before
+  the first post, because writers often skim the setup before deciding whether
+  to hop to a nearby scene.
+- Put attention-continuation controls after completion: `Previous unreplied`
+  and `Next unread` belong at the end of a thread, where the writer has
+  finished reading and is deciding what needs attention next. These controls
+  follow the visible community attention queue, not the current board's local
+  scene order.
+- Put inspection controls beside the thing they explain: post profile notes on
+  the post identity, facet filters near result sets, material context beside
+  canon or event content.
+- Put management controls behind the object but out of the emotional path:
+  scene management, staff controls, material studio, archive/close/move.
+
+Do not collapse a control just because it is secondary. Collapse it when it is
+secondary **and** not needed at the current step in the journey. Likewise, do
+not surface a control just because it is common. Surface it when the visible
+page state makes the action feel timely.
+
+Recent thread-page decision: breadcrumbs should have breathing room at the top.
+Previous/next scene navigation is useful for skimming and should stay visible,
+but it belongs with the transcript header rather than the breadcrumb row:
+after scene context and before the first post. Queue navigation is different:
+`Previous unreplied` and `Next unread` are attention actions, so they belong
+under the last post as small left/right navigation buttons that can jump across
+boards when the next obligation lives elsewhere.
+
+## Thread Reader Control Pattern
+
+Thread detail pages have three different kinds of movement, and they should not
+compete for the same slot:
+
+- **Orientation** belongs at the top: breadcrumbs, scene title, current board,
+  current event, state badges, and active face. Give this area breathing room.
+- **Local skim navigation** belongs with the transcript header: previous/next
+  thread controls help a writer compare neighboring scenes after reading the
+  scene setup, but before committing to the first post.
+- **Attention navigation** belongs after the last post: previous unreplied and
+  next unread are not local geography. They are queue actions for the moment
+  after the writer has finished reading.
+
+When a control pair has a directional meaning, preserve its physical side even
+when only one side exists. A lone `Next unread` still belongs on the right; a
+lone `Previous unreplied` still belongs on the left.
+
+Stage actions should separate commitment, reading, and state:
+
+- The main commitment stays large and labeled: `Reply as <face>` or `Join as
+  <face>`.
+- Secondary reading movement can be labeled and compact: `Read latest`.
+- Reversible state toggles can sit beside the labeled action as short icon
+  buttons when the state also appears elsewhere, such as a `watching` badge.
+  Keep the accessible label and tooltip explicit (`Watch thread`,
+  `Unwatch thread`), even when the visual button is only a symbol.
+
 ## Research Anchors
 
 Use these as the background doctrine, not as a second design system:
@@ -67,6 +143,8 @@ Before adding or condensing controls, answer these questions:
 7. Would hiding this control force recall, or merely reduce noise?
 8. Can the compact version still be labeled for screen readers, keyboard
    reachable, and understandable on mobile?
+9. Where in the journey does this action become useful: orienting, reading,
+   acting, or continuing?
 
 If the answers are unclear, keep the control visible and labeled until usage
 patterns tell us what can safely collapse.
@@ -80,7 +158,7 @@ patterns tell us what can safely collapse.
 | Icon plus text | The action is domain-specific, important, or not universally recognized. | The text repeats many times in a dense row and the icon is familiar. | `New plot hook`, `Reserve wanted`, `Mark caught up`. |
 | Icon-only button | The action is repeated, low-risk, conventional, and has a stable tooltip/ARIA label. | The icon would carry product-specific meaning or irreversible work. | Search, close, expand/collapse, edit pencil in a repeated owner toolbar. |
 | Overflow menu | Actions are rare, related, and secondary to the object. | The action is the next expected move or must be compared with nearby choices. | Archive, duplicate, move, close, request revision, staff moderation. |
-| Disclosure panel | Optional complexity belongs near the object but should not interrupt reading. | The hidden content is required to complete the main task. | Facets, related material, advanced discovery filters, material studio controls. |
+| Disclosure panel | Optional complexity belongs near the object but should not interrupt reading. | The hidden content is required to complete the main task or continue the flow. | Facets, related material, advanced discovery filters, profile notes, material studio controls. |
 | Inline edit, explicit pencil | A small set of owner-only fields can be edited in context, but editing mode should be deliberate. | The field is the primary text artifact or the action has social/workflow impact. | Plot hook status, room summary, character tagline, material metadata. |
 | Click-to-edit immediately | A single short field is obviously editable, low-risk, and has clear save/cancel behavior. | The text is also a navigation link, is long-form, or edits affect public workflow state. | Hook title in an owner studio area, compact room label, draft title. |
 | Full edit page or form | The object has several fields, validation, body text, permissions, or preview needs. | Only one small reversible property is changing. | Character profile edit, wanted hook edit, material edit, application forms. |
@@ -137,6 +215,7 @@ Keep details visible when they answer "what can I do next?":
 - Reply/join/interest actions.
 - Active-face defaults.
 - Current workflow state.
+- Continuation actions at the end of a finished reading flow.
 - Empty states that teach the next useful action.
 - Validation errors and required form instructions.
 
@@ -183,6 +262,18 @@ Use these defaults unless a surface has a stronger local reason:
 - Story-moving actions stay visible and text-labeled.
 - Active-face actions should read as `as <face>` when that reduces choice
   pressure safely.
+- Skim navigation can stay visible near the reading surface: previous/next
+  thread controls help writers browse nearby scenes after they have enough
+  scene context to decide. Prefer placing these controls in the transcript
+  header when the local titles are short and bounded.
+- State toggles can become compact icon buttons when the state is visible
+  elsewhere and the button keeps a clear accessible label, such as watching a
+  thread from the scene stage. Pair these with a nearby labeled action when
+  possible: `[○] [Read latest]`, not a mystery icon floating alone.
+- Attention navigation belongs after the transcript: `Previous unreplied` and
+  `Next unread` are for moving across things that need attention after the
+  reader has finished the current scene. Treat this as community-queue
+  navigation, not same-board browsing.
 - Owner and staff actions can collapse behind `Edit`, `Manage`, or an overflow
   when the page is primarily for reading or writing.
 - Plotter and wanted pages should expose interest/room actions clearly; archive,

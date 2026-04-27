@@ -112,6 +112,7 @@ def _character_from_row(row: sqlite3.Row) -> Character:
         tagline=row["tagline"],
         accent_color=row["accent_color"],
         summary=row["summary"],
+        post_profile_variant=row["post_profile_variant"],
         application_status=row["application_status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],

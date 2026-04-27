@@ -9,6 +9,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services.read_models import POST_PROFILE_VARIANT_LABELS
 from elbysodic.web.state import get_services
 
 
@@ -20,6 +21,7 @@ class CharacterCreateForm:
     poster_alt: str
     tagline: str
     accent_color: str
+    post_profile_variant: str
     summary: str
     make_default: str
 
@@ -38,6 +40,7 @@ async def post(request: Request) -> Page | Redirect:
     poster_alt = str(form.get("poster_alt") or "")
     tagline = str(form.get("tagline") or "")
     accent_color = str(form.get("accent_color") or "")
+    post_profile_variant = str(form.get("post_profile_variant") or "bio")
     make_default = str(form.get("make_default") or "") == "on"
 
     try:
@@ -49,6 +52,7 @@ async def post(request: Request) -> Page | Redirect:
             poster_alt=poster_alt,
             tagline=tagline,
             accent_color=accent_color,
+            post_profile_variant=post_profile_variant,
             make_default=make_default,
         )
     except ValueError as exc:
@@ -62,6 +66,7 @@ async def post(request: Request) -> Page | Redirect:
             poster_alt=poster_alt,
             tagline=tagline,
             accent_color=accent_color,
+            post_profile_variant=post_profile_variant,
             make_default=make_default,
         )
 
@@ -79,6 +84,7 @@ def _render_roster(
     poster_alt: str = "",
     tagline: str = "",
     accent_color: str = "",
+    post_profile_variant: str = "bio",
     make_default: bool = False,
 ) -> Page:
     services = get_services()
@@ -98,5 +104,7 @@ def _render_roster(
         poster_alt=poster_alt,
         tagline=tagline,
         accent_color=accent_color,
+        post_profile_variant=post_profile_variant,
+        post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
         make_default=make_default,
     )

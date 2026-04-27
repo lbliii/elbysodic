@@ -11,6 +11,7 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.services.plot_hooks import PLOT_HOOK_TYPES
+from elbysodic.services.read_models import POST_PROFILE_VARIANT_LABELS
 from elbysodic.web.state import get_services
 
 
@@ -23,6 +24,7 @@ class CharacterProfileForm:
     poster_alt: str
     tagline: str
     accent_color: str
+    post_profile_variant: str
     summary: str
     plot_hook_title: str = ""
     plot_hook_type: str = ""
@@ -78,6 +80,7 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
     poster_alt = str(form.get("poster_alt") or "")
     tagline = str(form.get("tagline") or "")
     accent_color = str(form.get("accent_color") or "")
+    post_profile_variant = str(form.get("post_profile_variant") or "bio")
     try:
         character = services.update_character(
             character_slug,
@@ -88,6 +91,7 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
             poster_alt=poster_alt,
             tagline=tagline,
             accent_color=accent_color,
+            post_profile_variant=post_profile_variant,
         )
     except ValueError as exc:
         return _render_profile(
@@ -101,6 +105,7 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
             poster_alt=poster_alt,
             tagline=tagline,
             accent_color=accent_color,
+            post_profile_variant=post_profile_variant,
         )
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
@@ -119,6 +124,7 @@ def _render_profile(
     poster_alt: str | None = None,
     tagline: str | None = None,
     accent_color: str | None = None,
+    post_profile_variant: str | None = None,
 ) -> Page:
     services = get_services()
     viewer = services.viewer()
@@ -138,6 +144,10 @@ def _render_profile(
         poster_alt=profile.character.poster_alt if poster_alt is None else poster_alt,
         tagline=profile.character.tagline if tagline is None else tagline,
         accent_color=profile.character.accent_color if accent_color is None else accent_color,
+        post_profile_variant=profile.character.post_profile_variant
+        if post_profile_variant is None
+        else post_profile_variant,
+        post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
         plot_hook_types=PLOT_HOOK_TYPES,
     )
 

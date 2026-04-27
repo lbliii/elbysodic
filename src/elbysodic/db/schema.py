@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS characters (
     tagline TEXT NOT NULL DEFAULT '',
     accent_color TEXT NOT NULL DEFAULT '',
     summary TEXT NOT NULL DEFAULT '',
+    post_profile_variant TEXT NOT NULL DEFAULT 'bio',
     application_status TEXT NOT NULL DEFAULT 'accepted',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -503,6 +504,7 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         "poster_alt": "TEXT NOT NULL DEFAULT ''",
         "tagline": "TEXT NOT NULL DEFAULT ''",
         "accent_color": "TEXT NOT NULL DEFAULT ''",
+        "post_profile_variant": "TEXT NOT NULL DEFAULT 'bio'",
     }.items():
         if name not in character_columns:
             connection.execute(f"ALTER TABLE characters ADD COLUMN {name} {definition}")

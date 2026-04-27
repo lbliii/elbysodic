@@ -83,6 +83,7 @@ class Character:
     tagline: str
     accent_color: str
     summary: str
+    post_profile_variant: str
     application_status: str
     created_at: str
     updated_at: str

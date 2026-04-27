@@ -146,7 +146,20 @@ unread, watched, mentioned.
 
 Activity signals should be concise and action-adjacent. The strongest signals
 belong in Writer Desk, My Threads, Notifications, and relevant board/thread
-lists. They should not overpower the world gateway.
+lists. On a thread detail page, `Previous unreplied` and `Next unread` follow
+the visible community attention queue and sit beneath the last post, while
+previous/next scene links sit in the transcript header for same-board skimming.
+Thread watch controls can be compact icon toggles when their accessible label
+and state badge remain clear. They should not overpower the world gateway.
+
+Thread reader controls follow this hierarchy:
+
+- Breadcrumbs and scene identity orient the reader.
+- Transcript header controls support local skim decisions.
+- Stage actions support immediate reading or writing: reply/join first, then a
+  compact watch toggle paired with `Read latest`.
+- End-of-thread controls support queue continuation across visible community
+  obligations.
 
 ### CastFaces
 
@@ -158,6 +171,26 @@ Writer names belong in metadata. Character faces belong in cast.
 Cast should compose ChirpUI's `avatar` primitive so status, sizing, fallback
 initials, and future avatar-stack behavior stay consistent across thread cards,
 wanted hooks, casting, and character hubs.
+
+### PostProfileRail
+
+Use for the character identity block attached to each post. It owns a stable
+physical footprint so the prose column does not shift as controls or profile
+details change.
+
+The rail may support presentation variants:
+
+- `bio`: visible name, writer, tagline, and profile note.
+- `poster`: portrait-only at rest; reveal name, writer, tagline, and profile
+  details on hover/focus/tap.
+- `dock`: image first, with a persistent identity strip and richer details
+  available inside the strip.
+- `crest`: fallback initial art in the same geometry when no portrait
+  exists.
+
+Variants may change density inside the frame, but they must preserve immediate
+author recognition, keyboard/touch access to hidden details, and no layout
+shift between posts.
 
 ### LocationTree
 
@@ -375,6 +408,12 @@ collection, and not a replacement for readable prose.
 
 ## Condensing Rules
 
+- Place controls by page rhythm: orient first, let the user read or compare,
+  show the action at the point of intent, and put continuation controls after
+  completion. Previous/next thread controls can stay near the top when they
+  help users skim nearby scenes; attention controls such as `Previous
+  unreplied` and `Next unread` belong beneath the last post because they answer
+  "what needs me after reading?"
 - Prefer active-face defaults over repeated controls when the action is safe:
   "Join as Rogue" beats a roster dropdown.
 - Use `docs/product/control-topology.md` before collapsing a visible action into

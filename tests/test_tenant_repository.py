@@ -145,6 +145,74 @@ def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
     assert notification_columns["actor_character_id"]["notnull"] == 0
 
 
+def test_schema_migrates_existing_characters_for_post_profile_variants() -> None:
+    connection = connect()
+    connection.executescript(
+        """
+        CREATE TABLE communities (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE,
+            host TEXT UNIQUE,
+            default_theme_id INTEGER,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE community_memberships (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            avatar_url TEXT,
+            role_id INTEGER NOT NULL,
+            default_character_id INTEGER,
+            post_count INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            joined_at TEXT NOT NULL
+        );
+        CREATE TABLE characters (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL,
+            membership_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            slug TEXT NOT NULL,
+            avatar_url TEXT,
+            summary TEXT NOT NULL DEFAULT '',
+            application_status TEXT NOT NULL DEFAULT 'accepted',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, slug)
+        );
+        INSERT INTO communities (id, name, slug, host, default_theme_id, created_at, updated_at)
+        VALUES (1, 'Default', 'default', NULL, NULL, '2026-01-01T00:00:00', '2026-01-01T00:00:00');
+        INSERT INTO community_memberships (
+            id, community_id, user_id, username, display_name, role_id, joined_at
+        )
+        VALUES (1, 1, 1, 'writer', 'Writer', 1, '2026-01-01T00:00:00');
+        INSERT INTO characters (
+            id, community_id, membership_id, name, slug, avatar_url, summary, created_at, updated_at
+        )
+        VALUES (
+            1, 1, 1, 'Rogue', 'rogue', NULL, 'Careful hands.',
+            '2026-01-01T00:00:00', '2026-01-01T00:00:00'
+        );
+        """
+    )
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]: row for row in connection.execute("PRAGMA table_info(characters)").fetchall()
+    }
+    character = connection.execute(
+        "SELECT post_profile_variant FROM characters WHERE id = 1"
+    ).fetchone()
+
+    assert "post_profile_variant" in columns
+    assert character["post_profile_variant"] == "bio"
+
+
 def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
@@ -252,6 +320,7 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
         poster_alt="Rogue standing in the Danger Room",
         tagline="Careful hands, reckless heart.",
         accent_color="#79a889",
+        post_profile_variant="dock",
         make_default=True,
     )
     magneto = repo.create_character(hosted.id, hosted_membership.id, "magneto", "Magneto")
@@ -262,6 +331,7 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
     assert draft.poster_alt == "Rogue standing in the Danger Room"
     assert draft.tagline == "Careful hands, reckless heart."
     assert draft.accent_color == "#79a889"
+    assert draft.post_profile_variant == "dock"
     assert repo.get_character(default.id, rogue.id).application_status == "draft"
     assert repo.get_membership(default.id, default_membership.id).default_character_id == rogue.id
     assert repo.get_membership(hosted.id, hosted_membership.id).default_character_id is None
@@ -306,6 +376,7 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
         tagline="Nobody touches the plot without consequence.",
         accent_color="#79a889",
         summary="Still carrying the whole plot.",
+        post_profile_variant="poster",
     )
 
     assert updated.slug == "rogue-prime"
@@ -316,6 +387,7 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
     assert updated.tagline == "Nobody touches the plot without consequence."
     assert updated.accent_color == "#79a889"
     assert updated.summary == "Still carrying the whole plot."
+    assert updated.post_profile_variant == "poster"
     assert repo.get_character_by_slug(hosted.id, "rogue").name == "Rogue Elsewhere"
 
     with pytest.raises(LookupError):

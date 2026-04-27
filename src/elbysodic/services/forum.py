@@ -95,6 +95,7 @@ from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
     MATERIAL_TYPES,
+    POST_PROFILE_VARIANTS,
     ActivityItem,
     ApplicationsDesk,
     AttentionItem,
@@ -756,6 +757,7 @@ class AppServices:
         poster_alt: str = "",
         tagline: str = "",
         accent_color: str = "",
+        post_profile_variant: str = "bio",
         make_default: bool = False,
     ) -> Character:
         viewer = self.viewer()
@@ -768,6 +770,9 @@ class AppServices:
         cleaned_poster_alt = poster_alt.strip()
         cleaned_tagline = tagline.strip()
         cleaned_accent_color = accent_color.strip()
+        cleaned_post_profile_variant = post_profile_variant.strip() or "bio"
+        if cleaned_post_profile_variant not in POST_PROFILE_VARIANTS:
+            raise ValueError("post profile variant is not supported")
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
         return self.repo.create_character(
             viewer.community.id,
@@ -780,6 +785,7 @@ class AppServices:
             tagline=cleaned_tagline,
             accent_color=cleaned_accent_color,
             summary=cleaned_summary,
+            post_profile_variant=cleaned_post_profile_variant,
             application_status="draft",
             make_default=make_default,
         )
@@ -795,6 +801,7 @@ class AppServices:
         poster_alt: str = "",
         tagline: str = "",
         accent_color: str = "",
+        post_profile_variant: str = "bio",
     ) -> Character:
         viewer = self.viewer()
         character = self.repo.get_character_by_slug(viewer.community.id, character_slug)
@@ -811,6 +818,9 @@ class AppServices:
         cleaned_poster_alt = poster_alt.strip()
         cleaned_tagline = tagline.strip()
         cleaned_accent_color = accent_color.strip()
+        cleaned_post_profile_variant = post_profile_variant.strip() or "bio"
+        if cleaned_post_profile_variant not in POST_PROFILE_VARIANTS:
+            raise ValueError("post profile variant is not supported")
         slug = character.slug
         if cleaned_name != character.name:
             slug = _unique_character_slug(
@@ -830,6 +840,7 @@ class AppServices:
             tagline=cleaned_tagline,
             accent_color=cleaned_accent_color,
             summary=cleaned_summary,
+            post_profile_variant=cleaned_post_profile_variant,
         )
 
     def update_post(self, board_slug: str, thread_slug: str, post_id: int, body: str) -> Post:

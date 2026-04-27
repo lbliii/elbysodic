@@ -32,6 +32,7 @@ type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "
 type PostingMode = Literal["freeform", "posting_order"]
 type MentionableKind = Literal["character", "writer"]
 type MentionableScope = Literal["all", "cast", "characters", "writers", "ooc"]
+type PostProfileVariant = Literal["bio", "poster", "dock", "crest"]
 type ApplicationStatus = Literal[
     "draft",
     "submitted",
@@ -65,6 +66,13 @@ APPLICATION_STATUS_VARIANTS: dict[str, str] = {
 }
 MATERIAL_TYPES = ("premise", "guide", "factions", "application", "event")
 MATERIAL_STATUSES = ("published", "draft")
+POST_PROFILE_VARIANTS: tuple[PostProfileVariant, ...] = ("bio", "poster", "dock", "crest")
+POST_PROFILE_VARIANT_LABELS: dict[str, str] = {
+    "bio": "Bio card",
+    "poster": "Poster focus",
+    "dock": "Docked profile",
+    "crest": "Crest mark",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -840,6 +848,7 @@ class ThreadView:
     is_unread: bool
     previous_thread: ThreadNavigationItem | None
     next_thread: ThreadNavigationItem | None
+    previous_unreplied_thread: ThreadNavigationItem | None
     next_unread_thread: ThreadNavigationItem | None
     is_watched: bool
 

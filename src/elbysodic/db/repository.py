@@ -457,6 +457,7 @@ class ForumRepository(
                 characters.tagline,
                 characters.accent_color,
                 characters.summary,
+                characters.post_profile_variant,
                 characters.application_status,
                 characters.created_at,
                 characters.updated_at
@@ -2079,6 +2080,7 @@ class ForumRepository(
                 characters.tagline,
                 characters.accent_color,
                 characters.summary,
+                characters.post_profile_variant,
                 characters.application_status,
                 characters.created_at,
                 characters.updated_at

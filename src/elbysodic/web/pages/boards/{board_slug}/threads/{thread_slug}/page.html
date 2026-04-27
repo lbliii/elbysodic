@@ -22,13 +22,23 @@
 {% end %}
 {% end %}
 
+{% def thread_attention_link(item, label, side) %}
+{% if item %}
+<a class="chirpui-btn chirpui-btn--secondary elbysodic-thread-attention-nav__link elbysodic-thread-attention-nav__link--{{ side }}"
+   href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}{{ "#" ~ item.jump_post.anchor if item.jump_post else "" }}">
+  <span class="elbysodic-thread-nav__label">{{ label }}</span>
+  <span class="elbysodic-thread-nav__title">{{ item.thread.title }}</span>
+</a>
+{% endif %}
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  <div class="elbysodic-thread-toolbar" aria-label="Thread navigation">
+  <div class="elbysodic-thread-toolbar">
     <nav class="elbysodic-place-path" aria-label="Scene path">
       <a href="/">World</a>
       {% if parent_board %}
@@ -40,13 +50,6 @@
       <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
       <span aria-current="page">{{ thread_view.thread.title }}</span>
     </nav>
-    <div class="elbysodic-thread-nav__links">
-      {{ thread_nav_link(thread_view.previous_thread, "Previous") }}
-      {{ thread_nav_link(thread_view.next_thread, "Next") }}
-      {% if thread_view.next_unread_thread %}
-      {{ thread_nav_link(thread_view.next_unread_thread, "Next unread") }}
-      {% end %}
-    </div>
   </div>
 
   <section class="elbysodic-thread-stage elbysodic-board-media--{{ thread_view.board.slug }}" aria-labelledby="scene-title">
@@ -118,24 +121,19 @@
       </div>
       <div class="elbysodic-thread-stage__summary">
         <h2>Scene details</h2>
-        {% if thread_view.thread.summary %}
-        <p>{{ thread_view.thread.summary }}</p>
-        {% else %}
-        <p>No scene brief has been added yet.</p>
-        {% end %}
+        {% if thread_view.latest_post %}
+        <p class="elbysodic-thread-stage__last-beat">
+          <span>Last beat</span>
+          <a href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
+          · {{ thread_view.latest_post.created_at_label }}
+        </p>
+        {% endif %}
         {% if thread_view.episode.writer_memberships %}
         <p class="elbysodic-thread-stage__credits">
           Credits:
           {% for writer in thread_view.episode.writer_memberships %}
           <a href="/members/{{ writer.username }}">{{ writer.display_name }}</a>{{ ", " if not loop.last else "" }}
           {% end %}
-        </p>
-        {% end %}
-        {% if thread_view.latest_post %}
-        <p class="elbysodic-thread-stage__last-beat">
-          Last beat:
-          <a href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
-          · {{ thread_view.latest_post.created_at_label }}
         </p>
         {% end %}
       </div>
@@ -152,12 +150,24 @@
           Reply as {{ selected_character.name }}
         </a>
         {% end %}
-        <form method="post" hx-boost="false">
-          <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
-          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-            {{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}
-          </button>
-        </form>
+        <div class="elbysodic-thread-stage__action-row">
+          <form method="post" hx-boost="false" class="elbysodic-thread-watch-form">
+            <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
+            <button type="submit"
+                    class="chirpui-btn chirpui-btn--secondary elbysodic-thread-watch-toggle"
+                    title="{{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}"
+                    aria-label="{{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}">
+              <span aria-hidden="true">{{ "◉" if thread_view.is_watched else "○" }}</span>
+              <span class="chirpui-visually-hidden">{{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}</span>
+            </button>
+          </form>
+          {% if thread_view.latest_post %}
+          <a class="chirpui-btn chirpui-btn--secondary"
+             href="#{{ thread_view.latest_post.anchor }}">
+            Read latest
+          </a>
+          {% end %}
+        </div>
       </div>
     </aside>
   </section>
@@ -322,16 +332,20 @@
   {% end %}
 
   <section class="elbysodic-scene-transcript" aria-labelledby="scene-transcript-title">
-    <div>
+    <div class="elbysodic-scene-transcript__copy">
       <p class="elbysodic-kicker">Transcript</p>
       <h2 id="scene-transcript-title">Scene posts</h2>
+      <p>
+        {{ thread_view.posts | length }} posts
+        {% if thread_view.latest_post %}
+        · latest by <a class="chirpui-link" href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
+        {% end %}
+      </p>
     </div>
-    <p>
-      {{ thread_view.posts | length }} posts
-      {% if thread_view.latest_post %}
-      · latest by <a class="chirpui-link" href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
-      {% end %}
-    </p>
+    <nav class="elbysodic-thread-nav__links elbysodic-thread-skim-nav" aria-label="Thread navigation">
+      {{ thread_nav_link(thread_view.previous_thread, "Previous") }}
+      {{ thread_nav_link(thread_view.next_thread, "Next") }}
+    </nav>
   </section>
 
   <div class="elbysodic-post-list" aria-label="Scene posts">
@@ -339,6 +353,16 @@
     {{ post_frame(item, thread_view.board, thread_view.thread) }}
     {% end %}
   </div>
+
+  {% if thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
+  <nav class="elbysodic-thread-attention-nav" aria-label="Attention thread navigation">
+    {% if not thread_view.previous_unreplied_thread and thread_view.next_unread_thread %}
+    <span class="elbysodic-thread-attention-nav__spacer" aria-hidden="true"></span>
+    {% end %}
+    {{ thread_attention_link(thread_view.previous_unreplied_thread, "Previous unreplied", "previous") }}
+    {{ thread_attention_link(thread_view.next_unread_thread, "Next unread", "next") }}
+  </nav>
+  {% end %}
 
   {% if thread_view.can_reply %}
     {% call surface(variant="elevated") %}
