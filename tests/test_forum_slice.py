@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 from chirp.app import App
 from chirp.testing import TestClient
+from chirp_ui.alpine import check_alpine_runtime
 
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed
@@ -236,7 +237,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
         async with TestClient(app) as client:
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
-            assert "World Map" in world.text
+            assert "World Map" not in world.text
             assert "Locations" in world.text
             assert "Sublocations" in world.text
             assert "Wanted board" not in world.text
@@ -248,6 +249,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert 'class="chirpui-sidebar elbysodic-sidebar"' in world.text
             assert "elbysodic-mobile-nav-trigger" in world.text
             assert "elbysodic-mobile-shell-drawer" in world.text
+            assert '<h2 class="chirpui-drawer__title">World</h2>' in world.text
 
             locations = await client.get("/locations")
             assert locations.status == 200
@@ -268,6 +270,10 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Guidebook" in guidebook.text
             assert "Start Here" in guidebook.text
             assert "World Map" not in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Guidebook</span>' not in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Start Here</span>' not in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Guides</span>' not in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Events</span>' not in guidebook.text
             assert '<h2 class="chirpui-drawer__title">Guidebook</h2>' in guidebook.text
 
             desk = await client.get("/desk")
@@ -275,6 +281,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Writer Desk" in desk.text
             assert "My threads" in desk.text
             assert "World Map" not in desk.text
+            assert 'class="chirpui-sidebar__section-title">Writer Desk</span>' not in desk.text
             assert '<h2 class="chirpui-drawer__title">Desk</h2>' in desk.text
 
             studio = await client.get("/studio")
@@ -283,6 +290,10 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Production" in studio.text
             assert "Wanted board" in studio.text
             assert "World Map" not in studio.text
+            assert (
+                'class="chirpui-sidebar__section-title">Director Studio</span>' not in studio.text
+            )
+            assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
             assert '<h2 class="chirpui-drawer__title">Studio</h2>' in studio.text
 
             wanted = await client.get("/wanted")
@@ -291,6 +302,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Wanted board" in wanted.text
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
+            assert 'class="chirpui-sidebar__section-title">Casting</span>' not in wanted.text
             assert '<h2 class="chirpui-drawer__title">Casting</h2>' in wanted.text
 
     asyncio.run(run())
@@ -321,6 +333,13 @@ def test_world_map_sidebar_anchors_current_location_branch() -> None:
                 r'[^>]*href="/boards/frozen-midtown"',
                 child.text,
             )
+            frozen_link = re.search(
+                r'<a class="[^"]*elbysodic-sidebar-tree__link[^"]*"'
+                r'[^>]*href="/boards/frozen-midtown"[^>]*>',
+                child.text,
+            )
+            assert frozen_link is not None
+            assert "hx-target" not in frozen_link.group(0)
             assert 'aria-label="Place path"' in child.text
 
     asyncio.run(run())
@@ -348,6 +367,36 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "Nearby" in midtown.text
             assert "New York City" in midtown.text
             assert "/boards/transit-tunnels" in midtown.text
+
+    asyncio.run(run())
+
+
+def test_community_board_pages_use_community_language_and_sidebar_state() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            announcements = await client.get("/boards/announcements")
+
+            assert announcements.status == 200
+            assert "Community board" in announcements.text
+            assert "Threads here" in announcements.text
+            assert "Direct threads in this board." in announcements.text
+            assert "Location hub" not in announcements.text
+            assert "Other major locations" not in announcements.text
+            assert "Current event in this location" not in announcements.text
+            assert "World Map" not in announcements.text
+            assert re.search(
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"'
+                r'[^>]*href="/community"[^>]*aria-current="page"',
+                announcements.text,
+            )
+            locations_link = re.search(
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"'
+                r'[^>]*href="/locations"[^>]*>',
+                announcements.text,
+            )
+            assert locations_link is not None
+            assert 'aria-current="page"' not in locations_link.group(0)
 
     asyncio.run(run())
 
@@ -2895,6 +2944,19 @@ def test_composer_pages_point_empty_roster_to_character_setup() -> None:
 
 def test_app_contract_check_passes() -> None:
     _app().check()
+
+
+def test_chirp_ui_alpine_runtime_is_loaded_for_interactive_layouts() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/characters/storm")
+            assert response.status == 200
+            check = check_alpine_runtime(response.text)
+            assert check.ok
+            assert check.script_loaded
+
+    asyncio.run(run())
 
 
 def _moderation_app(

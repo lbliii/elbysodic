@@ -5,6 +5,10 @@ writer memorize hidden rules just to move a scene forward. This guide helps
 agents decide when a control should be visible, collapsed, combined, inline,
 iconic, or expanded into a deliberate editing surface.
 
+Use `docs/product/navigation-menus.md` for navigation-specific decisions:
+topbar realms, sidebar groups, route pathing, breadcrumbs, tabs, dropdowns, and
+mobile drawer behavior.
+
 The core tradeoff is:
 
 - Recognition: visible, labeled controls lower memory load and help occasional

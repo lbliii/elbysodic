@@ -38,6 +38,9 @@ platforms forced roleplayers to do.
 - Use `docs/product/control-topology.md` before adding, hiding, combining, or
   changing controls. It is the decision guide for visible actions, disclosure,
   overflow menus, icon-only buttons, inline editing, and input component choice.
+- Use `docs/product/navigation-menus.md` before changing topbar realms,
+  sidebar grouping, route pathing, breadcrumbs, tabs, dropdowns, active states,
+  or mobile navigation behavior.
 - Keep frontend controls complete and ergonomic for roleplayers doing real
   writing: stable composer dimensions, previews, drafts, toolbar affordances,
   and clear character context.

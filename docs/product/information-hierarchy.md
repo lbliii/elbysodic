@@ -8,6 +8,8 @@ lenses, activity, and writer obligations should have a stable visual grammar.
 This document explains what repeated concepts mean visually. Use
 `docs/product/control-topology.md` alongside it when deciding how visible,
 compact, editable, or collapsed a control should be.
+Use `docs/product/navigation-menus.md` when deciding route placement, topbar
+realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
 
 ## Audit Baseline
 
@@ -192,6 +194,21 @@ Variants may change density inside the frame, but they must preserve immediate
 author recognition, keyboard/touch access to hidden details, and no layout
 shift between posts.
 
+### Sidebar Groups
+
+The app sidebar is contextual navigation for the current major mode. It should
+not repeat the topbar's product label, and it should not add a section label
+when the first row is already the named route parent.
+
+Use an unlabeled group when the row itself is the category: `Locations`,
+`Community`, `Overview`, `Start Here`, `Guides`, `Events`, `Wanted board`, or
+`Production`. Use labels only as optional dividers between unlike/contextual
+lists, such as `Current Event`, `Active Face`, `Open Wants`, `Related Wants`,
+or future director-configured sidebar collections.
+
+Route parents stay clickable, active, counted rows. Labels are not routes and
+should never carry the main active state for a category.
+
 ### LocationTree
 
 Use for the world map sidebar and nested board orientation. LocationTree is not
@@ -200,21 +217,28 @@ must remain direct links. Sublocations should reveal only for the current
 branch so the sidebar orients the writer without spoiling the atmospheric board
 surface.
 
+The server owns `open` and `active` branch state. In boosted app-shell sidebars,
+render LocationTree links with app-owned anchors when generic route-aware
+component links would add the wrong swap target. ChirpUI `nav_tree` remains a
+good fit for non-shell trees or shells whose route-link attributes match the
+intended target.
+
 Top-level locations should stay legible as places. Sublocations should be
 visible enough to communicate depth, but the tree should not become the primary
 atmospheric surface; PlaceTile and board pages still carry the world feeling.
 
 On small screens, keep the same contextual navigation in a ChirpUI drawer
 rather than turning the sidebar into a horizontal strip. The drawer should
-reuse the current major-mode sidebar content: World Map, Guidebook, Casting, or
-Writer Desk. This preserves orientation without making the world compete with
-mobile navigation chrome.
+reuse the current major-mode sidebar content: World, Guidebook, Casting, Studio,
+or Writer Desk. This preserves orientation without making the world compete
+with mobile navigation chrome.
 
 ### RouteTabs
 
-Use ChirpUI `route_tabs` for local subsection navigation where two or more
-closely related routes are views of the same object or workspace: future
-character profile sections, future guidebook sections, or director tools.
+Use ChirpUI `route_tabs` only for local subsection navigation where two or more
+closely related routes are unmistakably peer views of the same object or
+workspace: future character profile sections, future guidebook sections, or
+director tools.
 
 Route tabs are page chrome. They should not replace the topbar's global
 navigation, bridge broad feature areas, or replace the sidebar's world
@@ -236,6 +260,21 @@ Use route tabs instead when each item is a stable subsection route with its own
 mental model, such as profile sections, director settings, or guidebook admin
 views. Tabs say "different view of this object." Filter rails say "same object,
 smaller slice or nearby section."
+
+### Fragment And Island Regions
+
+Use native Chirp `{% fragment name %}` blocks for swap-only or response-only
+template regions: validation results, success panels, SSE payloads, and OOB
+targets that should never render inline during a full page request.
+
+Use ChirpUI `safe_region` or `fragment_island_with_result` for HTMX mutation
+regions inside boosted shells, especially when the form and result target need
+to stay in the same DOM subtree.
+
+Use Alpine islands for local-only state that should not touch the server:
+draft previews, presentational toggles, inline disclosure, small editors, and
+try-on previews. Use SSE only for server-originated changes after page load,
+such as notifications, live thread activity, or cross-writer presence.
 
 ### ThreadByline
 

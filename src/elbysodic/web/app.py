@@ -11,6 +11,7 @@ from chirp.ext.chirp_ui import use_chirp_ui
 from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
+from elbysodic.web.navigation import location_nav_tree_items
 from elbysodic.web.state import configure_services
 
 PAGES_DIR = Path(__file__).parent / "pages"
@@ -28,6 +29,7 @@ def create_app(
 
     configure_services(services or create_services(db_path))
     use_chirp_ui(app)
+    app.template_global()(location_nav_tree_items)
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))
     _copy_page_contracts(app)

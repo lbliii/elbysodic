@@ -22,7 +22,11 @@
 {% call stack(gap="lg") %}
   <div class="elbysodic-place-toolbar">
     <nav class="elbysodic-place-path" aria-label="Place path">
+      {% if is_community_board %}
+      <a href="/community">Community</a>
+      {% else %}
       <a href="/">World</a>
+      {% end %}
       {% if parent_board %}
       <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
       <a href="/boards/{{ parent_board.slug }}">{{ parent_board.name }}</a>
@@ -45,8 +49,12 @@
     <div class="chirpui-stack chirpui-stack--md elbysodic-board-stage__copy">
       {% if parent_board %}
       <p class="elbysodic-kicker">{{ parent_board.name }}</p>
-      {% else %}
+      {% elif is_location_board %}
       <p class="elbysodic-kicker">Location hub</p>
+      {% elif is_community_board %}
+      <p class="elbysodic-kicker">Community board</p>
+      {% else %}
+      <p class="elbysodic-kicker">Board</p>
       {% end %}
       <h1>{{ board.name }}</h1>
       {% if board.tagline %}
@@ -60,9 +68,11 @@
     </div>
   </section>
 
+  {% if is_location_board %}
   {{ event_bridge(current_event, "Current event in this location") }}
+  {% end %}
 
-  {% if subboards %}
+  {% if is_location_board and subboards %}
   <section class="elbysodic-place-section elbysodic-place-section--sublocations">
     <header class="elbysodic-place-section__header">
       <p class="elbysodic-kicker">Sublocations</p>
@@ -77,7 +87,7 @@
   </section>
   {% end %}
 
-  {% if sibling_boards %}
+  {% if is_location_board and sibling_boards %}
   <section class="elbysodic-place-section elbysodic-place-section--nearby">
     <header class="elbysodic-place-section__header elbysodic-place-section__header--compact">
       {% if parent_board %}
@@ -99,9 +109,17 @@
   <section id="board-thread-region"
            class="elbysodic-place-section elbysodic-place-section--scenes">
     <header class="elbysodic-place-section__header">
+      {% if is_location_board %}
       <p class="elbysodic-kicker">Scenes here</p>
+      {% else %}
+      <p class="elbysodic-kicker">Threads here</p>
+      {% end %}
       <h2>{{ board.name }} threads</h2>
+      {% if is_location_board %}
       <p>Direct threads in this location. Parent location totals include sublocations above.</p>
+      {% else %}
+      <p>Direct threads in this board.</p>
+      {% end %}
     </header>
     {% call inline_nav("Thread filters") %}
       {% for option in filter_options %}
@@ -117,7 +135,11 @@
       {% else %}
       {% call surface(variant="elevated") %}
       {% if active_filter == "all" %}
+      {% if is_location_board %}
       <p class="elbysodic-empty-state">No direct scenes here yet.</p>
+      {% else %}
+      <p class="elbysodic-empty-state">No threads here yet.</p>
+      {% end %}
       {% elif active_filter == "unread" %}
       <p class="elbysodic-empty-state">No new replies here yet.</p>
       {% elif active_filter == "attention" %}
