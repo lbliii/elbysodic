@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import sqlite3
 
-from elbysodic.domain.boards import normalize_board_kind, normalize_board_sidebar_section
+from elbysodic.domain.boards import (
+    BOARD_SIDEBAR_SECTION_REALMS,
+    normalize_board_kind,
+    normalize_board_sidebar_section,
+)
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -22,6 +26,7 @@ from elbysodic.domain.models import (
     Post,
     PostRevision,
     Role,
+    SidebarSectionConfig,
     Thread,
     ThreadParticipant,
     ThreadWatch,
@@ -106,6 +111,23 @@ def _board_from_row(row: sqlite3.Row) -> Board:
         navigation_order=row["navigation_order"],
         show_in_navigation=bool(row["show_in_navigation"]),
         is_private=bool(row["is_private"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _sidebar_section_config_from_row(row: sqlite3.Row) -> SidebarSectionConfig:
+    section_key = normalize_board_sidebar_section(row["section_key"])
+    return SidebarSectionConfig(
+        id=row["id"],
+        community_id=row["community_id"],
+        realm=BOARD_SIDEBAR_SECTION_REALMS[section_key],
+        section_key=section_key,
+        label=row["label"],
+        description=row["description"],
+        sort_order=row["sort_order"],
+        show_label=bool(row["show_label"]),
+        is_system=bool(row["is_system"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

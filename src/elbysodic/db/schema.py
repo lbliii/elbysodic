@@ -5,6 +5,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+from elbysodic.domain.boards import DEFAULT_SIDEBAR_SECTION_CONFIGS
+
 SCHEMA = """
 PRAGMA foreign_keys = ON;
 
@@ -100,6 +102,21 @@ CREATE TABLE IF NOT EXISTS boards (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS sidebar_sections (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    realm TEXT NOT NULL,
+    section_key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    show_label INTEGER NOT NULL DEFAULT 0,
+    is_system INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, realm, section_key)
 );
 
 CREATE TABLE IF NOT EXISTS facet_groups (
@@ -482,6 +499,7 @@ def connect(path: str | Path = ":memory:", *, check_same_thread: bool = True) ->
 def create_schema(connection: sqlite3.Connection) -> None:
     connection.executescript(SCHEMA)
     _migrate_schema(connection)
+    _ensure_sidebar_section_defaults(connection)
     connection.commit()
 
 
@@ -552,6 +570,30 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         ON boards(community_id, show_in_navigation, sidebar_section, parent_board_id, navigation_order, name)
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sidebar_sections (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            realm TEXT NOT NULL,
+            section_key TEXT NOT NULL,
+            label TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            show_label INTEGER NOT NULL DEFAULT 0,
+            is_system INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, realm, section_key)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_sidebar_sections_realm
+        ON sidebar_sections(community_id, realm, sort_order, label)
+        """
+    )
 
     character_columns = {
         row["name"] for row in connection.execute("PRAGMA table_info(characters)").fetchall()
@@ -610,6 +652,46 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     )
     _migrate_wanted_ad_interests_schema(connection)
     _migrate_notifications_schema(connection)
+
+
+def _ensure_sidebar_section_defaults(connection: sqlite3.Connection) -> None:
+    for (
+        realm,
+        section_key,
+        label,
+        description,
+        sort_order,
+        show_label,
+    ) in DEFAULT_SIDEBAR_SECTION_CONFIGS:
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO sidebar_sections (
+                community_id,
+                realm,
+                section_key,
+                label,
+                description,
+                sort_order,
+                show_label,
+                is_system,
+                created_at,
+                updated_at
+            )
+            SELECT
+                id,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                1,
+                created_at,
+                updated_at
+            FROM communities
+            """,
+            (realm, section_key, label, description, sort_order, int(show_label)),
+        )
 
 
 def _migrate_wanted_ad_interests_schema(connection: sqlite3.Connection) -> None:

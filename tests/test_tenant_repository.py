@@ -82,6 +82,14 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
         WHERE id = 1
         """
     ).fetchone()
+    sidebar_sections = connection.execute(
+        """
+        SELECT realm, section_key, label, sort_order, show_label, is_system
+        FROM sidebar_sections
+        WHERE community_id = 1
+        ORDER BY realm, sort_order
+        """
+    ).fetchall()
 
     assert {
         "parent_board_id",
@@ -105,6 +113,63 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
         "navigation_order": 10,
         "show_in_navigation": 1,
     }
+    assert [dict(row) for row in sidebar_sections] == [
+        {
+            "realm": "desk",
+            "section_key": "desk",
+            "label": "Writer Desk",
+            "sort_order": 10,
+            "show_label": 0,
+            "is_system": 1,
+        },
+        {
+            "realm": "studio",
+            "section_key": "studio",
+            "label": "Director Studio",
+            "sort_order": 20,
+            "show_label": 0,
+            "is_system": 1,
+        },
+        {
+            "realm": "world",
+            "section_key": "locations",
+            "label": "Locations",
+            "sort_order": 10,
+            "show_label": 0,
+            "is_system": 1,
+        },
+        {
+            "realm": "world",
+            "section_key": "community",
+            "label": "Community",
+            "sort_order": 20,
+            "show_label": 0,
+            "is_system": 1,
+        },
+    ]
+
+
+def test_sidebar_section_config_is_scoped_by_community(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+
+    default_locations = repo.update_sidebar_section(
+        default.id,
+        "locations",
+        label="Realms",
+        description="Major playable realms.",
+        sort_order=4,
+        show_label=True,
+    )
+
+    hosted_locations = repo.get_sidebar_section(hosted.id, "locations")
+
+    assert default_locations.label == "Realms"
+    assert default_locations.description == "Major playable realms."
+    assert default_locations.sort_order == 4
+    assert default_locations.show_label is True
+    assert hosted_locations.label == "Locations"
+    assert hosted_locations.show_label is False
 
 
 def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:

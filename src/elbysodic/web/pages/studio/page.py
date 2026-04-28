@@ -55,6 +55,17 @@ async def post(request: Request) -> Page | Redirect:
                 show_in_navigation=form.get("show_in_navigation") == "on",
                 sidebar_section=str(form.get("sidebar_section") or ""),
             )
+        elif intent == "sidebar_section":
+            services.update_sidebar_section_config(
+                str(form.get("section_key") or ""),
+                label=str(form.get("label") or ""),
+                description=str(form.get("description") or ""),
+                sort_order=_required_int(
+                    form.get("sort_order"),
+                    "choose a sidebar section order",
+                ),
+                show_label=form.get("show_label") == "on",
+            )
         elif intent == "post_style_policy":
             services.update_post_style_policy(
                 enabled_post_profile_variants=_form_values(

@@ -22,6 +22,7 @@ from elbysodic.domain.models import (
     Post,
     PostRevision,
     Role,
+    SidebarSectionConfig,
     Thread,
     WantedAd,
     WantedAdInterest,
@@ -37,6 +38,7 @@ type PostAccentStyle = Literal["soft", "line", "glow", "block"]
 type PostBorderStyle = Literal["none", "hairline", "bracket", "double"]
 type PostTitleStyle = Literal["standard", "serif", "condensed", "mono"]
 type PostDensity = Literal["calm", "compact", "dramatic"]
+type NavigationHealthSeverity = Literal["note", "warning", "attention"]
 type ApplicationStatus = Literal[
     "draft",
     "submitted",
@@ -700,6 +702,16 @@ class NavigationPreviewSection:
 
 
 @dataclass(frozen=True, slots=True)
+class NavigationHealthWarning:
+    severity: NavigationHealthSeverity
+    title: str
+    message: str
+    board: Board | None = None
+    section: SidebarSectionConfig | None = None
+    href: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class StudioBoardEditor:
     board: Board
     summary: BoardSummary
@@ -727,7 +739,9 @@ class DirectorStudio:
     current_event: MaterialSummary | None
     application_materials: list[MaterialSummary]
     board_taxonomy: list[BoardTaxonomyItem]
+    sidebar_sections: list[SidebarSectionConfig]
     navigation_preview_sections: list[NavigationPreviewSection]
+    navigation_warnings: list[NavigationHealthWarning]
     location_boards: list[BoardSummary]
     sublocation_boards: list[BoardSummary]
     wanted_ads: list[WantedAdSummary]
@@ -757,6 +771,18 @@ class DirectorStudio:
     @property
     def review_queue_count(self) -> int:
         return len(self.applications.review_queue)
+
+    @property
+    def navigation_attention_count(self) -> int:
+        return sum(1 for warning in self.navigation_warnings if warning.severity == "attention")
+
+    @property
+    def navigation_warning_count(self) -> int:
+        return sum(1 for warning in self.navigation_warnings if warning.severity == "warning")
+
+    @property
+    def navigation_note_count(self) -> int:
+        return sum(1 for warning in self.navigation_warnings if warning.severity == "note")
 
     @property
     def featured_material_titles(self) -> list[str]:
@@ -1042,9 +1068,13 @@ class ForumView:
     navigation_boards: list[BoardNavigationItem]
     location_navigation_boards: list[BoardNavigationItem]
     location_navigation_groups: list[LocationNavigationGroup]
+    location_sidebar_section: SidebarSectionConfig
     community_navigation_boards: list[BoardNavigationItem]
+    community_sidebar_section: SidebarSectionConfig
     desk_navigation_boards: list[BoardNavigationItem]
+    desk_sidebar_section: SidebarSectionConfig
     studio_navigation_boards: list[BoardNavigationItem]
+    studio_sidebar_section: SidebarSectionConfig
     unread_notification_count: int
 
 

@@ -231,12 +231,29 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
+            assert "Studio rooms" in studio.text
+            assert 'href="#world-structure"' in studio.text
+            assert 'href="#navigation"' in studio.text
+            assert 'href="#identity-appearance"' in studio.text
+            assert 'href="#casting-applications"' in studio.text
+            assert 'href="#continuity-events"' in studio.text
+            assert 'id="world-structure"' in studio.text
+            assert 'id="navigation"' in studio.text
+            assert 'id="identity-appearance"' in studio.text
+            assert 'id="casting-applications"' in studio.text
+            assert 'id="continuity-events"' in studio.text
+            assert "Boards and places" in studio.text
+            assert "Sidebar composer" in studio.text
+            assert "Appearance vocabulary" in studio.text
             assert "World Bible" in studio.text
             assert "Location Studio" in studio.text
             assert "Event Studio" in studio.text
             assert "Applications and hooks" in studio.text
             assert "Board taxonomy" in studio.text
             assert "Navigation composer" in studio.text
+            assert "Sidebar section settings" in studio.text
+            assert "Navigation Health" in studio.text
+            assert "Navigation looks coherent." in studio.text
             assert "World sidebar" in studio.text
             assert "Desk sidebar" in studio.text
             assert "Studio sidebar" in studio.text
@@ -259,6 +276,165 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Current Event" in studio.text
 
     asyncio.run(run())
+
+
+def test_director_studio_updates_sidebar_section_language() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "sidebar_section",
+                        "section_key": "locations",
+                        "label": "Realms",
+                        "description": "The board's playable map language.",
+                        "sort_order": 3,
+                        "show_label": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            section = repo.get_sidebar_section(community.id, "locations")
+            assert section.label == "Realms"
+            assert section.description == "The board's playable map language."
+            assert section.sort_order == 3
+            assert section.show_label is True
+
+            locations = await client.get("/locations")
+            assert locations.status == 200
+            assert 'class="chirpui-sidebar__section-title">Realms</span>' in locations.text
+            assert re.search(
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"'
+                r'[^>]*href="/locations"[^>]*>\s*'
+                r'<span class="chirpui-sidebar__icon">[^<]+</span>\s*'
+                r'<span class="chirpui-sidebar__label">Realms</span>',
+                locations.text,
+            )
+
+            studio = await client.get("/studio")
+            assert studio.status == 200
+            assert "playable map language" in studio.text
+            assert "Realms" in studio.text
+
+    asyncio.run(run())
+
+
+def test_navigation_health_flags_confusing_sidebar_shapes() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = repo.get_community(services.seed.community.id)
+    xavier = repo.get_board_by_slug(community.id, "xavier-institute")
+    med_bay = repo.get_board_by_slug(community.id, "med-bay")
+    announcements = repo.get_board_by_slug(community.id, "announcements")
+    staff_room = repo.get_board_by_slug(community.id, "staff-room")
+
+    repo.update_board(
+        community.id,
+        xavier.id,
+        name=xavier.name,
+        description=xavier.description,
+        sort_order=xavier.sort_order,
+        parent_board_id=xavier.parent_board_id,
+        board_kind=xavier.board_kind,
+        sidebar_section=xavier.sidebar_section,
+        tagline=xavier.tagline,
+        image_url=xavier.image_url,
+        image_alt=xavier.image_alt,
+        is_private=xavier.is_private,
+        navigation_order=xavier.navigation_order,
+        show_in_navigation=False,
+    )
+    repo.update_board(
+        community.id,
+        med_bay.id,
+        name=med_bay.name,
+        description=med_bay.description,
+        sort_order=med_bay.sort_order,
+        parent_board_id=med_bay.parent_board_id,
+        board_kind=med_bay.board_kind,
+        sidebar_section="community",
+        tagline=med_bay.tagline,
+        image_url=med_bay.image_url,
+        image_alt=med_bay.image_alt,
+        is_private=med_bay.is_private,
+        navigation_order=med_bay.navigation_order,
+        show_in_navigation=True,
+    )
+    repo.update_board(
+        community.id,
+        announcements.id,
+        name=announcements.name,
+        description=announcements.description,
+        sort_order=announcements.sort_order,
+        parent_board_id=announcements.parent_board_id,
+        board_kind=announcements.board_kind,
+        sidebar_section="locations",
+        tagline=announcements.tagline,
+        image_url=announcements.image_url,
+        image_alt=announcements.image_alt,
+        is_private=True,
+        navigation_order=announcements.navigation_order,
+        show_in_navigation=True,
+    )
+    repo.update_board(
+        community.id,
+        staff_room.id,
+        name=staff_room.name,
+        description=staff_room.description,
+        sort_order=staff_room.sort_order,
+        parent_board_id=staff_room.parent_board_id,
+        board_kind=staff_room.board_kind,
+        sidebar_section="studio",
+        tagline=staff_room.tagline,
+        image_url=staff_room.image_url,
+        image_alt=staff_room.image_alt,
+        is_private=False,
+        navigation_order=staff_room.navigation_order,
+        show_in_navigation=True,
+    )
+    repo.update_sidebar_section(
+        community.id,
+        "studio",
+        label="Director Studio",
+        description="Director lanes.",
+        sort_order=20,
+        show_label=True,
+    )
+
+    user = repo.get_user_by_email("moira@example.com")
+    membership = repo.get_membership_by_username(community.id, "moira")
+    character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+    admin_services = AppServices(
+        repo,
+        DemoSeed(community, user, membership, character),
+    )
+    studio = admin_services.director_studio()
+    titles = {warning.title for warning in studio.navigation_warnings}
+
+    assert "Hidden parent with visible children" in titles
+    assert "Visible child under hidden parent" in titles
+    assert "Place outside the map" in titles
+    assert "Community board in the location map" in titles
+    assert "Private board in a public-facing section" in titles
+    assert "Public board in Studio" in titles
+    assert studio.navigation_attention_count == 1
+    assert studio.navigation_warning_count >= 4
+    assert studio.navigation_note_count >= 1
 
 
 def test_director_studio_updates_board_taxonomy() -> None:

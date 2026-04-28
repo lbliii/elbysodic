@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from elbysodic.domain.boards import BoardKind, BoardSidebarSection
+from elbysodic.domain.boards import BoardKind, BoardSidebarSection, SidebarRealm
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +75,21 @@ class Board:
     navigation_order: int
     show_in_navigation: bool
     is_private: bool
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class SidebarSectionConfig:
+    id: int
+    community_id: int
+    realm: SidebarRealm
+    section_key: BoardSidebarSection
+    label: str
+    description: str
+    sort_order: int
+    show_label: bool
+    is_system: bool
     created_at: str
     updated_at: str
 

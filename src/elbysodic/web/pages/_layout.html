@@ -223,6 +223,8 @@
 {% def world_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
   {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
+  {% set locations_label = viewer.location_sidebar_section.label if viewer else "Locations" %}
+  {% set community_label = viewer.community_sidebar_section.label if viewer else "Community" %}
   {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
   {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
   {% call sidebar_section() %}
@@ -230,16 +232,16 @@
   {% end %}
 
   {% if viewer and viewer.location_navigation_groups %}
-  {% call sidebar_section() %}
-    {{ sidebar_destination_link("/locations", "Locations", "grid", locations_active, viewer.location_navigation_boards | length) }}
+  {% call sidebar_section(viewer.location_sidebar_section.label if viewer.location_sidebar_section.show_label else none) %}
+    {{ sidebar_destination_link("/locations", locations_label, "grid", locations_active, viewer.location_navigation_boards | length) }}
     {% set current_board_id = board.id if board is defined else 0 %}
     {% set current_parent_id = parent_board.id if parent_board is defined and parent_board else 0 %}
     {{ location_tree_nav(location_nav_tree_items(viewer, current_board_id, current_parent_id)) }}
   {% end %}
   {% end %}
 
-  {% call sidebar_section() %}
-    {{ sidebar_destination_link("/community", "Community", "user", community_active, viewer.community_navigation_boards | length if viewer else none) }}
+  {% call sidebar_section(viewer.community_sidebar_section.label if viewer and viewer.community_sidebar_section.show_label else none) %}
+    {{ sidebar_destination_link("/community", community_label, "user", community_active, viewer.community_navigation_boards | length if viewer else none) }}
     <a class="chirpui-sidebar__link" href="/members" title="Members">Members</a>
     {% if viewer %}
     {% for item in viewer.community_navigation_boards %}
@@ -304,7 +306,7 @@
 
 {% def desk_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% call sidebar_section() %}
+  {% call sidebar_section(viewer.desk_sidebar_section.label if viewer and viewer.desk_sidebar_section.show_label else none) %}
     {{ sidebar_destination_link("/desk", "Overview", "home", sidebar_path == "/desk") }}
     <a class="chirpui-sidebar__link" href="/my/threads" title="Queue">Queue</a>
     {{ sidebar_count_link("/notifications", "Inbox", viewer.unread_notification_count if viewer else 0) }}
@@ -322,7 +324,7 @@
 
 {% def studio_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% call sidebar_section() %}
+  {% call sidebar_section(viewer.studio_sidebar_section.label if viewer and viewer.studio_sidebar_section.show_label else none) %}
     {{ sidebar_destination_link("/studio", "Overview", "diamond", sidebar_path == "/studio") }}
     <a class="chirpui-sidebar__link" href="/studio#board-taxonomy" title="Board taxonomy">Board taxonomy</a>
     <a class="chirpui-sidebar__link" href="/studio#navigation-composer" title="Navigation composer">Navigation composer</a>

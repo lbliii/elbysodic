@@ -6,6 +6,7 @@ from typing import Literal, Protocol, cast
 
 type BoardKind = Literal["location", "sublocation", "community", "desk", "archive", "staff"]
 type BoardSidebarSection = Literal["locations", "community", "desk", "studio"]
+type SidebarRealm = Literal["world", "desk", "studio"]
 
 BOARD_KINDS: frozenset[str] = frozenset(
     {"location", "sublocation", "community", "desk", "archive", "staff"}
@@ -63,6 +64,32 @@ BOARD_KIND_DEFAULT_SECTIONS: dict[BoardKind, BoardSidebarSection] = {
     "desk": "desk",
     "staff": "studio",
 }
+BOARD_SIDEBAR_SECTION_REALMS: dict[BoardSidebarSection, SidebarRealm] = {
+    "locations": "world",
+    "community": "world",
+    "desk": "desk",
+    "studio": "studio",
+}
+BOARD_SIDEBAR_SECTION_DEFAULT_ORDER: dict[BoardSidebarSection, int] = {
+    "locations": 10,
+    "community": 20,
+    "desk": 10,
+    "studio": 20,
+}
+DEFAULT_SIDEBAR_SECTION_CONFIGS: tuple[
+    tuple[SidebarRealm, BoardSidebarSection, str, str, int, bool],
+    ...,
+] = tuple(
+    (
+        BOARD_SIDEBAR_SECTION_REALMS[key],
+        key,
+        BOARD_SIDEBAR_SECTION_LABELS[key],
+        BOARD_SIDEBAR_SECTION_GUIDANCE[key],
+        BOARD_SIDEBAR_SECTION_DEFAULT_ORDER[key],
+        False,
+    )
+    for key in ("locations", "community", "desk", "studio")
+)
 LOCATION_BOARD_KINDS: frozenset[BoardKind] = frozenset({"location", "sublocation"})
 COMMUNITY_BOARD_KINDS: frozenset[BoardKind] = frozenset({"community", "archive"})
 DESK_BOARD_KINDS: frozenset[BoardKind] = frozenset({"desk", "staff"})

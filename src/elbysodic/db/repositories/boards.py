@@ -9,12 +9,159 @@ from elbysodic.db.repositories.base import (
     _utc_now,
 )
 from elbysodic.db.repositories.notifications import NotificationRepositoryMixin
-from elbysodic.db.repositories.rows import _board_from_row
-from elbysodic.domain.boards import normalize_board_kind, normalize_board_sidebar_section
-from elbysodic.domain.models import Board
+from elbysodic.db.repositories.rows import _board_from_row, _sidebar_section_config_from_row
+from elbysodic.domain.boards import (
+    BOARD_SIDEBAR_SECTION_REALMS,
+    DEFAULT_SIDEBAR_SECTION_CONFIGS,
+    normalize_board_kind,
+    normalize_board_sidebar_section,
+)
+from elbysodic.domain.models import Board, SidebarSectionConfig
 
 
 class BoardRepositoryMixin(NotificationRepositoryMixin):
+    def ensure_sidebar_section_defaults(self, community_id: int) -> None:
+        self.get_community(community_id)
+        now = _utc_now()
+        for (
+            realm,
+            section_key,
+            label,
+            description,
+            sort_order,
+            show_label,
+        ) in DEFAULT_SIDEBAR_SECTION_CONFIGS:
+            self.connection.execute(
+                """
+                INSERT OR IGNORE INTO sidebar_sections (
+                    community_id,
+                    realm,
+                    section_key,
+                    label,
+                    description,
+                    sort_order,
+                    show_label,
+                    is_system,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                """,
+                (
+                    community_id,
+                    realm,
+                    section_key,
+                    label,
+                    description,
+                    sort_order,
+                    int(show_label),
+                    now,
+                    now,
+                ),
+            )
+        self.connection.commit()
+
+    def list_sidebar_sections(self, community_id: int) -> list[SidebarSectionConfig]:
+        self.ensure_sidebar_section_defaults(community_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                realm,
+                section_key,
+                label,
+                description,
+                sort_order,
+                show_label,
+                is_system,
+                created_at,
+                updated_at
+            FROM sidebar_sections
+            WHERE community_id = ?
+            ORDER BY
+                CASE realm
+                    WHEN 'world' THEN 10
+                    WHEN 'desk' THEN 20
+                    WHEN 'studio' THEN 30
+                    ELSE 99
+                END,
+                sort_order,
+                label
+            """,
+            (community_id,),
+        ).fetchall()
+        return [_sidebar_section_config_from_row(row) for row in rows]
+
+    def get_sidebar_section(
+        self,
+        community_id: int,
+        section_key: str,
+    ) -> SidebarSectionConfig:
+        normalized_key = normalize_board_sidebar_section(section_key)
+        self.ensure_sidebar_section_defaults(community_id)
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                realm,
+                section_key,
+                label,
+                description,
+                sort_order,
+                show_label,
+                is_system,
+                created_at,
+                updated_at
+            FROM sidebar_sections
+            WHERE community_id = ? AND realm = ? AND section_key = ?
+            """,
+            (community_id, BOARD_SIDEBAR_SECTION_REALMS[normalized_key], normalized_key),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"sidebar section not found in community {community_id}: {section_key}"
+            )
+        return _sidebar_section_config_from_row(row)
+
+    def update_sidebar_section(
+        self,
+        community_id: int,
+        section_key: str,
+        *,
+        label: str,
+        description: str,
+        sort_order: int,
+        show_label: bool,
+    ) -> SidebarSectionConfig:
+        section = self.get_sidebar_section(community_id, section_key)
+        cleaned_label = label.strip()
+        if not cleaned_label:
+            raise ValueError("sidebar section label is required")
+        self.connection.execute(
+            """
+            UPDATE sidebar_sections
+            SET label = ?,
+                description = ?,
+                sort_order = ?,
+                show_label = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                cleaned_label,
+                description.strip(),
+                sort_order,
+                int(show_label),
+                _next_update_stamp(section.updated_at),
+                community_id,
+                section.id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_sidebar_section(community_id, section.section_key)
+
     def create_board(
         self,
         community_id: int,

@@ -16,6 +16,16 @@
 </div>
 {% end %}
 
+{% def studio_room_card(kicker, title, summary, href, primary, secondary) %}
+<a class="elbysodic-studio-room-card" href="{{ href }}">
+  <span class="elbysodic-kicker">{{ kicker }}</span>
+  <strong>{{ title }}</strong>
+  <em>{{ summary }}</em>
+  <span>{{ primary }}</span>
+  <small>{{ secondary }}</small>
+</a>
+{% end %}
+
 {% def studio_lane(kicker, title, summary, href, cta, count, items) %}
 {% call surface(variant="elevated") %}
 <article class="elbysodic-director-lane">
@@ -62,6 +72,57 @@
     </aside>
   </section>
 
+  <nav class="elbysodic-studio-rail" aria-label="Studio rooms">
+    <a href="#world-structure">World structure</a>
+    <a href="#navigation">Navigation</a>
+    <a href="#identity-appearance">Identity and appearance</a>
+    <a href="#casting-applications">Casting and applications</a>
+    <a href="#continuity-events">Continuity and events</a>
+  </nav>
+
+  <section class="elbysodic-studio-overview" aria-label="Studio room overview">
+    {{ studio_room_card(
+      "World structure",
+      "Boards and places",
+      "Taxonomy, map lanes, and board placement.",
+      "#world-structure",
+      studio.location_count + studio.sublocation_count ~ " places",
+      studio.board_taxonomy | length ~ " boards"
+    ) }}
+    {{ studio_room_card(
+      "Navigation",
+      "Sidebar composer",
+      "Labels, lanes, preview, and health notes.",
+      "#navigation",
+      studio.navigation_warnings | length ~ " notes",
+      studio.sidebar_sections | length ~ " sections"
+    ) }}
+    {{ studio_room_card(
+      "Identity",
+      "Appearance vocabulary",
+      "Inherited accents and post style controls.",
+      "#identity-appearance",
+      studio.identity_accent_group.name if studio.identity_accent_group else "Theme default",
+      studio.post_style_policy.enabled_profile_variants | length ~ " post rails"
+    ) }}
+    {{ studio_room_card(
+      "Casting",
+      "Applications and hooks",
+      "Review queues, wanted hooks, and intake.",
+      "#casting-applications",
+      studio.open_wanted_count ~ " open hooks",
+      studio.review_queue_count ~ " in review"
+    ) }}
+    {{ studio_room_card(
+      "Continuity",
+      "Events and materials",
+      "Canon pressure, drafts, and guidebook work.",
+      "#continuity-events",
+      studio.current_event.material.title if studio.current_event else "No current event",
+      studio.draft_materials | length ~ " drafts"
+    ) }}
+  </section>
+
   {% if not studio.can_manage %}
   {% call surface(variant="elevated") %}
   <p class="elbysodic-empty-state">
@@ -69,7 +130,29 @@
     community canon and queues.
   </p>
   {% end %}
+  <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">Identity and appearance</p>
+    <h2 id="identity-appearance-heading">The board's visual language</h2>
+    <p>Preview the accent source and post style vocabulary directors use to guide the board.</p>
+  </div>
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--sm">
+    <p class="elbysodic-kicker">Community Direction</p>
+    <h2>Inherited accents</h2>
+    <p class="chirpui-text-muted">
+      {{ studio.identity_accent_group.name if studio.identity_accent_group else "Theme default" }}
+    </p>
+  </article>
+  {% end %}
+  </section>
   {% else %}
+  <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">Identity and appearance</p>
+    <h2 id="identity-appearance-heading">The board's visual language</h2>
+    <p>Set the defaults that make character identity and post styling feel guided, not accidental.</p>
+  </div>
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--sm" method="post">
     <input type="hidden" name="intent" value="identity_accent">
@@ -101,7 +184,14 @@
     <button class="chirpui-btn chirpui-btn--primary" type="submit">Save direction</button>
   </form>
   {% end %}
+  </section>
 
+  <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">World structure</p>
+    <h2 id="world-structure-heading">Boards, places, and community rooms</h2>
+    <p>Keep the world map, community boards, desk lanes, and staff spaces legible as the board grows.</p>
+  </div>
   {% call surface(variant="elevated") %}
   <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
@@ -189,7 +279,14 @@
     </div>
   </section>
   {% end %}
+  </section>
 
+  <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">Navigation</p>
+    <h2 id="navigation-heading">Sidebar language and health</h2>
+    <p>Shape how writers move through the board while keeping route meaning stable.</p>
+  </div>
   {% call surface(variant="elevated") %}
   <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
@@ -199,6 +296,81 @@
         Preview how app-owned routes, board taxonomy, and contextual objects compose the sidebars writers actually use.
       </p>
     </div>
+    {% if studio.can_manage %}
+    <div class="elbysodic-sidebar-section-configs" aria-label="Sidebar section controls">
+      {% for section in studio.sidebar_sections %}
+      <form class="elbysodic-sidebar-section-config" method="post">
+        <input type="hidden" name="intent" value="sidebar_section">
+        <input type="hidden" name="section_key" value="{{ section.section_key }}">
+        <div class="elbysodic-sidebar-section-config__identity">
+          <p class="elbysodic-kicker">{{ section.realm }} / {{ section.section_key }}</p>
+          <h3>{{ section.label }}</h3>
+          <p>{{ section.description }}</p>
+        </div>
+        <label class="elbysodic-form-field">
+          <span>Label</span>
+          <input name="label" value="{{ section.label }}" required>
+        </label>
+        <label class="elbysodic-form-field">
+          <span>Description</span>
+          <input name="description" value="{{ section.description }}">
+        </label>
+        <label class="elbysodic-form-field">
+          <span>Order</span>
+          <input type="number" name="sort_order" value="{{ section.sort_order }}" min="0" step="1">
+        </label>
+        <label class="elbysodic-checkbox">
+          <input type="checkbox" name="show_label" {% if section.show_label %}checked{% end %}>
+          <span>Show section label</span>
+        </label>
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save</button>
+      </form>
+      {% end %}
+    </div>
+    {% else %}
+    <div class="elbysodic-sidebar-section-configs" aria-label="Sidebar section settings">
+      {% for section in studio.sidebar_sections %}
+      <article class="elbysodic-sidebar-section-config">
+        <div class="elbysodic-sidebar-section-config__identity">
+          <p class="elbysodic-kicker">{{ section.realm }} / {{ section.section_key }}</p>
+          <h3>{{ section.label }}</h3>
+          <p>{{ section.description }}</p>
+        </div>
+      </article>
+      {% end %}
+    </div>
+    {% end %}
+    <section class="elbysodic-navigation-health" aria-labelledby="navigation-health-heading">
+      <div class="elbysodic-navigation-health__header">
+        <div>
+          <p class="elbysodic-kicker">Navigation Health</p>
+          <h3 id="navigation-health-heading">Sidebar production notes</h3>
+        </div>
+        <div class="elbysodic-navigation-health__counts" aria-label="Navigation health totals">
+          <span>{{ studio.navigation_attention_count }} attention</span>
+          <span>{{ studio.navigation_warning_count }} warnings</span>
+          <span>{{ studio.navigation_note_count }} notes</span>
+        </div>
+      </div>
+      {% if studio.navigation_warnings %}
+      <ol class="elbysodic-navigation-health__list">
+        {% for warning in studio.navigation_warnings %}
+        <li class="elbysodic-navigation-health__item elbysodic-navigation-health__item--{{ warning.severity }}">
+          <span>{{ warning.severity }}</span>
+          <div>
+            <strong>{{ warning.title }}</strong>
+            <p>{{ warning.message }}</p>
+          </div>
+          {% if warning.href %}
+          <a href="{{ warning.href }}">Review</a>
+          {% end %}
+        </li>
+        {% end %}
+      </ol>
+      {% else %}
+      <p class="elbysodic-empty-state">Navigation looks coherent.</p>
+      {% end %}
+    </section>
     <div class="elbysodic-navigation-composer">
       {% for section in studio.navigation_preview_sections %}
       <article class="elbysodic-navigation-preview">
@@ -227,7 +399,9 @@
     </div>
   </section>
   {% end %}
+  </section>
 
+  <section id="identity-appearance-style" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-label="Post style vocabulary">
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--md" method="post">
     <input type="hidden" name="intent" value="post_style_policy">
@@ -305,9 +479,16 @@
     </div>
   </form>
   {% end %}
+  </section>
   {% end %}
 
   {% if not studio.can_manage %}
+  <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">World structure</p>
+    <h2 id="world-structure-heading">Boards, places, and community rooms</h2>
+    <p>Preview how the board's places and community rooms are classified.</p>
+  </div>
   {% call surface(variant="elevated") %}
   <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
@@ -349,6 +530,13 @@
     </div>
   </section>
   {% end %}
+  </section>
+  <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">Navigation</p>
+    <h2 id="navigation-heading">Sidebar language and health</h2>
+    <p>Preview the sidebar composer and health notes.</p>
+  </div>
   {% call surface(variant="elevated") %}
   <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
@@ -358,6 +546,48 @@
         Preview how app-owned routes, board taxonomy, and contextual objects compose the sidebars writers actually use.
       </p>
     </div>
+    <div class="elbysodic-sidebar-section-configs" aria-label="Sidebar section settings">
+      {% for section in studio.sidebar_sections %}
+      <article class="elbysodic-sidebar-section-config">
+        <div class="elbysodic-sidebar-section-config__identity">
+          <p class="elbysodic-kicker">{{ section.realm }} / {{ section.section_key }}</p>
+          <h3>{{ section.label }}</h3>
+          <p>{{ section.description }}</p>
+        </div>
+      </article>
+      {% end %}
+    </div>
+    <section class="elbysodic-navigation-health" aria-labelledby="navigation-health-heading">
+      <div class="elbysodic-navigation-health__header">
+        <div>
+          <p class="elbysodic-kicker">Navigation Health</p>
+          <h3 id="navigation-health-heading">Sidebar production notes</h3>
+        </div>
+        <div class="elbysodic-navigation-health__counts" aria-label="Navigation health totals">
+          <span>{{ studio.navigation_attention_count }} attention</span>
+          <span>{{ studio.navigation_warning_count }} warnings</span>
+          <span>{{ studio.navigation_note_count }} notes</span>
+        </div>
+      </div>
+      {% if studio.navigation_warnings %}
+      <ol class="elbysodic-navigation-health__list">
+        {% for warning in studio.navigation_warnings %}
+        <li class="elbysodic-navigation-health__item elbysodic-navigation-health__item--{{ warning.severity }}">
+          <span>{{ warning.severity }}</span>
+          <div>
+            <strong>{{ warning.title }}</strong>
+            <p>{{ warning.message }}</p>
+          </div>
+          {% if warning.href %}
+          <a href="{{ warning.href }}">Review</a>
+          {% end %}
+        </li>
+        {% end %}
+      </ol>
+      {% else %}
+      <p class="elbysodic-empty-state">Navigation looks coherent.</p>
+      {% end %}
+    </section>
     <div class="elbysodic-navigation-composer">
       {% for section in studio.navigation_preview_sections %}
       <article class="elbysodic-navigation-preview">
@@ -386,8 +616,15 @@
     </div>
   </section>
   {% end %}
+  </section>
   {% end %}
 
+  <section id="casting-applications" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="casting-applications-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">Casting and applications</p>
+    <h2 id="casting-applications-heading">Intake, wanted hooks, and review queues</h2>
+    <p>Keep character growth and casting prompts close to the board's production pulse.</p>
+  </div>
   <section class="elbysodic-director-grid" aria-label="Director work lanes">
     {% set current_event_href = "/world/" ~ studio.current_event.material.slug if studio.current_event else "/world" %}
     {{ studio_lane(
@@ -427,7 +664,14 @@
       studio.application_material_titles or ["No application guides yet."]
     ) }}
   </section>
+  </section>
 
+  <section id="continuity-events" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="continuity-events-heading">
+  <div class="elbysodic-studio-room__header">
+    <p class="elbysodic-kicker">Continuity and events</p>
+    <h2 id="continuity-events-heading">Canon pressure and director queue</h2>
+    <p>Track the guidebook, drafts, current event pressure, and map coverage that keep play moving.</p>
+  </div>
   {% call section_header("Director Queue") %}
   The most useful next places to look before opening an editor.
   {% end %}
@@ -511,6 +755,7 @@
   </article>
   {% end %}
   {% end %}
+  </section>
 {% end %}
 {% end %}
 {% end %}

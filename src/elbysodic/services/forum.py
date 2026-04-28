@@ -33,6 +33,7 @@ from elbysodic.domain.models import (
     Material,
     Post,
     Role,
+    SidebarSectionConfig,
     Thread,
     WantedAdInterest,
 )
@@ -140,6 +141,7 @@ from elbysodic.services.read_models import (
     MemberProfile,
     Mentionable,
     MyThreadsDashboard,
+    NavigationHealthWarning,
     NavigationPreviewItem,
     NavigationPreviewSection,
     NotificationInbox,
@@ -192,6 +194,7 @@ class AppServices:
         roster = self.repo.list_characters(community.id, membership.id)
         current_character = _resolve_current_character(self.repo, membership, roster)
         navigation_boards = _board_navigation(self.repo, community.id, membership, role)
+        sidebar_sections = _sidebar_sections_by_key(self.repo, community.id)
         return ForumView(
             community=community,
             membership=membership,
@@ -207,17 +210,21 @@ class AppServices:
                 and is_location_sidebar_board(item.board)
             ],
             location_navigation_groups=_location_navigation_groups(navigation_boards),
+            location_sidebar_section=sidebar_sections["locations"],
             community_navigation_boards=[
                 item
                 for item in navigation_boards
                 if item.board.parent_board_id is None and is_community_sidebar_board(item.board)
             ],
+            community_sidebar_section=sidebar_sections["community"],
             desk_navigation_boards=[
                 item for item in navigation_boards if is_desk_sidebar_board(item.board)
             ],
+            desk_sidebar_section=sidebar_sections["desk"],
             studio_navigation_boards=[
                 item for item in navigation_boards if is_studio_sidebar_board(item.board)
             ],
+            studio_sidebar_section=sidebar_sections["studio"],
             unread_notification_count=self.repo.count_unread_notifications(
                 community.id, membership.id
             ),
@@ -524,6 +531,7 @@ class AppServices:
         current_event = next((item for item in events if item.material.is_featured), None)
         if current_event is None:
             current_event = events[0] if events else None
+        sidebar_sections = self.repo.list_sidebar_sections(viewer.community.id)
         facet_groups = self.repo.list_facet_groups(viewer.community.id)
         identity_accent_group = next(
             (
@@ -547,12 +555,18 @@ class AppServices:
                 item for item in materials if item.material.material_type == "application"
             ],
             board_taxonomy=board_taxonomy,
+            sidebar_sections=sidebar_sections,
             navigation_preview_sections=_navigation_preview_sections(
                 board_taxonomy,
+                sidebar_sections=_sidebar_section_map(sidebar_sections),
                 current_event=current_event,
                 unread_notification_count=viewer.unread_notification_count,
                 active_face=viewer.current_character,
                 open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
+            ),
+            navigation_warnings=_navigation_health_warnings(
+                board_taxonomy,
+                sidebar_sections=_sidebar_section_map(sidebar_sections),
             ),
             location_boards=location_boards,
             sublocation_boards=sublocation_boards,
@@ -628,6 +642,29 @@ class AppServices:
             is_private=board.is_private,
             navigation_order=navigation_order,
             show_in_navigation=show_in_navigation,
+        )
+
+    def update_sidebar_section_config(
+        self,
+        section_key: str,
+        *,
+        label: str,
+        description: str,
+        sort_order: int,
+        show_label: bool,
+    ) -> SidebarSectionConfig:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage sidebar sections"
+            )
+        return self.repo.update_sidebar_section(
+            viewer.community.id,
+            section_key,
+            label=label,
+            description=description,
+            sort_order=sort_order,
+            show_label=show_label,
         )
 
     def studio_board_editor(self, board_slug: str) -> StudioBoardEditor:
@@ -1475,6 +1512,19 @@ def _resolve_current_character(
     return roster[0]
 
 
+def _sidebar_sections_by_key(
+    repo: ForumRepository,
+    community_id: int,
+) -> dict[str, SidebarSectionConfig]:
+    return _sidebar_section_map(repo.list_sidebar_sections(community_id))
+
+
+def _sidebar_section_map(
+    sections: list[SidebarSectionConfig],
+) -> dict[str, SidebarSectionConfig]:
+    return {section.section_key: section for section in sections}
+
+
 def _board_navigation(
     repo: ForumRepository,
     community_id: int,
@@ -1701,6 +1751,7 @@ def _validate_board_parent(
 def _navigation_preview_sections(
     board_taxonomy: list[BoardTaxonomyItem],
     *,
+    sidebar_sections: dict[str, SidebarSectionConfig],
     current_event: MaterialSummary | None,
     unread_notification_count: int,
     active_face: Character | None,
@@ -1789,25 +1840,24 @@ def _navigation_preview_sections(
         NavigationPreviewSection(
             realm_label="World",
             title="World sidebar",
-            description=(
-                "App-owned gateways stay fixed; board-derived location and community "
-                "links follow sidebar placement, taxonomy, and sort order."
+            description="World lanes use director language while board placement stays constrained.",
+            label_visible=(
+                sidebar_sections["locations"].show_label or sidebar_sections["community"].show_label
             ),
-            label_visible=False,
             items=[
                 NavigationPreviewItem("Overview", "/", "App-owned", "Realm home"),
                 NavigationPreviewItem(
-                    "Locations",
+                    sidebar_sections["locations"].label,
                     "/locations",
-                    "App-owned",
+                    "Configured section",
                     "Location index",
                     len(location_items),
                 ),
                 *location_items,
                 NavigationPreviewItem(
-                    "Community",
+                    sidebar_sections["community"].label,
                     "/community",
-                    "App-owned",
+                    "Configured section",
                     "Community index",
                     len(community_items),
                 ),
@@ -1818,11 +1868,8 @@ def _navigation_preview_sections(
         NavigationPreviewSection(
             realm_label="Writer Desk",
             title="Desk sidebar",
-            description=(
-                "Writing operations stay app-owned; future desk boards can join this lane "
-                "without becoming world locations."
-            ),
-            label_visible=False,
+            description=sidebar_sections["desk"].description,
+            label_visible=sidebar_sections["desk"].show_label,
             items=[
                 NavigationPreviewItem("Overview", "/desk", "App-owned", "Realm home"),
                 NavigationPreviewItem("Queue", "/my/threads", "App-owned", "Writing lane"),
@@ -1843,11 +1890,8 @@ def _navigation_preview_sections(
         NavigationPreviewSection(
             realm_label="Studio",
             title="Studio sidebar",
-            description=(
-                "Director production controls stay visible; staff boards can be added as "
-                "board-derived Studio lanes."
-            ),
-            label_visible=False,
+            description=sidebar_sections["studio"].description,
+            label_visible=sidebar_sections["studio"].show_label,
             items=studio_items,
         ),
         NavigationPreviewSection(
@@ -1878,6 +1922,162 @@ def _navigation_preview_sections(
             ],
         ),
     ]
+
+
+def _navigation_health_warnings(
+    board_taxonomy: list[BoardTaxonomyItem],
+    sidebar_sections: dict[str, SidebarSectionConfig],
+) -> list[NavigationHealthWarning]:
+    warnings: list[NavigationHealthWarning] = []
+    items_by_board_id = {item.board.id: item for item in board_taxonomy}
+    visible_items_by_section: dict[str, list[BoardTaxonomyItem]] = {
+        "locations": [],
+        "community": [],
+        "desk": [],
+        "studio": [],
+    }
+    visible_children_by_parent: dict[int, list[BoardTaxonomyItem]] = {}
+    for item in board_taxonomy:
+        if item.board.show_in_navigation:
+            visible_items_by_section.setdefault(item.board.sidebar_section, []).append(item)
+            if item.board.parent_board_id is not None:
+                visible_children_by_parent.setdefault(item.board.parent_board_id, []).append(item)
+
+    for item in board_taxonomy:
+        board = item.board
+        visible_children = visible_children_by_parent.get(board.id, [])
+        if not board.show_in_navigation and visible_children:
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="warning",
+                    title="Hidden parent with visible children",
+                    message=(
+                        f"{board.name} is hidden from navigation, but "
+                        f"{len(visible_children)} child board(s) are still visible."
+                    ),
+                    board=board,
+                    href=f"/studio/boards/{board.slug}",
+                )
+            )
+        if (
+            board.show_in_navigation
+            and board.parent_board_id is not None
+            and (parent := items_by_board_id.get(board.parent_board_id)) is not None
+            and not parent.board.show_in_navigation
+        ):
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="warning",
+                    title="Visible child under hidden parent",
+                    message=(
+                        f"{board.name} is visible, but its parent {parent.board.name} "
+                        "is hidden from the sidebar."
+                    ),
+                    board=board,
+                    href=f"/studio/boards/{board.slug}",
+                )
+            )
+        if board.board_kind in {"location", "sublocation"} and board.sidebar_section != "locations":
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="warning",
+                    title="Place outside the map",
+                    message=(
+                        f"{board.name} is a {item.kind_label.lower()}, but it appears in "
+                        f"the {sidebar_sections[board.sidebar_section].label} section."
+                    ),
+                    board=board,
+                    section=sidebar_sections[board.sidebar_section],
+                    href=f"/studio/boards/{board.slug}",
+                )
+            )
+        if board.board_kind in {"community", "archive"} and board.sidebar_section == "locations":
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="warning",
+                    title="Community board in the location map",
+                    message=(
+                        f"{board.name} is a {item.kind_label.lower()}, but it is placed "
+                        "with playable locations."
+                    ),
+                    board=board,
+                    section=sidebar_sections["locations"],
+                    href=f"/studio/boards/{board.slug}",
+                )
+            )
+        if board.is_private and board.sidebar_section in {"locations", "community"}:
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="attention",
+                    title="Private board in a public-facing section",
+                    message=(
+                        f"{board.name} is private, but it is placed in "
+                        f"{sidebar_sections[board.sidebar_section].label}."
+                    ),
+                    board=board,
+                    section=sidebar_sections[board.sidebar_section],
+                    href=f"/studio/boards/{board.slug}",
+                )
+            )
+        if (
+            not board.is_private
+            and board.sidebar_section == "studio"
+            and board.board_kind != "staff"
+        ):
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="note",
+                    title="Public board in Studio",
+                    message=(
+                        f"{board.name} is public, but it appears in the director Studio sidebar."
+                    ),
+                    board=board,
+                    section=sidebar_sections["studio"],
+                    href=f"/studio/boards/{board.slug}",
+                )
+            )
+
+    for section_key, section in sidebar_sections.items():
+        if section.show_label and not visible_items_by_section.get(section_key):
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="note",
+                    title="Visible label without board links",
+                    message=(
+                        f"{section.label} is set to show as a section label, but no "
+                        "visible board-derived links currently live there."
+                    ),
+                    section=section,
+                    href="/studio#navigation-composer",
+                )
+            )
+
+    for section in sidebar_sections.values():
+        first_route = {
+            "locations": section.label,
+            "community": section.label,
+            "desk": "Overview",
+            "studio": "Production",
+        }.get(section.section_key)
+        if (
+            section.show_label
+            and first_route
+            and section.label.strip().lower() == first_route.lower()
+        ):
+            warnings.append(
+                NavigationHealthWarning(
+                    severity="note",
+                    title="Repeated sidebar label",
+                    message=(
+                        f"{section.label} is both the visible section label and the first "
+                        "route row. Hiding the label may make the sidebar cleaner."
+                    ),
+                    section=section,
+                    href="/studio#navigation-composer",
+                )
+            )
+
+    return warnings
 
 
 def _ensure_enabled_style_value(
