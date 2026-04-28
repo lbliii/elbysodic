@@ -666,6 +666,38 @@ class WorldHub:
 
 
 @dataclass(frozen=True, slots=True)
+class BoardTaxonomyItem:
+    summary: BoardSummary
+    parent: Board | None
+    child_count: int
+    kind_label: str
+    realm_label: str
+    sidebar_label: str
+    guidance: str
+
+    @property
+    def board(self) -> Board:
+        return self.summary.board
+
+
+@dataclass(frozen=True, slots=True)
+class NavigationPreviewItem:
+    label: str
+    href: str
+    source_label: str
+    behavior_label: str
+    count: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class NavigationPreviewSection:
+    realm_label: str
+    title: str
+    description: str
+    items: list[NavigationPreviewItem]
+
+
+@dataclass(frozen=True, slots=True)
 class DirectorStudio:
     can_manage: bool
     facet_groups: list[FacetGroup]
@@ -677,6 +709,8 @@ class DirectorStudio:
     events: list[MaterialSummary]
     current_event: MaterialSummary | None
     application_materials: list[MaterialSummary]
+    board_taxonomy: list[BoardTaxonomyItem]
+    navigation_preview_sections: list[NavigationPreviewSection]
     location_boards: list[BoardSummary]
     sublocation_boards: list[BoardSummary]
     wanted_ads: list[WantedAdSummary]
@@ -718,6 +752,22 @@ class DirectorStudio:
     @property
     def application_material_titles(self) -> list[str]:
         return [item.material.title for item in self.application_materials]
+
+    @property
+    def community_board_count(self) -> int:
+        return sum(1 for item in self.board_taxonomy if item.board.board_kind == "community")
+
+    @property
+    def archive_board_count(self) -> int:
+        return sum(1 for item in self.board_taxonomy if item.board.board_kind == "archive")
+
+    @property
+    def staff_board_count(self) -> int:
+        return sum(1 for item in self.board_taxonomy if item.board.board_kind == "staff")
+
+    @property
+    def desk_board_count(self) -> int:
+        return sum(1 for item in self.board_taxonomy if item.board.board_kind == "desk")
 
     @property
     def location_board_names(self) -> list[str]:
@@ -976,6 +1026,8 @@ class ForumView:
     location_navigation_boards: list[BoardNavigationItem]
     location_navigation_groups: list[LocationNavigationGroup]
     community_navigation_boards: list[BoardNavigationItem]
+    desk_navigation_boards: list[BoardNavigationItem]
+    studio_navigation_boards: list[BoardNavigationItem]
     unread_notification_count: int
 
 

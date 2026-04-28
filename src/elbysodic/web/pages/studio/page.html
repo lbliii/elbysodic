@@ -103,6 +103,119 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
+  <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-kicker">Community Direction</p>
+        <h2 id="board-taxonomy-heading">Board taxonomy</h2>
+        <p class="chirpui-text-muted">
+          Classify each board so World, Desk, Studio, and the sidebar know what kind of place it is.
+        </p>
+      </div>
+      <div class="elbysodic-board-taxonomy__pulse" aria-label="Board taxonomy totals">
+        {{ studio_signal("Locations", studio.location_count + studio.sublocation_count) }}
+        {{ studio_signal("Community", studio.community_board_count + studio.archive_board_count) }}
+        {{ studio_signal("Staff", studio.staff_board_count + studio.desk_board_count) }}
+      </div>
+    </div>
+    <div class="elbysodic-board-taxonomy">
+      {% for item in studio.board_taxonomy %}
+      <form class="elbysodic-board-taxonomy-row" method="post">
+        <input type="hidden" name="intent" value="board_taxonomy">
+        <input type="hidden" name="board_id" value="{{ item.board.id }}">
+        <div class="elbysodic-board-taxonomy-row__identity">
+          <p class="elbysodic-kicker">{{ item.kind_label }}</p>
+          <h3><a class="chirpui-link" href="{{ item.summary.href }}">{{ item.board.name }}</a></h3>
+          <p>{{ item.guidance }}</p>
+          <div class="elbysodic-board-taxonomy-row__meta">
+            <span>{{ item.realm_label }}</span>
+            <span>{{ item.sidebar_label }}</span>
+            <span>{{ item.summary.thread_count }} threads</span>
+            <span>nav {{ item.board.navigation_order }}</span>
+            <span>{{ "visible" if item.board.show_in_navigation else "hidden from nav" }}</span>
+            {% if item.child_count %}
+            <span>{{ item.child_count }} children</span>
+            {% end %}
+          </div>
+        </div>
+        <label class="elbysodic-form-field">
+          <span>Kind</span>
+          <select name="board_kind">
+            {% for value, label in board_kind_labels.items() %}
+            <option value="{{ value }}" {% if item.board.board_kind == value %}selected{% end %}>{{ label }}</option>
+            {% end %}
+          </select>
+        </label>
+        <label class="elbysodic-form-field">
+          <span>Parent</span>
+          <select name="parent_board_id">
+            <option value="">None</option>
+            {% for location in studio.location_boards %}
+            {% if location.board.id != item.board.id %}
+            <option value="{{ location.board.id }}" {% if item.parent and item.parent.id == location.board.id %}selected{% end %}>
+              {{ location.board.name }}
+            </option>
+            {% end %}
+            {% end %}
+          </select>
+        </label>
+        <label class="elbysodic-form-field">
+          <span>Order</span>
+          <input type="number"
+                 name="navigation_order"
+                 value="{{ item.board.navigation_order }}"
+                 min="0"
+                 step="1">
+        </label>
+        <label class="elbysodic-checkbox elbysodic-board-taxonomy-row__toggle">
+          <input type="checkbox"
+                 name="show_in_navigation"
+                 {% if item.board.show_in_navigation %}checked{% end %}>
+          <span>Show in navigation</span>
+        </label>
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save</button>
+      </form>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
+    <div>
+      <p class="elbysodic-kicker">Community Direction</p>
+      <h2 id="navigation-composer-heading">Navigation composer</h2>
+      <p class="chirpui-text-muted">
+        Preview how app-owned routes, board taxonomy, and contextual objects compose the sidebars writers actually use.
+      </p>
+    </div>
+    <div class="elbysodic-navigation-composer">
+      {% for section in studio.navigation_preview_sections %}
+      <article class="elbysodic-navigation-preview">
+        <div class="elbysodic-navigation-preview__header">
+          <p class="elbysodic-kicker">{{ section.realm_label }}</p>
+          <h3>{{ section.title }}</h3>
+          <p>{{ section.description }}</p>
+        </div>
+        <ol class="elbysodic-navigation-preview__list">
+          {% for item in section.items %}
+          <li>
+            <a href="{{ item.href }}">{{ item.label }}</a>
+            <span>{{ item.source_label }}</span>
+            <small>{{ item.behavior_label }}</small>
+            {% if item.count %}
+            <strong>{{ item.count }}</strong>
+            {% end %}
+          </li>
+          {% end %}
+        </ol>
+      </article>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--md" method="post">
     <input type="hidden" name="intent" value="post_style_policy">
     <div>
@@ -178,6 +291,82 @@
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Save style vocabulary</button>
     </div>
   </form>
+  {% end %}
+  {% end %}
+
+  {% if not studio.can_manage %}
+  {% call surface(variant="elevated") %}
+  <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-kicker">Community Direction</p>
+        <h2 id="board-taxonomy-heading">Board taxonomy</h2>
+        <p class="chirpui-text-muted">
+          Classify each board so World, Desk, Studio, and the sidebar know what kind of place it is.
+        </p>
+      </div>
+      <div class="elbysodic-board-taxonomy__pulse" aria-label="Board taxonomy totals">
+        {{ studio_signal("Locations", studio.location_count + studio.sublocation_count) }}
+        {{ studio_signal("Community", studio.community_board_count + studio.archive_board_count) }}
+        {{ studio_signal("Staff", studio.staff_board_count + studio.desk_board_count) }}
+      </div>
+    </div>
+    <div class="elbysodic-board-taxonomy">
+      {% for item in studio.board_taxonomy %}
+      <article class="elbysodic-board-taxonomy-row">
+        <div class="elbysodic-board-taxonomy-row__identity">
+          <p class="elbysodic-kicker">{{ item.kind_label }}</p>
+          <h3><a class="chirpui-link" href="{{ item.summary.href }}">{{ item.board.name }}</a></h3>
+          <p>{{ item.guidance }}</p>
+          <div class="elbysodic-board-taxonomy-row__meta">
+            <span>{{ item.realm_label }}</span>
+            <span>{{ item.sidebar_label }}</span>
+            <span>{{ item.summary.thread_count }} threads</span>
+            <span>nav {{ item.board.navigation_order }}</span>
+            <span>{{ "visible" if item.board.show_in_navigation else "hidden from nav" }}</span>
+            {% if item.parent %}
+            <span>inside {{ item.parent.name }}</span>
+            {% end %}
+          </div>
+        </div>
+      </article>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+  {% call surface(variant="elevated") %}
+  <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
+    <div>
+      <p class="elbysodic-kicker">Community Direction</p>
+      <h2 id="navigation-composer-heading">Navigation composer</h2>
+      <p class="chirpui-text-muted">
+        Preview how app-owned routes, board taxonomy, and contextual objects compose the sidebars writers actually use.
+      </p>
+    </div>
+    <div class="elbysodic-navigation-composer">
+      {% for section in studio.navigation_preview_sections %}
+      <article class="elbysodic-navigation-preview">
+        <div class="elbysodic-navigation-preview__header">
+          <p class="elbysodic-kicker">{{ section.realm_label }}</p>
+          <h3>{{ section.title }}</h3>
+          <p>{{ section.description }}</p>
+        </div>
+        <ol class="elbysodic-navigation-preview__list">
+          {% for item in section.items %}
+          <li>
+            <a href="{{ item.href }}">{{ item.label }}</a>
+            <span>{{ item.source_label }}</span>
+            <small>{{ item.behavior_label }}</small>
+            {% if item.count %}
+            <strong>{{ item.count }}</strong>
+            {% end %}
+          </li>
+          {% end %}
+        </ol>
+      </article>
+      {% end %}
+    </div>
+  </section>
   {% end %}
   {% end %}
 

@@ -69,20 +69,38 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     indexes = {row["name"] for row in connection.execute("PRAGMA index_list(boards)").fetchall()}
     board = connection.execute(
         """
-        SELECT parent_board_id, board_kind, tagline, image_url, image_alt
+        SELECT
+            parent_board_id,
+            board_kind,
+            tagline,
+            image_url,
+            image_alt,
+            navigation_order,
+            show_in_navigation
         FROM boards
         WHERE id = 1
         """
     ).fetchone()
 
-    assert {"parent_board_id", "board_kind", "tagline", "image_url", "image_alt"}.issubset(columns)
+    assert {
+        "parent_board_id",
+        "board_kind",
+        "tagline",
+        "image_url",
+        "image_alt",
+        "navigation_order",
+        "show_in_navigation",
+    }.issubset(columns)
     assert "idx_boards_parent_sort" in indexes
+    assert "idx_boards_navigation" in indexes
     assert dict(board) == {
         "parent_board_id": None,
         "board_kind": "location",
         "tagline": "",
         "image_url": None,
         "image_alt": "",
+        "navigation_order": 10,
+        "show_in_navigation": 1,
     }
 
 

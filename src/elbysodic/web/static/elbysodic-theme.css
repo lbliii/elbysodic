@@ -1072,6 +1072,166 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
 }
 
+.elbysodic-board-taxonomy {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.elbysodic-board-taxonomy__pulse {
+    display: grid;
+    gap: 0.55rem;
+    min-width: min(100%, 18rem);
+}
+
+.elbysodic-board-taxonomy-row {
+    align-items: end;
+    background: color-mix(in srgb, var(--chirpui-surface) 72%, transparent);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(8rem, 0.2fr)
+        minmax(8rem, 0.22fr)
+        minmax(5rem, 0.12fr)
+        auto
+        auto;
+    padding: 0.85rem;
+}
+
+.elbysodic-board-taxonomy-row__identity {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.elbysodic-board-taxonomy-row__identity h3,
+.elbysodic-board-taxonomy-row__identity p {
+    margin: 0;
+}
+
+.elbysodic-board-taxonomy-row__identity h3 {
+    font-size: var(--chirpui-font-xl);
+    letter-spacing: 0;
+}
+
+.elbysodic-board-taxonomy-row__identity p {
+    color: var(--chirpui-text-muted);
+    line-height: 1.4;
+}
+
+.elbysodic-board-taxonomy-row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.elbysodic-board-taxonomy-row__meta span {
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    padding: 0.14rem 0.45rem;
+}
+
+.elbysodic-board-taxonomy-row__toggle {
+    align-self: end;
+    min-height: 2.45rem;
+}
+
+.elbysodic-navigation-composer {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.elbysodic-navigation-preview {
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 68%, transparent);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.85rem;
+    padding: 0.95rem;
+}
+
+.elbysodic-navigation-preview__header {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.elbysodic-navigation-preview__header h3,
+.elbysodic-navigation-preview__header p {
+    margin: 0;
+}
+
+.elbysodic-navigation-preview__header h3 {
+    font-size: var(--chirpui-font-xl);
+    letter-spacing: 0;
+}
+
+.elbysodic-navigation-preview__header p {
+    color: var(--chirpui-text-muted);
+    line-height: 1.4;
+}
+
+.elbysodic-navigation-preview__list {
+    counter-reset: navigation-preview;
+    display: grid;
+    gap: 0.45rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.elbysodic-navigation-preview__list li {
+    align-items: center;
+    border-top: 1px solid var(--chirpui-border-subtle);
+    counter-increment: navigation-preview;
+    display: grid;
+    gap: 0.45rem;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    padding-top: 0.45rem;
+}
+
+.elbysodic-navigation-preview__list li::before {
+    color: var(--chirpui-text-muted);
+    content: counter(navigation-preview, decimal-leading-zero);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+}
+
+.elbysodic-navigation-preview__list a {
+    color: var(--chirpui-text);
+    font-weight: 850;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.elbysodic-navigation-preview__list span,
+.elbysodic-navigation-preview__list small {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+}
+
+.elbysodic-navigation-preview__list span {
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    padding: 0.12rem 0.4rem;
+}
+
+.elbysodic-navigation-preview__list strong {
+    background: color-mix(in srgb, var(--chirpui-accent) 18%, var(--chirpui-surface));
+    border-radius: 999px;
+    font-size: var(--chirpui-font-xs);
+    justify-self: end;
+    min-width: 1.35rem;
+    padding: 0.08rem 0.36rem;
+    text-align: center;
+}
+
 .elbysodic-style-policy-group {
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
@@ -4770,7 +4930,10 @@ body {
 
     .elbysodic-director-grid,
     .elbysodic-director-queue,
-    .elbysodic-director-event {
+    .elbysodic-director-event,
+    .elbysodic-board-taxonomy-row,
+    .elbysodic-navigation-composer,
+    .elbysodic-navigation-preview__list li {
         grid-template-columns: 1fr;
     }
 

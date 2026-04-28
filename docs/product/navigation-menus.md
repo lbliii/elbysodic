@@ -182,8 +182,18 @@ Configurable:
 
 - Which boards are `location`, `sublocation`, `community`, `archive`, `desk`,
   or `staff`.
+- Studio's Board Taxonomy editor is the canonical place to review and adjust
+  this classification. Treat it as production direction: changing a board kind
+  changes where the app places that board in World, Desk, Studio, and sidebars.
+- Studio's Navigation Composer preview is the canonical place to inspect the
+  result before adding editable ordering or visibility. It must distinguish
+  app-owned, board-derived, material-derived, identity-derived, and
+  wanted-derived rows so directors understand what they are configuring.
 - Optional named sidebar collections inside a realm.
 - Ordering and visibility of board-derived links within allowed sections.
+- Hidden boards may remain reachable by direct URL and visible in page content
+  where appropriate; "hidden from navigation" means the sidebar stops
+  advertising them, not that the board is deleted or permission-denied.
 - Labels for custom collections, such as houses, claims, events, or staff
   queues.
 

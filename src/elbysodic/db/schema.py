@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS boards (
     image_url TEXT,
     image_alt TEXT NOT NULL DEFAULT '',
     sort_order INTEGER NOT NULL DEFAULT 0,
+    navigation_order INTEGER NOT NULL DEFAULT 0,
+    show_in_navigation INTEGER NOT NULL DEFAULT 1,
     is_private INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -511,13 +513,28 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         "tagline": "TEXT NOT NULL DEFAULT ''",
         "image_url": "TEXT",
         "image_alt": "TEXT NOT NULL DEFAULT ''",
+        "navigation_order": "INTEGER NOT NULL DEFAULT 0",
+        "show_in_navigation": "INTEGER NOT NULL DEFAULT 1",
     }.items():
         if name not in board_columns:
             connection.execute(f"ALTER TABLE boards ADD COLUMN {name} {definition}")
     connection.execute(
         """
+        UPDATE boards
+        SET navigation_order = sort_order
+        WHERE navigation_order = 0 AND sort_order != 0
+        """
+    )
+    connection.execute(
+        """
         CREATE INDEX IF NOT EXISTS idx_boards_parent_sort
         ON boards(community_id, parent_board_id, sort_order, name)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_boards_navigation
+        ON boards(community_id, show_in_navigation, parent_board_id, navigation_order, name)
         """
     )
 

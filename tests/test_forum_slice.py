@@ -235,10 +235,137 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Location Studio" in studio.text
             assert "Event Studio" in studio.text
             assert "Applications and hooks" in studio.text
+            assert "Board taxonomy" in studio.text
+            assert "Navigation composer" in studio.text
+            assert "World sidebar" in studio.text
+            assert "Desk sidebar" in studio.text
+            assert "Studio sidebar" in studio.text
+            assert "Casting sidebar" in studio.text
+            assert "App-owned" in studio.text
+            assert "Board-derived" in studio.text
+            assert "Material-derived" in studio.text
+            assert "Identity-derived" in studio.text
+            assert "Wanted-derived" in studio.text
+            assert "Community board" in studio.text
+            assert "Sublocation" in studio.text
+            assert "Announcements" in studio.text
+            assert "Classify each board" in studio.text
+            assert 'href="/studio#board-taxonomy"' in studio.text
+            assert 'href="/studio#navigation-composer"' in studio.text
             assert 'href="/world/b-24-winter"' in studio.text
             assert 'href="/applications"' in studio.text
             assert 'href="/wanted"' in studio.text
             assert "Current Event" in studio.text
+
+    asyncio.run(run())
+
+
+def test_director_studio_updates_board_taxonomy() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        announcements = repo.get_board_by_slug(community.id, "announcements")
+        xavier = repo.get_board_by_slug(community.id, "xavier-institute")
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "board_taxonomy",
+                        "board_id": announcements.id,
+                        "board_kind": "sublocation",
+                        "parent_board_id": xavier.id,
+                        "navigation_order": 99,
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            updated = repo.get_board(community.id, announcements.id)
+            assert updated.board_kind == "sublocation"
+            assert updated.parent_board_id == xavier.id
+            assert updated.navigation_order == 99
+            assert updated.show_in_navigation is True
+
+            invalid = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "board_taxonomy",
+                        "board_id": announcements.id,
+                        "board_kind": "sublocation",
+                        "parent_board_id": "",
+                        "navigation_order": 99,
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert invalid.status == 200
+            assert "choose a parent location for sublocations" in invalid.text
+
+    asyncio.run(run())
+
+
+def test_director_studio_hides_board_from_navigation_without_hiding_route() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        announcements = repo.get_board_by_slug(community.id, "announcements")
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "board_taxonomy",
+                        "board_id": announcements.id,
+                        "board_kind": "community",
+                        "parent_board_id": "",
+                        "navigation_order": 40,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            updated = repo.get_board(community.id, announcements.id)
+            assert updated.show_in_navigation is False
+            assert updated.navigation_order == 40
+
+            community_page = await client.get("/community")
+            assert community_page.status == 200
+            assert not re.search(
+                r'<a class="[^"]*elbysodic-sidebar-link[^"]*"'
+                r' href="/boards/announcements"',
+                community_page.text,
+            )
+
+            board_page = await client.get("/boards/announcements")
+            assert board_page.status == 200
+            assert "Announcements" in board_page.text
 
     asyncio.run(run())
 

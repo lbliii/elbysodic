@@ -28,6 +28,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         image_url: str | None = None,
         image_alt: str = "",
         sort_order: int = 0,
+        navigation_order: int | None = None,
+        show_in_navigation: bool = True,
         is_private: bool = False,
     ) -> Board:
         if parent_board_id is not None:
@@ -47,11 +49,13 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url,
                 image_alt,
                 sort_order,
+                navigation_order,
+                show_in_navigation,
                 is_private,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -64,6 +68,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url,
                 image_alt,
                 sort_order,
+                sort_order if navigation_order is None else navigation_order,
+                int(show_in_navigation),
                 int(is_private),
                 now,
                 now,
@@ -86,6 +92,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         image_url: str | None = None,
         image_alt: str = "",
         is_private: bool = False,
+        navigation_order: int | None = None,
+        show_in_navigation: bool | None = None,
     ) -> Board:
         board = self.get_board(community_id, board_id)
         if parent_board_id is not None:
@@ -105,6 +113,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url = ?,
                 image_alt = ?,
                 sort_order = ?,
+                navigation_order = ?,
+                show_in_navigation = ?,
                 is_private = ?,
                 updated_at = ?
             WHERE community_id = ? AND id = ?
@@ -118,6 +128,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url,
                 image_alt,
                 sort_order,
+                board.navigation_order if navigation_order is None else navigation_order,
+                int(board.show_in_navigation if show_in_navigation is None else show_in_navigation),
                 int(is_private),
                 _next_update_stamp(board.updated_at),
                 community_id,
@@ -142,6 +154,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url,
                 image_alt,
                 sort_order,
+                navigation_order,
+                show_in_navigation,
                 is_private,
                 created_at,
                 updated_at
@@ -169,6 +183,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url,
                 image_alt,
                 sort_order,
+                navigation_order,
+                show_in_navigation,
                 is_private,
                 created_at,
                 updated_at
@@ -196,6 +212,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 image_url,
                 image_alt,
                 sort_order,
+                navigation_order,
+                show_in_navigation,
                 is_private,
                 created_at,
                 updated_at
@@ -225,6 +243,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                     image_url,
                     image_alt,
                     sort_order,
+                    navigation_order,
+                    show_in_navigation,
                     is_private,
                     created_at,
                     updated_at
@@ -249,6 +269,8 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                     image_url,
                     image_alt,
                     sort_order,
+                    navigation_order,
+                    show_in_navigation,
                     is_private,
                     created_at,
                     updated_at

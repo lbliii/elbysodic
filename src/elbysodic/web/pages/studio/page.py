@@ -7,6 +7,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.domain.boards import BOARD_KIND_LABELS
 from elbysodic.services.read_models import (
     POST_ACCENT_STYLE_LABELS,
     POST_BORDER_STYLE_LABELS,
@@ -26,7 +27,32 @@ async def post(request: Request) -> Page | Redirect:
     form = await request.form()
     intent = str(form.get("intent") or "identity_accent")
     try:
-        if intent == "post_style_policy":
+        if intent == "board_taxonomy":
+            raw_parent_id = str(form.get("parent_board_id") or "")
+            board_id = _required_int(form.get("board_id"), "choose a board to update")
+            services.update_board_taxonomy(
+                board_id,
+                board_kind=str(form.get("board_kind") or ""),
+                parent_board_id=int(raw_parent_id) if raw_parent_id else None,
+            )
+            services.update_board_navigation(
+                board_id,
+                navigation_order=_required_int(
+                    form.get("navigation_order"),
+                    "choose a navigation order",
+                ),
+                show_in_navigation=form.get("show_in_navigation") == "on",
+            )
+        elif intent == "board_navigation":
+            services.update_board_navigation(
+                _required_int(form.get("board_id"), "choose a board to update"),
+                navigation_order=_required_int(
+                    form.get("navigation_order"),
+                    "choose a navigation order",
+                ),
+                show_in_navigation=form.get("show_in_navigation") == "on",
+            )
+        elif intent == "post_style_policy":
             services.update_post_style_policy(
                 enabled_post_profile_variants=_form_values(
                     form,
@@ -76,6 +102,7 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page:
         post_border_style_labels=POST_BORDER_STYLE_LABELS,
         post_title_style_labels=POST_TITLE_STYLE_LABELS,
         post_density_labels=POST_DENSITY_LABELS,
+        board_kind_labels=BOARD_KIND_LABELS,
     )
 
 
@@ -88,3 +115,10 @@ def _form_values(form: object, name: str) -> list[str]:
         return [str(value) for value in getlist(name)]
     raw = getattr(form, "get", lambda _name: None)(name)
     return [] if raw is None else [str(raw)]
+
+
+def _required_int(raw: object, message: str) -> int:
+    value = str(raw or "")
+    if not value:
+        raise ValueError(message)
+    return int(value)

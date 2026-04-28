@@ -9,6 +9,38 @@ type BoardKind = Literal["location", "sublocation", "community", "desk", "archiv
 BOARD_KINDS: frozenset[str] = frozenset(
     {"location", "sublocation", "community", "desk", "archive", "staff"}
 )
+BOARD_KIND_LABELS: dict[BoardKind, str] = {
+    "location": "Location",
+    "sublocation": "Sublocation",
+    "community": "Community board",
+    "desk": "Desk board",
+    "archive": "Archive",
+    "staff": "Staff board",
+}
+BOARD_KIND_REALMS: dict[BoardKind, str] = {
+    "location": "World",
+    "sublocation": "World",
+    "community": "World",
+    "desk": "Writer Desk",
+    "archive": "World",
+    "staff": "Studio",
+}
+BOARD_KIND_SIDEBAR_LABELS: dict[BoardKind, str] = {
+    "location": "Location tree",
+    "sublocation": "Location branch",
+    "community": "Community group",
+    "desk": "Desk lane",
+    "archive": "Community archive",
+    "staff": "Studio lane",
+}
+BOARD_KIND_GUIDANCE: dict[BoardKind, str] = {
+    "location": "Major playable place; appears as a parent in the world map.",
+    "sublocation": "Nested playable place; needs a major location parent.",
+    "community": "OOC or public community board; lives outside the map.",
+    "desk": "Writer workflow board; belongs near queue and roster work.",
+    "archive": "Read-only or historical community board.",
+    "staff": "Director-only production board.",
+}
 LOCATION_BOARD_KINDS: frozenset[BoardKind] = frozenset({"location", "sublocation"})
 COMMUNITY_BOARD_KINDS: frozenset[BoardKind] = frozenset({"community", "archive"})
 DESK_BOARD_KINDS: frozenset[BoardKind] = frozenset({"desk", "staff"})

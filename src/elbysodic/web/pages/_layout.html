@@ -310,6 +310,11 @@
     <a class="chirpui-sidebar__link" href="/plotting" title="Plotting rooms">Plotting</a>
     <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
     <a class="chirpui-sidebar__link" href="/discover" title="Discovery">Discovery</a>
+    {% if viewer %}
+    {% for item in viewer.desk_navigation_boards %}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {% end %}
+    {% end %}
   {% end %}
 {% end %}
 
@@ -317,6 +322,8 @@
   {% set sidebar_path = current_path or "/" %}
   {% call sidebar_section() %}
     {{ sidebar_destination_link("/studio", "Overview", "diamond", sidebar_path == "/studio") }}
+    <a class="chirpui-sidebar__link" href="/studio#board-taxonomy" title="Board taxonomy">Board taxonomy</a>
+    <a class="chirpui-sidebar__link" href="/studio#navigation-composer" title="Navigation composer">Navigation composer</a>
     <a class="chirpui-sidebar__link" href="/world" title="Guidebook">Guidebook</a>
     <a class="chirpui-sidebar__link" href="/" title="World map">World map</a>
   {% end %}
@@ -326,6 +333,11 @@
     <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
     <a class="chirpui-sidebar__link" href="/wanted" title="Wanted board">Wanted board</a>
     <a class="chirpui-sidebar__link" href="/casting" title="Casting desk">Casting desk</a>
+    {% if viewer %}
+    {% for item in viewer.studio_navigation_boards %}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {% end %}
+    {% end %}
   {% end %}
 
   {% if studio is defined and studio.current_event %}

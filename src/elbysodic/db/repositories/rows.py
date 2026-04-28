@@ -99,6 +99,8 @@ def _board_from_row(row: sqlite3.Row) -> Board:
         image_url=row["image_url"],
         image_alt=row["image_alt"],
         sort_order=row["sort_order"],
+        navigation_order=row["navigation_order"],
+        show_in_navigation=bool(row["show_in_navigation"]),
         is_private=bool(row["is_private"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],

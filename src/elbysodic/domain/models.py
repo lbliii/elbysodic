@@ -71,6 +71,8 @@ class Board:
     image_url: str | None
     image_alt: str
     sort_order: int
+    navigation_order: int
+    show_in_navigation: bool
     is_private: bool
     created_at: str
     updated_at: str
