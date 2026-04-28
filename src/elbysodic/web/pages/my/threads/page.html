@@ -2,6 +2,7 @@
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/thread_summary.html" import compact_thread_card, thread_card %}
+  {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
 
 {% def thread_item(item) %}
@@ -66,29 +67,17 @@
       <p class="elbysodic-section-kicker">Queue focus</p>
       {% if dashboard.selected_character %}
       <h2 id="queue-focus-heading">{{ dashboard.selected_character.name }}'s writing lane</h2>
-      <p>Open the scenes that need this face first; use history when you need the broader tracker.</p>
+      <p class="elbysodic-copy-section">Open the scenes that need this face first; use history when you need the broader tracker.</p>
       {% else %}
       <h2 id="queue-focus-heading">Roster writing lane</h2>
-      <p>Open scenes that need any of your faces first; use history when you need the broader tracker.</p>
+      <p class="elbysodic-copy-section">Open scenes that need any of your faces first; use history when you need the broader tracker.</p>
       {% end %}
     </div>
     <div class="elbysodic-queue-focus__metrics" aria-label="Queue totals">
-      <span class="elbysodic-queue-metric">
-        <strong>{{ dashboard.needs_reply | length }}</strong>
-        <span>Needs reply</span>
-      </span>
-      <span class="elbysodic-queue-metric">
-        <strong>{{ dashboard.waiting_on_others | length }}</strong>
-        <span>Waiting</span>
-      </span>
-      <span class="elbysodic-queue-metric">
-        <strong>{{ dashboard.started_by_me | length }}</strong>
-        <span>Started</span>
-      </span>
-      <span class="elbysodic-queue-metric">
-        <strong>{{ dashboard.participated | length }}</strong>
-        <span>All active</span>
-      </span>
+      {{ metric_item(dashboard.needs_reply | length, "Needs reply") }}
+      {{ metric_item(dashboard.waiting_on_others | length, "Waiting") }}
+      {{ metric_item(dashboard.started_by_me | length, "Started") }}
+      {{ metric_item(dashboard.participated | length, "All active") }}
     </div>
     {% if dashboard.needs_reply %}
     {% set next_reply = dashboard.needs_reply[0] %}

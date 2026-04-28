@@ -15,14 +15,14 @@
   {% call section_header("Plot discovery") %}
   {% end %}
   {% if viewer.current_character and discovery.used_active_face_lens %}
-  <p class="chirpui-text-muted">For {{ viewer.current_character.name }}</p>
+  <p class="elbysodic-copy-meta">For {{ viewer.current_character.name }}</p>
   {% elif viewer.current_character %}
-  <p class="chirpui-text-muted">Face: {{ viewer.current_character.name }}</p>
+  <p class="elbysodic-copy-meta">Face: {{ viewer.current_character.name }}</p>
   {% end %}
 
   {% if discovery.selected_facets %}
   <div class="chirpui-stack chirpui-stack--sm">
-    <p class="chirpui-text-muted">Current lens</p>
+    <p class="elbysodic-copy-meta">Current lens</p>
     {{ facet_pills(discovery.selected_facets) }}
   </div>
   {% endif %}
@@ -78,13 +78,13 @@
               {{ result.plot_hook.title }}
             </a>
           </h2>
-          <p class="chirpui-text-muted">
+          <p class="elbysodic-copy-meta">
             plotted by <a class="chirpui-link" href="/characters/{{ result.character.slug }}">{{ result.character.name }}</a>
           </p>
         </div>
       </div>
       {% if result.plot_hook.summary %}
-      <p class="chirpui-text-muted">{{ result.plot_hook.summary }}</p>
+      <p class="elbysodic-copy-summary">{{ result.plot_hook.summary }}</p>
       {% end %}
       {{ facet_pills(result.facets) }}
     </article>
@@ -114,12 +114,12 @@
         </a>
         <div>
           <h2><a class="chirpui-link" href="/characters/{{ result.character.slug }}">{{ result.character.name }}</a></h2>
-          <p class="chirpui-text-muted">
+          <p class="elbysodic-copy-meta">
             writer <a class="chirpui-link" href="/members/{{ result.owner_membership.username }}">{{ result.owner_membership.username }}</a>
           </p>
         </div>
       </div>
-      <p class="chirpui-text-muted">{{ result.character.summary }}</p>
+      <p class="elbysodic-copy-summary">{{ result.character.summary }}</p>
       {{ facet_pills(result.facets) }}
     </article>
     {% end %}
@@ -145,7 +145,7 @@
               {{ result.thread.title }}
             </a>
           </h2>
-          <p class="chirpui-text-muted">
+          <p class="elbysodic-copy-meta">
             {{ result.board.name }} · opened by
             <a class="chirpui-link" href="/characters/{{ result.author.slug }}">{{ result.author.name }}</a>
           </p>
@@ -153,7 +153,7 @@
         {{ counter("R", result.reply_count, "replies") }}
       </div>
       {% if result.thread.summary %}
-      <p class="chirpui-text-muted">{{ result.thread.summary }}</p>
+      <p class="elbysodic-copy-summary">{{ result.thread.summary }}</p>
       {% end %}
       <div class="elbysodic-scene-cast" aria-label="Scene participants">
         {% for participant in result.participants %}

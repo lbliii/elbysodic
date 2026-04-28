@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/vocabulary.html" import local_rail, local_rail_link, production_room_card, room_header %}
 {% end %}
 
 {% def studio_signal(label, value, href=None) %}
@@ -16,16 +17,6 @@
 </div>
 {% end %}
 
-{% def studio_room_card(kicker, title, summary, href, primary, secondary) %}
-<a class="elbysodic-studio-room-card" href="{{ href }}">
-  <span class="elbysodic-kicker">{{ kicker }}</span>
-  <strong>{{ title }}</strong>
-  <em>{{ summary }}</em>
-  <span>{{ primary }}</span>
-  <small>{{ secondary }}</small>
-</a>
-{% end %}
-
 {% def studio_lane(kicker, title, summary, href, cta, count, items) %}
 {% call surface(variant="elevated") %}
 <article class="elbysodic-director-lane">
@@ -36,7 +27,7 @@
     </div>
     <span class="elbysodic-director-lane__count">{{ count }}</span>
   </div>
-  <p>{{ summary }}</p>
+  <p class="elbysodic-copy-summary">{{ summary }}</p>
   {% if items %}
   <ul class="elbysodic-director-list">
     {% for item in items[:3] %}
@@ -59,7 +50,7 @@
     <div>
       <p class="elbysodic-kicker">Director Studio</p>
       <h1>Shape {{ viewer.community.name }}</h1>
-      <p>
+      <p class="elbysodic-copy-lead">
         A production room for the canon, locations, applications, and hooks that make
         this board feel authored instead of merely configured.
       </p>
@@ -72,16 +63,16 @@
     </aside>
   </section>
 
-  <nav class="elbysodic-studio-rail" aria-label="Studio rooms">
-    <a href="#world-structure">World structure</a>
-    <a href="#navigation">Navigation</a>
-    <a href="#identity-appearance">Identity and appearance</a>
-    <a href="#casting-applications">Casting and applications</a>
-    <a href="#continuity-events">Continuity and events</a>
-  </nav>
+  {% call local_rail("Studio rooms", "elbysodic-local-rail--outlined") %}
+    {{ local_rail_link("World structure", "#world-structure") }}
+    {{ local_rail_link("Navigation", "#navigation") }}
+    {{ local_rail_link("Identity and appearance", "#identity-appearance") }}
+    {{ local_rail_link("Casting and applications", "#casting-applications") }}
+    {{ local_rail_link("Continuity and events", "#continuity-events") }}
+  {% end %}
 
   <section class="elbysodic-studio-overview" aria-label="Studio room overview">
-    {{ studio_room_card(
+    {{ production_room_card(
       "World structure",
       "Boards and places",
       "Taxonomy, map lanes, and board placement.",
@@ -89,7 +80,7 @@
       studio.location_count + studio.sublocation_count ~ " places",
       studio.board_taxonomy | length ~ " boards"
     ) }}
-    {{ studio_room_card(
+    {{ production_room_card(
       "Navigation",
       "Sidebar composer",
       "Labels, lanes, preview, and health notes.",
@@ -97,7 +88,7 @@
       studio.navigation_warnings | length ~ " notes",
       studio.sidebar_sections | length ~ " sections"
     ) }}
-    {{ studio_room_card(
+    {{ production_room_card(
       "Identity",
       "Appearance vocabulary",
       "Inherited accents and post style controls.",
@@ -105,7 +96,7 @@
       studio.identity_accent_group.name if studio.identity_accent_group else "Theme default",
       studio.post_style_policy.enabled_profile_variants | length ~ " post rails"
     ) }}
-    {{ studio_room_card(
+    {{ production_room_card(
       "Casting",
       "Applications and hooks",
       "Review queues, wanted hooks, and intake.",
@@ -113,7 +104,7 @@
       studio.open_wanted_count ~ " open hooks",
       studio.review_queue_count ~ " in review"
     ) }}
-    {{ studio_room_card(
+    {{ production_room_card(
       "Continuity",
       "Events and materials",
       "Canon pressure, drafts, and guidebook work.",
@@ -131,11 +122,7 @@
   </p>
   {% end %}
   <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">Identity and appearance</p>
-    <h2 id="identity-appearance-heading">The board's visual language</h2>
-    <p>Preview the accent source and post style vocabulary directors use to guide the board.</p>
-  </div>
+  {{ room_header("Identity and appearance", "The board's visual language", "Preview the accent source and post style vocabulary directors use to guide the board.", "identity-appearance-heading") }}
   {% call surface(variant="elevated") %}
   <article class="chirpui-stack chirpui-stack--sm">
     <p class="elbysodic-kicker">Community Direction</p>
@@ -148,11 +135,7 @@
   </section>
   {% else %}
   <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">Identity and appearance</p>
-    <h2 id="identity-appearance-heading">The board's visual language</h2>
-    <p>Set the defaults that make character identity and post styling feel guided, not accidental.</p>
-  </div>
+  {{ room_header("Identity and appearance", "The board's visual language", "Set the defaults that make character identity and post styling feel guided, not accidental.", "identity-appearance-heading") }}
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--sm" method="post">
     <input type="hidden" name="intent" value="identity_accent">
@@ -187,11 +170,7 @@
   </section>
 
   <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">World structure</p>
-    <h2 id="world-structure-heading">Boards, places, and community rooms</h2>
-    <p>Keep the world map, community boards, desk lanes, and staff spaces legible as the board grows.</p>
-  </div>
+  {{ room_header("World structure", "Boards, places, and community rooms", "Keep the world map, community boards, desk lanes, and staff spaces legible as the board grows.", "world-structure-heading") }}
   {% call surface(variant="elevated") %}
   <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
@@ -216,64 +195,73 @@
         <div class="elbysodic-board-taxonomy-row__identity">
           <p class="elbysodic-kicker">{{ item.kind_label }}</p>
           <h3><a class="chirpui-link" href="/studio/boards/{{ item.board.slug }}">{{ item.board.name }}</a></h3>
-          <p>{{ item.guidance }}</p>
+          <p class="elbysodic-board-taxonomy-row__decision">
+            {{ item.sidebar_section_label }} sidebar · {{ "visible" if item.board.show_in_navigation else "hidden from navigation" }}
+            {% if item.parent %}
+            · inside {{ item.parent.name }}
+            {% elif item.child_count %}
+            · {{ item.child_count }} sublocations
+            {% end %}
+          </p>
+          <p class="elbysodic-board-taxonomy-row__guidance">{{ item.guidance }}</p>
           <div class="elbysodic-board-taxonomy-row__meta">
             <a href="{{ item.summary.href }}">View board</a>
             <span>{{ item.realm_label }}</span>
-            <span>{{ item.sidebar_section_label }} sidebar</span>
-            <span>{{ item.sidebar_label }}</span>
             <span>{{ item.summary.thread_count }} threads</span>
-            <span>nav {{ item.board.navigation_order }}</span>
-            <span>{{ "visible" if item.board.show_in_navigation else "hidden from nav" }}</span>
-            {% if item.child_count %}
-            <span>{{ item.child_count }} children</span>
-            {% end %}
           </div>
         </div>
-        <label class="elbysodic-form-field">
-          <span>Kind</span>
-          <select name="board_kind">
-            {% for value, label in board_kind_labels.items() %}
-            <option value="{{ value }}" {% if item.board.board_kind == value %}selected{% end %}>{{ label }}</option>
-            {% end %}
-          </select>
-        </label>
-        <label class="elbysodic-form-field">
-          <span>Parent</span>
-          <select name="parent_board_id">
-            <option value="">None</option>
-            {% for location in studio.location_boards %}
-            {% if location.board.id != item.board.id %}
-            <option value="{{ location.board.id }}" {% if item.parent and item.parent.id == location.board.id %}selected{% end %}>
-              {{ location.board.name }}
-            </option>
-            {% end %}
-            {% end %}
-          </select>
-        </label>
-        <label class="elbysodic-form-field">
-          <span>Sidebar</span>
-          <select name="sidebar_section">
-            {% for value, label in sidebar_section_labels.items() %}
-            <option value="{{ value }}" {% if item.board.sidebar_section == value %}selected{% end %}>{{ label }}</option>
-            {% end %}
-          </select>
-        </label>
-        <label class="elbysodic-form-field">
-          <span>Order</span>
-          <input type="number"
-                 name="navigation_order"
-                 value="{{ item.board.navigation_order }}"
-                 min="0"
-                 step="1">
-        </label>
-        <label class="elbysodic-checkbox elbysodic-board-taxonomy-row__toggle">
-          <input type="checkbox"
-                 name="show_in_navigation"
-                 {% if item.board.show_in_navigation %}checked{% end %}>
-          <span>Show in navigation</span>
-        </label>
-        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save</button>
+        <details class="elbysodic-board-taxonomy-row__editor">
+          <summary>
+            <span>Edit placement</span>
+            <small>{{ item.kind_label }} · nav {{ item.board.navigation_order }}</small>
+          </summary>
+          <div class="elbysodic-board-taxonomy-row__controls">
+            <label class="elbysodic-form-field">
+              <span>Kind</span>
+              <select name="board_kind">
+                {% for value, label in board_kind_labels.items() %}
+                <option value="{{ value }}" {% if item.board.board_kind == value %}selected{% end %}>{{ label }}</option>
+                {% end %}
+              </select>
+            </label>
+            <label class="elbysodic-form-field">
+              <span>Parent</span>
+              <select name="parent_board_id">
+                <option value="">None</option>
+                {% for location in studio.location_boards %}
+                {% if location.board.id != item.board.id %}
+                <option value="{{ location.board.id }}" {% if item.parent and item.parent.id == location.board.id %}selected{% end %}>
+                  {{ location.board.name }}
+                </option>
+                {% end %}
+                {% end %}
+              </select>
+            </label>
+            <label class="elbysodic-form-field">
+              <span>Sidebar</span>
+              <select name="sidebar_section">
+                {% for value, label in sidebar_section_labels.items() %}
+                <option value="{{ value }}" {% if item.board.sidebar_section == value %}selected{% end %}>{{ label }}</option>
+                {% end %}
+              </select>
+            </label>
+            <label class="elbysodic-form-field">
+              <span>Order</span>
+              <input type="number"
+                     name="navigation_order"
+                     value="{{ item.board.navigation_order }}"
+                     min="0"
+                     step="1">
+            </label>
+            <label class="elbysodic-checkbox elbysodic-board-taxonomy-row__toggle">
+              <input type="checkbox"
+                     name="show_in_navigation"
+                     {% if item.board.show_in_navigation %}checked{% end %}>
+              <span>Show in navigation</span>
+            </label>
+            <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save</button>
+          </div>
+        </details>
       </form>
       {% end %}
     </div>
@@ -282,11 +270,7 @@
   </section>
 
   <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">Navigation</p>
-    <h2 id="navigation-heading">Sidebar language and health</h2>
-    <p>Shape how writers move through the board while keeping route meaning stable.</p>
-  </div>
+  {{ room_header("Navigation", "Sidebar language and health", "Shape how writers move through the board while keeping route meaning stable.", "navigation-heading") }}
   {% call surface(variant="elevated") %}
   <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
@@ -484,11 +468,7 @@
 
   {% if not studio.can_manage %}
   <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">World structure</p>
-    <h2 id="world-structure-heading">Boards, places, and community rooms</h2>
-    <p>Preview how the board's places and community rooms are classified.</p>
-  </div>
+  {{ room_header("World structure", "Boards, places, and community rooms", "Preview how the board's places and community rooms are classified.", "world-structure-heading") }}
   {% call surface(variant="elevated") %}
   <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
@@ -511,18 +491,19 @@
         <div class="elbysodic-board-taxonomy-row__identity">
           <p class="elbysodic-kicker">{{ item.kind_label }}</p>
           <h3><a class="chirpui-link" href="/studio/boards/{{ item.board.slug }}">{{ item.board.name }}</a></h3>
-          <p>{{ item.guidance }}</p>
+          <p class="elbysodic-board-taxonomy-row__decision">
+            {{ item.sidebar_section_label }} sidebar · {{ "visible" if item.board.show_in_navigation else "hidden from navigation" }}
+            {% if item.parent %}
+            · inside {{ item.parent.name }}
+            {% elif item.child_count %}
+            · {{ item.child_count }} sublocations
+            {% end %}
+          </p>
+          <p class="elbysodic-board-taxonomy-row__guidance">{{ item.guidance }}</p>
           <div class="elbysodic-board-taxonomy-row__meta">
             <a href="{{ item.summary.href }}">View board</a>
             <span>{{ item.realm_label }}</span>
-            <span>{{ item.sidebar_section_label }} sidebar</span>
-            <span>{{ item.sidebar_label }}</span>
             <span>{{ item.summary.thread_count }} threads</span>
-            <span>nav {{ item.board.navigation_order }}</span>
-            <span>{{ "visible" if item.board.show_in_navigation else "hidden from nav" }}</span>
-            {% if item.parent %}
-            <span>inside {{ item.parent.name }}</span>
-            {% end %}
           </div>
         </div>
       </article>
@@ -532,11 +513,7 @@
   {% end %}
   </section>
   <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">Navigation</p>
-    <h2 id="navigation-heading">Sidebar language and health</h2>
-    <p>Preview the sidebar composer and health notes.</p>
-  </div>
+  {{ room_header("Navigation", "Sidebar language and health", "Preview the sidebar composer and health notes.", "navigation-heading") }}
   {% call surface(variant="elevated") %}
   <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
@@ -620,11 +597,7 @@
   {% end %}
 
   <section id="casting-applications" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="casting-applications-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">Casting and applications</p>
-    <h2 id="casting-applications-heading">Intake, wanted hooks, and review queues</h2>
-    <p>Keep character growth and casting prompts close to the board's production pulse.</p>
-  </div>
+  {{ room_header("Casting and applications", "Intake, wanted hooks, and review queues", "Keep character growth and casting prompts close to the board's production pulse.", "casting-applications-heading") }}
   <section class="elbysodic-director-grid" aria-label="Director work lanes">
     {% set current_event_href = "/world/" ~ studio.current_event.material.slug if studio.current_event else "/world" %}
     {{ studio_lane(
@@ -667,11 +640,7 @@
   </section>
 
   <section id="continuity-events" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="continuity-events-heading">
-  <div class="elbysodic-studio-room__header">
-    <p class="elbysodic-kicker">Continuity and events</p>
-    <h2 id="continuity-events-heading">Canon pressure and director queue</h2>
-    <p>Track the guidebook, drafts, current event pressure, and map coverage that keep play moving.</p>
-  </div>
+  {{ room_header("Continuity and events", "Canon pressure and director queue", "Track the guidebook, drafts, current event pressure, and map coverage that keep play moving.", "continuity-events-heading") }}
   {% call section_header("Director Queue") %}
   The most useful next places to look before opening an editor.
   {% end %}

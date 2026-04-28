@@ -7,7 +7,7 @@
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=desk-operating-room-1">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=link-token-mobile-menu-1">
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=resizable-destination-rail"></script>
 {% end %}
 
@@ -38,6 +38,12 @@
 </a>
 {% end %}
 
+{% def mobile_realm_link(href, label, is_active=False) %}
+<a class="elbysodic-mobile-realm-link{{ " elbysodic-mobile-realm-link--active" if is_active else "" }}"
+   href="{{ href }}"
+   {% if is_active %}aria-current="page"{% end %}>{{ label }}</a>
+{% end %}
+
 {% block topbar_center %}
 {% set topbar_path = current_path or "/" %}
 {% set world_active = topbar_path == "/" or topbar_path == "/locations" or topbar_path.startswith("/locations/") or topbar_path == "/community" or topbar_path.startswith("/community/") or topbar_path.startswith("/boards/") %}
@@ -46,7 +52,7 @@
 {% set studio_active = topbar_path == "/studio" or topbar_path.startswith("/studio/") %}
 {% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
-{% set mobile_nav_label = "Guidebook" if guidebook_active else ("Casting" if wanted_active else ("Studio" if studio_active else ("Desk" if desk_active or notifications_active else "World"))) %}
+{% set mobile_nav_label = "Menu: Guidebook" if guidebook_active else ("Menu: Casting" if wanted_active else ("Menu: Studio" if studio_active else ("Menu: Desk" if desk_active or notifications_active else "Menu: World"))) %}
 {{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
 <nav class="elbysodic-topnav" aria-label="Primary">
   {{ topnav_link("/", "World", world_active) }}
@@ -57,6 +63,13 @@
   {{ topnav_link("/studio", "Studio", studio_active) }}
 </nav>
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
+  <nav class="elbysodic-mobile-realm-nav" aria-label="Primary">
+    {{ mobile_realm_link("/", "World", world_active) }}
+    {{ mobile_realm_link("/world", "Guidebook", guidebook_active) }}
+    {{ mobile_realm_link("/wanted", "Wanted", wanted_active) }}
+    {{ mobile_realm_link("/desk", "Writer Desk", desk_active) }}
+    {{ mobile_realm_link("/studio", "Studio", studio_active) }}
+  </nav>
   {{ elbysodic_sidebar() }}
 {% end %}
 {% end %}
@@ -82,6 +95,9 @@
         </span>
         {% end %}
       </span>
+      {% if viewer.unread_notification_count %}
+      <span class="elbysodic-identity-menu__summary-badge">{{ viewer.unread_notification_count }}</span>
+      {% end %}
       <span class="elbysodic-identity-menu__copy">
         <span class="elbysodic-identity-menu__label">{{ viewer.membership.username }}</span>
         {% if viewer.current_character %}
@@ -95,6 +111,22 @@
       <div class="elbysodic-identity-menu__section">
         <span class="elbysodic-identity-menu__kicker">Writer</span>
         <a href="/members/{{ viewer.membership.username }}">{{ viewer.membership.display_name or viewer.membership.username }}</a>
+      </div>
+      <div class="elbysodic-identity-menu__compact-tools">
+        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if notifications_active else "" }}"
+           href="/notifications"
+           {% if notifications_active %}aria-current="page"{% end %}>
+          Notifications
+          {% if viewer.unread_notification_count %}
+          <span>{{ viewer.unread_notification_count }} unread</span>
+          {% else %}
+          <span>caught up</span>
+          {% end %}
+        </a>
+        <div class="elbysodic-identity-menu__theme-row">
+          <span>Theme</span>
+          {{ theme_toggle() }}
+        </div>
       </div>
       {% if viewer.current_character %}
       <form action="/identity" method="post" hx-boost="false" class="elbysodic-identity-menu__face-form">
@@ -124,19 +156,10 @@
       {% end %}
     </div>
   </details>
-  <a class="elbysodic-notification-button{{ " elbysodic-notification-button--active" if notifications_active else "" }}"
-     href="/notifications"
-     aria-label="Notifications{% if viewer.unread_notification_count %}, {{ viewer.unread_notification_count }} unread{% end %}">
-    <span class="elbysodic-notification-button__icon" aria-hidden="true">!</span>
-    {% if viewer.unread_notification_count %}
-    <span class="elbysodic-notification-button__count">{{ viewer.unread_notification_count }}</span>
-    {% else %}
-    <span class="elbysodic-notification-button__dot" aria-hidden="true"></span>
-    {% end %}
-  </a>
 </div>
-{% end %}
+{% else %}
 {{ theme_toggle() }}
+{% end %}
 {% end %}
 
 {% block shell_actions_oob %}

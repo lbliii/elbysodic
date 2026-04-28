@@ -111,12 +111,16 @@
 
 {% def event_bridge(event, label="Current event") %}
 {% if event %}
-<aside class="elbysodic-event-bridge" aria-label="{{ label }}">
+<aside class="elbysodic-notice elbysodic-notice--event elbysodic-event-bridge" aria-label="{{ label }}">
+  <span class="elbysodic-notice__mark" aria-hidden="true">!</span>
   <span class="elbysodic-event-bridge__label">{{ label }}</span>
-  <a class="elbysodic-event-bridge__title" href="/world/{{ event.material.slug }}">
-    {{ event.material.title }}
-  </a>
-  <span class="elbysodic-event-bridge__summary">{{ event.rendered_summary }}</span>
+  <span class="elbysodic-event-bridge__body">
+    <a class="elbysodic-event-bridge__title" href="/world/{{ event.material.slug }}">
+      {{ event.material.title }}
+    </a>
+    <span class="elbysodic-event-bridge__summary">{{ event.rendered_summary }}</span>
+  </span>
+  <a class="elbysodic-notice__action" href="/world/{{ event.material.slug }}">View event</a>
 </aside>
 {% end %}
 {% end %}

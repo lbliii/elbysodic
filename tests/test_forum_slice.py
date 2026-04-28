@@ -97,7 +97,8 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Relevant for Rogue:" in index.text
             assert "elbysodic-board-poster__face-signal-hint" in index.text
             assert "elbysodic-identity-menu" in index.text
-            assert "elbysodic-notification-button" in index.text
+            assert "elbysodic-identity-menu__notification-link" in index.text
+            assert "elbysodic-identity-menu__theme-row" in index.text
             assert "wearing Rogue" in index.text
             assert "elbysodic-community-table" in index.text
             assert "elbysodic-community-row" in index.text
@@ -189,7 +190,8 @@ def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
             assert "Built on" in index.text
             assert "<strong>Elbysodic</strong>" in index.text
             assert 'href="/desk"' in index.text
-            assert index.text.count("Writer Desk") == 1
+            assert index.text.count("Writer Desk") == 2
+            assert "elbysodic-mobile-realm-nav" in index.text
             assert 'class="elbysodic-topnav__link" href="/notifications"' not in index.text
 
     asyncio.run(run())
@@ -204,9 +206,14 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
             assert desk.status == 200
             assert "Writer Desk" in desk.text
             assert "Lane's operating room" in desk.text
+            assert "Writing as Rogue" in desk.text
             assert "What needs you" in desk.text
             assert "Face lanes" in desk.text
             assert "Work lanes" in desk.text
+            assert "Needs reply" in desk.text
+            assert "Unread watched" in desk.text
+            assert "Waiting on others" in desk.text
+            assert "Plotting rooms" in desk.text
             assert "wearing Rogue" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
@@ -719,7 +726,8 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert 'class="chirpui-sidebar elbysodic-sidebar"' in world.text
             assert "elbysodic-mobile-nav-trigger" in world.text
             assert "elbysodic-mobile-shell-drawer" in world.text
-            assert '<h2 class="chirpui-drawer__title">World</h2>' in world.text
+            assert '<h2 class="chirpui-drawer__title">Menu: World</h2>' in world.text
+            assert "elbysodic-mobile-realm-nav" in world.text
 
             locations = await client.get("/locations")
             assert locations.status == 200
@@ -744,7 +752,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert 'class="chirpui-sidebar__section-title">Start Here</span>' not in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Guides</span>' not in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Events</span>' not in guidebook.text
-            assert '<h2 class="chirpui-drawer__title">Guidebook</h2>' in guidebook.text
+            assert '<h2 class="chirpui-drawer__title">Menu: Guidebook</h2>' in guidebook.text
 
             desk = await client.get("/desk")
             assert desk.status == 200
@@ -754,7 +762,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Roster" in desk.text
             assert "World Map" not in desk.text
             assert 'class="chirpui-sidebar__section-title">Writer Desk</span>' not in desk.text
-            assert '<h2 class="chirpui-drawer__title">Desk</h2>' in desk.text
+            assert '<h2 class="chirpui-drawer__title">Menu: Desk</h2>' in desk.text
 
             studio = await client.get("/studio")
             assert studio.status == 200
@@ -766,7 +774,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
                 'class="chirpui-sidebar__section-title">Director Studio</span>' not in studio.text
             )
             assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
-            assert '<h2 class="chirpui-drawer__title">Studio</h2>' in studio.text
+            assert '<h2 class="chirpui-drawer__title">Menu: Studio</h2>' in studio.text
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
@@ -775,7 +783,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
             assert 'class="chirpui-sidebar__section-title">Casting</span>' not in wanted.text
-            assert '<h2 class="chirpui-drawer__title">Casting</h2>' in wanted.text
+            assert '<h2 class="chirpui-drawer__title">Menu: Casting</h2>' in wanted.text
 
     asyncio.run(run())
 
@@ -925,7 +933,7 @@ def test_topbar_marks_active_product_realm() -> None:
                 notifications.text,
             )
             assert re.search(
-                r'class="[^"]*elbysodic-notification-button--active[^"]*"'
+                r'class="[^"]*elbysodic-identity-menu__notification-link--active[^"]*"'
                 r'[^>]*href="/notifications"',
                 notifications.text,
             )
@@ -3058,7 +3066,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "Start thread" in form.text
             assert "elbysodicComposer" in form.text
             assert "thread-composer-config" in form.text
-            assert "Posting as" in form.text
+            assert "Post as" in form.text
             assert "Scene summary" in form.text
             assert "Tag cast" in form.text
             assert "elbysodicMentionPicker" in form.text

@@ -60,7 +60,7 @@
       {% if board.tagline %}
       <p class="elbysodic-board-stage__logline">{{ board.tagline }}</p>
       {% end %}
-      <p class="elbysodic-board-stage__description">{{ board.description }}</p>
+      <p class="elbysodic-board-stage__description elbysodic-copy-lead">{{ board.description }}</p>
       <div class="elbysodic-board-stage__signals">
         {{ board_stat_row(board_summary, viewer) }}
         {{ facet_pills(board_facets) }}
@@ -77,7 +77,7 @@
     <header class="elbysodic-place-section__header">
       <p class="elbysodic-kicker">Sublocations</p>
       <h2>Choose a door inside {{ board.name }}</h2>
-      <p>Rooms, districts, and pressure points that make this location playable.</p>
+      <p class="elbysodic-copy-section">Rooms, districts, and pressure points that make this location playable.</p>
     </header>
     <div class="elbysodic-subboard-grid">
       {% for summary in subboards %}
@@ -116,9 +116,9 @@
       {% end %}
       <h2>{{ board.name }} threads</h2>
       {% if is_location_board %}
-      <p>Direct threads in this location. Parent location totals include sublocations above.</p>
+      <p class="elbysodic-copy-section">Direct threads in this location. Parent location totals include sublocations above.</p>
       {% else %}
-      <p>Direct threads in this board.</p>
+      <p class="elbysodic-copy-section">Direct threads in this board.</p>
       {% end %}
     </header>
     {% call inline_nav("Thread filters") %}

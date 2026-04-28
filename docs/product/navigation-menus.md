@@ -199,6 +199,10 @@ Configurable:
   this classification. Treat it as production direction: changing a board kind
   changes the board's meaning; changing sidebar placement changes navigation
   without pretending the board is a different kind of object.
+- Board Taxonomy rows should foreground the director decision first: board
+  name, kind, sidebar placement, visibility, and parent/child relationship.
+  Form controls belong behind an `Edit placement` disclosure so the list stays
+  scannable, especially on mobile.
 - Studio's board editor is the deeper production room for each board: identity,
   parent, media, sort order, navigation order, visibility, and access belong
   there when a quick taxonomy row is not enough.
@@ -387,10 +391,16 @@ contents into visible navigation or a contextual action area.
 Mobile keeps the same hierarchy but changes the container.
 
 - The topbar compresses to a drawer trigger for the current major mode.
-- The drawer reuses the same contextual sidebar content.
+- The drawer starts with global realm links, then reuses the same contextual
+  sidebar content. The compact trigger names the current room, but the drawer
+  must still let the writer leave that room without hunting elsewhere.
 - Route parents remain visible links.
 - Active face remains accessible from the shell.
-- Notifications remain visible as a compact shell bubble/count.
+- Notifications attach to the identity cluster as a compact bubble/count, not
+  as an orphaned second control.
+- For signed-in writers, account identity, active face, notifications, and
+  theme live inside one identity menu at every width. The topbar should not
+  split them into sibling buttons that compete with the realm navigation.
 - Primary page actions stay in the page, not hidden inside the drawer.
 
 Do not create a separate mobile navigation model unless the desktop model is

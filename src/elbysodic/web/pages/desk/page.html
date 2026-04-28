@@ -1,22 +1,29 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/vocabulary.html" import command_action, lane_preview, local_rail, local_rail_link, metric_item %}
 {% end %}
 
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="62rem") %}
+{% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  <section class="elbysodic-desk-hero">
+  <section class="elbysodic-desk-hero elbysodic-desk-hero--v2">
     <div class="chirpui-stack chirpui-stack--sm">
       <p class="elbysodic-kicker">Writer Desk</p>
-      <h1>{{ viewer.membership.display_name or viewer.membership.username }}'s operating room</h1>
-      <p class="chirpui-text-muted">
-        Your roster, active face, writing queue, inbox, and plotting lanes in one place.
+      {% if viewer.current_character %}
+      <h1>Writing as {{ viewer.current_character.name }}</h1>
+      <p class="elbysodic-copy-lead">
+        {{ viewer.membership.display_name or viewer.membership.username }}'s operating room for replies, reading, plotting, inbox, and character work.
       </p>
+      {% else %}
+      <h1>{{ viewer.membership.display_name or viewer.membership.username }}'s operating room</h1>
+      <p class="elbysodic-copy-helper">
+        Your roster-level command surface for replies, reading, plotting, inbox, and character work.
+      </p>
+      {% end %}
     </div>
     <div class="elbysodic-desk-hero__lens">
       <span>{{ viewer.membership.username }}</span>
@@ -28,36 +35,32 @@
     </div>
   </section>
 
+  {% call local_rail("Writer Desk sections") %}
+    {{ local_rail_link("Needs reply", "#attention") }}
+    {{ local_rail_link("Unread", "#scenes") }}
+    {{ local_rail_link("Waiting", "#waiting") }}
+    {{ local_rail_link("Plotting", "#plotting") }}
+    {{ local_rail_link("Applications", "#casting") }}
+    {{ local_rail_link("Inbox", "#notifications") }}
+  {% end %}
+
   {% call surface(variant="elevated") %}
   <section class="elbysodic-desk-queue" aria-labelledby="desk-queue-heading">
     <div class="chirpui-stack chirpui-stack--sm">
       <p class="elbysodic-section-kicker">Today</p>
       <h2 id="desk-queue-heading">What needs you</h2>
-      <p class="chirpui-text-muted">
-        Start with replies, skim what is waiting, then use the lanes below when you need a narrower view.
-      </p>
+      <p class="elbysodic-copy-helper">{{ desk.current_focus_label }}</p>
     </div>
     <div class="elbysodic-desk-queue__metrics" aria-label="Desk queue totals">
-      <span class="elbysodic-queue-metric">
-        <strong>{{ desk.needs_reply_count }}</strong>
-        <span>Needs reply</span>
-      </span>
-      <span class="elbysodic-queue-metric">
-        <strong>{{ desk.waiting_count }}</strong>
-        <span>Waiting</span>
-      </span>
-      <span class="elbysodic-queue-metric">
-        <strong>{{ desk.unread_notifications }}</strong>
-        <span>Inbox</span>
-      </span>
-      <span class="elbysodic-queue-metric">
-        <strong>{{ desk.active_count }}</strong>
-        <span>Active</span>
-      </span>
+      {{ metric_item(desk.needs_reply_count, "Needs reply") }}
+      {{ metric_item(desk.unread_watched_count, "Unread") }}
+      {{ metric_item(desk.waiting_count, "Waiting") }}
+      {{ metric_item(desk.unread_notifications, "Inbox") }}
     </div>
-    <div class="elbysodic-desk-queue__actions">
-      <a class="chirpui-btn chirpui-btn--primary" href="{{ desk.next_queue_href }}">{{ desk.next_queue_label }}</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/notifications">Open inbox</a>
+    <div class="elbysodic-desk-queue__actions elbysodic-desk-action-grid">
+      {% for action in desk.actions %}
+      {{ command_action(action) }}
+      {% end %}
     </div>
   </section>
   {% end %}
@@ -82,23 +85,30 @@
   {% end %}
 
   {% call section_header("Work lanes") %}
-  Each lane supports writing from a different angle: attention, identity, plotting, intake, and discovery.
+  Move through writing, reading, plotting, applications, and inbox work without leaving the Desk first.
   {% end %}
 
-  <div class="elbysodic-desk-grid">
-    {% for item in desk_links %}
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm elbysodic-desk-card">
-      <div class="chirpui-cluster chirpui-cluster--between">
-        <h2><a class="chirpui-link" href="{{ item.href }}">{{ item.label }}</a></h2>
-        {{ badge(item.count ~ " new", variant="info") if item.count else "" }}
-      </div>
-      <p class="elbysodic-section-kicker">{{ item.lane }}</p>
-      <p class="chirpui-text-muted">{{ item.summary }}</p>
-    </article>
-    {% end %}
+  <div class="elbysodic-desk-grid elbysodic-desk-grid--lanes">
+    {% for lane in desk.lanes %}
+    {{ lane_preview(lane) }}
     {% end %}
   </div>
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-desk-shortcuts" aria-labelledby="desk-shortcuts-heading">
+    <div>
+      <p class="elbysodic-section-kicker">Desk shortcuts</p>
+      <h2 id="desk-shortcuts-heading">Deeper rooms</h2>
+    </div>
+    <div class="elbysodic-desk-shortcuts__links">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads">Queue</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/notifications">Inbox</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/characters">Roster</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Discovery</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Casting</a>
+    </div>
+  </section>
+  {% end %}
 {% end %}
 {% end %}
 {% end %}

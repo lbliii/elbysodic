@@ -1,8 +1,8 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/ui.html" import counter %}
+  {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
 {% def room_card(item) %}
@@ -57,20 +57,13 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  <article class="chirpui-stack chirpui-stack--md">
-    <div>
-      <p class="elbysodic-kicker">Writer Desk</p>
-      <h2>{{ viewer.current_character.name if viewer.current_character else viewer.membership.display_name }}</h2>
-      <p class="chirpui-text-muted">
-        Turn interest into a private planning lane before it becomes an IC scene.
-      </p>
+  {% call command_panel("Writer Desk", viewer.current_character.name if viewer.current_character else viewer.membership.display_name, "Turn interest into a private planning lane before it becomes an IC scene.", "plotting-pulse-heading") %}
+    <div class="elbysodic-command-panel__metrics" aria-label="Plotting pulse">
+      {{ metric_item(desk.rooms | length, "Rooms") }}
+      {{ metric_item(desk.plot_hook_interests | length, "Plot interest") }}
+      {{ metric_item(desk.wanted_interests | length, "Wanted interest") }}
     </div>
-    <div class="elbysodic-profile-hero__metrics" aria-label="Plotting pulse">
-      {{ counter("R", desk.rooms | length, "rooms") }}
-      {{ counter("!", desk.plot_hook_interests | length, "plot hook interest") }}
-      {{ counter("@", desk.wanted_interests | length, "wanted interest") }}
-    </div>
-  </article>
+  {% end %}
   {% end %}
 
   <section class="chirpui-stack chirpui-stack--md">

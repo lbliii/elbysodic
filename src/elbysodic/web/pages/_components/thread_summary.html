@@ -15,7 +15,7 @@
   </a>
   <div class="elbysodic-thread-card__main">
     <div class="elbysodic-thread-card__identity">
-      <p class="elbysodic-thread-card__eyebrow">
+      <p class="elbysodic-thread-card__eyebrow elbysodic-copy-meta">
         {% if show_board_name %}
         <a class="chirpui-link" href="/boards/{{ board.slug }}">{{ board.name }}</a>
         {% endif %}
@@ -48,17 +48,17 @@
         </a>
       </h3>
       {% end %}
-      <p class="elbysodic-thread-card__meta">
+      <p class="elbysodic-thread-card__meta elbysodic-copy-meta">
         Started by <a class="chirpui-link" href="/characters/{{ author.slug }}">{{ author.name }}</a>
         {% if author_membership %}
         <span>writer <a class="chirpui-link" href="/members/{{ author_membership.username }}">{{ author_membership.username }}</a></span>
         {% end %}
       </p>
       {% if thread.summary %}
-      <p class="elbysodic-thread-card__summary">{{ thread.summary }}</p>
+      <p class="elbysodic-thread-card__summary elbysodic-copy-summary">{{ thread.summary }}</p>
       {% end %}
       {% if episode %}
-      <p class="elbysodic-thread-card__credits">
+      <p class="elbysodic-thread-card__credits elbysodic-copy-meta">
         <span>{{ episode.read_estimate_label }}</span>
         <span>{{ episode.post_count }} posts</span>
         {% if episode.writer_memberships %}
@@ -130,7 +130,7 @@
       </a>
     </h3>
     {% end %}
-    <p class="elbysodic-thread-card__meta">
+    <p class="elbysodic-thread-card__meta elbysodic-copy-meta">
       {% if show_board_name %}
       <a class="chirpui-link" href="/boards/{{ board.slug }}">{{ board.name }}</a>
       <span aria-hidden="true">/</span>
@@ -141,7 +141,7 @@
       {% end %}
     </p>
     {% if episode %}
-    <p class="elbysodic-thread-card__credits">
+    <p class="elbysodic-thread-card__credits elbysodic-copy-meta">
       <span>{{ episode.read_estimate_label }}</span>
       <span>{{ episode.writer_count }} writers</span>
     </p>
@@ -191,7 +191,7 @@
       {{ thread.title }}
     </a>
   </h2>
-  <p class="chirpui-text-muted">{{ snippet }}</p>
+  <p class="elbysodic-copy-summary">{{ snippet }}</p>
 </article>
 {% end %}
 {% end %}
@@ -217,7 +217,7 @@
         {{ thread.title }}
       </a>
     </h3>
-    <p>{{ snippet }}</p>
+    <p class="elbysodic-copy-summary">{{ snippet }}</p>
   </div>
 </article>
 {% end %}

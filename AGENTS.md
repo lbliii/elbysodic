@@ -41,6 +41,11 @@ platforms forced roleplayers to do.
 - Use `docs/product/navigation-menus.md` before changing topbar realms,
   sidebar grouping, route pathing, breadcrumbs, tabs, dropdowns, active states,
   or mobile navigation behavior.
+- Use `docs/product/paragraph-rhythm.md` before adding or changing `<p>` output
+  or paragraph styling. Posts, hero leads, card summaries, helper copy,
+  metadata, and empty states need distinct text roles.
+- Use `docs/product/notices-admonitions.md` before adding current-event bridges,
+  warnings, staff notices, toasts, or other page-local alerts.
 - Keep frontend controls complete and ergonomic for roleplayers doing real
   writing: stable composer dimensions, previews, drafts, toolbar affordances,
   and clear character context.

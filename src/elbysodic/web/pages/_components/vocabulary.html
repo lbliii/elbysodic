@@ -1,0 +1,109 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def local_rail(label, cls="") %}
+<nav class="elbysodic-local-rail{{ " " ~ cls if cls else "" }}" aria-label="{{ label }}">
+  {% slot %}
+</nav>
+{% end %}
+
+{% def local_rail_link(label, href) %}
+<a href="{{ href }}">{{ label }}</a>
+{% end %}
+
+{% def preview_row(item, cls="") %}
+<a class="elbysodic-preview-row{{ " " ~ cls if cls else "" }}" href="{{ item.href }}">
+  <span class="elbysodic-preview-row__body">
+    <span class="elbysodic-preview-row__topline">
+      <strong>{{ item.title }}</strong>
+      {{ badge(item.badge, variant="info") if item.badge else "" }}
+    </span>
+    <span class="elbysodic-preview-row__meta">{{ item.meta }}</span>
+    <span class="elbysodic-preview-row__summary">{{ item.summary }}</span>
+  </span>
+</a>
+{% end %}
+
+{% def metric_item(value, label, cls="") %}
+<span class="elbysodic-metric{{ " " ~ cls if cls else "" }}">
+  <strong>{{ value }}</strong>
+  <span>{{ label }}</span>
+</span>
+{% end %}
+
+{% def command_action(action, cls="") %}
+<a class="elbysodic-command-action{{ " " ~ cls if cls else "" }}" href="{{ action.href }}">
+  <span>
+    <strong>{{ action.label }}</strong>
+    <small>{{ action.summary }}</small>
+  </span>
+  {% if action.count %}
+  <b>{{ action.count }}</b>
+  {% end %}
+</a>
+{% end %}
+
+{% def command_panel(kicker, title, summary, heading_id=None, cls="") %}
+<article class="elbysodic-command-panel{{ " " ~ cls if cls else "" }}">
+  <div class="elbysodic-command-panel__copy">
+    <p class="elbysodic-section-kicker">{{ kicker }}</p>
+    {% if heading_id %}
+    <h2 id="{{ heading_id }}">{{ title }}</h2>
+    {% else %}
+    <h2>{{ title }}</h2>
+    {% end %}
+    <p class="elbysodic-copy-section">{{ summary }}</p>
+  </div>
+  <div class="elbysodic-command-panel__tools">
+    {% slot %}
+  </div>
+</article>
+{% end %}
+
+{% def lane_preview(lane, cls="") %}
+{% call surface(variant="elevated") %}
+<article id="{{ lane.anchor }}" class="elbysodic-lane-preview{{ " " ~ cls if cls else "" }}" aria-labelledby="{{ lane.anchor }}-heading">
+  <div class="elbysodic-lane-preview__header">
+    <div>
+      <p class="elbysodic-section-kicker">{{ lane.count }} open</p>
+      <h2 id="{{ lane.anchor }}-heading">{{ lane.title }}</h2>
+      <p class="elbysodic-copy-section">{{ lane.summary }}</p>
+    </div>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ lane.href }}">{{ lane.action_label }}</a>
+  </div>
+  <div class="elbysodic-lane-preview__items">
+    {% if lane.items %}
+      {% for item in lane.items %}
+      {{ preview_row(item) }}
+      {% end %}
+    {% else %}
+      <p class="elbysodic-empty-state">{{ lane.empty_text }}</p>
+    {% end %}
+  </div>
+</article>
+{% end %}
+{% end %}
+
+{% def production_room_card(kicker, title, summary, href, primary, secondary, cls="") %}
+<a class="elbysodic-production-room-card{{ " " ~ cls if cls else "" }}" href="{{ href }}">
+  <span class="elbysodic-kicker">{{ kicker }}</span>
+  <strong>{{ title }}</strong>
+  <em>{{ summary }}</em>
+  <span>{{ primary }}</span>
+  <small>{{ secondary }}</small>
+</a>
+{% end %}
+
+{% def room_header(kicker, title, summary, heading_id=None, cls="") %}
+<div class="elbysodic-room-header{{ " " ~ cls if cls else "" }}">
+  <p class="elbysodic-kicker">{{ kicker }}</p>
+  {% if heading_id %}
+  <h2 id="{{ heading_id }}">{{ title }}</h2>
+  {% else %}
+  <h2>{{ title }}</h2>
+  {% end %}
+  <p class="elbysodic-copy-section">{{ summary }}</p>
+</div>
+{% end %}

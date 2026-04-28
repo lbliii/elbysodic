@@ -10,6 +10,11 @@ This document explains what repeated concepts mean visually. Use
 compact, editable, or collapsed a control should be.
 Use `docs/product/navigation-menus.md` when deciding route placement, topbar
 realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
+Use `docs/product/paragraph-rhythm.md` before adding or changing paragraph
+output; Elbysodic is a text-first app, so prose, summaries, helper copy, and
+metadata need distinct paragraph roles.
+Use `docs/product/notices-admonitions.md` before adding current-event bridges,
+warnings, staff notices, toasts, or other page-local alerts.
 
 ## Audit Baseline
 
@@ -27,6 +32,47 @@ competes for attention. Elbysodic should instead decide which concepts are
 identity, which are action, which are metadata, and which are signals.
 
 ## Vocabulary
+
+### Component Promotion
+
+Promote a page-local shape into `src/elbysodic/web/pages/_components/` when it
+appears in more than one product area or clearly represents a PBP-native
+concept. The goal is shared meaning, not generic abstraction. Prefer component
+names that describe the writer/director job they support.
+
+Current promoted component shapes:
+
+- `local_rail`: in-page navigation for dense rooms such as Writer Desk, Studio,
+  character hubs, and application/casting surfaces. It moves within the current
+  route; it is not a sidebar substitute and should not carry global active
+  state.
+- `preview_row`: compact linked object summary with title, badge, metadata, and
+  snippet. Use for recent notifications, queue items, plotting rooms, and other
+  scannable work previews.
+- `metric_item`: compact stable quantity inside a command surface, queue focus,
+  or production overview. It is not a button; pair it with nearby actions when
+  the number should lead somewhere.
+- `command_action`: short action tile for the first few things a writer or
+  director can do from a command surface. Use when the action benefits from one
+  sentence of context and an optional count; use a plain button/link when the
+  action is already obvious.
+- `command_panel`: compact elevated summary for a page or workroom. Use when a
+  page needs one explanatory title plus a small set of metrics or immediate
+  actions, such as applications, plotting rooms, or queue focus.
+- `lane_preview`: a bounded work lane with count, explanation, deeper-room
+  action, and a small list of `preview_row` items. Use when the page is a
+  command surface and the deeper workflow lives elsewhere.
+- `production_room_card`: a Studio-style room tile for director/admin surfaces
+  where the card represents an area of board production rather than a single
+  story object.
+- `room_header`: a kicker, title, and short explanation for one room within a
+  dense production surface. Use when a route is divided into several stable
+  workrooms and those rooms need consistent anchor targets.
+
+Do not promote a shape just because it has similar CSS. Promote it when reusing
+the component makes the page's meaning clearer: writer attention lanes should
+feel like writer attention lanes everywhere, and director production rooms
+should feel like director production rooms everywhere.
 
 ### PlaceTile
 

@@ -74,7 +74,7 @@
 <article class="chirpui-stack chirpui-stack--sm elbysodic-board-card elbysodic-location-card">
   {{ board_poster(summary, viewer, False, True, heading_level) }}
   <div class="elbysodic-board-card__body">
-    <p class="elbysodic-board-card__description">{{ summary.board.description }}</p>
+    <p class="elbysodic-board-card__description elbysodic-copy-summary">{{ summary.board.description }}</p>
     {{ board_stat_row(summary, viewer) }}
   </div>
   {{ facet_pills(summary.facets) }}
@@ -108,7 +108,7 @@
   <div class="elbysodic-community-row__main">
     <div>
       <h3><a href="{{ summary.href }}">{{ summary.board.name }}</a></h3>
-      <p>{{ summary.board.description }}</p>
+      <p class="elbysodic-copy-summary">{{ summary.board.description }}</p>
     </div>
     {% if summary.facets %}
     {{ facet_pills(summary.facets) }}
@@ -128,7 +128,7 @@
 <article class="chirpui-stack chirpui-stack--sm elbysodic-subboard-card">
   {{ board_poster(summary, viewer, True, True, "h3") }}
   <div class="elbysodic-subboard-card__body">
-    <p class="elbysodic-board-card__description">{{ summary.board.description }}</p>
+    <p class="elbysodic-board-card__description elbysodic-copy-summary">{{ summary.board.description }}</p>
     <div class="elbysodic-subboard-card__signals">
       {{ board_stat_row(summary, viewer, False) }}
       {{ facet_pills(summary.facets) }}

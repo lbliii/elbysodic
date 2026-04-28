@@ -23,7 +23,7 @@
         {{ badge(wanted.wanted_ad.status, variant="success" if wanted.wanted_ad.status == "open" else "muted") }}
       </div>
       {% if wanted.wanted_ad.summary %}
-      <p class="chirpui-text-muted">{{ wanted.wanted_ad.summary }}</p>
+      <p class="elbysodic-copy-lead">{{ wanted.wanted_ad.summary }}</p>
       {% end %}
     </div>
 
@@ -55,7 +55,7 @@
 
     {% if wanted.related_characters %}
     <div>
-      <p class="chirpui-text-muted">Related characters</p>
+      <p class="elbysodic-copy-meta">Related characters</p>
       <div class="elbysodic-character-chip-row">
         {% for character in wanted.related_characters %}
         <a class="elbysodic-character-chip" href="/characters/{{ character.slug }}">
@@ -96,9 +96,9 @@
         </button>
       </form>
       {% elif wanted.is_created_by_viewer %}
-      <p class="chirpui-text-muted">You created this hook.</p>
+      <p class="elbysodic-copy-status">You created this hook.</p>
       {% elif wanted.wanted_ad.status != "open" %}
-      <p class="chirpui-text-muted">This hook is {{ wanted.wanted_ad.status }}.</p>
+      <p class="elbysodic-copy-status">This hook is {{ wanted.wanted_ad.status }}.</p>
       {% end %}
       {% if wanted.can_express_prospective_interest %}
       <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-prospective-interest">

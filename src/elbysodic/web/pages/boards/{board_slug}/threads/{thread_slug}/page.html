@@ -390,11 +390,21 @@
       <div class="elbysodic-composer-heading">
         <div>
           <p class="elbysodic-kicker">Next beat</p>
-          <h2>Reply as {{ selected_character.name }}</h2>
-          <p class="chirpui-text-muted">Continue the scene as the face you are wearing.</p>
+          <h2>Reply as <span x-text="character().name">{{ selected_character.name }}</span></h2>
+          <p class="elbysodic-copy-helper">Use your topbar face by default, or choose a one-off face for this post.</p>
+        </div>
+      </div>
+      <div class="elbysodic-composer-character elbysodic-composer-character--selectable" aria-label="Active face for this reply">
+        <div class="elbysodic-character-avatar" aria-hidden="true">
+          <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
+          <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
         </div>
         <div>
-          <label class="chirpui-field__label" for="reply-character">Change face</label>
+          <strong x-text="character().name">{{ selected_character.name }}</strong>
+          <p class="elbysodic-copy-summary" x-text="character().summary">{{ selected_character.summary }}</p>
+        </div>
+        <div class="elbysodic-composer-character__control">
+          <label class="chirpui-field__label" for="reply-character">Post as</label>
           <select id="reply-character"
                   name="character_id"
                   class="chirpui-field__input"
@@ -405,16 +415,6 @@
             </option>
             {% end %}
           </select>
-        </div>
-      </div>
-      <div class="elbysodic-composer-character" aria-label="Active face for this reply">
-        <div class="elbysodic-character-avatar" aria-hidden="true">
-          <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
-          <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
-        </div>
-        <div>
-          <strong x-text="character().name">{{ selected_character.name }}</strong>
-          <p class="chirpui-text-muted" x-text="character().summary">{{ selected_character.summary }}</p>
         </div>
       </div>
       {% if error %}

@@ -17,18 +17,18 @@
     <div class="elbysodic-world-hero__copy">
       <p class="elbysodic-kicker">World status</p>
       <h1>{{ viewer.community.name }}</h1>
-      <p>
+      <p class="elbysodic-copy-lead">
         The school has reopened under a fragile truce while B-24 turns mutant fear into
         policy, prediction, and weaponry. Choose a door into the crisis: academy halls,
         frozen streets, underground networks, diplomatic rooms, or the labs pretending
         this was all inevitable.
       </p>
       {% if viewer.current_character %}
-      <p class="chirpui-text-muted">
+      <p class="elbysodic-copy-helper">
         Current face: {{ viewer.current_character.name }}. Relevant locations are quietly marked.
       </p>
       {% else %}
-      <p class="chirpui-text-muted">
+      <p class="elbysodic-copy-helper">
         Create your first character to start posting in {{ viewer.community.name }}.
       </p>
       {% end %}

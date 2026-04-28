@@ -40,10 +40,20 @@
       <div>
         <p class="elbysodic-kicker">Scene draft</p>
         <h2>Opening post</h2>
-        <p class="chirpui-text-muted">Set the hook, tag the cast, and write the first beat.</p>
+        <p class="elbysodic-copy-helper">Set the hook, tag the cast, and write the first beat.</p>
+      </div>
+    </div>
+    <div class="elbysodic-composer-character elbysodic-composer-character--selectable" aria-label="Active face for this post">
+      <div class="elbysodic-character-avatar" aria-hidden="true">
+        <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
+        <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
       </div>
       <div>
-        <label class="chirpui-field__label" for="thread-character">Posting as</label>
+        <strong x-text="character().name">{{ selected_character.name }}</strong>
+        <p class="elbysodic-copy-summary" x-text="character().summary">{{ selected_character.summary }}</p>
+      </div>
+      <div class="elbysodic-composer-character__control">
+        <label class="chirpui-field__label" for="thread-character">Post as</label>
         <select id="thread-character"
                 name="character_id"
                 class="chirpui-field__input"
@@ -54,16 +64,6 @@
           </option>
           {% end %}
         </select>
-      </div>
-    </div>
-    <div class="elbysodic-composer-character" aria-label="Active face for this post">
-      <div class="elbysodic-character-avatar" aria-hidden="true">
-        <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
-        <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
-      </div>
-      <div>
-        <strong x-text="character().name">{{ selected_character.name }}</strong>
-        <p class="chirpui-text-muted" x-text="character().summary">{{ selected_character.summary }}</p>
       </div>
     </div>
     {% if error %}

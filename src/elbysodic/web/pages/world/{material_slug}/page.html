@@ -18,7 +18,7 @@
       </a>
     </h3>
     {% if item.thread.summary %}
-    <p>{{ item.thread.summary }}</p>
+    <p class="elbysodic-copy-summary">{{ item.thread.summary }}</p>
     {% end %}
   </div>
   {{ scene_state_badges(item.thread) }}
@@ -53,7 +53,7 @@
       <p class="elbysodic-material-card__type">{{ material.type_label }}</p>
       <h1>{{ material.material.title }}</h1>
       {% if material.material.summary %}
-      <p>{{ material.material.summary }}</p>
+      <p class="elbysodic-copy-lead">{{ material.material.summary }}</p>
       {% end %}
       {{ facet_pills(material.facets) }}
     </div>
@@ -89,7 +89,7 @@
     <div>
       <p class="elbysodic-kicker">Write now</p>
       <h2 id="event-actions-title">Carry this event into play</h2>
-      <p>Scenes, hooks, places, and discovery routes that turn this canon pressure into posts.</p>
+      <p class="elbysodic-copy-section">Scenes, hooks, places, and discovery routes that turn this canon pressure into posts.</p>
     </div>
     <div class="elbysodic-event-action-grid">
       {% for action in material.event_actions %}

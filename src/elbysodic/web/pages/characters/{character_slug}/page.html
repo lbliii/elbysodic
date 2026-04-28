@@ -49,8 +49,8 @@
             {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
             {{ badge(profile.application_status_label, variant=profile.application_status_variant) }}
           </div>
-          <p class="chirpui-text-muted">{{ profile.character.summary }}</p>
-          <p class="chirpui-text-muted">
+          <p class="elbysodic-copy-lead">{{ profile.character.summary }}</p>
+          <p class="elbysodic-copy-meta">
             writer
             <a class="chirpui-link" href="/members/{{ profile.owner_membership.username }}">
               {{ profile.owner_membership.username }}
@@ -143,7 +143,7 @@
           <p class="elbysodic-wanted-card__type">{{ item.source_label }}</p>
           <h3><a class="chirpui-link" href="/plotting/{{ item.room.id }}">{{ item.room.title }}</a></h3>
           {% if item.room.summary %}
-          <p class="chirpui-text-muted">{{ item.room.summary }}</p>
+          <p class="elbysodic-copy-summary">{{ item.room.summary }}</p>
           {% end %}
         </div>
         <div class="elbysodic-interest-card__meta">
