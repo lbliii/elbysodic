@@ -1094,6 +1094,7 @@ body {
         minmax(0, 1fr)
         minmax(8rem, 0.2fr)
         minmax(8rem, 0.22fr)
+        minmax(8rem, 0.18fr)
         minmax(5rem, 0.12fr)
         auto
         auto;
@@ -1136,9 +1137,98 @@ body {
     padding: 0.14rem 0.45rem;
 }
 
+.elbysodic-board-taxonomy-row__meta a {
+    color: var(--chirpui-link);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    text-decoration: none;
+}
+
 .elbysodic-board-taxonomy-row__toggle {
     align-self: end;
     min-height: 2.45rem;
+}
+
+.elbysodic-board-editor-layout {
+    align-items: start;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(min(100%, 22rem), 0.35fr);
+}
+
+.elbysodic-board-editor-form h2,
+.elbysodic-board-editor-layout h2 {
+    margin: 0;
+}
+
+.elbysodic-board-editor-form textarea[name="description"] {
+    line-height: 1.55;
+    min-height: 8rem;
+}
+
+.elbysodic-board-editor-toggles {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.elbysodic-board-editor-preview-stage {
+    aspect-ratio: 16 / 10;
+    background:
+        linear-gradient(180deg, rgba(10, 12, 16, 0.12), rgba(10, 12, 16, 0.9)),
+        radial-gradient(circle at 72% 24%, color-mix(in srgb, var(--chirpui-accent) 28%, transparent), transparent 38%),
+        var(--chirpui-bg-subtle);
+    background-position: center;
+    background-size: cover;
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.35rem;
+    padding: 1rem;
+    place-content: end start;
+}
+
+.elbysodic-board-editor-preview-stage span {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.elbysodic-board-editor-preview-stage strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-2xl);
+    line-height: 1;
+}
+
+.elbysodic-board-editor-preview-stage em {
+    color: var(--chirpui-text-muted);
+    font-style: normal;
+    font-weight: 800;
+}
+
+.elbysodic-board-editor-facts {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+}
+
+.elbysodic-board-editor-facts div {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.15rem;
+    padding-top: 0.55rem;
+}
+
+.elbysodic-board-editor-facts dt {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.elbysodic-board-editor-facts dd {
+    font-weight: 850;
+    margin: 0;
 }
 
 .elbysodic-navigation-composer {
@@ -4932,6 +5022,7 @@ body {
     .elbysodic-director-queue,
     .elbysodic-director-event,
     .elbysodic-board-taxonomy-row,
+    .elbysodic-board-editor-layout,
     .elbysodic-navigation-composer,
     .elbysodic-navigation-preview__list li {
         grid-template-columns: 1fr;

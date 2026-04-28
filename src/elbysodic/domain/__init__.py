@@ -2,11 +2,18 @@
 
 from elbysodic.domain.boards import (
     BOARD_KINDS,
+    BOARD_SIDEBAR_SECTIONS,
     BoardKind,
+    BoardSidebarSection,
     is_community_board,
+    is_community_sidebar_board,
     is_desk_board,
+    is_desk_sidebar_board,
     is_location_board,
+    is_location_sidebar_board,
+    is_studio_sidebar_board,
     normalize_board_kind,
+    normalize_board_sidebar_section,
 )
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, CommunityContext
 from elbysodic.domain.models import (
@@ -25,9 +32,11 @@ from elbysodic.domain.models import (
 
 __all__ = [
     "BOARD_KINDS",
+    "BOARD_SIDEBAR_SECTIONS",
     "DEFAULT_COMMUNITY_ID",
     "Board",
     "BoardKind",
+    "BoardSidebarSection",
     "Character",
     "Community",
     "CommunityContext",
@@ -40,7 +49,12 @@ __all__ = [
     "ThreadWatch",
     "User",
     "is_community_board",
+    "is_community_sidebar_board",
     "is_desk_board",
+    "is_desk_sidebar_board",
     "is_location_board",
+    "is_location_sidebar_board",
+    "is_studio_sidebar_board",
     "normalize_board_kind",
+    "normalize_board_sidebar_section",
 ]

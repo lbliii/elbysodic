@@ -1,0 +1,254 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/boards.html" import board_stat_row %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="76rem") %}
+{% call stack(gap="lg") %}
+  <div class="elbysodic-place-toolbar">
+    <nav class="elbysodic-place-path" aria-label="Studio path">
+      <a href="/studio">Studio</a>
+      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
+      <a href="/studio#board-taxonomy">Board taxonomy</a>
+      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
+      <span aria-current="page">{{ editor.board.name }}</span>
+    </nav>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/boards/{{ editor.board.slug }}">View board</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio">Back to Studio</a>
+    </div>
+  </div>
+
+  <section class="elbysodic-director-hero elbysodic-board-editor-hero">
+    <div>
+      <p class="elbysodic-kicker">Board editor</p>
+      <h1>Edit {{ editor.board.name }}</h1>
+      <p>{{ editor.guidance }}</p>
+    </div>
+    <aside class="elbysodic-director-hero__signals" aria-label="Board production state">
+      <div class="elbysodic-director-signal">
+        <span>Kind</span>
+        <strong>{{ editor.kind_label }}</strong>
+      </div>
+      <div class="elbysodic-director-signal">
+        <span>Realm</span>
+        <strong>{{ editor.realm_label }}</strong>
+      </div>
+      <div class="elbysodic-director-signal">
+        <span>Sidebar</span>
+        <strong>{{ editor.sidebar_section_label }}</strong>
+      </div>
+    </aside>
+  </section>
+
+  {% if not editor.can_manage %}
+  {% call surface(variant="elevated") %}
+  <p class="elbysodic-empty-state">
+    Board editor is visible as a preview, but only staff memberships can manage board production.
+  </p>
+  {% end %}
+  {% else %}
+  <section class="elbysodic-board-editor-layout">
+    {% call surface(variant="elevated") %}
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-board-editor-form">
+      {% if error %}
+      <p class="chirpui-field__error">{{ error }}</p>
+      {% end %}
+      <div>
+        <p class="elbysodic-kicker">Identity</p>
+        <h2>Board details</h2>
+      </div>
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="board-name">Name</label>
+          <input id="board-name"
+                 class="chirpui-field__input"
+                 name="name"
+                 value="{{ values.name }}"
+                 required>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-kind">Kind</label>
+          <select id="board-kind" class="chirpui-field__input" name="board_kind">
+            {% for value, label in board_kind_labels.items() %}
+            <option value="{{ value }}" {{ "selected" if value == values.board_kind else "" }}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-parent">Parent location</label>
+          <select id="board-parent" class="chirpui-field__input" name="parent_board_id">
+            <option value="">None</option>
+            {% for option in editor.parent_options %}
+            <option value="{{ option.id }}" {{ "selected" if option.id == values.parent_board_id else "" }}>
+              {{ option.name }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="chirpui-field__label" for="board-tagline">Tagline</label>
+        <input id="board-tagline"
+               class="chirpui-field__input"
+               name="tagline"
+               value="{{ values.tagline }}">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="board-description">Description</label>
+        <textarea id="board-description"
+                  class="chirpui-field__input"
+                  name="description"
+                  rows="4">{{ values.description }}</textarea>
+      </div>
+
+      <div>
+        <p class="elbysodic-kicker">Media</p>
+        <h2>Board image</h2>
+      </div>
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="board-image-url">Image URL</label>
+          <input id="board-image-url"
+                 class="chirpui-field__input"
+                 name="image_url"
+                 value="{{ values.image_url }}">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-image-alt">Image alt text</label>
+          <input id="board-image-alt"
+                 class="chirpui-field__input"
+                 name="image_alt"
+                 value="{{ values.image_alt }}">
+        </div>
+      </div>
+
+      <div>
+        <p class="elbysodic-kicker">Structure</p>
+        <h2>Ordering and access</h2>
+      </div>
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="board-sort-order">Board sort order</label>
+          <input id="board-sort-order"
+                 class="chirpui-field__input"
+                 type="number"
+                 name="sort_order"
+                 value="{{ values.sort_order }}"
+                 min="0"
+                 step="1">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-navigation-order">Navigation order</label>
+          <input id="board-navigation-order"
+                 class="chirpui-field__input"
+                 type="number"
+                 name="navigation_order"
+                 value="{{ values.navigation_order }}"
+                 min="0"
+                 step="1">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-sidebar-section">Sidebar placement</label>
+          <select id="board-sidebar-section" class="chirpui-field__input" name="sidebar_section">
+            {% for value, label in sidebar_section_labels.items() %}
+            <option value="{{ value }}" {{ "selected" if value == values.sidebar_section else "" }}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+      <div class="elbysodic-board-editor-toggles">
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="show_in_navigation"
+                 {{ "checked" if values.show_in_navigation else "" }}>
+          <span>Show in sidebar navigation</span>
+        </label>
+        <label class="elbysodic-checkbox">
+          <input type="checkbox"
+                 name="is_private"
+                 {{ "checked" if values.is_private else "" }}>
+          <span>Staff/private board</span>
+        </label>
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Save board</button>
+      </div>
+    </form>
+    {% end %}
+
+    <aside class="chirpui-stack chirpui-stack--md">
+      {% call surface(variant="elevated") %}
+      <section class="chirpui-stack chirpui-stack--sm">
+        <p class="elbysodic-kicker">Preview</p>
+        <h2>Board surface</h2>
+        <div class="elbysodic-board-editor-preview-stage elbysodic-board-media--{{ editor.board.slug }}"
+             {% if editor.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86)), url('{{ editor.board.image_url }}');"{% end %}>
+          <span>{{ editor.kind_label }}</span>
+          <strong>{{ editor.board.name }}</strong>
+          {% if editor.board.tagline %}
+          <em>{{ editor.board.tagline }}</em>
+          {% end %}
+        </div>
+        <p class="chirpui-text-muted">{{ editor.board.description }}</p>
+        {{ board_stat_row(editor.summary, viewer) }}
+      </section>
+      {% end %}
+
+      {% call surface(variant="elevated") %}
+      <section class="chirpui-stack chirpui-stack--sm">
+        <p class="elbysodic-kicker">Navigation</p>
+        <h2>Composer effect</h2>
+        <dl class="elbysodic-board-editor-facts">
+          <div>
+            <dt>Sidebar placement</dt>
+            <dd>{{ editor.sidebar_section_label }}</dd>
+          </div>
+          <div>
+            <dt>Placement rule</dt>
+            <dd>{{ editor.sidebar_section_guidance }}</dd>
+          </div>
+          <div>
+            <dt>Navigation order</dt>
+            <dd>{{ editor.board.navigation_order }}</dd>
+          </div>
+          <div>
+            <dt>Visibility</dt>
+            <dd>{{ "Shown in navigation" if editor.board.show_in_navigation else "Hidden from navigation" }}</dd>
+          </div>
+          <div>
+            <dt>Access</dt>
+            <dd>{{ "Private/staff" if editor.board.is_private else "Public" }}</dd>
+          </div>
+          {% if editor.parent %}
+          <div>
+            <dt>Parent</dt>
+            <dd>{{ editor.parent.name }}</dd>
+          </div>
+          {% end %}
+        </dl>
+        <p class="chirpui-text-muted">
+          Hidden from navigation keeps the board reachable by direct URL. Private boards still depend on permissions.
+        </p>
+      </section>
+      {% end %}
+    </aside>
+  </section>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

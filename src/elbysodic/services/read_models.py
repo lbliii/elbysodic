@@ -673,6 +673,7 @@ class BoardTaxonomyItem:
     kind_label: str
     realm_label: str
     sidebar_label: str
+    sidebar_section_label: str
     guidance: str
 
     @property
@@ -694,7 +695,23 @@ class NavigationPreviewSection:
     realm_label: str
     title: str
     description: str
+    label_visible: bool
     items: list[NavigationPreviewItem]
+
+
+@dataclass(frozen=True, slots=True)
+class StudioBoardEditor:
+    board: Board
+    summary: BoardSummary
+    parent: Board | None
+    parent_options: list[Board]
+    kind_label: str
+    realm_label: str
+    sidebar_label: str
+    sidebar_section_label: str
+    sidebar_section_guidance: str
+    guidance: str
+    can_manage: bool
 
 
 @dataclass(frozen=True, slots=True)

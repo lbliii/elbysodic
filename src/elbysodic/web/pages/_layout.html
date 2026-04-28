@@ -146,8 +146,10 @@
 {% end %}
 {% end %}
 
-{% def sidebar_count_link(href, label, count) %}
-<a class="chirpui-sidebar__link elbysodic-sidebar-link" href="{{ href }}" title="{{ label }}">
+{% def sidebar_count_link(href, label, count, is_active=False) %}
+<a class="chirpui-sidebar__link elbysodic-sidebar-link" href="{{ href }}"
+   title="{{ label }}"
+   {% if is_active %}aria-current="page"{% end %}>
   <span>{{ label }}</span>
   {% if count %}
   <span class="elbysodic-sidebar-count">{{ count }}</span>
@@ -220,9 +222,9 @@
 
 {% def world_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% set current_board_kind = board.board_kind if board is defined else "" %}
-  {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_kind in ("location", "sublocation") %}
-  {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_kind in ("community", "archive") %}
+  {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
+  {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
+  {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
   {% call sidebar_section() %}
     {{ sidebar_destination_link(url_for("index"), "Overview", "home", sidebar_path == "/") }}
   {% end %}
@@ -241,7 +243,7 @@
     <a class="chirpui-sidebar__link" href="/members" title="Members">Members</a>
     {% if viewer %}
     {% for item in viewer.community_navigation_boards %}
-    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count, board is defined and board.id == item.board.id) }}
     {% end %}
     {% end %}
   {% end %}
@@ -312,7 +314,7 @@
     <a class="chirpui-sidebar__link" href="/discover" title="Discovery">Discovery</a>
     {% if viewer %}
     {% for item in viewer.desk_navigation_boards %}
-    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count, board is defined and board.id == item.board.id) }}
     {% end %}
     {% end %}
   {% end %}
@@ -335,7 +337,7 @@
     <a class="chirpui-sidebar__link" href="/casting" title="Casting desk">Casting desk</a>
     {% if viewer %}
     {% for item in viewer.studio_navigation_boards %}
-    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count) }}
+    {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count, board is defined and board.id == item.board.id) }}
     {% end %}
     {% end %}
   {% end %}
@@ -382,6 +384,7 @@
 {% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") %}
 {% set is_studio = sidebar_path == "/studio" or sidebar_path.startswith("/studio/") %}
 {% set is_desk = sidebar_path == "/desk" or sidebar_path.startswith("/desk/") or sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads") or sidebar_path == "/notifications" or sidebar_path.startswith("/notifications") or sidebar_path == "/characters" or sidebar_path.startswith("/characters/") or sidebar_path == "/applications" or sidebar_path.startswith("/applications") or sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
+{% set board_sidebar_section = board?.sidebar_section ?? "" if board is defined else "" %}
 {% call sidebar(cls="elbysodic-sidebar") %}
   {% slot footer %}
   {{ sidebar_footer() }}
@@ -391,9 +394,9 @@
   {{ guidebook_sidebar() }}
   {% elif is_casting %}
   {{ casting_sidebar() }}
-  {% elif is_studio %}
+  {% elif is_studio or board_sidebar_section == "studio" %}
   {{ studio_sidebar() }}
-  {% elif is_desk %}
+  {% elif is_desk or board_sidebar_section == "desk" %}
   {{ desk_sidebar() }}
   {% else %}
   {{ world_sidebar() }}

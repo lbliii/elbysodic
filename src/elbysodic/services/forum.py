@@ -13,10 +13,16 @@ from elbysodic.domain.boards import (
     BOARD_KIND_LABELS,
     BOARD_KIND_REALMS,
     BOARD_KIND_SIDEBAR_LABELS,
+    BOARD_SIDEBAR_SECTION_GUIDANCE,
+    BOARD_SIDEBAR_SECTION_LABELS,
     BoardKind,
-    is_community_board,
+    is_community_sidebar_board,
+    is_desk_sidebar_board,
     is_location_board,
+    is_location_sidebar_board,
+    is_studio_sidebar_board,
     normalize_board_kind,
+    normalize_board_sidebar_section,
 )
 from elbysodic.domain.models import (
     Board,
@@ -142,6 +148,7 @@ from elbysodic.services.read_models import (
     PlottingRoomDetail,
     PostRevisionHistory,
     PostStylePolicy,
+    StudioBoardEditor,
     ThreadNavigationItem,
     ThreadSummary,
     ThreadView,
@@ -195,19 +202,21 @@ class AppServices:
             location_navigation_boards=[
                 item
                 for item in navigation_boards
-                if item.board.parent_board_id is None and is_location_board(item.board)
+                if item.board.parent_board_id is None
+                and is_location_board(item.board)
+                and is_location_sidebar_board(item.board)
             ],
             location_navigation_groups=_location_navigation_groups(navigation_boards),
             community_navigation_boards=[
                 item
                 for item in navigation_boards
-                if item.board.parent_board_id is None and is_community_board(item.board)
+                if item.board.parent_board_id is None and is_community_sidebar_board(item.board)
             ],
             desk_navigation_boards=[
-                item for item in navigation_boards if item.board.board_kind == "desk"
+                item for item in navigation_boards if is_desk_sidebar_board(item.board)
             ],
             studio_navigation_boards=[
-                item for item in navigation_boards if item.board.board_kind == "staff"
+                item for item in navigation_boards if is_studio_sidebar_board(item.board)
             ],
             unread_notification_count=self.repo.count_unread_notifications(
                 community.id, membership.id
@@ -558,12 +567,17 @@ class AppServices:
         *,
         board_kind: str,
         parent_board_id: int | None,
+        sidebar_section: str | None = None,
     ) -> Board:
         viewer = self.viewer()
         if not viewer.role.is_admin:
             raise PermissionError(f"membership {viewer.membership.id} cannot manage boards")
         board = self.repo.get_board(viewer.community.id, board_id)
         normalized_kind = normalize_board_kind(board_kind)
+        normalized_sidebar_section = normalize_board_sidebar_section(
+            sidebar_section,
+            normalized_kind,
+        )
         normalized_parent_id = _validate_board_parent(
             self.repo.list_boards(viewer.community.id),
             board,
@@ -578,6 +592,7 @@ class AppServices:
             sort_order=board.sort_order,
             parent_board_id=normalized_parent_id,
             board_kind=normalized_kind,
+            sidebar_section=normalized_sidebar_section,
             tagline=board.tagline,
             image_url=board.image_url,
             image_alt=board.image_alt,
@@ -590,6 +605,7 @@ class AppServices:
         *,
         navigation_order: int,
         show_in_navigation: bool,
+        sidebar_section: str | None = None,
     ) -> Board:
         viewer = self.viewer()
         if not viewer.role.is_admin:
@@ -605,10 +621,99 @@ class AppServices:
             sort_order=board.sort_order,
             parent_board_id=board.parent_board_id,
             board_kind=board.board_kind,
+            sidebar_section=sidebar_section,
             tagline=board.tagline,
             image_url=board.image_url,
             image_alt=board.image_alt,
             is_private=board.is_private,
+            navigation_order=navigation_order,
+            show_in_navigation=show_in_navigation,
+        )
+
+    def studio_board_editor(self, board_slug: str) -> StudioBoardEditor:
+        viewer = self.viewer()
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        summary = _board_summary(
+            self.repo,
+            viewer,
+            board,
+            _current_character_facet_ids(self.repo, viewer),
+        )
+        parent = (
+            self.repo.get_board(viewer.community.id, board.parent_board_id)
+            if board.parent_board_id is not None
+            else None
+        )
+        kind = normalize_board_kind(board.board_kind)
+        parent_options = [
+            candidate
+            for candidate in self.repo.list_boards(viewer.community.id)
+            if candidate.id != board.id
+            and candidate.parent_board_id is None
+            and candidate.board_kind == "location"
+        ]
+        return StudioBoardEditor(
+            board=board,
+            summary=summary,
+            parent=parent,
+            parent_options=parent_options,
+            kind_label=BOARD_KIND_LABELS[kind],
+            realm_label=BOARD_KIND_REALMS[kind],
+            sidebar_label=BOARD_KIND_SIDEBAR_LABELS[kind],
+            sidebar_section_label=BOARD_SIDEBAR_SECTION_LABELS[board.sidebar_section],
+            sidebar_section_guidance=BOARD_SIDEBAR_SECTION_GUIDANCE[board.sidebar_section],
+            guidance=BOARD_KIND_GUIDANCE[kind],
+            can_manage=viewer.role.is_admin,
+        )
+
+    def update_studio_board(
+        self,
+        board_slug: str,
+        *,
+        name: str,
+        board_kind: str,
+        parent_board_id: int | None,
+        tagline: str,
+        description: str,
+        image_url: str,
+        image_alt: str,
+        sort_order: int,
+        navigation_order: int,
+        show_in_navigation: bool,
+        sidebar_section: str,
+        is_private: bool,
+    ) -> Board:
+        viewer = self.viewer()
+        if not viewer.role.is_admin:
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage boards")
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        cleaned_name = name.strip()
+        if not cleaned_name:
+            raise ValueError("board name is required")
+        normalized_kind = normalize_board_kind(board_kind)
+        normalized_sidebar_section = normalize_board_sidebar_section(
+            sidebar_section,
+            normalized_kind,
+        )
+        normalized_parent_id = _validate_board_parent(
+            self.repo.list_boards(viewer.community.id),
+            board,
+            normalized_kind,
+            parent_board_id,
+        )
+        return self.repo.update_board(
+            viewer.community.id,
+            board.id,
+            name=cleaned_name,
+            description=description.strip(),
+            sort_order=sort_order,
+            parent_board_id=normalized_parent_id,
+            board_kind=normalized_kind,
+            sidebar_section=normalized_sidebar_section,
+            tagline=tagline.strip(),
+            image_url=image_url.strip() or None,
+            image_alt=image_alt.strip(),
+            is_private=is_private,
             navigation_order=navigation_order,
             show_in_navigation=show_in_navigation,
         )
@@ -1400,14 +1505,20 @@ def _location_navigation_groups(
     parents = [
         item
         for item in navigation_boards
-        if item.board.parent_board_id is None and is_location_board(item.board)
+        if item.board.parent_board_id is None
+        and is_location_board(item.board)
+        and is_location_sidebar_board(item.board)
     ]
     children_by_parent: dict[int, list[BoardNavigationItem]] = {
         item.board.id: [] for item in parents
     }
     for item in navigation_boards:
         parent_id = item.board.parent_board_id
-        if parent_id is None or not is_location_board(item.board):
+        if (
+            parent_id is None
+            or not is_location_board(item.board)
+            or not is_location_sidebar_board(item.board)
+        ):
             continue
         if parent_id in children_by_parent:
             children_by_parent[parent_id].append(item)
@@ -1559,6 +1670,7 @@ def _board_taxonomy_item(
         kind_label=BOARD_KIND_LABELS[kind],
         realm_label=BOARD_KIND_REALMS[kind],
         sidebar_label=BOARD_KIND_SIDEBAR_LABELS[kind],
+        sidebar_section_label=BOARD_SIDEBAR_SECTION_LABELS[summary.board.sidebar_section],
         guidance=BOARD_KIND_GUIDANCE[kind],
     )
 
@@ -1606,6 +1718,7 @@ def _navigation_preview_sections(
         )
         for item in board_taxonomy
         if item.board.show_in_navigation
+        and item.board.sidebar_section == "locations"
         and item.board.parent_board_id is None
         and item.board.board_kind == "location"
     ]
@@ -1618,9 +1731,7 @@ def _navigation_preview_sections(
             count=item.summary.unread_thread_count or None,
         )
         for item in board_taxonomy
-        if item.board.show_in_navigation
-        and item.board.parent_board_id is None
-        and item.board.board_kind in {"community", "archive"}
+        if item.board.show_in_navigation and item.board.sidebar_section == "community"
     ]
     desk_board_items = [
         NavigationPreviewItem(
@@ -1631,7 +1742,7 @@ def _navigation_preview_sections(
             count=item.summary.unread_thread_count or None,
         )
         for item in board_taxonomy
-        if item.board.show_in_navigation and item.board.board_kind == "desk"
+        if item.board.show_in_navigation and item.board.sidebar_section == "desk"
     ]
     staff_board_items = [
         NavigationPreviewItem(
@@ -1642,7 +1753,7 @@ def _navigation_preview_sections(
             count=item.summary.unread_thread_count or None,
         )
         for item in board_taxonomy
-        if item.board.show_in_navigation and item.board.board_kind == "staff"
+        if item.board.show_in_navigation and item.board.sidebar_section == "studio"
     ]
     studio_items = [
         NavigationPreviewItem("Overview", "/studio", "App-owned", "Realm home"),
@@ -1680,8 +1791,9 @@ def _navigation_preview_sections(
             title="World sidebar",
             description=(
                 "App-owned gateways stay fixed; board-derived location and community "
-                "links follow taxonomy and sort order."
+                "links follow sidebar placement, taxonomy, and sort order."
             ),
+            label_visible=False,
             items=[
                 NavigationPreviewItem("Overview", "/", "App-owned", "Realm home"),
                 NavigationPreviewItem(
@@ -1710,6 +1822,7 @@ def _navigation_preview_sections(
                 "Writing operations stay app-owned; future desk boards can join this lane "
                 "without becoming world locations."
             ),
+            label_visible=False,
             items=[
                 NavigationPreviewItem("Overview", "/desk", "App-owned", "Realm home"),
                 NavigationPreviewItem("Queue", "/my/threads", "App-owned", "Writing lane"),
@@ -1734,6 +1847,7 @@ def _navigation_preview_sections(
                 "Director production controls stay visible; staff boards can be added as "
                 "board-derived Studio lanes."
             ),
+            label_visible=False,
             items=studio_items,
         ),
         NavigationPreviewSection(
@@ -1743,6 +1857,7 @@ def _navigation_preview_sections(
                 "Casting navigation stays lean: app-owned surfaces first, then the active "
                 "face and context-specific wants."
             ),
+            label_visible=False,
             items=[
                 NavigationPreviewItem("Wanted board", "/wanted", "App-owned", "Realm home"),
                 NavigationPreviewItem("Casting desk", "/casting", "App-owned", "Pipeline"),

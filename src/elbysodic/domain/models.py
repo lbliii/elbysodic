@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from elbysodic.domain.boards import BoardKind
+from elbysodic.domain.boards import BoardKind, BoardSidebarSection
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +66,7 @@ class Board:
     slug: str
     name: str
     board_kind: BoardKind
+    sidebar_section: BoardSidebarSection
     tagline: str
     description: str
     image_url: str | None

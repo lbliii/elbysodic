@@ -10,7 +10,7 @@ from elbysodic.db.repositories.base import (
 )
 from elbysodic.db.repositories.notifications import NotificationRepositoryMixin
 from elbysodic.db.repositories.rows import _board_from_row
-from elbysodic.domain.boards import normalize_board_kind
+from elbysodic.domain.boards import normalize_board_kind, normalize_board_sidebar_section
 from elbysodic.domain.models import Board
 
 
@@ -24,6 +24,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         *,
         parent_board_id: int | None = None,
         board_kind: str = "location",
+        sidebar_section: str | None = None,
         tagline: str = "",
         image_url: str | None = None,
         image_alt: str = "",
@@ -35,6 +36,10 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         if parent_board_id is not None:
             self.get_board(community_id, parent_board_id)
         normalized_board_kind = normalize_board_kind(board_kind)
+        normalized_sidebar_section = normalize_board_sidebar_section(
+            sidebar_section,
+            normalized_board_kind,
+        )
         now = _utc_now()
         cursor = self.connection.execute(
             """
@@ -44,6 +49,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 slug,
                 name,
                 board_kind,
+                sidebar_section,
                 tagline,
                 description,
                 image_url,
@@ -55,7 +61,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -63,6 +69,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 slug,
                 name,
                 normalized_board_kind,
+                normalized_sidebar_section,
                 tagline,
                 description,
                 image_url,
@@ -88,6 +95,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         sort_order: int,
         parent_board_id: int | None = None,
         board_kind: str = "location",
+        sidebar_section: str | None = None,
         tagline: str = "",
         image_url: str | None = None,
         image_alt: str = "",
@@ -101,6 +109,10 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
             if parent.id == board.id:
                 raise TenantBoundaryError("board cannot be its own parent")
         normalized_board_kind = normalize_board_kind(board_kind)
+        normalized_sidebar_section = normalize_board_sidebar_section(
+            board.sidebar_section if sidebar_section is None else sidebar_section,
+            normalized_board_kind,
+        )
         self.connection.execute(
             """
             UPDATE boards
@@ -108,6 +120,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 parent_board_id = ?,
                 name = ?,
                 board_kind = ?,
+                sidebar_section = ?,
                 tagline = ?,
                 description = ?,
                 image_url = ?,
@@ -123,6 +136,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 parent_board_id,
                 name,
                 normalized_board_kind,
+                normalized_sidebar_section,
                 tagline,
                 description,
                 image_url,
@@ -149,6 +163,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 slug,
                 name,
                 board_kind,
+                sidebar_section,
                 tagline,
                 description,
                 image_url,
@@ -178,6 +193,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 slug,
                 name,
                 board_kind,
+                sidebar_section,
                 tagline,
                 description,
                 image_url,
@@ -207,6 +223,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 slug,
                 name,
                 board_kind,
+                sidebar_section,
                 tagline,
                 description,
                 image_url,
@@ -238,6 +255,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                     slug,
                     name,
                     board_kind,
+                    sidebar_section,
                     tagline,
                     description,
                     image_url,
@@ -264,6 +282,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                     slug,
                     name,
                     board_kind,
+                    sidebar_section,
                     tagline,
                     description,
                     image_url,

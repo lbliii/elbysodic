@@ -7,7 +7,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
-from elbysodic.domain.boards import BOARD_KIND_LABELS
+from elbysodic.domain.boards import BOARD_KIND_LABELS, BOARD_SIDEBAR_SECTION_LABELS
 from elbysodic.services.read_models import (
     POST_ACCENT_STYLE_LABELS,
     POST_BORDER_STYLE_LABELS,
@@ -34,6 +34,7 @@ async def post(request: Request) -> Page | Redirect:
                 board_id,
                 board_kind=str(form.get("board_kind") or ""),
                 parent_board_id=int(raw_parent_id) if raw_parent_id else None,
+                sidebar_section=str(form.get("sidebar_section") or ""),
             )
             services.update_board_navigation(
                 board_id,
@@ -42,6 +43,7 @@ async def post(request: Request) -> Page | Redirect:
                     "choose a navigation order",
                 ),
                 show_in_navigation=form.get("show_in_navigation") == "on",
+                sidebar_section=str(form.get("sidebar_section") or ""),
             )
         elif intent == "board_navigation":
             services.update_board_navigation(
@@ -51,6 +53,7 @@ async def post(request: Request) -> Page | Redirect:
                     "choose a navigation order",
                 ),
                 show_in_navigation=form.get("show_in_navigation") == "on",
+                sidebar_section=str(form.get("sidebar_section") or ""),
             )
         elif intent == "post_style_policy":
             services.update_post_style_policy(
@@ -103,6 +106,7 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page:
         post_title_style_labels=POST_TITLE_STYLE_LABELS,
         post_density_labels=POST_DENSITY_LABELS,
         board_kind_labels=BOARD_KIND_LABELS,
+        sidebar_section_labels=BOARD_SIDEBAR_SECTION_LABELS,
     )
 
 

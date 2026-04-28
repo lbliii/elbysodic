@@ -252,6 +252,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Classify each board" in studio.text
             assert 'href="/studio#board-taxonomy"' in studio.text
             assert 'href="/studio#navigation-composer"' in studio.text
+            assert 'href="/studio/boards/announcements"' in studio.text
             assert 'href="/world/b-24-winter"' in studio.text
             assert 'href="/applications"' in studio.text
             assert 'href="/wanted"' in studio.text
@@ -296,6 +297,7 @@ def test_director_studio_updates_board_taxonomy() -> None:
             updated = repo.get_board(community.id, announcements.id)
             assert updated.board_kind == "sublocation"
             assert updated.parent_board_id == xavier.id
+            assert updated.sidebar_section == "locations"
             assert updated.navigation_order == 99
             assert updated.show_in_navigation is True
 
@@ -354,6 +356,7 @@ def test_director_studio_hides_board_from_navigation_without_hiding_route() -> N
             updated = repo.get_board(community.id, announcements.id)
             assert updated.show_in_navigation is False
             assert updated.navigation_order == 40
+            assert updated.sidebar_section == "community"
 
             community_page = await client.get("/community")
             assert community_page.status == 200
@@ -366,6 +369,158 @@ def test_director_studio_hides_board_from_navigation_without_hiding_route() -> N
             board_page = await client.get("/boards/announcements")
             assert board_page.status == 200
             assert "Announcements" in board_page.text
+
+    asyncio.run(run())
+
+
+def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        xavier = repo.get_board_by_slug(community.id, "xavier-institute")
+
+        async with TestClient(app) as client:
+            editor = await client.get("/studio/boards/announcements")
+            assert editor.status == 200
+            assert "Board editor" in editor.text
+            assert "Edit Announcements" in editor.text
+            assert "Show in sidebar navigation" in editor.text
+            assert "Sidebar placement" in editor.text
+            assert "Composer effect" in editor.text
+
+            response = await client.post(
+                "/studio/boards/announcements",
+                body=urlencode(
+                    {
+                        "name": "Director Notices",
+                        "board_kind": "sublocation",
+                        "parent_board_id": xavier.id,
+                        "tagline": "What changed, and why.",
+                        "description": "Formal staff notices for the current continuity.",
+                        "image_url": "https://example.test/notices.jpg",
+                        "image_alt": "Notice board under red light",
+                        "sort_order": 12,
+                        "navigation_order": 7,
+                        "sidebar_section": "locations",
+                        "show_in_navigation": "on",
+                        "is_private": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 302
+            assert dict(response.headers)["location"] == "/studio/boards/announcements"
+            updated = repo.get_board_by_slug(community.id, "announcements")
+            assert updated.name == "Director Notices"
+            assert updated.board_kind == "sublocation"
+            assert updated.parent_board_id == xavier.id
+            assert updated.tagline == "What changed, and why."
+            assert updated.description == "Formal staff notices for the current continuity."
+            assert updated.image_url == "https://example.test/notices.jpg"
+            assert updated.image_alt == "Notice board under red light"
+            assert updated.sort_order == 12
+            assert updated.navigation_order == 7
+            assert updated.sidebar_section == "locations"
+            assert updated.show_in_navigation is True
+            assert updated.is_private is True
+
+    asyncio.run(run())
+
+
+def test_studio_board_editor_validates_sublocation_parent() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio/boards/announcements",
+                body=urlencode(
+                    {
+                        "name": "Announcements",
+                        "board_kind": "sublocation",
+                        "parent_board_id": "",
+                        "tagline": "",
+                        "description": "Needs a parent.",
+                        "image_url": "",
+                        "image_alt": "",
+                        "sort_order": 10,
+                        "navigation_order": 10,
+                        "sidebar_section": "locations",
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+            assert response.status == 200
+            assert "choose a parent location for sublocations" in response.text
+            assert "Board editor" in response.text
+
+    asyncio.run(run())
+
+
+def test_board_sidebar_section_controls_direct_board_sidebar_realm() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        applications = repo.get_board_by_slug(community.id, "applications")
+        repo.update_board(
+            community.id,
+            applications.id,
+            name=applications.name,
+            description=applications.description,
+            sort_order=applications.sort_order,
+            parent_board_id=applications.parent_board_id,
+            board_kind=applications.board_kind,
+            sidebar_section="studio",
+            tagline=applications.tagline,
+            image_url=applications.image_url,
+            image_alt=applications.image_alt,
+            is_private=applications.is_private,
+            navigation_order=applications.navigation_order,
+            show_in_navigation=applications.show_in_navigation,
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            board_page = await client.get("/boards/applications")
+
+            assert board_page.status == 200
+            assert 'href="/studio#board-taxonomy"' in board_page.text
+            assert re.search(
+                r'<a class="[^"]*elbysodic-sidebar-link[^"]*"'
+                r'[^>]*href="/boards/applications"[^>]*aria-current="page"',
+                board_page.text,
+            )
+            assert "Board taxonomy" in board_page.text
 
     asyncio.run(run())
 

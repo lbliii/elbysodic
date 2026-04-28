@@ -125,10 +125,12 @@
         <input type="hidden" name="board_id" value="{{ item.board.id }}">
         <div class="elbysodic-board-taxonomy-row__identity">
           <p class="elbysodic-kicker">{{ item.kind_label }}</p>
-          <h3><a class="chirpui-link" href="{{ item.summary.href }}">{{ item.board.name }}</a></h3>
+          <h3><a class="chirpui-link" href="/studio/boards/{{ item.board.slug }}">{{ item.board.name }}</a></h3>
           <p>{{ item.guidance }}</p>
           <div class="elbysodic-board-taxonomy-row__meta">
+            <a href="{{ item.summary.href }}">View board</a>
             <span>{{ item.realm_label }}</span>
+            <span>{{ item.sidebar_section_label }} sidebar</span>
             <span>{{ item.sidebar_label }}</span>
             <span>{{ item.summary.thread_count }} threads</span>
             <span>nav {{ item.board.navigation_order }}</span>
@@ -156,6 +158,14 @@
               {{ location.board.name }}
             </option>
             {% end %}
+            {% end %}
+          </select>
+        </label>
+        <label class="elbysodic-form-field">
+          <span>Sidebar</span>
+          <select name="sidebar_section">
+            {% for value, label in sidebar_section_labels.items() %}
+            <option value="{{ value }}" {% if item.board.sidebar_section == value %}selected{% end %}>{{ label }}</option>
             {% end %}
           </select>
         </label>
@@ -196,6 +206,9 @@
           <p class="elbysodic-kicker">{{ section.realm_label }}</p>
           <h3>{{ section.title }}</h3>
           <p>{{ section.description }}</p>
+          <p class="chirpui-text-muted">
+            {{ "Section label shown" if section.label_visible else "Section label hidden; the route title carries the context." }}
+          </p>
         </div>
         <ol class="elbysodic-navigation-preview__list">
           {% for item in section.items %}
@@ -316,10 +329,12 @@
       <article class="elbysodic-board-taxonomy-row">
         <div class="elbysodic-board-taxonomy-row__identity">
           <p class="elbysodic-kicker">{{ item.kind_label }}</p>
-          <h3><a class="chirpui-link" href="{{ item.summary.href }}">{{ item.board.name }}</a></h3>
+          <h3><a class="chirpui-link" href="/studio/boards/{{ item.board.slug }}">{{ item.board.name }}</a></h3>
           <p>{{ item.guidance }}</p>
           <div class="elbysodic-board-taxonomy-row__meta">
+            <a href="{{ item.summary.href }}">View board</a>
             <span>{{ item.realm_label }}</span>
+            <span>{{ item.sidebar_section_label }} sidebar</span>
             <span>{{ item.sidebar_label }}</span>
             <span>{{ item.summary.thread_count }} threads</span>
             <span>nav {{ item.board.navigation_order }}</span>
@@ -350,6 +365,9 @@
           <p class="elbysodic-kicker">{{ section.realm_label }}</p>
           <h3>{{ section.title }}</h3>
           <p>{{ section.description }}</p>
+          <p class="chirpui-text-muted">
+            {{ "Section label shown" if section.label_visible else "Section label hidden; the route title carries the context." }}
+          </p>
         </div>
         <ol class="elbysodic-navigation-preview__list">
           {% for item in section.items %}

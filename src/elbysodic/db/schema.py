@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS boards (
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
     board_kind TEXT NOT NULL DEFAULT 'location',
+    sidebar_section TEXT NOT NULL DEFAULT '',
     tagline TEXT NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
     image_url TEXT,
@@ -510,6 +511,7 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     for name, definition in {
         "parent_board_id": "INTEGER REFERENCES boards(id) ON DELETE SET NULL",
         "board_kind": "TEXT NOT NULL DEFAULT 'location'",
+        "sidebar_section": "TEXT NOT NULL DEFAULT ''",
         "tagline": "TEXT NOT NULL DEFAULT ''",
         "image_url": "TEXT",
         "image_alt": "TEXT NOT NULL DEFAULT ''",
@@ -527,6 +529,19 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     )
     connection.execute(
         """
+        UPDATE boards
+        SET sidebar_section = CASE board_kind
+            WHEN 'community' THEN 'community'
+            WHEN 'archive' THEN 'community'
+            WHEN 'desk' THEN 'desk'
+            WHEN 'staff' THEN 'studio'
+            ELSE 'locations'
+        END
+        WHERE sidebar_section = ''
+        """
+    )
+    connection.execute(
+        """
         CREATE INDEX IF NOT EXISTS idx_boards_parent_sort
         ON boards(community_id, parent_board_id, sort_order, name)
         """
@@ -534,7 +549,7 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     connection.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_boards_navigation
-        ON boards(community_id, show_in_navigation, parent_board_id, navigation_order, name)
+        ON boards(community_id, show_in_navigation, sidebar_section, parent_board_id, navigation_order, name)
         """
     )
 

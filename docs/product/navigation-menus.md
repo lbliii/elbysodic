@@ -182,9 +182,16 @@ Configurable:
 
 - Which boards are `location`, `sublocation`, `community`, `archive`, `desk`,
   or `staff`.
+- Which sidebar section a board belongs to: `locations`, `community`, `desk`,
+  or `studio`. Board kind answers "what kind of object is this?"; sidebar
+  section answers "where should writers reach it from?"
 - Studio's Board Taxonomy editor is the canonical place to review and adjust
   this classification. Treat it as production direction: changing a board kind
-  changes where the app places that board in World, Desk, Studio, and sidebars.
+  changes the board's meaning; changing sidebar placement changes navigation
+  without pretending the board is a different kind of object.
+- Studio's board editor is the deeper production room for each board: identity,
+  parent, media, sort order, navigation order, visibility, and access belong
+  there when a quick taxonomy row is not enough.
 - Studio's Navigation Composer preview is the canonical place to inspect the
   result before adding editable ordering or visibility. It must distinguish
   app-owned, board-derived, material-derived, identity-derived, and
@@ -200,7 +207,7 @@ Configurable:
 Not configurable in ordinary admin UI:
 
 - The existence of topbar realms.
-- Whether a board kind belongs to World, Guidebook, Wanted, Desk, or Studio.
+- The meaning of board kinds and sidebar sections.
 - The difference between labels and route rows.
 - Accessibility requirements for active states, counts, and mobile drawers.
 
@@ -252,7 +259,11 @@ Examples:
   on their own work, but may appear as a linked production destination inside
   `Studio`.
 
-When URL prefix and domain kind disagree, domain kind wins for sidebar state.
+When URL prefix and navigation placement disagree, sidebar placement wins for
+sidebar state. This lets a community keep domain language honest while still
+making room for authored navigation: a public record board can be a community
+board, a production-facing board can live in Studio, and a house/faction board
+can sit where directors expect writers to find it.
 
 ## Breadcrumbs
 

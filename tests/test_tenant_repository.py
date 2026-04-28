@@ -72,6 +72,7 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
         SELECT
             parent_board_id,
             board_kind,
+            sidebar_section,
             tagline,
             image_url,
             image_alt,
@@ -85,6 +86,7 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     assert {
         "parent_board_id",
         "board_kind",
+        "sidebar_section",
         "tagline",
         "image_url",
         "image_alt",
@@ -96,6 +98,7 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     assert dict(board) == {
         "parent_board_id": None,
         "board_kind": "location",
+        "sidebar_section": "locations",
         "tagline": "",
         "image_url": None,
         "image_alt": "",

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal, Protocol, cast
 
 type BoardKind = Literal["location", "sublocation", "community", "desk", "archive", "staff"]
+type BoardSidebarSection = Literal["locations", "community", "desk", "studio"]
 
 BOARD_KINDS: frozenset[str] = frozenset(
     {"location", "sublocation", "community", "desk", "archive", "staff"}
@@ -41,6 +42,27 @@ BOARD_KIND_GUIDANCE: dict[BoardKind, str] = {
     "archive": "Read-only or historical community board.",
     "staff": "Director-only production board.",
 }
+BOARD_SIDEBAR_SECTIONS: frozenset[str] = frozenset({"locations", "community", "desk", "studio"})
+BOARD_SIDEBAR_SECTION_LABELS: dict[BoardSidebarSection, str] = {
+    "locations": "Locations",
+    "community": "Community",
+    "desk": "Writer Desk",
+    "studio": "Director Studio",
+}
+BOARD_SIDEBAR_SECTION_GUIDANCE: dict[BoardSidebarSection, str] = {
+    "locations": "Playable places in the world map.",
+    "community": "Public OOC, records, announcements, and archives.",
+    "desk": "Writer workflow lanes near queues and roster work.",
+    "studio": "Director production lanes for staff and board operations.",
+}
+BOARD_KIND_DEFAULT_SECTIONS: dict[BoardKind, BoardSidebarSection] = {
+    "location": "locations",
+    "sublocation": "locations",
+    "community": "community",
+    "archive": "community",
+    "desk": "desk",
+    "staff": "studio",
+}
 LOCATION_BOARD_KINDS: frozenset[BoardKind] = frozenset({"location", "sublocation"})
 COMMUNITY_BOARD_KINDS: frozenset[BoardKind] = frozenset({"community", "archive"})
 DESK_BOARD_KINDS: frozenset[BoardKind] = frozenset({"desk", "staff"})
@@ -50,12 +72,28 @@ class BoardLike(Protocol):
     @property
     def board_kind(self) -> str: ...
 
+    @property
+    def sidebar_section(self) -> str: ...
+
 
 def normalize_board_kind(value: str | None) -> BoardKind:
     """Normalize persisted or external board-kind input to a known contract value."""
     if value in BOARD_KINDS:
         return cast(BoardKind, value)
     return "location"
+
+
+def default_sidebar_section_for_kind(board_kind: str | None) -> BoardSidebarSection:
+    return BOARD_KIND_DEFAULT_SECTIONS[normalize_board_kind(board_kind)]
+
+
+def normalize_board_sidebar_section(
+    value: str | None,
+    board_kind: str | None = None,
+) -> BoardSidebarSection:
+    if value in BOARD_SIDEBAR_SECTIONS:
+        return cast(BoardSidebarSection, value)
+    return default_sidebar_section_for_kind(board_kind)
 
 
 def is_location_board(board: BoardLike) -> bool:
@@ -68,3 +106,19 @@ def is_community_board(board: BoardLike) -> bool:
 
 def is_desk_board(board: BoardLike) -> bool:
     return normalize_board_kind(board.board_kind) in DESK_BOARD_KINDS
+
+
+def is_location_sidebar_board(board: BoardLike) -> bool:
+    return normalize_board_sidebar_section(board.sidebar_section, board.board_kind) == "locations"
+
+
+def is_community_sidebar_board(board: BoardLike) -> bool:
+    return normalize_board_sidebar_section(board.sidebar_section, board.board_kind) == "community"
+
+
+def is_desk_sidebar_board(board: BoardLike) -> bool:
+    return normalize_board_sidebar_section(board.sidebar_section, board.board_kind) == "desk"
+
+
+def is_studio_sidebar_board(board: BoardLike) -> bool:
+    return normalize_board_sidebar_section(board.sidebar_section, board.board_kind) == "studio"
