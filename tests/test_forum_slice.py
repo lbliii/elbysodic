@@ -96,7 +96,9 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Latest details:" in index.text
             assert "Relevant for Rogue:" in index.text
             assert "elbysodic-board-poster__face-signal-hint" in index.text
-            assert "elbysodic-face-switcher" in index.text
+            assert "elbysodic-identity-menu" in index.text
+            assert "elbysodic-notification-button" in index.text
+            assert "wearing Rogue" in index.text
             assert "elbysodic-community-table" in index.text
             assert "elbysodic-community-row" in index.text
             assert "✉" in index.text
@@ -188,6 +190,7 @@ def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
             assert "<strong>Elbysodic</strong>" in index.text
             assert 'href="/desk"' in index.text
             assert index.text.count("Writer Desk") == 1
+            assert 'class="elbysodic-topnav__link" href="/notifications"' not in index.text
 
     asyncio.run(run())
 
@@ -200,6 +203,15 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
 
             assert desk.status == 200
             assert "Writer Desk" in desk.text
+            assert "Lane's operating room" in desk.text
+            assert "What needs you" in desk.text
+            assert "Face lanes" in desk.text
+            assert "Work lanes" in desk.text
+            assert "wearing Rogue" in desk.text
+            assert "Queue" in desk.text
+            assert "Inbox" in desk.text
+            assert "Roster" in desk.text
+            assert "Discovery" in desk.text
             assert "/my/threads" in desk.text
             assert "/notifications" in desk.text
             assert "/characters" in desk.text
@@ -279,7 +291,9 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             desk = await client.get("/desk")
             assert desk.status == 200
             assert "Writer Desk" in desk.text
-            assert "My threads" in desk.text
+            assert "Queue" in desk.text
+            assert "Inbox" in desk.text
+            assert "Roster" in desk.text
             assert "World Map" not in desk.text
             assert 'class="chirpui-sidebar__section-title">Writer Desk</span>' not in desk.text
             assert '<h2 class="chirpui-drawer__title">Desk</h2>' in desk.text
@@ -443,6 +457,19 @@ def test_topbar_marks_active_product_realm() -> None:
                 r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
                 r'\s+href="/studio"',
                 studio.text,
+            )
+
+            notifications = await client.get("/notifications")
+            assert notifications.status == 200
+            assert re.search(
+                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/desk"',
+                notifications.text,
+            )
+            assert re.search(
+                r'class="[^"]*elbysodic-notification-button--active[^"]*"'
+                r'[^>]*href="/notifications"',
+                notifications.text,
             )
 
     asyncio.run(run())

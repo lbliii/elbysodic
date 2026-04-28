@@ -39,8 +39,6 @@ Current topbar realms:
 - `Writer Desk`: the writer's workbench: queues, roster, applications,
   plotting rooms, discovery, notifications when they support writing.
 - `Studio`: director/admin production tools.
-- `Notifications`: a cross-cutting attention inbox, visible because it is a
-  writer obligation surface.
 
 Topbar items should be realms, not tasks. A topbar item earns its place when it
 contains a stable family of routes that a writer can name without seeing the
@@ -61,15 +59,25 @@ fragility on mobile.
 
 ### Topbar Exceptions
 
-`Notifications` is allowed to sit in the topbar even though it is also a Writer
-Desk destination. It is a cross-cutting attention inbox, not a separate product
-realm. This exception depends on two constraints: the visible unread count must
-be useful from anywhere, and the notifications page must still feel like writer
-work rather than a new global section.
+Notifications are not a topbar realm. They are a shell attention affordance:
+show a compact always-visible bubble/count near the identity cluster, and route
+the full inbox through Writer Desk. The bubble answers "something needs me";
+Writer Desk answers "what exactly do I owe?"
 
-The active-face switcher lives in the topbar area but is not topbar navigation.
-It is a shell lens control. It may use a dropdown because the current face is
-visible, the roster can grow, and changing it affects defaults across the app.
+The identity cluster lives in the topbar area but is not topbar navigation. It
+represents operating state: the writer account/membership and the active face
+being worn. It may use a dropdown because the current face is visible, the
+roster can grow, and changing it affects defaults across the app.
+
+Account owns access. Membership owns community identity. Face owns story
+context. Notifications belong to the writer, but can expose face-scoped queues
+inside the identity menu or Writer Desk.
+
+Writer Desk is the operating room that cashes out the shell promise. It should
+start with "what needs me," then let the writer narrow by face lane or move to
+work lanes: Queue, Inbox, Roster, Plotting, Applications, Discovery, and
+Casting/Wanted. Desk should feel like a writing cockpit, not a generic tool
+directory.
 
 ## Sidebar
 
@@ -324,6 +332,7 @@ Mobile keeps the same hierarchy but changes the container.
 - The drawer reuses the same contextual sidebar content.
 - Route parents remain visible links.
 - Active face remains accessible from the shell.
+- Notifications remain visible as a compact shell bubble/count.
 - Primary page actions stay in the page, not hidden inside the drawer.
 
 Do not create a separate mobile navigation model unless the desktop model is
@@ -352,8 +361,8 @@ the mental model is clear.
 
 These are the navigation pressure points to revisit as Elbysodic grows:
 
-- `Notifications` is intentionally duplicated in the topbar and Writer Desk
-  sidebar because it is a cross-cutting attention surface.
+- `Notifications` is intentionally visible in the shell and reachable from
+  Writer Desk because it is a cross-cutting attention surface, not a realm.
 - The Guidebook sidebar is acting as a table of contents plus object directory.
   Keep it only while the sections remain stable director-authored collections.
 - Studio's `Production` grouping currently jumps to writer-facing routes such

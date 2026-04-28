@@ -10,16 +10,79 @@
 {% block page_content %}
 {% call container(max_width="62rem") %}
 {% call stack(gap="lg") %}
-  <section class="chirpui-stack chirpui-stack--sm elbysodic-desk-hero">
-    <p class="elbysodic-kicker">Writer Desk</p>
-    <h1>{{ viewer.current_character.name if viewer.current_character else viewer.membership.display_name }}</h1>
-    <p class="chirpui-text-muted">
-      The behind-the-scenes workbench for your scenes, faces, alerts, applications, and plotting tools.
-    </p>
+  <section class="elbysodic-desk-hero">
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-kicker">Writer Desk</p>
+      <h1>{{ viewer.membership.display_name or viewer.membership.username }}'s operating room</h1>
+      <p class="chirpui-text-muted">
+        Your roster, active face, writing queue, inbox, and plotting lanes in one place.
+      </p>
+    </div>
+    <div class="elbysodic-desk-hero__lens">
+      <span>{{ viewer.membership.username }}</span>
+      {% if viewer.current_character %}
+      <strong>wearing {{ viewer.current_character.name }}</strong>
+      {% else %}
+      <strong>whole roster</strong>
+      {% end %}
+    </div>
   </section>
 
-  {% call section_header("Tools") %}
-  Everything here supports the writing; the world map stays focused on places.
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-desk-queue" aria-labelledby="desk-queue-heading">
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-section-kicker">Today</p>
+      <h2 id="desk-queue-heading">What needs you</h2>
+      <p class="chirpui-text-muted">
+        Start with replies, skim what is waiting, then use the lanes below when you need a narrower view.
+      </p>
+    </div>
+    <div class="elbysodic-desk-queue__metrics" aria-label="Desk queue totals">
+      <span class="elbysodic-queue-metric">
+        <strong>{{ desk.needs_reply_count }}</strong>
+        <span>Needs reply</span>
+      </span>
+      <span class="elbysodic-queue-metric">
+        <strong>{{ desk.waiting_count }}</strong>
+        <span>Waiting</span>
+      </span>
+      <span class="elbysodic-queue-metric">
+        <strong>{{ desk.unread_notifications }}</strong>
+        <span>Inbox</span>
+      </span>
+      <span class="elbysodic-queue-metric">
+        <strong>{{ desk.active_count }}</strong>
+        <span>Active</span>
+      </span>
+    </div>
+    <div class="elbysodic-desk-queue__actions">
+      <a class="chirpui-btn chirpui-btn--primary" href="{{ desk.next_queue_href }}">{{ desk.next_queue_label }}</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/notifications">Open inbox</a>
+    </div>
+  </section>
+  {% end %}
+
+  {% if desk.queue.roster_activity %}
+  <section class="chirpui-stack chirpui-stack--sm">
+    {% call section_header("Face lanes") %}
+    Switch from the whole roster to the face that needs the cleanest writing lane.
+    {% end %}
+    <div class="elbysodic-desk-face-lanes">
+      {% for activity in desk.queue.roster_activity %}
+      <a class="elbysodic-desk-face-lane" href="/my/threads?character={{ activity.character.slug }}">
+        <span class="elbysodic-desk-face-lane__avatar">{{ activity.character.name[:1] }}</span>
+        <span class="elbysodic-desk-face-lane__copy">
+          <strong>{{ activity.character.name }}</strong>
+          <span>{{ activity.needs_reply | length }} needs reply · {{ activity.waiting_on_others | length }} waiting</span>
+        </span>
+      </a>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+  {% call section_header("Work lanes") %}
+  Each lane supports writing from a different angle: attention, identity, plotting, intake, and discovery.
   {% end %}
 
   <div class="elbysodic-desk-grid">
@@ -30,6 +93,7 @@
         <h2><a class="chirpui-link" href="{{ item.href }}">{{ item.label }}</a></h2>
         {{ badge(item.count ~ " new", variant="info") if item.count else "" }}
       </div>
+      <p class="elbysodic-section-kicker">{{ item.lane }}</p>
       <p class="chirpui-text-muted">{{ item.summary }}</p>
     </article>
     {% end %}

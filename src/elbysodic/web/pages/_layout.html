@@ -7,7 +7,7 @@
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=expressive-post-shell-1">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=desk-operating-room-1">
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=resizable-destination-rail"></script>
 {% end %}
 
@@ -44,7 +44,7 @@
 {% set guidebook_active = topbar_path == "/world" or topbar_path.startswith("/world/") %}
 {% set wanted_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") %}
 {% set studio_active = topbar_path == "/studio" or topbar_path.startswith("/studio/") %}
-{% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
+{% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
 {% set mobile_nav_label = "Guidebook" if guidebook_active else ("Casting" if wanted_active else ("Studio" if studio_active else ("Desk" if desk_active or notifications_active else "World"))) %}
 {{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
@@ -55,7 +55,6 @@
   <span class="elbysodic-topnav__divider" aria-hidden="true"></span>
   {{ topnav_link("/desk", "Writer Desk", desk_active) }}
   {{ topnav_link("/studio", "Studio", studio_active) }}
-  {{ topnav_count_link("/notifications", "Notifications", viewer.unread_notification_count if viewer else 0, notifications_active) }}
 </nav>
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
   {{ elbysodic_sidebar() }}
@@ -66,33 +65,76 @@
 {% end %}
 
 {% block topbar_end %}
-{% if viewer and viewer.current_character %}
-<form action="/identity" method="post" hx-boost="false" class="elbysodic-face-switcher">
-  <input type="hidden" name="next" value="{{ current_path or "/" }}">
-  <a class="elbysodic-face-switcher__avatar"
-     href="/characters/{{ viewer.current_character.slug }}"
-     aria-label="View {{ viewer.current_character.name }}">
-    {% if viewer.current_character.avatar_url %}
-    <img src="{{ viewer.current_character.avatar_url }}" alt="">
+{% if viewer %}
+<div class="elbysodic-shell-identity">
+  <details class="elbysodic-identity-menu">
+    <summary class="elbysodic-identity-menu__summary"
+             aria-label="Identity menu: {{ viewer.membership.username }}{% if viewer.current_character %} wearing {{ viewer.current_character.name }}{% end %}">
+      <span class="elbysodic-identity-menu__avatar-stack" aria-hidden="true">
+        <span class="elbysodic-identity-menu__writer-avatar">{{ (viewer.membership.display_name or viewer.membership.username)[:1] }}</span>
+        {% if viewer.current_character %}
+        <span class="elbysodic-identity-menu__face-avatar">
+          {% if viewer.current_character.avatar_url %}
+          <img src="{{ viewer.current_character.avatar_url }}" alt="">
+          {% else %}
+          {{ viewer.current_character.name[:1] }}
+          {% end %}
+        </span>
+        {% end %}
+      </span>
+      <span class="elbysodic-identity-menu__copy">
+        <span class="elbysodic-identity-menu__label">{{ viewer.membership.username }}</span>
+        {% if viewer.current_character %}
+        <span class="elbysodic-identity-menu__face">wearing {{ viewer.current_character.name }}</span>
+        {% else %}
+        <span class="elbysodic-identity-menu__face">no active face</span>
+        {% end %}
+      </span>
+    </summary>
+    <div class="elbysodic-identity-menu__panel">
+      <div class="elbysodic-identity-menu__section">
+        <span class="elbysodic-identity-menu__kicker">Writer</span>
+        <a href="/members/{{ viewer.membership.username }}">{{ viewer.membership.display_name or viewer.membership.username }}</a>
+      </div>
+      {% if viewer.current_character %}
+      <form action="/identity" method="post" hx-boost="false" class="elbysodic-identity-menu__face-form">
+        <input type="hidden" name="next" value="{{ current_path or "/" }}">
+        <label class="elbysodic-identity-menu__kicker" for="active-character">Wearing</label>
+        <select id="active-character"
+                name="character_id"
+                class="chirpui-field__input"
+                onchange="this.form.submit()">
+          {% for character in viewer.roster %}
+          <option value="{{ character.id }}" {{ "selected" if character.id == viewer.current_character.id else "" }}>
+            {{ character.name }}
+          </option>
+          {% end %}
+        </select>
+      </form>
+      <div class="elbysodic-identity-menu__links">
+        <a href="/characters/{{ viewer.current_character.slug }}">Active face profile</a>
+        <a href="/my/threads?character={{ viewer.current_character.slug }}">Face queue</a>
+        <a href="/characters">Manage roster</a>
+      </div>
+      {% else %}
+      <div class="elbysodic-identity-menu__links">
+        <a href="/characters">Choose a face</a>
+        <a href="/my/threads">My threads</a>
+      </div>
+      {% end %}
+    </div>
+  </details>
+  <a class="elbysodic-notification-button{{ " elbysodic-notification-button--active" if notifications_active else "" }}"
+     href="/notifications"
+     aria-label="Notifications{% if viewer.unread_notification_count %}, {{ viewer.unread_notification_count }} unread{% end %}">
+    <span class="elbysodic-notification-button__icon" aria-hidden="true">!</span>
+    {% if viewer.unread_notification_count %}
+    <span class="elbysodic-notification-button__count">{{ viewer.unread_notification_count }}</span>
     {% else %}
-    <span aria-hidden="true">{{ viewer.current_character.name[:1] }}</span>
+    <span class="elbysodic-notification-button__dot" aria-hidden="true"></span>
     {% end %}
   </a>
-  <div class="elbysodic-face-switcher__control">
-  <span class="elbysodic-face-switcher__label">Wearing</span>
-  <label class="chirpui-visually-hidden" for="active-character">Active character</label>
-  <select id="active-character"
-          name="character_id"
-          class="chirpui-field__input"
-          onchange="this.form.submit()">
-    {% for character in viewer.roster %}
-    <option value="{{ character.id }}" {{ "selected" if character.id == viewer.current_character.id else "" }}>
-      {{ character.name }}
-    </option>
-    {% end %}
-  </select>
-  </div>
-</form>
+</div>
 {% end %}
 {{ theme_toggle() }}
 {% end %}
@@ -262,12 +304,12 @@
   {% set sidebar_path = current_path or "/" %}
   {% call sidebar_section() %}
     {{ sidebar_destination_link("/desk", "Overview", "home", sidebar_path == "/desk") }}
-    <a class="chirpui-sidebar__link" href="/my/threads" title="My threads">My threads</a>
-    {{ sidebar_count_link("/notifications", "Notifications", viewer.unread_notification_count if viewer else 0) }}
-    <a class="chirpui-sidebar__link" href="/characters" title="Characters">Characters</a>
-    <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
+    <a class="chirpui-sidebar__link" href="/my/threads" title="Queue">Queue</a>
+    {{ sidebar_count_link("/notifications", "Inbox", viewer.unread_notification_count if viewer else 0) }}
+    <a class="chirpui-sidebar__link" href="/characters" title="Roster">Roster</a>
     <a class="chirpui-sidebar__link" href="/plotting" title="Plotting rooms">Plotting</a>
-    <a class="chirpui-sidebar__link" href="/discover" title="Discover">Discover</a>
+    <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
+    <a class="chirpui-sidebar__link" href="/discover" title="Discovery">Discovery</a>
   {% end %}
 {% end %}
 
