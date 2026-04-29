@@ -1,6 +1,6 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/layout.html" import container, stack %}
   {% from "chirpui/surface.html" import surface %}
 {% end %}
 
@@ -25,6 +25,32 @@
 {% end %}
 {% end %}
 
+{% def participant_card(item) %}
+<article class="elbysodic-plotting-participant">
+  {% if item.character %}
+  <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+    <span class="elbysodic-character-avatar" aria-hidden="true">
+      {% if item.character.avatar_url %}
+      <img src="{{ item.character.avatar_url }}" alt="">
+      {% else %}
+      {{ item.character.name[:1] }}
+      {% end %}
+    </span>
+    <span>{{ item.character.name }}</span>
+  </a>
+  {% else %}
+  <div>
+    <h3>{{ item.display_name }}</h3>
+    <p class="elbysodic-copy-meta">prospective character</p>
+  </div>
+  {% end %}
+  <div class="elbysodic-interest-card__meta">
+    {{ badge(item.participant.participant_role, variant="info" if item.participant.participant_role == "owner" else "muted") }}
+    <span>writer <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.username }}</a></span>
+  </div>
+</article>
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
@@ -34,144 +60,43 @@
   <a class="chirpui-link" href="/plotting">← Plotting rooms</a>
 
   {% call surface(variant="elevated") %}
-  <article class="chirpui-stack chirpui-stack--md">
-    <div class="chirpui-cluster chirpui-cluster--between">
-      <div>
-        <p class="elbysodic-kicker">Plotting room</p>
-        <h2>{{ room.room.title }}</h2>
-        {% if room.room.summary %}
-        <p class="elbysodic-copy-lead">{{ room.room.summary }}</p>
+  <article class="elbysodic-plotting-stage">
+    <div class="elbysodic-plotting-stage__copy">
+      <p class="elbysodic-kicker">Plotting room</p>
+      <h2>{{ room.room.title }}</h2>
+      {% if room.room.summary %}
+      <p class="elbysodic-copy-lead">{{ room.room.summary }}</p>
+      {% end %}
+      {% if room.room.next_step %}
+      <p class="elbysodic-plotting-stage__next">
+        <span>Next beat</span>
+        {{ room.room.next_step }}
+      </p>
+      {% end %}
+      <div class="elbysodic-wanted-card__meta">
+        <span>owned by <a class="chirpui-link" href="/members/{{ room.owner_membership.username }}">{{ room.owner_membership.username }}</a></span>
+        {% if room.source_plot_hook %}
+        <span>
+          source
+          <a class="chirpui-link" href="/characters/{{ room.source_plot_hook.character.slug }}/hooks/{{ room.source_plot_hook.plot_hook.slug }}">
+            {{ room.source_plot_hook.plot_hook.title }}
+          </a>
+        </span>
+        {% end %}
+        {% if room.source_wanted_ad %}
+        <span>
+          source
+          <a class="chirpui-link" href="/wanted/{{ room.source_wanted_ad.wanted_ad.slug }}">
+            {{ room.source_wanted_ad.wanted_ad.title }}
+          </a>
+        </span>
         {% end %}
       </div>
+    </div>
+    <div class="elbysodic-plotting-stage__status">
       <div class="elbysodic-interest-card__meta">
         {{ badge(room.room.status, variant="info" if room.room.status == "brainstorming" else "muted") }}
         <span>{{ room.created_at_label }}</span>
-      </div>
-    </div>
-    <div class="elbysodic-wanted-card__meta">
-      <span>owned by <a class="chirpui-link" href="/members/{{ room.owner_membership.username }}">{{ room.owner_membership.username }}</a></span>
-      {% if room.source_plot_hook %}
-      <span>
-        source
-        <a class="chirpui-link" href="/characters/{{ room.source_plot_hook.character.slug }}/hooks/{{ room.source_plot_hook.plot_hook.slug }}">
-          {{ room.source_plot_hook.plot_hook.title }}
-        </a>
-      </span>
-      {% end %}
-      {% if room.source_wanted_ad %}
-      <span>
-        source
-        <a class="chirpui-link" href="/wanted/{{ room.source_wanted_ad.wanted_ad.slug }}">
-          {{ room.source_wanted_ad.wanted_ad.title }}
-        </a>
-      </span>
-      {% end %}
-    </div>
-  </article>
-  {% end %}
-
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Writers") %}
-    Faces and concepts currently in the room.
-    {% end %}
-    <div class="elbysodic-interest-list">
-      {% for item in room.participants %}
-      {% call surface(variant="elevated") %}
-      <article class="elbysodic-interest-card">
-        {% if item.character %}
-        <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
-          <span class="elbysodic-character-avatar" aria-hidden="true">
-            {% if item.character.avatar_url %}
-            <img src="{{ item.character.avatar_url }}" alt="">
-            {% else %}
-            {{ item.character.name[:1] }}
-            {% end %}
-          </span>
-          <span>{{ item.character.name }}</span>
-        </a>
-        {% else %}
-        <div>
-          <h3>{{ item.display_name }}</h3>
-          <p class="elbysodic-copy-meta">prospective character</p>
-        </div>
-        {% end %}
-        <div class="elbysodic-interest-card__meta">
-          {{ badge(item.participant.participant_role, variant="info" if item.participant.participant_role == "owner" else "muted") }}
-          <span>writer <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.username }}</a></span>
-        </div>
-      </article>
-      {% end %}
-      {% end %}
-    </div>
-  </section>
-
-  {% call surface(variant="elevated") %}
-  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="room-chat">
-    <div class="chirpui-cluster chirpui-cluster--between">
-      <div>
-        <p class="elbysodic-kicker">Room chat</p>
-        <h2 id="room-chat">Planning table</h2>
-      </div>
-      <span class="elbysodic-copy-meta">Live while the room is open</span>
-    </div>
-    <div hx-ext="sse"
-         sse-connect="/plotting/{{ room.room.id }}/stream"
-         hx-disinherit="hx-target hx-swap">
-      {% block plotting_room_message_item %}
-      {{ room_message_item(item | default(none)) }}
-      {% end %}
-      <div id="plotting-room-transcript"
-           class="elbysodic-room-chat"
-           role="log"
-           aria-live="polite"
-           aria-relevant="additions"
-           sse-swap="plotting-room-message"
-           hx-swap="beforeend"
-           hx-target="this">
-        {% for item in room.messages %}
-        {{ room_message_item(item) }}
-        {% end %}
-      </div>
-      <div sse-swap="plotting-room-ready"
-           hx-swap="none"
-           hx-target="this"
-           class="elbysodic-sse-sink"></div>
-    </div>
-    {% block plotting_room_message_composer %}
-    {% if room.can_edit_plan %}
-    <form id="plotting-room-composer"
-          method="post"
-          hx-post="/plotting/{{ room.room.id }}"
-          hx-target="#plotting-room-composer"
-          hx-swap="outerHTML"
-          hx-disinherit="hx-select hx-target hx-swap"
-          hx-boost="false"
-          class="elbysodic-room-composer">
-      <input type="hidden" name="intent" value="post_message">
-      <label class="chirpui-field__label" for="room-message">
-        Message{% if viewer.current_character %} as {{ viewer.current_character.name }}{% end %}
-      </label>
-      <div class="elbysodic-room-composer__row">
-        <textarea id="room-message"
-                  class="chirpui-field__input"
-                  name="body"
-                  rows="2"
-                  maxlength="2000"
-                  placeholder="Drop a quick plotting note..."></textarea>
-        <button type="submit" class="chirpui-btn chirpui-btn--primary">Send</button>
-      </div>
-    </form>
-    {% end %}
-    {% end %}
-  </section>
-  {% end %}
-
-  {% call surface(variant="elevated") %}
-  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="room-plan">
-    <div class="chirpui-cluster chirpui-cluster--between">
-      <div>
-        <p class="elbysodic-kicker">Planning</p>
-        <h2 id="room-plan">Room notes</h2>
       </div>
       {% if room.target_thread and room.target_board %}
       <a class="chirpui-btn chirpui-btn--primary" href="/boards/{{ room.target_board.slug }}/threads/{{ room.target_thread.slug }}">
@@ -179,65 +104,187 @@
       </a>
       {% end %}
     </div>
-
-    {% if room.can_edit_plan %}
-    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
-      <input type="hidden" name="intent" value="save_plan">
-      <div class="elbysodic-form-grid">
-        <div>
-          <label class="chirpui-field__label" for="room-status">Status</label>
-          <select id="room-status" class="chirpui-field__input" name="status">
-            {% for status in ["brainstorming", "ready", "paused", "done"] %}
-            <option value="{{ status }}" {{ "selected" if status == room.room.status else "" }}>
-              {{ status.replace("_", " ").title() }}
-            </option>
-            {% end %}
-            {% if room.target_thread %}
-            <option value="threaded" {{ "selected" if room.room.status == "threaded" else "" }}>Threaded</option>
-            {% end %}
-          </select>
-        </div>
-        <div>
-          <label class="chirpui-field__label" for="target-board">Scene board</label>
-          <select id="target-board" class="chirpui-field__input" name="target_board_id">
-            <option value="">Choose later</option>
-            {% for board in room.scene_boards %}
-            <option value="{{ board.id }}" {{ "selected" if room.target_board and board.id == room.target_board.id else "" }}>
-              {{ board.name }}
-            </option>
-            {% end %}
-          </select>
-        </div>
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="next-step">Next step</label>
-        <input id="next-step"
-               class="chirpui-field__input"
-               name="next_step"
-               value="{{ room.room.next_step }}"
-               placeholder="Pick the opening beat">
-      </div>
-      <div>
-        <label class="chirpui-field__label" for="room-notes">Shared notes</label>
-        <textarea id="room-notes"
-                  class="chirpui-field__input"
-                  name="notes"
-                  rows="8">{{ room.room.notes }}</textarea>
-      </div>
-      <div class="chirpui-cluster chirpui-cluster--end">
-        <button type="submit" class="chirpui-btn chirpui-btn--primary">Save room plan</button>
-      </div>
-    </form>
-    {% else %}
-    <article class="chirpui-stack chirpui-stack--sm">
-      {% if room.room.next_step %}
-      <p class="elbysodic-copy-meta">{{ room.room.next_step }}</p>
-      {% end %}
-      <div class="elbysodic-prose">{{ room.room.notes }}</div>
-    </article>
-    {% end %}
-  </section>
+  </article>
   {% end %}
+
+  <div class="elbysodic-plotting-workspace">
+    <div class="elbysodic-plotting-workspace__main">
+      {% call surface(variant="elevated") %}
+      <section class="elbysodic-room-live" aria-labelledby="room-chat">
+        <div class="elbysodic-room-live__header">
+          <div>
+            <p class="elbysodic-kicker">Room chat</p>
+            <h2 id="room-chat">Planning table</h2>
+          </div>
+          <span class="elbysodic-copy-meta">Live while the room is open</span>
+        </div>
+        <div hx-ext="sse"
+             sse-connect="/plotting/{{ room.room.id }}/stream"
+             hx-disinherit="hx-target hx-swap">
+          {% block plotting_room_message_item %}
+          {{ room_message_item(item | default(none)) }}
+          {% end %}
+          <div id="plotting-room-transcript"
+               class="elbysodic-room-chat"
+               role="log"
+               aria-live="polite"
+               aria-relevant="additions"
+               sse-swap="plotting-room-message"
+               hx-swap="beforeend"
+               hx-target="this">
+            {% for item in room.messages %}
+            {{ room_message_item(item) }}
+            {% end %}
+            {% if not room.messages %}
+            <p class="elbysodic-room-chat__empty">No room messages yet.</p>
+            {% end %}
+          </div>
+          <div sse-swap="plotting-room-ready"
+               hx-swap="none"
+               hx-target="this"
+               class="elbysodic-sse-sink"></div>
+        </div>
+        {% block plotting_room_message_composer %}
+        {% if room.can_edit_plan %}
+        <form id="plotting-room-composer"
+              method="post"
+              hx-post="/plotting/{{ room.room.id }}"
+              hx-target="#plotting-room-composer"
+              hx-swap="outerHTML"
+              hx-disinherit="hx-select hx-target hx-swap"
+              hx-boost="false"
+              class="elbysodic-room-composer">
+          <input type="hidden" name="intent" value="post_message">
+          <label class="chirpui-field__label" for="room-message">
+            Message{% if viewer.current_character %} as {{ viewer.current_character.name }}{% end %}
+          </label>
+          <div class="elbysodic-room-composer__row">
+            <textarea id="room-message"
+                      class="chirpui-field__input"
+                      name="body"
+                      rows="2"
+                      maxlength="2000"
+                      placeholder="Drop a quick plotting note..."></textarea>
+            <button type="submit" class="chirpui-btn chirpui-btn--primary">Send</button>
+          </div>
+        </form>
+        {% end %}
+        {% end %}
+      </section>
+      {% end %}
+
+      {% call surface(variant="elevated") %}
+      <section class="chirpui-stack chirpui-stack--md" aria-labelledby="room-plan">
+        <div class="chirpui-cluster chirpui-cluster--between">
+          <div>
+            <p class="elbysodic-kicker">Planning</p>
+            <h2 id="room-plan">Room notes</h2>
+          </div>
+        </div>
+
+        {% if room.can_edit_plan %}
+        <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+          <input type="hidden" name="intent" value="save_plan">
+          <div class="elbysodic-form-grid">
+            <div>
+              <label class="chirpui-field__label" for="room-status">Status</label>
+              <select id="room-status" class="chirpui-field__input" name="status">
+                {% for status in ["brainstorming", "ready", "paused", "done"] %}
+                <option value="{{ status }}" {{ "selected" if status == room.room.status else "" }}>
+                  {{ status.replace("_", " ").title() }}
+                </option>
+                {% end %}
+                {% if room.target_thread %}
+                <option value="threaded" {{ "selected" if room.room.status == "threaded" else "" }}>Threaded</option>
+                {% end %}
+              </select>
+            </div>
+            <div>
+              <label class="chirpui-field__label" for="target-board">Scene board</label>
+              <select id="target-board" class="chirpui-field__input" name="target_board_id">
+                <option value="">Choose later</option>
+                {% for board in room.scene_boards %}
+                <option value="{{ board.id }}" {{ "selected" if room.target_board and board.id == room.target_board.id else "" }}>
+                  {{ board.name }}
+                </option>
+                {% end %}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="chirpui-field__label" for="next-step">Next step</label>
+            <input id="next-step"
+                   class="chirpui-field__input"
+                   name="next_step"
+                   value="{{ room.room.next_step }}"
+                   placeholder="Pick the opening beat">
+          </div>
+          <div>
+            <label class="chirpui-field__label" for="room-notes">Shared notes</label>
+            <textarea id="room-notes"
+                      class="chirpui-field__input"
+                      name="notes"
+                      rows="8">{{ room.room.notes }}</textarea>
+          </div>
+          <div class="chirpui-cluster chirpui-cluster--end">
+            <button type="submit" class="chirpui-btn chirpui-btn--primary">Save room plan</button>
+          </div>
+        </form>
+        {% else %}
+        <article class="chirpui-stack chirpui-stack--sm">
+          {% if room.room.next_step %}
+          <p class="elbysodic-copy-meta">{{ room.room.next_step }}</p>
+          {% end %}
+          <div class="elbysodic-prose">{{ room.room.notes }}</div>
+        </article>
+        {% end %}
+      </section>
+      {% end %}
+    </div>
+
+    <aside class="elbysodic-plotting-workspace__aside" aria-label="Room context">
+      {% call surface(variant="elevated") %}
+      <section class="chirpui-stack chirpui-stack--md">
+        <div>
+          <p class="elbysodic-kicker">Writers</p>
+          <h2>Faces in room</h2>
+        </div>
+        <div class="elbysodic-plotting-participant-list">
+          {% for item in room.participants %}
+          {{ participant_card(item) }}
+          {% end %}
+        </div>
+      </section>
+      {% end %}
+
+      {% call surface(variant="elevated") %}
+      <section class="chirpui-stack chirpui-stack--md">
+        <div>
+          <p class="elbysodic-kicker">Handoff</p>
+          <h2>Scene target</h2>
+        </div>
+        <div class="elbysodic-plotting-context-list">
+          <p>
+            <span>Status</span>
+            <strong>{{ room.room.status.replace("_", " ").title() }}</strong>
+          </p>
+          <p>
+            <span>Board</span>
+            <strong>{{ room.target_board.name if room.target_board else "Choose later" }}</strong>
+          </p>
+          <p>
+            <span>Scene</span>
+            {% if room.target_thread and room.target_board %}
+            <a class="chirpui-link" href="/boards/{{ room.target_board.slug }}/threads/{{ room.target_thread.slug }}">{{ room.target_thread.title }}</a>
+            {% else %}
+            <strong>Not started</strong>
+            {% end %}
+          </p>
+        </div>
+      </section>
+      {% end %}
+    </aside>
+  </div>
 
   {% if room.can_create_scene %}
   {% call surface(variant="elevated") %}

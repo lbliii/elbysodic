@@ -1,12 +1,12 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/plot_hooks.html" import plot_hook_card %}
   {% from "_components/post_style_preview.html" import post_style_preview %}
   {% from "_components/thread_summary.html" import thread_card %}
-  {% from "_components/ui.html" import counter %}
+  {% from "_components/vocabulary.html" import metric_item %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -41,39 +41,54 @@
       <em>{{ profile.character.tagline }}</em>
       {% end %}
     </a>
-    <div class="elbysodic-profile-hero__body chirpui-stack chirpui-stack--md">
-      <div class="elbysodic-character-card__header">
-        <div>
-          <div class="chirpui-cluster chirpui-cluster--sm">
-            <h2>{{ profile.character.name }}</h2>
+    <div class="elbysodic-profile-hero__body">
+      <div class="elbysodic-face-hub__identity">
+        <div class="elbysodic-face-hub__status">
+          <span class="elbysodic-section-kicker">Face hub</span>
+          <span class="elbysodic-face-hub__badges">
             {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
             {{ badge(profile.application_status_label, variant=profile.application_status_variant) }}
-          </div>
-          <p class="elbysodic-copy-lead">{{ profile.character.summary }}</p>
+          </span>
+        </div>
+        <div>
+          <h2>{{ profile.character.name }}</h2>
+          {% if profile.character.tagline %}
+          <p class="elbysodic-face-hub__tagline">{{ profile.character.tagline }}</p>
+          {% end %}
+        </div>
+        <p class="elbysodic-copy-lead">{{ profile.character.summary }}</p>
+        <div class="elbysodic-face-hub__meta">
           <p class="elbysodic-copy-meta">
             writer
             <a class="chirpui-link" href="/members/{{ profile.owner_membership.username }}">
               {{ profile.owner_membership.username }}
             </a>
           </p>
-          <p class="elbysodic-accent-source">
-            <span class="elbysodic-accent-source__swatch" aria-hidden="true"
-                  {% if profile.accent_color %}style="--elbysodic-accent-source-color: {{ profile.accent_color }}"{% end %}></span>
-            <span>{{ profile.accent_source_label }}</span>
-            <small>{{ profile.accent_source_detail }}</small>
+          <p class="elbysodic-copy-status">
+            {% if profile.is_default %}
+            Current face: {{ profile.character.name }}
+            {% else %}
+            Community face: {{ viewer.community.name }}
+            {% end %}
           </p>
-          {{ facet_pills(profile.facets) }}
         </div>
+        <p class="elbysodic-accent-source">
+          <span class="elbysodic-accent-source__swatch" aria-hidden="true"
+                {% if profile.accent_color %}style="--elbysodic-accent-source-color: {{ profile.accent_color }}"{% end %}></span>
+          <span>{{ profile.accent_source_label }}</span>
+          <small>{{ profile.accent_source_detail }}</small>
+        </p>
+        {{ facet_pills(profile.facets) }}
       </div>
-      <div class="elbysodic-profile-hero__metrics" aria-label="{{ profile.character.name }} activity">
-        {{ counter("P", profile.post_count, "posts") }}
-        {{ counter("T", profile.thread_count, "threads started") }}
-        {{ counter("!", profile.activity.needs_reply | length, "needs reply") }}
-        {{ counter("R", profile.activity.participated | length, "active threads") }}
-        <span class="elbysodic-meta-line">Writer {{ profile.owner_membership.display_name }}</span>
+      <div class="elbysodic-face-hub__actions">
+        <a class="chirpui-btn chirpui-btn--secondary" href="#tracker">Scene tracker</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="#plotter">Plotter</a>
+        {% if profile.can_manage %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ profile.character.slug }}">Open review room</a>
+        {% end %}
       </div>
       {% if profile.can_manage %}
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="elbysodic-face-hub__actions elbysodic-face-hub__actions--primary">
         {% if profile.character.application_status == "draft" %}
         <form method="post" hx-boost="false">
           <input type="hidden" name="intent" value="submit_application">
@@ -97,9 +112,57 @@
   </article>
   {% end %}
 
-  <section class="chirpui-stack chirpui-stack--md">
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-face-writing-lane" aria-labelledby="face-writing-lane-heading">
+    <div class="elbysodic-face-writing-lane__copy">
+      <p class="elbysodic-section-kicker">Writing lane</p>
+      <h2 id="face-writing-lane-heading">{{ profile.character.name }}'s current queue</h2>
+      {% if profile.activity.needs_reply %}
+      {% set next_reply = profile.activity.needs_reply[0] %}
+      <p class="elbysodic-face-writing-lane__next">
+        <a class="chirpui-link" href="/my/threads?character={{ profile.character.slug }}">Needs {{ profile.character.name }}</a>
+        · latest in
+        <a class="chirpui-link"
+           href="/boards/{{ next_reply.board.slug }}/threads/{{ next_reply.thread.slug }}{{ "#" ~ next_reply.jump_post.anchor if next_reply.jump_post else "" }}">
+          {{ next_reply.thread.title }}
+        </a>
+      </p>
+      {% elif profile.activity.waiting_on_others %}
+      {% set waiting_scene = profile.activity.waiting_on_others[0] %}
+      <p class="elbysodic-face-writing-lane__next">
+        <a class="chirpui-link" href="/my/threads?character={{ profile.character.slug }}">Waiting on {{ profile.character.name }}</a>
+        · latest in
+        <a class="chirpui-link" href="/boards/{{ waiting_scene.board.slug }}/threads/{{ waiting_scene.thread.slug }}">
+          {{ waiting_scene.thread.title }}
+        </a>
+      </p>
+      {% else %}
+      <p class="elbysodic-face-writing-lane__next">Caught up for now.</p>
+      {% end %}
+    </div>
+    <div class="elbysodic-face-writing-lane__metrics" aria-label="{{ profile.character.name }} writing totals">
+      {{ metric_item(profile.activity.needs_reply | length, "Needs reply") }}
+      {{ metric_item(profile.activity.waiting_on_others | length, "Waiting") }}
+      {{ metric_item(profile.activity.participated | length, "Active") }}
+      {{ metric_item(profile.post_count, "Posts") }}
+    </div>
+    {% if profile.can_manage %}
+    <a class="chirpui-btn chirpui-btn--primary elbysodic-face-writing-lane__action"
+       href="/my/threads?character={{ profile.character.slug }}">
+      Open filtered queue
+    </a>
+    {% else %}
+    <a class="chirpui-btn chirpui-btn--secondary elbysodic-face-writing-lane__action"
+       href="/members/{{ profile.owner_membership.username }}">
+      View writer
+    </a>
+    {% end %}
+  </section>
+  {% end %}
+
+  <section id="plotter" class="chirpui-stack chirpui-stack--md">
     {% call section_header("Plotter") %}
-    Character hooks, wanted hooks, and story invitations.
+    Character hooks, wanted hooks, and story invitations orbiting this face.
     {% end %}
     {% if profile.plot_hooks %}
     <div class="elbysodic-section-kicker">Character hooks</div>
@@ -260,17 +323,17 @@
   </section>
   {% end %}
 
-  <section class="chirpui-stack chirpui-stack--md">
+  <section id="tracker" class="chirpui-stack chirpui-stack--md">
     {% call section_header("Tracker") %}
-    {{ profile.character.name }}'s current writing queue.
+    {{ profile.character.name }}'s scene tracker and thread history.
     {% end %}
-    {% call cluster(gap="sm") %}
+    <div class="elbysodic-profile-section-actions">
       {% if profile.can_manage %}
       <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">Open filtered queue</a>
       {% else %}
       <a class="chirpui-btn chirpui-btn--secondary" href="/members/{{ profile.owner_membership.username }}">View writer</a>
       {% end %}
-    {% end %}
+    </div>
     {% if profile.activity.participated %}
     {% for item in profile.activity.participated %}
       {{ character_thread_item(item) }}
