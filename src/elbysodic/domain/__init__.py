@@ -17,12 +17,18 @@ from elbysodic.domain.boards import (
     normalize_board_kind,
     normalize_board_sidebar_section,
 )
-from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, CommunityContext
+from elbysodic.domain.context import (
+    DEFAULT_COMMUNITY_ID,
+    DEFAULT_COMMUNITY_SLUG,
+    CommunityContext,
+    RequestIdentityContext,
+)
 from elbysodic.domain.models import (
     Board,
     Character,
     Community,
     CommunityMembership,
+    CommunityTheme,
     Notification,
     Post,
     Role,
@@ -37,6 +43,7 @@ __all__ = [
     "BOARD_KINDS",
     "BOARD_SIDEBAR_SECTIONS",
     "DEFAULT_COMMUNITY_ID",
+    "DEFAULT_COMMUNITY_SLUG",
     "DEFAULT_SIDEBAR_SECTION_CONFIGS",
     "Board",
     "BoardKind",
@@ -45,8 +52,10 @@ __all__ = [
     "Community",
     "CommunityContext",
     "CommunityMembership",
+    "CommunityTheme",
     "Notification",
     "Post",
+    "RequestIdentityContext",
     "Role",
     "SidebarRealm",
     "SidebarSectionConfig",

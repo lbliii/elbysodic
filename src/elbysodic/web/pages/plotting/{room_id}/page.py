@@ -15,7 +15,7 @@ def get(request: Request, room_id: str) -> Page:
 
 
 async def post(request: Request, room_id: str) -> Fragment | Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     parsed_room_id = _parse_room_id(room_id)
     form = await request.form()
     intent = str(form.get("intent") or "")
@@ -80,7 +80,7 @@ async def post(request: Request, room_id: str) -> Fragment | Page | Redirect:
 
 
 def _render_room(request: Request, room_id: str) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         room = services.read_plotting_room(_parse_room_id(room_id))
     except LookupError as exc:

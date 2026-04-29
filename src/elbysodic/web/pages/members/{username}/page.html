@@ -1,9 +1,9 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/thread_summary.html" import thread_card %}
+  {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
 
 {% def profile_thread_item(item) %}
@@ -19,8 +19,8 @@
   <a class="chirpui-link" href="/members">← Members</a>
 
   {% call surface(variant="elevated") %}
-  <article class="elbysodic-profile-hero chirpui-stack chirpui-stack--md">
-    <div class="elbysodic-member-card__header">
+  <article class="elbysodic-member-profile-hero">
+    <div class="elbysodic-member-profile-hero__identity">
       <div class="elbysodic-character-avatar elbysodic-character-avatar--lg" aria-hidden="true">
         {% if profile.default_character and profile.default_character.avatar_url %}
         <img src="{{ profile.default_character.avatar_url }}" alt="">
@@ -48,12 +48,12 @@
         {% end %}
       </div>
     </div>
-    {% call cluster(gap="sm") %}
-      {{ stat(value=profile.roster | length, label="Faces") }}
-      {{ stat(value=profile.visible_post_count, label="Visible posts") }}
-      {{ stat(value=profile.visible_thread_count, label="Current scenes") }}
-      {{ stat(value=profile.collaborators | length, label="Collaborators") }}
-    {% end %}
+    <div class="elbysodic-member-profile-hero__metrics" aria-label="{{ profile.membership.display_name }} writing totals">
+      {{ metric_item(profile.roster | length, "Faces") }}
+      {{ metric_item(profile.visible_post_count, "Visible posts") }}
+      {{ metric_item(profile.visible_thread_count, "Current scenes") }}
+      {{ metric_item(profile.collaborators | length, "Collaborators") }}
+    </div>
   </article>
   {% end %}
 
@@ -63,7 +63,7 @@
   <div class="elbysodic-character-grid">
     {% for character in profile.known_for %}
     {% call surface(variant="elevated") %}
-    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm">
+    <article class="elbysodic-member-face-card">
       <div class="elbysodic-character-card__identity">
         <a class="elbysodic-character-avatar" href="/characters/{{ character.slug }}" aria-label="{{ character.name }}">
           {% if character.avatar_url %}
@@ -88,7 +88,7 @@
   <div class="elbysodic-character-grid">
     {% for character in profile.roster %}
     {% call surface(variant="elevated") %}
-    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm">
+    <article class="elbysodic-member-face-card">
       <div class="elbysodic-character-card__identity">
         <a class="elbysodic-character-avatar" href="/characters/{{ character.slug }}" aria-label="{{ character.name }}">
           {% if character.avatar_url %}

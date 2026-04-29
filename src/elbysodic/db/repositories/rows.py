@@ -19,6 +19,7 @@ from elbysodic.domain.models import (
     CharacterReserve,
     Community,
     CommunityMembership,
+    CommunityTheme,
     Facet,
     FacetGroup,
     Material,
@@ -52,6 +53,18 @@ def _community_from_row(row: sqlite3.Row) -> Community:
         enabled_post_border_styles=row["enabled_post_border_styles"],
         enabled_post_title_styles=row["enabled_post_title_styles"],
         enabled_post_densities=row["enabled_post_densities"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _community_theme_from_row(row: sqlite3.Row) -> CommunityTheme:
+    return CommunityTheme(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        name=row["name"],
+        tokens_json=row["tokens_json"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

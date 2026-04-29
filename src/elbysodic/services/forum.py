@@ -24,6 +24,7 @@ from elbysodic.domain.boards import (
     normalize_board_kind,
     normalize_board_sidebar_section,
 )
+from elbysodic.domain.context import RequestIdentityContext
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -38,6 +39,7 @@ from elbysodic.domain.models import (
     WantedAdInterest,
 )
 from elbysodic.services import policies
+from elbysodic.services.access import DefaultRequestIdentity, RequestIdentityResolver
 from elbysodic.services.applications import (
     accept_character_application as _accept_character_application,
 )
@@ -165,6 +167,7 @@ from elbysodic.services.read_models import (
     PostRevisionHistory,
     PostStylePolicy,
     StudioBoardEditor,
+    StudioIdentityOption,
     ThreadNavigationItem,
     ThreadSummary,
     ThreadView,
@@ -179,6 +182,7 @@ from elbysodic.services.read_models import (
 from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
+from elbysodic.services.themes import community_theme_view
 from elbysodic.services.threads import (
     board_thread_summaries as _board_thread_summaries,
 )
@@ -197,13 +201,46 @@ DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
 class AppServices:
     """Small application service facade for the dev forum."""
 
-    def __init__(self, repo: ForumRepository, seed: DemoSeed) -> None:
+    def __init__(
+        self,
+        repo: ForumRepository,
+        seed: DemoSeed,
+        *,
+        identity_resolver: RequestIdentityResolver | None = None,
+        identity_context: RequestIdentityContext | None = None,
+    ) -> None:
         self.repo = repo
         self.seed = seed
+        self._identity_resolver = identity_resolver or RequestIdentityResolver(
+            repo,
+            DefaultRequestIdentity(
+                community_id=seed.community.id,
+                user_id=seed.user.id,
+                membership_id=seed.membership.id,
+            ),
+        )
+        self._identity_context = identity_context
+
+    def for_request(self, request: object) -> AppServices:
+        """Return a request-scoped facade sharing the same repository."""
+
+        return AppServices(
+            self.repo,
+            self.seed,
+            identity_resolver=self._identity_resolver,
+            identity_context=self._identity_resolver.resolve(request),
+        )
 
     def viewer(self) -> ForumView:
-        community = self.repo.get_community(self.seed.community.id)
-        membership = self.repo.get_membership(community.id, self.seed.membership.id)
+        identity = self._identity_context or self._identity_resolver.resolve()
+        community = self.repo.get_community(identity.community_id)
+        membership = self.repo.get_membership(community.id, identity.membership_id)
+        if membership.user_id != identity.user_id:
+            raise PermissionError(
+                f"membership {membership.id} does not belong to user {identity.user_id}"
+            )
+        if not membership.is_active:
+            raise PermissionError(f"membership {membership.id} is not active")
         role = self.repo.get_role(community.id, membership.role_id)
         roster = self.repo.list_characters(community.id, membership.id)
         current_character = _resolve_current_character(self.repo, membership, roster)
@@ -242,6 +279,60 @@ class AppServices:
             unread_notification_count=self.repo.count_unread_notifications(
                 community.id, membership.id
             ),
+            identity_options=self._identity_options(identity),
+            program_theme=community_theme_view(self.repo.get_default_theme(community.id)),
+        )
+
+    def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
+        options: list[StudioIdentityOption] = []
+        for membership in self.repo.list_memberships_for_user(identity.user_id):
+            if not membership.is_active:
+                continue
+            community = self.repo.get_community(membership.community_id)
+            role = self.repo.get_role(community.id, membership.role_id)
+            roster = self.repo.list_characters(community.id, membership.id)
+            options.append(
+                StudioIdentityOption(
+                    community=community,
+                    membership=membership,
+                    role=role,
+                    current_character=_resolve_current_character(self.repo, membership, roster),
+                    unread_notification_count=self.repo.count_unread_notifications(
+                        community.id,
+                        membership.id,
+                    ),
+                    is_current=(
+                        community.id == identity.community_id
+                        and membership.id == identity.membership_id
+                    ),
+                )
+            )
+        return sorted(
+            options,
+            key=lambda option: (
+                0 if option.is_current else 1,
+                option.community.name,
+                option.membership.display_name,
+                option.membership.id,
+            ),
+        )
+
+    def switch_dev_identity(self, membership_id: int) -> RequestIdentityContext:
+        identity = self._identity_context or self._identity_resolver.resolve()
+        for membership in self.repo.list_memberships_for_user(identity.user_id):
+            if membership.id != membership_id:
+                continue
+            if not membership.is_active:
+                raise PermissionError(f"membership {membership.id} is not active")
+            community = self.repo.get_community(membership.community_id)
+            return RequestIdentityContext(
+                community_id=community.id,
+                community_slug=community.slug,
+                user_id=identity.user_id,
+                membership_id=membership.id,
+            )
+        raise PermissionError(
+            f"user {identity.user_id} cannot switch to membership {membership_id}"
         )
 
     def list_boards(self) -> list[BoardSummary]:

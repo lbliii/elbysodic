@@ -31,7 +31,7 @@ class ThreadFilterOption:
 
 
 def get(request: Request, board_slug: str) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     active_filter = _parse_filter(request.query.get("filter", "all"))
     board, threads = services.board_threads(board_slug, filter_by=active_filter)

@@ -25,6 +25,17 @@ class Community:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityTheme:
+    id: int
+    community_id: int
+    slug: str
+    name: str
+    tokens_json: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class User:
     id: int
     email: str

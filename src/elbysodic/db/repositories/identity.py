@@ -5,12 +5,13 @@ from __future__ import annotations
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
     _community_from_row,
+    _community_theme_from_row,
     _membership_from_row,
     _role_from_row,
     _user_from_row,
 )
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
-from elbysodic.domain.models import Community, CommunityMembership, Role, User
+from elbysodic.domain.models import Community, CommunityMembership, CommunityTheme, Role, User
 
 
 class IdentityRepositoryMixin(RepositoryBase):
@@ -64,6 +65,58 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"community not found: {community_id}")
         return _community_from_row(row)
 
+    def get_community_by_slug(self, slug: str) -> Community:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                name,
+                slug,
+                host,
+                default_theme_id,
+                identity_accent_facet_group_id,
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
+                created_at,
+                updated_at
+            FROM communities
+            WHERE slug = ?
+            """,
+            (slug,),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"community not found for slug: {slug}")
+        return _community_from_row(row)
+
+    def get_community_by_host(self, host: str) -> Community:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                name,
+                slug,
+                host,
+                default_theme_id,
+                identity_accent_facet_group_id,
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
+                created_at,
+                updated_at
+            FROM communities
+            WHERE host = ?
+            """,
+            (host,),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"community not found for host: {host}")
+        return _community_from_row(row)
+
     def update_community_identity_accent_group(
         self,
         community_id: int,
@@ -93,6 +146,145 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self.connection.commit()
         return self.get_community(community_id)
+
+    def update_community_name_and_slug(
+        self, community_id: int, *, slug: str, name: str
+    ) -> Community:
+        self.get_community(community_id)
+        self.connection.execute(
+            """
+            UPDATE communities
+            SET slug = ?, name = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (slug, name, _utc_now(), community_id),
+        )
+        self.connection.commit()
+        return self.get_community(community_id)
+
+    def create_theme(
+        self,
+        community_id: int,
+        slug: str,
+        name: str,
+        tokens_json: str,
+    ) -> CommunityTheme:
+        self.get_community(community_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO themes (community_id, slug, name, tokens_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (community_id, slug, name, tokens_json, now, now),
+        )
+        self.connection.commit()
+        return self.get_theme(community_id, _last_id(cursor))
+
+    def get_theme(self, community_id: int, theme_id: int) -> CommunityTheme:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                name,
+                tokens_json,
+                created_at,
+                updated_at
+            FROM themes
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, theme_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"theme not found in community {community_id}: {theme_id}")
+        return _community_theme_from_row(row)
+
+    def get_theme_by_slug(self, community_id: int, slug: str) -> CommunityTheme:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                name,
+                tokens_json,
+                created_at,
+                updated_at
+            FROM themes
+            WHERE community_id = ? AND slug = ?
+            """,
+            (community_id, slug),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"theme not found in community {community_id}: {slug}")
+        return _community_theme_from_row(row)
+
+    def get_default_theme(self, community_id: int) -> CommunityTheme | None:
+        community = self.get_community(community_id)
+        if community.default_theme_id is None:
+            return None
+        return self.get_theme(community_id, community.default_theme_id)
+
+    def update_theme(
+        self,
+        community_id: int,
+        theme_id: int,
+        *,
+        slug: str,
+        name: str,
+        tokens_json: str,
+    ) -> CommunityTheme:
+        self.get_theme(community_id, theme_id)
+        self.connection.execute(
+            """
+            UPDATE themes
+            SET slug = ?, name = ?, tokens_json = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (slug, name, tokens_json, _utc_now(), community_id, theme_id),
+        )
+        self.connection.commit()
+        return self.get_theme(community_id, theme_id)
+
+    def set_default_theme(self, community_id: int, theme_id: int | None) -> Community:
+        self.get_community(community_id)
+        if theme_id is not None:
+            self.get_theme(community_id, theme_id)
+        self.connection.execute(
+            """
+            UPDATE communities
+            SET default_theme_id = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (theme_id, _utc_now(), community_id),
+        )
+        self.connection.commit()
+        return self.get_community(community_id)
+
+    def upsert_default_theme(
+        self,
+        community_id: int,
+        *,
+        slug: str,
+        name: str,
+        tokens_json: str,
+    ) -> CommunityTheme:
+        try:
+            theme = self.get_theme_by_slug(community_id, slug)
+        except LookupError:
+            theme = self.create_theme(community_id, slug, name, tokens_json)
+        else:
+            theme = self.update_theme(
+                community_id,
+                theme.id,
+                slug=slug,
+                name=name,
+                tokens_json=tokens_json,
+            )
+        self.set_default_theme(community_id, theme.id)
+        return theme
 
     def update_community_post_style_policy(
         self,
@@ -329,6 +521,29 @@ class IdentityRepositoryMixin(RepositoryBase):
             ORDER BY display_name, username, id
             """,
             (community_id,),
+        ).fetchall()
+        return [_membership_from_row(row) for row in rows]
+
+    def list_memberships_for_user(self, user_id: int) -> list[CommunityMembership]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                user_id,
+                username,
+                display_name,
+                avatar_url,
+                role_id,
+                default_character_id,
+                post_count,
+                is_active,
+                joined_at
+            FROM community_memberships
+            WHERE user_id = ?
+            ORDER BY community_id, display_name, username, id
+            """,
+            (user_id,),
         ).fetchall()
         return [_membership_from_row(row) for row in rows]
 

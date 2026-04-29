@@ -23,7 +23,7 @@ def get(request: Request) -> Page:
 
 
 async def post(request: Request) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "identity_accent")
     try:
@@ -101,7 +101,7 @@ async def post(request: Request) -> Page | Redirect:
 
 
 def _render_studio(request: Request, *, error: str | None = None) -> Page:
-    services = get_services()
+    services = get_services(request)
     studio = services.director_studio()
     return Page(
         "studio/page.html",

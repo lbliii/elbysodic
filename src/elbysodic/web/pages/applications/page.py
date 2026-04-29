@@ -26,7 +26,7 @@ def get(request: Request) -> Page:
 @contract(form=FormContract(ApplicationActionForm, "applications/page.html"))
 async def post(request: Request) -> Page | Redirect:
     form = await request.form()
-    services = get_services()
+    services = get_services(request)
     intent = str(form.get("intent") or "")
     character_slug = str(form.get("character_slug") or "")
     if intent not in {
@@ -55,7 +55,7 @@ async def post(request: Request) -> Page | Redirect:
 
 
 def _render_applications(request: Request) -> Page:
-    services = get_services()
+    services = get_services(request)
     return Page(
         "applications/page.html",
         "page_content",

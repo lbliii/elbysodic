@@ -15,7 +15,7 @@ def get(request: Request, wanted_slug: str) -> Page:
 
 
 async def post(request: Request, wanted_slug: str) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "")
     if intent == "express_interest":
@@ -85,7 +85,7 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
 
 
 def _render_wanted(request: Request, wanted_slug: str) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         wanted = services.read_wanted_ad(wanted_slug)
     except LookupError as exc:

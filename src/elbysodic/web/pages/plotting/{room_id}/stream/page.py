@@ -14,7 +14,7 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request, room_id: str) -> EventStream:
-    services = get_services()
+    services = get_services(request)
     parsed_room_id = _parse_room_id(room_id)
     try:
         services.read_plotting_room(parsed_room_id)

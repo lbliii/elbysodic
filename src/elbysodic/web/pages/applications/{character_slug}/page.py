@@ -30,7 +30,7 @@ def get(request: Request, character_slug: str) -> Page:
 @contract(form=FormContract(ApplicationRoomForm, "applications/{character_slug}/page.html"))
 async def post(request: Request, character_slug: str) -> Page | Redirect:
     form = await request.form()
-    services = get_services()
+    services = get_services(request)
     intent = str(form.get("intent") or "")
     try:
         if intent == "save_application":
@@ -67,7 +67,7 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
 
 
 def _render_application_room(request: Request, character_slug: str) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         room = services.read_application_review_room(character_slug)
     except PermissionError as exc:

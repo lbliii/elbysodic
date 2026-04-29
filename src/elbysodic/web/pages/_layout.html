@@ -7,7 +7,41 @@
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=plotting-rooms-1">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=small-maintenance-1">
+    {% if viewer and viewer.program_theme %}
+    <style id="elbysodic-program-theme">
+      :root {
+        {% for variable, value in viewer.program_theme.base_variables %}
+        {{ variable }}: {{ value }};
+        {% end %}
+        {% for variable, value in viewer.program_theme.dark_variables %}
+        {{ variable }}: {{ value }};
+        {% end %}
+      }
+
+      [data-theme="light"] {
+        {% for variable, value in viewer.program_theme.light_variables %}
+        {{ variable }}: {{ value }};
+        {% end %}
+      }
+
+      @media (prefers-color-scheme: light) {
+        [data-theme="system"] {
+          {% for variable, value in viewer.program_theme.light_variables %}
+          {{ variable }}: {{ value }};
+          {% end %}
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        [data-theme="system"] {
+          {% for variable, value in viewer.program_theme.dark_variables %}
+          {{ variable }}: {{ value }};
+          {% end %}
+        }
+      }
+    </style>
+    {% end %}
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=resizable-destination-rail"></script>
 {% end %}
 
@@ -111,7 +145,36 @@
       <div class="elbysodic-identity-menu__section">
         <span class="elbysodic-identity-menu__kicker">Writer</span>
         <a href="/members/{{ viewer.membership.username }}">{{ viewer.membership.display_name or viewer.membership.username }}</a>
+        <span class="elbysodic-identity-menu__role">{{ viewer.role.name }} in {{ viewer.community.name }}</span>
       </div>
+      {% if viewer.identity_options and viewer.identity_options | length > 1 %}
+      <div class="elbysodic-identity-menu__section">
+        <span class="elbysodic-identity-menu__kicker">Studio Network</span>
+        <div class="elbysodic-identity-switcher">
+          {% for option in viewer.identity_options %}
+          <form action="/identity" method="post" hx-boost="false">
+            <input type="hidden" name="intent" value="switch_membership">
+            <input type="hidden" name="membership_id" value="{{ option.membership.id }}">
+            <input type="hidden" name="character_id" value="{{ option.current_character.id if option.current_character else 0 }}">
+            <input type="hidden" name="next" value="{{ current_path or "/" }}">
+            <button class="elbysodic-identity-switcher__option{{ " elbysodic-identity-switcher__option--current" if option.is_current else "" }}"
+                    type="submit"
+                    {{ "disabled" if option.is_current else "" }}>
+              <span>
+                <strong>{{ option.community.name }}</strong>
+                <small>{{ option.membership.display_name or option.membership.username }} · {{ option.role.name }}{% if option.current_character %} · wearing {{ option.current_character.name }}{% endif %}</small>
+              </span>
+              {% if option.unread_notification_count %}
+              <b>{{ option.unread_notification_count }}</b>
+              {% elif option.is_current %}
+              <b>now</b>
+              {% end %}
+            </button>
+          </form>
+          {% end %}
+        </div>
+      </div>
+      {% end %}
       <div class="elbysodic-identity-menu__compact-tools">
         <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if notifications_active else "" }}"
            href="/notifications"
@@ -130,6 +193,7 @@
       </div>
       {% if viewer.current_character %}
       <form action="/identity" method="post" hx-boost="false" class="elbysodic-identity-menu__face-form">
+        <input type="hidden" name="intent" value="set_default_character">
         <input type="hidden" name="next" value="{{ current_path or "/" }}">
         <label class="elbysodic-identity-menu__kicker" for="active-character">Wearing</label>
         <select id="active-character"

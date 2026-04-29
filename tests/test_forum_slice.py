@@ -4,8 +4,11 @@ import asyncio
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 from urllib.parse import urlencode
 
+import pytest
 from chirp.app import App
 from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
@@ -33,6 +36,16 @@ def _sidebar_board_count(html: str, board_slug: str) -> int:
         match.group("body"),
     )
     return int(count.group("count")) if count is not None else 0
+
+
+def _response_header(response: Any, name: str) -> str:
+    headers = response.headers
+    if isinstance(headers, dict):
+        return str(headers[name])
+    for key, value in headers:
+        if str(key).lower() == name.lower():
+            return str(value)
+    raise AssertionError(f"response header not found: {name}")
 
 
 def _app():
@@ -77,6 +90,210 @@ def _faceless_services(services: AppServices, *, prefix: str = "faceless") -> Ap
         prefix.title(),
     )
     return AppServices(repo, DemoSeed(community, user, membership, None))
+
+
+def _add_hosted_membership(
+    services: AppServices,
+    *,
+    slug: str = "hosted",
+    user_id: int | None = None,
+    username: str = "hosted-lane",
+    is_admin: bool = False,
+) -> tuple[Community, int, int, int]:
+    repo = services.repo
+    community = repo.create_community(slug, "Hosted Program", host=f"{slug}.test")
+    role = repo.create_role(
+        community.id,
+        "director" if is_admin else "member",
+        "Director" if is_admin else "Member",
+        is_admin=is_admin,
+    )
+    if user_id is None:
+        user = repo.create_user(f"{slug}@example.com", "hash")
+        user_id = user.id
+    membership = repo.create_membership(
+        community.id,
+        user_id,
+        role.id,
+        username,
+        "Hosted Lane",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "hosted-face",
+        "Hosted Face",
+        make_default=True,
+    )
+    return community, user_id, membership.id, character.id
+
+
+def _dev_request(headers: dict[str, str]) -> SimpleNamespace:
+    return SimpleNamespace(headers=headers)
+
+
+def test_request_identity_resolves_membership_inside_selected_community() -> None:
+    services = create_services(path=":memory:")
+    community, user_id, membership_id, character_id = _add_hosted_membership(
+        services,
+        user_id=services.seed.user.id,
+    )
+
+    scoped = services.for_request(
+        _dev_request(
+            {
+                "x-elbysodic-community": community.slug,
+                "x-elbysodic-user-id": str(user_id),
+            }
+        )
+    )
+
+    viewer = scoped.viewer()
+    assert viewer.community.id == community.id
+    assert viewer.membership.id == membership_id
+    assert viewer.current_character is not None
+    assert viewer.current_character.id == character_id
+    assert viewer.current_character.community_id == community.id
+
+
+def test_request_identity_does_not_leak_roles_between_communities() -> None:
+    services = create_services(path=":memory:")
+    community, user_id, _membership_id, _character_id = _add_hosted_membership(
+        services,
+        user_id=services.seed.user.id,
+        is_admin=False,
+    )
+
+    default_viewer = services.viewer()
+    hosted_viewer = services.for_request(
+        _dev_request(
+            {
+                "host": "hosted.test",
+                "x-elbysodic-user-id": str(user_id),
+            }
+        )
+    ).viewer()
+
+    assert default_viewer.community.id != hosted_viewer.community.id
+    assert hosted_viewer.community.id == community.id
+    assert hosted_viewer.role.community_id == community.id
+    assert not hosted_viewer.role.is_admin
+
+
+def test_request_identity_rejects_membership_that_belongs_to_another_user() -> None:
+    services = create_services(path=":memory:")
+    community, _user_id, membership_id, _character_id = _add_hosted_membership(services)
+    other_user = services.repo.create_user("other-hosted@example.com", "hash")
+
+    with pytest.raises(PermissionError, match="does not belong to user"):
+        services.for_request(
+            _dev_request(
+                {
+                    "x-elbysodic-community": community.slug,
+                    "x-elbysodic-membership-id": str(membership_id),
+                    "x-elbysodic-user-id": str(other_user.id),
+                }
+            )
+        )
+
+
+def test_request_identity_rejects_inactive_membership_viewer() -> None:
+    services = create_services(path=":memory:")
+    community, user_id, membership_id, _character_id = _add_hosted_membership(services)
+    services.repo.connection.execute(
+        "UPDATE community_memberships SET is_active = 0 WHERE community_id = ? AND id = ?",
+        (community.id, membership_id),
+    )
+    services.repo.connection.commit()
+
+    scoped = services.for_request(
+        _dev_request(
+            {
+                "x-elbysodic-community": community.slug,
+                "x-elbysodic-user-id": str(user_id),
+            }
+        )
+    )
+
+    with pytest.raises(PermissionError, match="is not active"):
+        scoped.viewer()
+
+
+def test_request_scoped_page_renders_selected_community_membership() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        community, user_id, _membership_id, _character_id = _add_hosted_membership(
+            services,
+            user_id=services.seed.user.id,
+        )
+
+        async with TestClient(app) as client:
+            default_members = await client.get("/members")
+            hosted_members = await client.get(
+                "/members",
+                headers={
+                    "x-elbysodic-community": community.slug,
+                    "x-elbysodic-user-id": str(user_id),
+                },
+            )
+
+        assert default_members.status == 200
+        assert hosted_members.status == 200
+        assert "X-Men Apocalypse" in default_members.text
+        assert "Hosted Program" in hosted_members.text
+        assert "Hosted Lane" in hosted_members.text
+        assert "Hosted Face" in hosted_members.text
+        assert "Cyclops" not in hosted_members.text
+
+    asyncio.run(run())
+
+
+def test_identity_switcher_persists_dev_membership_cookie() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        network_option = next(
+            option
+            for option in services.viewer().identity_options
+            if option.community.slug == "hp-universe"
+        )
+
+        async with TestClient(app) as client:
+            before = await client.get("/notifications")
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(network_option.membership.id),
+                        "character_id": "0",
+                        "next": "/notifications",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            set_cookie = _response_header(switch, "set-cookie")
+            cookie = set_cookie.split(";", 1)[0]
+            after = await client.get("/notifications", headers={"Cookie": cookie})
+
+        assert before.status == 200
+        assert "X-Men Universe" not in before.text
+        assert "HP Universe" in before.text
+        assert "Jurassic Park Universe" in before.text
+        assert "RL NYC" in before.text
+        assert "RL Small Town" in before.text
+        assert switch.status == 302
+        assert "elbysodic_dev_identity=" in set_cookie
+        assert after.status == 200
+        assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in after.text
+        assert "Director in HP Universe" in after.text
+        assert "wearing Rowan Ash" in after.text
+        assert '<style id="elbysodic-program-theme">' in after.text
+        assert "--chirpui-accent: #c8a6ff;" in after.text
+        assert "--chirpui-ui-font-family: Georgia, serif;" in after.text
+
+    asyncio.run(run())
 
 
 def test_forum_pages_render_seeded_boards_and_thread() -> None:

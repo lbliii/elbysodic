@@ -31,7 +31,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
     body = str(form.get("body") or "")
 
     try:
-        created = get_services().start_thread_with_post(
+        created = get_services(request).start_thread_with_post(
             board_slug=board_slug,
             character_id=character_id,
             title=title,
@@ -77,7 +77,7 @@ def _render_form(
     posting_mode: str = "freeform",
     body: str = "",
 ) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     board, _threads = services.board_threads(board_slug)
     if viewer.current_character is None:

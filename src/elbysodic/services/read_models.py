@@ -30,6 +30,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.services.themes import ProgramThemeView
 
 type BoardThreadFilter = Literal["all", "unread", "attention", "mine", "pinned", "locked"]
 type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "archived"]
@@ -1110,6 +1111,16 @@ class ThreadView:
 
 
 @dataclass(frozen=True, slots=True)
+class StudioIdentityOption:
+    community: Community
+    membership: CommunityMembership
+    role: Role
+    current_character: Character | None
+    unread_notification_count: int
+    is_current: bool
+
+
+@dataclass(frozen=True, slots=True)
 class ForumView:
     community: Community
     membership: CommunityMembership
@@ -1127,6 +1138,8 @@ class ForumView:
     studio_navigation_boards: list[BoardNavigationItem]
     studio_sidebar_section: SidebarSectionConfig
     unread_notification_count: int
+    identity_options: list[StudioIdentityOption]
+    program_theme: ProgramThemeView | None
 
 
 def thread_state_badges(thread: Thread) -> tuple[ThreadCardBadge, ...]:

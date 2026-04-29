@@ -1,8 +1,8 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
 {% block page_root %}
@@ -15,18 +15,20 @@
   Watched threads and direct mentions for {{ viewer.community.name }}.
   {% end %}
 
-  <div class="chirpui-cluster chirpui-cluster--between">
-    {% call cluster(gap="sm") %}
-      {{ stat(value=inbox.unread_count, label="Unread") }}
-      {{ stat(value=inbox.items | length, label="Recent") }}
+  {% call surface(variant="elevated") %}
+    {% call command_panel("Signals", "What changed while you were writing", "Mentions, watched thread replies, applications, and plotting movement land here.", "notification-signals-heading", "elbysodic-notification-command") %}
+      <div class="elbysodic-command-panel__metrics" aria-label="Notification totals">
+        {{ metric_item(inbox.unread_count, "Unread") }}
+        {{ metric_item(inbox.items | length, "Recent") }}
+      </div>
+      {% if inbox.unread_count %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="mark_all_read">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Mark all read</button>
+      </form>
+      {% end %}
     {% end %}
-    {% if inbox.unread_count %}
-    <form method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="mark_all_read">
-      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Mark all read</button>
-    </form>
-    {% end %}
-  </div>
+  {% end %}
 
   <div class="chirpui-stack chirpui-stack--sm">
     {% if inbox.items %}
@@ -55,7 +57,11 @@
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No notifications are waiting on you.</p>
+    <div class="elbysodic-notification-empty">
+      <p class="elbysodic-section-kicker">Caught up</p>
+      <h2>No notifications are waiting on you.</h2>
+      <p class="elbysodic-copy-section">Watched scenes, mentions, review movement, and plotting room updates will appear here.</p>
+    </div>
     {% end %}
     {% end %}
   </div>

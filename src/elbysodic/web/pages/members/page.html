@@ -1,8 +1,8 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
 {% block page_root %}
@@ -15,9 +15,13 @@
   Writer studio profiles and active rosters in {{ viewer.community.name }}.
   {% end %}
 
-  {% call cluster(gap="sm") %}
-    {{ stat(value=directory.cards | length, label="Writers") }}
-    {{ stat(value=viewer.community.name, label="Community") }}
+  {% call surface(variant="elevated") %}
+  {% call command_panel("Directory", "Writers in " ~ viewer.community.name, "Community memberships, public faces, recent writing, and collaboration context.", "members-directory-heading", "elbysodic-member-directory-command") %}
+    <div class="elbysodic-command-panel__metrics" aria-label="Member directory totals">
+      {{ metric_item(directory.cards | length, "Writers") }}
+      {{ metric_item(viewer.community.name, "Community") }}
+    </div>
+  {% end %}
   {% end %}
 
   <div class="elbysodic-member-grid">
@@ -45,11 +49,11 @@
           {{ badge(card.role.name, variant="warning" if card.role.is_admin else "muted") }}
         </div>
       </div>
-      {% call cluster(gap="sm") %}
-        {{ stat(value=card.roster | length, label="Faces") }}
-        {{ stat(value=card.visible_post_count, label="Visible posts") }}
-        {{ stat(value=card.active_thread_count, label="Active") }}
-      {% end %}
+      <div class="elbysodic-command-panel__metrics elbysodic-member-card__metrics" aria-label="{{ card.membership.display_name }} writing totals">
+        {{ metric_item(card.roster | length, "Faces") }}
+        {{ metric_item(card.visible_post_count, "Visible posts") }}
+        {{ metric_item(card.active_thread_count, "Active") }}
+      </div>
       {% if card.known_for %}
       <p class="elbysodic-member-card__roster">
         <span>Known for</span>
@@ -58,7 +62,10 @@
         {% end %}
       </p>
       {% else %}
-      <p class="elbysodic-member-card__roster">No public faces listed yet.</p>
+      <p class="elbysodic-member-card__roster">
+        <span>Known for</span>
+        No public faces listed yet.
+      </p>
       {% end %}
       {% if card.latest_post %}
       <p class="elbysodic-member-card__latest">

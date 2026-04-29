@@ -9,7 +9,7 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     raw_facets = str(request.query.get("facets") or "")
     discovery = services.discover_plots(facet_slugs=[raw_facets])

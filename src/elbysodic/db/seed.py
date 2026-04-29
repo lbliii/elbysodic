@@ -2,9 +2,22 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from elbysodic.blueprints import (
+    BlueprintBoard,
+    BlueprintCharacter,
+    BlueprintMaterial,
+    BlueprintTheme,
+    BlueprintThemeMode,
+    BlueprintTypography,
+    BlueprintWanted,
+    ProgramBlueprint,
+    blueprint_theme_tokens,
+    ensure_valid_program_blueprints,
+)
 from elbysodic.db.repository import ForumRepository
 from elbysodic.domain.models import (
     Board,
@@ -23,6 +36,678 @@ class DemoSeed:
     user: User
     membership: CommunityMembership
     default_character: Character | None
+
+
+STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
+    ProgramBlueprint(
+        slug="hp-universe",
+        name="HP Universe",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        theme=BlueprintTheme(
+            slug="glass-staircase",
+            name="Glass Staircase",
+            typography=BlueprintTypography(display="serif", body="serif", mono="mono"),
+            light=BlueprintThemeMode(
+                bg="#f8f2df",
+                bg_subtle="#eee3c7",
+                surface="#fff9e8",
+                surface_elevated="#fbefd3",
+                border="#c9b57b",
+                text="#2b2417",
+                text_muted="#6f6041",
+                accent="#7b4f9f",
+                accent_hover="#5f397f",
+                accent_dim="#b99ad1",
+                accent_secondary="#2f7c72",
+                success="#477b5e",
+                warning="#9b6a1f",
+                error="#a64242",
+            ),
+            dark=BlueprintThemeMode(
+                bg="#14111d",
+                bg_subtle="#1d172a",
+                surface="#221b31",
+                surface_elevated="#2b223e",
+                border="#5b4c77",
+                text="#f4ecd8",
+                text_muted="#c5b691",
+                accent="#c8a6ff",
+                accent_hover="#dfc8ff",
+                accent_dim="#6f5595",
+                accent_secondary="#7ed0bd",
+                success="#8ac59b",
+                warning="#dfb55f",
+                error="#ef8f8f",
+            ),
+            radius="md",
+            density="calm",
+            texture="paper",
+        ),
+        characters=(
+            BlueprintCharacter(
+                "rowan-ash",
+                "Rowan Ash",
+                "Seventh-year cursebreaker-in-training who keeps seeing tomorrow on the stairs.",
+                "Ancient magic, modern consequences.",
+            ),
+            BlueprintCharacter(
+                "celeste-binns",
+                "Celeste Binns",
+                "Archivist's daughter who knows which portraits are lying.",
+                "The library remembers.",
+            ),
+            BlueprintCharacter(
+                "imogen-vale",
+                "Professor Imogen Vale",
+                "Ancient Runes professor assigned to keep a broken castle from choosing sides.",
+                "Every ward has a witness.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "castle-corridors",
+                "Castle Corridors",
+                "location",
+                "Portraits gossip faster than owls and the stairs have started answering back.",
+                "A shifting school artery for rumors, detentions, vanished students, and late-night discoveries.",
+            ),
+            BlueprintBoard(
+                "restricted-stacks",
+                "Restricted Stacks",
+                "location",
+                "Where old spells keep footnotes on the living.",
+                "Library scenes, secret research, and faculty-supervised bad ideas.",
+            ),
+            BlueprintBoard(
+                "hogsmeade-after-dark",
+                "Hogsmeade After Dark",
+                "location",
+                "Butterbeer, back rooms, and the first place rumors become plans.",
+                "Village scenes for weekends, family pressure, clandestine meetings, and inconvenient crushes.",
+            ),
+            BlueprintBoard(
+                "owlery-plotter",
+                "Owlery Plotter",
+                "desk",
+                "Lesson threads, secret societies, club nights, and cursed-object handoffs.",
+                "A writer lane for school-year planning, mystery partners, and character connection calls.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: The Glass Staircase",
+                "premise",
+                "A Hogwarts mystery where the castle is showing students futures nobody has chosen yet.",
+                (
+                    "The Glass Staircase appeared after a summer renovation opened a sealed wing "
+                    "beneath the astronomy tower. It reflects possible futures: exam failures, "
+                    "family betrayals, romances that should not exist, and one student who does "
+                    "not appear in any reflection at all.\n\n"
+                    "The board is built for school drama with a supernatural engine: classroom "
+                    "rivalries, club politics, forbidden research, faculty secrets, Ministry "
+                    "oversight, and students deciding whether prophecy is a warning or a dare."
+                ),
+            ),
+            BlueprintMaterial(
+                "current-event",
+                "Current Event: No Reflection",
+                "event",
+                "One student has gone missing, and every portrait remembers a different last sighting.",
+                (
+                    "The current plot opens the week after Juniper Quill walks into the Glass "
+                    "Staircase and disappears from every mirror in the castle.\n\n"
+                    "Open scene lanes include corridor searches, suspicious detentions, family "
+                    "letters, Ministry interviews, faculty arguments, and students using "
+                    "forbidden magic because the adults are moving too slowly."
+                ),
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "guide",
+                "Applications should bring a school-year role and at least one reason to touch the mystery.",
+                (
+                    "Useful concepts include students with family pressure, professors with old "
+                    "research, Ministry observers, Hogsmeade locals, prefects, club leaders, and "
+                    "characters who have seen something in the Staircase they badly want to undo."
+                ),
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "ministry-observer-for-the-staircase",
+                "Ministry observer for the Glass Staircase inquiry",
+                "event_role",
+                "A public-safety official who can make the investigation better or much worse.",
+                (
+                    "The school needs an outside adult with authority, suspicion, and enough "
+                    "political pressure to treat teenagers like evidence. They can be sympathetic, "
+                    "ambitious, compromised, or all three."
+                ),
+                related_material_slug="current-event",
+            ),
+            BlueprintWanted(
+                "student-who-saw-their-own-expulsion",
+                "Student who saw their own expulsion",
+                "plot_role",
+                "A character whose reflected future makes them desperate enough to break rules now.",
+                (
+                    "Bring a student whose glimpse of the future creates immediate playable "
+                    "pressure: blackmail, secret alliances, bad research partners, or a frantic "
+                    "attempt to change the timeline before anyone else finds out."
+                ),
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="jurassic-park-universe",
+        name="Jurassic Park Universe",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        theme=BlueprintTheme(
+            slug="isla-nublar-operations",
+            name="Isla Nublar Operations",
+            typography=BlueprintTypography(display="condensed", body="system", mono="mono"),
+            light=BlueprintThemeMode(
+                bg="#f2efe2",
+                bg_subtle="#e1decf",
+                surface="#fbf8ec",
+                surface_elevated="#ece7d3",
+                border="#9a8f70",
+                text="#20261d",
+                text_muted="#5f6658",
+                accent="#2f7d4f",
+                accent_hover="#1f5d39",
+                accent_dim="#8ab891",
+                accent_secondary="#b46f22",
+                success="#3d7b4b",
+                warning="#a36d1b",
+                error="#a94432",
+            ),
+            dark=BlueprintThemeMode(
+                bg="#0d1510",
+                bg_subtle="#142018",
+                surface="#1b271f",
+                surface_elevated="#223429",
+                border="#4a604d",
+                text="#f2ead7",
+                text_muted="#b9c0aa",
+                accent="#6bbf7a",
+                accent_hover="#91d99b",
+                accent_dim="#2d6c43",
+                accent_secondary="#f0a64d",
+                success="#7bc986",
+                warning="#e7b85a",
+                error="#ff8468",
+            ),
+            radius="sm",
+            density="compact",
+            texture="grid",
+        ),
+        characters=(
+            BlueprintCharacter(
+                "lena-marquez",
+                "Dr. Lena Marquez",
+                "Behavioral paleobiologist who can tell when the fences are lying.",
+                "The paddock is never quiet.",
+            ),
+            BlueprintCharacter(
+                "caleb-ross",
+                "Caleb Ross",
+                "Field tech with a radio, a keyring, and increasingly bad odds.",
+                "Check the gate twice.",
+            ),
+            BlueprintCharacter(
+                "asha-bennett",
+                "Asha Bennett",
+                "Guest-experience director trying to keep the soft opening from becoming evidence.",
+                "Smile for the investors.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "isla-nublar",
+                "Isla Nublar",
+                "location",
+                "Rain, alarms, and something moving beyond the treeline before the park opens.",
+                "The island stage for research stations, visitor roads, guest previews, and containment failures.",
+            ),
+            BlueprintBoard(
+                "paddock-twelve",
+                "Paddock Twelve",
+                "location",
+                "A new attraction with old blood in the soil.",
+                "Restricted animal-care scenes, field repairs, strange behavior logs, and the first bad tracks.",
+            ),
+            BlueprintBoard(
+                "control-room",
+                "Control Room",
+                "location",
+                "Every warning light wants to be someone else's problem.",
+                "Operations, security disputes, investor calls, and the screens nobody should ignore.",
+            ),
+            BlueprintBoard(
+                "worker-village",
+                "Worker Village",
+                "location",
+                "Bunks, cafeteria rumors, storm prep, and people who know the park after dark.",
+                "Staff relationships, local labor friction, contraband, and off-shift secrets.",
+            ),
+            BlueprintBoard(
+                "operations",
+                "Operations",
+                "desk",
+                "Where incident scenes become tomorrow's sanitized report.",
+                "Open expeditions, staff calls, rescue planning, and survival plotting.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Soft Opening",
+                "premise",
+                "Jurassic Park is preparing a private preview while the island starts keeping secrets.",
+                (
+                    "The public story is simple: a controlled investor preview before the grand "
+                    "opening. The private reality is a half-finished island full of rushed systems, "
+                    "underpaid staff, animals smarter than the reports suggest, and executives who "
+                    "need the park to look inevitable.\n\n"
+                    "This hub supports science drama, worker politics, corporate pressure, survival "
+                    "set pieces, guest panic, and the creeping realization that containment is also "
+                    "a story people tell themselves."
+                ),
+            ),
+            BlueprintMaterial(
+                "paddock-twelve-incident",
+                "Current Event: Paddock Twelve",
+                "event",
+                "A juvenile raptor has vanished from a sealed paddock during a tropical storm.",
+                (
+                    "The first event begins with a clean status board, a missing animal, and three "
+                    "hours before invited guests arrive.\n\n"
+                    "Playable lanes include fence-line searches, staff coverups, guest containment, "
+                    "animal behavior reads, storm-damaged roads, and the question everyone avoids: "
+                    "did the animal escape, or was it moved?"
+                ),
+            ),
+            BlueprintMaterial(
+                "park-bible",
+                "Park Bible",
+                "guide",
+                "The director frame for tone, staff roles, animal encounters, and escalation.",
+                (
+                    "Keep the park playable by balancing wonder with consequence. The best scenes "
+                    "are not only chase scenes: they are bad calls made under pressure, people "
+                    "protecting each other across job titles, and the moment a beautiful impossible "
+                    "thing becomes dangerous because someone wanted it profitable."
+                ),
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "corporate-cleaner-for-paddock-twelve",
+                "Corporate cleaner for the Paddock Twelve incident",
+                "faction_need",
+                "A legal, PR, or security operator sent to make the timeline investor-safe.",
+                (
+                    "This character should create friction with scientists and field staff by "
+                    "turning a living emergency into a liability problem. Bonus if they are not "
+                    "wrong about every risk, just wrong about what matters most."
+                ),
+                related_material_slug="paddock-twelve-incident",
+            ),
+            BlueprintWanted(
+                "guest-who-saw-the-track",
+                "Preview guest who saw the track",
+                "plot_role",
+                "A civilian witness with just enough truth to make containment harder.",
+                (
+                    "A guest, investor's child, travel journalist, or VIP spouse saw evidence "
+                    "before the official story was ready. They can become a rescue priority, a "
+                    "blackmail risk, or the only person asking the right question."
+                ),
+                related_material_slug="paddock-twelve-incident",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="rl-nyc",
+        name="RL NYC",
+        role_slug="member",
+        role_name="Member",
+        is_admin=False,
+        theme=BlueprintTheme(
+            slug="rent-week",
+            name="Rent Week",
+            typography=BlueprintTypography(display="system", body="system", mono="mono"),
+            light=BlueprintThemeMode(
+                bg="#f4f3ee",
+                bg_subtle="#e5e2da",
+                surface="#ffffff",
+                surface_elevated="#ece9e1",
+                border="#bbb5aa",
+                text="#202124",
+                text_muted="#64615c",
+                accent="#c04468",
+                accent_hover="#93314d",
+                accent_dim="#d895a9",
+                accent_secondary="#277c92",
+                success="#3c7a5a",
+                warning="#a36d1b",
+                error="#b13f4e",
+            ),
+            dark=BlueprintThemeMode(
+                bg="#101114",
+                bg_subtle="#181b21",
+                surface="#20232a",
+                surface_elevated="#292d36",
+                border="#4d5360",
+                text="#f3f0eb",
+                text_muted="#b9b4aa",
+                accent="#ff7aa2",
+                accent_hover="#ff9cbb",
+                accent_dim="#8d3c55",
+                accent_secondary="#4cc9e2",
+                success="#75c997",
+                warning="#e7b75f",
+                error="#ff7f8c",
+            ),
+            radius="sm",
+            density="compact",
+            texture="scanline",
+        ),
+        characters=(
+            BlueprintCharacter(
+                "lena-park",
+                "Lena Park",
+                "Night-shift producer trying to make rent, art, and a life in the same week.",
+                "Everything is urgent after midnight.",
+            ),
+            BlueprintCharacter(
+                "mateo-rivera",
+                "Mateo Rivera",
+                "Community organizer with too many group chats and not enough sleep.",
+                "The city keeps receipts.",
+            ),
+            BlueprintCharacter(
+                "tessa-chen",
+                "Tessa Chen",
+                "ER nurse with an ex in every borough and no patience for soft lies.",
+                "Triage is a love language.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "brooklyn",
+                "Brooklyn",
+                "location",
+                "Coffee, sirens, venues, stoops, and second chances nobody admits they need.",
+                "Apartments, bars, studios, parks, and neighborhood threads for everyday drama.",
+            ),
+            BlueprintBoard(
+                "queens-night-market",
+                "Queens Night Market",
+                "location",
+                "Food stalls, missed trains, awkward dates, and old friends pretending not to stare.",
+                "A high-crossover social hub for chance meetings, group scenes, and messy reunions.",
+            ),
+            BlueprintBoard(
+                "shift-work",
+                "Shift Work",
+                "location",
+                "Hospitals, kitchens, trains, offices, and the hours that make people honest.",
+                "Workplace scenes for ambition, burnout, care, rivalry, and late-night confession.",
+            ),
+            BlueprintBoard(
+                "group-chat",
+                "Group Chat",
+                "desk",
+                "Roommates, exes, gigs, borough ties, and chance meetings that need one more nudge.",
+                "A writer lane for grounded relationship planning, open socials, and slice-of-life threads.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Rent Week",
+                "premise",
+                "A grounded NYC ensemble where money, love, ambition, and friendship collide in public.",
+                (
+                    "Rent Week follows a loose network of friends, exes, coworkers, neighbors, "
+                    "artists, nurses, organizers, bartenders, teachers, and commuters through "
+                    "one very expensive city.\n\n"
+                    "The drama engine is human-scale: housing pressure, creative ambition, family "
+                    "obligations, mutual aid, bad timing, queer found family, work exhaustion, and "
+                    "the way one subway delay can reroute three relationships."
+                ),
+            ),
+            BlueprintMaterial(
+                "current-event",
+                "Current Event: The Building Meeting",
+                "event",
+                "A rent hike turns one apartment building into the center of everyone's week.",
+                (
+                    "A new landlord announces renovations, rent increases, and buyout offers in a "
+                    "building where half the cast knows someone.\n\n"
+                    "Open lanes include tenant meetings, legal-aid nights, hallway arguments, old "
+                    "flames ending up on opposite sides, fundraising gigs, and the soft terror of "
+                    "deciding whether to stay in a city that keeps asking for more."
+                ),
+            ),
+            BlueprintMaterial(
+                "city-guide",
+                "City Guide",
+                "guide",
+                "Keep stakes human, local, and character-led.",
+                (
+                    "Use neighborhoods as emotional geography, not tourist scenery. A borough can "
+                    "mean commute time, family history, community ties, rent math, ex proximity, "
+                    "and where a character feels most like themselves."
+                ),
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "ex-bandmate-with-the-old-lease",
+                "Ex-bandmate with the old lease",
+                "relationship",
+                "A former creative partner whose name is still on a lease, a song, or both.",
+                (
+                    "This character brings unfinished business: a band that almost made it, a "
+                    "friendship that turned into avoidance, and one practical reason they cannot "
+                    "fully disappear from Lena's life."
+                ),
+                related_material_slug="premise",
+            ),
+            BlueprintWanted(
+                "tenant-organizer-who-knows-everyone",
+                "Tenant organizer who knows everyone",
+                "event_role",
+                "A connective character for the building meeting, mutual aid, and messy alliances.",
+                (
+                    "This role is ideal for someone who can pull many characters into play: group "
+                    "texts, canvassing, legal-aid referrals, public pressure, and private favors "
+                    "that complicate the clean version of the cause."
+                ),
+                related_material_slug="current-event",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="rl-small-town",
+        name="RL Small Town",
+        role_slug="member",
+        role_name="Member",
+        is_admin=False,
+        theme=BlueprintTheme(
+            slug="founders-week",
+            name="Founder's Week",
+            typography=BlueprintTypography(display="serif", body="serif", mono="mono"),
+            light=BlueprintThemeMode(
+                bg="#fbf5e8",
+                bg_subtle="#eee3cf",
+                surface="#fffaf0",
+                surface_elevated="#f4ead7",
+                border="#c8b89a",
+                text="#2b2318",
+                text_muted="#75684f",
+                accent="#8d3f4a",
+                accent_hover="#6e2f38",
+                accent_dim="#c9878f",
+                accent_secondary="#4f7c5b",
+                success="#4f7c5b",
+                warning="#a06d2a",
+                error="#a64242",
+            ),
+            dark=BlueprintThemeMode(
+                bg="#16130f",
+                bg_subtle="#211c16",
+                surface="#282219",
+                surface_elevated="#332b1f",
+                border="#675942",
+                text="#f6eddf",
+                text_muted="#c9b99e",
+                accent="#e38991",
+                accent_hover="#f0a7ad",
+                accent_dim="#7d4248",
+                accent_secondary="#91c49a",
+                success="#91c49a",
+                warning="#dbb168",
+                error="#ee8d8d",
+            ),
+            radius="md",
+            density="calm",
+            texture="paper",
+        ),
+        characters=(
+            BlueprintCharacter(
+                "june-calloway",
+                "June Calloway",
+                "Florist, town council note-taker, and keeper of other people's secrets.",
+                "Everybody knows. Nobody says.",
+            ),
+            BlueprintCharacter(
+                "eli-brooks",
+                "Eli Brooks",
+                "Mechanic back home after ten years and one burned bridge too many.",
+                "The road back is short.",
+            ),
+            BlueprintCharacter(
+                "mara-whitlock",
+                "Mara Whitlock",
+                "Deputy mayor with perfect manners and a family name nailed to every building.",
+                "Legacy is not the same as loyalty.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "main-street",
+                "Main Street",
+                "location",
+                "One stoplight, twelve opinions, and a bakery that hears everything.",
+                "The town's public spine for errands, arguments, festivals, and reunions.",
+            ),
+            BlueprintBoard(
+                "lake-road",
+                "Lake Road",
+                "location",
+                "Cabins, bonfires, old dares, and the place nobody goes alone after rain.",
+                "A scenic pressure valve for secrets, romances, trespassing, and returning-home arcs.",
+            ),
+            BlueprintBoard(
+                "town-hall",
+                "Town Hall",
+                "location",
+                "Minutes, motions, grudges, and the polite version of a knife fight.",
+                "Civic scenes for local politics, public disputes, permits, and family reputations.",
+            ),
+            BlueprintBoard(
+                "county-fairgrounds",
+                "County Fairgrounds",
+                "location",
+                "String lights, livestock pens, reunion smiles, and the annual art of pretending.",
+                "Events, volunteer shifts, rivalry games, summer jobs, and festival mess.",
+            ),
+            BlueprintBoard(
+                "porch-light",
+                "Porch Light",
+                "desk",
+                "Family ties, local history, slow-burn scene calls, and who knows what about whom.",
+                "A writer lane for cozy conflict, small-town entanglements, and relationship plotting.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Founder's Week",
+                "premise",
+                "A small-town ensemble where celebration keeps digging up history.",
+                (
+                    "Founder's Week should be a cozy pressure cooker: parade planning, school "
+                    "reunions, family businesses, old property lines, summer visitors, and people "
+                    "who left town discovering the town kept a place for them anyway.\n\n"
+                    "The board's tension is not apocalypse. It is reputation, memory, inheritance, "
+                    "returning home, staying put, and the cost of everyone knowing the wrong half "
+                    "of the story."
+                ),
+            ),
+            BlueprintMaterial(
+                "current-event",
+                "Current Event: The Time Capsule",
+                "event",
+                "A buried town time capsule contains a letter that makes three families nervous.",
+                (
+                    "During Founder's Week setup, volunteers open a damaged time capsule early and "
+                    "find a sealed letter naming someone who allegedly sold land that was never "
+                    "theirs to sell.\n\n"
+                    "Playable lanes include council meetings, diner gossip, legal threats, family "
+                    "confrontations, childhood friends choosing sides, and outsiders realizing the "
+                    "town's nicest traditions have teeth."
+                ),
+            ),
+            BlueprintMaterial(
+                "town-guide",
+                "Town Guide",
+                "guide",
+                "A grounded small-town sandbox where history is social weather.",
+                (
+                    "Every character should have at least two visible ties: a place they are known, "
+                    "a person they avoid, a family story, a job everyone comments on, or a town "
+                    "ritual they cannot escape. Keep the stakes intimate and let history do the work."
+                ),
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "returning-sibling-with-the-missing-deed",
+                "Returning sibling with the missing deed",
+                "relationship",
+                "A homecoming character tied to the time capsule letter and an unresolved family split.",
+                (
+                    "This role gives the town an emotional fuse: someone who left, came back at the "
+                    "worst possible moment, and may have the document everyone else is arguing about."
+                ),
+                related_material_slug="current-event",
+            ),
+            BlueprintWanted(
+                "founders-week-rival-chair",
+                "Founder's Week rival chair",
+                "event_role",
+                "A civic antagonist, ex-friend, or perfectionist volunteer making the festival personal.",
+                (
+                    "The fair needs a human source of pressure: someone who can weaponize seating "
+                    "charts, permits, sponsorships, family history, and a smile sharp enough to draw blood."
+                ),
+                related_material_slug="current-event",
+            ),
+        ),
+    ),
+)
 
 
 def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
@@ -59,6 +744,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             "Lane",
         ),
     )
+    _seed_studio_network_programs(repo, user)
     charlie_user = _get_or_create(
         lambda: repo.get_user_by_email("charlie@example.com"),
         lambda: repo.create_user("charlie@example.com", "dev-password-hash"),
@@ -1548,6 +2234,142 @@ def _get_or_create[T](get: Callable[[], T], create: Callable[[], T]) -> T:
         return get()
     except LookupError:
         return create()
+
+
+def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
+    ensure_valid_program_blueprints(STUDIO_NETWORK_PROGRAMS)
+    for program in STUDIO_NETWORK_PROGRAMS:
+        community = _ensure_studio_program_community(repo, program)
+        if program.theme is not None:
+            repo.upsert_default_theme(
+                community.id,
+                slug=program.theme.slug,
+                name=program.theme.name,
+                tokens_json=json.dumps(
+                    blueprint_theme_tokens(program.theme),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+        role = _get_or_create(
+            lambda program=program, community=community: repo.get_role_by_slug(
+                community.id,
+                program.role_slug,
+            ),
+            lambda program=program, community=community: repo.create_role(
+                community.id,
+                program.role_slug,
+                program.role_name,
+                is_admin=program.is_admin,
+            ),
+        )
+        membership = _get_or_create(
+            lambda community=community: repo.get_membership_for_user(community.id, user.id),
+            lambda community=community, role=role: repo.create_membership(
+                community.id,
+                user.id,
+                role.id,
+                "starlane",
+                "Lane",
+            ),
+        )
+        default_character: Character | None = None
+        for index, character_seed in enumerate(program.characters):
+            character = _get_or_create(
+                lambda community=community, character_seed=character_seed: (
+                    repo.get_character_by_slug(
+                        community.id,
+                        character_seed.slug,
+                    )
+                ),
+                lambda community=community, membership=membership, character_seed=character_seed, index=index: (
+                    repo.create_character(
+                        community.id,
+                        membership.id,
+                        character_seed.slug,
+                        character_seed.name,
+                        summary=character_seed.summary,
+                        tagline=character_seed.tagline,
+                        make_default=index == 0,
+                    )
+                ),
+            )
+            character = _ensure_character_identity(
+                repo,
+                community.id,
+                character,
+                tagline=character_seed.tagline,
+            )
+            if index == 0:
+                default_character = character
+
+        membership = repo.get_membership(community.id, membership.id)
+        if membership.default_character_id is None and default_character is not None:
+            repo.set_default_character(community.id, membership.id, default_character.id)
+
+        for index, board_seed in enumerate(program.boards, start=1):
+            _ensure_board(
+                repo,
+                community.id,
+                board_seed.slug,
+                board_seed.name,
+                board_seed.description,
+                index * 10,
+                board_kind=board_seed.board_kind,
+                tagline=board_seed.tagline,
+            )
+        materials_by_slug: dict[str, Material] = {}
+        for index, material_seed in enumerate(program.materials, start=1):
+            material = _ensure_material(
+                repo,
+                community.id,
+                material_seed.slug,
+                material_seed.title,
+                material_type=material_seed.material_type,
+                summary=material_seed.summary,
+                body=material_seed.body,
+                sort_order=index * 10,
+                is_featured=index == 1,
+            )
+            materials_by_slug[material_seed.slug] = material
+        for wanted_seed in program.wanted:
+            related_material_id = None
+            if wanted_seed.related_material_slug:
+                related_material_id = materials_by_slug[wanted_seed.related_material_slug].id
+            _get_or_create(
+                lambda community=community, wanted_seed=wanted_seed: repo.get_wanted_ad_by_slug(
+                    community.id,
+                    wanted_seed.slug,
+                ),
+                lambda community=community, membership=membership, default_character=default_character, wanted_seed=wanted_seed, related_material_id=related_material_id: (
+                    repo.create_wanted_ad(
+                        community.id,
+                        membership.id,
+                        wanted_seed.slug,
+                        wanted_seed.title,
+                        creator_character_id=(
+                            default_character.id if default_character is not None else None
+                        ),
+                        related_material_id=related_material_id,
+                        wanted_type=wanted_seed.wanted_type,
+                        summary=wanted_seed.summary,
+                        body=wanted_seed.body,
+                    )
+                ),
+            )
+
+
+def _ensure_studio_program_community(
+    repo: ForumRepository,
+    program: ProgramBlueprint,
+) -> Community:
+    try:
+        community = repo.get_community_by_slug(program.slug)
+    except LookupError:
+        return repo.create_community(program.slug, program.name)
+    if community.name == program.name and community.slug == program.slug:
+        return community
+    return repo.update_community_name_and_slug(community.id, slug=program.slug, name=program.name)
 
 
 def _ensure_character_identity(

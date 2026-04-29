@@ -10,7 +10,7 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request, username: str) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         profile = services.read_member(username)
     except LookupError as exc:

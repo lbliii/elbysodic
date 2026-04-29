@@ -9,7 +9,7 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request) -> Page:
-    services = get_services()
+    services = get_services(request)
     return Page(
         "members/page.html",
         "page_content",

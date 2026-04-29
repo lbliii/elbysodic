@@ -19,7 +19,7 @@ def get(request: Request, board_slug: str, thread_slug: str) -> Page:
 
 
 async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "reply")
     if intent == "move":
@@ -121,7 +121,7 @@ def _render_thread(
     body: str = "",
     selected_character_id: int | None = None,
 ) -> Page:
-    services = get_services()
+    services = get_services(request)
     thread_view = services.read_thread(board_slug, thread_slug)
     viewer = services.viewer()
     selected_cast = _character_mentionables(

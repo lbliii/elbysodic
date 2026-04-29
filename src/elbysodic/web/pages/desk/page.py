@@ -103,7 +103,7 @@ class DeskOverview:
 
 
 def get(request: Request) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     queue = services.my_threads()
     plotting = services.plotting_desk()

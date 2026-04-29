@@ -4,7 +4,7 @@
 PYTHON_VERSION ?= 3.14t
 VENV_DIR ?= .venv
 
-.PHONY: all help setup install test test-cov lint lint-fix format format-check ty check ci changelog changelog-draft changelog-check build clean shell
+.PHONY: all help setup install test test-cov lint lint-fix format format-check ty app-check check ci changelog changelog-draft changelog-check build clean shell
 
 all: help
 
@@ -23,7 +23,8 @@ help:
 	@echo "  make format          - Run ruff formatter"
 	@echo "  make format-check    - Check ruff formatting"
 	@echo "  make ty              - Run ty type checker"
-	@echo "  make check           - Run lint, format-check, and ty"
+	@echo "  make app-check       - Run Chirp route/template check"
+	@echo "  make check           - Run lint, format-check, ty, and app-check"
 	@echo "  make ci              - Run the full local gate"
 	@echo "  make changelog       - Compile changelog.d fragments into CHANGELOG.md"
 	@echo "  make changelog-draft - Preview changelog from fragments"
@@ -67,9 +68,12 @@ format-check:
 
 ty:
 	@echo "Running ty type checker..."
-	uv run ty check src/elbysodic/
+	uv run ty check src/elbysodic/ tests/
 
-check: lint format-check ty
+app-check:
+	uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"
+
+check: lint format-check ty app-check
 
 ci: check test
 

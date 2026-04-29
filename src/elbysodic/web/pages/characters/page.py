@@ -65,7 +65,7 @@ async def post(request: Request) -> Page | Redirect:
     make_default = str(form.get("make_default") or "") == "on"
 
     try:
-        character = get_services().create_character(
+        character = get_services(request).create_character(
             name=name,
             summary=summary,
             avatar_url=avatar_url,
@@ -125,7 +125,7 @@ def _render_roster(
     accent_source: str = "inherit",
     make_default: bool = False,
 ) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     style_policy = services.post_style_policy()
     post_style_preview_config_id = "character-post-style-preview-config"

@@ -7,7 +7,6 @@ receive this context explicitly so the code stays tenant-aware.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 DEFAULT_COMMUNITY_ID = 1
 DEFAULT_COMMUNITY_SLUG = "default"
@@ -21,7 +20,17 @@ class CommunityContext:
     slug: str = DEFAULT_COMMUNITY_SLUG
 
 
-def resolve_current_community(request: Any | None = None) -> CommunityContext:
+@dataclass(frozen=True, slots=True)
+class RequestIdentityContext:
+    """Resolved studio-network identity for a request."""
+
+    community_id: int
+    user_id: int
+    membership_id: int
+    community_slug: str = DEFAULT_COMMUNITY_SLUG
+
+
+def resolve_current_community(request: object | None = None) -> CommunityContext:
     """Resolve the current community for a request.
 
     The argument is accepted now so route handlers can call the same function

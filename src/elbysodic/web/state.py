@@ -12,7 +12,9 @@ def configure_services(services: AppServices) -> None:
     _services = services
 
 
-def get_services() -> AppServices:
+def get_services(request: object | None = None) -> AppServices:
     if _services is None:
         raise RuntimeError("Elbysodic services have not been configured")
+    if request is not None:
+        return _services.for_request(request)
     return _services

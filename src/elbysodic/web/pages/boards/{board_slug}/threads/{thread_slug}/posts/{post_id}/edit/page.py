@@ -26,7 +26,7 @@ async def post(
     body = str(form.get("body") or "")
 
     try:
-        post_view = get_services().update_post(board_slug, thread_slug, parsed_post_id, body)
+        post_view = get_services(request).update_post(board_slug, thread_slug, parsed_post_id, body)
     except ValueError as exc:
         return _render_form(
             request,
@@ -54,7 +54,7 @@ def _render_form(
     body: str | None = None,
 ) -> Page:
     parsed_post_id = _parse_post_id(post_id)
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     try:
         edit_view = services.read_post_editor(board_slug, thread_slug, parsed_post_id)

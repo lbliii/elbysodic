@@ -16,7 +16,7 @@ def get(request: Request, character_slug: str, hook_slug: str) -> Page:
 
 
 async def post(request: Request, character_slug: str, hook_slug: str) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "")
     if intent == "express_interest":
@@ -85,7 +85,7 @@ async def post(request: Request, character_slug: str, hook_slug: str) -> Page | 
 
 
 def _render_hook(request: Request, character_slug: str, hook_slug: str) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         hook = services.read_plot_hook(character_slug, hook_slug)
     except LookupError as exc:

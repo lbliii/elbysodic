@@ -17,7 +17,7 @@ def get(request: Request, board_slug: str) -> Page:
 
 
 async def post(request: Request, board_slug: str) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     try:
         raw_parent_id = str(form.get("parent_board_id") or "")
@@ -73,7 +73,7 @@ def _render_board_editor(
     error: str | None = None,
     form_values: dict[str, object] | None = None,
 ) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         editor = services.studio_board_editor(board_slug)
     except LookupError as exc:

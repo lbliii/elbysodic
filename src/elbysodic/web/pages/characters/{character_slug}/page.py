@@ -53,7 +53,7 @@ def get(request: Request, character_slug: str) -> Page:
 @contract(form=FormContract(CharacterProfileForm, "characters/{character_slug}/page.html"))
 async def post(request: Request, character_slug: str) -> Page | Redirect:
     form = await request.form()
-    services = get_services()
+    services = get_services(request)
     intent = str(form.get("intent") or "save")
     if intent == "set_default":
         profile = services.read_character(character_slug)
@@ -164,7 +164,7 @@ def _render_profile(
     post_style_preset: str = "",
     accent_source: str | None = None,
 ) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     profile = services.read_character(character_slug)
     style_policy = services.post_style_policy()

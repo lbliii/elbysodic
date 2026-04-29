@@ -53,3 +53,18 @@ another community's resolver or service layer.
 The MVP does not include hosted forum creation, billing, custom domains,
 cross-community dashboards, community discovery, tenant analytics, or
 per-community backup UI. The resolver abstraction keeps those options open.
+
+## Request Identity Boundary
+
+The web layer treats community and writer identity as request-scoped, even in
+development. A shared `AppServices` instance owns the repository, then
+`for_request(request)` creates a scoped facade that resolves:
+
+- community from an explicit development header, a configured host, or the
+  seeded default community
+- user from a development identity header or the seeded dev user
+- membership from the resolved user inside the resolved community
+
+This is not final authentication. It is the boundary that lets hosted programs,
+membership switching, and real login sessions arrive without service methods
+continuing to depend on the seeded demo identity.

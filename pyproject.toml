@@ -174,8 +174,8 @@ test = { cmd = "pytest", help = "Run the test suite" }
 test-fast = { cmd = "pytest tests/ -x -q --timeout=10", help = "Fast feedback loop" }
 test-cov = { cmd = "pytest tests/ --cov=elbysodic --cov-report=term-missing", help = "Run tests with coverage" }
 
-ty = { cmd = "ty check src/elbysodic/", help = "Run ty type checker" }
-ty-strict = { cmd = "ty check src/elbysodic/ --error-on-warning", help = "Strict type checking" }
+ty = { cmd = "ty check src/elbysodic/ tests/", help = "Run ty type checker" }
+ty-strict = { cmd = "ty check src/elbysodic/ tests/ --error-on-warning", help = "Strict type checking" }
 
 lint = { cmd = "ruff check .", help = "Run ruff linter" }
 lint-fix = { cmd = "ruff check . --fix", help = "Run ruff linter with auto-fix" }
@@ -184,9 +184,10 @@ format-check = { cmd = "ruff format . --check", help = "Check formatting" }
 
 hooks = { cmd = "prek run --all-files", help = "Run all pre-commit hooks" }
 hooks-install = { cmd = "prek install", help = "Install pre-commit hooks" }
+app-check = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()\"", help = "Run Chirp route/template check" }
 
-ci = { sequence = ["lint", "format-check", "ty", "test"], help = "Full CI check" }
-check = { sequence = ["lint", "format-check", "ty"], help = "Quick check without tests" }
+ci = { sequence = ["lint", "format-check", "ty", "app-check", "test"], help = "Full CI check" }
+check = { sequence = ["lint", "format-check", "ty", "app-check"], help = "Quick check without tests" }
 
 dist = { shell = "rm -rf dist/ && uv build && ls -la dist/", help = "Build distribution" }
 

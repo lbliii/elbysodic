@@ -10,7 +10,7 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     boards = services.list_boards()
     return Page(

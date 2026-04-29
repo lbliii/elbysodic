@@ -16,7 +16,7 @@ def get(request: Request, material_slug: str) -> Page:
 
 
 async def post(request: Request, material_slug: str) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     try:
         material = services.update_material(
@@ -59,7 +59,7 @@ def _render_material(
     status: str | None = None,
     is_featured: bool | None = None,
 ) -> Page:
-    services = get_services()
+    services = get_services(request)
     try:
         material = services.read_material(material_slug)
     except LookupError as exc:

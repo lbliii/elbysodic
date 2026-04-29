@@ -15,7 +15,7 @@ def get(request: Request) -> Page:
 
 
 async def post(request: Request) -> Page | Redirect:
-    services = get_services()
+    services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "")
     if intent == "mark_all_read":
@@ -33,7 +33,7 @@ async def post(request: Request) -> Page | Redirect:
 
 
 def _render_notifications(request: Request) -> Page:
-    services = get_services()
+    services = get_services(request)
     viewer = services.viewer()
     return Page(
         "notifications/page.html",
