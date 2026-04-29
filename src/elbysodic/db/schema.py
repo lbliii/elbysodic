@@ -84,6 +84,39 @@ CREATE TABLE IF NOT EXISTS characters (
     UNIQUE (community_id, slug)
 );
 
+CREATE TABLE IF NOT EXISTS applications (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    source_wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE SET NULL,
+    source_wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'draft',
+    revision_notes TEXT NOT NULL DEFAULT '',
+    staff_notes TEXT NOT NULL DEFAULT '',
+    checklist TEXT NOT NULL DEFAULT '',
+    submitted_at TEXT,
+    reviewed_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, character_id)
+);
+
+CREATE TABLE IF NOT EXISTS application_events (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    from_status TEXT,
+    to_status TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS boards (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -466,6 +499,10 @@ CREATE INDEX IF NOT EXISTS idx_posts_community_thread ON posts(community_id, thr
 CREATE INDEX IF NOT EXISTS idx_post_revisions_post ON post_revisions(community_id, post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON community_memberships(user_id, community_id);
 CREATE INDEX IF NOT EXISTS idx_characters_membership ON characters(community_id, membership_id, name);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(community_id, status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_applications_membership ON applications(community_id, membership_id, status);
+CREATE INDEX IF NOT EXISTS idx_application_events_application
+ON application_events(community_id, application_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_facet_groups_community_sort ON facet_groups(community_id, sort_order, name);
 CREATE INDEX IF NOT EXISTS idx_facets_group_sort ON facets(community_id, facet_group_id, sort_order, name);
 CREATE INDEX IF NOT EXISTS idx_character_facets_character ON character_facets(community_id, character_id, facet_id);
@@ -493,7 +530,6 @@ CREATE INDEX IF NOT EXISTS idx_character_plot_hook_facets_facet ON character_plo
 CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_hook ON character_plot_hook_interests(community_id, plot_hook_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_character ON character_plot_hook_interests(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_plotting_rooms_owner ON plotting_rooms(community_id, owner_membership_id, status, updated_at);
-CREATE INDEX IF NOT EXISTS idx_plotting_rooms_target_thread ON plotting_rooms(community_id, target_thread_id);
 CREATE INDEX IF NOT EXISTS idx_plotting_room_participants_membership ON plotting_room_participants(community_id, membership_id, plotting_room_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_plotting_room_participants_unique_character
 ON plotting_room_participants(community_id, plotting_room_id, membership_id, character_id)
@@ -682,6 +718,67 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     _migrate_notifications_schema(connection)
     _migrate_plotting_rooms_schema(connection)
     _migrate_plotting_room_messages_schema(connection)
+    _migrate_applications_schema(connection)
+
+
+def _migrate_applications_schema(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+            source_wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE SET NULL,
+            source_wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE SET NULL,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            body TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'draft',
+            revision_notes TEXT NOT NULL DEFAULT '',
+            staff_notes TEXT NOT NULL DEFAULT '',
+            checklist TEXT NOT NULL DEFAULT '',
+            submitted_at TEXT,
+            reviewed_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, character_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS application_events (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+            actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            note TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_applications_status
+        ON applications(community_id, status, updated_at)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_applications_membership
+        ON applications(community_id, membership_id, status)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_application_events_application
+        ON application_events(community_id, application_id, created_at, id)
+        """
+    )
 
 
 def _ensure_sidebar_section_defaults(connection: sqlite3.Connection) -> None:

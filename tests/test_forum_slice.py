@@ -1121,6 +1121,31 @@ def test_applications_desk_tracks_character_statuses() -> None:
             assert "Jubilee" in draft_view.text
             assert "Draft" in draft_view.text
             assert "Submit application" in draft_view.text
+            assert 'href="/applications/jubilee"' in draft_view.text
+
+            room = await client.get("/applications/jubilee")
+            assert room.status == 200
+            assert "Application Review Room" in room.text
+            assert "Applicant Notes" in room.text
+            assert "Save notes" in room.text
+
+            save_room = await client.post(
+                "/applications/jubilee",
+                body=urlencode(
+                    {
+                        "intent": "save_application",
+                        "summary": "Fireworks, mall instincts, and a very loud jacket.",
+                        "body": "Jubilee is looking for a found-family first scene.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert save_room.status == 302
+            application = services.repo.get_character_application_for_character(
+                services.seed.community.id,
+                character.id,
+            )
+            assert application.body == "Jubilee is looking for a found-family first scene."
 
             submit_response = await client.post(
                 "/applications",
@@ -1168,12 +1193,30 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 assert "Accept" in review.text
                 assert "Request revisions" in review.text
 
+                review_room = await alex_client.get("/applications/jubilee")
+                assert review_room.status == 200
+                assert "Director Review" in review_room.text
+                assert "Jubilee is looking for a found-family first scene." in review_room.text
+
+                save_review = await alex_client.post(
+                    "/applications/jubilee",
+                    body=urlencode(
+                        {
+                            "intent": "save_review",
+                            "revision_notes": "",
+                            "staff_notes": "Voice is clear.",
+                            "checklist": "Starter hook\nCast tie",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+                assert save_review.status == 302
+
                 accept_response = await alex_client.post(
-                    "/applications",
+                    "/applications/jubilee",
                     body=urlencode(
                         {
                             "intent": "accept_application",
-                            "character_slug": "jubilee",
                         }
                     ).encode(),
                     headers=_FORM,
@@ -1181,11 +1224,11 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 assert accept_response.status == 302
 
                 revision_response = await alex_client.post(
-                    "/applications",
+                    "/applications/kitty-pryde",
                     body=urlencode(
                         {
                             "intent": "request_revision",
-                            "character_slug": "kitty-pryde",
+                            "revision_notes": "Add one concrete school-life pressure point.",
                         }
                     ).encode(),
                     headers=_FORM,
@@ -1203,6 +1246,19 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 item.label == "Application accepted" and item.title == "Jubilee"
                 for item in services.notifications().items
             )
+            accepted_application = services.repo.get_character_application_for_character(
+                services.seed.community.id,
+                character.id,
+            )
+            assert accepted_application.staff_notes == "Voice is clear."
+            assert accepted_application.checklist == "Starter hook\nCast tie"
+            assert [
+                event.to_status
+                for event in services.repo.list_character_application_events(
+                    services.seed.community.id,
+                    accepted_application.id,
+                )
+            ] == ["accepted", "submitted"]
 
             mira_membership = services.repo.get_membership_by_username(
                 services.seed.community.id,
@@ -1228,6 +1284,9 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 mira_applications = await mira_client.get("/applications")
                 assert mira_applications.status == 200
                 assert "Resubmit application" in mira_applications.text
+                kitty_room = await mira_client.get("/applications/kitty-pryde")
+                assert kitty_room.status == 200
+                assert "Add one concrete school-life pressure point." in kitty_room.text
 
                 resubmit_response = await mira_client.post(
                     "/applications",

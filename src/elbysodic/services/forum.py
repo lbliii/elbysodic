@@ -43,11 +43,16 @@ from elbysodic.services.applications import (
 )
 from elbysodic.services.applications import applications_desk as _applications_desk
 from elbysodic.services.applications import (
+    read_application_review_room as _read_application_review_room,
+)
+from elbysodic.services.applications import (
     request_character_application_revision as _request_character_application_revision,
 )
 from elbysodic.services.applications import (
     submit_character_application as _submit_character_application,
 )
+from elbysodic.services.applications import update_application_draft as _update_application_draft
+from elbysodic.services.applications import update_application_review as _update_application_review
 from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
     create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
@@ -127,6 +132,7 @@ from elbysodic.services.read_models import (
     POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
     ActivityItem,
+    ApplicationReviewRoom,
     ApplicationsDesk,
     AttentionItem,
     BoardNavigationItem,
@@ -998,9 +1004,54 @@ class AppServices:
         viewer = self.viewer()
         return _accept_character_application(self.repo, viewer, character_slug)
 
-    def request_character_application_revision(self, character_slug: str) -> Character:
+    def request_character_application_revision(
+        self,
+        character_slug: str,
+        *,
+        note: str = "",
+    ) -> Character:
         viewer = self.viewer()
-        return _request_character_application_revision(self.repo, viewer, character_slug)
+        return _request_character_application_revision(
+            self.repo,
+            viewer,
+            character_slug,
+            note=note,
+        )
+
+    def read_application_review_room(self, character_slug: str) -> ApplicationReviewRoom:
+        return _read_application_review_room(self.repo, self.viewer(), character_slug)
+
+    def update_application_draft(
+        self,
+        character_slug: str,
+        *,
+        summary: str,
+        body: str,
+    ):
+        return _update_application_draft(
+            self.repo,
+            self.viewer(),
+            character_slug,
+            summary=summary,
+            body=body,
+        )
+
+    def update_application_review(
+        self,
+        character_slug: str,
+        *,
+        revision_notes: str,
+        staff_notes: str,
+        checklist: str,
+    ):
+        return _update_application_review(
+            self.repo,
+            self.viewer(),
+            character_slug,
+            revision_notes=revision_notes,
+            staff_notes=staff_notes,
+            checklist=checklist,
+        )
 
     def read_character(self, character_slug: str) -> CharacterProfile:
         viewer = self.viewer()
@@ -1232,7 +1283,7 @@ class AppServices:
             "post density",
         )
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
-        return self.repo.create_character(
+        character = self.repo.create_character(
             viewer.community.id,
             viewer.membership.id,
             slug,
@@ -1251,6 +1302,8 @@ class AppServices:
             application_status="draft",
             make_default=make_default,
         )
+        self.repo.ensure_character_application(viewer.community.id, character.id)
+        return character
 
     def update_character(
         self,

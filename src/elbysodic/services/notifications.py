@@ -204,7 +204,7 @@ def notification_item(
             title=character.name,
             created_at_label=timestamp_label(notification.created_at),
             snippet=snippet,
-            href=f"/characters/{character.slug}",
+            href=f"/applications/{character.slug}",
         )
     if notification.wanted_ad_id is not None:
         wanted_ad = repo.get_wanted_ad(viewer.community.id, notification.wanted_ad_id)

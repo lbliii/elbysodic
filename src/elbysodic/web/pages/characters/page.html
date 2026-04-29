@@ -1,9 +1,9 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/post_style_preview.html" import post_style_preview %}
+  {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
 {% block page_root %}
@@ -16,22 +16,30 @@
   {{ badge(viewer.community.name) }}
   {% end %}
 
-  {% call cluster(gap="sm") %}
-    {{ stat(value=viewer.roster | length, label="Characters") }}
-    {% if viewer.current_character %}
-    {{ stat(value=viewer.current_character.name, label="Current face") }}
-    {% else %}
-    {{ stat(value="Needed", label="Current face") }}
+  {% call surface(variant="elevated") %}
+  {% call command_panel("Roster", "Face lanes", "Your playable cast, application state, and writing queue in one calm scan.", "roster-lanes-heading") %}
+    <div class="elbysodic-command-panel__actions">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/applications">Applications</a>
+      <a class="chirpui-btn chirpui-btn--primary" href="#new-character">Add face</a>
+    </div>
+    <div class="elbysodic-command-panel__metrics" aria-label="Roster totals">
+      {{ metric_item(viewer.roster | length, "Characters") }}
+      {% if viewer.current_character %}
+      {{ metric_item(viewer.current_character.name, "Current face") }}
+      {% else %}
+      {{ metric_item("Needed", "Current face") }}
+      {% end %}
+      {{ metric_item(viewer.membership.post_count, "Posts") }}
+    </div>
     {% end %}
-    {{ stat(value=viewer.membership.post_count, label="Posts") }}
   {% end %}
 
   <div class="elbysodic-character-grid">
     {% for card in roster_dashboard.cards %}
     {% call surface(variant="elevated") %}
-    <article class="elbysodic-character-card chirpui-stack chirpui-stack--sm"
+    <article class="elbysodic-roster-card"
              {% if card.accent_color %}style="--elbysodic-character-accent: {{ card.accent_color }}"{% end %}>
-      <a class="elbysodic-character-card__poster elbysodic-character-poster--{{ card.character.slug }}"
+      <a class="elbysodic-roster-card__poster elbysodic-character-poster--{{ card.character.slug }}"
          href="/characters/{{ card.character.slug }}"
          aria-label="{{ card.character.name }}">
         {% if card.character.poster_url %}
@@ -43,63 +51,69 @@
         <em>{{ card.character.tagline }}</em>
         {% end %}
       </a>
-      <div class="elbysodic-character-card__header">
-        <div class="elbysodic-character-card__identity">
-          <div class="elbysodic-character-avatar" aria-hidden="true">
-            {% if card.character.avatar_url %}
-            <img src="{{ card.character.avatar_url }}" alt="">
-            {% else %}
-            {{ card.character.name[:1] }}
-            {% end %}
+      <div class="elbysodic-roster-card__main">
+        <header class="elbysodic-roster-card__header">
+          <div class="elbysodic-roster-card__identity">
+            <div>
+              <h2>
+                <a class="chirpui-link" href="/characters/{{ card.character.slug }}">{{ card.character.name }}</a>
+              </h2>
+              {% if card.character.tagline %}
+              <p class="elbysodic-character-card__tagline">{{ card.character.tagline }}</p>
+              {% end %}
+              <p class="elbysodic-accent-source">
+                <span class="elbysodic-accent-source__swatch" aria-hidden="true"
+                      {% if card.accent_color %}style="--elbysodic-accent-source-color: {{ card.accent_color }}"{% end %}></span>
+                <span>{{ card.accent_source_label }}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h2>
-              <a class="chirpui-link" href="/characters/{{ card.character.slug }}">{{ card.character.name }}</a>
-            </h2>
-            {% if card.character.tagline %}
-            <p class="elbysodic-character-card__tagline">{{ card.character.tagline }}</p>
+          <div class="elbysodic-roster-card__status">
+            {% if card.is_default %}
+            {{ badge("current", variant="success") }}
             {% end %}
-            <p class="elbysodic-accent-source">
-              <span class="elbysodic-accent-source__swatch" aria-hidden="true"
-                    {% if card.accent_color %}style="--elbysodic-accent-source-color: {{ card.accent_color }}"{% end %}></span>
-              <span>{{ card.accent_source_label }}</span>
-            </p>
-            <p class="elbysodic-copy-summary">{{ card.character.summary }}</p>
+            {{ badge(card.application_status_label, variant=card.application_status_variant) }}
           </div>
+        </header>
+        <p class="elbysodic-copy-summary">{{ card.character.summary }}</p>
+        <div class="elbysodic-roster-card__activity" aria-label="{{ card.character.name }} activity">
+          <a class="elbysodic-roster-card__metric" href="/my/threads?character={{ card.character.slug }}">
+            <strong>{{ card.activity.needs_reply | length }}</strong>
+            <span>Needs reply</span>
+          </a>
+          <a class="elbysodic-roster-card__metric" href="/my/threads?character={{ card.character.slug }}">
+            <strong>{{ card.activity.waiting_on_others | length }}</strong>
+            <span>Waiting</span>
+          </a>
+          <a class="elbysodic-roster-card__metric" href="/characters/{{ card.character.slug }}">
+            <strong>{{ card.activity.participated | length }}</strong>
+            <span>Active</span>
+          </a>
         </div>
-        {% if card.is_default %}
-        {{ badge("current", variant="success") }}
+        {% if card.activity.needs_reply %}
+        <p class="elbysodic-roster-card__queue">
+          <a class="chirpui-link" href="/my/threads?character={{ card.character.slug }}">Needs {{ card.character.name }}</a>
+          · latest in
+          <a class="chirpui-link"
+             href="/boards/{{ card.activity.needs_reply[0].board.slug }}/threads/{{ card.activity.needs_reply[0].thread.slug }}">
+            {{ card.activity.needs_reply[0].thread.title }}
+          </a>
+        </p>
+        {% elif card.activity.waiting_on_others %}
+        <p class="elbysodic-roster-card__queue">
+          <a class="chirpui-link" href="/my/threads?character={{ card.character.slug }}">Waiting on {{ card.character.name }}</a>
+          · latest in
+          <a class="chirpui-link"
+             href="/boards/{{ card.activity.waiting_on_others[0].board.slug }}/threads/{{ card.activity.waiting_on_others[0].thread.slug }}">
+            {{ card.activity.waiting_on_others[0].thread.title }}
+          </a>
+        </p>
+        {% else %}
+        <p class="elbysodic-roster-card__queue">Caught up for now.</p>
         {% end %}
-        {{ badge(card.application_status_label, variant=card.application_status_variant) }}
-      </div>
-      <div class="elbysodic-character-activity">
-        {{ stat(value=card.activity.needs_reply | length, label="Needs reply") }}
-        {{ stat(value=card.activity.waiting_on_others | length, label="Waiting") }}
-        {{ stat(value=card.activity.participated | length, label="Active") }}
-      </div>
-      {% if card.activity.needs_reply %}
-      <p class="elbysodic-character-card__queue">
-        <a class="chirpui-link" href="/my/threads?character={{ card.character.slug }}">Needs {{ card.character.name }}</a>
-        · latest in
-        <a class="chirpui-link"
-           href="/boards/{{ card.activity.needs_reply[0].board.slug }}/threads/{{ card.activity.needs_reply[0].thread.slug }}">
-          {{ card.activity.needs_reply[0].thread.title }}
-        </a>
-      </p>
-      {% elif card.activity.waiting_on_others %}
-      <p class="elbysodic-character-card__queue">
-        <a class="chirpui-link" href="/my/threads?character={{ card.character.slug }}">Waiting on {{ card.character.name }}</a>
-        · latest in
-        <a class="chirpui-link"
-           href="/boards/{{ card.activity.waiting_on_others[0].board.slug }}/threads/{{ card.activity.waiting_on_others[0].thread.slug }}">
-          {{ card.activity.waiting_on_others[0].thread.title }}
-        </a>
-      </p>
-      {% else %}
-      <p class="elbysodic-character-card__queue">Caught up for now.</p>
-      {% end %}
-      <div class="chirpui-cluster chirpui-cluster--end">
-        <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ card.character.slug }}">Manage</a>
+        <div class="elbysodic-roster-card__actions">
+          <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ card.character.slug }}">Open profile</a>
+        </div>
       </div>
     </article>
     {% end %}
@@ -108,7 +122,8 @@
 
   {% call surface(variant="elevated") %}
   {{ alpine_json_config(post_style_preview_config_id, post_style_preview_config) }}
-  <form method="post"
+  <form id="new-character"
+        method="post"
         hx-boost="false"
         class="chirpui-stack chirpui-stack--md"
         x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">

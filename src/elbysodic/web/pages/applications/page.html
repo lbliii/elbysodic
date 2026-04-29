@@ -8,59 +8,63 @@
 
 {% def application_card(item) %}
 {% call surface(variant="elevated") %}
-<article class="elbysodic-interest-card">
-  <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
-    <span class="elbysodic-character-avatar" aria-hidden="true">
+<article class="elbysodic-application-card">
+  <div class="elbysodic-application-card__face">
+    <a class="elbysodic-application-card__avatar" href="/characters/{{ item.character.slug }}" aria-label="{{ item.character.name }}">
       {% if item.character.avatar_url %}
       <img src="{{ item.character.avatar_url }}" alt="">
       {% else %}
       {{ item.character.name[:1] }}
       {% end %}
-    </span>
-    <span>{{ item.character.name }}</span>
-  </a>
-  <div>
-    <h3><a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h3>
+    </a>
+    <div class="elbysodic-application-card__identity">
+      <h3><a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h3>
+      <p class="elbysodic-copy-meta">
+        writer
+        <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
+      </p>
+    </div>
+  </div>
+  <div class="elbysodic-application-card__body">
     <p class="elbysodic-copy-summary">
       {{ item.character.summary if item.character.summary else "Application summary is still blank." }}
     </p>
-    <p class="elbysodic-copy-meta">
-      writer
-      <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
-    </p>
     {{ facet_pills(item.facets) }}
   </div>
-  <div class="elbysodic-interest-card__meta">
-    {{ badge(item.status_label, variant=item.status_variant) }}
-    {{ badge("yours", variant="success") if item.is_owned_by_viewer else "" }}
-    {{ badge(item.reserves | length ~ " reserves", variant="info") if item.reserves else "" }}
-  </div>
-  <div class="chirpui-cluster chirpui-cluster--end">
-    {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
-    <form method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="submit_application">
-      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
-    </form>
-    {% elif item.is_owned_by_viewer and item.character.application_status == "revision_requested" %}
-    <form method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="submit_application">
-      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
-    </form>
-    {% end %}
-    {% if desk.can_review and item.character.application_status == "submitted" %}
-    <form method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="accept_application">
-      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Accept</button>
-    </form>
-    <form method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="request_revision">
-      <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
-      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
-    </form>
-    {% end %}
+  <div class="elbysodic-application-card__review">
+    <div class="elbysodic-application-card__badges">
+      {{ badge(item.status_label, variant=item.status_variant) }}
+      {{ badge("yours", variant="success") if item.is_owned_by_viewer else "" }}
+      {{ badge(item.reserves | length ~ " reserves", variant="info") if item.reserves else "" }}
+    </div>
+    <div class="elbysodic-application-card__actions">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">Open review room</a>
+      {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="submit_application">
+        <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
+      </form>
+      {% elif item.is_owned_by_viewer and item.character.application_status == "revision_requested" %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="submit_application">
+        <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
+      </form>
+      {% end %}
+      {% if desk.can_review and item.character.application_status == "submitted" %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="accept_application">
+        <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Accept</button>
+      </form>
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="request_revision">
+        <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
+      </form>
+      {% end %}
+    </div>
   </div>
 </article>
 {% end %}

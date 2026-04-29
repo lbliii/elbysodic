@@ -118,6 +118,40 @@ class Character:
 
 
 @dataclass(frozen=True, slots=True)
+class CharacterApplication:
+    id: int
+    community_id: int
+    membership_id: int
+    character_id: int
+    source_wanted_ad_id: int | None
+    source_wanted_ad_interest_id: int | None
+    title: str
+    summary: str
+    body: str
+    status: str
+    revision_notes: str
+    staff_notes: str
+    checklist: str
+    submitted_at: str | None
+    reviewed_at: str | None
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterApplicationEvent:
+    id: int
+    community_id: int
+    application_id: int
+    actor_membership_id: int
+    actor_character_id: int | None
+    from_status: str | None
+    to_status: str
+    note: str
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class FacetGroup:
     id: int
     community_id: int

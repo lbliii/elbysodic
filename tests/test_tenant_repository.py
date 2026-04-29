@@ -250,6 +250,8 @@ def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
     assert "plotting_rooms" in tables
     assert "plotting_room_participants" in tables
     assert "plotting_room_messages" in tables
+    assert "applications" in tables
+    assert "application_events" in tables
     assert "notes" in plotting_columns
     assert "next_step" in plotting_columns
     assert "target_board_id" in plotting_columns
@@ -458,6 +460,102 @@ def test_public_identity_is_membership_scoped(repo: ForumRepository) -> None:
     assert default_membership.username == "lark"
     assert hosted_membership.username == "winterglass"
     assert repo.get_role(hosted.id, hosted_membership.role_id).is_admin is True
+
+
+def test_application_review_rooms_are_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    user = repo.create_user("application-room@example.com", "hash")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "applicant",
+        "Applicant",
+    )
+    other_user = repo.create_user("application-room-other@example.com", "hash")
+    other_membership = repo.create_membership(
+        default.id,
+        other_user.id,
+        default_role.id,
+        "other",
+        "Other",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "applicant",
+        "Applicant Elsewhere",
+    )
+    rogue = repo.create_character(
+        default.id,
+        default_membership.id,
+        "rogue",
+        "Rogue",
+        summary="Careful hands.",
+        application_status="draft",
+    )
+    magneto = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "magneto",
+        "Magneto",
+        application_status="draft",
+    )
+    jean = repo.create_character(
+        default.id,
+        other_membership.id,
+        "jean-grey",
+        "Jean Grey",
+        application_status="accepted",
+    )
+
+    application = repo.ensure_character_application(default.id, rogue.id)
+    updated = repo.update_character_application_draft(
+        default.id,
+        application.id,
+        title="Rogue",
+        summary="Careful hands, complicated loyalties.",
+        body="I want her to test trust under pressure.",
+    )
+    reviewed = repo.update_character_application_review(
+        default.id,
+        updated.id,
+        revision_notes="Clarify her first scene pressure point.",
+        staff_notes="Strong concept.",
+        checklist="Face claim\nStarter hook",
+    )
+    submitted = repo.transition_character_application_status(
+        default.id,
+        reviewed.id,
+        status="submitted",
+        actor_membership_id=default_membership.id,
+        actor_character_id=rogue.id,
+        note="Ready for review.",
+    )
+    events = repo.list_character_application_events(default.id, submitted.id)
+
+    assert submitted.status == "submitted"
+    assert repo.get_character(default.id, rogue.id).application_status == "submitted"
+    assert reviewed.revision_notes == "Clarify her first scene pressure point."
+    assert reviewed.staff_notes == "Strong concept."
+    assert [event.note for event in events] == ["Ready for review."]
+
+    with pytest.raises(LookupError):
+        repo.ensure_character_application(default.id, magneto.id)
+    with pytest.raises(LookupError):
+        repo.get_character_application(hosted.id, application.id)
+    with pytest.raises(TenantBoundaryError):
+        repo.transition_character_application_status(
+            default.id,
+            submitted.id,
+            status="accepted",
+            actor_membership_id=default_membership.id,
+            actor_character_id=jean.id,
+        )
     assert repo.get_role(default.id, default_membership.role_id).is_admin is False
 
 

@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
-from elbysodic.db.repositories.base import _last_id, _utc_now
+from elbysodic.db.repositories.base import TenantBoundaryError, _last_id, _utc_now
 from elbysodic.db.repositories.identity import IdentityRepositoryMixin
-from elbysodic.db.repositories.rows import _character_from_row
-from elbysodic.domain.models import Character, CommunityMembership
+from elbysodic.db.repositories.rows import (
+    _character_application_event_from_row,
+    _character_application_from_row,
+    _character_from_row,
+)
+from elbysodic.domain.models import (
+    Character,
+    CharacterApplication,
+    CharacterApplicationEvent,
+    CommunityMembership,
+)
 
 
 class CharacterRepositoryMixin(IdentityRepositoryMixin):
@@ -225,8 +234,350 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
             """,
             (application_status, _utc_now(), community_id, character_id),
         )
+        self.connection.execute(
+            """
+            UPDATE applications
+            SET status = ?, updated_at = ?
+            WHERE community_id = ? AND character_id = ?
+            """,
+            (application_status, _utc_now(), community_id, character_id),
+        )
         self.connection.commit()
         return self.get_character(community_id, character_id)
+
+    def ensure_character_application(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        source_wanted_ad_id: int | None = None,
+        source_wanted_ad_interest_id: int | None = None,
+    ) -> CharacterApplication:
+        character = self.get_character(community_id, character_id)
+        if source_wanted_ad_id is not None:
+            self._ensure_row_in_community("wanted_ads", community_id, source_wanted_ad_id)
+        if source_wanted_ad_interest_id is not None:
+            self._ensure_row_in_community(
+                "wanted_ad_interests",
+                community_id,
+                source_wanted_ad_interest_id,
+            )
+        existing = self.get_character_application_for_character_or_none(
+            community_id,
+            character_id,
+        )
+        if existing is not None:
+            return existing
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO applications (
+                community_id,
+                membership_id,
+                character_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                body,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                character.membership_id,
+                character.id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                character.name,
+                character.summary,
+                "",
+                character.application_status,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return self.get_character_application(community_id, _last_id(cursor))
+
+    def get_character_application(
+        self,
+        community_id: int,
+        application_id: int,
+    ) -> CharacterApplication:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                body,
+                status,
+                revision_notes,
+                staff_notes,
+                checklist,
+                submitted_at,
+                reviewed_at,
+                created_at,
+                updated_at
+            FROM applications
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, application_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"application not found in community {community_id}: {application_id}"
+            )
+        return _character_application_from_row(row)
+
+    def get_character_application_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+    ) -> CharacterApplication:
+        application = self.get_character_application_for_character_or_none(
+            community_id,
+            character_id,
+        )
+        if application is None:
+            raise LookupError(
+                f"application not found in community {community_id}: character {character_id}"
+            )
+        return application
+
+    def get_character_application_for_character_or_none(
+        self,
+        community_id: int,
+        character_id: int,
+    ) -> CharacterApplication | None:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                character_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                body,
+                status,
+                revision_notes,
+                staff_notes,
+                checklist,
+                submitted_at,
+                reviewed_at,
+                created_at,
+                updated_at
+            FROM applications
+            WHERE community_id = ? AND character_id = ?
+            """,
+            (community_id, character_id),
+        ).fetchone()
+        return _character_application_from_row(row) if row is not None else None
+
+    def update_character_application_draft(
+        self,
+        community_id: int,
+        application_id: int,
+        *,
+        title: str,
+        summary: str,
+        body: str,
+    ) -> CharacterApplication:
+        application = self.get_character_application(community_id, application_id)
+        self.connection.execute(
+            """
+            UPDATE applications
+            SET title = ?, summary = ?, body = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (title, summary, body, _utc_now(), community_id, application_id),
+        )
+        self.connection.execute(
+            """
+            UPDATE characters
+            SET summary = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (summary, _utc_now(), community_id, application.character_id),
+        )
+        self.connection.commit()
+        return self.get_character_application(community_id, application_id)
+
+    def update_character_application_review(
+        self,
+        community_id: int,
+        application_id: int,
+        *,
+        revision_notes: str,
+        staff_notes: str,
+        checklist: str,
+    ) -> CharacterApplication:
+        self.get_character_application(community_id, application_id)
+        self.connection.execute(
+            """
+            UPDATE applications
+            SET revision_notes = ?, staff_notes = ?, checklist = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                revision_notes,
+                staff_notes,
+                checklist,
+                _utc_now(),
+                community_id,
+                application_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_character_application(community_id, application_id)
+
+    def transition_character_application_status(
+        self,
+        community_id: int,
+        application_id: int,
+        *,
+        status: str,
+        actor_membership_id: int,
+        actor_character_id: int | None,
+        note: str = "",
+    ) -> CharacterApplication:
+        application = self.get_character_application(community_id, application_id)
+        self.get_membership(community_id, actor_membership_id)
+        if actor_character_id is not None:
+            actor = self.get_character(community_id, actor_character_id)
+            if actor.membership_id != actor_membership_id:
+                raise TenantBoundaryError(
+                    f"character {actor_character_id} does not belong to membership {actor_membership_id}"
+                )
+        now = _utc_now()
+        submitted_at = now if status == "submitted" else application.submitted_at
+        reviewed_at = now if status in {"accepted", "rejected", "revision_requested"} else None
+        self.connection.execute(
+            """
+            UPDATE applications
+            SET status = ?, submitted_at = ?, reviewed_at = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, submitted_at, reviewed_at, now, community_id, application_id),
+        )
+        self.connection.execute(
+            """
+            UPDATE characters
+            SET application_status = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, now, community_id, application.character_id),
+        )
+        cursor = self.connection.execute(
+            """
+            INSERT INTO application_events (
+                community_id,
+                application_id,
+                actor_membership_id,
+                actor_character_id,
+                from_status,
+                to_status,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                application_id,
+                actor_membership_id,
+                actor_character_id,
+                application.status,
+                status,
+                note,
+                now,
+            ),
+        )
+        self.connection.commit()
+        self.get_character_application_event(community_id, _last_id(cursor))
+        return self.get_character_application(community_id, application_id)
+
+    def get_character_application_event(
+        self,
+        community_id: int,
+        event_id: int,
+    ) -> CharacterApplicationEvent:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                application_id,
+                actor_membership_id,
+                actor_character_id,
+                from_status,
+                to_status,
+                note,
+                created_at
+            FROM application_events
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, event_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"application event not found in community {community_id}: {event_id}"
+            )
+        return _character_application_event_from_row(row)
+
+    def list_character_application_events(
+        self,
+        community_id: int,
+        application_id: int,
+    ) -> list[CharacterApplicationEvent]:
+        self.get_character_application(community_id, application_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                application_id,
+                actor_membership_id,
+                actor_character_id,
+                from_status,
+                to_status,
+                note,
+                created_at
+            FROM application_events
+            WHERE community_id = ? AND application_id = ?
+            ORDER BY created_at DESC, id DESC
+            """,
+            (community_id, application_id),
+        ).fetchall()
+        return [_character_application_event_from_row(row) for row in rows]
+
+    def _ensure_row_in_community(self, table: str, community_id: int, row_id: int) -> None:
+        if table == "wanted_ads":
+            row = self.connection.execute(
+                "SELECT id FROM wanted_ads WHERE community_id = ? AND id = ?",
+                (community_id, row_id),
+            ).fetchone()
+        elif table == "wanted_ad_interests":
+            row = self.connection.execute(
+                "SELECT id FROM wanted_ad_interests WHERE community_id = ? AND id = ?",
+                (community_id, row_id),
+            ).fetchone()
+        else:
+            raise ValueError(f"unknown community-scoped table: {table}")
+        if row is None:
+            raise LookupError(f"{table} row not found in community {community_id}: {row_id}")
 
     def list_characters(self, community_id: int, membership_id: int) -> list[Character]:
         self.get_membership(community_id, membership_id)

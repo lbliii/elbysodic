@@ -1,0 +1,173 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/facets.html" import facet_pills %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Application Review Room") %}
+  {{ room.character_view.character.name }} from {{ room.character_view.membership.display_name }}
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <article class="elbysodic-interest-card">
+    <a class="elbysodic-character-chip" href="/characters/{{ room.character_view.character.slug }}">
+      <span class="elbysodic-character-avatar" aria-hidden="true">
+        {% if room.character_view.character.avatar_url %}
+        <img src="{{ room.character_view.character.avatar_url }}" alt="">
+        {% else %}
+        {{ room.character_view.character.name[:1] }}
+        {% end %}
+      </span>
+      <span>{{ room.character_view.character.name }}</span>
+    </a>
+    <div>
+      <h3>{{ room.application.title }}</h3>
+      <p class="elbysodic-copy-summary">
+        {{ room.application.summary if room.application.summary else room.character_view.character.summary }}
+      </p>
+      <p class="elbysodic-copy-meta">
+        writer
+        <a class="chirpui-link" href="/members/{{ room.character_view.membership.username }}">
+          {{ room.character_view.membership.display_name }}
+        </a>
+      </p>
+      {{ facet_pills(room.character_view.facets) }}
+    </div>
+    <div class="elbysodic-interest-card__meta">
+      {{ badge(room.character_view.status_label, variant=room.character_view.status_variant) }}
+      {{ badge("yours", variant="success") if room.character_view.is_owned_by_viewer else "" }}
+      {{ badge("director view", variant="info") if room.can_review else "" }}
+    </div>
+  </article>
+  {% end %}
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Applicant Notes") %}
+    The public-facing shape staff should use to review this face.
+    {% end %}
+    {% call surface(variant="elevated") %}
+    {% if room.can_edit_application %}
+    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="save_application">
+      <label>
+        <span class="chirpui-field__label">Application summary</span>
+        <textarea class="chirpui-field__input"
+                  name="summary"
+                  rows="3">{{ room.application.summary }}</textarea>
+      </label>
+      <label>
+        <span class="chirpui-field__label">Application notes</span>
+        <textarea class="chirpui-field__input"
+                  name="body"
+                  rows="9">{{ room.application.body }}</textarea>
+      </label>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save notes</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-copy-summary">
+        {{ room.application.body if room.application.body else "No applicant notes have been saved yet." }}
+      </p>
+    </div>
+    {% end %}
+    {% end %}
+  </section>
+
+  {% if room.application.revision_notes %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Revision Notes") %}
+    Staff notes visible to the applicant.
+    {% end %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-copy-summary">{{ room.application.revision_notes }}</p>
+    {% end %}
+  </section>
+  {% end %}
+
+  {% if room.can_review %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Director Review") %}
+    Private production notes and revision checklist for this application.
+    {% end %}
+    {% call surface(variant="elevated") %}
+    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="save_review">
+      <label>
+        <span class="chirpui-field__label">Revision note for applicant</span>
+        <textarea class="chirpui-field__input"
+                  name="revision_notes"
+                  rows="4">{{ room.application.revision_notes }}</textarea>
+      </label>
+      <label>
+        <span class="chirpui-field__label">Staff notes</span>
+        <textarea class="chirpui-field__input"
+                  name="staff_notes"
+                  rows="5">{{ room.application.staff_notes }}</textarea>
+      </label>
+      <label>
+        <span class="chirpui-field__label">Checklist</span>
+        <textarea class="chirpui-field__input"
+                  name="checklist"
+                  rows="5">{{ room.application.checklist }}</textarea>
+      </label>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save review notes</button>
+      </div>
+    </form>
+    {% if room.character_view.character.application_status == "submitted" %}
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="accept_application">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Accept face</button>
+      </form>
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="request_revision">
+        <input type="hidden" name="revision_notes" value="{{ room.application.revision_notes }}">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
+      </form>
+    </div>
+    {% end %}
+    {% end %}
+  </section>
+  {% end %}
+
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Status History") %}
+    Review movement for this face.
+    {% end %}
+    {% call surface(variant="elevated") %}
+    {% if room.events %}
+    <ol class="elbysodic-activity-log">
+      {% for event in room.events %}
+      <li class="elbysodic-activity-log-item">
+        <time class="elbysodic-activity-log-item__time">{{ event.created_at_label }}</time>
+        <div>
+          <strong>{{ event.actor_label }}</strong>
+          moved the application to {{ event.to_label }}.
+          {% if event.event.note %}
+          <p class="elbysodic-copy-summary">{{ event.event.note }}</p>
+          {% end %}
+        </div>
+      </li>
+      {% end %}
+    </ol>
+    {% else %}
+    <p class="elbysodic-empty-state">No review movement has been recorded yet.</p>
+    {% end %}
+    {% end %}
+  </section>
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

@@ -3613,7 +3613,7 @@ body {
 .elbysodic-character-grid {
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr));
 }
 
 .elbysodic-member-grid {
@@ -3687,6 +3687,7 @@ body {
 }
 
 .elbysodic-character-card__poster,
+.elbysodic-roster-card__poster,
 .elbysodic-profile-hero__poster {
     align-items: end;
     background:
@@ -3704,6 +3705,7 @@ body {
 }
 
 .elbysodic-character-card__poster::before,
+.elbysodic-roster-card__poster::before,
 .elbysodic-profile-hero__poster::before {
     background:
         linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.72)),
@@ -3715,6 +3717,7 @@ body {
 }
 
 .elbysodic-character-card__poster img,
+.elbysodic-roster-card__poster img,
 .elbysodic-profile-hero__poster img {
     height: 100%;
     inset: 0;
@@ -3725,6 +3728,7 @@ body {
 }
 
 .elbysodic-character-card__poster span,
+.elbysodic-roster-card__poster span,
 .elbysodic-profile-hero__poster span {
     font-weight: 900;
     line-height: 0.85;
@@ -3733,6 +3737,7 @@ body {
 }
 
 .elbysodic-character-card__poster em,
+.elbysodic-roster-card__poster em,
 .elbysodic-profile-hero__poster em {
     color: var(--elbysodic-on-media-text);
     font-size: var(--chirpui-font-sm);
@@ -3750,6 +3755,113 @@ body {
 
 .elbysodic-character-card__poster span {
     font-size: clamp(3rem, 9vw, 5.5rem);
+}
+
+.elbysodic-roster-card {
+    --elbysodic-character-accent: var(--chirpui-accent);
+    align-items: stretch;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+}
+
+.elbysodic-roster-card__poster {
+    align-self: stretch;
+    min-height: 100%;
+}
+
+.elbysodic-roster-card__poster span {
+    font-size: 4rem;
+}
+
+.elbysodic-roster-card__main {
+    align-content: start;
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.elbysodic-roster-card__header {
+    align-items: start;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-roster-card__identity {
+    min-width: 0;
+}
+
+.elbysodic-roster-card__identity h2,
+.elbysodic-roster-card__identity p,
+.elbysodic-roster-card__main > .elbysodic-copy-summary {
+    margin: 0;
+}
+
+.elbysodic-roster-card__identity h2 {
+    font-size: var(--chirpui-font-xl);
+    line-height: var(--chirpui-line-tight);
+}
+
+.elbysodic-roster-card__status {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    justify-content: flex-end;
+}
+
+.elbysodic-roster-card__status .chirpui-badge {
+    max-width: none;
+    white-space: nowrap;
+}
+
+.elbysodic-roster-card__activity {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.elbysodic-roster-card__metric {
+    background: color-mix(in srgb, var(--elbysodic-character-accent) 7%, var(--chirpui-bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--elbysodic-character-accent) 18%, var(--chirpui-border-subtle));
+    border-radius: var(--chirpui-radius);
+    color: var(--chirpui-text);
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    text-decoration: none;
+}
+
+.elbysodic-roster-card__metric:hover,
+.elbysodic-roster-card__metric:focus-visible {
+    border-color: color-mix(in srgb, var(--elbysodic-character-accent) 40%, var(--chirpui-border));
+    color: var(--chirpui-accent);
+}
+
+.elbysodic-roster-card__metric strong {
+    font-size: var(--chirpui-font-lg);
+    line-height: 1;
+}
+
+.elbysodic-roster-card__metric span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.elbysodic-roster-card__queue {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    color: var(--chirpui-text-muted);
+    margin: 0;
+    padding-top: 0.75rem;
+}
+
+.elbysodic-roster-card__actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .elbysodic-character-activity {
@@ -5701,6 +5813,96 @@ body {
     gap: 0.5rem;
 }
 
+.elbysodic-application-card {
+    align-items: center;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(12rem, 0.42fr) minmax(18rem, 1fr) minmax(12rem, auto);
+}
+
+.elbysodic-application-card__face {
+    align-items: center;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    min-width: 0;
+}
+
+.elbysodic-application-card__avatar {
+    align-items: center;
+    background:
+        radial-gradient(
+            circle at 35% 25%,
+            color-mix(in srgb, var(--chirpui-accent) 22%, transparent),
+            transparent 58%
+        ),
+        var(--chirpui-bg-subtle);
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius-md);
+    color: var(--chirpui-text);
+    display: inline-flex;
+    font-size: var(--chirpui-font-lg);
+    font-weight: var(--chirpui-font-weight-bold);
+    height: 2.75rem;
+    justify-content: center;
+    overflow: hidden;
+    text-decoration: none;
+    width: 2.75rem;
+}
+
+.elbysodic-application-card__avatar img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.elbysodic-application-card__identity {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.elbysodic-application-card__identity h3,
+.elbysodic-application-card__identity p,
+.elbysodic-application-card__body p {
+    margin: 0;
+}
+
+.elbysodic-application-card__identity h3 {
+    font-size: var(--chirpui-font-xl);
+    line-height: var(--chirpui-line-tight);
+}
+
+.elbysodic-application-card__identity .chirpui-link {
+    overflow-wrap: anywhere;
+}
+
+.elbysodic-application-card__body {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.elbysodic-application-card__review {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: end;
+    min-width: 0;
+}
+
+.elbysodic-application-card__badges,
+.elbysodic-application-card__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.elbysodic-application-card__actions form {
+    margin: 0;
+}
+
 .elbysodic-room-chat {
     border: 1px solid var(--chirpui-border);
     border-radius: var(--chirpui-radius-md);
@@ -5780,6 +5982,35 @@ body {
     pointer-events: none;
     position: absolute;
     width: 1px;
+}
+
+@media (max-width: 64rem) {
+    .elbysodic-roster-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-roster-card__poster {
+        aspect-ratio: 16 / 5;
+        min-height: 6.5rem;
+    }
+
+    .elbysodic-roster-card__poster span {
+        font-size: 3.25rem;
+    }
+
+    .elbysodic-application-card {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .elbysodic-application-card__body {
+        grid-column: 1;
+    }
+
+    .elbysodic-application-card__review {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
 }
 
 @media (max-width: 48rem) {
@@ -6080,6 +6311,34 @@ body {
     .elbysodic-interest-card {
         align-items: start;
         grid-template-columns: 1fr;
+    }
+
+    .elbysodic-roster-card__header {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-roster-card__status,
+    .elbysodic-roster-card__actions {
+        justify-content: flex-start;
+    }
+
+    .elbysodic-application-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-application-card__body,
+    .elbysodic-application-card__review {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .elbysodic-application-card__review {
+        justify-items: start;
+    }
+
+    .elbysodic-application-card__badges,
+    .elbysodic-application-card__actions {
+        justify-content: flex-start;
     }
 
     .elbysodic-move-thread-form {

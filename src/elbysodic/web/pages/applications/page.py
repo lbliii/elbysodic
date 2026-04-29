@@ -41,7 +41,10 @@ async def post(request: Request) -> Page | Redirect:
         elif intent == "accept_application":
             services.accept_character_application(character_slug)
         else:
-            services.request_character_application_revision(character_slug)
+            services.request_character_application_revision(
+                character_slug,
+                note=str(form.get("revision_note") or ""),
+            )
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except LookupError as exc:

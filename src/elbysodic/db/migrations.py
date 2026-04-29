@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -60,9 +60,70 @@ def _add_plotting_room_messages(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_application_review_rooms(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+            source_wanted_ad_id INTEGER REFERENCES wanted_ads(id) ON DELETE SET NULL,
+            source_wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE SET NULL,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            body TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'draft',
+            revision_notes TEXT NOT NULL DEFAULT '',
+            staff_notes TEXT NOT NULL DEFAULT '',
+            checklist TEXT NOT NULL DEFAULT '',
+            submitted_at TEXT,
+            reviewed_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, character_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS application_events (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+            actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            note TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_applications_status
+        ON applications(community_id, status, updated_at)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_applications_membership
+        ON applications(community_id, membership_id, status)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_application_events_application
+        ON application_events(community_id, application_id, created_at, id)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
+    Migration(4, "application-review-rooms", _add_application_review_rooms),
 )
 
 

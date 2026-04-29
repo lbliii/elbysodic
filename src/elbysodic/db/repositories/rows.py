@@ -12,6 +12,8 @@ from elbysodic.domain.boards import (
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterApplication,
+    CharacterApplicationEvent,
     CharacterPlotHook,
     CharacterPlotHookInterest,
     CharacterReserve,
@@ -155,6 +157,42 @@ def _character_from_row(row: sqlite3.Row) -> Character:
         application_status=row["application_status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+    )
+
+
+def _character_application_from_row(row: sqlite3.Row) -> CharacterApplication:
+    return CharacterApplication(
+        id=row["id"],
+        community_id=row["community_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        source_wanted_ad_id=row["source_wanted_ad_id"],
+        source_wanted_ad_interest_id=row["source_wanted_ad_interest_id"],
+        title=row["title"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        revision_notes=row["revision_notes"],
+        staff_notes=row["staff_notes"],
+        checklist=row["checklist"],
+        submitted_at=row["submitted_at"],
+        reviewed_at=row["reviewed_at"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _character_application_event_from_row(row: sqlite3.Row) -> CharacterApplicationEvent:
+    return CharacterApplicationEvent(
+        id=row["id"],
+        community_id=row["community_id"],
+        application_id=row["application_id"],
+        actor_membership_id=row["actor_membership_id"],
+        actor_character_id=row["actor_character_id"],
+        from_status=row["from_status"],
+        to_status=row["to_status"],
+        note=row["note"],
+        created_at=row["created_at"],
     )
 
 

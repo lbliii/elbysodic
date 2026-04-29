@@ -8,6 +8,8 @@ from typing import Literal
 from elbysodic.domain.models import (
     Board,
     Character,
+    CharacterApplication,
+    CharacterApplicationEvent,
     CharacterPlotHook,
     CharacterPlotHookInterest,
     CharacterReserve,
@@ -480,6 +482,7 @@ class CharacterRosterDashboard:
 @dataclass(frozen=True, slots=True)
 class ApplicationCharacterView:
     character: Character
+    application: CharacterApplication | None
     membership: CommunityMembership
     facets: list[FacetTag]
     reserves: list[CharacterReserveView]
@@ -494,6 +497,26 @@ class ApplicationsDesk:
     review_queue: list[ApplicationCharacterView]
     accepted_characters: list[ApplicationCharacterView]
     application_materials: list[MaterialSummary]
+    can_review: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationReviewEventView:
+    event: CharacterApplicationEvent
+    actor_membership: CommunityMembership
+    actor: Character | None
+    actor_label: str
+    created_at_label: str
+    from_label: str | None
+    to_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationReviewRoom:
+    application: CharacterApplication
+    character_view: ApplicationCharacterView
+    events: list[ApplicationReviewEventView]
+    can_edit_application: bool
     can_review: bool
 
 
