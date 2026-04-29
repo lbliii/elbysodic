@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from dataclasses import dataclass
 from typing import Protocol
 
 from elbysodic.domain.models import (
@@ -13,6 +15,7 @@ from elbysodic.domain.models import (
     Facet,
     Material,
     PlottingRoom,
+    PlottingRoomMessage,
     PlottingRoomParticipant,
     Thread,
     WantedAd,
@@ -38,6 +41,7 @@ from elbysodic.services.read_models import (
     PlotHookInterestInboxItem,
     PlottingDesk,
     PlottingRoomDetail,
+    PlottingRoomMessageView,
     PlottingRoomParticipantView,
     PlottingRoomSummary,
     WantedInterestInboxItem,
@@ -45,6 +49,16 @@ from elbysodic.services.read_models import (
 from elbysodic.services.timestamps import timestamp_label
 
 PLOTTING_ROOM_STATUSES = ("brainstorming", "ready", "threaded", "paused", "done")
+MAX_PLOTTING_ROOM_MESSAGE_BODY = 2000
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoomLiveEvent:
+    kind: str
+    message: PlottingRoomMessageView | None = None
+
+
+_plotting_room_subscribers: dict[int, set[asyncio.Queue[PlottingRoomLiveEvent]]] = {}
 
 
 class PlottingRepository(
@@ -221,6 +235,31 @@ class PlottingRepository(
         plotting_room_id: int,
     ) -> list[PlottingRoomParticipant]: ...
 
+    def create_plotting_room_message(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        author_membership_id: int,
+        body: str,
+        *,
+        author_character_id: int | None = None,
+    ) -> PlottingRoomMessage: ...
+
+    def get_plotting_room_message(
+        self,
+        community_id: int,
+        message_id: int,
+    ) -> PlottingRoomMessage: ...
+
+    def list_plotting_room_messages(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        *,
+        after_id: int | None = None,
+        limit: int = 100,
+    ) -> list[PlottingRoomMessage]: ...
+
     def update_plotting_room_plan(
         self,
         community_id: int,
@@ -382,6 +421,14 @@ def read_plotting_room(
             if policies.can_start_thread(viewer.membership, board, viewer.role)
         ],
         scene_character_options=_scene_character_options(viewer, participants),
+        messages=[
+            plotting_room_message_view(repo, viewer.community.id, message)
+            for message in repo.list_plotting_room_messages(
+                viewer.community.id,
+                room.id,
+                limit=100,
+            )
+        ],
         created_at_label=timestamp_label(room.created_at),
         can_manage=can_create_scene,
         can_edit_plan=can_edit_plan,
@@ -471,6 +518,85 @@ def create_thread_from_plotting_room(
     repo.attach_plotting_room_thread(viewer.community.id, room.id, created.thread.id)
     _notify_room_threaded(repo, viewer, room, participants, created.thread)
     return created
+
+
+async def create_plotting_room_message(
+    repo: PlottingRepository,
+    viewer: ForumView,
+    room_id: int,
+    body: str,
+) -> PlottingRoomMessageView:
+    room = repo.get_plotting_room(viewer.community.id, room_id)
+    participants = [
+        plotting_room_participant_view(repo, viewer.community.id, participant)
+        for participant in repo.list_plotting_room_participants(viewer.community.id, room.id)
+    ]
+    if not _can_edit_plotting_room_plan(viewer, room, _participant_membership_ids(participants)):
+        raise PermissionError(f"membership {viewer.membership.id} cannot post in room {room.id}")
+    cleaned = body.strip()
+    if not cleaned:
+        raise ValueError("message body is required")
+    if len(cleaned) > MAX_PLOTTING_ROOM_MESSAGE_BODY:
+        cleaned = cleaned[:MAX_PLOTTING_ROOM_MESSAGE_BODY]
+    message = repo.create_plotting_room_message(
+        viewer.community.id,
+        room.id,
+        viewer.membership.id,
+        cleaned,
+        author_character_id=(
+            viewer.current_character.id if viewer.current_character is not None else None
+        ),
+    )
+    message_view = plotting_room_message_view(repo, viewer.community.id, message)
+    await publish_plotting_room_live_event(
+        room.id,
+        PlottingRoomLiveEvent(kind="message", message=message_view),
+    )
+    return message_view
+
+
+def plotting_room_message_view(
+    repo: PlottingRepository,
+    community_id: int,
+    message: PlottingRoomMessage,
+) -> PlottingRoomMessageView:
+    return PlottingRoomMessageView(
+        message=message,
+        author_membership=repo.get_membership(community_id, message.author_membership_id),
+        author_character=(
+            repo.get_character(community_id, message.author_character_id)
+            if message.author_character_id is not None
+            else None
+        ),
+        created_at_label=timestamp_label(message.created_at),
+    )
+
+
+async def subscribe_plotting_room_live(room_id: int) -> asyncio.Queue[PlottingRoomLiveEvent]:
+    queue: asyncio.Queue[PlottingRoomLiveEvent] = asyncio.Queue()
+    _plotting_room_subscribers.setdefault(room_id, set()).add(queue)
+    await queue.put(PlottingRoomLiveEvent(kind="ready"))
+    return queue
+
+
+async def unsubscribe_plotting_room_live(
+    room_id: int,
+    queue: asyncio.Queue[PlottingRoomLiveEvent],
+) -> None:
+    subscribers = _plotting_room_subscribers.get(room_id)
+    if subscribers is None:
+        return
+    subscribers.discard(queue)
+    if not subscribers:
+        _plotting_room_subscribers.pop(room_id, None)
+
+
+async def publish_plotting_room_live_event(
+    room_id: int,
+    event: PlottingRoomLiveEvent,
+) -> None:
+    for queue in list(_plotting_room_subscribers.get(room_id, ())):
+        await queue.put(event)
 
 
 def clean_plotting_room_status(status: str) -> str:

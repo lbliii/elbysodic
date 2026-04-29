@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -38,8 +38,31 @@ def _add_plotting_room_planning_fields(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_plotting_room_messages(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS plotting_room_messages (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            plotting_room_id INTEGER NOT NULL REFERENCES plotting_rooms(id) ON DELETE CASCADE,
+            author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            author_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            body TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_plotting_room_messages_room
+        ON plotting_room_messages(community_id, plotting_room_id, id)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
+    Migration(3, "plotting-room-messages", _add_plotting_room_messages),
 )
 
 
@@ -50,10 +73,12 @@ def apply_migrations(connection: sqlite3.Connection) -> None:
     applied_versions = _applied_versions(connection)
     if not applied_versions:
         _record_migration(connection, CURRENT_SCHEMA_VERSION, BASELINE_MIGRATION_NAME)
+        applied_versions.update(migration.version for migration in MIGRATIONS)
         applied_versions.add(CURRENT_SCHEMA_VERSION)
 
+    baseline_version = max(applied_versions)
     for migration in sorted(MIGRATIONS, key=lambda item: item.version):
-        if migration.version in applied_versions:
+        if migration.version in applied_versions or migration.version <= baseline_version:
             continue
         migration.apply(connection)
         _record_migration(connection, migration.version, migration.name)

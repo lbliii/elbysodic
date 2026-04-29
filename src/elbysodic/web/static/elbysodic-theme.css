@@ -5701,6 +5701,87 @@ body {
     gap: 0.5rem;
 }
 
+.elbysodic-room-chat {
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius-md);
+    display: grid;
+    gap: 0;
+    max-height: min(32rem, 58vh);
+    overflow: auto;
+}
+
+.elbysodic-room-message {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    padding: 0.85rem;
+}
+
+.elbysodic-room-message + .elbysodic-room-message {
+    border-top: 1px solid var(--chirpui-border-subtle);
+}
+
+.elbysodic-room-message__avatar {
+    align-items: center;
+    aspect-ratio: 1;
+    background: var(--chirpui-bg-subtle);
+    border: 1px solid var(--chirpui-border);
+    border-radius: 999px;
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 700;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.elbysodic-room-message__avatar img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.elbysodic-room-message__body {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.elbysodic-room-message__meta {
+    align-items: baseline;
+    color: var(--chirpui-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.5rem;
+}
+
+.elbysodic-room-message__body p {
+    margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.elbysodic-room-composer {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.elbysodic-room-composer__row {
+    align-items: end;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-sse-sink {
+    height: 1px;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+}
+
 @media (max-width: 48rem) {
     .elbysodic-topnav {
         display: none;

@@ -312,6 +312,16 @@ CREATE TABLE IF NOT EXISTS plotting_room_participants (
     UNIQUE (community_id, plotting_room_id, membership_id, character_id)
 );
 
+CREATE TABLE IF NOT EXISTS plotting_room_messages (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    plotting_room_id INTEGER NOT NULL REFERENCES plotting_rooms(id) ON DELETE CASCADE,
+    author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    author_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS character_reserves (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -494,6 +504,8 @@ WHERE character_id IS NULL AND prospective_character_name != '';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_plotting_room_participants_unique_membership_blank
 ON plotting_room_participants(community_id, plotting_room_id, membership_id)
 WHERE character_id IS NULL AND prospective_character_name = '';
+CREATE INDEX IF NOT EXISTS idx_plotting_room_messages_room
+ON plotting_room_messages(community_id, plotting_room_id, id);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_character ON character_reserves(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_wanted ON character_reserves(community_id, wanted_ad_id, status);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
@@ -669,6 +681,7 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     _migrate_wanted_ad_interests_schema(connection)
     _migrate_notifications_schema(connection)
     _migrate_plotting_rooms_schema(connection)
+    _migrate_plotting_room_messages_schema(connection)
 
 
 def _ensure_sidebar_section_defaults(connection: sqlite3.Connection) -> None:
@@ -823,6 +836,28 @@ def _migrate_plotting_rooms_schema(connection: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_plotting_rooms_target_thread
         ON plotting_rooms(community_id, target_thread_id)
+        """
+    )
+
+
+def _migrate_plotting_room_messages_schema(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS plotting_room_messages (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            plotting_room_id INTEGER NOT NULL REFERENCES plotting_rooms(id) ON DELETE CASCADE,
+            author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            author_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            body TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_plotting_room_messages_room
+        ON plotting_room_messages(community_id, plotting_room_id, id)
         """
     )
 

@@ -1,1 +1,1 @@
-Add plotting room planning notes and scene handoff workflow.
+Add plotting room planning notes, live room chat, and scene handoff workflow.

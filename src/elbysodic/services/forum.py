@@ -99,10 +99,14 @@ from elbysodic.services.plotting import (
     create_plotting_room_from_wanted_interest as _create_plotting_room_from_wanted_interest,
 )
 from elbysodic.services.plotting import (
+    create_plotting_room_message as _create_plotting_room_message,
+)
+from elbysodic.services.plotting import (
     create_thread_from_plotting_room as _create_thread_from_plotting_room,
 )
 from elbysodic.services.plotting import plotting_desk as _plotting_desk
 from elbysodic.services.plotting import read_plotting_room as _read_plotting_room
+from elbysodic.services.plotting import subscribe_plotting_room_live, unsubscribe_plotting_room_live
 from elbysodic.services.plotting import update_plotting_room_plan as _update_plotting_room_plan
 from elbysodic.services.posting import join_thread_as_current_character as _join_thread
 from elbysodic.services.posting import read_post_editor as _read_post_editor
@@ -1105,6 +1109,16 @@ class AppServices:
             timeline=timeline,
             posting_mode=posting_mode,
         )
+
+    async def create_plotting_room_message(self, room_id: int, body: str):
+        return await _create_plotting_room_message(self.repo, self.viewer(), room_id, body)
+
+    async def subscribe_plotting_room_live(self, room_id: int):
+        self.read_plotting_room(room_id)
+        return await subscribe_plotting_room_live(room_id)
+
+    async def unsubscribe_plotting_room_live(self, room_id: int, queue):
+        await unsubscribe_plotting_room_live(room_id, queue)
 
     def create_plotting_room_from_plot_hook_interest(
         self,

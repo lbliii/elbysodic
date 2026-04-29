@@ -249,6 +249,7 @@ def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
     assert "character_plot_hook_interests" in tables
     assert "plotting_rooms" in tables
     assert "plotting_room_participants" in tables
+    assert "plotting_room_messages" in tables
     assert "notes" in plotting_columns
     assert "next_step" in plotting_columns
     assert "target_board_id" in plotting_columns
@@ -935,12 +936,20 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
         "Old ghosts",
     )
     threaded_room = repo.attach_plotting_room_thread(default.id, room.id, default_thread.id)
+    message = repo.create_plotting_room_message(
+        default.id,
+        room.id,
+        owner.id,
+        "This should start after the gala.",
+        author_character_id=rogue.id,
+    )
 
     assert planned_room.notes == "Rogue and Gambit decide where the first spark lands."
     assert planned_room.next_step == "Open a scene."
     assert planned_room.target_board_id == default_board.id
     assert threaded_room.target_thread_id == default_thread.id
     assert threaded_room.status == "threaded"
+    assert repo.list_plotting_room_messages(default.id, room.id) == [message]
 
     with pytest.raises(LookupError):
         repo.assign_character_plot_hook_facet(hosted.id, hook.id, x_men.id)
@@ -972,6 +981,21 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
     )
     with pytest.raises(LookupError):
         repo.attach_plotting_room_thread(default.id, room.id, hosted_thread.id)
+    with pytest.raises(LookupError):
+        repo.create_plotting_room_message(
+            hosted.id,
+            room.id,
+            hosted_membership.id,
+            "Wrong room.",
+        )
+    with pytest.raises(TenantBoundaryError):
+        repo.create_plotting_room_message(
+            default.id,
+            room.id,
+            owner.id,
+            "Wrong face.",
+            author_character_id=gambit.id,
+        )
 
 
 def test_plotting_room_participants_are_unique_for_nullable_identity(

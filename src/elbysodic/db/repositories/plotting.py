@@ -6,9 +6,10 @@ from elbysodic.db.repositories.base import TenantBoundaryError, _last_id, _utc_n
 from elbysodic.db.repositories.plot_hooks import PlotHookRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _plotting_room_from_row,
+    _plotting_room_message_from_row,
     _plotting_room_participant_from_row,
 )
-from elbysodic.domain.models import PlottingRoom, PlottingRoomParticipant
+from elbysodic.domain.models import PlottingRoom, PlottingRoomMessage, PlottingRoomParticipant
 
 
 class PlottingRepositoryMixin(PlotHookRepositoryMixin):
@@ -534,3 +535,111 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
             (community_id, plotting_room_id),
         ).fetchall()
         return [_plotting_room_participant_from_row(row) for row in rows]
+
+    def create_plotting_room_message(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        author_membership_id: int,
+        body: str,
+        *,
+        author_character_id: int | None = None,
+    ) -> PlottingRoomMessage:
+        self.get_plotting_room(community_id, plotting_room_id)
+        self.get_membership(community_id, author_membership_id)
+        if author_character_id is not None:
+            character = self.get_character(community_id, author_character_id)
+            if character.membership_id != author_membership_id:
+                raise TenantBoundaryError(
+                    f"character {author_character_id} does not belong to membership {author_membership_id}"
+                )
+        cursor = self.connection.execute(
+            """
+            INSERT INTO plotting_room_messages (
+                community_id,
+                plotting_room_id,
+                author_membership_id,
+                author_character_id,
+                body,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                plotting_room_id,
+                author_membership_id,
+                author_character_id,
+                body,
+                _utc_now(),
+            ),
+        )
+        self.connection.execute(
+            """
+            UPDATE plotting_rooms
+            SET updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (_utc_now(), community_id, plotting_room_id),
+        )
+        self.connection.commit()
+        return self.get_plotting_room_message(community_id, _last_id(cursor))
+
+    def get_plotting_room_message(
+        self,
+        community_id: int,
+        message_id: int,
+    ) -> PlottingRoomMessage:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                plotting_room_id,
+                author_membership_id,
+                author_character_id,
+                body,
+                created_at
+            FROM plotting_room_messages
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, message_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plotting room message not found in community {community_id}: {message_id}"
+            )
+        return _plotting_room_message_from_row(row)
+
+    def list_plotting_room_messages(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        *,
+        after_id: int | None = None,
+        limit: int = 100,
+    ) -> list[PlottingRoomMessage]:
+        self.get_plotting_room(community_id, plotting_room_id)
+        where = "WHERE community_id = ? AND plotting_room_id = ?"
+        params: tuple[object, ...] = (community_id, plotting_room_id)
+        if after_id is not None:
+            where = f"{where} AND id > ?"
+            params = (*params, after_id)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                plotting_room_id,
+                author_membership_id,
+                author_character_id,
+                body,
+                created_at
+            FROM plotting_room_messages
+            {where}
+            ORDER BY id
+            LIMIT ?
+            """,
+            (*params, limit),
+        ).fetchall()
+        return [_plotting_room_message_from_row(row) for row in rows]

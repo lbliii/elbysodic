@@ -22,6 +22,7 @@ from elbysodic.domain.models import (
     Material,
     Notification,
     PlottingRoom,
+    PlottingRoomMessage,
     PlottingRoomParticipant,
     Post,
     PostRevision,
@@ -299,6 +300,18 @@ def _plotting_room_participant_from_row(row: sqlite3.Row) -> PlottingRoomPartici
         character_id=row["character_id"],
         prospective_character_name=row["prospective_character_name"],
         participant_role=row["participant_role"],
+        created_at=row["created_at"],
+    )
+
+
+def _plotting_room_message_from_row(row: sqlite3.Row) -> PlottingRoomMessage:
+    return PlottingRoomMessage(
+        id=row["id"],
+        community_id=row["community_id"],
+        plotting_room_id=row["plotting_room_id"],
+        author_membership_id=row["author_membership_id"],
+        author_character_id=row["author_character_id"],
+        body=row["body"],
         created_at=row["created_at"],
     )
 

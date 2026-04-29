@@ -4,6 +4,27 @@
   {% from "chirpui/surface.html" import surface %}
 {% end %}
 
+{% def room_message_item(item) %}
+{% if item %}
+<article class="elbysodic-room-message" data-message-id="{{ item.message.id }}">
+  <div class="elbysodic-room-message__avatar" aria-hidden="true">
+    {% if item.author_character and item.author_character.avatar_url %}
+    <img src="{{ item.author_character.avatar_url }}" alt="">
+    {% else %}
+    {{ item.author_label[:1] }}
+    {% end %}
+  </div>
+  <div class="elbysodic-room-message__body">
+    <div class="elbysodic-room-message__meta">
+      <a class="chirpui-link" href="{{ item.author_href }}">{{ item.author_label }}</a>
+      <span>{{ item.created_at_label }}</span>
+    </div>
+    <p>{{ item.message.body }}</p>
+  </div>
+</article>
+{% end %}
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
@@ -83,6 +104,67 @@
       {% end %}
     </div>
   </section>
+
+  {% call surface(variant="elevated") %}
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="room-chat">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-kicker">Room chat</p>
+        <h2 id="room-chat">Planning table</h2>
+      </div>
+      <span class="elbysodic-copy-meta">Live while the room is open</span>
+    </div>
+    <div hx-ext="sse"
+         sse-connect="/plotting/{{ room.room.id }}/stream"
+         hx-disinherit="hx-target hx-swap">
+      {% block plotting_room_message_item %}
+      {{ room_message_item(item | default(none)) }}
+      {% end %}
+      <div id="plotting-room-transcript"
+           class="elbysodic-room-chat"
+           role="log"
+           aria-live="polite"
+           aria-relevant="additions"
+           sse-swap="plotting-room-message"
+           hx-swap="beforeend"
+           hx-target="this">
+        {% for item in room.messages %}
+        {{ room_message_item(item) }}
+        {% end %}
+      </div>
+      <div sse-swap="plotting-room-ready"
+           hx-swap="none"
+           hx-target="this"
+           class="elbysodic-sse-sink"></div>
+    </div>
+    {% block plotting_room_message_composer %}
+    {% if room.can_edit_plan %}
+    <form id="plotting-room-composer"
+          method="post"
+          hx-post="/plotting/{{ room.room.id }}"
+          hx-target="#plotting-room-composer"
+          hx-swap="outerHTML"
+          hx-disinherit="hx-select hx-target hx-swap"
+          hx-boost="false"
+          class="elbysodic-room-composer">
+      <input type="hidden" name="intent" value="post_message">
+      <label class="chirpui-field__label" for="room-message">
+        Message{% if viewer.current_character %} as {{ viewer.current_character.name }}{% end %}
+      </label>
+      <div class="elbysodic-room-composer__row">
+        <textarea id="room-message"
+                  class="chirpui-field__input"
+                  name="body"
+                  rows="2"
+                  maxlength="2000"
+                  placeholder="Drop a quick plotting note..."></textarea>
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Send</button>
+      </div>
+    </form>
+    {% end %}
+    {% end %}
+  </section>
+  {% end %}
 
   {% call surface(variant="elevated") %}
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="room-plan">

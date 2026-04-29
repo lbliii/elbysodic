@@ -18,6 +18,7 @@ from elbysodic.domain.models import (
     Material,
     Notification,
     PlottingRoom,
+    PlottingRoomMessage,
     PlottingRoomParticipant,
     Post,
     PostRevision,
@@ -902,6 +903,26 @@ class PlottingRoomParticipantView:
 
 
 @dataclass(frozen=True, slots=True)
+class PlottingRoomMessageView:
+    message: PlottingRoomMessage
+    author_membership: CommunityMembership
+    author_character: Character | None
+    created_at_label: str
+
+    @property
+    def author_label(self) -> str:
+        if self.author_character is not None:
+            return self.author_character.name
+        return self.author_membership.display_name or self.author_membership.username
+
+    @property
+    def author_href(self) -> str:
+        if self.author_character is not None:
+            return f"/characters/{self.author_character.slug}"
+        return f"/members/{self.author_membership.username}"
+
+
+@dataclass(frozen=True, slots=True)
 class PlottingRoomSummary:
     room: PlottingRoom
     participants: list[PlottingRoomParticipantView]
@@ -942,6 +963,7 @@ class PlottingRoomDetail:
     target_thread: Thread | None
     scene_boards: list[Board]
     scene_character_options: list[Character]
+    messages: list[PlottingRoomMessageView]
     created_at_label: str
     can_manage: bool
     can_edit_plan: bool

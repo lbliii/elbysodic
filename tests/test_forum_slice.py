@@ -1673,11 +1673,27 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
             )
             assert save_plan.status == 302
 
+            message_response = await lane_client.post(
+                f"/plotting/{room.id}",
+                body=urlencode(
+                    {
+                        "intent": "post_message",
+                        "body": "I can play Rogue guarded but curious.",
+                    }
+                ).encode(),
+                headers={**_FORM, "HX-Request": "true"},
+            )
+            assert message_response.status == 200
+            assert "plotting-room-composer" in message_response.text
+
         updated_room = repo.get_plotting_room(community.id, room.id)
         assert updated_room.status == "ready"
         assert updated_room.target_board_id == plotting_board.id
         assert updated_room.next_step == "Charles opens with the invitation."
         assert updated_room.notes == "Rogue arrives with a guarded yes."
+        messages = repo.list_plotting_room_messages(community.id, room.id)
+        assert len(messages) == 1
+        assert messages[0].body == "I can play Rogue guarded but curious."
 
         outsider_services, _character_id = _outsider_services(services, prefix="roomcrasher")
         outsider_app = create_app(debug=False, services=outsider_services)
@@ -1690,7 +1706,17 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
             refreshed = await charlie_client.get(f"/plotting/{room.id}")
             assert refreshed.status == 200
             assert "Rogue arrives with a guarded yes." in refreshed.text
+            assert "I can play Rogue guarded but curious." in refreshed.text
+            assert f'sse-connect="/plotting/{room.id}/stream"' in refreshed.text
             assert "Start scene" in refreshed.text
+
+            stream = await charlie_client.sse(
+                f"/plotting/{room.id}/stream",
+                max_events=1,
+                timeout=1.0,
+            )
+            assert stream.status == 200
+            assert stream.events[0].event == "plotting-room-ready"
 
             scene = await charlie_client.post(
                 f"/plotting/{room.id}",

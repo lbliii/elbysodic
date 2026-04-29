@@ -255,6 +255,17 @@ class PlottingRoomParticipant:
 
 
 @dataclass(frozen=True, slots=True)
+class PlottingRoomMessage:
+    id: int
+    community_id: int
+    plotting_room_id: int
+    author_membership_id: int
+    author_character_id: int | None
+    body: str
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class CharacterReserve:
     id: int
     community_id: int

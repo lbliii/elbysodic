@@ -5,7 +5,7 @@ from __future__ import annotations
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
-from chirp.templating.returns import Page
+from chirp.templating.returns import Fragment, Page
 
 from elbysodic.web.state import get_services
 
@@ -14,7 +14,7 @@ def get(request: Request, room_id: str) -> Page:
     return _render_room(request, room_id)
 
 
-async def post(request: Request, room_id: str) -> Page | Redirect:
+async def post(request: Request, room_id: str) -> Fragment | Page | Redirect:
     services = get_services()
     parsed_room_id = _parse_room_id(room_id)
     form = await request.form()
@@ -54,6 +54,27 @@ async def post(request: Request, room_id: str) -> Page | Redirect:
             raise HTTPError(status=403, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/plotting/{parsed_room_id}")
+    if intent == "post_message":
+        try:
+            await services.create_plotting_room_message(
+                parsed_room_id,
+                str(form.get("body") or ""),
+            )
+            room = services.read_plotting_room(parsed_room_id)
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        if request.is_htmx:
+            return Fragment(
+                "plotting/{room_id}/page.html",
+                "plotting_room_message_composer",
+                room=room,
+                viewer=services.viewer(),
+            )
         return Redirect(f"/plotting/{parsed_room_id}")
     raise HTTPError(status=400, detail=f"unknown plotting room intent: {intent}")
 
