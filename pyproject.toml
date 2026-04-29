@@ -95,6 +95,7 @@ ignore = [
 "src/elbysodic/db/repository.py" = ["S608"]
 "src/elbysodic/db/repositories/facets.py" = ["S608"]
 "src/elbysodic/db/repositories/materials.py" = ["S608"]
+"src/elbysodic/db/repositories/plot_hooks.py" = ["S608"]
 "src/elbysodic/db/repositories/wanted.py" = ["S608"]
 
 # =============================================================================
