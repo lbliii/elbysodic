@@ -327,6 +327,66 @@ class CharacterReserve:
 
 
 @dataclass(frozen=True, slots=True)
+class ClaimType:
+    id: int
+    community_id: int
+    slug: str
+    name: str
+    claim_kind: str
+    description: str
+    visibility: str
+    is_required: bool
+    is_exclusive: bool
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterClaim:
+    id: int
+    community_id: int
+    claim_type_id: int
+    character_id: int | None
+    application_id: int | None
+    source_reserve_id: int | None
+    value: str
+    label: str
+    status: str
+    notes: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationTemplateField:
+    id: int
+    community_id: int
+    field_key: str
+    label: str
+    field_type: str
+    help_text: str
+    placeholder: str
+    options_json: str
+    maps_to_claim_type_id: int | None
+    is_required: bool
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationFieldValue:
+    id: int
+    community_id: int
+    application_id: int
+    field_id: int
+    value: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class RealmInteraction:
     id: int
     community_id: int

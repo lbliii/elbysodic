@@ -6,13 +6,17 @@ from dataclasses import dataclass
 from typing import Literal
 
 from elbysodic.domain.models import (
+    ApplicationFieldValue,
+    ApplicationTemplateField,
     Board,
     Character,
     CharacterApplication,
     CharacterApplicationEvent,
+    CharacterClaim,
     CharacterPlotHook,
     CharacterPlotHookInterest,
     CharacterReserve,
+    ClaimType,
     Community,
     CommunityMembership,
     Facet,
@@ -511,6 +515,7 @@ class ApplicationOnboarding:
     facets: list[FacetTag]
     application_materials: list[MaterialSummary]
     interactions: list[RealmInteractionSummary]
+    template_fields: list[ApplicationTemplateFieldView]
 
 
 @dataclass(frozen=True, slots=True)
@@ -528,6 +533,7 @@ class ApplicationReviewEventView:
 class ApplicationReviewRoom:
     application: CharacterApplication
     character_view: ApplicationCharacterView
+    field_values: list[ApplicationFieldValueView]
     events: list[ApplicationReviewEventView]
     can_edit_application: bool
     can_review: bool
@@ -589,6 +595,61 @@ class RealmInteractionDetail:
 @dataclass(frozen=True, slots=True)
 class RealmInteractionHub:
     interactions: list[RealmInteractionSummary]
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationTemplateFieldView:
+    field: ApplicationTemplateField
+    options: list[str]
+    mapped_claim_type: ClaimType | None
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationFieldValueView:
+    value: ApplicationFieldValue
+    field: ApplicationTemplateFieldView
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterClaimView:
+    claim: CharacterClaim
+    claim_type: ClaimType
+    character: Character | None
+    application: CharacterApplication | None
+
+    @property
+    def status_label(self) -> str:
+        return self.claim.status.title()
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimTypeDirectory:
+    claim_type: ClaimType
+    claims: list[CharacterClaimView]
+    template_fields: list[ApplicationTemplateFieldView]
+
+    @property
+    def live_count(self) -> int:
+        return len(
+            [claim for claim in self.claims if claim.claim.status in {"claimed", "reserved"}]
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimsDirectory:
+    groups: list[ClaimTypeDirectory]
+
+    @property
+    def claim_count(self) -> int:
+        return sum(len(group.claims) for group in self.groups)
+
+    @property
+    def required_count(self) -> int:
+        return len([group for group in self.groups if group.claim_type.is_required])
+
+    @property
+    def claim_type_names(self) -> list[str]:
+        return [group.claim_type.name for group in self.groups]
 
 
 @dataclass(frozen=True, slots=True)
@@ -829,6 +890,7 @@ class DirectorStudio:
     wanted_ads: list[WantedAdSummary]
     open_wanted_ads: list[WantedAdSummary]
     applications: ApplicationsDesk
+    claims: ClaimsDirectory
 
     @property
     def material_count(self) -> int:

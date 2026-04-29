@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 5
+CURRENT_SCHEMA_VERSION = 6
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -235,11 +235,116 @@ def _add_realm_interactions(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_intake_claims(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS claim_types (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            slug TEXT NOT NULL,
+            name TEXT NOT NULL,
+            claim_kind TEXT NOT NULL DEFAULT 'custom',
+            description TEXT NOT NULL DEFAULT '',
+            visibility TEXT NOT NULL DEFAULT 'public',
+            is_required INTEGER NOT NULL DEFAULT 0,
+            is_exclusive INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, slug)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS character_claims (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            claim_type_id INTEGER NOT NULL REFERENCES claim_types(id) ON DELETE CASCADE,
+            character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
+            application_id INTEGER REFERENCES applications(id) ON DELETE SET NULL,
+            source_reserve_id INTEGER REFERENCES character_reserves(id) ON DELETE SET NULL,
+            value TEXT NOT NULL,
+            label TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'claimed',
+            notes TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS application_template_fields (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            field_key TEXT NOT NULL,
+            label TEXT NOT NULL,
+            field_type TEXT NOT NULL DEFAULT 'text',
+            help_text TEXT NOT NULL DEFAULT '',
+            placeholder TEXT NOT NULL DEFAULT '',
+            options_json TEXT NOT NULL DEFAULT '[]',
+            maps_to_claim_type_id INTEGER REFERENCES claim_types(id) ON DELETE SET NULL,
+            is_required INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, field_key)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS application_field_values (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+            field_id INTEGER NOT NULL REFERENCES application_template_fields(id) ON DELETE CASCADE,
+            value TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, application_id, field_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_claim_types_community
+        ON claim_types(community_id, sort_order, name)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_character_claims_community
+        ON character_claims(community_id, status, claim_type_id, label)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_character_claims_character
+        ON character_claims(community_id, character_id, status)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_application_template_fields_community
+        ON application_template_fields(community_id, sort_order, label)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_application_field_values_application
+        ON application_field_values(community_id, application_id, field_id)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
     Migration(4, "application-review-rooms", _add_application_review_rooms),
     Migration(5, "realm-interactions", _add_realm_interactions),
+    Migration(6, "intake-claims", _add_intake_claims),
 )
 
 

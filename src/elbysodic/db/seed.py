@@ -65,6 +65,37 @@ class InteractionSeed:
     questions: tuple[InteractionQuestionSeed, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class ClaimTypeSeed:
+    slug: str
+    name: str
+    claim_kind: str
+    description: str
+    is_required: bool = False
+    is_exclusive: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationFieldSeed:
+    field_key: str
+    label: str
+    field_type: str
+    help_text: str
+    placeholder: str = ""
+    options: tuple[str, ...] = ()
+    maps_to_claim_type_slug: str | None = None
+    is_required: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimSeed:
+    claim_type_slug: str
+    character_slug: str
+    value: str
+    label: str
+    status: str = "claimed"
+
+
 STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
     ProgramBlueprint(
         slug="hp-universe",
@@ -940,6 +971,269 @@ STUDIO_REALM_INTERACTIONS: dict[str, tuple[InteractionSeed, ...]] = {
 }
 
 
+DEFAULT_CLAIM_TYPES: tuple[ClaimTypeSeed, ...] = (
+    ClaimTypeSeed(
+        "face",
+        "Face Claim",
+        "face",
+        "Public actor, model, or visual reference used by a face.",
+        is_required=True,
+        is_exclusive=True,
+    ),
+    ClaimTypeSeed(
+        "faction",
+        "Faction Claim",
+        "faction",
+        "The character's primary political or story allegiance.",
+        is_required=True,
+    ),
+    ClaimTypeSeed(
+        "power",
+        "Power Claim",
+        "ability",
+        "The mutation, ability lane, or signature capability directors should track.",
+    ),
+)
+
+
+DEFAULT_APPLICATION_FIELDS: tuple[ApplicationFieldSeed, ...] = (
+    ApplicationFieldSeed(
+        "face_claim",
+        "Face claim",
+        "text",
+        "The public visual reference you want directors to reserve.",
+        placeholder="Example: Ian McKellen",
+        maps_to_claim_type_slug="face",
+        is_required=True,
+    ),
+    ApplicationFieldSeed(
+        "faction_claim",
+        "Primary faction",
+        "select",
+        "Choose the story lane that should shape staff review and plotting defaults.",
+        options=("X-Men", "Brotherhood", "United Nations", "Evil Lab", "Civilian"),
+        maps_to_claim_type_slug="faction",
+        is_required=True,
+    ),
+    ApplicationFieldSeed(
+        "power_claim",
+        "Power or role claim",
+        "text",
+        "A concise mutation, ability, or production role directors should avoid duplicating.",
+        placeholder="Metal manipulation, evacuation medic, UN analyst",
+        maps_to_claim_type_slug="power",
+    ),
+)
+
+
+DEFAULT_CLAIMS: tuple[ClaimSeed, ...] = (
+    ClaimSeed("face", "magneto", "magneto-visual", "Magneto visual reference"),
+    ClaimSeed("face", "rogue", "rogue-visual", "Rogue visual reference"),
+    ClaimSeed("face", "storm", "storm-visual", "Storm visual reference"),
+    ClaimSeed("faction", "magneto", "brotherhood", "Brotherhood"),
+    ClaimSeed("faction", "rogue", "x-men", "X-Men"),
+    ClaimSeed("faction", "storm", "x-men", "X-Men", status="available"),
+)
+
+
+STUDIO_CLAIM_TYPES: dict[str, tuple[ClaimTypeSeed, ...]] = {
+    "hp-universe": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed("house", "House Claim", "faction", "School house or social lane.", True),
+        ClaimTypeSeed(
+            "year", "Year Claim", "rank", "Student year, graduate status, or faculty role."
+        ),
+    ),
+    "jurassic-park-universe": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "department",
+            "Department Claim",
+            "occupation",
+            "Park, lab, security, or guest-facing department.",
+            True,
+        ),
+        ClaimTypeSeed(
+            "clearance",
+            "Clearance Claim",
+            "access",
+            "What this face is allowed to know before things go wrong.",
+        ),
+    ),
+    "rl-nyc": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "occupation",
+            "Occupation Claim",
+            "occupation",
+            "Work, art, nightlife, or survival lane.",
+        ),
+        ClaimTypeSeed("borough", "Borough Claim", "location", "Primary neighborhood pressure."),
+    ),
+    "rl-small-town": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "family", "Family Claim", "relationship", "Local family, newcomer tie, or town lineage."
+        ),
+        ClaimTypeSeed(
+            "business", "Business Claim", "occupation", "Shop, service, civic office, or workplace."
+        ),
+    ),
+}
+
+
+STUDIO_APPLICATION_FIELDS: dict[str, tuple[ApplicationFieldSeed, ...]] = {
+    "hp-universe": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "house_claim",
+            "House or lane",
+            "select",
+            "The school pressure lane that best fits your concept.",
+            options=("Gryffindor", "Slytherin", "Ravenclaw", "Hufflepuff", "Faculty", "Hogsmeade"),
+            maps_to_claim_type_slug="house",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "year_claim",
+            "Year or role",
+            "text",
+            "Student year, graduate status, faculty role, or adult tie.",
+            placeholder="Seventh year, professor, shopkeeper",
+            maps_to_claim_type_slug="year",
+        ),
+    ),
+    "jurassic-park-universe": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "department_claim",
+            "Department",
+            "select",
+            "Where this character creates immediate island pressure.",
+            options=(
+                "Paleobiology",
+                "Security",
+                "Guest Services",
+                "Operations",
+                "Executive",
+                "Visitor",
+            ),
+            maps_to_claim_type_slug="department",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "clearance_claim",
+            "Clearance",
+            "text",
+            "What they are allowed to know before the incident escalates.",
+            placeholder="Guest-only, paddock access, lab access",
+            maps_to_claim_type_slug="clearance",
+        ),
+    ),
+    "rl-nyc": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "occupation_claim",
+            "Occupation",
+            "text",
+            "The work or creative lane people know them by.",
+            placeholder="Bartender, stylist, gallery assistant",
+            maps_to_claim_type_slug="occupation",
+        ),
+        ApplicationFieldSeed(
+            "borough_claim",
+            "Borough",
+            "select",
+            "Where their day-to-day story tends to orbit.",
+            options=(
+                "Manhattan",
+                "Brooklyn",
+                "Queens",
+                "The Bronx",
+                "Staten Island",
+                "Jersey-adjacent",
+            ),
+            maps_to_claim_type_slug="borough",
+        ),
+    ),
+    "rl-small-town": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "family_claim",
+            "Family or local tie",
+            "text",
+            "A lineage, newcomer tie, or relationship pressure the town recognizes.",
+            placeholder="The Vale family, returning cousin, new arrival",
+            maps_to_claim_type_slug="family",
+        ),
+        ApplicationFieldSeed(
+            "business_claim",
+            "Business or civic role",
+            "text",
+            "A workplace, shop, church committee, volunteer role, or office.",
+            placeholder="Diner owner, council aide, mechanic",
+            maps_to_claim_type_slug="business",
+        ),
+    ),
+}
+
+
 def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     """Seed a small X-Men themed play-by-post community for local development.
 
@@ -1659,6 +1953,12 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     _assign_board_facets(repo, community.id, staff_room.id, facets, ["staff"])
     _seed_materials(repo, community.id, facets)
     _seed_realm_interactions(repo, community.id, DEFAULT_REALM_INTERACTIONS)
+    _seed_intake_claims(
+        repo,
+        community.id,
+        claim_types=DEFAULT_CLAIM_TYPES,
+        application_fields=DEFAULT_APPLICATION_FIELDS,
+    )
     _seed_wanted_ads(
         repo,
         community.id,
@@ -1669,6 +1969,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         trask=trask,
     )
     _seed_plot_hooks(repo, community.id, facets, rogue=rogue, magneto=magneto)
+    _seed_character_claims(repo, community.id, DEFAULT_CLAIMS)
 
     welcome = _get_or_create(
         lambda: repo.get_thread_by_slug(
@@ -2593,6 +2894,12 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             community.id,
             STUDIO_REALM_INTERACTIONS.get(program.slug, ()),
         )
+        _seed_intake_claims(
+            repo,
+            community.id,
+            claim_types=STUDIO_CLAIM_TYPES.get(program.slug, ()),
+            application_fields=STUDIO_APPLICATION_FIELDS.get(program.slug, ()),
+        )
 
 
 def _ensure_studio_program_community(
@@ -2787,6 +3094,113 @@ def _seed_realm_interactions(
                     result_key=option_seed.result_key,
                     sort_order=option_index * 10,
                 )
+
+
+def _seed_intake_claims(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    claim_types: tuple[ClaimTypeSeed, ...],
+    application_fields: tuple[ApplicationFieldSeed, ...],
+) -> None:
+    claim_types_by_slug = {}
+    for index, claim_type_seed in enumerate(claim_types, start=1):
+        claim_type = _get_or_create(
+            lambda community_id=community_id, claim_type_seed=claim_type_seed: (
+                repo.get_claim_type_by_slug(community_id, claim_type_seed.slug)
+            ),
+            lambda community_id=community_id, claim_type_seed=claim_type_seed, index=index: (
+                repo.create_claim_type(
+                    community_id,
+                    claim_type_seed.slug,
+                    claim_type_seed.name,
+                    claim_kind=claim_type_seed.claim_kind,
+                    description=claim_type_seed.description,
+                    is_required=claim_type_seed.is_required,
+                    is_exclusive=claim_type_seed.is_exclusive,
+                    sort_order=index * 10,
+                )
+            ),
+        )
+        claim_types_by_slug[claim_type.slug] = repo.update_claim_type(
+            community_id,
+            claim_type.id,
+            name=claim_type_seed.name,
+            claim_kind=claim_type_seed.claim_kind,
+            description=claim_type_seed.description,
+            is_required=claim_type_seed.is_required,
+            is_exclusive=claim_type_seed.is_exclusive,
+            sort_order=index * 10,
+        )
+
+    for index, field_seed in enumerate(application_fields, start=1):
+        mapped_claim_type_id = None
+        if field_seed.maps_to_claim_type_slug is not None:
+            mapped_claim_type_id = claim_types_by_slug[field_seed.maps_to_claim_type_slug].id
+        options_json = json.dumps(list(field_seed.options), separators=(",", ":"))
+        field = _get_or_create(
+            lambda community_id=community_id, field_seed=field_seed: (
+                repo.get_application_template_field_by_key(
+                    community_id,
+                    field_seed.field_key,
+                )
+            ),
+            lambda community_id=community_id, field_seed=field_seed, mapped_claim_type_id=mapped_claim_type_id, options_json=options_json, index=index: (
+                repo.create_application_template_field(
+                    community_id,
+                    field_seed.field_key,
+                    field_seed.label,
+                    field_type=field_seed.field_type,
+                    help_text=field_seed.help_text,
+                    placeholder=field_seed.placeholder,
+                    options_json=options_json,
+                    maps_to_claim_type_id=mapped_claim_type_id,
+                    is_required=field_seed.is_required,
+                    sort_order=index * 10,
+                )
+            ),
+        )
+        repo.update_application_template_field(
+            community_id,
+            field.id,
+            label=field_seed.label,
+            field_type=field_seed.field_type,
+            help_text=field_seed.help_text,
+            placeholder=field_seed.placeholder,
+            options_json=options_json,
+            maps_to_claim_type_id=mapped_claim_type_id,
+            is_required=field_seed.is_required,
+            sort_order=index * 10,
+        )
+
+
+def _seed_character_claims(
+    repo: ForumRepository,
+    community_id: int,
+    claims: tuple[ClaimSeed, ...],
+) -> None:
+    for claim_seed in claims:
+        claim_type = repo.get_claim_type_by_slug(community_id, claim_seed.claim_type_slug)
+        character = repo.get_character_by_slug(community_id, claim_seed.character_slug)
+        existing = [
+            claim
+            for claim in repo.list_character_claims(
+                community_id,
+                status=None,
+                claim_type_id=claim_type.id,
+            )
+            if claim.value == claim_seed.value
+        ]
+        if existing:
+            continue
+        repo.create_character_claim(
+            community_id,
+            claim_type.id,
+            claim_seed.value,
+            claim_seed.label,
+            character_id=character.id,
+            status=claim_seed.status,
+        )
 
 
 def _ensure_post(

@@ -616,6 +616,15 @@
       studio.review_queue_count,
       studio.application_material_titles or ["No application guides are live yet."]
     ) }}
+    {{ studio_lane(
+      "Claims",
+      "Intake tables",
+      "Face, canon, faction, role, and realm-specific availability without manual table maintenance.",
+      "/claims",
+      "Open claims",
+      studio.claims.claim_count,
+      studio.claims.claim_type_names[:4] or ["No claim types configured yet."]
+    ) }}
   </section>
   </section>
 
@@ -663,6 +672,29 @@
       </ul>
       {% else %}
       <p class="elbysodic-director-note">No open wanted hooks need director attention.</p>
+      {% end %}
+    </article>
+    {% end %}
+
+    {% call surface(variant="elevated") %}
+    <article class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-kicker">Intake</p>
+      <h2>Claims and fields</h2>
+      <p class="elbysodic-copy-helper">
+        Application fields now map to claim tables so directors can see launch-readiness.
+      </p>
+      <div class="elbysodic-director-mini-grid">
+        {{ studio_signal("Types", studio.claims.groups | length) }}
+        {{ studio_signal("Claims", studio.claims.claim_count) }}
+      </div>
+      {% if studio.claims.groups %}
+      <ul class="elbysodic-director-list">
+        {% for group in studio.claims.groups[:4] %}
+        <li><a href="/claims">{{ group.claim_type.name }}</a></li>
+        {% end %}
+      </ul>
+      {% else %}
+      <p class="elbysodic-director-note">No claim types have been configured yet.</p>
       {% end %}
     </article>
     {% end %}

@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import re
 from typing import Protocol
 
 from elbysodic.domain.models import (
+    ApplicationFieldValue,
+    ApplicationTemplateField,
     Character,
     CharacterApplication,
     CharacterApplicationEvent,
+    CharacterClaim,
+    ClaimType,
     CommunityMembership,
     Material,
     Notification,
@@ -15,6 +20,7 @@ from elbysodic.domain.models import (
 )
 from elbysodic.services import policies
 from elbysodic.services.casting import CastingReadRepository, character_reserve_view
+from elbysodic.services.claims import application_field_value_view
 from elbysodic.services.facets import facet_tags
 from elbysodic.services.materials import MaterialSummaryRepository, material_summary
 from elbysodic.services.read_models import (
@@ -37,6 +43,12 @@ class ApplicationRepository(
     Protocol,
 ):
     def get_character_by_slug(self, community_id: int, slug: str) -> Character: ...
+
+    def get_character_application(
+        self,
+        community_id: int,
+        application_id: int,
+    ) -> CharacterApplication: ...
 
     def get_role(self, community_id: int, role_id: int) -> Role: ...
 
@@ -106,6 +118,57 @@ class ApplicationRepository(
         community_id: int,
         application_id: int,
     ) -> list[CharacterApplicationEvent]: ...
+
+    def list_application_template_fields(
+        self,
+        community_id: int,
+    ) -> list[ApplicationTemplateField]: ...
+
+    def list_claim_types(self, community_id: int) -> list[ClaimType]: ...
+
+    def get_claim_type(self, community_id: int, claim_type_id: int) -> ClaimType: ...
+
+    def get_application_template_field(
+        self,
+        community_id: int,
+        field_id: int,
+    ) -> ApplicationTemplateField: ...
+
+    def list_application_field_values(
+        self,
+        community_id: int,
+        application_id: int,
+    ) -> list[ApplicationFieldValue]: ...
+
+    def create_character_claim(
+        self,
+        community_id: int,
+        claim_type_id: int,
+        value: str,
+        label: str,
+        *,
+        character_id: int | None = None,
+        application_id: int | None = None,
+        source_reserve_id: int | None = None,
+        status: str = "claimed",
+        notes: str = "",
+    ) -> CharacterClaim: ...
+
+    def list_character_claims_for_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        status: str | None = "claimed",
+    ) -> list[CharacterClaim]: ...
+
+    def list_character_claims(
+        self,
+        community_id: int,
+        *,
+        status: str | None = "claimed",
+        claim_type_id: int | None = None,
+    ) -> list[CharacterClaim]: ...
 
     def create_notification(
         self,
@@ -200,6 +263,7 @@ def accept_character_application(
         actor_character_id=application_actor_character_id(viewer, character),
         note="Accepted for play.",
     )
+    hydrate_application_claims(repo, viewer, character, application)
     character = repo.get_character(viewer.community.id, character.id)
     notify_application_owner(repo, viewer, character, "application_accepted")
     return character
@@ -260,6 +324,10 @@ def read_application_review_room(
     return ApplicationReviewRoom(
         application=application,
         character_view=character_view,
+        field_values=[
+            application_field_value_view(repo, viewer.community.id, value)
+            for value in repo.list_application_field_values(viewer.community.id, application.id)
+        ],
         events=[
             application_review_event_view(repo, viewer, event)
             for event in repo.list_character_application_events(viewer.community.id, application.id)
@@ -317,6 +385,65 @@ def update_application_review(
         staff_notes=_clean_application_text(staff_notes, field_name="staff notes"),
         checklist=_clean_application_text(checklist, field_name="checklist"),
     )
+
+
+def hydrate_application_claims(
+    repo: ApplicationRepository,
+    viewer: ForumView,
+    character: Character,
+    application: CharacterApplication,
+) -> list[CharacterClaim]:
+    fields = {
+        field.id: field for field in repo.list_application_template_fields(viewer.community.id)
+    }
+    existing_claims = repo.list_character_claims_for_character(
+        viewer.community.id,
+        character.id,
+        status=None,
+    )
+    created_claims = []
+    for field_value in repo.list_application_field_values(viewer.community.id, application.id):
+        field = fields.get(field_value.field_id)
+        if field is None or field.maps_to_claim_type_id is None:
+            continue
+        label = field_value.value.strip()
+        if not label:
+            continue
+        claim_type = repo.get_claim_type(viewer.community.id, field.maps_to_claim_type_id)
+        claim_value = _claim_value_key(label)
+        if any(
+            claim.claim_type_id == field.maps_to_claim_type_id
+            and claim.value == claim_value
+            and claim.status in {"claimed", "reserved"}
+            for claim in existing_claims
+        ):
+            continue
+        if claim_type.is_exclusive:
+            conflicting_claims = repo.list_character_claims(
+                viewer.community.id,
+                status=None,
+                claim_type_id=field.maps_to_claim_type_id,
+            )
+            if any(
+                claim.value == claim_value
+                and claim.status in {"claimed", "reserved"}
+                and claim.character_id != character.id
+                for claim in conflicting_claims
+            ):
+                raise ValueError(f"{field.label} is already claimed: {label}")
+        created = repo.create_character_claim(
+            viewer.community.id,
+            field.maps_to_claim_type_id,
+            claim_value,
+            label,
+            character_id=character.id,
+            application_id=application.id,
+            status="claimed",
+            notes=f"Accepted from application field: {field.label}",
+        )
+        existing_claims.append(created)
+        created_claims.append(created)
+    return created_claims
 
 
 def application_character_view(
@@ -436,3 +563,8 @@ def _clean_application_text(value: str, *, field_name: str) -> str:
     if len(cleaned) > MAX_APPLICATION_FIELD_LENGTH:
         raise ValueError(f"{field_name} must be {MAX_APPLICATION_FIELD_LENGTH} characters or fewer")
     return cleaned
+
+
+def _claim_value_key(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return normalized or value.strip().lower()

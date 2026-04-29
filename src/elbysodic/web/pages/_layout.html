@@ -82,7 +82,7 @@
 {% set topbar_path = current_path or "/" %}
 {% set world_active = topbar_path == "/" or topbar_path == "/locations" or topbar_path.startswith("/locations/") or topbar_path == "/community" or topbar_path.startswith("/community/") or topbar_path.startswith("/boards/") %}
 {% set guidebook_active = topbar_path == "/world" or topbar_path.startswith("/world/") %}
-{% set wanted_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") %}
+{% set wanted_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/claims" or topbar_path.startswith("/claims/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") %}
 {% set studio_active = topbar_path == "/studio" or topbar_path.startswith("/studio/") %}
 {% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/network" or topbar_path.startswith("/network/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/interactions" or topbar_path.startswith("/interactions/") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
@@ -431,6 +431,7 @@
     <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
     <a class="chirpui-sidebar__link" href="/wanted" title="Wanted board">Wanted board</a>
     <a class="chirpui-sidebar__link" href="/casting" title="Casting desk">Casting desk</a>
+    <a class="chirpui-sidebar__link" href="/claims" title="Claims directory">Claims</a>
     {% if viewer %}
     {% for item in viewer.studio_navigation_boards %}
     {{ sidebar_count_link("/boards/" ~ item.board.slug, item.board.name, item.unread_thread_count, board is defined and board.id == item.board.id) }}
@@ -450,6 +451,7 @@
   {% call sidebar_section() %}
     {{ sidebar_destination_link("/wanted", "Wanted board", "star", sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/")) }}
     <a class="chirpui-sidebar__link" href="/casting" title="Casting desk">Casting desk</a>
+    <a class="chirpui-sidebar__link" href="/claims" title="Claims directory">Claims</a>
     <a class="chirpui-sidebar__link" href="/applications" title="Applications">Applications</a>
   {% end %}
 
@@ -477,7 +479,7 @@
 {% def elbysodic_sidebar() %}
 {% set sidebar_path = current_path or "/" %}
 {% set is_guidebook = sidebar_path == "/world" or sidebar_path.startswith("/world/") %}
-{% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") %}
+{% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/claims" or sidebar_path.startswith("/claims/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") %}
 {% set is_studio = sidebar_path == "/studio" or sidebar_path.startswith("/studio/") %}
 {% set is_desk = sidebar_path == "/desk" or sidebar_path.startswith("/desk/") or sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads") or sidebar_path == "/notifications" or sidebar_path.startswith("/notifications") or sidebar_path == "/characters" or sidebar_path.startswith("/characters/") or sidebar_path == "/applications" or sidebar_path.startswith("/applications") or sidebar_path == "/interactions" or sidebar_path.startswith("/interactions/") or sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
 {% set board_sidebar_section = board?.sidebar_section ?? "" if board is defined else "" %}

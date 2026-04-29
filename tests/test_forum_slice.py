@@ -1838,6 +1838,10 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         services = get_services()
         community = services.seed.community
         facet = services.repo.get_facet_by_slug(community.id, "x-men")
+        fields = {
+            field.field_key: field
+            for field in services.repo.list_application_template_fields(community.id)
+        }
 
         async with TestClient(app) as client:
             form = await client.get("/applications/new")
@@ -1849,6 +1853,9 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                         "summary": "A powerful telepath trying to stay gentle.",
                         "body": "Looking for school pressure, found family, and dangerous rescue work.",
                         "facet_slugs": [facet.slug],
+                        f"application_field_{fields['face_claim'].id}": "Famke Janssen",
+                        f"application_field_{fields['faction_claim'].id}": "X-Men",
+                        f"application_field_{fields['power_claim'].id}": "Telepathy",
                     },
                     doseq=True,
                 ).encode(),
@@ -1862,22 +1869,86 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
             community.id,
             character.id,
         )
+        field_values = services.repo.list_application_field_values(community.id, application.id)
         facets = services.repo.list_character_facets(community.id, character.id)
 
         assert form.status == 200
         assert "Begin a new face for this realm." in form.text
         assert "Application Guide" in form.text
+        assert "Director fields" in form.text
+        assert "Face claim" in form.text
         assert response.status == 302
         assert _response_header(response, "location") == "/applications/jean-grey"
         assert character.application_status == "draft"
         assert application.summary == "A powerful telepath trying to stay gentle."
         assert "dangerous rescue work" in application.body
+        assert "Application fields" in application.body
+        assert "Face claim: Famke Janssen" in application.body
+        assert "Primary faction: X-Men" in application.body
+        assert {value.value for value in field_values} == {
+            "Famke Janssen",
+            "Telepathy",
+            "X-Men",
+        }
         assert [assigned.slug for assigned in facets] == ["x-men"]
         assert room.status == 200
         assert "Jean Grey" in room.text
+        assert "Intake Fields" in room.text
+        assert "maps to Face Claim" in room.text
         assert "Draft" in room.text
         assert applications.status == 200
         assert "Jean Grey" in applications.text
+
+        async with TestClient(app) as client:
+            submit_response = await client.post(
+                "/applications",
+                body=urlencode(
+                    {
+                        "intent": "submit_application",
+                        "character_slug": "jean-grey",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+        assert submit_response.status == 302
+
+        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
+        alex_user = services.repo.get_user(alex_membership.user_id)
+        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
+        alex_services = AppServices(
+            services.repo,
+            DemoSeed(community, alex_user, alex_membership, cyclops),
+        )
+        alex_app = create_app(debug=False, services=alex_services)
+        async with TestClient(alex_app) as alex_client:
+            review_room = await alex_client.get("/applications/jean-grey")
+            accept_response = await alex_client.post(
+                "/applications/jean-grey",
+                body=urlencode({"intent": "accept_application"}).encode(),
+                headers=_FORM,
+            )
+            claims = await alex_client.get("/claims")
+
+        accepted_claims = services.repo.list_character_claims_for_character(
+            community.id,
+            character.id,
+            status=None,
+        )
+        assert review_room.status == 200
+        assert "Intake Fields" in review_room.text
+        assert accept_response.status == 302
+        assert {claim.label for claim in accepted_claims} == {
+            "Famke Janssen",
+            "Telepathy",
+            "X-Men",
+        }
+        assert {claim.value for claim in accepted_claims} == {
+            "famke-janssen",
+            "telepathy",
+            "x-men",
+        }
+        assert claims.status == 200
+        assert "Famke Janssen" in claims.text
 
     asyncio.run(run())
 
@@ -1887,6 +1958,14 @@ def test_application_start_form_preserves_validation_errors_and_unique_slugs() -
         app = _app()
         services = get_services()
         community = services.seed.community
+        fields = {
+            field.field_key: field
+            for field in services.repo.list_application_template_fields(community.id)
+        }
+        dynamic_fields = {
+            f"application_field_{fields['face_claim'].id}": "Echo Visual",
+            f"application_field_{fields['faction_claim'].id}": "X-Men",
+        }
 
         async with TestClient(app) as client:
             invalid = await client.post(
@@ -1894,19 +1973,43 @@ def test_application_start_form_preserves_validation_errors_and_unique_slugs() -
                 body=urlencode({"name": "", "summary": "A concept"}).encode(),
                 headers=_FORM,
             )
+            missing_required_field = await client.post(
+                "/applications/new",
+                body=urlencode(
+                    {
+                        "name": "Missing Claim",
+                        "summary": "A concept",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
             first = await client.post(
                 "/applications/new",
-                body=urlencode({"name": "Echo", "summary": "First draft"}).encode(),
+                body=urlencode(
+                    {
+                        "name": "Echo",
+                        "summary": "First draft",
+                        **dynamic_fields,
+                    }
+                ).encode(),
                 headers=_FORM,
             )
             second = await client.post(
                 "/applications/new",
-                body=urlencode({"name": "Echo", "summary": "Second draft"}).encode(),
+                body=urlencode(
+                    {
+                        "name": "Echo",
+                        "summary": "Second draft",
+                        **dynamic_fields,
+                    }
+                ).encode(),
                 headers=_FORM,
             )
 
         assert invalid.status == 200
         assert "character name is required" in invalid.text
+        assert missing_required_field.status == 200
+        assert "Face claim is required" in missing_required_field.text
         assert first.status == 302
         assert _response_header(first, "location") == "/applications/echo"
         assert second.status == 302
@@ -1948,6 +2051,27 @@ def test_network_start_application_switches_to_realm_form() -> None:
         assert form.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in form.text
         assert "Begin a new face for this realm." in form.text
+
+    asyncio.run(run())
+
+
+def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            claims = await client.get("/claims")
+            studio = await client.get("/studio")
+
+        assert claims.status == 200
+        assert "What is taken, open, and expected." in claims.text
+        assert "Face Claim" in claims.text
+        assert "Faction Claim" in claims.text
+        assert "Magneto visual reference" in claims.text
+        assert "Brotherhood" in claims.text
+        assert "Collected by Face claim on the application template." in claims.text
+        assert studio.status == 200
+        assert "Claims and fields" in studio.text
+        assert 'href="/claims"' in studio.text
 
     asyncio.run(run())
 

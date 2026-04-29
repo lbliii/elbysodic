@@ -275,6 +275,146 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
         )
 
 
+def test_claim_types_template_fields_and_character_claims_are_scoped(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("claims@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "claimant",
+        "Claimant",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "claimant",
+        "Claimant",
+    )
+    default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "default-face",
+        "Default Face",
+    )
+    second_default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "second-face",
+        "Second Face",
+    )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-face",
+        "Hosted Face",
+    )
+
+    default_face = repo.create_claim_type(
+        default.id,
+        "face",
+        "Face Claim",
+        claim_kind="face",
+        is_required=True,
+        is_exclusive=True,
+    )
+    default_faction = repo.create_claim_type(
+        default.id,
+        "faction",
+        "Faction Claim",
+        claim_kind="faction",
+    )
+    hosted_face = repo.create_claim_type(
+        hosted.id,
+        "face",
+        "Hosted Face Claim",
+        claim_kind="face",
+        is_exclusive=True,
+    )
+    field = repo.create_application_template_field(
+        default.id,
+        "face_claim",
+        "Face claim",
+        field_type="text",
+        maps_to_claim_type_id=default_face.id,
+        is_required=True,
+    )
+    application = repo.ensure_character_application(default.id, default_character.id)
+    field_value = repo.set_application_field_value(
+        default.id,
+        application.id,
+        field.id,
+        "Sample Face",
+    )
+
+    repo.create_character_claim(
+        default.id,
+        default_face.id,
+        "sample-face",
+        "Sample Face",
+        character_id=default_character.id,
+    )
+    repo.create_character_claim(
+        default.id,
+        default_faction.id,
+        "x-men",
+        "X-Men",
+        character_id=default_character.id,
+    )
+    repo.create_character_claim(
+        default.id,
+        default_faction.id,
+        "x-men",
+        "X-Men",
+        character_id=second_default_character.id,
+    )
+    repo.create_character_claim(
+        hosted.id,
+        hosted_face.id,
+        "sample-face",
+        "Sample Face",
+        character_id=hosted_character.id,
+    )
+
+    assert repo.get_claim_type_by_slug(default.id, "face").name == "Face Claim"
+    assert repo.get_claim_type_by_slug(hosted.id, "face").name == "Hosted Face Claim"
+    assert repo.get_application_template_field_by_key(default.id, "face_claim").id == field.id
+    assert (
+        repo.get_application_field_value(default.id, application.id, field.id).id == field_value.id
+    )
+    assert [
+        value.value for value in repo.list_application_field_values(default.id, application.id)
+    ] == ["Sample Face"]
+    assert len(repo.list_character_claims(default.id, claim_type_id=default_faction.id)) == 2
+    assert len(repo.list_character_claims(hosted.id, claim_type_id=hosted_face.id)) == 1
+
+    with pytest.raises(TenantBoundaryError, match="claim value is already in use"):
+        repo.create_character_claim(
+            default.id,
+            default_face.id,
+            "sample-face",
+            "Duplicate Sample Face",
+            character_id=second_default_character.id,
+        )
+    with pytest.raises(LookupError, match="claim type not found"):
+        repo.get_claim_type(hosted.id, default_face.id)
+    with pytest.raises(LookupError, match="claim type not found"):
+        repo.create_application_template_field(
+            hosted.id,
+            "bad_field",
+            "Bad field",
+            maps_to_claim_type_id=default_face.id,
+        )
+    with pytest.raises(LookupError, match="application not found"):
+        repo.set_application_field_value(hosted.id, application.id, field.id, "Leak")
+
+
 def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
     connection = connect()
     connection.executescript(

@@ -48,6 +48,29 @@
   </article>
   {% end %}
 
+  {% if room.field_values %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("Intake Fields") %}
+    Director-readable claims and routing details from the application form.
+    {% end %}
+    {% call surface(variant="elevated") %}
+    <dl class="elbysodic-intake-field-list">
+      {% for item in room.field_values %}
+      <div>
+        <dt>
+          {{ item.field.field.label }}
+          {% if item.field.mapped_claim_type %}
+          <small>maps to {{ item.field.mapped_claim_type.name }}</small>
+          {% end %}
+        </dt>
+        <dd>{{ item.value.value }}</dd>
+      </div>
+      {% end %}
+    </dl>
+    {% end %}
+  </section>
+  {% end %}
+
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Applicant Notes") %}
     The public-facing shape staff should use to review this face.

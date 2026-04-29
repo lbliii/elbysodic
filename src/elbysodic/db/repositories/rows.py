@@ -10,13 +10,17 @@ from elbysodic.domain.boards import (
     normalize_board_sidebar_section,
 )
 from elbysodic.domain.models import (
+    ApplicationFieldValue,
+    ApplicationTemplateField,
     Board,
     Character,
     CharacterApplication,
     CharacterApplicationEvent,
+    CharacterClaim,
     CharacterPlotHook,
     CharacterPlotHookInterest,
     CharacterReserve,
+    ClaimType,
     Community,
     CommunityMembership,
     CommunityTheme,
@@ -384,6 +388,70 @@ def _character_reserve_from_row(row: sqlite3.Row) -> CharacterReserve:
         title=row["title"],
         notes=row["notes"],
         status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _claim_type_from_row(row: sqlite3.Row) -> ClaimType:
+    return ClaimType(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        name=row["name"],
+        claim_kind=row["claim_kind"],
+        description=row["description"],
+        visibility=row["visibility"],
+        is_required=bool(row["is_required"]),
+        is_exclusive=bool(row["is_exclusive"]),
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _character_claim_from_row(row: sqlite3.Row) -> CharacterClaim:
+    return CharacterClaim(
+        id=row["id"],
+        community_id=row["community_id"],
+        claim_type_id=row["claim_type_id"],
+        character_id=row["character_id"],
+        application_id=row["application_id"],
+        source_reserve_id=row["source_reserve_id"],
+        value=row["value"],
+        label=row["label"],
+        status=row["status"],
+        notes=row["notes"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _application_template_field_from_row(row: sqlite3.Row) -> ApplicationTemplateField:
+    return ApplicationTemplateField(
+        id=row["id"],
+        community_id=row["community_id"],
+        field_key=row["field_key"],
+        label=row["label"],
+        field_type=row["field_type"],
+        help_text=row["help_text"],
+        placeholder=row["placeholder"],
+        options_json=row["options_json"],
+        maps_to_claim_type_id=row["maps_to_claim_type_id"],
+        is_required=bool(row["is_required"]),
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _application_field_value_from_row(row: sqlite3.Row) -> ApplicationFieldValue:
+    return ApplicationFieldValue(
+        id=row["id"],
+        community_id=row["community_id"],
+        application_id=row["application_id"],
+        field_id=row["field_id"],
+        value=row["value"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

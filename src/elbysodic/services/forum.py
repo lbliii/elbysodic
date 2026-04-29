@@ -67,6 +67,10 @@ from elbysodic.services.casting import read_wanted_ad as _read_wanted_ad
 from elbysodic.services.casting import reserve_wanted_interest as _reserve_wanted_interest
 from elbysodic.services.casting import wanted_ad_summary as _wanted_ad_summary
 from elbysodic.services.casting import wanted_board as _wanted_board
+from elbysodic.services.claims import (
+    application_template_field_view as _application_template_field_view,
+)
+from elbysodic.services.claims import claims_directory as _claims_directory
 from elbysodic.services.discovery import discover_plots as _discover_plots
 from elbysodic.services.facets import (
     current_character_facet_ids as _current_character_facet_ids,
@@ -153,6 +157,7 @@ from elbysodic.services.read_models import (
     CharacterPlotHookDetail,
     CharacterProfile,
     CharacterRosterDashboard,
+    ClaimsDirectory,
     CreatedThread,
     DirectorStudio,
     EditablePostView,
@@ -587,7 +592,15 @@ class AppServices:
                     placement="application",
                 )
             ],
+            template_fields=[
+                _application_template_field_view(self.repo, viewer.community.id, field)
+                for field in self.repo.list_application_template_fields(viewer.community.id)
+            ],
         )
+
+    def claims_directory(self) -> ClaimsDirectory:
+        viewer = self.viewer()
+        return _claims_directory(self.repo, viewer)
 
     def realm_interactions(self) -> RealmInteractionHub:
         viewer = self.viewer()
@@ -797,6 +810,7 @@ class AppServices:
             wanted_ads=wanted_ads,
             open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
             applications=self.applications_desk(),
+            claims=_claims_directory(self.repo, viewer),
         )
 
     def update_board_taxonomy(
@@ -1416,6 +1430,7 @@ class AppServices:
         name: str,
         summary: str = "",
         application_body: str = "",
+        application_field_values: dict[int, str] | None = None,
         facet_slugs: list[str] | None = None,
         avatar_url: str | None = None,
         poster_url: str | None = None,
@@ -1524,6 +1539,15 @@ class AppServices:
                 summary=character.summary,
                 body=cleaned_application_body,
             )
+        for field_id, value in (application_field_values or {}).items():
+            cleaned_value = value.strip()
+            if cleaned_value:
+                self.repo.set_application_field_value(
+                    viewer.community.id,
+                    application.id,
+                    field_id,
+                    cleaned_value,
+                )
         return character
 
     def update_character(

@@ -73,6 +73,48 @@
                 maxlength="5000"
                 placeholder="History, hooks, boundaries, wanted ties, and what kind of play you want.">{{ body }}</textarea>
     </label>
+    {% if onboarding.template_fields %}
+    <fieldset class="elbysodic-application-form__facets">
+      <legend class="chirpui-field__label">Director fields</legend>
+      <div class="elbysodic-claim-field-grid">
+        {% for field_view in onboarding.template_fields %}
+        {% set field_name = "application_field_" ~ field_view.field.id %}
+        <label>
+          <span class="chirpui-field__label">
+            {{ field_view.field.label }}{% if field_view.field.is_required %} <small>required</small>{% end %}
+          </span>
+          {% if field_view.field.field_type == "select" and field_view.options %}
+          <select class="chirpui-field__input"
+                  name="{{ field_name }}"
+                  {{ "required" if field_view.field.is_required else "" }}>
+            <option value="">Choose one</option>
+            {% for option in field_view.options %}
+            <option value="{{ option }}" {{ "selected" if field_values.get(field_view.field.id) == option else "" }}>{{ option }}</option>
+            {% end %}
+          </select>
+          {% elif field_view.field.field_type == "textarea" %}
+          <textarea class="chirpui-field__input"
+                    name="{{ field_name }}"
+                    rows="4"
+                    maxlength="5000"
+                    placeholder="{{ field_view.field.placeholder }}"
+                    {{ "required" if field_view.field.is_required else "" }}>{{ field_values.get(field_view.field.id, "") }}</textarea>
+          {% else %}
+          <input class="chirpui-field__input"
+                 name="{{ field_name }}"
+                 value="{{ field_values.get(field_view.field.id, "") }}"
+                 maxlength="5000"
+                 placeholder="{{ field_view.field.placeholder }}"
+                 {{ "required" if field_view.field.is_required else "" }}>
+          {% end %}
+          {% if field_view.field.help_text %}
+          <span class="elbysodic-field-hint">{{ field_view.field.help_text }}</span>
+          {% end %}
+        </label>
+        {% end %}
+      </div>
+    </fieldset>
+    {% end %}
     {% if onboarding.facets %}
     <fieldset class="elbysodic-application-form__facets">
       <legend class="chirpui-field__label">World lenses</legend>

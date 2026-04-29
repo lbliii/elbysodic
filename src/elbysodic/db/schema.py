@@ -371,6 +371,65 @@ CREATE TABLE IF NOT EXISTS character_reserves (
     UNIQUE (community_id, wanted_ad_interest_id)
 );
 
+CREATE TABLE IF NOT EXISTS claim_types (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    claim_kind TEXT NOT NULL DEFAULT 'custom',
+    description TEXT NOT NULL DEFAULT '',
+    visibility TEXT NOT NULL DEFAULT 'public',
+    is_required INTEGER NOT NULL DEFAULT 0,
+    is_exclusive INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS character_claims (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    claim_type_id INTEGER NOT NULL REFERENCES claim_types(id) ON DELETE CASCADE,
+    character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE,
+    application_id INTEGER REFERENCES applications(id) ON DELETE SET NULL,
+    source_reserve_id INTEGER REFERENCES character_reserves(id) ON DELETE SET NULL,
+    value TEXT NOT NULL,
+    label TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'claimed',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS application_template_fields (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    field_key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    field_type TEXT NOT NULL DEFAULT 'text',
+    help_text TEXT NOT NULL DEFAULT '',
+    placeholder TEXT NOT NULL DEFAULT '',
+    options_json TEXT NOT NULL DEFAULT '[]',
+    maps_to_claim_type_id INTEGER REFERENCES claim_types(id) ON DELETE SET NULL,
+    is_required INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, field_key)
+);
+
+CREATE TABLE IF NOT EXISTS application_field_values (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    field_id INTEGER NOT NULL REFERENCES application_template_fields(id) ON DELETE CASCADE,
+    value TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, application_id, field_id)
+);
+
 CREATE TABLE IF NOT EXISTS realm_interactions (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -611,6 +670,16 @@ CREATE INDEX IF NOT EXISTS idx_plotting_room_messages_room
 ON plotting_room_messages(community_id, plotting_room_id, id);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_character ON character_reserves(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_wanted ON character_reserves(community_id, wanted_ad_id, status);
+CREATE INDEX IF NOT EXISTS idx_claim_types_community
+ON claim_types(community_id, sort_order, name);
+CREATE INDEX IF NOT EXISTS idx_character_claims_community
+ON character_claims(community_id, status, claim_type_id, label);
+CREATE INDEX IF NOT EXISTS idx_character_claims_character
+ON character_claims(community_id, character_id, status);
+CREATE INDEX IF NOT EXISTS idx_application_template_fields_community
+ON application_template_fields(community_id, sort_order, label);
+CREATE INDEX IF NOT EXISTS idx_application_field_values_application
+ON application_field_values(community_id, application_id, field_id);
 CREATE INDEX IF NOT EXISTS idx_realm_interactions_community
 ON realm_interactions(community_id, status, placement, sort_order, title);
 CREATE INDEX IF NOT EXISTS idx_realm_interaction_questions_interaction
