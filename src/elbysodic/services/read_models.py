@@ -938,8 +938,14 @@ class PlottingRoomDetail:
     participants: list[PlottingRoomParticipantView]
     source_plot_hook: CharacterPlotHookSummary | None
     source_wanted_ad: WantedAdSummary | None
+    target_board: Board | None
+    target_thread: Thread | None
+    scene_boards: list[Board]
+    scene_character_options: list[Character]
     created_at_label: str
     can_manage: bool
+    can_edit_plan: bool
+    can_create_scene: bool
 
 
 @dataclass(frozen=True, slots=True)

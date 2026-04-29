@@ -98,8 +98,12 @@ from elbysodic.services.plotting import (
 from elbysodic.services.plotting import (
     create_plotting_room_from_wanted_interest as _create_plotting_room_from_wanted_interest,
 )
+from elbysodic.services.plotting import (
+    create_thread_from_plotting_room as _create_thread_from_plotting_room,
+)
 from elbysodic.services.plotting import plotting_desk as _plotting_desk
 from elbysodic.services.plotting import read_plotting_room as _read_plotting_room
+from elbysodic.services.plotting import update_plotting_room_plan as _update_plotting_room_plan
 from elbysodic.services.posting import join_thread_as_current_character as _join_thread
 from elbysodic.services.posting import read_post_editor as _read_post_editor
 from elbysodic.services.posting import read_post_revisions as _read_post_revisions
@@ -1055,6 +1059,52 @@ class AppServices:
 
     def read_plotting_room(self, room_id: int) -> PlottingRoomDetail:
         return _read_plotting_room(self.repo, self.viewer(), room_id)
+
+    def update_plotting_room_plan(
+        self,
+        room_id: int,
+        *,
+        notes: str,
+        next_step: str,
+        target_board_id: int | None,
+        status: str,
+    ):
+        return _update_plotting_room_plan(
+            self.repo,
+            self.viewer(),
+            room_id,
+            notes=notes,
+            next_step=next_step,
+            target_board_id=target_board_id,
+            status=status,
+        )
+
+    def create_thread_from_plotting_room(
+        self,
+        room_id: int,
+        *,
+        board_id: int,
+        character_id: int,
+        title: str,
+        summary: str,
+        body: str,
+        location: str = "",
+        timeline: str = "",
+        posting_mode: str = "freeform",
+    ) -> CreatedThread:
+        return _create_thread_from_plotting_room(
+            self.repo,
+            self.viewer(),
+            room_id,
+            board_id=board_id,
+            character_id=character_id,
+            title=title,
+            summary=summary,
+            body=body,
+            location=location,
+            timeline=timeline,
+            posting_mode=posting_mode,
+        )
 
     def create_plotting_room_from_plot_hook_interest(
         self,

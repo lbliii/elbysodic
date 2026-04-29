@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from elbysodic.domain.models import (
+    Board,
     Character,
     CharacterPlotHook,
     CharacterPlotHookInterest,
@@ -13,6 +14,7 @@ from elbysodic.domain.models import (
     Material,
     PlottingRoom,
     PlottingRoomParticipant,
+    Thread,
     WantedAd,
     WantedAdInterest,
 )
@@ -28,7 +30,10 @@ from elbysodic.services.plot_hooks import (
     plot_hook_interest_view,
     plot_hook_summary,
 )
+from elbysodic.services.posting import PostingRepository
+from elbysodic.services.posting import start_thread as _start_thread
 from elbysodic.services.read_models import (
+    CreatedThread,
     ForumView,
     PlotHookInterestInboxItem,
     PlottingDesk,
@@ -42,7 +47,11 @@ from elbysodic.services.timestamps import timestamp_label
 PLOTTING_ROOM_STATUSES = ("brainstorming", "ready", "threaded", "paused", "done")
 
 
-class PlottingRepository(CastingReadRepository, PlotHookReadRepository, Protocol):
+class PlottingRepository(
+    CastingReadRepository, PlotHookReadRepository, PostingRepository, Protocol
+):
+    def get_board(self, community_id: int, board_id: int) -> Board: ...
+
     def get_character(self, community_id: int, character_id: int) -> Character: ...
 
     def get_character_by_slug(self, community_id: int, slug: str) -> Character: ...
@@ -171,6 +180,10 @@ class PlottingRepository(CastingReadRepository, PlotHookReadRepository, Protocol
 
     def get_plotting_room(self, community_id: int, plotting_room_id: int) -> PlottingRoom: ...
 
+    def list_boards(self, community_id: int) -> list[Board]: ...
+
+    def get_thread(self, community_id: int, thread_id: int) -> Thread: ...
+
     def get_plotting_room_for_plot_hook_interest(
         self,
         community_id: int,
@@ -207,6 +220,24 @@ class PlottingRepository(CastingReadRepository, PlotHookReadRepository, Protocol
         community_id: int,
         plotting_room_id: int,
     ) -> list[PlottingRoomParticipant]: ...
+
+    def update_plotting_room_plan(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        *,
+        notes: str,
+        next_step: str,
+        target_board_id: int | None,
+        status: str,
+    ) -> PlottingRoom: ...
+
+    def attach_plotting_room_thread(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        thread_id: int,
+    ) -> PlottingRoom: ...
 
     def create_notification(
         self,
@@ -308,11 +339,10 @@ def read_plotting_room(
         plotting_room_participant_view(repo, viewer.community.id, participant)
         for participant in repo.list_plotting_room_participants(viewer.community.id, room.id)
     ]
-    if not policies.can_manage_casting(
-        viewer.membership, viewer.role
-    ) and viewer.membership.id not in {
-        participant.participant.membership_id for participant in participants
-    }:
+    participant_membership_ids = _participant_membership_ids(participants)
+    can_edit_plan = _can_edit_plotting_room_plan(viewer, room, participant_membership_ids)
+    can_create_scene = _can_create_scene_from_room(viewer, room)
+    if not can_edit_plan:
         raise PermissionError(f"membership {viewer.membership.id} cannot view room {room.id}")
     source_plot_hook = None
     if room.source_plot_hook_id is not None:
@@ -328,16 +358,190 @@ def read_plotting_room(
             viewer.community.id,
             repo.get_wanted_ad(viewer.community.id, room.source_wanted_ad_id),
         )
+    target_board = (
+        repo.get_board(viewer.community.id, room.target_board_id)
+        if room.target_board_id is not None
+        else None
+    )
+    target_thread = (
+        repo.get_thread(viewer.community.id, room.target_thread_id)
+        if room.target_thread_id is not None
+        else None
+    )
     return PlottingRoomDetail(
         room=room,
         owner_membership=repo.get_membership(viewer.community.id, room.owner_membership_id),
         participants=participants,
         source_plot_hook=source_plot_hook,
         source_wanted_ad=source_wanted_ad,
+        target_board=target_board,
+        target_thread=target_thread,
+        scene_boards=[
+            board
+            for board in repo.list_boards(viewer.community.id)
+            if policies.can_start_thread(viewer.membership, board, viewer.role)
+        ],
+        scene_character_options=_scene_character_options(viewer, participants),
         created_at_label=timestamp_label(room.created_at),
-        can_manage=room.owner_membership_id == viewer.membership.id
-        or policies.can_manage_casting(viewer.membership, viewer.role),
+        can_manage=can_create_scene,
+        can_edit_plan=can_edit_plan,
+        can_create_scene=can_create_scene and room.target_thread_id is None,
     )
+
+
+def update_plotting_room_plan(
+    repo: PlottingRepository,
+    viewer: ForumView,
+    room_id: int,
+    *,
+    notes: str,
+    next_step: str,
+    target_board_id: int | None,
+    status: str,
+) -> PlottingRoom:
+    room = repo.get_plotting_room(viewer.community.id, room_id)
+    participants = [
+        plotting_room_participant_view(repo, viewer.community.id, participant)
+        for participant in repo.list_plotting_room_participants(viewer.community.id, room.id)
+    ]
+    if not _can_edit_plotting_room_plan(viewer, room, _participant_membership_ids(participants)):
+        raise PermissionError(f"membership {viewer.membership.id} cannot edit room {room.id}")
+    cleaned_status = clean_plotting_room_status(status)
+    if cleaned_status == "threaded" and room.target_thread_id is None:
+        raise ValueError("start a scene before marking a room threaded")
+    if target_board_id is not None:
+        board = repo.get_board(viewer.community.id, target_board_id)
+        if not policies.can_start_thread(viewer.membership, board, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot start scenes in board {board.id}"
+            )
+    return repo.update_plotting_room_plan(
+        viewer.community.id,
+        room.id,
+        notes=notes.strip(),
+        next_step=next_step.strip(),
+        target_board_id=target_board_id,
+        status=cleaned_status,
+    )
+
+
+def create_thread_from_plotting_room(
+    repo: PlottingRepository,
+    viewer: ForumView,
+    room_id: int,
+    *,
+    board_id: int,
+    character_id: int,
+    title: str,
+    summary: str,
+    body: str,
+    location: str = "",
+    timeline: str = "",
+    posting_mode: str = "freeform",
+) -> CreatedThread:
+    room = repo.get_plotting_room(viewer.community.id, room_id)
+    if not _can_create_scene_from_room(viewer, room):
+        raise PermissionError(f"membership {viewer.membership.id} cannot create a scene")
+    if room.target_thread_id is not None:
+        raise ValueError("plotting room already has a scene")
+    board = repo.get_board(viewer.community.id, board_id)
+    participants = [
+        plotting_room_participant_view(repo, viewer.community.id, participant)
+        for participant in repo.list_plotting_room_participants(viewer.community.id, room.id)
+    ]
+    participant_ids = [
+        item.participant.character_id
+        for item in participants
+        if item.participant.character_id is not None
+    ]
+    created = _start_thread(
+        repo,
+        viewer,
+        board_slug=board.slug,
+        character_id=character_id,
+        title=title,
+        body=body,
+        status="active",
+        location=location,
+        timeline=timeline,
+        summary=summary,
+        posting_mode=posting_mode,
+        participant_ids=participant_ids,
+    )
+    repo.attach_plotting_room_thread(viewer.community.id, room.id, created.thread.id)
+    _notify_room_threaded(repo, viewer, room, participants, created.thread)
+    return created
+
+
+def clean_plotting_room_status(status: str) -> str:
+    cleaned = status.strip().lower().replace("-", "_")
+    if cleaned not in PLOTTING_ROOM_STATUSES:
+        return "brainstorming"
+    return cleaned
+
+
+def _participant_membership_ids(participants: list[PlottingRoomParticipantView]) -> set[int]:
+    return {participant.participant.membership_id for participant in participants}
+
+
+def _can_edit_plotting_room_plan(
+    viewer: ForumView,
+    room: PlottingRoom,
+    participant_membership_ids: set[int],
+) -> bool:
+    return (
+        viewer.membership.id == room.owner_membership_id
+        or viewer.membership.id in participant_membership_ids
+        or policies.can_manage_casting(viewer.membership, viewer.role)
+    )
+
+
+def _can_create_scene_from_room(viewer: ForumView, room: PlottingRoom) -> bool:
+    return room.owner_membership_id == viewer.membership.id or policies.can_manage_casting(
+        viewer.membership,
+        viewer.role,
+    )
+
+
+def _scene_character_options(
+    viewer: ForumView,
+    participants: list[PlottingRoomParticipantView],
+) -> list[Character]:
+    participant_character_ids = {
+        participant.participant.character_id
+        for participant in participants
+        if participant.participant.membership_id == viewer.membership.id
+        and participant.participant.character_id is not None
+    }
+    if participant_character_ids:
+        return [
+            character for character in viewer.roster if character.id in participant_character_ids
+        ]
+    return viewer.roster
+
+
+def _notify_room_threaded(
+    repo: PlottingRepository,
+    viewer: ForumView,
+    room: PlottingRoom,
+    participants: list[PlottingRoomParticipantView],
+    thread: Thread,
+) -> None:
+    notified_membership_ids: set[int] = set()
+    for participant in participants:
+        membership_id = participant.participant.membership_id
+        if membership_id == viewer.membership.id or membership_id in notified_membership_ids:
+            continue
+        repo.create_notification(
+            viewer.community.id,
+            membership_id,
+            kind="plotting_room_threaded",
+            thread_id=thread.id,
+            plotting_room_id=room.id,
+            actor_membership_id=viewer.membership.id,
+            actor_character_id=thread.author_character_id,
+        )
+        notified_membership_ids.add(membership_id)
 
 
 def create_plotting_room_from_plot_hook_interest(

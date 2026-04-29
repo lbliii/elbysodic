@@ -240,11 +240,19 @@ def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
     }
+    plotting_columns = {
+        row["name"]: row
+        for row in connection.execute("PRAGMA table_info(plotting_rooms)").fetchall()
+    }
 
     assert "character_plot_hooks" in tables
     assert "character_plot_hook_interests" in tables
     assert "plotting_rooms" in tables
     assert "plotting_room_participants" in tables
+    assert "notes" in plotting_columns
+    assert "next_step" in plotting_columns
+    assert "target_board_id" in plotting_columns
+    assert "target_thread_id" in plotting_columns
     assert wanted_columns["character_id"]["notnull"] == 0
     assert "prospective_character_name" in wanted_columns
     assert "character_plot_hook_id" in notification_columns
@@ -909,6 +917,30 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
         prospect_participant,
     ]
     assert room_notification.plotting_room_id == room.id
+    default_board = repo.create_board(default.id, "planning-board", "Planning Board")
+    hosted_board = repo.create_board(hosted.id, "planning-board", "Hosted Planning Board")
+    planned_room = repo.update_plotting_room_plan(
+        default.id,
+        room.id,
+        notes="Rogue and Gambit decide where the first spark lands.",
+        next_step="Open a scene.",
+        target_board_id=default_board.id,
+        status="ready",
+    )
+    default_thread = repo.create_thread(
+        default.id,
+        default_board.id,
+        rogue.id,
+        "old-ghosts",
+        "Old ghosts",
+    )
+    threaded_room = repo.attach_plotting_room_thread(default.id, room.id, default_thread.id)
+
+    assert planned_room.notes == "Rogue and Gambit decide where the first spark lands."
+    assert planned_room.next_step == "Open a scene."
+    assert planned_room.target_board_id == default_board.id
+    assert threaded_room.target_thread_id == default_thread.id
+    assert threaded_room.status == "threaded"
 
     with pytest.raises(LookupError):
         repo.assign_character_plot_hook_facet(hosted.id, hook.id, x_men.id)
@@ -922,6 +954,24 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
             source_plot_hook_id=hook.id,
             source_plot_hook_interest_id=interest.id,
         )
+    with pytest.raises(LookupError):
+        repo.update_plotting_room_plan(
+            default.id,
+            room.id,
+            notes="Crossed target.",
+            next_step="Nope.",
+            target_board_id=hosted_board.id,
+            status="ready",
+        )
+    hosted_thread = repo.create_thread(
+        hosted.id,
+        hosted_board.id,
+        hosted_character.id,
+        "hosted-old-ghosts",
+        "Hosted old ghosts",
+    )
+    with pytest.raises(LookupError):
+        repo.attach_plotting_room_thread(default.id, room.id, hosted_thread.id)
 
 
 def test_plotting_room_participants_are_unique_for_nullable_identity(

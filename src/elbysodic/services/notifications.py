@@ -269,6 +269,10 @@ def notification_item(
         )
     if notification.plotting_room_id is not None:
         room = repo.get_plotting_room(viewer.community.id, notification.plotting_room_id)
+        if notification.kind == "plotting_room_threaded":
+            snippet = f"{actor_label} started a scene from this plotting room."
+        else:
+            snippet = f"{actor_label} started a plotting room with you."
         return NotificationItem(
             notification=notification,
             board=None,
@@ -282,7 +286,7 @@ def notification_item(
             label=notification_label(notification.kind),
             title=room.title,
             created_at_label=timestamp_label(notification.created_at),
-            snippet=f"{actor_label} started a plotting room with you.",
+            snippet=snippet,
             href=f"/plotting/{room.id}",
         )
     if notification.thread_id is None or notification.post_id is None:
@@ -323,6 +327,8 @@ def notification_label(kind: str) -> str:
             return "Plot hook interest"
         case "plotting_room_created":
             return "Plotting room"
+        case "plotting_room_threaded":
+            return "Scene started"
         case "wanted_reserved":
             return "Wanted reserved"
         case "reserve_created":

@@ -85,13 +85,158 @@
   </section>
 
   {% call surface(variant="elevated") %}
-  <article class="chirpui-stack chirpui-stack--sm">
-    <h2>Notes</h2>
-    <p class="elbysodic-copy-helper">
-      Shared notes and thread conversion come next; for now this room preserves the match,
-      source context, and participants so plotting has somewhere to live.
-    </p>
-  </article>
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="room-plan">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-kicker">Planning</p>
+        <h2 id="room-plan">Room notes</h2>
+      </div>
+      {% if room.target_thread and room.target_board %}
+      <a class="chirpui-btn chirpui-btn--primary" href="/boards/{{ room.target_board.slug }}/threads/{{ room.target_thread.slug }}">
+        Open scene
+      </a>
+      {% end %}
+    </div>
+
+    {% if room.can_edit_plan %}
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+      <input type="hidden" name="intent" value="save_plan">
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="room-status">Status</label>
+          <select id="room-status" class="chirpui-field__input" name="status">
+            {% for status in ["brainstorming", "ready", "paused", "done"] %}
+            <option value="{{ status }}" {{ "selected" if status == room.room.status else "" }}>
+              {{ status.replace("_", " ").title() }}
+            </option>
+            {% end %}
+            {% if room.target_thread %}
+            <option value="threaded" {{ "selected" if room.room.status == "threaded" else "" }}>Threaded</option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="target-board">Scene board</label>
+          <select id="target-board" class="chirpui-field__input" name="target_board_id">
+            <option value="">Choose later</option>
+            {% for board in room.scene_boards %}
+            <option value="{{ board.id }}" {{ "selected" if room.target_board and board.id == room.target_board.id else "" }}>
+              {{ board.name }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="next-step">Next step</label>
+        <input id="next-step"
+               class="chirpui-field__input"
+               name="next_step"
+               value="{{ room.room.next_step }}"
+               placeholder="Pick the opening beat">
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="room-notes">Shared notes</label>
+        <textarea id="room-notes"
+                  class="chirpui-field__input"
+                  name="notes"
+                  rows="8">{{ room.room.notes }}</textarea>
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Save room plan</button>
+      </div>
+    </form>
+    {% else %}
+    <article class="chirpui-stack chirpui-stack--sm">
+      {% if room.room.next_step %}
+      <p class="elbysodic-copy-meta">{{ room.room.next_step }}</p>
+      {% end %}
+      <div class="elbysodic-prose">{{ room.room.notes }}</div>
+    </article>
+    {% end %}
+  </section>
+  {% end %}
+
+  {% if room.can_create_scene %}
+  {% call surface(variant="elevated") %}
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="start-scene">
+    <div>
+      <p class="elbysodic-kicker">Scene handoff</p>
+      <h2 id="start-scene">Start scene</h2>
+    </div>
+    {% if room.scene_boards and room.scene_character_options %}
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+      <input type="hidden" name="intent" value="start_scene">
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="scene-board">Board</label>
+          <select id="scene-board" class="chirpui-field__input" name="board_id" required>
+            {% for board in room.scene_boards %}
+            <option value="{{ board.id }}" {{ "selected" if room.target_board and board.id == room.target_board.id else "" }}>
+              {{ board.name }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="scene-character">Opening face</label>
+          <select id="scene-character" class="chirpui-field__input" name="character_id" required>
+            {% for character in room.scene_character_options %}
+            <option value="{{ character.id }}" {{ "selected" if viewer.current_character and character.id == viewer.current_character.id else "" }}>
+              {{ character.name }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="scene-title">Title</label>
+        <input id="scene-title"
+               class="chirpui-field__input"
+               name="title"
+               value="{{ room.room.title }}"
+               required>
+      </div>
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="scene-location">Location</label>
+          <input id="scene-location"
+                 class="chirpui-field__input"
+                 name="location"
+                 value="{{ room.target_board.name if room.target_board else '' }}">
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="scene-timeline">Timeline</label>
+          <input id="scene-timeline"
+                 class="chirpui-field__input"
+                 name="timeline"
+                 value="">
+        </div>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="scene-summary">Summary</label>
+        <textarea id="scene-summary"
+                  class="chirpui-field__input"
+                  name="summary"
+                  rows="3">{{ room.room.summary }}</textarea>
+      </div>
+      <div>
+        <label class="chirpui-field__label" for="scene-body">Opening post</label>
+        <textarea id="scene-body"
+                  class="chirpui-field__input"
+                  name="body"
+                  rows="10"
+                  required>{{ room.room.notes }}</textarea>
+      </div>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Start scene</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="elbysodic-copy-helper">A scene needs one available board and one face to open.</p>
+    {% end %}
+  </section>
+  {% end %}
   {% end %}
 {% end %}
 {% end %}

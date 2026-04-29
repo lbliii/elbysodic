@@ -289,6 +289,10 @@ CREATE TABLE IF NOT EXISTS plotting_rooms (
     source_wanted_ad_interest_id INTEGER REFERENCES wanted_ad_interests(id) ON DELETE SET NULL,
     title TEXT NOT NULL,
     summary TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    next_step TEXT NOT NULL DEFAULT '',
+    target_board_id INTEGER REFERENCES boards(id) ON DELETE SET NULL,
+    target_thread_id INTEGER REFERENCES threads(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'brainstorming',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -479,6 +483,7 @@ CREATE INDEX IF NOT EXISTS idx_character_plot_hook_facets_facet ON character_plo
 CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_hook ON character_plot_hook_interests(community_id, plot_hook_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_character ON character_plot_hook_interests(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_plotting_rooms_owner ON plotting_rooms(community_id, owner_membership_id, status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_plotting_rooms_target_thread ON plotting_rooms(community_id, target_thread_id);
 CREATE INDEX IF NOT EXISTS idx_plotting_room_participants_membership ON plotting_room_participants(community_id, membership_id, plotting_room_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_plotting_room_participants_unique_character
 ON plotting_room_participants(community_id, plotting_room_id, membership_id, character_id)
@@ -663,6 +668,7 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     )
     _migrate_wanted_ad_interests_schema(connection)
     _migrate_notifications_schema(connection)
+    _migrate_plotting_rooms_schema(connection)
 
 
 def _ensure_sidebar_section_defaults(connection: sqlite3.Connection) -> None:
@@ -797,6 +803,26 @@ def _ensure_wanted_ad_interest_indexes(connection: sqlite3.Connection) -> None:
         CREATE UNIQUE INDEX IF NOT EXISTS idx_wanted_ad_interests_unique_prospective
         ON wanted_ad_interests(community_id, wanted_ad_id, membership_id)
         WHERE character_id IS NULL
+        """
+    )
+
+
+def _migrate_plotting_rooms_schema(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(plotting_rooms)").fetchall()
+    }
+    for name, definition in {
+        "notes": "TEXT NOT NULL DEFAULT ''",
+        "next_step": "TEXT NOT NULL DEFAULT ''",
+        "target_board_id": "INTEGER REFERENCES boards(id) ON DELETE SET NULL",
+        "target_thread_id": "INTEGER REFERENCES threads(id) ON DELETE SET NULL",
+    }.items():
+        if name not in columns:
+            connection.execute(f"ALTER TABLE plotting_rooms ADD COLUMN {name} {definition}")
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_plotting_rooms_target_thread
+        ON plotting_rooms(community_id, target_thread_id)
         """
     )
 

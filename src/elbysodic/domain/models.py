@@ -233,6 +233,10 @@ class PlottingRoom:
     source_wanted_ad_interest_id: int | None
     title: str
     summary: str
+    notes: str
+    next_step: str
+    target_board_id: int | None
+    target_thread_id: int | None
     status: str
     created_at: str
     updated_at: str

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -18,7 +18,29 @@ class Migration:
     apply: Callable[[sqlite3.Connection], None]
 
 
-MIGRATIONS: tuple[Migration, ...] = ()
+def _add_plotting_room_planning_fields(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(plotting_rooms)").fetchall()
+    }
+    for name, definition in {
+        "notes": "TEXT NOT NULL DEFAULT ''",
+        "next_step": "TEXT NOT NULL DEFAULT ''",
+        "target_board_id": "INTEGER REFERENCES boards(id) ON DELETE SET NULL",
+        "target_thread_id": "INTEGER REFERENCES threads(id) ON DELETE SET NULL",
+    }.items():
+        if name not in columns:
+            connection.execute(f"ALTER TABLE plotting_rooms ADD COLUMN {name} {definition}")
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_plotting_rooms_target_thread
+        ON plotting_rooms(community_id, target_thread_id)
+        """
+    )
+
+
+MIGRATIONS: tuple[Migration, ...] = (
+    Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
+)
 
 
 def apply_migrations(connection: sqlite3.Connection) -> None:

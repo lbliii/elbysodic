@@ -1616,6 +1616,128 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
     asyncio.run(run())
 
 
+def test_plotting_room_plan_can_turn_into_scene() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+        room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+        plotting_board = repo.get_board_by_slug(community.id, "plotting")
+        lane_app = create_app(debug=False, services=services)
+        async with TestClient(lane_app) as lane_client:
+            room_page = await lane_client.get(f"/plotting/{room.id}")
+            assert room_page.status == 200
+            assert "Room notes" in room_page.text
+            assert "Start scene" not in room_page.text
+
+            save_plan = await lane_client.post(
+                f"/plotting/{room.id}",
+                body=urlencode(
+                    {
+                        "intent": "save_plan",
+                        "status": "ready",
+                        "target_board_id": plotting_board.id,
+                        "next_step": "Charles opens with the invitation.",
+                        "notes": "Rogue arrives with a guarded yes.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert save_plan.status == 302
+
+        updated_room = repo.get_plotting_room(community.id, room.id)
+        assert updated_room.status == "ready"
+        assert updated_room.target_board_id == plotting_board.id
+        assert updated_room.next_step == "Charles opens with the invitation."
+        assert updated_room.notes == "Rogue arrives with a guarded yes."
+
+        outsider_services, _character_id = _outsider_services(services, prefix="roomcrasher")
+        outsider_app = create_app(debug=False, services=outsider_services)
+        async with TestClient(outsider_app) as outsider_client:
+            denied = await outsider_client.get(f"/plotting/{room.id}")
+            assert denied.status == 403
+
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            refreshed = await charlie_client.get(f"/plotting/{room.id}")
+            assert refreshed.status == 200
+            assert "Rogue arrives with a guarded yes." in refreshed.text
+            assert "Start scene" in refreshed.text
+
+            scene = await charlie_client.post(
+                f"/plotting/{room.id}",
+                body=urlencode(
+                    {
+                        "intent": "start_scene",
+                        "board_id": plotting_board.id,
+                        "character_id": xavier.id,
+                        "title": "B-24 Liaison Debrief",
+                        "summary": "Charles and Rogue turn the liaison hook into a scene.",
+                        "location": "Xavier Institute",
+                        "timeline": "After B-24",
+                        "body": "Charles sets tea down and waits for Rogue to decide.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert scene.status == 302
+
+            threaded_room = repo.get_plotting_room(community.id, room.id)
+            assert threaded_room.status == "threaded"
+            assert threaded_room.target_thread_id is not None
+            created_thread = repo.get_thread(community.id, threaded_room.target_thread_id)
+            assert created_thread.title == "B-24 Liaison Debrief"
+            assert created_thread.summary == "Charles and Rogue turn the liaison hook into a scene."
+            assert created_thread.location == "Xavier Institute"
+            assert created_thread.timeline == "After B-24"
+            assert {
+                character.slug
+                for character in repo.list_thread_participants(
+                    community.id,
+                    created_thread.id,
+                )
+            } == {"charles-xavier", "rogue"}
+
+            threaded_page = await charlie_client.get(f"/plotting/{room.id}")
+            assert threaded_page.status == 200
+            assert "Open scene" in threaded_page.text
+            assert f"/boards/plotting/threads/{created_thread.slug}" in threaded_page.text
+            assert "Start scene" not in threaded_page.text
+
+        lane_inbox = services.notifications()
+        assert any(item.label == "Scene started" for item in lane_inbox.items)
+
+    asyncio.run(run())
+
+
 def test_thread_cards_jump_to_first_unread_then_latest() -> None:
     async def run() -> None:
         app = _app()

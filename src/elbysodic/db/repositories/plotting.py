@@ -113,6 +113,10 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 source_wanted_ad_interest_id,
                 title,
                 summary,
+                notes,
+                next_step,
+                target_board_id,
+                target_thread_id,
                 status,
                 created_at,
                 updated_at
@@ -126,6 +130,70 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 f"plotting room not found in community {community_id}: {plotting_room_id}"
             )
         return _plotting_room_from_row(row)
+
+    def update_plotting_room_plan(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        *,
+        notes: str,
+        next_step: str,
+        target_board_id: int | None,
+        status: str,
+    ) -> PlottingRoom:
+        self.get_plotting_room(community_id, plotting_room_id)
+        if target_board_id is not None:
+            self.get_board(community_id, target_board_id)
+        self.connection.execute(
+            """
+            UPDATE plotting_rooms
+            SET notes = ?,
+                next_step = ?,
+                target_board_id = ?,
+                status = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                notes,
+                next_step,
+                target_board_id,
+                status,
+                _utc_now(),
+                community_id,
+                plotting_room_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_plotting_room(community_id, plotting_room_id)
+
+    def attach_plotting_room_thread(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        thread_id: int,
+    ) -> PlottingRoom:
+        self.get_plotting_room(community_id, plotting_room_id)
+        thread = self.get_thread(community_id, thread_id)
+        self.connection.execute(
+            """
+            UPDATE plotting_rooms
+            SET target_board_id = ?,
+                target_thread_id = ?,
+                status = 'threaded',
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                thread.board_id,
+                thread.id,
+                _utc_now(),
+                community_id,
+                plotting_room_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_plotting_room(community_id, plotting_room_id)
 
     def get_plotting_room_for_plot_hook_interest(
         self,
@@ -144,6 +212,10 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 source_wanted_ad_interest_id,
                 title,
                 summary,
+                notes,
+                next_step,
+                target_board_id,
+                target_thread_id,
                 status,
                 created_at,
                 updated_at
@@ -175,6 +247,10 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 source_wanted_ad_interest_id,
                 title,
                 summary,
+                notes,
+                next_step,
+                target_board_id,
+                target_thread_id,
                 status,
                 created_at,
                 updated_at
@@ -212,6 +288,10 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 source_wanted_ad_interest_id,
                 title,
                 summary,
+                notes,
+                next_step,
+                target_board_id,
+                target_thread_id,
                 status,
                 created_at,
                 updated_at
@@ -248,6 +328,10 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 rooms.source_wanted_ad_interest_id,
                 rooms.title,
                 rooms.summary,
+                rooms.notes,
+                rooms.next_step,
+                rooms.target_board_id,
+                rooms.target_thread_id,
                 rooms.status,
                 rooms.created_at,
                 rooms.updated_at
@@ -287,6 +371,10 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 rooms.source_wanted_ad_interest_id,
                 rooms.title,
                 rooms.summary,
+                rooms.notes,
+                rooms.next_step,
+                rooms.target_board_id,
+                rooms.target_thread_id,
                 rooms.status,
                 rooms.created_at,
                 rooms.updated_at
