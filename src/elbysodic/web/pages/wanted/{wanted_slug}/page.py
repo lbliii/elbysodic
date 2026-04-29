@@ -7,6 +7,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
 
@@ -88,8 +89,8 @@ def _render_wanted(request: Request, wanted_slug: str) -> Page:
     services = get_services(request)
     try:
         wanted = services.read_wanted_ad(wanted_slug)
-    except LookupError as exc:
-        raise HTTPError(status=404, detail=str(exc)) from exc
+    except LookupError:
+        return recover_missing_route(request, kind="wanted", slug=wanted_slug)
     return Page(
         "wanted/{wanted_slug}/page.html",
         "page_content",

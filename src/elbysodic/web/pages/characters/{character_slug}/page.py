@@ -19,6 +19,7 @@ from elbysodic.services.read_models import (
     POST_STYLE_PRESETS,
     POST_TITLE_STYLE_LABELS,
 )
+from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
 
@@ -166,7 +167,10 @@ def _render_profile(
 ) -> Page:
     services = get_services(request)
     viewer = services.viewer()
-    profile = services.read_character(character_slug)
+    try:
+        profile = services.read_character(character_slug)
+    except LookupError:
+        return recover_missing_route(request, kind="character", slug=character_slug)
     style_policy = services.post_style_policy()
     resolved_accent_source = (
         "custom"

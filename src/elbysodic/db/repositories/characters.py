@@ -8,11 +8,13 @@ from elbysodic.db.repositories.rows import (
     _character_application_event_from_row,
     _character_application_from_row,
     _character_from_row,
+    _community_from_row,
 )
 from elbysodic.domain.models import (
     Character,
     CharacterApplication,
     CharacterApplicationEvent,
+    Community,
     CommunityMembership,
 )
 
@@ -156,6 +158,32 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         if row is None:
             raise LookupError(f"character not found in community {community_id}: {slug}")
         return _character_from_row(row)
+
+    def list_character_communities_by_slug(self, slug: str) -> list[Community]:
+        rows = self.connection.execute(
+            """
+            SELECT DISTINCT
+                communities.id,
+                communities.name,
+                communities.slug,
+                communities.host,
+                communities.default_theme_id,
+                communities.identity_accent_facet_group_id,
+                communities.enabled_post_profile_variants,
+                communities.enabled_post_accent_styles,
+                communities.enabled_post_border_styles,
+                communities.enabled_post_title_styles,
+                communities.enabled_post_densities,
+                communities.created_at,
+                communities.updated_at
+            FROM communities
+            JOIN characters ON characters.community_id = communities.id
+            WHERE characters.slug = ?
+            ORDER BY communities.name, communities.id
+            """,
+            (slug,),
+        ).fetchall()
+        return [_community_from_row(row) for row in rows]
 
     def update_character(
         self,

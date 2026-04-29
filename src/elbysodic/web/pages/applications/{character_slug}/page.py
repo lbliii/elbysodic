@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
 
@@ -72,8 +73,8 @@ def _render_application_room(request: Request, character_slug: str) -> Page:
         room = services.read_application_review_room(character_slug)
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
-    except LookupError as exc:
-        raise HTTPError(status=404, detail=str(exc)) from exc
+    except LookupError:
+        return recover_missing_route(request, kind="application", slug=character_slug)
     return Page(
         "applications/{character_slug}/page.html",
         "page_content",

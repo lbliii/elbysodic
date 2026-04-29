@@ -51,31 +51,56 @@ class RequestIdentityResolver:
     def resolve(self, request: object | None = None) -> RequestIdentityContext:
         cookie_identity = _dev_identity_cookie(request)
         community = self._resolve_community(request)
-        user_id = _optional_int_header(request, DEV_USER_HEADER)
-        membership_id = _optional_int_header(request, DEV_MEMBERSHIP_HEADER)
+        header_user_id = _optional_int_header(request, DEV_USER_HEADER)
+        header_membership_id = _optional_int_header(request, DEV_MEMBERSHIP_HEADER)
+        user_id = header_user_id
+        membership_id = header_membership_id
+        user_from_cookie = False
+        membership_from_cookie = False
 
         if cookie_identity is not None and cookie_identity.community_id == community.id:
-            user_id = user_id if user_id is not None else cookie_identity.user_id
+            if user_id is None:
+                user_id = cookie_identity.user_id
+                user_from_cookie = True
             membership_id = (
                 membership_id if membership_id is not None else cookie_identity.membership_id
             )
+            membership_from_cookie = header_membership_id is None
 
         if membership_id is not None:
-            membership = self._repo.get_membership(community.id, membership_id)
-            if user_id is not None and membership.user_id != user_id:
-                raise PermissionError(
-                    f"membership {membership.id} does not belong to user {user_id}"
+            try:
+                membership = self._repo.get_membership(community.id, membership_id)
+            except LookupError:
+                if not membership_from_cookie:
+                    raise
+                membership = None
+            if membership is not None and user_id is not None and membership.user_id != user_id:
+                if user_from_cookie or membership_from_cookie:
+                    membership = None
+                    if user_from_cookie and header_user_id is None:
+                        user_id = None
+                else:
+                    raise PermissionError(
+                        f"membership {membership.id} does not belong to user {user_id}"
+                    )
+
+            if membership is not None:
+                self._repo.get_user(membership.user_id)
+                return RequestIdentityContext(
+                    community_id=community.id,
+                    community_slug=community.slug,
+                    user_id=membership.user_id,
+                    membership_id=membership.id,
                 )
-            self._repo.get_user(membership.user_id)
-            return RequestIdentityContext(
-                community_id=community.id,
-                community_slug=community.slug,
-                user_id=membership.user_id,
-                membership_id=membership.id,
-            )
 
         resolved_user_id = user_id if user_id is not None else self._default.user_id
-        self._repo.get_user(resolved_user_id)
+        try:
+            self._repo.get_user(resolved_user_id)
+        except LookupError:
+            if not user_from_cookie:
+                raise PermissionError(f"{DEV_USER_HEADER} must identify a known user") from None
+            resolved_user_id = self._default.user_id
+            self._repo.get_user(resolved_user_id)
         membership = self._repo.get_membership_for_user(community.id, resolved_user_id)
         return RequestIdentityContext(
             community_id=community.id,
@@ -97,7 +122,10 @@ class RequestIdentityResolver:
 
         cookie_identity = _dev_identity_cookie(request)
         if cookie_identity is not None:
-            return self._repo.get_community(cookie_identity.community_id)
+            try:
+                return self._repo.get_community(cookie_identity.community_id)
+            except LookupError:
+                pass
 
         return self._repo.get_community(self._default.community_id)
 

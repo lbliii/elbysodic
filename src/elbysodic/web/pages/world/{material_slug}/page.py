@@ -8,6 +8,7 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.services.forum import MATERIAL_STATUSES, MATERIAL_TYPES
+from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
 
@@ -62,8 +63,8 @@ def _render_material(
     services = get_services(request)
     try:
         material = services.read_material(material_slug)
-    except LookupError as exc:
-        raise HTTPError(status=404, detail=str(exc)) from exc
+    except LookupError:
+        return recover_missing_route(request, kind="material", slug=material_slug)
     return Page(
         "world/{material_slug}/page.html",
         "page_content",

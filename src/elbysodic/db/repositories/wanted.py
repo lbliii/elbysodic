@@ -6,10 +6,11 @@ from elbysodic.db.repositories.base import TenantBoundaryError, _last_id, _utc_n
 from elbysodic.db.repositories.materials import MaterialRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _character_from_row,
+    _community_from_row,
     _wanted_ad_from_row,
     _wanted_ad_interest_from_row,
 )
-from elbysodic.domain.models import Character, WantedAd, WantedAdInterest
+from elbysodic.domain.models import Character, Community, WantedAd, WantedAdInterest
 
 
 class WantedRepositoryMixin(MaterialRepositoryMixin):
@@ -124,6 +125,32 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
         if row is None:
             raise LookupError(f"wanted ad not found in community {community_id}: {slug}")
         return _wanted_ad_from_row(row)
+
+    def list_wanted_ad_communities_by_slug(self, slug: str) -> list[Community]:
+        rows = self.connection.execute(
+            """
+            SELECT DISTINCT
+                communities.id,
+                communities.name,
+                communities.slug,
+                communities.host,
+                communities.default_theme_id,
+                communities.identity_accent_facet_group_id,
+                communities.enabled_post_profile_variants,
+                communities.enabled_post_accent_styles,
+                communities.enabled_post_border_styles,
+                communities.enabled_post_title_styles,
+                communities.enabled_post_densities,
+                communities.created_at,
+                communities.updated_at
+            FROM communities
+            JOIN wanted_ads ON wanted_ads.community_id = communities.id
+            WHERE wanted_ads.slug = ?
+            ORDER BY communities.name, communities.id
+            """,
+            (slug,),
+        ).fetchall()
+        return [_community_from_row(row) for row in rows]
 
     def list_wanted_ads(
         self,

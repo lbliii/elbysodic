@@ -5868,6 +5868,26 @@ body {
     margin: 0.25rem 0 0;
 }
 
+.elbysodic-recovery {
+    display: grid;
+    gap: 0.9rem;
+    padding: clamp(1.1rem, 3vw, 1.8rem);
+}
+
+.elbysodic-recovery h1 {
+    color: var(--chirpui-text);
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    letter-spacing: 0;
+    line-height: 0.98;
+    margin: 0;
+    max-inline-size: 13ch;
+}
+
+.elbysodic-recovery form {
+    margin: 0;
+}
+
 .elbysodic-current-event-card {
     color: var(--chirpui-text);
     display: grid;

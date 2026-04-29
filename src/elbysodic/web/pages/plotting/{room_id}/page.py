@@ -7,6 +7,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Fragment, Page
 
+from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
 
@@ -82,9 +83,13 @@ async def post(request: Request, room_id: str) -> Fragment | Page | Redirect:
 def _render_room(request: Request, room_id: str) -> Page:
     services = get_services(request)
     try:
-        room = services.read_plotting_room(_parse_room_id(room_id))
-    except LookupError as exc:
-        raise HTTPError(status=404, detail=str(exc)) from exc
+        parsed_room_id = _parse_room_id(room_id)
+    except HTTPError:
+        return recover_missing_route(request, kind="plotting", slug=room_id)
+    try:
+        room = services.read_plotting_room(parsed_room_id)
+    except LookupError:
+        return recover_missing_route(request, kind="plotting", slug=room_id)
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
     return Page(

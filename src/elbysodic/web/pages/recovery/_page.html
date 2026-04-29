@@ -1,0 +1,41 @@
+{% imports %}
+  {% from "chirpui/layout.html" import cluster, container, stack %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="54rem") %}
+{% call stack(gap="lg") %}
+  {% call surface(variant="elevated") %}
+  <article class="elbysodic-recovery">
+    <p class="elbysodic-section-kicker">{{ recovery.kicker }}</p>
+    <h1>{{ recovery.title }}</h1>
+    <p class="elbysodic-copy-section">{{ recovery.summary }}</p>
+    <p class="elbysodic-copy-summary">{{ recovery.detail }}</p>
+    {% call cluster(gap="sm") %}
+      {% if recovery.switch_action %}
+      <form action="/identity" method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="switch_membership">
+        <input type="hidden" name="membership_id" value="{{ recovery.switch_action.membership_id }}">
+        <input type="hidden" name="character_id" value="{{ recovery.switch_action.character_id }}">
+        <input type="hidden" name="next" value="{{ recovery.switch_action.next_url }}">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">
+          {{ recovery.switch_action.label }}
+        </button>
+      </form>
+      {% end %}
+      {% for link in recovery.links %}
+      <a class="chirpui-btn chirpui-btn--{{ link.variant }}" href="{{ link.href }}">{{ link.label }}</a>
+      {% end %}
+    {% end %}
+  </article>
+{% end %}
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

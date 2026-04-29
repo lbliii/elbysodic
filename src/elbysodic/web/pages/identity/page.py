@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
+from elbysodic.web.recovery import recover_next_url
 from elbysodic.web.state import get_services
 
 
@@ -29,6 +30,7 @@ async def post(request: Request) -> Redirect:
     intent = str(form.get("intent") or "set_default_character")
     if intent == "switch_membership":
         identity = services.switch_dev_identity(int(str(form.get("membership_id") or "0")))
+        next_url = recover_next_url(services.repo, identity, next_url)
         return Redirect(
             next_url,
             headers=(

@@ -296,6 +296,122 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
     asyncio.run(run())
 
 
+def test_stale_dev_identity_cookie_falls_back_to_membership_for_program() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        community = services.repo.get_community_by_slug("jurassic-park-universe")
+        stale_cookie = f"elbysodic_dev_identity={community.id}:1:999999"
+
+        async with TestClient(app) as client:
+            response = await client.get("/applications", headers={"Cookie": stale_cookie})
+
+        assert response.status == 200
+        assert (
+            '<span class="elbysodic-community-brand__name">Jurassic Park Universe</span>'
+            in response.text
+        )
+        assert '<style id="elbysodic-program-theme">' in response.text
+        assert "--chirpui-accent: #6bbf7a;" in response.text
+
+    asyncio.run(run())
+
+
+def test_application_room_for_other_program_renders_realm_recovery() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/applications/asha-bennett",
+                headers={"Cookie": cookie},
+            )
+
+        assert response.status == 200
+        assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in response.text
+        assert "That face lives in Jurassic Park Universe." in response.text
+        assert "Switch to Jurassic Park Universe" in response.text
+        assert 'name="next" value="/applications/asha-bennett"' in response.text
+        assert 'href="/applications"' in response.text
+
+    asyncio.run(run())
+
+
+def test_cross_realm_character_url_renders_switchable_recovery() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/characters/asha-bennett",
+                headers={"Cookie": cookie},
+            )
+
+        assert response.status == 200
+        assert "That face lives in Jurassic Park Universe." in response.text
+        assert 'name="next" value="/characters/asha-bennett"' in response.text
+        assert "Open Roster" in response.text
+
+    asyncio.run(run())
+
+
+def test_cross_realm_material_url_renders_switchable_recovery() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/world/paddock-twelve-incident",
+                headers={"Cookie": cookie},
+            )
+
+        assert response.status == 200
+        assert "That world material lives in Jurassic Park Universe." in response.text
+        assert 'name="next" value="/world/paddock-twelve-incident"' in response.text
+        assert "Open Guidebook" in response.text
+
+    asyncio.run(run())
+
+
+def test_identity_switch_sanitizes_cross_realm_next_url() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/applications/asha-bennett",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 302
+        assert _response_header(response, "location") == "/applications"
+
+    asyncio.run(run())
+
+
 def test_forum_pages_render_seeded_boards_and_thread() -> None:
     async def run() -> None:
         app = _app()
@@ -1290,7 +1406,9 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert 'href="/world/b-24-winter"' in scene.text
 
             missing = await client.get("/world/not-a-material")
-            assert missing.status == 404
+            assert missing.status == 200
+            assert "That world material is not in X-Men Apocalypse." in missing.text
+            assert "Open Guidebook" in missing.text
 
     asyncio.run(run())
 
@@ -1657,7 +1775,9 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "Rogue&#39;s Reserves" in casting.text
 
             missing = await client.get("/wanted/not-a-hook")
-            assert missing.status == 404
+            assert missing.status == 200
+            assert "That wanted hook is not in X-Men Apocalypse." in missing.text
+            assert "Open Wanted" in missing.text
 
     asyncio.run(run())
 
