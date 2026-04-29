@@ -7,15 +7,15 @@ from elbysodic.db.repositories.base import (
     _next_update_stamp,
     _utc_now,
 )
+from elbysodic.db.repositories.interactions import InteractionRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _post_from_row,
     _post_revision_from_row,
 )
-from elbysodic.db.repositories.threads import ThreadRepositoryMixin
 from elbysodic.domain.models import Post, PostRevision
 
 
-class PostRepositoryMixin(ThreadRepositoryMixin):
+class PostRepositoryMixin(InteractionRepositoryMixin):
     def create_post(
         self,
         community_id: int,

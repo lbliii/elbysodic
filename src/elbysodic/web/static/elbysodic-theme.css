@@ -4547,6 +4547,173 @@ body {
     top: auto;
 }
 
+.elbysodic-interaction-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.elbysodic-interaction-card {
+    background: color-mix(in srgb, var(--chirpui-accent) 6%, var(--chirpui-surface-elevated));
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius);
+    color: var(--chirpui-text);
+    display: grid;
+    gap: 0.55rem;
+    min-height: 12rem;
+    padding: 1rem;
+    text-decoration: none;
+}
+
+.elbysodic-interaction-card:hover,
+.elbysodic-interaction-card:focus-visible {
+    border-color: var(--chirpui-card-hover-border);
+    box-shadow: var(--chirpui-card-hover-shadow);
+}
+
+.elbysodic-interaction-card strong {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xl);
+    line-height: 1.1;
+}
+
+.elbysodic-interaction-card span:not(.elbysodic-section-kicker) {
+    color: var(--chirpui-text-muted);
+    line-height: 1.45;
+}
+
+.elbysodic-interaction-card small {
+    align-self: end;
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+}
+
+.elbysodic-interaction-hero {
+    align-items: center;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-interaction-hero h1 {
+    font-size: var(--chirpui-font-3xl);
+    line-height: 1.05;
+    margin: 0;
+}
+
+.elbysodic-interaction-hero__status {
+    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 28%, var(--chirpui-border));
+    border-radius: var(--chirpui-radius);
+    display: grid;
+    gap: 0.2rem;
+    min-width: 8rem;
+    padding: 0.85rem;
+}
+
+.elbysodic-interaction-hero__status strong {
+    font-size: var(--chirpui-font-2xl);
+    line-height: 1;
+}
+
+.elbysodic-interaction-hero__status span,
+.elbysodic-interaction-hero__status em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.elbysodic-interaction-form,
+.elbysodic-interaction-question,
+.elbysodic-interaction-options {
+    display: grid;
+    gap: 1rem;
+}
+
+.elbysodic-interaction-question {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.elbysodic-interaction-question + .elbysodic-interaction-question {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    padding-top: 1rem;
+}
+
+.elbysodic-interaction-question legend {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-xl);
+    font-weight: 900;
+    line-height: 1.15;
+    padding: 0;
+}
+
+.elbysodic-interaction-question p {
+    color: var(--chirpui-text-muted);
+    margin: 0;
+}
+
+.elbysodic-interaction-option {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 4%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius-sm);
+    cursor: pointer;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0.85rem;
+}
+
+.elbysodic-interaction-option:hover,
+.elbysodic-interaction-option:has(input:focus-visible),
+.elbysodic-interaction-option--selected {
+    border-color: color-mix(in srgb, var(--chirpui-accent) 58%, var(--chirpui-border));
+}
+
+.elbysodic-interaction-option input {
+    accent-color: var(--chirpui-accent);
+}
+
+.elbysodic-interaction-option span {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.elbysodic-interaction-option strong {
+    color: var(--chirpui-text);
+    line-height: 1.2;
+}
+
+.elbysodic-interaction-option small,
+.elbysodic-interaction-option em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-style: normal;
+    line-height: 1.35;
+}
+
+.elbysodic-interaction-option em {
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+@media (max-width: 44rem) {
+    .elbysodic-interaction-hero,
+    .elbysodic-interaction-option {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-interaction-hero__status {
+        min-width: 0;
+    }
+}
+
 .elbysodic-post-shell {
     --elbysodic-character-accent: var(--chirpui-accent);
     isolation: isolate;

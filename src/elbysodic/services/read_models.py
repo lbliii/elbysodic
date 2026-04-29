@@ -24,6 +24,11 @@ from elbysodic.domain.models import (
     PlottingRoomParticipant,
     Post,
     PostRevision,
+    RealmInteraction,
+    RealmInteractionAnswer,
+    RealmInteractionOption,
+    RealmInteractionQuestion,
+    RealmInteractionResponse,
     Role,
     SidebarSectionConfig,
     Thread,
@@ -505,6 +510,7 @@ class ApplicationsDesk:
 class ApplicationOnboarding:
     facets: list[FacetTag]
     application_materials: list[MaterialSummary]
+    interactions: list[RealmInteractionSummary]
 
 
 @dataclass(frozen=True, slots=True)
@@ -538,6 +544,51 @@ class MemberDirectoryCard:
     active_thread_count: int
     latest_post: CharacterAppearance | None
     is_current_member: bool
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionSummary:
+    interaction: RealmInteraction
+    response_count: int
+    has_response: bool
+
+    @property
+    def type_label(self) -> str:
+        return {
+            "quiz": "Quiz",
+            "poll": "Poll",
+            "survey": "Survey",
+        }.get(self.interaction.interaction_type, "Interaction")
+
+    @property
+    def status_label(self) -> str:
+        return "Open" if self.interaction.status == "open" else self.interaction.status.title()
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionOptionView:
+    option: RealmInteractionOption
+    response_count: int
+    is_selected: bool
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionQuestionView:
+    question: RealmInteractionQuestion
+    options: list[RealmInteractionOptionView]
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionDetail:
+    summary: RealmInteractionSummary
+    questions: list[RealmInteractionQuestionView]
+    response: RealmInteractionResponse | None
+    answers: list[RealmInteractionAnswer]
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionHub:
+    interactions: list[RealmInteractionSummary]
 
 
 @dataclass(frozen=True, slots=True)

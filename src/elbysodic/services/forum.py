@@ -83,6 +83,12 @@ from elbysodic.services.identity import member_directory as _member_directory
 from elbysodic.services.identity import member_profile as _member_profile
 from elbysodic.services.identity import roster_activity as _roster_activity
 from elbysodic.services.identity import selected_character as _selected_character
+from elbysodic.services.interactions import read_realm_interaction as _read_realm_interaction
+from elbysodic.services.interactions import realm_interaction_hub as _realm_interaction_hub
+from elbysodic.services.interactions import (
+    realm_interaction_summary as _realm_interaction_summary,
+)
+from elbysodic.services.interactions import submit_realm_interaction as _submit_realm_interaction
 from elbysodic.services.markup import post_snippet
 from elbysodic.services.materials import (
     current_event_for_facet_ids as _current_event_for_facet_ids,
@@ -168,6 +174,8 @@ from elbysodic.services.read_models import (
     PlottingRoomDetail,
     PostRevisionHistory,
     PostStylePolicy,
+    RealmInteractionDetail,
+    RealmInteractionHub,
     StudioBoardEditor,
     StudioIdentityOption,
     StudioNetworkDirectory,
@@ -572,7 +580,30 @@ class AppServices:
                 for material in self.repo.list_materials(viewer.community.id)
                 if material.material_type == "application"
             ],
+            interactions=[
+                _realm_interaction_summary(self.repo, viewer, interaction)
+                for interaction in self.repo.list_realm_interactions(
+                    viewer.community.id,
+                    placement="application",
+                )
+            ],
         )
+
+    def realm_interactions(self) -> RealmInteractionHub:
+        viewer = self.viewer()
+        return _realm_interaction_hub(self.repo, viewer)
+
+    def read_realm_interaction(self, slug: str) -> RealmInteractionDetail:
+        viewer = self.viewer()
+        return _read_realm_interaction(self.repo, viewer, slug)
+
+    def submit_realm_interaction(
+        self,
+        slug: str,
+        selected_option_ids: dict[int, int],
+    ) -> RealmInteractionDetail:
+        viewer = self.viewer()
+        return _submit_realm_interaction(self.repo, viewer, slug, selected_option_ids)
 
     def members_directory(self) -> MemberDirectory:
         viewer = self.viewer()

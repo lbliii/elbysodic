@@ -29,6 +29,11 @@ from elbysodic.domain.models import (
     PlottingRoomParticipant,
     Post,
     PostRevision,
+    RealmInteraction,
+    RealmInteractionAnswer,
+    RealmInteractionOption,
+    RealmInteractionQuestion,
+    RealmInteractionResponse,
     Role,
     SidebarSectionConfig,
     Thread,
@@ -381,6 +386,79 @@ def _character_reserve_from_row(row: sqlite3.Row) -> CharacterReserve:
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+    )
+
+
+def _realm_interaction_from_row(row: sqlite3.Row) -> RealmInteraction:
+    return RealmInteraction(
+        id=row["id"],
+        community_id=row["community_id"],
+        slug=row["slug"],
+        title=row["title"],
+        interaction_type=row["interaction_type"],
+        placement=row["placement"],
+        summary=row["summary"],
+        body=row["body"],
+        status=row["status"],
+        result_mode=row["result_mode"],
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _realm_interaction_question_from_row(row: sqlite3.Row) -> RealmInteractionQuestion:
+    return RealmInteractionQuestion(
+        id=row["id"],
+        community_id=row["community_id"],
+        interaction_id=row["interaction_id"],
+        prompt=row["prompt"],
+        help_text=row["help_text"],
+        question_type=row["question_type"],
+        is_required=bool(row["is_required"]),
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _realm_interaction_option_from_row(row: sqlite3.Row) -> RealmInteractionOption:
+    return RealmInteractionOption(
+        id=row["id"],
+        community_id=row["community_id"],
+        question_id=row["question_id"],
+        slug=row["slug"],
+        label=row["label"],
+        description=row["description"],
+        result_key=row["result_key"],
+        score=row["score"],
+        sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _realm_interaction_response_from_row(row: sqlite3.Row) -> RealmInteractionResponse:
+    return RealmInteractionResponse(
+        id=row["id"],
+        community_id=row["community_id"],
+        interaction_id=row["interaction_id"],
+        membership_id=row["membership_id"],
+        character_id=row["character_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _realm_interaction_answer_from_row(row: sqlite3.Row) -> RealmInteractionAnswer:
+    return RealmInteractionAnswer(
+        id=row["id"],
+        community_id=row["community_id"],
+        response_id=row["response_id"],
+        question_id=row["question_id"],
+        option_id=row["option_id"],
+        text_answer=row["text_answer"],
+        created_at=row["created_at"],
     )
 
 

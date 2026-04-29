@@ -327,6 +327,74 @@ class CharacterReserve:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmInteraction:
+    id: int
+    community_id: int
+    slug: str
+    title: str
+    interaction_type: str
+    placement: str
+    summary: str
+    body: str
+    status: str
+    result_mode: str
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionQuestion:
+    id: int
+    community_id: int
+    interaction_id: int
+    prompt: str
+    help_text: str
+    question_type: str
+    is_required: bool
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionOption:
+    id: int
+    community_id: int
+    question_id: int
+    slug: str
+    label: str
+    description: str
+    result_key: str
+    score: int
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionResponse:
+    id: int
+    community_id: int
+    interaction_id: int
+    membership_id: int
+    character_id: int | None
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmInteractionAnswer:
+    id: int
+    community_id: int
+    response_id: int
+    question_id: int
+    option_id: int | None
+    text_answer: str
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class Thread:
     id: int
     community_id: int

@@ -38,6 +38,33 @@ class DemoSeed:
     default_character: Character | None
 
 
+@dataclass(frozen=True, slots=True)
+class InteractionOptionSeed:
+    slug: str
+    label: str
+    description: str
+    result_key: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class InteractionQuestionSeed:
+    prompt: str
+    help_text: str
+    options: tuple[InteractionOptionSeed, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class InteractionSeed:
+    slug: str
+    title: str
+    interaction_type: str
+    placement: str
+    summary: str
+    body: str
+    result_mode: str
+    questions: tuple[InteractionQuestionSeed, ...]
+
+
 STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
     ProgramBlueprint(
         slug="hp-universe",
@@ -708,6 +735,209 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         ),
     ),
 )
+
+
+DEFAULT_REALM_INTERACTIONS: tuple[InteractionSeed, ...] = (
+    InteractionSeed(
+        slug="pressure-lane-finder",
+        title="Pressure Lane Finder",
+        interaction_type="quiz",
+        placement="application",
+        summary="A quick lens for choosing where a new face feels most playable.",
+        body=(
+            "Use this as a soft nudge before applying. It is not binding; it helps writers "
+            "and directors see whether the concept wants school politics, field work, "
+            "Brotherhood pressure, or civilian fallout."
+        ),
+        result_mode="weighted",
+        questions=(
+            InteractionQuestionSeed(
+                "When the world turns against mutants, where does your face first move?",
+                "Pick the pressure that feels most useful for your opening threads.",
+                (
+                    InteractionOptionSeed(
+                        "school",
+                        "Toward the school",
+                        "Found family, mentorship, student pressure, and safer walls.",
+                        "x-men",
+                    ),
+                    InteractionOptionSeed(
+                        "field",
+                        "Into the field",
+                        "Rescue work, hard choices, and fast-moving mission fallout.",
+                        "mission-ready",
+                    ),
+                    InteractionOptionSeed(
+                        "brotherhood",
+                        "Toward sharper politics",
+                        "Radicalization, protection through force, and ideological heat.",
+                        "brotherhood",
+                    ),
+                    InteractionOptionSeed(
+                        "civilian",
+                        "Into the civilian blast radius",
+                        "Families, public panic, and the cost of being known.",
+                        "political",
+                    ),
+                ),
+            ),
+        ),
+    ),
+)
+
+
+STUDIO_REALM_INTERACTIONS: dict[str, tuple[InteractionSeed, ...]] = {
+    "hp-universe": (
+        InteractionSeed(
+            slug="house-pressure-sorting",
+            title="House Pressure Sorting",
+            interaction_type="quiz",
+            placement="application",
+            summary="A sorting-style prompt for the kind of school-year trouble your face courts.",
+            body=(
+                "This is less about choosing a canon house and more about the narrative pressure "
+                "your character brings to the castle."
+            ),
+            result_mode="weighted",
+            questions=(
+                InteractionQuestionSeed(
+                    "What would get your face into trouble before breakfast?",
+                    "Choose the hook that sounds most fun to write.",
+                    (
+                        InteractionOptionSeed(
+                            "bravery",
+                            "Running toward a cursed door",
+                            "Instinct, loyalty, and courage with poor timing.",
+                            "gryffindor",
+                        ),
+                        InteractionOptionSeed(
+                            "ambition",
+                            "Making a private bargain",
+                            "Reputation, leverage, and secrets kept too well.",
+                            "slytherin",
+                        ),
+                        InteractionOptionSeed(
+                            "curiosity",
+                            "Reading the forbidden marginalia",
+                            "Research, pattern-hunting, and consequences with footnotes.",
+                            "ravenclaw",
+                        ),
+                        InteractionOptionSeed(
+                            "loyalty",
+                            "Covering for a friend",
+                            "Care, stubbornness, and community pressure.",
+                            "hufflepuff",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "jurassic-park-universe": (
+        InteractionSeed(
+            slug="incident-role-poll",
+            title="Incident Role Poll",
+            interaction_type="poll",
+            placement="general",
+            summary="Vote on what kind of opening incident the island should spotlight next.",
+            body=(
+                "Directors can use this as a temperature check before staging the next island beat."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "Which incident lane should get the next event spotlight?",
+                    "Pick the kind of pressure you would most like to write into.",
+                    (
+                        InteractionOptionSeed(
+                            "supply-run",
+                            "A supply run goes quiet",
+                            "Radio silence, mud, and something moving near the crates.",
+                        ),
+                        InteractionOptionSeed(
+                            "guest-tour",
+                            "A guest tour loses power",
+                            "Public-facing panic where everyone has a camera.",
+                        ),
+                        InteractionOptionSeed(
+                            "lab-breach",
+                            "A lab breach asks for volunteers",
+                            "Contained science trouble that may not stay contained.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "rl-nyc": (
+        InteractionSeed(
+            slug="borough-energy-survey",
+            title="Borough Energy Survey",
+            interaction_type="survey",
+            placement="application",
+            summary="A quick vibe check for where a new NYC character creates pressure.",
+            body="A small director aid for connecting applicants to neighborhoods and social circles.",
+            result_mode="confirmation",
+            questions=(
+                InteractionQuestionSeed(
+                    "What kind of city pressure should find your face first?",
+                    "Choose the lane that would make the first three threads easy.",
+                    (
+                        InteractionOptionSeed(
+                            "creative",
+                            "Creative scene chaos",
+                            "Openings, auditions, collabs, rivals, and late-night favors.",
+                        ),
+                        InteractionOptionSeed(
+                            "work",
+                            "Work-life collision",
+                            "Ambition, burnout, bosses, shifts, side hustles, and rent.",
+                        ),
+                        InteractionOptionSeed(
+                            "neighborhood",
+                            "Neighborhood history",
+                            "Families, regulars, grudges, and everyone knowing your business.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "rl-small-town": (
+        InteractionSeed(
+            slug="founders-week-vote",
+            title="Founder's Week Vote",
+            interaction_type="poll",
+            placement="general",
+            summary="Choose the next public pressure point for the time capsule event.",
+            body="A simple civic vote directors can turn into the next town-wide prompt.",
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "Where should the time capsule letter cause trouble next?",
+                    "Pick the public stage that sounds most combustible.",
+                    (
+                        InteractionOptionSeed(
+                            "diner",
+                            "The diner breakfast rush",
+                            "Gossip, receipts, and three tables pretending not to listen.",
+                        ),
+                        InteractionOptionSeed(
+                            "council",
+                            "The town council meeting",
+                            "Minutes, motions, microphones, and long memories.",
+                        ),
+                        InteractionOptionSeed(
+                            "festival",
+                            "The Founder's Week parade",
+                            "Floats, sponsors, old grudges, and everyone outside.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+}
 
 
 def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
@@ -1428,6 +1658,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     _assign_board_facets(repo, community.id, archive.id, facets, ["history"])
     _assign_board_facets(repo, community.id, staff_room.id, facets, ["staff"])
     _seed_materials(repo, community.id, facets)
+    _seed_realm_interactions(repo, community.id, DEFAULT_REALM_INTERACTIONS)
     _seed_wanted_ads(
         repo,
         community.id,
@@ -2357,6 +2588,11 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                     )
                 ),
             )
+        _seed_realm_interactions(
+            repo,
+            community.id,
+            STUDIO_REALM_INTERACTIONS.get(program.slug, ()),
+        )
 
 
 def _ensure_studio_program_community(
@@ -2502,6 +2738,55 @@ def _ensure_material(
         sort_order=sort_order,
         is_featured=is_featured,
     )
+
+
+def _seed_realm_interactions(
+    repo: ForumRepository,
+    community_id: int,
+    interactions: tuple[InteractionSeed, ...],
+) -> None:
+    for interaction_index, interaction_seed in enumerate(interactions, start=1):
+        interaction = _get_or_create(
+            lambda community_id=community_id, interaction_seed=interaction_seed: (
+                repo.get_realm_interaction_by_slug(
+                    community_id,
+                    interaction_seed.slug,
+                )
+            ),
+            lambda community_id=community_id, interaction_seed=interaction_seed, interaction_index=interaction_index: (
+                repo.create_realm_interaction(
+                    community_id,
+                    interaction_seed.slug,
+                    interaction_seed.title,
+                    interaction_type=interaction_seed.interaction_type,
+                    placement=interaction_seed.placement,
+                    summary=interaction_seed.summary,
+                    body=interaction_seed.body,
+                    result_mode=interaction_seed.result_mode,
+                    sort_order=interaction_index * 10,
+                )
+            ),
+        )
+        if repo.list_realm_interaction_questions(community_id, interaction.id):
+            continue
+        for question_index, question_seed in enumerate(interaction_seed.questions, start=1):
+            question = repo.create_realm_interaction_question(
+                community_id,
+                interaction.id,
+                question_seed.prompt,
+                help_text=question_seed.help_text,
+                sort_order=question_index * 10,
+            )
+            for option_index, option_seed in enumerate(question_seed.options, start=1):
+                repo.create_realm_interaction_option(
+                    community_id,
+                    question.id,
+                    option_seed.slug,
+                    option_seed.label,
+                    description=option_seed.description,
+                    result_key=option_seed.result_key,
+                    sort_order=option_index * 10,
+                )
 
 
 def _ensure_post(

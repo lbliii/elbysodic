@@ -1952,6 +1952,58 @@ def test_network_start_application_switches_to_realm_form() -> None:
     asyncio.run(run())
 
 
+def test_realm_interactions_render_submit_and_link_from_applications() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        community = services.seed.community
+        interaction = services.repo.get_realm_interaction_by_slug(
+            community.id,
+            "pressure-lane-finder",
+        )
+        question = services.repo.list_realm_interaction_questions(
+            community.id,
+            interaction.id,
+        )[0]
+        option = services.repo.list_realm_interaction_options(
+            community.id,
+            question.id,
+        )[0]
+
+        async with TestClient(app) as client:
+            hub = await client.get("/interactions")
+            detail = await client.get("/interactions/pressure-lane-finder")
+            application = await client.get("/applications/new")
+            response = await client.post(
+                "/interactions/pressure-lane-finder",
+                body=urlencode({f"question_{question.id}": str(option.id)}).encode(),
+                headers=_FORM,
+            )
+            updated = await client.get("/interactions/pressure-lane-finder")
+
+        stored = services.repo.get_realm_interaction_response_for_membership(
+            community.id,
+            interaction.id,
+            services.seed.membership.id,
+        )
+
+        assert hub.status == 200
+        assert "Realm Artifacts" in hub.text
+        assert "Pressure Lane Finder" in hub.text
+        assert detail.status == 200
+        assert "When the world turns against mutants" in detail.text
+        assert application.status == 200
+        assert "Optional realm quizzes" in application.text
+        assert "Pressure Lane Finder" in application.text
+        assert response.status == 302
+        assert _response_header(response, "location") == "/interactions/pressure-lane-finder"
+        assert stored is not None
+        assert updated.status == 200
+        assert "You responded" in updated.text
+
+    asyncio.run(run())
+
+
 def test_character_plot_hooks_render_create_and_notify_interest() -> None:
     async def run() -> None:
         app = _app()

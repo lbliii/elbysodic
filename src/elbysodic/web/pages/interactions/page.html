@@ -1,0 +1,45 @@
+{% imports %}
+  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Realm Artifacts") %}
+  Quizzes, polls, and surveys directors can use to shape applications and events.
+  {% end %}
+
+  {% if hub.interactions %}
+  <div class="elbysodic-interaction-grid">
+    {% for item in hub.interactions %}
+    <a class="elbysodic-interaction-card" href="/interactions/{{ item.interaction.slug }}">
+      <span class="elbysodic-section-kicker">{{ item.type_label }} · {{ item.status_label }}</span>
+      <strong>{{ item.interaction.title }}</strong>
+      <span>{{ item.interaction.summary }}</span>
+      <small>
+        {% if item.has_response %}
+        You responded
+        {% elif item.response_count %}
+        {{ item.response_count }} response{{ "" if item.response_count == 1 else "s" }}
+        {% else %}
+        Open for the first response
+        {% end %}
+      </small>
+    </a>
+    {% end %}
+  </div>
+  {% else %}
+  {% call surface(variant="elevated") %}
+  <p class="elbysodic-empty-state">No realm artifacts are open yet.</p>
+  {% end %}
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

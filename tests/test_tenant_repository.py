@@ -193,6 +193,88 @@ def test_sidebar_section_config_is_scoped_by_community(repo: ForumRepository) ->
     assert hosted_locations.show_label is False
 
 
+def test_realm_interactions_are_scoped_and_accept_one_membership_response(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("pollster@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "pollster",
+        "Pollster",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "pollster",
+        "Pollster",
+    )
+    default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "poll-face",
+        "Poll Face",
+    )
+    interaction = repo.create_realm_interaction(
+        default.id,
+        "sorting",
+        "Sorting",
+        placement="application",
+    )
+    question = repo.create_realm_interaction_question(
+        default.id,
+        interaction.id,
+        "Where do you belong?",
+    )
+    option = repo.create_realm_interaction_option(
+        default.id,
+        question.id,
+        "library",
+        "The library",
+    )
+    repo.create_realm_interaction(
+        hosted.id,
+        "sorting",
+        "Hosted Sorting",
+        placement="application",
+    )
+
+    response = repo.submit_realm_interaction_response(
+        default.id,
+        interaction.id,
+        default_membership.id,
+        character_id=default_character.id,
+        selected_option_ids={question.id: option.id},
+    )
+    replacement = repo.submit_realm_interaction_response(
+        default.id,
+        interaction.id,
+        default_membership.id,
+        character_id=default_character.id,
+        selected_option_ids={question.id: option.id},
+    )
+
+    assert repo.get_realm_interaction_by_slug(default.id, "sorting").title == "Sorting"
+    assert repo.get_realm_interaction_by_slug(hosted.id, "sorting").title == "Hosted Sorting"
+    assert response.id == replacement.id
+    assert response.character_id == default_character.id
+    assert repo.count_realm_interaction_responses(default.id, interaction.id) == 1
+    assert repo.realm_interaction_option_counts(default.id, interaction.id) == {option.id: 1}
+    with pytest.raises(LookupError, match="membership not found"):
+        repo.submit_realm_interaction_response(
+            default.id,
+            interaction.id,
+            hosted_membership.id,
+            selected_option_ids={question.id: option.id},
+        )
+
+
 def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
     connection = connect()
     connection.executescript(

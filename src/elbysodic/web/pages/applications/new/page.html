@@ -30,6 +30,16 @@
       {% end %}
     </div>
     {% end %}
+    {% if onboarding.interactions %}
+    <div class="elbysodic-application-starter__materials">
+      <p class="elbysodic-copy-meta">Optional realm quizzes</p>
+      {% for item in onboarding.interactions %}
+      <a class="chirpui-link" href="/interactions/{{ item.interaction.slug }}">
+        {{ item.interaction.title }}{% if item.has_response %} · responded{% end %}
+      </a>
+      {% end %}
+    </div>
+    {% end %}
   </section>
   {% end %}
 

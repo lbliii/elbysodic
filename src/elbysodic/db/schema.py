@@ -371,6 +371,73 @@ CREATE TABLE IF NOT EXISTS character_reserves (
     UNIQUE (community_id, wanted_ad_interest_id)
 );
 
+CREATE TABLE IF NOT EXISTS realm_interactions (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    interaction_type TEXT NOT NULL DEFAULT 'quiz',
+    placement TEXT NOT NULL DEFAULT 'general',
+    summary TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    result_mode TEXT NOT NULL DEFAULT 'confirmation',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS realm_interaction_questions (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    interaction_id INTEGER NOT NULL REFERENCES realm_interactions(id) ON DELETE CASCADE,
+    prompt TEXT NOT NULL,
+    help_text TEXT NOT NULL DEFAULT '',
+    question_type TEXT NOT NULL DEFAULT 'single_choice',
+    is_required INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS realm_interaction_options (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL REFERENCES realm_interaction_questions(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    label TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    result_key TEXT NOT NULL DEFAULT '',
+    score INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, question_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS realm_interaction_responses (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    interaction_id INTEGER NOT NULL REFERENCES realm_interactions(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, interaction_id, membership_id)
+);
+
+CREATE TABLE IF NOT EXISTS realm_interaction_answers (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    response_id INTEGER NOT NULL REFERENCES realm_interaction_responses(id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL REFERENCES realm_interaction_questions(id) ON DELETE CASCADE,
+    option_id INTEGER REFERENCES realm_interaction_options(id) ON DELETE CASCADE,
+    text_answer TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, response_id, question_id)
+);
+
 CREATE TABLE IF NOT EXISTS threads (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -544,6 +611,16 @@ CREATE INDEX IF NOT EXISTS idx_plotting_room_messages_room
 ON plotting_room_messages(community_id, plotting_room_id, id);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_character ON character_reserves(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_wanted ON character_reserves(community_id, wanted_ad_id, status);
+CREATE INDEX IF NOT EXISTS idx_realm_interactions_community
+ON realm_interactions(community_id, status, placement, sort_order, title);
+CREATE INDEX IF NOT EXISTS idx_realm_interaction_questions_interaction
+ON realm_interaction_questions(community_id, interaction_id, sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_realm_interaction_options_question
+ON realm_interaction_options(community_id, question_id, sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_realm_interaction_responses_interaction
+ON realm_interaction_responses(community_id, interaction_id, updated_at);
+CREATE INDEX IF NOT EXISTS idx_realm_interaction_answers_response
+ON realm_interaction_answers(community_id, response_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id, facet_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);
