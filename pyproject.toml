@@ -98,6 +98,7 @@ ignore = [
 "src/elbysodic/db/repositories/plot_hooks.py" = ["S608"]
 "src/elbysodic/db/repositories/plotting.py" = ["S608"]
 "src/elbysodic/db/repositories/reserves.py" = ["S608"]
+"src/elbysodic/db/repositories/threads.py" = ["S608"]
 "src/elbysodic/db/repositories/wanted.py" = ["S608"]
 
 # =============================================================================
