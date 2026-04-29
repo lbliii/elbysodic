@@ -5888,6 +5888,148 @@ body {
     margin: 0;
 }
 
+.elbysodic-network-hero {
+    align-items: end;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.elbysodic-network-hero h1 {
+    color: var(--chirpui-text);
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(2.2rem, 4vw, 3.6rem);
+    letter-spacing: 0;
+    line-height: 0.98;
+    margin: 0 0 0.65rem;
+    max-inline-size: 13ch;
+}
+
+.elbysodic-network-hero__metrics,
+.elbysodic-network-card__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.elbysodic-network-grid {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.elbysodic-network-card {
+    --elbysodic-network-accent: var(--chirpui-accent);
+    --elbysodic-network-surface: var(--chirpui-surface);
+    --elbysodic-network-text: var(--chirpui-text);
+    --elbysodic-network-display-font: var(--elbysodic-display-font-family);
+    align-items: stretch;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) auto;
+    padding: 0.9rem;
+}
+
+.elbysodic-network-card--current {
+    outline: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 60%, transparent);
+}
+
+.elbysodic-network-card__swatch {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-network-accent) 72%, transparent), transparent 56%),
+        var(--elbysodic-network-surface);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 45%, var(--chirpui-border));
+    border-radius: var(--chirpui-radius-sm);
+    min-block-size: 8rem;
+}
+
+.elbysodic-network-card__main {
+    display: grid;
+    gap: 0.65rem;
+    min-inline-size: 0;
+}
+
+.elbysodic-network-card__header {
+    align-items: start;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.elbysodic-network-card__header h2 {
+    color: var(--elbysodic-network-accent);
+    font-family: var(--elbysodic-network-display-font);
+    font-size: clamp(1.7rem, 3vw, 2.45rem);
+    letter-spacing: 0;
+    line-height: 1;
+    margin: 0;
+}
+
+.elbysodic-network-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+
+.elbysodic-network-card__actions {
+    align-content: end;
+    display: grid;
+    gap: 0.45rem;
+    justify-items: stretch;
+}
+
+.elbysodic-network-card__actions form {
+    margin: 0;
+}
+
+.elbysodic-application-starter {
+    align-items: start;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.35fr);
+    padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.elbysodic-application-starter h1 {
+    color: var(--chirpui-text);
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    letter-spacing: 0;
+    line-height: 0.98;
+    margin: 0 0 0.65rem;
+    max-inline-size: 13ch;
+}
+
+.elbysodic-application-starter__materials,
+.elbysodic-application-form__facets {
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0.85rem;
+}
+
+.elbysodic-facet-choice-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.elbysodic-facet-choice {
+    align-items: center;
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 0.35rem;
+    padding: 0.35rem 0.55rem;
+}
+
+.elbysodic-facet-choice small {
+    color: var(--chirpui-text-muted);
+}
+
 .elbysodic-current-event-card {
     color: var(--chirpui-text);
     display: grid;
@@ -6947,5 +7089,22 @@ body {
 
     .elbysodic-member-profile-hero__metrics {
         justify-content: flex-start;
+    }
+
+    .elbysodic-network-hero,
+    .elbysodic-network-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-network-card__swatch {
+        min-block-size: 4.5rem;
+    }
+
+    .elbysodic-network-card__actions {
+        justify-items: start;
+    }
+
+    .elbysodic-application-starter {
+        grid-template-columns: 1fr;
     }
 }

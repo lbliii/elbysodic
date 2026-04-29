@@ -85,6 +85,7 @@
     <div class="elbysodic-command-panel__actions">
       <a class="chirpui-btn chirpui-btn--secondary" href="/world/application-guide">Open guide</a>
       <a class="chirpui-btn chirpui-btn--primary" href="/characters">Open roster</a>
+      <a class="chirpui-btn chirpui-btn--primary" href="/applications/new">Start application</a>
     </div>
     <div class="elbysodic-command-panel__metrics" aria-label="Application pipeline totals">
       {{ metric_item(desk.my_applications | length, "My applications") }}
@@ -106,7 +107,10 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No character drafts are in your application lane yet.</p>
+    <div class="chirpui-stack chirpui-stack--sm">
+      <p class="elbysodic-empty-state">No character drafts are in your application lane yet.</p>
+      <a class="chirpui-btn chirpui-btn--primary" href="/applications/new">Start application</a>
+    </div>
     {% end %}
     {% end %}
   </section>

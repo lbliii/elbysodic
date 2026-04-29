@@ -1,0 +1,94 @@
+{% imports %}
+  {% from "chirpui/layout.html" import cluster, container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="68rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Start Application") %}
+  Create a draft face inside {{ viewer.community.name }}.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-application-starter" aria-labelledby="application-starter-heading">
+    <div>
+      <p class="elbysodic-section-kicker">Casting ritual</p>
+      <h1 id="application-starter-heading">Begin a new face for this realm.</h1>
+      <p class="elbysodic-copy-section">
+        Start with the playable shape. The application room will hold the fuller notes.
+      </p>
+    </div>
+    {% if onboarding.application_materials %}
+    <div class="elbysodic-application-starter__materials">
+      <p class="elbysodic-copy-meta">Application materials</p>
+      {% for item in onboarding.application_materials %}
+      <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+      {% end %}
+    </div>
+    {% end %}
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <form class="chirpui-stack chirpui-stack--md elbysodic-application-form" method="post" hx-boost="false">
+    {% if error %}
+    <p class="chirpui-field__error">{{ error }}</p>
+    {% end %}
+    <label>
+      <span class="chirpui-field__label">Face name</span>
+      <input class="chirpui-field__input"
+             name="name"
+             value="{{ name }}"
+             required
+             maxlength="80"
+             placeholder="Rowan Ash">
+    </label>
+    <label>
+      <span class="chirpui-field__label">Concept summary</span>
+      <textarea class="chirpui-field__input"
+                name="summary"
+                rows="4"
+                maxlength="5000"
+                placeholder="A sentence or two directors and writers can scan.">{{ summary }}</textarea>
+    </label>
+    <label>
+      <span class="chirpui-field__label">Application notes</span>
+      <textarea class="chirpui-field__input"
+                name="body"
+                rows="8"
+                maxlength="5000"
+                placeholder="History, hooks, boundaries, wanted ties, and what kind of play you want.">{{ body }}</textarea>
+    </label>
+    {% if onboarding.facets %}
+    <fieldset class="elbysodic-application-form__facets">
+      <legend class="chirpui-field__label">World lenses</legend>
+      <div class="elbysodic-facet-choice-grid">
+        {% for tag in onboarding.facets %}
+        <label class="elbysodic-facet-choice">
+          <input type="checkbox"
+                 name="facet_slugs"
+                 value="{{ tag.facet.slug }}"
+                 {{ "checked" if tag.facet.slug in selected_facet_slugs else "" }}>
+          <span>{{ tag.facet.name }}</span>
+          <small>{{ tag.group.name }}</small>
+        </label>
+        {% end %}
+      </div>
+    </fieldset>
+    {% end %}
+    {% call cluster(gap="sm") %}
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Create draft face</button>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/applications">Back to Applications</a>
+    {% end %}
+  </form>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}

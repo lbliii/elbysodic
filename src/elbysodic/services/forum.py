@@ -74,6 +74,7 @@ from elbysodic.services.facets import (
 from elbysodic.services.facets import (
     facet_tags as _facet_tags,
 )
+from elbysodic.services.facets import resolve_facets as _resolve_facets
 from elbysodic.services.identity import character_profile as _character_profile
 from elbysodic.services.identity import (
     character_roster_dashboard as _character_roster_dashboard,
@@ -134,6 +135,7 @@ from elbysodic.services.read_models import (
     POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
     ActivityItem,
+    ApplicationOnboarding,
     ApplicationReviewRoom,
     ApplicationsDesk,
     AttentionItem,
@@ -168,6 +170,9 @@ from elbysodic.services.read_models import (
     PostStylePolicy,
     StudioBoardEditor,
     StudioIdentityOption,
+    StudioNetworkDirectory,
+    StudioNetworkProgramView,
+    StudioNetworkThemePreview,
     ThreadNavigationItem,
     ThreadSummary,
     ThreadView,
@@ -335,6 +340,70 @@ class AppServices:
             f"user {identity.user_id} cannot switch to membership {membership_id}"
         )
 
+    def studio_network(self) -> StudioNetworkDirectory:
+        identity = self._identity_context or self._identity_resolver.resolve()
+        programs: list[StudioNetworkProgramView] = []
+        for membership in self.repo.list_memberships_for_user(identity.user_id):
+            if not membership.is_active:
+                continue
+            community = self.repo.get_community(membership.community_id)
+            role = self.repo.get_role(community.id, membership.role_id)
+            roster = self.repo.list_characters(community.id, membership.id)
+            materials = self.repo.list_materials(community.id)
+            wanted_ads = self.repo.list_wanted_ads(community.id)
+            community_characters = self.repo.list_community_characters(community.id)
+            theme = community_theme_view(self.repo.get_default_theme(community.id))
+            programs.append(
+                StudioNetworkProgramView(
+                    community=community,
+                    membership=membership,
+                    role=role,
+                    current_character=_resolve_current_character(self.repo, membership, roster),
+                    premise=_first_material_summary(materials, "premise", self.repo, community.id),
+                    current_event=_first_material_summary(
+                        materials,
+                        "event",
+                        self.repo,
+                        community.id,
+                    ),
+                    roster_count=len(community_characters),
+                    open_wanted_count=sum(
+                        1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
+                    ),
+                    application_count=_network_application_count(
+                        community_characters,
+                        can_review=policies.can_manage_applications(membership, role),
+                        membership_id=membership.id,
+                    ),
+                    plotting_room_count=len(
+                        self.repo.list_plotting_rooms_for_membership(
+                            community.id,
+                            membership.id,
+                        )
+                    ),
+                    unread_notification_count=self.repo.count_unread_notifications(
+                        community.id,
+                        membership.id,
+                    ),
+                    theme_preview=_network_theme_preview(theme),
+                    is_current=(
+                        community.id == identity.community_id
+                        and membership.id == identity.membership_id
+                    ),
+                )
+            )
+        return StudioNetworkDirectory(
+            programs=sorted(
+                programs,
+                key=lambda program: (
+                    0 if program.is_current else 1,
+                    program.community.name,
+                    program.membership.display_name,
+                    program.membership.id,
+                ),
+            )
+        )
+
     def list_boards(self) -> list[BoardSummary]:
         viewer = self.viewer()
         current_facet_ids = _current_character_facet_ids(self.repo, viewer)
@@ -489,6 +558,21 @@ class AppServices:
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
         return _applications_desk(self.repo, viewer)
+
+    def application_onboarding(self) -> ApplicationOnboarding:
+        viewer = self.viewer()
+        return ApplicationOnboarding(
+            facets=_facet_tags(
+                self.repo,
+                viewer.community.id,
+                self.repo.list_facets(viewer.community.id),
+            ),
+            application_materials=[
+                _material_summary(self.repo, viewer.community.id, material)
+                for material in self.repo.list_materials(viewer.community.id)
+                if material.material_type == "application"
+            ],
+        )
 
     def members_directory(self) -> MemberDirectory:
         viewer = self.viewer()
@@ -1300,6 +1384,8 @@ class AppServices:
         *,
         name: str,
         summary: str = "",
+        application_body: str = "",
+        facet_slugs: list[str] | None = None,
         avatar_url: str | None = None,
         poster_url: str | None = None,
         poster_alt: str = "",
@@ -1393,7 +1479,20 @@ class AppServices:
             application_status="draft",
             make_default=make_default,
         )
-        self.repo.ensure_character_application(viewer.community.id, character.id)
+        for facet in _resolve_facets(self.repo, viewer.community.id, facet_slugs or []):
+            self.repo.assign_character_facet(viewer.community.id, character.id, facet.id)
+        application = self.repo.ensure_character_application(viewer.community.id, character.id)
+        cleaned_application_body = application_body.strip()
+        if cleaned_application_body:
+            if len(cleaned_application_body) > 5000:
+                raise ValueError("application body must be 5000 characters or fewer")
+            self.repo.update_character_application_draft(
+                viewer.community.id,
+                application.id,
+                title=character.name,
+                summary=character.summary,
+                body=cleaned_application_body,
+            )
         return character
 
     def update_character(
@@ -2307,6 +2406,48 @@ def _ensure_enabled_style_value(
         raise ValueError(f"{label} is not supported")
     if value not in enabled_values and value != current_value:
         raise ValueError(f"{label} is not available in this community")
+
+
+def _first_material_summary(
+    materials: list[Material],
+    material_type: str,
+    repo: ForumRepository,
+    community_id: int,
+) -> MaterialSummary | None:
+    for material in materials:
+        if material.material_type == material_type:
+            return _material_summary(repo, community_id, material)
+    return None
+
+
+def _network_application_count(
+    characters: list[Character],
+    *,
+    can_review: bool,
+    membership_id: int,
+) -> int:
+    statuses = {"draft", "submitted", "revision_requested"}
+    if can_review:
+        return sum(1 for character in characters if character.application_status in statuses)
+    return sum(
+        1
+        for character in characters
+        if character.membership_id == membership_id and character.application_status in statuses
+    )
+
+
+def _network_theme_preview(theme: object | None) -> StudioNetworkThemePreview:
+    variables = dict(getattr(theme, "dark_variables", ()) or ())
+    base_variables = dict(getattr(theme, "base_variables", ()) or ())
+    return StudioNetworkThemePreview(
+        accent=variables.get("--chirpui-accent", "var(--chirpui-accent)"),
+        surface=variables.get("--chirpui-surface", "var(--chirpui-surface)"),
+        text=variables.get("--chirpui-text", "var(--chirpui-text)"),
+        display_font=base_variables.get(
+            "--elbysodic-display-font-family",
+            "var(--elbysodic-display-font-family)",
+        ),
+    )
 
 
 def _apply_post_style_preset(

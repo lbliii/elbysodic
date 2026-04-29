@@ -502,6 +502,12 @@ class ApplicationsDesk:
 
 
 @dataclass(frozen=True, slots=True)
+class ApplicationOnboarding:
+    facets: list[FacetTag]
+    application_materials: list[MaterialSummary]
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationReviewEventView:
     event: CharacterApplicationEvent
     actor_membership: CommunityMembership
@@ -1118,6 +1124,36 @@ class StudioIdentityOption:
     current_character: Character | None
     unread_notification_count: int
     is_current: bool
+
+
+@dataclass(frozen=True, slots=True)
+class StudioNetworkThemePreview:
+    accent: str
+    surface: str
+    text: str
+    display_font: str
+
+
+@dataclass(frozen=True, slots=True)
+class StudioNetworkProgramView:
+    community: Community
+    membership: CommunityMembership
+    role: Role
+    current_character: Character | None
+    premise: MaterialSummary | None
+    current_event: MaterialSummary | None
+    roster_count: int
+    open_wanted_count: int
+    application_count: int
+    plotting_room_count: int
+    unread_notification_count: int
+    theme_preview: StudioNetworkThemePreview
+    is_current: bool
+
+
+@dataclass(frozen=True, slots=True)
+class StudioNetworkDirectory:
+    programs: list[StudioNetworkProgramView]
 
 
 @dataclass(frozen=True, slots=True)

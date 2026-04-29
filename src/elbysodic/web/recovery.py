@@ -248,6 +248,8 @@ def _target_path(kind: RecoveryKind, slug: str) -> str:
 
 def _kind_and_slug_for_next_url(next_url: str) -> tuple[RecoveryKind, str] | None:
     normalized = next_url.split("?", 1)[0].rstrip("/")
+    if normalized == "/applications/new":
+        return None
     patterns: tuple[tuple[str, RecoveryKind], ...] = (
         ("/applications/", "application"),
         ("/characters/", "character"),

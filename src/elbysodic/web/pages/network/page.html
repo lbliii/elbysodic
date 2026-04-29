@@ -1,0 +1,119 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import cluster, container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/vocabulary.html" import metric_item %}
+{% end %}
+
+{% def program_card(program) %}
+{% call surface(variant="elevated") %}
+<article class="elbysodic-network-card{{ " elbysodic-network-card--current" if program.is_current else "" }}"
+         style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
+  <div class="elbysodic-network-card__swatch" aria-hidden="true"></div>
+  <div class="elbysodic-network-card__main">
+    <header class="elbysodic-network-card__header">
+      <div>
+        <p class="elbysodic-section-kicker">{{ program.role.name }} realm</p>
+        <h2>{{ program.community.name }}</h2>
+      </div>
+      <div class="elbysodic-network-card__badges">
+        {% if program.is_current %}
+        {{ badge("current realm", variant="success") }}
+        {% end %}
+        {% if program.unread_notification_count %}
+        {{ badge(program.unread_notification_count ~ " unread", variant="info") }}
+        {% end %}
+      </div>
+    </header>
+    <p class="elbysodic-copy-summary">
+      {% if program.current_event %}
+      {{ program.current_event.material.summary }}
+      {% elif program.premise %}
+      {{ program.premise.material.summary }}
+      {% else %}
+      A studio program ready for scenes, casting, and writer movement.
+      {% end %}
+    </p>
+    <p class="elbysodic-copy-meta">
+      {{ program.membership.display_name or program.membership.username }}
+      {% if program.current_character %}
+      · wearing {{ program.current_character.name }}
+      {% else %}
+      · no active face
+      {% end %}
+    </p>
+    <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
+      {{ metric_item(program.roster_count, "faces") }}
+      {{ metric_item(program.open_wanted_count, "wanted") }}
+      {{ metric_item(program.application_count, "apps") }}
+      {{ metric_item(program.plotting_room_count, "rooms") }}
+    </div>
+  </div>
+  <div class="elbysodic-network-card__actions">
+    {% if program.current_event %}
+    <a class="chirpui-btn chirpui-btn--secondary" href="/world/{{ program.current_event.material.slug }}">Current event</a>
+    {% elif program.premise %}
+    <a class="chirpui-btn chirpui-btn--secondary" href="/world/{{ program.premise.material.slug }}">Premise</a>
+    {% end %}
+    {% if program.is_current %}
+    <a class="chirpui-btn chirpui-btn--primary" href="/">Enter realm</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/applications/new">Start application</a>
+    {% else %}
+    <form action="/identity" method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="switch_membership">
+      <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
+      <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
+      <input type="hidden" name="next" value="/">
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Enter realm</button>
+    </form>
+    <form action="/identity" method="post" hx-boost="false">
+      <input type="hidden" name="intent" value="switch_membership">
+      <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
+      <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
+      <input type="hidden" name="next" value="/applications/new">
+      <button class="chirpui-btn chirpui-btn--secondary" type="submit">Start application</button>
+    </form>
+    {% end %}
+  </div>
+</article>
+{% end %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="76rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Studio Network") %}
+  Your reachable play-by-post programs, active faces, and the rooms asking for attention.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-network-hero" aria-labelledby="network-heading">
+    <div>
+      <p class="elbysodic-section-kicker">Studio layer</p>
+      <h1 id="network-heading">Choose the realm you are writing in.</h1>
+      <p class="elbysodic-copy-section">
+        Each program keeps its own world, cast, theme, queues, and active face.
+      </p>
+    </div>
+    <div class="elbysodic-network-hero__metrics" aria-label="Network totals">
+      {{ metric_item(network.programs | length, "programs") }}
+      {{ metric_item(viewer.identity_options | length, "memberships") }}
+      {{ metric_item(viewer.unread_notification_count, "current unread") }}
+    </div>
+  </section>
+  {% end %}
+
+  <section class="elbysodic-network-grid" aria-label="Studio programs">
+    {% for program in network.programs %}
+    {{ program_card(program) }}
+    {% end %}
+  </section>
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

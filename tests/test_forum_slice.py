@@ -412,6 +412,56 @@ def test_identity_switch_sanitizes_cross_realm_next_url() -> None:
     asyncio.run(run())
 
 
+def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/network")
+
+        assert response.status == 200
+        assert "Studio Network" in response.text
+        assert "Choose the realm you are writing in." in response.text
+        assert "X-Men Apocalypse" in response.text
+        assert "HP Universe" in response.text
+        assert "Jurassic Park Universe" in response.text
+        assert "RL NYC" in response.text
+        assert "RL Small Town" in response.text
+        assert "current realm" in response.text
+        assert "wearing Rogue" in response.text
+        assert response.text.count('name="intent" value="switch_membership"') >= 4
+        assert response.text.count('name="next" value="/"') >= 4
+
+    asyncio.run(run())
+
+
+def test_network_directory_enter_realm_sets_identity_cookie() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 302
+        assert _response_header(response, "location") == "/"
+        assert "elbysodic_dev_identity=" in _response_header(response, "set-cookie")
+
+    asyncio.run(run())
+
+
 def test_forum_pages_render_seeded_boards_and_thread() -> None:
     async def run() -> None:
         app = _app()
@@ -1778,6 +1828,126 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert missing.status == 200
             assert "That wanted hook is not in X-Men Apocalypse." in missing.text
             assert "Open Wanted" in missing.text
+
+    asyncio.run(run())
+
+
+def test_application_start_form_creates_draft_face_and_review_room() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        community = services.seed.community
+        facet = services.repo.get_facet_by_slug(community.id, "x-men")
+
+        async with TestClient(app) as client:
+            form = await client.get("/applications/new")
+            response = await client.post(
+                "/applications/new",
+                body=urlencode(
+                    {
+                        "name": "Jean Grey",
+                        "summary": "A powerful telepath trying to stay gentle.",
+                        "body": "Looking for school pressure, found family, and dangerous rescue work.",
+                        "facet_slugs": [facet.slug],
+                    },
+                    doseq=True,
+                ).encode(),
+                headers=_FORM,
+            )
+            room = await client.get("/applications/jean-grey")
+            applications = await client.get("/applications")
+
+        character = services.repo.get_character_by_slug(community.id, "jean-grey")
+        application = services.repo.get_character_application_for_character(
+            community.id,
+            character.id,
+        )
+        facets = services.repo.list_character_facets(community.id, character.id)
+
+        assert form.status == 200
+        assert "Begin a new face for this realm." in form.text
+        assert "Application Guide" in form.text
+        assert response.status == 302
+        assert _response_header(response, "location") == "/applications/jean-grey"
+        assert character.application_status == "draft"
+        assert application.summary == "A powerful telepath trying to stay gentle."
+        assert "dangerous rescue work" in application.body
+        assert [assigned.slug for assigned in facets] == ["x-men"]
+        assert room.status == 200
+        assert "Jean Grey" in room.text
+        assert "Draft" in room.text
+        assert applications.status == 200
+        assert "Jean Grey" in applications.text
+
+    asyncio.run(run())
+
+
+def test_application_start_form_preserves_validation_errors_and_unique_slugs() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        community = services.seed.community
+
+        async with TestClient(app) as client:
+            invalid = await client.post(
+                "/applications/new",
+                body=urlencode({"name": "", "summary": "A concept"}).encode(),
+                headers=_FORM,
+            )
+            first = await client.post(
+                "/applications/new",
+                body=urlencode({"name": "Echo", "summary": "First draft"}).encode(),
+                headers=_FORM,
+            )
+            second = await client.post(
+                "/applications/new",
+                body=urlencode({"name": "Echo", "summary": "Second draft"}).encode(),
+                headers=_FORM,
+            )
+
+        assert invalid.status == 200
+        assert "character name is required" in invalid.text
+        assert first.status == 302
+        assert _response_header(first, "location") == "/applications/echo"
+        assert second.status == 302
+        assert _response_header(second, "location") == "/applications/echo-2"
+        assert services.repo.get_character_by_slug(community.id, "echo").name == "Echo"
+        assert services.repo.get_character_by_slug(community.id, "echo-2").name == "Echo"
+
+    asyncio.run(run())
+
+
+def test_network_start_application_switches_to_realm_form() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+
+        async with TestClient(app) as client:
+            network = await client.get("/network")
+            response = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/applications/new",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            set_cookie = _response_header(response, "set-cookie").split(";", 1)[0]
+            form = await client.get("/applications/new", headers={"Cookie": set_cookie})
+
+        assert network.status == 200
+        assert 'name="next" value="/applications/new"' in network.text
+        assert response.status == 302
+        assert _response_header(response, "location") == "/applications/new"
+        assert form.status == 200
+        assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in form.text
+        assert "Begin a new face for this realm." in form.text
 
     asyncio.run(run())
 

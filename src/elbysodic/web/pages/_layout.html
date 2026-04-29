@@ -84,7 +84,7 @@
 {% set guidebook_active = topbar_path == "/world" or topbar_path.startswith("/world/") %}
 {% set wanted_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") %}
 {% set studio_active = topbar_path == "/studio" or topbar_path.startswith("/studio/") %}
-{% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
+{% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/network" or topbar_path.startswith("/network/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
 {% set mobile_nav_label = "Menu: Guidebook" if guidebook_active else ("Menu: Casting" if wanted_active else ("Menu: Studio" if studio_active else ("Menu: Desk" if desk_active or notifications_active else "Menu: World"))) %}
 {{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
@@ -176,6 +176,12 @@
       </div>
       {% end %}
       <div class="elbysodic-identity-menu__compact-tools">
+        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if topbar_path == "/network" or topbar_path.startswith("/network/") else "" }}"
+           href="/network"
+           {% if topbar_path == "/network" or topbar_path.startswith("/network/") %}aria-current="page"{% end %}>
+          Studio Network
+          <span>{{ viewer.identity_options | length }} programs</span>
+        </a>
         <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if notifications_active else "" }}"
            href="/notifications"
            {% if notifications_active %}aria-current="page"{% end %}>
