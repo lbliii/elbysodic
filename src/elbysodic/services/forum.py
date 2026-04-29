@@ -478,12 +478,16 @@ class AppServices:
                 for item in additional_materials
                 if item.material.material_type == "application"
             ],
-            can_manage=viewer.role.is_admin,
+            can_manage=policies.can_manage_world(viewer.membership, viewer.role),
         )
 
     def director_studio(self) -> DirectorStudio:
         viewer = self.viewer()
-        material_status = None if viewer.role.is_admin else "published"
+        can_manage_world = policies.can_manage_world(viewer.membership, viewer.role)
+        can_manage_casting = policies.can_manage_casting(viewer.membership, viewer.role)
+        can_manage_navigation = policies.can_manage_navigation(viewer.membership, viewer.role)
+        can_manage_studio = can_manage_world or can_manage_casting or can_manage_navigation
+        material_status = None if can_manage_world else "published"
         materials = [
             _material_summary(self.repo, viewer.community.id, material)
             for material in self.repo.list_materials(
@@ -519,7 +523,7 @@ class AppServices:
         sublocation_boards = [
             item for item in board_summaries if item.board.board_kind == "sublocation"
         ]
-        wanted_status = None if viewer.role.is_admin else "open"
+        wanted_status = None if can_manage_casting else "open"
         wanted_ads = [
             _wanted_ad_summary(self.repo, viewer.community.id, wanted_ad)
             for wanted_ad in self.repo.list_wanted_ads(
@@ -542,7 +546,7 @@ class AppServices:
             None,
         )
         return DirectorStudio(
-            can_manage=viewer.role.is_admin,
+            can_manage=can_manage_studio,
             facet_groups=facet_groups,
             identity_accent_group=identity_accent_group,
             post_style_policy=_post_style_policy(viewer.community),
@@ -584,7 +588,7 @@ class AppServices:
         sidebar_section: str | None = None,
     ) -> Board:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_navigation(viewer.membership, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot manage boards")
         board = self.repo.get_board(viewer.community.id, board_id)
         normalized_kind = normalize_board_kind(board_kind)
@@ -622,7 +626,7 @@ class AppServices:
         sidebar_section: str | None = None,
     ) -> Board:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_navigation(viewer.membership, viewer.role):
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage board navigation"
             )
@@ -654,7 +658,7 @@ class AppServices:
         show_label: bool,
     ) -> SidebarSectionConfig:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_navigation(viewer.membership, viewer.role):
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage sidebar sections"
             )
@@ -700,7 +704,7 @@ class AppServices:
             sidebar_section_label=BOARD_SIDEBAR_SECTION_LABELS[board.sidebar_section],
             sidebar_section_guidance=BOARD_SIDEBAR_SECTION_GUIDANCE[board.sidebar_section],
             guidance=BOARD_KIND_GUIDANCE[kind],
-            can_manage=viewer.role.is_admin,
+            can_manage=policies.can_manage_navigation(viewer.membership, viewer.role),
         )
 
     def update_studio_board(
@@ -721,7 +725,7 @@ class AppServices:
         is_private: bool,
     ) -> Board:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_navigation(viewer.membership, viewer.role):
             raise PermissionError(f"membership {viewer.membership.id} cannot manage boards")
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
         cleaned_name = name.strip()
@@ -757,7 +761,7 @@ class AppServices:
 
     def update_identity_accent_group(self, facet_group_id: int | None) -> None:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage community direction"
             )
@@ -779,7 +783,7 @@ class AppServices:
         enabled_post_densities: list[str],
     ) -> None:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage post style policy"
             )
@@ -825,7 +829,10 @@ class AppServices:
     def read_material(self, material_slug: str) -> MaterialDetail:
         viewer = self.viewer()
         material = self.repo.get_material_by_slug(viewer.community.id, material_slug)
-        if material.status != "published" and not viewer.role.is_admin:
+        if material.status != "published" and not policies.can_manage_world(
+            viewer.membership,
+            viewer.role,
+        ):
             raise LookupError(
                 f"material not found in community {viewer.community.id}: {material_slug}"
             )
@@ -875,7 +882,7 @@ class AppServices:
         is_featured: bool = False,
     ) -> Material:
         viewer = self.viewer()
-        if not viewer.role.is_admin:
+        if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage world materials"
             )

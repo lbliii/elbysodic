@@ -35,8 +35,8 @@ or attach a character to the wrong membership.
 Page handlers should not make permission decisions directly. They should call
 service methods, and services should route decisions through policy helpers.
 
-Current policy checks are intentionally small. As staff tools mature, prefer
-named capabilities such as:
+Policy checks expose named capabilities, even while the MVP still maps them to
+admin roles:
 
 - `manage_threads`
 - `manage_world`
@@ -46,6 +46,10 @@ named capabilities such as:
 
 Named capabilities should remain membership-scoped. A global user with staff
 power in one community must not gain staff power in another.
+
+When adding a staff workflow, add or reuse a named capability in
+`src/elbysodic/services/policies.py` and route service-layer checks through the
+helper. Avoid direct `role.is_admin` checks outside the policy module.
 
 ## Nullable Identity Shapes
 
