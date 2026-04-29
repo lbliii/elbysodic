@@ -8,13 +8,12 @@ from elbysodic.db.repositories.base import (
     _next_update_stamp,
     _utc_now,
 )
-from elbysodic.db.repositories.facets import FacetRepositoryMixin
+from elbysodic.db.repositories.materials import MaterialRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _character_from_row,
     _character_plot_hook_from_row,
     _character_plot_hook_interest_from_row,
     _character_reserve_from_row,
-    _material_from_row,
     _plotting_room_from_row,
     _plotting_room_participant_from_row,
     _post_from_row,
@@ -30,7 +29,6 @@ from elbysodic.domain.models import (
     CharacterPlotHook,
     CharacterPlotHookInterest,
     CharacterReserve,
-    Material,
     PlottingRoom,
     PlottingRoomParticipant,
     Post,
@@ -44,183 +42,9 @@ from elbysodic.domain.models import (
 
 
 class ForumRepository(
-    FacetRepositoryMixin,
+    MaterialRepositoryMixin,
 ):
     """Small repository layer that keeps community scope explicit."""
-
-    def create_material(
-        self,
-        community_id: int,
-        slug: str,
-        title: str,
-        *,
-        material_type: str = "guide",
-        summary: str = "",
-        body: str = "",
-        status: str = "published",
-        sort_order: int = 0,
-        is_featured: bool = False,
-    ) -> Material:
-        self.get_community(community_id)
-        now = _utc_now()
-        cursor = self.connection.execute(
-            """
-            INSERT INTO materials (
-                community_id,
-                slug,
-                title,
-                material_type,
-                summary,
-                body,
-                status,
-                sort_order,
-                is_featured,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                community_id,
-                slug,
-                title,
-                material_type,
-                summary,
-                body,
-                status,
-                sort_order,
-                int(is_featured),
-                now,
-                now,
-            ),
-        )
-        self.connection.commit()
-        return self.get_material(community_id, _last_id(cursor))
-
-    def get_material(self, community_id: int, material_id: int) -> Material:
-        row = self.connection.execute(
-            """
-            SELECT
-                id,
-                community_id,
-                slug,
-                title,
-                material_type,
-                summary,
-                body,
-                status,
-                sort_order,
-                is_featured,
-                created_at,
-                updated_at
-            FROM materials
-            WHERE community_id = ? AND id = ?
-            """,
-            (community_id, material_id),
-        ).fetchone()
-        if row is None:
-            raise LookupError(f"material not found in community {community_id}: {material_id}")
-        return _material_from_row(row)
-
-    def get_material_by_slug(self, community_id: int, slug: str) -> Material:
-        row = self.connection.execute(
-            """
-            SELECT
-                id,
-                community_id,
-                slug,
-                title,
-                material_type,
-                summary,
-                body,
-                status,
-                sort_order,
-                is_featured,
-                created_at,
-                updated_at
-            FROM materials
-            WHERE community_id = ? AND slug = ?
-            """,
-            (community_id, slug),
-        ).fetchone()
-        if row is None:
-            raise LookupError(f"material not found in community {community_id}: {slug}")
-        return _material_from_row(row)
-
-    def update_material(
-        self,
-        community_id: int,
-        material_id: int,
-        *,
-        title: str,
-        material_type: str,
-        summary: str,
-        body: str,
-        status: str = "published",
-        sort_order: int = 0,
-        is_featured: bool = False,
-    ) -> Material:
-        self.get_material(community_id, material_id)
-        self.connection.execute(
-            """
-            UPDATE materials
-            SET
-                title = ?,
-                material_type = ?,
-                summary = ?,
-                body = ?,
-                status = ?,
-                sort_order = ?,
-                is_featured = ?,
-                updated_at = ?
-            WHERE community_id = ? AND id = ?
-            """,
-            (
-                title,
-                material_type,
-                summary,
-                body,
-                status,
-                sort_order,
-                int(is_featured),
-                _utc_now(),
-                community_id,
-                material_id,
-            ),
-        )
-        self.connection.commit()
-        return self.get_material(community_id, material_id)
-
-    def list_materials(
-        self, community_id: int, *, status: str | None = "published"
-    ) -> list[Material]:
-        where = "WHERE community_id = ?"
-        params: tuple[object, ...] = (community_id,)
-        if status is not None:
-            where = f"{where} AND status = ?"
-            params = (community_id, status)
-        rows = self.connection.execute(
-            f"""
-            SELECT
-                id,
-                community_id,
-                slug,
-                title,
-                material_type,
-                summary,
-                body,
-                status,
-                sort_order,
-                is_featured,
-                created_at,
-                updated_at
-            FROM materials
-            {where}
-            ORDER BY is_featured DESC, sort_order, title, id
-            """,
-            params,
-        ).fetchall()
-        return [_material_from_row(row) for row in rows]
 
     def create_wanted_ad(
         self,
@@ -1400,9 +1224,9 @@ class ForumRepository(
                     f"character {character_id} does not belong to membership {membership_id}"
                 )
         now = _utc_now()
-        cursor = self.connection.execute(
+        self.connection.execute(
             """
-            INSERT INTO plotting_room_participants (
+            INSERT OR IGNORE INTO plotting_room_participants (
                 community_id,
                 plotting_room_id,
                 membership_id,
@@ -1424,7 +1248,56 @@ class ForumRepository(
             ),
         )
         self.connection.commit()
-        return self.get_plotting_room_participant(community_id, _last_id(cursor))
+        return self.get_plotting_room_participant_for_identity(
+            community_id,
+            plotting_room_id,
+            membership_id,
+            character_id=character_id,
+            prospective_character_name=prospective_character_name,
+        )
+
+    def get_plotting_room_participant_for_identity(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+        membership_id: int,
+        *,
+        character_id: int | None = None,
+        prospective_character_name: str = "",
+    ) -> PlottingRoomParticipant:
+        if character_id is not None:
+            identity_clause = "character_id = ?"
+            identity_params: tuple[object, ...] = (character_id,)
+        else:
+            identity_clause = "character_id IS NULL AND prospective_character_name = ?"
+            identity_params = (prospective_character_name,)
+        row = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                plotting_room_id,
+                membership_id,
+                character_id,
+                prospective_character_name,
+                participant_role,
+                created_at
+            FROM plotting_room_participants
+            WHERE community_id = ?
+              AND plotting_room_id = ?
+              AND membership_id = ?
+              AND {identity_clause}
+            ORDER BY id
+            LIMIT 1
+            """,
+            (community_id, plotting_room_id, membership_id, *identity_params),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"plotting room participant not found in community {community_id}: "
+                f"{plotting_room_id}/{membership_id}"
+            )
+        return _plotting_room_participant_from_row(row)
 
     def get_plotting_room_participant(
         self,

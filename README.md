@@ -62,8 +62,12 @@ The development app currently includes:
 The core product primitives are documented in
 [docs/architecture/primitives.md](docs/architecture/primitives.md). The
 multi-tenancy strategy lives in
-[docs/architecture/multi-tenancy.md](docs/architecture/multi-tenancy.md). The
-product mission and UI vocabulary live in
+[docs/architecture/multi-tenancy.md](docs/architecture/multi-tenancy.md).
+Schema migration rules live in
+[docs/architecture/migrations.md](docs/architecture/migrations.md), and tenant
+and permission boundaries live in
+[docs/architecture/security-boundaries.md](docs/architecture/security-boundaries.md).
+The product mission and UI vocabulary live in
 [docs/product/mission.md](docs/product/mission.md) and
 [docs/product/information-hierarchy.md](docs/product/information-hierarchy.md).
 

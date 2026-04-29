@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+from elbysodic.db.migrations import apply_migrations
 from elbysodic.domain.boards import DEFAULT_SIDEBAR_SECTION_CONFIGS
 
 SCHEMA = """
@@ -479,6 +480,15 @@ CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_hook ON character_p
 CREATE INDEX IF NOT EXISTS idx_character_plot_hook_interests_character ON character_plot_hook_interests(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_plotting_rooms_owner ON plotting_rooms(community_id, owner_membership_id, status, updated_at);
 CREATE INDEX IF NOT EXISTS idx_plotting_room_participants_membership ON plotting_room_participants(community_id, membership_id, plotting_room_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_plotting_room_participants_unique_character
+ON plotting_room_participants(community_id, plotting_room_id, membership_id, character_id)
+WHERE character_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_plotting_room_participants_unique_prospective
+ON plotting_room_participants(community_id, plotting_room_id, membership_id, prospective_character_name)
+WHERE character_id IS NULL AND prospective_character_name != '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_plotting_room_participants_unique_membership_blank
+ON plotting_room_participants(community_id, plotting_room_id, membership_id)
+WHERE character_id IS NULL AND prospective_character_name = '';
 CREATE INDEX IF NOT EXISTS idx_character_reserves_character ON character_reserves(community_id, character_id, status);
 CREATE INDEX IF NOT EXISTS idx_character_reserves_wanted ON character_reserves(community_id, wanted_ad_id, status);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
@@ -500,6 +510,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
     connection.executescript(SCHEMA)
     _migrate_schema(connection)
     _ensure_sidebar_section_defaults(connection)
+    apply_migrations(connection)
     connection.commit()
 
 
