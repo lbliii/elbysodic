@@ -136,16 +136,16 @@
       {% call surface(variant="elevated") %}
       {% if active_filter == "all" %}
       {% if is_location_board %}
-      <p class="elbysodic-empty-state">No direct scenes here yet.</p>
+      <p class="elbysodic-empty-state">No scenes have opened directly here yet.</p>
       {% else %}
-      <p class="elbysodic-empty-state">No threads here yet.</p>
+      <p class="elbysodic-empty-state">No threads have opened here yet.</p>
       {% end %}
       {% elif active_filter == "unread" %}
-      <p class="elbysodic-empty-state">No new replies here yet.</p>
+      <p class="elbysodic-empty-state">No new replies are waiting here.</p>
       {% elif active_filter == "attention" %}
-      <p class="elbysodic-empty-state">No threads need a reply here.</p>
+      <p class="elbysodic-empty-state">Nothing here needs your roster right now.</p>
       {% else %}
-      <p class="elbysodic-empty-state">No {{ active_filter }} threads here yet.</p>
+      <p class="elbysodic-empty-state">No {{ active_filter }} threads are in this board yet.</p>
       {% end %}
       {% end %}
       {% end %}

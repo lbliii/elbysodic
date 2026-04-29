@@ -13,7 +13,7 @@
       <p class="elbysodic-wanted-card__type">{{ item.source_label }}</p>
       <h2><a class="chirpui-link" href="/plotting/{{ item.room.id }}">{{ item.room.title }}</a></h2>
       {% if item.room.summary %}
-      <p class="chirpui-text-muted">{{ item.room.summary }}</p>
+      <p class="elbysodic-copy-summary">{{ item.room.summary }}</p>
       {% end %}
     </div>
     <div class="elbysodic-interest-card__meta">
@@ -79,7 +79,7 @@
     {% else %}
     {% call surface(variant="elevated") %}
     <div class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-empty-state">No plotting rooms yet.</p>
+      <p class="elbysodic-empty-state">No plotting rooms are open yet.</p>
       <div class="chirpui-cluster chirpui-cluster--sm">
         {% if viewer.current_character %}
         <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ viewer.current_character.slug }}">Open {{ viewer.current_character.name }}'s plotter</a>
@@ -108,7 +108,7 @@
                 {{ item.hook.plot_hook.title }}
               </a>
             </h2>
-            <p class="chirpui-text-muted">{{ item.interest.character.name }} raised a hand.</p>
+            <p class="elbysodic-copy-status">{{ item.interest.character.name }} raised a hand.</p>
           </div>
           <div class="elbysodic-interest-card__meta">
             {{ badge(item.interest.interest.status, variant="info") }}
@@ -138,7 +138,7 @@
           <div>
             <p class="elbysodic-wanted-card__type">Wanted hook</p>
             <h2><a class="chirpui-link" href="/wanted/{{ item.wanted_ad.wanted_ad.slug }}">{{ item.wanted_ad.wanted_ad.title }}</a></h2>
-            <p class="chirpui-text-muted">{{ item.interest.display_name }} raised a hand.</p>
+            <p class="elbysodic-copy-status">{{ item.interest.display_name }} raised a hand.</p>
           </div>
           <div class="elbysodic-interest-card__meta">
             {{ badge(item.interest.interest.status, variant="info") }}
@@ -164,7 +164,7 @@
     {% else %}
     {% call surface(variant="elevated") %}
     <div class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-empty-state">No incoming interest yet.</p>
+      <p class="elbysodic-empty-state">No raised hands are waiting on you.</p>
       <div class="chirpui-cluster chirpui-cluster--sm">
         <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
         <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find plot hooks</a>

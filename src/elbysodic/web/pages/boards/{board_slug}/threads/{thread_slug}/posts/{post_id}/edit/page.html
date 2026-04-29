@@ -30,7 +30,7 @@
     <div class="elbysodic-composer-heading">
       <div>
         <h2>{{ edit_view.thread.title }}</h2>
-        <p class="chirpui-text-muted">
+        <p class="elbysodic-copy-meta">
           Posted {{ edit_view.post.created_at_label }}
           {% if edit_view.post.is_edited %}
           · edited {{ edit_view.post.updated_at_label }}
@@ -48,7 +48,7 @@
       </div>
       <div>
         <strong>{{ edit_view.post.author.name }}</strong>
-        <p class="chirpui-text-muted">writer <a class="chirpui-link" href="/members/{{ edit_view.post.author_membership.username }}">{{ edit_view.post.author_membership.username }}</a></p>
+        <p class="elbysodic-copy-meta">writer <a class="chirpui-link" href="/members/{{ edit_view.post.author_membership.username }}">{{ edit_view.post.author_membership.username }}</a></p>
       </div>
     </div>
     {% if error %}
@@ -110,8 +110,8 @@
       </div>
     </div>
     <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
-      <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
-      <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
+      <div class="elbysodic-prose-body elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
+      <p class="elbysodic-copy-status" x-show="!hasPreview()">Preview will appear once the post has body text.</p>
     </div>
     <div class="chirpui-cluster chirpui-cluster--end">
       <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>

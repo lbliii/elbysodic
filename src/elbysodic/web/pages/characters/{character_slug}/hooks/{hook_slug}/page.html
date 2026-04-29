@@ -22,7 +22,7 @@
         {{ badge(hook.plot_hook.status, variant="success" if hook.plot_hook.status == "open" else "muted") }}
       </div>
       {% if hook.plot_hook.summary %}
-      <p class="chirpui-text-muted">{{ hook.plot_hook.summary }}</p>
+      <p class="elbysodic-copy-lead">{{ hook.plot_hook.summary }}</p>
       {% end %}
     </div>
     <div class="elbysodic-wanted-card__meta">
@@ -48,7 +48,7 @@
       {% end %}
     </div>
     {{ facet_pills(hook.facets) }}
-    <div class="elbysodic-post-content">
+    <div class="elbysodic-prose-body elbysodic-prose-body--hook elbysodic-hook-body">
       {{ hook.rendered_body }}
     </div>
     <div class="elbysodic-wanted-action">
@@ -64,9 +64,9 @@
         </button>
       </form>
       {% elif hook.can_manage %}
-      <p class="chirpui-text-muted">You created this hook.</p>
+      <p class="elbysodic-copy-status">You created this hook.</p>
       {% elif hook.plot_hook.status != "open" %}
-      <p class="chirpui-text-muted">This hook is {{ hook.plot_hook.status }}.</p>
+      <p class="elbysodic-copy-status">This hook is {{ hook.plot_hook.status }}.</p>
       {% end %}
     </div>
   </article>
@@ -103,7 +103,7 @@
         </button>
       </form>
       {% elif hook.can_manage and item.interest.status == "plotting" %}
-      <p class="chirpui-text-muted">Plotting room started.</p>
+      <p class="elbysodic-copy-status">Plotting room started.</p>
       {% end %}
     </article>
     {% end %}

@@ -84,15 +84,15 @@
   </a>
   {% end %}
 
-  {{ material_section("Start here", "The board's highest-signal pillars.", hub.featured, "No featured materials yet.", "start-here") }}
+  {{ material_section("Start here", "The board's highest-signal pillars.", hub.featured, "No guidebook pillars have been featured yet.", "start-here") }}
   {% if hub.guides %}
-  {{ material_section("Guides", "Premise, rules, faction context, and setting reference.", hub.guides, "No guides yet.", "guides") }}
+  {{ material_section("Guides", "Premise, rules, faction context, and setting reference.", hub.guides, "No guidebook pages have been published yet.", "guides") }}
   {% end %}
   {% if hub.events %}
-  {{ material_section("Events", "Current plot pressure that should inspire threads.", hub.events, "No events yet.", "events") }}
+  {{ material_section("Events", "Current plot pressure that should inspire threads.", hub.events, "No event pressure is live yet.", "events") }}
   {% end %}
   {% if hub.application_materials %}
-  {{ material_section("Applications", "Character submission guidance outside the thread format.", hub.application_materials, "No application materials yet.", "applications") }}
+  {{ material_section("Applications", "Character submission guidance outside the thread format.", hub.application_materials, "No application guidance is live yet.", "applications") }}
   {% end %}
 {% end %}
 {% end %}

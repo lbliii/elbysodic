@@ -2053,8 +2053,10 @@ body {
 .elbysodic-section-kicker {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-xs);
+    font-style: normal;
     font-weight: 850;
     letter-spacing: 0;
+    margin: 0;
     text-transform: uppercase;
 }
 
@@ -4687,27 +4689,68 @@ body {
     min-width: 0;
 }
 
-.elbysodic-post-content {
+.elbysodic-prose-body {
     color: color-mix(in srgb, var(--chirpui-text) 92%, var(--chirpui-text-muted));
     font-size: 1.0625rem;
     line-height: 1.72;
     max-width: 68ch;
 }
 
-.elbysodic-post-content--compact {
+.elbysodic-prose-body--compact {
     font-size: var(--chirpui-font-base);
 }
 
-.elbysodic-post-content p,
-.elbysodic-post-content blockquote {
+.elbysodic-prose-body p,
+.elbysodic-prose-body blockquote {
     margin: 0;
 }
 
-.elbysodic-post-content p + p,
-.elbysodic-post-content blockquote + p,
-.elbysodic-post-content p + blockquote,
-.elbysodic-post-content blockquote + blockquote {
+.elbysodic-prose-body p + p,
+.elbysodic-prose-body blockquote + p,
+.elbysodic-prose-body p + blockquote,
+.elbysodic-prose-body blockquote + blockquote {
     margin-top: 1.08rem;
+}
+
+.elbysodic-prose-body blockquote {
+    background: color-mix(in srgb, var(--chirpui-accent) 7%, transparent);
+    border-left: 3px solid var(--chirpui-accent);
+    color: var(--chirpui-text-muted);
+    line-height: 1.62;
+    padding: 0.85rem 1rem;
+}
+
+.elbysodic-prose-body strong {
+    color: var(--chirpui-text);
+    font-weight: 700;
+}
+
+.elbysodic-prose-body em {
+    color: color-mix(in srgb, var(--chirpui-text) 82%, var(--chirpui-accent));
+}
+
+.elbysodic-prose-body--canon {
+    font-size: 1.075rem;
+    line-height: 1.74;
+    max-width: 72ch;
+}
+
+.elbysodic-prose-body--canon blockquote {
+    background: color-mix(in srgb, var(--chirpui-link) 6%, transparent);
+    border-left-color: color-mix(in srgb, var(--chirpui-link) 74%, var(--chirpui-border));
+}
+
+.elbysodic-prose-body--hook {
+    font-size: var(--chirpui-font-base);
+    line-height: 1.64;
+    max-width: 66ch;
+}
+
+.elbysodic-prose-body--hook p + p,
+.elbysodic-prose-body--hook blockquote + p,
+.elbysodic-prose-body--hook p + blockquote,
+.elbysodic-prose-body--hook blockquote + blockquote {
+    margin-top: 0.9rem;
 }
 
 .elbysodic-post-density--compact {
@@ -4718,14 +4761,14 @@ body {
     gap: 0.75rem;
 }
 
-.elbysodic-post-density--compact .elbysodic-post-content {
+.elbysodic-post-density--compact .elbysodic-prose-body {
     line-height: 1.55;
 }
 
-.elbysodic-post-density--compact .elbysodic-post-content p + p,
-.elbysodic-post-density--compact .elbysodic-post-content blockquote + p,
-.elbysodic-post-density--compact .elbysodic-post-content p + blockquote,
-.elbysodic-post-density--compact .elbysodic-post-content blockquote + blockquote {
+.elbysodic-post-density--compact .elbysodic-prose-body p + p,
+.elbysodic-post-density--compact .elbysodic-prose-body blockquote + p,
+.elbysodic-post-density--compact .elbysodic-prose-body p + blockquote,
+.elbysodic-post-density--compact .elbysodic-prose-body blockquote + blockquote {
     margin-top: 0.75rem;
 }
 
@@ -4737,44 +4780,27 @@ body {
     gap: 1.25rem;
 }
 
-.elbysodic-post-density--dramatic .elbysodic-post-content {
+.elbysodic-post-density--dramatic .elbysodic-prose-body {
     line-height: 1.82;
     max-width: 68ch;
 }
 
-.elbysodic-post-density--dramatic .elbysodic-post-content p + p,
-.elbysodic-post-density--dramatic .elbysodic-post-content blockquote + p,
-.elbysodic-post-density--dramatic .elbysodic-post-content p + blockquote,
-.elbysodic-post-density--dramatic .elbysodic-post-content blockquote + blockquote {
+.elbysodic-post-density--dramatic .elbysodic-prose-body p + p,
+.elbysodic-post-density--dramatic .elbysodic-prose-body blockquote + p,
+.elbysodic-post-density--dramatic .elbysodic-prose-body p + blockquote,
+.elbysodic-post-density--dramatic .elbysodic-prose-body blockquote + blockquote {
     margin-top: 1.35rem;
 }
 
-.elbysodic-post-content blockquote {
-    background: color-mix(in srgb, var(--chirpui-accent) 7%, transparent);
-    border-left: 3px solid var(--chirpui-accent);
-    color: var(--chirpui-text-muted);
-    line-height: 1.62;
-    padding: 0.85rem 1rem;
-}
-
-.elbysodic-post-accent--line .elbysodic-post-content {
+.elbysodic-post-accent--line .elbysodic-prose-body {
     border-left: 3px solid color-mix(in srgb, var(--elbysodic-character-accent) 62%, var(--chirpui-border));
     padding-left: 1rem;
 }
 
-.elbysodic-post-accent--block .elbysodic-post-content blockquote,
-.elbysodic-post-accent--glow .elbysodic-post-content blockquote,
-.elbysodic-post-accent--line .elbysodic-post-content blockquote {
+.elbysodic-post-accent--block .elbysodic-prose-body blockquote,
+.elbysodic-post-accent--glow .elbysodic-prose-body blockquote,
+.elbysodic-post-accent--line .elbysodic-prose-body blockquote {
     border-left-color: color-mix(in srgb, var(--elbysodic-character-accent) 68%, var(--chirpui-accent));
-}
-
-.elbysodic-post-content strong {
-    color: var(--chirpui-text);
-    font-weight: 700;
-}
-
-.elbysodic-post-content em {
-    color: color-mix(in srgb, var(--chirpui-text) 82%, var(--chirpui-accent));
 }
 
 .elbysodic-post__meta {
@@ -5396,6 +5422,25 @@ body {
     --elbysodic-notice-accent: var(--chirpui-link);
 }
 
+.elbysodic-notice--staff,
+.elbysodic-notice--note,
+.elbysodic-notice--status {
+    --elbysodic-notice-accent: var(--chirpui-accent);
+}
+
+.elbysodic-notice--warning {
+    --elbysodic-notice-accent: var(--chirpui-warning);
+}
+
+.elbysodic-notice--attention,
+.elbysodic-notice--error {
+    --elbysodic-notice-accent: var(--chirpui-error);
+}
+
+.elbysodic-notice--success {
+    --elbysodic-notice-accent: var(--chirpui-success);
+}
+
 .elbysodic-notice__mark {
     align-items: center;
     aspect-ratio: 1;
@@ -5430,6 +5475,7 @@ body {
     color: var(--elbysodic-notice-accent);
 }
 
+.elbysodic-notice__label,
 .elbysodic-event-bridge__label {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-xs);
@@ -5440,6 +5486,7 @@ body {
     text-transform: uppercase;
 }
 
+.elbysodic-notice__body,
 .elbysodic-event-bridge__body {
     display: grid;
     gap: 0.15rem;
@@ -5447,16 +5494,25 @@ body {
     min-inline-size: 0;
 }
 
+.elbysodic-notice__title,
 .elbysodic-event-bridge__title {
-    color: var(--chirpui-link);
+    color: var(--elbysodic-notice-accent);
     font-weight: 850;
     line-height: 1.2;
+    margin: 0;
 }
 
+.elbysodic-notice__summary,
 .elbysodic-event-bridge__summary {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
     line-height: 1.35;
+    margin: 0;
+}
+
+.elbysodic-notice .chirpui-field__error {
+    grid-column: 2 / -1;
+    margin: 0.25rem 0 0;
 }
 
 .elbysodic-current-event-card {

@@ -21,7 +21,7 @@
   <div class="chirpui-stack chirpui-stack--md">
     <div>
       <h2>Create a character first</h2>
-      <p class="chirpui-text-muted">
+      <p class="elbysodic-copy-helper">
         {{ viewer.community.name }} needs a roster face before you can start a thread.
       </p>
     </div>
@@ -72,7 +72,7 @@
     <section class="elbysodic-composer-panel" aria-labelledby="thread-scene-setup">
       <div class="elbysodic-composer-panel__header">
         <h3 id="thread-scene-setup">Scene setup</h3>
-        <p>Short signals that help other writers understand the invitation.</p>
+        <p class="elbysodic-copy-helper">Short signals that help other writers understand the invitation.</p>
       </div>
       <div>
         <label class="chirpui-field__label" for="thread-title">Title</label>
@@ -179,7 +179,7 @@
               </span>
             </button>
           </template>
-          <p class="chirpui-text-muted" x-show="!loading && query.trim() && results.length === 0">No matches.</p>
+          <p class="elbysodic-copy-status" x-show="!loading && query.trim() && results.length === 0">No faces match that search.</p>
         </div>
       </div>
     </section>
@@ -188,7 +188,7 @@
       <div class="elbysodic-composer-panel__bar">
         <div>
           <h3 id="thread-writing">Writing</h3>
-          <p class="chirpui-text-muted">Drafts save locally in this browser.</p>
+          <p class="elbysodic-copy-helper">Drafts stay in this browser.</p>
         </div>
         <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
           <label>
@@ -249,8 +249,8 @@
       </div>
       <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
         <h2 x-show="title.trim()" x-text="title"></h2>
-        <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
-        <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
+        <div class="elbysodic-prose-body elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
+        <p class="elbysodic-copy-status" x-show="!hasPreview()">Preview will appear once you write a beat.</p>
       </div>
     </section>
     <div class="chirpui-cluster chirpui-cluster--end">

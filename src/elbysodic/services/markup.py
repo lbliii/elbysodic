@@ -1,4 +1,4 @@
-"""Safe post body rendering for forum content."""
+"""Safe long-form body rendering for forum content."""
 
 from __future__ import annotations
 
@@ -24,14 +24,20 @@ class MentionLink:
     kind: str
 
 
-def render_post_body(value: str, *, mentions: list[MentionLink] | None = None) -> Markup:
-    """Render a user-authored post body as sanitized HTML."""
+def render_prose_body(value: str, *, mentions: list[MentionLink] | None = None) -> Markup:
+    """Render user-authored long-form body text as sanitized HTML."""
 
     blocks = _blocks(value)
     if not blocks:
         return Markup("")
     mention_map = {mention.handle.lower(): mention for mention in mentions or []}
     return Markup("".join(_render_block(kind, lines, mention_map) for kind, lines in blocks))
+
+
+def render_post_body(value: str, *, mentions: list[MentionLink] | None = None) -> Markup:
+    """Render a character post body as sanitized HTML."""
+
+    return render_prose_body(value, mentions=mentions)
 
 
 def post_snippet(value: str, *, limit: int = 130) -> str:

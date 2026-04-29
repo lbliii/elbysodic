@@ -21,10 +21,10 @@
   </a>
   <div>
     <h3><a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h3>
-    <p class="chirpui-text-muted">
-      {{ item.character.summary if item.character.summary else "No application summary yet." }}
+    <p class="elbysodic-copy-summary">
+      {{ item.character.summary if item.character.summary else "Application summary is still blank." }}
     </p>
-    <p class="chirpui-text-muted">
+    <p class="elbysodic-copy-meta">
       writer
       <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
     </p>
@@ -102,7 +102,7 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No character applications yet.</p>
+    <p class="elbysodic-empty-state">No character drafts are in your application lane yet.</p>
     {% end %}
     {% end %}
   </section>
@@ -120,7 +120,7 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No characters are waiting on review.</p>
+    <p class="elbysodic-empty-state">No submitted faces are waiting on review.</p>
     {% end %}
     {% end %}
   </section>
@@ -139,14 +139,14 @@
           <h3><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h3>
           {{ badge(item.type_label, variant="info") }}
         </div>
-        <p class="chirpui-text-muted">{{ item.rendered_summary }}</p>
+        <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
       </article>
       {% end %}
       {% end %}
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No application materials have been published yet.</p>
+    <p class="elbysodic-empty-state">No application guidance has been published yet.</p>
     {% end %}
     {% end %}
   </section>

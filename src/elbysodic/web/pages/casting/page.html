@@ -26,7 +26,7 @@
     <h3>{{ item.reserve.title }}</h3>
     {% end %}
     {% if item.reserve.notes %}
-    <p class="chirpui-text-muted">{{ item.reserve.notes }}</p>
+    <p class="elbysodic-copy-summary">{{ item.reserve.notes }}</p>
     {% end %}
   </div>
   <div class="elbysodic-interest-card__meta">
@@ -55,10 +55,10 @@
           {% if desk.active_face %}
           Browsing as {{ desk.active_face.name }}
           {% else %}
-          No active face selected
+          No face selected
           {% end %}
         </h2>
-        <p class="chirpui-text-muted">
+        <p class="elbysodic-copy-section">
           {% if desk.active_face %}
           Casting views are weighted toward the face you are currently wearing.
           {% else %}
@@ -117,7 +117,7 @@
               </a>
             </h2>
             {% if item.wanted_ad.wanted_ad.summary %}
-            <p class="chirpui-text-muted">{{ item.wanted_ad.wanted_ad.summary }}</p>
+            <p class="elbysodic-copy-summary">{{ item.wanted_ad.wanted_ad.summary }}</p>
             {% end %}
           </div>
           <div class="elbysodic-interest-card__meta">
@@ -129,7 +129,7 @@
         </div>
         {% if item.interests %}
         <div>
-          <p class="chirpui-text-muted">Interested faces</p>
+          <p class="elbysodic-section-kicker">Interested faces</p>
           <div class="elbysodic-character-chip-row">
             {% for interest in item.interests %}
             {% if interest.character %}
@@ -156,7 +156,7 @@
         {% end %}
         {% if item.reserves %}
         <div>
-          <p class="chirpui-text-muted">Reserves created</p>
+          <p class="elbysodic-section-kicker">Reserves created</p>
           <div class="elbysodic-character-chip-row">
             {% for reserve in item.reserves %}
             <a class="elbysodic-character-chip" href="/characters/{{ reserve.character.slug }}">
@@ -179,7 +179,7 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No wanted hooks have interest yet.</p>
+    <p class="elbysodic-empty-state">No wanted hooks have raised hands yet.</p>
     {% end %}
     {% end %}
   </section>
@@ -196,7 +196,7 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No active reserves yet.</p>
+    <p class="elbysodic-empty-state">No reserves are active right now.</p>
     {% end %}
     {% end %}
   </section>

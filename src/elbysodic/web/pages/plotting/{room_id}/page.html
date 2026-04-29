@@ -19,7 +19,7 @@
         <p class="elbysodic-kicker">Plotting room</p>
         <h2>{{ room.room.title }}</h2>
         {% if room.room.summary %}
-        <p class="chirpui-text-muted">{{ room.room.summary }}</p>
+        <p class="elbysodic-copy-lead">{{ room.room.summary }}</p>
         {% end %}
       </div>
       <div class="elbysodic-interest-card__meta">
@@ -71,7 +71,7 @@
         {% else %}
         <div>
           <h3>{{ item.display_name }}</h3>
-          <p class="chirpui-text-muted">prospective character</p>
+          <p class="elbysodic-copy-meta">prospective character</p>
         </div>
         {% end %}
         <div class="elbysodic-interest-card__meta">
@@ -87,7 +87,7 @@
   {% call surface(variant="elevated") %}
   <article class="chirpui-stack chirpui-stack--sm">
     <h2>Notes</h2>
-    <p class="chirpui-text-muted">
+    <p class="elbysodic-copy-helper">
       Shared notes and thread conversion come next; for now this room preserves the match,
       source context, and participants so plotting has somewhere to live.
     </p>

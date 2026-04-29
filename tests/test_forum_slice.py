@@ -260,7 +260,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Navigation composer" in studio.text
             assert "Sidebar section settings" in studio.text
             assert "Navigation Health" in studio.text
-            assert "Navigation looks coherent." in studio.text
+            assert "Navigation is coherent right now." in studio.text
             assert "World sidebar" in studio.text
             assert "Desk sidebar" in studio.text
             assert "Studio sidebar" in studio.text
@@ -836,7 +836,7 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "elbysodic-board-media--xavier-institute" in academy.text
             assert "Choose a door inside Xavier Institute" in academy.text
             assert "Xavier Institute threads" in academy.text
-            assert "No direct scenes here yet." in academy.text
+            assert "No scenes have opened directly here yet." in academy.text
             assert "Sublocations" in academy.text
             assert "elbysodic-board-poster--tile" in academy.text
 
@@ -2219,7 +2219,7 @@ def test_board_thread_filters_use_roster_participation() -> None:
 
             pinned = await client.get("/boards/plotting?filter=pinned")
             assert pinned.status == 200
-            assert "No pinned threads here yet." in pinned.text
+            assert "No pinned threads are in this board yet." in pinned.text
 
             locked = await client.get("/boards/announcements?filter=locked")
             assert locked.status == 200
@@ -2277,10 +2277,10 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
 
             cleared = await client.get("/boards/plotting?filter=attention")
             assert cleared.status == 200
-            assert "No threads need a reply here." in cleared.text
+            assert "Nothing here needs your roster right now." in cleared.text
 
             index_after_read = await client.get("/")
-            assert "No threads need a reply right now." in index_after_read.text
+            assert "Your roster is caught up for now." in index_after_read.text
 
     asyncio.run(run())
 

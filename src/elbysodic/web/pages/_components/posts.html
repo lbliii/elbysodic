@@ -23,7 +23,7 @@
     <h2>
       <a class="chirpui-link" href="/characters/{{ item.author.slug }}">{{ item.author.name }}</a>
     </h2>
-    <p>
+    <p class="elbysodic-copy-meta">
       writer <a class="chirpui-link" href="/members/{{ item.author_membership.username }}">{{ item.author_membership.username }}</a>
     </p>
   </div>
@@ -93,7 +93,7 @@
         {% end %}
       </div>
     </header>
-    <div class="elbysodic-post-content">{{ item.rendered_body }}</div>
+    <div class="elbysodic-prose-body elbysodic-post-content">{{ item.rendered_body }}</div>
   </div>
 </article>
 {% end %}

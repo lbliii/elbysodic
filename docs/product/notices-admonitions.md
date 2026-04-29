@@ -39,6 +39,10 @@ Contract:
 - Usually page-local and persistent until the state changes.
 - Can include one action if there is an obvious next step.
 
+Use `.elbysodic-notice--staff` for read-only staff tooling previews and locked
+production surfaces. Use `.elbysodic-notice--warning` or
+`.elbysodic-notice--attention` only when the state needs director attention.
+
 ### Toast
 
 Use for temporary confirmation after an action: draft saved, application
@@ -60,6 +64,10 @@ Contract:
 - Stays adjacent to the control or region it describes.
 - Uses compact live-region text when needed.
 - Avoid long explanations in `aria-live`.
+
+Inline status is not a full notice. Keep draft saved, preview empty, no matches,
+and field validation close to the relevant control unless the message changes
+what the whole page is doing.
 
 ## Event Notice Shape
 
@@ -85,6 +93,8 @@ needs a richer route.
   the notice is the main content.
 - Do not use warning colors for event context unless something is actually
   broken or blocked.
+- Do not use empty-state styling for permission or workflow constraints. Those
+  are admonitions, not absences.
 - Keep notices responsive: on tablet and mobile, title and action must wrap
   beneath the label instead of squeezing adjacent content.
 - Prefer one action. If there are multiple actions, the notice is probably a
@@ -97,5 +107,8 @@ needs a richer route.
 - Shared notice classes live in `elbysodic-theme.css` under `.elbysodic-notice`.
 - Event bridge notices compose `.elbysodic-notice` with
   `.elbysodic-notice--event` and `.elbysodic-event-bridge`.
-- Future warning, success, and staff variants should extend the same base class
-  instead of inventing new one-off panels.
+- Staff previews and locked surfaces use `.elbysodic-notice--staff`.
+- Navigation health and other production warnings use `.elbysodic-notice--note`,
+  `.elbysodic-notice--warning`, or `.elbysodic-notice--attention`.
+- Success and neutral status variants should extend the same base class instead
+  of inventing one-off panels.

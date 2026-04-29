@@ -38,7 +38,7 @@
               {{ card.membership.display_name }}
             </a>
           </h2>
-          <p class="chirpui-text-muted">@{{ card.membership.username }}</p>
+          <p class="elbysodic-copy-meta">@{{ card.membership.username }}</p>
         </div>
         <div class="chirpui-cluster chirpui-cluster--sm">
           {{ badge("you", variant="success") if card.is_current_member else "" }}
@@ -58,7 +58,7 @@
         {% end %}
       </p>
       {% else %}
-      <p class="elbysodic-member-card__roster">No public faces yet.</p>
+      <p class="elbysodic-member-card__roster">No public faces listed yet.</p>
       {% end %}
       {% if card.latest_post %}
       <p class="elbysodic-member-card__latest">

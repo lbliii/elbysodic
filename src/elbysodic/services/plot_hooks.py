@@ -20,7 +20,7 @@ from elbysodic.services.facets import (
     facet_tags,
     resolve_facets,
 )
-from elbysodic.services.markup import render_post_body
+from elbysodic.services.markup import render_prose_body
 from elbysodic.services.posts import PostViewRepository, post_mention_links
 from elbysodic.services.read_models import (
     CharacterPlotHookDetail,
@@ -245,7 +245,7 @@ def read_plot_hook(
             and plot_hook.author_membership_id != viewer.membership.id
         ),
         can_manage=can_manage_plot_hook(viewer, plot_hook),
-        rendered_body=render_post_body(
+        rendered_body=render_prose_body(
             plot_hook.body,
             mentions=post_mention_links(repo, viewer.community.id),
         ),

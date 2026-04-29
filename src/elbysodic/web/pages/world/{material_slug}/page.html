@@ -101,7 +101,7 @@
 
   {% call surface(variant="elevated") %}
   <article id="canon" class="chirpui-stack chirpui-stack--md elbysodic-material-detail">
-    <div class="elbysodic-post-content">
+    <div class="elbysodic-prose-body elbysodic-prose-body--canon elbysodic-material-body">
       {{ material.rendered_body }}
     </div>
   </article>
@@ -237,7 +237,7 @@
     <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card">
       <p class="elbysodic-material-card__type">{{ item.type_label }}</p>
       <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
-      <p class="chirpui-text-muted">{{ item.rendered_summary }}</p>
+      <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
       {{ facet_pills(item.facets) }}
     </article>
     {% end %}

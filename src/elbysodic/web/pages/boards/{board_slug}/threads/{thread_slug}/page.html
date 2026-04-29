@@ -182,7 +182,7 @@
       <small>Signal, cast, and scene brief</small>
     </summary>
     <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="scene-management">
-      <p class="chirpui-text-muted">Update the scene signal and tag other writers into the cast.</p>
+      <p class="elbysodic-copy-helper">Update the scene signal and tag other writers into the cast.</p>
       <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
       <input type="hidden" name="intent" value="scene">
       <div class="elbysodic-scene-form-grid">
@@ -277,7 +277,7 @@
               </span>
             </button>
           </template>
-          <p class="chirpui-text-muted" x-show="!loading && query.trim() && results.length === 0">No matches.</p>
+          <p class="elbysodic-copy-status" x-show="!loading && query.trim() && results.length === 0">No faces match that search.</p>
         </div>
       </div>
       <div class="chirpui-cluster chirpui-cluster--end">
@@ -297,7 +297,7 @@
       <small>Pin, lock, or move thread</small>
     </summary>
     <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="thread-staff-controls">
-      <p class="chirpui-text-muted">Manage this thread's visibility in the community queue.</p>
+      <p class="elbysodic-copy-helper">Manage this thread's visibility in the community queue.</p>
       <div class="elbysodic-staff-panel__controls">
       <div class="chirpui-cluster chirpui-cluster--sm">
         <form method="post" hx-boost="false">
@@ -335,7 +335,7 @@
     <div class="elbysodic-scene-transcript__copy">
       <p class="elbysodic-kicker">Transcript</p>
       <h2 id="scene-transcript-title">Scene posts</h2>
-      <p>
+      <p class="elbysodic-copy-meta">
         {{ thread_view.posts | length }} posts
         {% if thread_view.latest_post %}
         · latest by <a class="chirpui-link" href="#{{ thread_view.latest_post.anchor }}">{{ thread_view.latest_post.author.name }}</a>
@@ -370,7 +370,7 @@
     <div class="chirpui-stack chirpui-stack--md">
       <div>
         <h2>Create a character first</h2>
-        <p class="chirpui-text-muted">
+        <p class="elbysodic-copy-helper">
           {{ viewer.community.name }} needs a roster face before you can reply.
         </p>
       </div>
@@ -424,7 +424,7 @@
         <div class="elbysodic-composer-panel__bar">
           <div>
             <h3 id="reply-writing">Writing</h3>
-            <p class="chirpui-text-muted">Drafts save locally in this browser.</p>
+            <p class="elbysodic-copy-helper">Drafts stay in this browser.</p>
           </div>
           <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
             <label>
@@ -484,8 +484,8 @@
           </div>
         </div>
         <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
-          <div class="elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
-          <p class="chirpui-text-muted" x-show="!hasPreview()">Preview is empty.</p>
+          <div class="elbysodic-prose-body elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
+          <p class="elbysodic-copy-status" x-show="!hasPreview()">Preview will appear once you write a beat.</p>
         </div>
       </section>
       <div class="chirpui-cluster chirpui-cluster--end">
@@ -496,15 +496,17 @@
     {% end %}
     {% end %}
   {% else %}
-    {% call surface(variant="elevated") %}
-    <div class="chirpui-stack chirpui-stack--sm">
-      <h2>Thread locked</h2>
-      <p class="chirpui-text-muted">Replies are closed for this thread.</p>
+    <aside class="elbysodic-notice elbysodic-notice--staff" aria-label="Thread locked">
+      <span class="elbysodic-notice__mark" aria-hidden="true">!</span>
+      <span class="elbysodic-notice__label">Thread locked</span>
+      <span class="elbysodic-notice__body">
+        <strong class="elbysodic-notice__title">Replies are closed</strong>
+        <span class="elbysodic-notice__summary">This scene is available to read, but no new replies can be posted.</span>
+      </span>
       {% if error %}
       <p class="chirpui-field__error">{{ error }}</p>
       {% end %}
-    </div>
-    {% end %}
+    </aside>
   {% end %}
 {% end %}
 {% end %}

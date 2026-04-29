@@ -34,9 +34,9 @@
           {{ badge("you", variant="success") if profile.is_current_member else "" }}
           {{ badge(profile.role.name, variant="warning" if profile.role.is_admin else "muted") }}
         </div>
-        <p class="chirpui-text-muted">@{{ profile.membership.username }}</p>
+        <p class="elbysodic-copy-meta">@{{ profile.membership.username }}</p>
         {% if profile.default_character %}
-        <p class="chirpui-text-muted">Current face: {{ profile.default_character.name }}</p>
+        <p class="elbysodic-copy-status">Current face: {{ profile.default_character.name }}</p>
         {% end %}
         {% if profile.known_for %}
         <p class="elbysodic-writer-known-for">
@@ -74,7 +74,7 @@
         </a>
         <div>
           <h2><a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
-          <p class="chirpui-text-muted">{{ character.summary }}</p>
+          <p class="elbysodic-copy-summary">{{ character.summary }}</p>
         </div>
       </div>
     </article>
@@ -99,7 +99,7 @@
         </a>
         <div>
           <h2><a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
-          <p class="chirpui-text-muted">{{ character.summary }}</p>
+          <p class="elbysodic-copy-summary">{{ character.summary }}</p>
         </div>
       </div>
       {% if profile.default_character and profile.default_character.id == character.id %}
@@ -124,9 +124,9 @@
             {{ collaborator.membership.display_name }}
           </a>
         </h3>
-        <p class="chirpui-text-muted">{{ collaborator.shared_thread_count }} shared scenes</p>
+        <p class="elbysodic-copy-meta">{{ collaborator.shared_thread_count }} shared scenes</p>
       </div>
-      <p>
+      <p class="elbysodic-copy-meta">
         Latest:
         <a class="chirpui-link"
            href="/boards/{{ collaborator.latest_board.slug }}/threads/{{ collaborator.latest_thread.slug }}">
@@ -153,7 +153,7 @@
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No visible active threads yet.</p>
+    <p class="elbysodic-empty-state">No visible scenes are in motion yet.</p>
     {% end %}
     {% end %}
   </div>
@@ -180,13 +180,13 @@
           {{ item.thread.title }}
         </a>
       </h2>
-      <p class="chirpui-text-muted">{{ item.post.snippet }}</p>
+      <p class="elbysodic-copy-summary">{{ item.post.snippet }}</p>
     </article>
     {% end %}
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No visible posts yet.</p>
+    <p class="elbysodic-empty-state">No visible writing has been posted yet.</p>
     {% end %}
     {% end %}
   </div>

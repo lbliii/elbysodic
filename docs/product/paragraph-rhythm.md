@@ -52,10 +52,19 @@ Contract:
 
 Current anchors:
 
+- `.elbysodic-prose-body`
 - `.elbysodic-post-content`
+- `.elbysodic-prose-body--canon`
+- `.elbysodic-prose-body--hook`
 - `.elbysodic-composer-preview`
 - rendered `<p>` from `services/markup.py`
 - client preview `<p>` from `elbysodic-composer.js`
+
+Posts, canon, and hooks share the same safe markup shape, but they should not
+all borrow post-specific naming. Use `.elbysodic-prose-body` for the shared
+reading contract. Compose it with `.elbysodic-post-content` for character posts
+and composer previews, `.elbysodic-prose-body--canon` for world materials, and
+`.elbysodic-prose-body--hook` for wanted and plot-hook pitches.
 
 ### Hero Lead
 
@@ -159,6 +168,11 @@ Contract:
 - Enough contrast to be readable, but visually quiet.
 - Can include a next action nearby, but the paragraph itself should not pretend
   to be the action.
+- For queues, prefer "caught up" or "nothing is waiting" over generic absence.
+- Name the surface in product language: scenes, faces, hooks, guidance, raised
+  hands, or director attention.
+- Avoid dead-end "No X yet" copy unless the object itself is the important
+  noun and no stronger workflow context exists.
 
 Use `elbysodic-empty-state` or a component-specific empty-state class.
 
@@ -195,8 +209,8 @@ Contract:
   role.
 - Product copy that appears in more than one surface should use a shared
   Elbysodic role class or component slot.
-- Real prose should stay inside a prose container such as
-  `.elbysodic-post-content` or a future canon/body prose class.
+- Real prose should stay inside `.elbysodic-prose-body` plus the appropriate
+  variant: post, canon, hook, or preview.
 - Hero and card paragraphs should not inherit prose paragraph gaps.
 - Metadata that is not sentence-like should usually not be a paragraph.
 - If a paragraph is visible next to a control, decide whether it is helper copy,
@@ -213,8 +227,9 @@ Contract:
    command panels, lane previews, post previews, and composer shells.
 3. Audit page-local bare paragraphs and decide whether each is hero lead,
    section intro, helper copy, or metadata.
-4. Strengthen `.elbysodic-post-content` as the canonical PBP reading rhythm and
-   mirror it in composer preview so writers trust what they see before posting.
+4. Strengthen `.elbysodic-prose-body` as the canonical PBP reading rhythm and
+   mirror the post variant in composer preview so writers trust what they see
+   before posting.
 5. Add visual/browser checks for representative surfaces: home, board, thread,
    character profile, wanted detail, material page, Studio, Writer Desk, and
    mobile thread reading.

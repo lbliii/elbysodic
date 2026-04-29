@@ -204,7 +204,7 @@ def _build_lanes(
             "Open queue",
             len(queue.needs_reply),
             _thread_preview_items(queue.needs_reply[:3], "Needs reply"),
-            "Nothing needs a reply right now.",
+            "Your roster is caught up for now.",
         ),
         DeskLane(
             "scenes",
@@ -214,7 +214,7 @@ def _build_lanes(
             "Read scenes",
             len(unread_watched),
             _thread_preview_items(unread_watched[:3], "Unread"),
-            "No watched scenes have unread posts.",
+            "No watched scenes have fresh posts.",
         ),
         DeskLane(
             "waiting",
@@ -224,7 +224,7 @@ def _build_lanes(
             "Review waiting",
             len(queue.waiting_on_others),
             _thread_preview_items(queue.waiting_on_others[:3], "Waiting"),
-            "You are not waiting on any active threads.",
+            "No active scenes are waiting on other writers for you.",
         ),
         DeskLane(
             "plotting",
@@ -243,7 +243,7 @@ def _build_lanes(
                 )
                 for item in plotting.rooms[:3]
             ],
-            "No active plotting rooms yet.",
+            "No plotting rooms are open yet.",
         ),
         DeskLane(
             "casting",
@@ -262,7 +262,7 @@ def _build_lanes(
                 )
                 for item in application_items
             ],
-            "No character applications are in motion.",
+            "No character drafts are in motion.",
         ),
         DeskLane(
             "notifications",
@@ -281,7 +281,7 @@ def _build_lanes(
                 )
                 for item in notifications.items[:3]
             ],
-            "No recent notifications.",
+            "No notifications are waiting on you.",
         ),
     ]
 

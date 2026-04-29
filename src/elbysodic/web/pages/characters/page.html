@@ -64,7 +64,7 @@
                     {% if card.accent_color %}style="--elbysodic-accent-source-color: {{ card.accent_color }}"{% end %}></span>
               <span>{{ card.accent_source_label }}</span>
             </p>
-            <p class="chirpui-text-muted">{{ card.character.summary }}</p>
+            <p class="elbysodic-copy-summary">{{ card.character.summary }}</p>
           </div>
         </div>
         {% if card.is_default %}
@@ -96,7 +96,7 @@
         </a>
       </p>
       {% else %}
-      <p class="elbysodic-character-card__queue">No active thread queue.</p>
+      <p class="elbysodic-character-card__queue">Caught up for now.</p>
       {% end %}
       <div class="chirpui-cluster chirpui-cluster--end">
         <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ card.character.slug }}">Manage</a>
@@ -114,7 +114,7 @@
         x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
     <div>
       <h2>Add character</h2>
-      <p class="chirpui-text-muted">Start a draft application for {{ viewer.community.name }}</p>
+      <p class="elbysodic-copy-helper">Start a draft application for {{ viewer.community.name }}</p>
     </div>
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>

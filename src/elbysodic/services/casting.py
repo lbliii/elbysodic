@@ -14,7 +14,7 @@ from elbysodic.domain.models import (
     WantedAdInterest,
 )
 from elbysodic.services.facets import FacetReadRepository, facet_tags
-from elbysodic.services.markup import render_post_body
+from elbysodic.services.markup import render_prose_body
 from elbysodic.services.posts import PostViewRepository, post_mention_links
 from elbysodic.services.read_models import (
     CastingDesk,
@@ -307,7 +307,7 @@ def read_wanted_ad(
         ),
         is_created_by_viewer=is_created_by_viewer,
         can_manage=is_created_by_viewer or viewer.role.is_admin,
-        rendered_body=render_post_body(
+        rendered_body=render_prose_body(
             wanted_ad.body,
             mentions=post_mention_links(repo, viewer.community.id),
         ),

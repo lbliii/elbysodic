@@ -17,7 +17,7 @@ from elbysodic.domain.models import (
 )
 from elbysodic.services import policies
 from elbysodic.services.facets import FacetReadRepository, facet_tags
-from elbysodic.services.markup import post_snippet, render_post_body
+from elbysodic.services.markup import post_snippet, render_prose_body
 from elbysodic.services.posts import PostViewRepository, post_mention_links
 from elbysodic.services.read_models import (
     BoardSummary,
@@ -113,7 +113,7 @@ def material_detail(
     return MaterialDetail(
         material=material,
         facets=facets,
-        rendered_body=render_post_body(
+        rendered_body=render_prose_body(
             material.body,
             mentions=post_mention_links(repo, viewer.community.id),
         ),

@@ -29,7 +29,7 @@
     <div>
       <p class="elbysodic-kicker">Board editor</p>
       <h1>Edit {{ editor.board.name }}</h1>
-      <p>{{ editor.guidance }}</p>
+      <p class="elbysodic-copy-lead">{{ editor.guidance }}</p>
     </div>
     <aside class="elbysodic-director-hero__signals" aria-label="Board production state">
       <div class="elbysodic-director-signal">
@@ -48,11 +48,16 @@
   </section>
 
   {% if not editor.can_manage %}
-  {% call surface(variant="elevated") %}
-  <p class="elbysodic-empty-state">
-    Board editor is visible as a preview, but only staff memberships can manage board production.
-  </p>
-  {% end %}
+  <aside class="elbysodic-notice elbysodic-notice--staff" aria-label="Staff preview">
+    <span class="elbysodic-notice__mark" aria-hidden="true">i</span>
+    <span class="elbysodic-notice__label">Staff preview</span>
+    <span class="elbysodic-notice__body">
+      <strong class="elbysodic-notice__title">Board production is read-only here</strong>
+      <span class="elbysodic-notice__summary">
+        Board editor is visible as a preview, but only staff memberships can manage board production.
+      </span>
+    </span>
+  </aside>
   {% else %}
   <section class="elbysodic-board-editor-layout">
     {% call surface(variant="elevated") %}
@@ -201,7 +206,7 @@
           <em>{{ editor.board.tagline }}</em>
           {% end %}
         </div>
-        <p class="chirpui-text-muted">{{ editor.board.description }}</p>
+        <p class="elbysodic-copy-summary">{{ editor.board.description }}</p>
         {{ board_stat_row(editor.summary, viewer) }}
       </section>
       {% end %}
@@ -238,7 +243,7 @@
           </div>
           {% end %}
         </dl>
-        <p class="chirpui-text-muted">
+        <p class="elbysodic-copy-helper">
           Hidden from navigation keeps the board reachable by direct URL. Private boards still depend on permissions.
         </p>
       </section>

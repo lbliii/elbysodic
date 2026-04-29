@@ -110,7 +110,7 @@
     </div>
     {% elif profile.can_manage %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No plot hooks for {{ profile.character.name }} yet. Open New plot hook below when you are ready to invite a scene or connection.</p>
+    <p class="elbysodic-empty-state">No plot hooks for {{ profile.character.name }} yet. Open New plot hook when you are ready to invite a scene or connection.</p>
     {% end %}
     {% end %}
     {% if profile.wanted_ads %}
@@ -122,7 +122,7 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No open wanted hooks for {{ profile.character.name }} yet.</p>
+    <p class="elbysodic-empty-state">No open wanted hooks are tied to {{ profile.character.name }} yet.</p>
     {% end %}
     {% end %}
     <div class="chirpui-cluster chirpui-cluster--end">
@@ -246,7 +246,7 @@
           <h3>{{ item.reserve.title }}</h3>
           {% end %}
           {% if item.reserve.notes %}
-          <p class="chirpui-text-muted">{{ item.reserve.notes }}</p>
+          <p class="elbysodic-copy-summary">{{ item.reserve.notes }}</p>
           {% end %}
         </div>
         <div class="elbysodic-interest-card__meta">
@@ -277,7 +277,7 @@
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">{{ profile.character.name }} has not joined any visible threads yet.</p>
+    <p class="elbysodic-empty-state">{{ profile.character.name }} has not joined any visible scenes yet.</p>
     {% end %}
     {% end %}
   </section>
@@ -494,7 +494,7 @@
               {{ item.thread.title }}
             </a>
           </h3>
-          <p class="chirpui-text-muted">
+          <p class="elbysodic-copy-meta">
             {{ item.board.name }} · {{ item.post.created_at_label }}
           </p>
         </div>
@@ -504,7 +504,7 @@
           #{{ item.post.post.id }}
         </a>
       </div>
-      <div class="elbysodic-post-content elbysodic-post-content--compact">
+      <div class="elbysodic-prose-body elbysodic-prose-body--compact elbysodic-post-content">
         {{ item.post.rendered_body }}
       </div>
     </article>

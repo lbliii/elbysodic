@@ -25,7 +25,7 @@
     <div class="chirpui-cluster chirpui-cluster--between">
       <div>
         <h2>{{ history.post.author.name }}</h2>
-        <p class="chirpui-text-muted">
+        <p class="elbysodic-copy-meta">
           Posted by writer <a class="chirpui-link" href="/members/{{ history.post.author_membership.username }}">{{ history.post.author_membership.username }}</a>
           · {{ history.post.created_at_label }}
         </p>
@@ -35,7 +35,7 @@
         Edit current post
       </a>
     </div>
-    <div class="elbysodic-post-content elbysodic-post-content--compact">
+    <div class="elbysodic-prose-body elbysodic-prose-body--compact elbysodic-post-content">
       {{ history.post.rendered_body }}
     </div>
   </article>
@@ -48,7 +48,7 @@
     <article class="elbysodic-revision chirpui-stack chirpui-stack--md">
       <div>
         <h2>Revision {{ history.revisions | length - loop.index0 }}</h2>
-        <p class="chirpui-text-muted">
+        <p class="elbysodic-copy-meta">
           Edited by writer <a class="chirpui-link" href="/members/{{ item.editor_membership.username }}">{{ item.editor_membership.username }}</a>
           · {{ item.created_at_label }}
         </p>
@@ -68,7 +68,7 @@
     {% end %}
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No revisions recorded yet.</p>
+    <p class="elbysodic-empty-state">No edits have been recorded for this post yet.</p>
     {% end %}
     {% end %}
   </div>
