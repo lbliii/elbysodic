@@ -394,7 +394,10 @@ def plot_hook_type_label(hook_type: str) -> str:
 
 
 def can_manage_plot_hook(viewer: ForumView, plot_hook: CharacterPlotHook) -> bool:
-    return plot_hook.author_membership_id == viewer.membership.id or viewer.role.is_admin
+    return plot_hook.author_membership_id == viewer.membership.id or policies.can_manage_casting(
+        viewer.membership,
+        viewer.role,
+    )
 
 
 def unique_plot_hook_slug(

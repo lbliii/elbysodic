@@ -13,6 +13,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.services import policies
 from elbysodic.services.facets import FacetReadRepository, facet_tags
 from elbysodic.services.markup import render_prose_body
 from elbysodic.services.posts import PostViewRepository, post_mention_links
@@ -306,7 +307,8 @@ def read_wanted_ad(
             and not is_created_by_viewer
         ),
         is_created_by_viewer=is_created_by_viewer,
-        can_manage=is_created_by_viewer or viewer.role.is_admin,
+        can_manage=is_created_by_viewer
+        or policies.can_manage_casting(viewer.membership, viewer.role),
         rendered_body=render_prose_body(
             wanted_ad.body,
             mentions=post_mention_links(repo, viewer.community.id),
@@ -392,7 +394,10 @@ def reserve_wanted_interest(
     interest_id: int,
 ) -> WantedAdInterest:
     wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-    if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
+    if wanted_ad.creator_membership_id != viewer.membership.id and not policies.can_manage_casting(
+        viewer.membership,
+        viewer.role,
+    ):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
         )
@@ -430,7 +435,10 @@ def create_reserve_for_wanted_interest(
     interest_id: int,
 ) -> CharacterReserve:
     wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-    if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
+    if wanted_ad.creator_membership_id != viewer.membership.id and not policies.can_manage_casting(
+        viewer.membership,
+        viewer.role,
+    ):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
         )

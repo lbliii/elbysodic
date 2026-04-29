@@ -92,8 +92,13 @@ ignore = [
 "__init__.py" = ["F401"]
 "tests/**/*.py" = ["S101"]
 "scripts/**/*.py" = ["T20"]
-"src/elbysodic/db/repository.py" = ["S608"]
 "src/elbysodic/db/repositories/facets.py" = ["S608"]
+"src/elbysodic/db/repositories/materials.py" = ["S608"]
+"src/elbysodic/db/repositories/plot_hooks.py" = ["S608"]
+"src/elbysodic/db/repositories/plotting.py" = ["S608"]
+"src/elbysodic/db/repositories/reserves.py" = ["S608"]
+"src/elbysodic/db/repositories/threads.py" = ["S608"]
+"src/elbysodic/db/repositories/wanted.py" = ["S608"]
 
 # =============================================================================
 # ty - Type Checker

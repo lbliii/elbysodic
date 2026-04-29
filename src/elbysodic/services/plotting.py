@@ -16,6 +16,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.services import policies
 from elbysodic.services.casting import (
     CastingReadRepository,
     wanted_ad_interest_view,
@@ -276,7 +277,9 @@ def plotting_desk(repo: PlottingRepository, viewer: ForumView) -> PlottingDesk:
     for wanted_ad in repo.list_wanted_ads(viewer.community.id, status=None):
         if wanted_ad.status == "archived":
             continue
-        if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
+        if wanted_ad.creator_membership_id != viewer.membership.id and not (
+            policies.can_manage_casting(viewer.membership, viewer.role)
+        ):
             continue
         for interest in repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id):
             if interest.status not in {"interested", "plotting", "reserved"}:
@@ -305,7 +308,9 @@ def read_plotting_room(
         plotting_room_participant_view(repo, viewer.community.id, participant)
         for participant in repo.list_plotting_room_participants(viewer.community.id, room.id)
     ]
-    if not viewer.role.is_admin and viewer.membership.id not in {
+    if not policies.can_manage_casting(
+        viewer.membership, viewer.role
+    ) and viewer.membership.id not in {
         participant.participant.membership_id for participant in participants
     }:
         raise PermissionError(f"membership {viewer.membership.id} cannot view room {room.id}")
@@ -330,7 +335,8 @@ def read_plotting_room(
         source_plot_hook=source_plot_hook,
         source_wanted_ad=source_wanted_ad,
         created_at_label=timestamp_label(room.created_at),
-        can_manage=room.owner_membership_id == viewer.membership.id or viewer.role.is_admin,
+        can_manage=room.owner_membership_id == viewer.membership.id
+        or policies.can_manage_casting(viewer.membership, viewer.role),
     )
 
 
@@ -404,7 +410,9 @@ def create_plotting_room_from_wanted_interest(
     interest_id: int,
 ) -> PlottingRoom:
     wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-    if wanted_ad.creator_membership_id != viewer.membership.id and not viewer.role.is_admin:
+    if wanted_ad.creator_membership_id != viewer.membership.id and not (
+        policies.can_manage_casting(viewer.membership, viewer.role)
+    ):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
         )

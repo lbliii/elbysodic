@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db.migrations import BASELINE_MIGRATION_NAME, CURRENT_SCHEMA_VERSION
 from elbysodic.db.repositories.base import TenantBoundaryError
 
 
@@ -24,6 +25,26 @@ def test_boards_are_scoped_by_community(repo: ForumRepository) -> None:
 
     assert [board.name for board in repo.list_boards(default.id)] == ["Announcements"]
     assert [board.name for board in repo.list_boards(hosted.id)] == ["Hosted Announcements"]
+
+
+def test_schema_records_migration_baseline() -> None:
+    connection = connect()
+
+    create_schema(connection)
+    create_schema(connection)
+
+    rows = connection.execute(
+        "SELECT version, name FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    user_version = connection.execute("PRAGMA user_version").fetchone()[0]
+
+    assert [dict(row) for row in rows] == [
+        {
+            "version": CURRENT_SCHEMA_VERSION,
+            "name": BASELINE_MIGRATION_NAME,
+        }
+    ]
+    assert user_version == CURRENT_SCHEMA_VERSION
 
 
 def test_schema_migrates_existing_boards_for_place_navigation() -> None:
@@ -901,6 +922,59 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
             source_plot_hook_id=hook.id,
             source_plot_hook_interest_id=interest.id,
         )
+
+
+def test_plotting_room_participants_are_unique_for_nullable_identity(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    role = repo.create_role(default.id, "member", "Member")
+    owner_user = repo.create_user("room-owner@example.com", "hash")
+    prospect_user = repo.create_user("room-prospect@example.com", "hash")
+    owner = repo.create_membership(default.id, owner_user.id, role.id, "owner", "Owner")
+    prospect = repo.create_membership(
+        default.id,
+        prospect_user.id,
+        role.id,
+        "prospect",
+        "Prospect",
+    )
+    wanted = repo.create_wanted_ad(default.id, owner.id, "casting-room", "Casting room")
+    interest = repo.create_wanted_ad_interest(
+        default.id,
+        wanted.id,
+        prospect.id,
+        prospective_character_name="Remy LeBeau",
+    )
+    room = repo.create_plotting_room(
+        default.id,
+        owner.id,
+        "Casting room",
+        source_wanted_ad_id=wanted.id,
+        source_wanted_ad_interest_id=interest.id,
+    )
+
+    owner_participant = repo.create_plotting_room_participant(default.id, room.id, owner.id)
+    duplicate_owner = repo.create_plotting_room_participant(default.id, room.id, owner.id)
+    prospect_participant = repo.create_plotting_room_participant(
+        default.id,
+        room.id,
+        prospect.id,
+        prospective_character_name="Remy LeBeau",
+    )
+    duplicate_prospect = repo.create_plotting_room_participant(
+        default.id,
+        room.id,
+        prospect.id,
+        prospective_character_name="Remy LeBeau",
+    )
+
+    assert duplicate_owner == owner_participant
+    assert duplicate_prospect == prospect_participant
+    assert repo.list_plotting_room_participants(default.id, room.id) == [
+        owner_participant,
+        prospect_participant,
+    ]
 
 
 def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumRepository) -> None:

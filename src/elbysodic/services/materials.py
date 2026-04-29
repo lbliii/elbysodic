@@ -135,7 +135,7 @@ def material_detail(
             related_scenes,
             related_wanted_ads,
         ),
-        can_manage=viewer.role.is_admin,
+        can_manage=policies.can_manage_world(viewer.membership, viewer.role),
     )
 
 

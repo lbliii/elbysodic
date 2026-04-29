@@ -59,6 +59,7 @@ class ApplicationRepository(
 
 
 def applications_desk(repo: ApplicationRepository, viewer: ForumView) -> ApplicationsDesk:
+    can_review = policies.can_manage_applications(viewer.membership, viewer.role)
     character_views = [
         application_character_view(repo, viewer, character)
         for character in repo.list_community_characters(viewer.community.id)
@@ -74,14 +75,14 @@ def applications_desk(repo: ApplicationRepository, viewer: ForumView) -> Applica
         ],
         review_queue=(
             [item for item in character_views if item.character.application_status == "submitted"]
-            if viewer.role.is_admin
+            if can_review
             else []
         ),
         accepted_characters=[
             item for item in character_views if item.character.application_status == "accepted"
         ],
         application_materials=materials,
-        can_review=viewer.role.is_admin,
+        can_review=can_review,
     )
 
 
@@ -113,7 +114,7 @@ def accept_character_application(
     viewer: ForumView,
     character_slug: str,
 ) -> Character:
-    if not viewer.role.is_admin:
+    if not policies.can_manage_applications(viewer.membership, viewer.role):
         raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
     character = repo.get_character_by_slug(viewer.community.id, character_slug)
     if character.application_status != "submitted":
@@ -134,7 +135,7 @@ def request_character_application_revision(
     viewer: ForumView,
     character_slug: str,
 ) -> Character:
-    if not viewer.role.is_admin:
+    if not policies.can_manage_applications(viewer.membership, viewer.role):
         raise PermissionError(f"membership {viewer.membership.id} cannot review applications")
     character = repo.get_character_by_slug(viewer.community.id, character_slug)
     if character.application_status != "submitted":
@@ -180,7 +181,10 @@ def notify_application_directors(
 ) -> None:
     for membership in repo.list_memberships(viewer.community.id):
         role = repo.get_role(viewer.community.id, membership.role_id)
-        if not role.is_admin or membership.id == viewer.membership.id:
+        if (
+            not policies.can_manage_applications(membership, role)
+            or membership.id == viewer.membership.id
+        ):
             continue
         repo.create_notification(
             viewer.community.id,
