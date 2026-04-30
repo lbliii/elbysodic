@@ -48,7 +48,7 @@
   </article>
   {% end %}
 
-  {% if room.field_values %}
+  {% if room.field_values and not room.can_edit_application %}
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Intake Fields") %}
     Director-readable claims and routing details from the application form.
@@ -91,6 +91,48 @@
                   name="body"
                   rows="9">{{ room.application.body }}</textarea>
       </label>
+      {% if room.intake_fields %}
+      <fieldset class="elbysodic-application-form__facets">
+        <legend class="chirpui-field__label">Director fields</legend>
+        <div class="elbysodic-claim-field-grid">
+          {% for item in room.intake_fields %}
+          {% set field_name = "application_field_" ~ item.field.field.id %}
+          <label>
+            <span class="chirpui-field__label">
+              {{ item.field.field.label }}{% if item.field.field.is_required %} <small>required</small>{% end %}
+            </span>
+            {% if item.field.field.field_type == "select" and item.field.options %}
+            <select class="chirpui-field__input"
+                    name="{{ field_name }}"
+                    {{ "required" if item.field.field.is_required else "" }}>
+              <option value="">Choose one</option>
+              {% for option in item.field.options %}
+              <option value="{{ option }}" {{ "selected" if item.value == option else "" }}>{{ option }}</option>
+              {% end %}
+            </select>
+            {% elif item.field.field.field_type == "textarea" %}
+            <textarea class="chirpui-field__input"
+                      name="{{ field_name }}"
+                      rows="4"
+                      maxlength="5000"
+                      placeholder="{{ item.field.field.placeholder }}"
+                      {{ "required" if item.field.field.is_required else "" }}>{{ item.value }}</textarea>
+            {% else %}
+            <input class="chirpui-field__input"
+                   name="{{ field_name }}"
+                   value="{{ item.value }}"
+                   maxlength="5000"
+                   placeholder="{{ item.field.field.placeholder }}"
+                   {{ "required" if item.field.field.is_required else "" }}>
+            {% end %}
+            {% if item.field.field.help_text %}
+            <span class="elbysodic-field-hint">{{ item.field.field.help_text }}</span>
+            {% end %}
+          </label>
+          {% end %}
+        </div>
+      </fieldset>
+      {% end %}
       <div class="chirpui-cluster chirpui-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save notes</button>
       </div>

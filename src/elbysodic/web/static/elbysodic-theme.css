@@ -4852,11 +4852,31 @@ body {
     font-weight: 800;
 }
 
+.elbysodic-intake-editor-layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+}
+
+.elbysodic-intake-editor-card__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: start;
+    justify-content: space-between;
+}
+
+.elbysodic-intake-editor-card__header h2 {
+    margin: 0;
+}
+
 @media (max-width: 44rem) {
     .elbysodic-interaction-hero,
     .elbysodic-interaction-option,
     .elbysodic-claims-hero,
-    .elbysodic-claim-row {
+    .elbysodic-claim-row,
+    .elbysodic-intake-editor-layout {
         grid-template-columns: 1fr;
     }
 

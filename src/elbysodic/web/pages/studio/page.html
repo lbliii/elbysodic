@@ -690,12 +690,15 @@
       {% if studio.claims.groups %}
       <ul class="elbysodic-director-list">
         {% for group in studio.claims.groups[:4] %}
-        <li><a href="/claims">{{ group.claim_type.name }}</a></li>
+        <li><a href="/studio/intake">{{ group.claim_type.name }}</a></li>
         {% end %}
       </ul>
       {% else %}
       <p class="elbysodic-director-note">No claim types have been configured yet.</p>
       {% end %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake">Edit intake</a>
+      </div>
     </article>
     {% end %}
 

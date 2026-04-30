@@ -1893,13 +1893,27 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert [assigned.slug for assigned in facets] == ["x-men"]
         assert room.status == 200
         assert "Jean Grey" in room.text
-        assert "Intake Fields" in room.text
-        assert "maps to Face Claim" in room.text
+        assert "Director fields" in room.text
+        assert "Famke Janssen" in room.text
         assert "Draft" in room.text
         assert applications.status == 200
         assert "Jean Grey" in applications.text
 
         async with TestClient(app) as client:
+            save_response = await client.post(
+                "/applications/jean-grey",
+                body=urlencode(
+                    {
+                        "intent": "save_application",
+                        "summary": "A powerful telepath trying to stay gentle.",
+                        "body": "Updated notes for school pressure and rescue work.",
+                        f"application_field_{fields['face_claim'].id}": "Sophie Turner",
+                        f"application_field_{fields['faction_claim'].id}": "X-Men",
+                        f"application_field_{fields['power_claim'].id}": "Telekinesis",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
             submit_response = await client.post(
                 "/applications",
                 body=urlencode(
@@ -1910,6 +1924,16 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 ).encode(),
                 headers=_FORM,
             )
+        assert save_response.status == 302
+        updated_field_values = services.repo.list_application_field_values(
+            community.id,
+            application.id,
+        )
+        assert {value.value for value in updated_field_values} == {
+            "Sophie Turner",
+            "Telekinesis",
+            "X-Men",
+        }
         assert submit_response.status == 302
 
         alex_membership = services.repo.get_membership_by_username(community.id, "alex")
@@ -1938,17 +1962,17 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert "Intake Fields" in review_room.text
         assert accept_response.status == 302
         assert {claim.label for claim in accepted_claims} == {
-            "Famke Janssen",
-            "Telepathy",
+            "Sophie Turner",
+            "Telekinesis",
             "X-Men",
         }
         assert {claim.value for claim in accepted_claims} == {
-            "famke-janssen",
-            "telepathy",
+            "sophie-turner",
+            "telekinesis",
             "x-men",
         }
         assert claims.status == 200
-        assert "Famke Janssen" in claims.text
+        assert "Sophie Turner" in claims.text
 
     asyncio.run(run())
 
@@ -2072,6 +2096,95 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
         assert studio.status == 200
         assert "Claims and fields" in studio.text
         assert 'href="/claims"' in studio.text
+
+    asyncio.run(run())
+
+
+def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
+    async def run() -> None:
+        _app()
+        services = get_services()
+        community = services.seed.community
+        face_claim = services.repo.get_claim_type_by_slug(community.id, "face")
+        faction_field = services.repo.get_application_template_field_by_key(
+            community.id,
+            "faction_claim",
+        )
+        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
+        alex_user = services.repo.get_user(alex_membership.user_id)
+        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
+        alex_services = AppServices(
+            services.repo,
+            DemoSeed(community, alex_user, alex_membership, cyclops),
+        )
+        alex_app = create_app(debug=False, services=alex_services)
+
+        async with TestClient(alex_app) as client:
+            editor = await client.get("/studio/intake")
+            claim_response = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "claim_type",
+                        "claim_type_id": str(face_claim.id),
+                        "name": "Visual Claim",
+                        "claim_kind": "face",
+                        "description": "The visual reference directors reserve.",
+                        "sort_order": "5",
+                        "is_required": "on",
+                        "is_exclusive": "on",
+                        "visibility": "public",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            field_response = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "template_field",
+                        "field_id": str(faction_field.id),
+                        "label": "Story lane",
+                        "field_type": "select",
+                        "maps_to_claim_type_id": str(faction_field.maps_to_claim_type_id),
+                        "sort_order": "15",
+                        "help_text": "Choose the pressure lane directors should route first.",
+                        "placeholder": "",
+                        "options": "X-Men\nBrotherhood\nCivilian\nOther",
+                        "is_required": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            updated_editor = await client.get("/studio/intake")
+            studio = await client.get("/studio")
+            claims = await client.get("/claims")
+            application_form = await client.get("/applications/new")
+
+        updated_face_claim = services.repo.get_claim_type(community.id, face_claim.id)
+        updated_faction_field = services.repo.get_application_template_field(
+            community.id,
+            faction_field.id,
+        )
+
+        assert editor.status == 200
+        assert "Claims and application fields" in editor.text
+        assert claim_response.status == 302
+        assert field_response.status == 302
+        assert updated_face_claim.name == "Visual Claim"
+        assert updated_face_claim.sort_order == 5
+        assert updated_faction_field.label == "Story lane"
+        assert updated_faction_field.options_json == '["X-Men","Brotherhood","Civilian","Other"]'
+        assert updated_editor.status == 200
+        assert "Visual Claim" in updated_editor.text
+        assert "Story lane" in updated_editor.text
+        assert studio.status == 200
+        assert 'href="/studio/intake"' in studio.text
+        assert claims.status == 200
+        assert "Visual Claim" in claims.text
+        assert application_form.status == 200
+        assert "Story lane" in application_form.text
+        assert "Other" in application_form.text
 
     asyncio.run(run())
 

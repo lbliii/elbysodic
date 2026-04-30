@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services.read_models import ApplicationReviewRoom
 from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
@@ -35,10 +36,12 @@ async def post(request: Request, character_slug: str) -> Page | Redirect:
     intent = str(form.get("intent") or "")
     try:
         if intent == "save_application":
+            room = services.read_application_review_room(character_slug)
             services.update_application_draft(
                 character_slug,
                 summary=str(form.get("summary") or ""),
                 body=str(form.get("body") or ""),
+                application_field_values=_application_field_values(form, room),
             )
         elif intent == "submit_application":
             services.submit_character_application(character_slug)
@@ -83,3 +86,24 @@ def _render_application_room(request: Request, character_slug: str) -> Page:
         viewer=services.viewer(),
         room=room,
     )
+
+
+def _application_field_values(
+    form: object,
+    room: ApplicationReviewRoom,
+) -> dict[int, str]:
+    values: dict[int, str] = {}
+    form_get = getattr(form, "get", lambda _name: None)
+    if not any(
+        form_get(f"application_field_{item.field.field.id}") is not None
+        for item in room.intake_fields
+    ):
+        return values
+    for item in room.intake_fields:
+        field = item.field.field
+        value = str(form_get(f"application_field_{field.id}") or "")
+        value = value.strip()
+        if field.is_required and not value:
+            raise ValueError(f"{field.label} is required")
+        values[field.id] = value[:5000]
+    return values

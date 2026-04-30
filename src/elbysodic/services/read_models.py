@@ -533,6 +533,7 @@ class ApplicationReviewEventView:
 class ApplicationReviewRoom:
     application: CharacterApplication
     character_view: ApplicationCharacterView
+    intake_fields: list[ApplicationFieldDraftView]
     field_values: list[ApplicationFieldValueView]
     events: list[ApplicationReviewEventView]
     can_edit_application: bool
@@ -603,11 +604,21 @@ class ApplicationTemplateFieldView:
     options: list[str]
     mapped_claim_type: ClaimType | None
 
+    @property
+    def options_text(self) -> str:
+        return "\n".join(self.options)
+
 
 @dataclass(frozen=True, slots=True)
 class ApplicationFieldValueView:
     value: ApplicationFieldValue
     field: ApplicationTemplateFieldView
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationFieldDraftView:
+    field: ApplicationTemplateFieldView
+    value: str
 
 
 @dataclass(frozen=True, slots=True)

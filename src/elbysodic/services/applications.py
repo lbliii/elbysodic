@@ -20,13 +20,14 @@ from elbysodic.domain.models import (
 )
 from elbysodic.services import policies
 from elbysodic.services.casting import CastingReadRepository, character_reserve_view
-from elbysodic.services.claims import application_field_value_view
+from elbysodic.services.claims import application_field_value_view, application_template_field_view
 from elbysodic.services.facets import facet_tags
 from elbysodic.services.materials import MaterialSummaryRepository, material_summary
 from elbysodic.services.read_models import (
     APPLICATION_STATUS_LABELS,
     APPLICATION_STATUS_VARIANTS,
     ApplicationCharacterView,
+    ApplicationFieldDraftView,
     ApplicationReviewEventView,
     ApplicationReviewRoom,
     ApplicationsDesk,
@@ -139,6 +140,14 @@ class ApplicationRepository(
         community_id: int,
         application_id: int,
     ) -> list[ApplicationFieldValue]: ...
+
+    def set_application_field_value(
+        self,
+        community_id: int,
+        application_id: int,
+        field_id: int,
+        value: str,
+    ) -> ApplicationFieldValue: ...
 
     def create_character_claim(
         self,
@@ -321,13 +330,26 @@ def read_application_review_room(
         )
     application = repo.ensure_character_application(viewer.community.id, character.id)
     character_view = application_character_view(repo, viewer, character)
+    template_fields = [
+        application_template_field_view(repo, viewer.community.id, field)
+        for field in repo.list_application_template_fields(viewer.community.id)
+    ]
+    field_values = [
+        application_field_value_view(repo, viewer.community.id, value)
+        for value in repo.list_application_field_values(viewer.community.id, application.id)
+    ]
+    values_by_field_id = {value.field.field.id: value.value.value for value in field_values}
     return ApplicationReviewRoom(
         application=application,
         character_view=character_view,
-        field_values=[
-            application_field_value_view(repo, viewer.community.id, value)
-            for value in repo.list_application_field_values(viewer.community.id, application.id)
+        intake_fields=[
+            ApplicationFieldDraftView(
+                field=field,
+                value=values_by_field_id.get(field.field.id, ""),
+            )
+            for field in template_fields
         ],
+        field_values=field_values,
         events=[
             application_review_event_view(repo, viewer, event)
             for event in repo.list_character_application_events(viewer.community.id, application.id)
@@ -345,6 +367,7 @@ def update_application_draft(
     *,
     summary: str,
     body: str,
+    application_field_values: dict[int, str] | None = None,
 ) -> CharacterApplication:
     character = repo.get_character_by_slug(viewer.community.id, character_slug)
     if not policies.can_post_as(viewer.membership, character):
@@ -356,13 +379,21 @@ def update_application_draft(
             f"character {character.id} cannot edit application from {character.application_status}"
         )
     application = repo.ensure_character_application(viewer.community.id, character.id)
-    return repo.update_character_application_draft(
+    updated = repo.update_character_application_draft(
         viewer.community.id,
         application.id,
         title=character.name,
         summary=_clean_application_text(summary, field_name="application summary"),
         body=_clean_application_text(body, field_name="application body"),
     )
+    for field_id, value in (application_field_values or {}).items():
+        repo.set_application_field_value(
+            viewer.community.id,
+            application.id,
+            field_id,
+            _clean_application_text(value, field_name="application field"),
+        )
+    return updated
 
 
 def update_application_review(

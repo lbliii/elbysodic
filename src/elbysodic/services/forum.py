@@ -602,6 +602,66 @@ class AppServices:
         viewer = self.viewer()
         return _claims_directory(self.repo, viewer)
 
+    def update_claim_type_config(
+        self,
+        claim_type_id: int,
+        *,
+        name: str,
+        claim_kind: str,
+        description: str,
+        visibility: str = "public",
+        is_required: bool = False,
+        is_exclusive: bool = False,
+        sort_order: int = 0,
+    ):
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage intake configuration"
+            )
+        return self.repo.update_claim_type(
+            viewer.community.id,
+            claim_type_id,
+            name=name.strip(),
+            claim_kind=claim_kind.strip() or "custom",
+            description=description.strip(),
+            visibility=visibility.strip() or "public",
+            is_required=is_required,
+            is_exclusive=is_exclusive,
+            sort_order=sort_order,
+        )
+
+    def update_application_template_field_config(
+        self,
+        field_id: int,
+        *,
+        label: str,
+        field_type: str,
+        help_text: str,
+        placeholder: str,
+        options_json: str = "[]",
+        maps_to_claim_type_id: int | None = None,
+        is_required: bool = False,
+        sort_order: int = 0,
+    ):
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage intake configuration"
+            )
+        return self.repo.update_application_template_field(
+            viewer.community.id,
+            field_id,
+            label=label.strip(),
+            field_type=field_type.strip() or "text",
+            help_text=help_text.strip(),
+            placeholder=placeholder.strip(),
+            options_json=options_json,
+            maps_to_claim_type_id=maps_to_claim_type_id,
+            is_required=is_required,
+            sort_order=sort_order,
+        )
+
     def realm_interactions(self) -> RealmInteractionHub:
         viewer = self.viewer()
         return _realm_interaction_hub(self.repo, viewer)
@@ -1247,6 +1307,7 @@ class AppServices:
         *,
         summary: str,
         body: str,
+        application_field_values: dict[int, str] | None = None,
     ):
         return _update_application_draft(
             self.repo,
@@ -1254,6 +1315,7 @@ class AppServices:
             character_slug,
             summary=summary,
             body=body,
+            application_field_values=application_field_values,
         )
 
     def update_application_review(
