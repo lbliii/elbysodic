@@ -21,7 +21,17 @@ async def post(request: Request) -> Page | Redirect:
     form = await request.form()
     intent = str(form.get("intent") or "")
     try:
-        if intent == "claim_type":
+        if intent == "create_claim_type":
+            services.create_claim_type_config(
+                name=str(form.get("name") or ""),
+                claim_kind=str(form.get("claim_kind") or ""),
+                description=str(form.get("description") or ""),
+                visibility=str(form.get("visibility") or "public"),
+                is_required=form.get("is_required") == "on",
+                is_exclusive=form.get("is_exclusive") == "on",
+                sort_order=_required_int(form.get("sort_order"), "choose a claim type order"),
+            )
+        elif intent == "claim_type":
             services.update_claim_type_config(
                 _required_int(form.get("claim_type_id"), "choose a claim type to update"),
                 name=str(form.get("name") or ""),
@@ -31,6 +41,18 @@ async def post(request: Request) -> Page | Redirect:
                 is_required=form.get("is_required") == "on",
                 is_exclusive=form.get("is_exclusive") == "on",
                 sort_order=_required_int(form.get("sort_order"), "choose a claim type order"),
+            )
+        elif intent == "create_template_field":
+            raw_claim_type_id = str(form.get("maps_to_claim_type_id") or "")
+            services.create_application_template_field_config(
+                label=str(form.get("label") or ""),
+                field_type=str(form.get("field_type") or ""),
+                help_text=str(form.get("help_text") or ""),
+                placeholder=str(form.get("placeholder") or ""),
+                options_json=_options_json(str(form.get("options") or "")),
+                maps_to_claim_type_id=int(raw_claim_type_id) if raw_claim_type_id else None,
+                is_required=form.get("is_required") == "on",
+                sort_order=_required_int(form.get("sort_order"), "choose a field order"),
             )
         elif intent == "template_field":
             raw_claim_type_id = str(form.get("maps_to_claim_type_id") or "")

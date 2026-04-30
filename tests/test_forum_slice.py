@@ -2100,6 +2100,92 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
     asyncio.run(run())
 
 
+def test_director_can_record_manual_claims_from_claims_directory() -> None:
+    async def run() -> None:
+        _app()
+        services = get_services()
+        community = services.seed.community
+        face_claim = services.repo.get_claim_type_by_slug(community.id, "face")
+        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
+        alex_user = services.repo.get_user(alex_membership.user_id)
+        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
+        alex_services = AppServices(
+            services.repo,
+            DemoSeed(community, alex_user, alex_membership, cyclops),
+        )
+        alex_app = create_app(debug=False, services=alex_services)
+
+        async with TestClient(alex_app) as client:
+            directory = await client.get("/claims")
+            response = await client.post(
+                "/claims",
+                body=urlencode(
+                    {
+                        "intent": "create_claim",
+                        "claim_type_id": str(face_claim.id),
+                        "label": "Cyclops tactical visor",
+                        "status": "claimed",
+                        "character_id": str(cyclops.id),
+                        "notes": "Manual director correction after importing old claims.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            created_claim = next(
+                claim
+                for claim in services.repo.list_character_claims_for_character(
+                    community.id,
+                    cyclops.id,
+                    status=None,
+                )
+                if claim.label == "Cyclops tactical visor"
+            )
+            update_response = await client.post(
+                "/claims",
+                body=urlencode(
+                    {
+                        "intent": "update_claim",
+                        "claim_id": str(created_claim.id),
+                        "label": "Cyclops visor reserve",
+                        "status": "reserved",
+                        "character_id": "",
+                        "notes": "Holding the visual slot during a costume refresh.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            updated_directory = await client.get("/claims")
+
+        manual_claim = services.repo.get_character_claim(
+            community.id,
+            created_claim.id,
+        )
+        cyclops_claims = services.repo.list_character_claims_for_character(
+            community.id,
+            cyclops.id,
+            status=None,
+        )
+
+        assert directory.status == 200
+        assert "Record claim" in directory.text
+        assert "Cyclops" in directory.text
+        assert response.status == 302
+        assert update_response.status == 302
+        assert manual_claim.label == "Cyclops visor reserve"
+        assert manual_claim.value == "cyclops-visor-reserve"
+        assert manual_claim.status == "reserved"
+        assert manual_claim.character_id is None
+        assert manual_claim.notes == "Holding the visual slot during a costume refresh."
+        assert all(claim.id != created_claim.id for claim in cyclops_claims)
+        assert updated_directory.status == 200
+        assert "Edit claim" in updated_directory.text
+        assert "Cyclops visor reserve" in updated_directory.text
+        assert "Holding the visual slot during a costume refresh." in updated_directory.text
+        assert "Save claim" in updated_directory.text
+
+    asyncio.run(run())
+
+
 def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
     async def run() -> None:
         _app()
@@ -2121,6 +2207,40 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
 
         async with TestClient(alex_app) as client:
             editor = await client.get("/studio/intake")
+            create_claim_response = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "create_claim_type",
+                        "name": "Birthright Claim",
+                        "claim_kind": "lineage",
+                        "description": "Legacy, family, or inheritance pressure.",
+                        "sort_order": "25",
+                        "is_required": "on",
+                        "is_exclusive": "on",
+                        "visibility": "public",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            created_claim = services.repo.get_claim_type_by_slug(community.id, "birthright-claim")
+            create_field_response = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "create_template_field",
+                        "label": "Birthright",
+                        "field_type": "text",
+                        "maps_to_claim_type_id": str(created_claim.id),
+                        "sort_order": "35",
+                        "help_text": "Name the legacy pressure this face brings into play.",
+                        "placeholder": "Summers family, royal line, inherited title...",
+                        "options": "",
+                        "is_required": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
             claim_response = await client.post(
                 "/studio/intake",
                 body=urlencode(
@@ -2166,24 +2286,41 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
             community.id,
             faction_field.id,
         )
+        created_field = services.repo.get_application_template_field_by_key(
+            community.id,
+            "birthright",
+        )
 
         assert editor.status == 200
         assert "Claims and application fields" in editor.text
+        assert create_claim_response.status == 302
+        assert create_field_response.status == 302
         assert claim_response.status == 302
         assert field_response.status == 302
+        assert created_claim.name == "Birthright Claim"
+        assert created_claim.claim_kind == "lineage"
+        assert created_claim.is_exclusive
+        assert created_field.label == "Birthright"
+        assert created_field.maps_to_claim_type_id == created_claim.id
         assert updated_face_claim.name == "Visual Claim"
         assert updated_face_claim.sort_order == 5
         assert updated_faction_field.label == "Story lane"
         assert updated_faction_field.options_json == '["X-Men","Brotherhood","Civilian","Other"]'
         assert updated_editor.status == 200
+        assert "Add claim type" in updated_editor.text
+        assert "Add application field" in updated_editor.text
+        assert "Birthright Claim" in updated_editor.text
+        assert "Birthright" in updated_editor.text
         assert "Visual Claim" in updated_editor.text
         assert "Story lane" in updated_editor.text
         assert studio.status == 200
         assert 'href="/studio/intake"' in studio.text
         assert claims.status == 200
+        assert "Birthright Claim" in claims.text
         assert "Visual Claim" in claims.text
         assert application_form.status == 200
         assert "Story lane" in application_form.text
+        assert "Birthright" in application_form.text
         assert "Other" in application_form.text
 
     asyncio.run(run())

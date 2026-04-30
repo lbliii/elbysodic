@@ -58,6 +58,51 @@
       Tables that track reserved, claimed, and shared production slots.
       {% end %}
 
+      {% call surface(variant="elevated") %}
+      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-intake-editor-card elbysodic-intake-editor-card--new">
+        <input type="hidden" name="intent" value="create_claim_type">
+        <header class="elbysodic-intake-editor-card__header">
+          <div>
+            <p class="elbysodic-kicker">New table</p>
+            <h2>Add claim type</h2>
+          </div>
+          {{ badge("director-defined", variant="info") }}
+        </header>
+        <div class="elbysodic-form-grid">
+          <label>
+            <span class="chirpui-field__label">Name</span>
+            <input class="chirpui-field__input" name="name" placeholder="Occupation Claim" required>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Kind</span>
+            <input class="chirpui-field__input" name="claim_kind" placeholder="occupation" required>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Sort</span>
+            <input class="chirpui-field__input" type="number" name="sort_order" value="100" min="0" step="1">
+          </label>
+        </div>
+        <label>
+          <span class="chirpui-field__label">Description</span>
+          <textarea class="chirpui-field__input" name="description" rows="3" placeholder="What this table tracks for directors and applicants."></textarea>
+        </label>
+        <div class="elbysodic-board-editor-toggles">
+          <label class="elbysodic-checkbox">
+            <input type="checkbox" name="is_required">
+            <span>Required for application</span>
+          </label>
+          <label class="elbysodic-checkbox">
+            <input type="checkbox" name="is_exclusive">
+            <span>Exclusive value</span>
+          </label>
+        </div>
+        <input type="hidden" name="visibility" value="public">
+        <div class="chirpui-cluster chirpui-cluster--end">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Create claim type</button>
+        </div>
+      </form>
+      {% end %}
+
       {% for group in directory.groups %}
       {% call surface(variant="elevated") %}
       <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-intake-editor-card">
@@ -113,6 +158,66 @@
     <div class="chirpui-stack chirpui-stack--md">
       {% call section_header("Application Fields") %}
       Questions applicants answer before directors approve the face.
+      {% end %}
+
+      {% call surface(variant="elevated") %}
+      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-intake-editor-card elbysodic-intake-editor-card--new">
+        <input type="hidden" name="intent" value="create_template_field">
+        <header class="elbysodic-intake-editor-card__header">
+          <div>
+            <p class="elbysodic-kicker">New question</p>
+            <h2>Add application field</h2>
+          </div>
+          {{ badge("intake", variant="info") }}
+        </header>
+        <div class="elbysodic-form-grid">
+          <label>
+            <span class="chirpui-field__label">Label</span>
+            <input class="chirpui-field__input" name="label" placeholder="Occupation" required>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Type</span>
+            <select class="chirpui-field__input" name="field_type">
+              {% for value in ["text", "textarea", "select"] %}
+              <option value="{{ value }}">{{ value }}</option>
+              {% end %}
+            </select>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Maps to</span>
+            <select class="chirpui-field__input" name="maps_to_claim_type_id">
+              <option value="">No claim table</option>
+              {% for group in directory.groups %}
+              <option value="{{ group.claim_type.id }}">{{ group.claim_type.name }}</option>
+              {% end %}
+            </select>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Sort</span>
+            <input class="chirpui-field__input" type="number" name="sort_order" value="100" min="0" step="1">
+          </label>
+        </div>
+        <label>
+          <span class="chirpui-field__label">Help text</span>
+          <textarea class="chirpui-field__input" name="help_text" rows="3" placeholder="What should the applicant know before answering?"></textarea>
+        </label>
+        <label>
+          <span class="chirpui-field__label">Placeholder</span>
+          <input class="chirpui-field__input" name="placeholder" placeholder="Optional prompt text">
+        </label>
+        <label>
+          <span class="chirpui-field__label">Options</span>
+          <textarea class="chirpui-field__input" name="options" rows="4" placeholder="One option per line"></textarea>
+          <span class="elbysodic-field-hint">One option per line. Used by select fields.</span>
+        </label>
+        <label class="elbysodic-checkbox">
+          <input type="checkbox" name="is_required">
+          <span>Required for application</span>
+        </label>
+        <div class="chirpui-cluster chirpui-cluster--end">
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Create field</button>
+        </div>
+      </form>
       {% end %}
 
       {% for item in onboarding.template_fields %}

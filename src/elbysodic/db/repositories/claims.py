@@ -255,6 +255,62 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
         self.connection.commit()
         return self.get_character_claim(community_id, _last_id(cursor))
 
+    def update_character_claim(
+        self,
+        community_id: int,
+        claim_id: int,
+        *,
+        value: str,
+        label: str,
+        character_id: int | None = None,
+        status: str = "claimed",
+        notes: str = "",
+    ) -> CharacterClaim:
+        claim = self.get_character_claim(community_id, claim_id)
+        claim_type = self.get_claim_type(community_id, claim.claim_type_id)
+        if character_id is not None:
+            self.get_character(community_id, character_id)
+        if claim_type.is_exclusive and status in {"claimed", "reserved"} and value:
+            live_claim = self.connection.execute(
+                """
+                SELECT id
+                FROM character_claims
+                WHERE community_id = ?
+                    AND claim_type_id = ?
+                    AND value = ?
+                    AND status IN ('claimed', 'reserved')
+                    AND id != ?
+                """,
+                (community_id, claim.claim_type_id, value, claim_id),
+            ).fetchone()
+            if live_claim is not None:
+                raise TenantBoundaryError(f"claim value is already in use: {label}")
+        self.connection.execute(
+            """
+            UPDATE character_claims
+            SET
+                character_id = ?,
+                value = ?,
+                label = ?,
+                status = ?,
+                notes = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                character_id,
+                value,
+                label,
+                status,
+                notes,
+                _utc_now(),
+                community_id,
+                claim_id,
+            ),
+        )
+        self.connection.commit()
+        return self.get_character_claim(community_id, claim_id)
+
     def get_character_claim(self, community_id: int, claim_id: int) -> CharacterClaim:
         row = self.connection.execute(
             """

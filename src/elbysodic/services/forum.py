@@ -602,6 +602,99 @@ class AppServices:
         viewer = self.viewer()
         return _claims_directory(self.repo, viewer)
 
+    def claimable_characters(self) -> list[Character]:
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            return []
+        return self.repo.list_community_characters(viewer.community.id)
+
+    def create_director_claim(
+        self,
+        claim_type_id: int,
+        *,
+        label: str,
+        status: str = "claimed",
+        character_id: int | None = None,
+        notes: str = "",
+    ):
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage claims")
+        clean_label = label.strip()
+        if not clean_label:
+            raise ValueError("claim label is required")
+        claim_status = _normalize_claim_status(status)
+        if claim_status == "claimed" and character_id is None:
+            raise ValueError("claimed rows need a face")
+        return self.repo.create_character_claim(
+            viewer.community.id,
+            claim_type_id,
+            _claim_value_key(clean_label),
+            clean_label,
+            character_id=character_id,
+            status=claim_status,
+            notes=notes.strip(),
+        )
+
+    def update_director_claim(
+        self,
+        claim_id: int,
+        *,
+        label: str,
+        status: str = "claimed",
+        character_id: int | None = None,
+        notes: str = "",
+    ):
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage claims")
+        clean_label = label.strip()
+        if not clean_label:
+            raise ValueError("claim label is required")
+        claim_status = _normalize_claim_status(status)
+        if claim_status == "claimed" and character_id is None:
+            raise ValueError("claimed rows need a face")
+        return self.repo.update_character_claim(
+            viewer.community.id,
+            claim_id,
+            value=_claim_value_key(clean_label),
+            label=clean_label,
+            character_id=character_id,
+            status=claim_status,
+            notes=notes.strip(),
+        )
+
+    def create_claim_type_config(
+        self,
+        *,
+        name: str,
+        claim_kind: str,
+        description: str,
+        visibility: str = "public",
+        is_required: bool = False,
+        is_exclusive: bool = False,
+        sort_order: int = 0,
+    ):
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage intake configuration"
+            )
+        cleaned_name = name.strip()
+        if not cleaned_name:
+            raise ValueError("claim type name is required")
+        return self.repo.create_claim_type(
+            viewer.community.id,
+            _unique_claim_type_slug(self.repo, viewer.community.id, cleaned_name),
+            cleaned_name,
+            claim_kind=claim_kind.strip() or "custom",
+            description=description.strip(),
+            visibility=visibility.strip() or "public",
+            is_required=is_required,
+            is_exclusive=is_exclusive,
+            sort_order=sort_order,
+        )
+
     def update_claim_type_config(
         self,
         claim_type_id: int,
@@ -619,15 +712,51 @@ class AppServices:
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage intake configuration"
             )
+        cleaned_name = name.strip()
+        if not cleaned_name:
+            raise ValueError("claim type name is required")
         return self.repo.update_claim_type(
             viewer.community.id,
             claim_type_id,
-            name=name.strip(),
+            name=cleaned_name,
             claim_kind=claim_kind.strip() or "custom",
             description=description.strip(),
             visibility=visibility.strip() or "public",
             is_required=is_required,
             is_exclusive=is_exclusive,
+            sort_order=sort_order,
+        )
+
+    def create_application_template_field_config(
+        self,
+        *,
+        label: str,
+        field_type: str,
+        help_text: str,
+        placeholder: str,
+        options_json: str = "[]",
+        maps_to_claim_type_id: int | None = None,
+        is_required: bool = False,
+        sort_order: int = 0,
+    ):
+        viewer = self.viewer()
+        if not policies.can_manage_applications(viewer.membership, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage intake configuration"
+            )
+        cleaned_label = label.strip()
+        if not cleaned_label:
+            raise ValueError("application field label is required")
+        return self.repo.create_application_template_field(
+            viewer.community.id,
+            _unique_application_field_key(self.repo, viewer.community.id, cleaned_label),
+            cleaned_label,
+            field_type=field_type.strip() or "text",
+            help_text=help_text.strip(),
+            placeholder=placeholder.strip(),
+            options_json=options_json,
+            maps_to_claim_type_id=maps_to_claim_type_id,
+            is_required=is_required,
             sort_order=sort_order,
         )
 
@@ -649,10 +778,13 @@ class AppServices:
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot manage intake configuration"
             )
+        cleaned_label = label.strip()
+        if not cleaned_label:
+            raise ValueError("application field label is required")
         return self.repo.update_application_template_field(
             viewer.community.id,
             field_id,
-            label=label.strip(),
+            label=cleaned_label,
             field_type=field_type.strip() or "text",
             help_text=help_text.strip(),
             placeholder=placeholder.strip(),
@@ -2618,3 +2750,48 @@ def _unique_character_slug(
 def _slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug or "character"
+
+
+def _unique_claim_type_slug(repo: ForumRepository, community_id: int, name: str) -> str:
+    base = _slugify_with_fallback(name, "claim")
+    slug = base
+    suffix = 2
+    while True:
+        try:
+            repo.get_claim_type_by_slug(community_id, slug)
+        except LookupError:
+            return slug
+        slug = f"{base}-{suffix}"
+        suffix += 1
+
+
+def _unique_application_field_key(repo: ForumRepository, community_id: int, label: str) -> str:
+    base = _slugify_with_fallback(label, "field").replace("-", "_")
+    field_key = base
+    suffix = 2
+    while True:
+        try:
+            repo.get_application_template_field_by_key(community_id, field_key)
+        except LookupError:
+            return field_key
+        field_key = f"{base}_{suffix}"
+        suffix += 1
+
+
+def _slugify_with_fallback(value: str, fallback: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or fallback
+
+
+def _claim_value_key(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return normalized or value.strip().lower()
+
+
+def _normalize_claim_status(status: str) -> str:
+    normalized = status.strip() or "claimed"
+    if normalized == "open":
+        normalized = "available"
+    if normalized not in {"claimed", "reserved", "available"}:
+        raise ValueError(f"unsupported claim status: {normalized}")
+    return normalized

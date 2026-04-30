@@ -31,6 +31,12 @@
   </section>
   {% end %}
 
+  {% if error %}
+  {% call surface(variant="elevated") %}
+  <p class="chirpui-field__error">{{ error }}</p>
+  {% end %}
+  {% end %}
+
   {% if directory.groups %}
   <div class="elbysodic-claim-group-list">
     {% for group in directory.groups %}
@@ -55,24 +61,105 @@
       {% if group.claims %}
       <div class="elbysodic-claim-table" role="table" aria-label="{{ group.claim_type.name }}">
         {% for item in group.claims %}
-        <article class="elbysodic-claim-row" role="row">
-          <span role="cell">
-            <strong>{{ item.claim.label }}</strong>
-            <small>{{ item.claim.value }}</small>
-          </span>
-          <span role="cell">
-            {% if item.character %}
-            <a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a>
-            {% else %}
-            Available
-            {% end %}
-          </span>
-          <span role="cell">{{ badge(item.status_label, variant="success" if item.claim.status == "claimed" else ("warning" if item.claim.status == "reserved" else "muted")) }}</span>
-        </article>
+        <div class="elbysodic-claim-record">
+          <article class="elbysodic-claim-row" role="row">
+            <span role="cell">
+              <strong>{{ item.claim.label }}</strong>
+              <small>{{ item.claim.value }}</small>
+            </span>
+            <span role="cell">
+              {% if item.character %}
+              <a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a>
+              {% else %}
+              Available
+              {% end %}
+            </span>
+            <span role="cell">{{ badge(item.status_label, variant="success" if item.claim.status == "claimed" else ("warning" if item.claim.status == "reserved" else "muted")) }}</span>
+          </article>
+          {% if can_manage %}
+          <details class="elbysodic-claim-maintenance">
+            <summary>Edit claim</summary>
+            <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm">
+              <input type="hidden" name="intent" value="update_claim">
+              <input type="hidden" name="claim_id" value="{{ item.claim.id }}">
+              <div class="elbysodic-form-grid">
+                <label>
+                  <span class="chirpui-field__label">Claim</span>
+                  <input class="chirpui-field__input" name="label" value="{{ item.claim.label }}" required>
+                </label>
+                <label>
+                  <span class="chirpui-field__label">Status</span>
+                  <select class="chirpui-field__input" name="status">
+                    <option value="claimed" {{ "selected" if item.claim.status == "claimed" else "" }}>Claimed</option>
+                    <option value="reserved" {{ "selected" if item.claim.status == "reserved" else "" }}>Reserved</option>
+                    <option value="available" {{ "selected" if item.claim.status == "available" else "" }}>Open slot</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="chirpui-field__label">Face</span>
+                  <select class="chirpui-field__input" name="character_id">
+                    <option value="">No face yet</option>
+                    {% for character in characters %}
+                    <option value="{{ character.id }}" {{ "selected" if item.character and item.character.id == character.id else "" }}>{{ character.name }}</option>
+                    {% end %}
+                  </select>
+                </label>
+              </div>
+              <label>
+                <span class="chirpui-field__label">Notes</span>
+                <input class="chirpui-field__input" name="notes" value="{{ item.claim.notes }}" placeholder="Optional director context">
+              </label>
+              <div class="chirpui-cluster chirpui-cluster--end">
+                <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save claim</button>
+              </div>
+            </form>
+          </details>
+          {% end %}
+        </div>
         {% end %}
       </div>
       {% else %}
       <p class="elbysodic-empty-state">No claims have been recorded for this type yet.</p>
+      {% end %}
+      {% if can_manage %}
+      <form method="post" hx-boost="false" class="elbysodic-claim-create-form">
+        <input type="hidden" name="intent" value="create_claim">
+        <input type="hidden" name="claim_type_id" value="{{ group.claim_type.id }}">
+        <header>
+          <p class="elbysodic-section-kicker">Director entry</p>
+          <h3>Record claim</h3>
+        </header>
+        <div class="elbysodic-form-grid">
+          <label>
+            <span class="chirpui-field__label">Claim</span>
+            <input class="chirpui-field__input" name="label" placeholder="{{ group.claim_type.name }}" required>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Status</span>
+            <select class="chirpui-field__input" name="status">
+              <option value="claimed">Claimed</option>
+              <option value="reserved">Reserved</option>
+              <option value="available">Open slot</option>
+            </select>
+          </label>
+          <label>
+            <span class="chirpui-field__label">Face</span>
+            <select class="chirpui-field__input" name="character_id">
+              <option value="">No face yet</option>
+              {% for character in characters %}
+              <option value="{{ character.id }}">{{ character.name }}</option>
+              {% end %}
+            </select>
+          </label>
+        </div>
+        <label>
+          <span class="chirpui-field__label">Notes</span>
+          <input class="chirpui-field__input" name="notes" placeholder="Optional director context">
+        </label>
+        <div class="chirpui-cluster chirpui-cluster--end">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Add claim</button>
+        </div>
+      </form>
       {% end %}
     </section>
     {% end %}
