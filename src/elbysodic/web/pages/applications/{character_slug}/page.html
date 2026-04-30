@@ -62,8 +62,23 @@
           {% if item.field.mapped_claim_type %}
           <small>maps to {{ item.field.mapped_claim_type.name }}</small>
           {% end %}
+          {% if item.claim_check %}
+          {{ badge(item.claim_check.label, variant=item.claim_check.variant) }}
+          {% end %}
         </dt>
         <dd>{{ item.value.value }}</dd>
+        {% if item.claim_check and item.claim_check.claim %}
+        <dd class="elbysodic-intake-field-list__note">
+          {% if item.claim_check.claim.character %}
+          Held by
+          <a class="chirpui-link" href="/characters/{{ item.claim_check.claim.character.slug }}">
+            {{ item.claim_check.claim.character.name }}
+          </a>
+          {% else %}
+          Held by the casting desk
+          {% end %}
+        </dd>
+        {% end %}
       </div>
       {% end %}
     </dl>
@@ -164,13 +179,43 @@
     Private production notes and revision checklist for this application.
     {% end %}
     {% call surface(variant="elevated") %}
+    {% set revision_note_value = room.application.revision_notes or room.claim_conflict_revision_note %}
+    {% if room.blocking_claim_conflicts %}
+    <aside class="elbysodic-notice elbysodic-notice--warning" aria-label="Claim conflict">
+      <span class="elbysodic-notice__mark" aria-hidden="true">!</span>
+      <span class="elbysodic-notice__label">Claim conflict</span>
+      <span class="elbysodic-notice__body">
+        <strong class="elbysodic-notice__title">Resolve exclusive claims before accepting</strong>
+        <span class="elbysodic-notice__summary">
+          This application maps to a claim that is already held in this realm.
+        </span>
+        <ul class="elbysodic-claim-conflict-list">
+          {% for item in room.blocking_claim_conflicts %}
+          <li>
+            <strong>{{ item.field.field.label }}:</strong>
+            {{ item.value.value }}
+            {% if item.claim_check and item.claim_check.claim and item.claim_check.claim.character %}
+            is held by
+            <a class="chirpui-link" href="/characters/{{ item.claim_check.claim.character.slug }}">
+              {{ item.claim_check.claim.character.name }}
+            </a>
+            {% elif item.claim_check and item.claim_check.claim %}
+            is held by the casting desk
+            {% end %}
+          </li>
+          {% end %}
+        </ul>
+      </span>
+      <a class="elbysodic-notice__action" href="/claims">Review claims</a>
+    </aside>
+    {% end %}
     <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
       <input type="hidden" name="intent" value="save_review">
       <label>
         <span class="chirpui-field__label">Revision note for applicant</span>
         <textarea class="chirpui-field__input"
                   name="revision_notes"
-                  rows="4">{{ room.application.revision_notes }}</textarea>
+                  rows="4">{{ revision_note_value }}</textarea>
       </label>
       <label>
         <span class="chirpui-field__label">Staff notes</span>
@@ -192,11 +237,15 @@
     <div class="chirpui-cluster chirpui-cluster--end">
       <form method="post" hx-boost="false">
         <input type="hidden" name="intent" value="accept_application">
-        <button type="submit" class="chirpui-btn chirpui-btn--primary">Accept face</button>
+        <button type="submit"
+                class="chirpui-btn chirpui-btn--primary"
+                {{ "disabled" if room.has_blocking_claim_conflicts else "" }}>
+          Accept face
+        </button>
       </form>
       <form method="post" hx-boost="false">
         <input type="hidden" name="intent" value="request_revision">
-        <input type="hidden" name="revision_notes" value="{{ room.application.revision_notes }}">
+        <input type="hidden" name="revision_notes" value="{{ revision_note_value }}">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
       </form>
     </div>

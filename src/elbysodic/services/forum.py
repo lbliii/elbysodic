@@ -68,6 +68,9 @@ from elbysodic.services.casting import reserve_wanted_interest as _reserve_wante
 from elbysodic.services.casting import wanted_ad_summary as _wanted_ad_summary
 from elbysodic.services.casting import wanted_board as _wanted_board
 from elbysodic.services.claims import (
+    application_claim_checks as _application_claim_checks,
+)
+from elbysodic.services.claims import (
     application_template_field_view as _application_template_field_view,
 )
 from elbysodic.services.claims import claims_directory as _claims_directory
@@ -145,6 +148,7 @@ from elbysodic.services.read_models import (
     POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
     ActivityItem,
+    ApplicationClaimCheck,
     ApplicationOnboarding,
     ApplicationReviewRoom,
     ApplicationsDesk,
@@ -598,9 +602,35 @@ class AppServices:
             ],
         )
 
-    def claims_directory(self) -> ClaimsDirectory:
+    def application_claim_checks(
+        self,
+        field_values: dict[int, str],
+        *,
+        character_id: int | None = None,
+        application_id: int | None = None,
+    ) -> dict[int, ApplicationClaimCheck]:
         viewer = self.viewer()
-        return _claims_directory(self.repo, viewer)
+        return _application_claim_checks(
+            self.repo,
+            viewer.community.id,
+            field_values,
+            character_id=character_id,
+            application_id=application_id,
+        )
+
+    def claims_directory(
+        self,
+        *,
+        status_filter: str | None = None,
+        search_query: str = "",
+    ) -> ClaimsDirectory:
+        viewer = self.viewer()
+        return _claims_directory(
+            self.repo,
+            viewer,
+            status_filter=status_filter,
+            search_query=search_query,
+        )
 
     def claimable_characters(self) -> list[Character]:
         viewer = self.viewer()

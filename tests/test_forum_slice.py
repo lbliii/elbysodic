@@ -1977,6 +1977,83 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
     asyncio.run(run())
 
 
+def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None:
+    async def run() -> None:
+        _app()
+        services = get_services()
+        community = services.seed.community
+        fields = {
+            field.field_key: field
+            for field in services.repo.list_application_template_fields(community.id)
+        }
+        expected_revision_note = (
+            "Please revise the mapped claim details before we can accept this face.\n"
+            "- Face claim: Magneto Visual is already held by Magneto."
+        )
+        character = services.create_character(
+            name="Duplicate Face",
+            summary="A test applicant with a taken visual reference.",
+            application_body="Staff should see the collision before accepting.",
+            application_field_values={
+                fields["face_claim"].id: "Magneto Visual",
+                fields["faction_claim"].id: "X-Men",
+            },
+        )
+        services.submit_character_application(character.slug)
+
+        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
+        alex_user = services.repo.get_user(alex_membership.user_id)
+        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
+        alex_services = AppServices(
+            services.repo,
+            DemoSeed(community, alex_user, alex_membership, cyclops),
+        )
+        alex_app = create_app(debug=False, services=alex_services)
+        async with TestClient(alex_app) as alex_client:
+            review_room = await alex_client.get("/applications/duplicate-face")
+            accept_response = await alex_client.post(
+                "/applications/duplicate-face",
+                body=urlencode({"intent": "accept_application"}).encode(),
+                headers=_FORM,
+            )
+            revision_response = await alex_client.post(
+                "/applications/duplicate-face",
+                body=urlencode(
+                    {
+                        "intent": "request_revision",
+                        "revision_notes": expected_revision_note,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        duplicate = services.repo.get_character_by_slug(community.id, "duplicate-face")
+        duplicate_application = services.repo.get_character_application_for_character(
+            community.id,
+            duplicate.id,
+        )
+
+        assert review_room.status == 200
+        assert "Already claimed" in review_room.text
+        assert "Resolve exclusive claims before accepting" in review_room.text
+        assert "Please revise the mapped claim details" in review_room.text
+        assert "Review claims" in review_room.text
+        assert (
+            '<button type="submit"\n                class="chirpui-btn chirpui-btn--primary"\n                disabled>'
+            in review_room.text
+        )
+        assert "Held by" in review_room.text
+        assert 'href="/characters/magneto"' in review_room.text
+        assert "Shared lane" in review_room.text
+        assert accept_response.status == 400
+        assert "Face claim is already claimed: Magneto Visual" in accept_response.text
+        assert revision_response.status == 302
+        assert duplicate.application_status == "revision_requested"
+        assert duplicate_application.revision_notes == expected_revision_note
+
+    asyncio.run(run())
+
+
 def test_application_start_form_preserves_validation_errors_and_unique_slugs() -> None:
     async def run() -> None:
         app = _app()
@@ -2003,6 +2080,18 @@ def test_application_start_form_preserves_validation_errors_and_unique_slugs() -
                     {
                         "name": "Missing Claim",
                         "summary": "A concept",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            duplicate_claim = await client.post(
+                "/applications/new",
+                body=urlencode(
+                    {
+                        "name": "Duplicate Face",
+                        "summary": "A concept with a taken face claim.",
+                        f"application_field_{fields['face_claim'].id}": "Magneto Visual",
+                        f"application_field_{fields['faction_claim'].id}": "X-Men",
                     }
                 ).encode(),
                 headers=_FORM,
@@ -2034,12 +2123,23 @@ def test_application_start_form_preserves_validation_errors_and_unique_slugs() -
         assert "character name is required" in invalid.text
         assert missing_required_field.status == 200
         assert "Face claim is required" in missing_required_field.text
+        assert duplicate_claim.status == 200
+        assert (
+            "Some claims need another choice before you create this draft." in duplicate_claim.text
+        )
+        assert "Already claimed" in duplicate_claim.text
+        assert "Held by" in duplicate_claim.text
+        assert 'href="/characters/magneto"' in duplicate_claim.text
+        assert "Shared lane" in duplicate_claim.text
         assert first.status == 302
         assert _response_header(first, "location") == "/applications/echo"
         assert second.status == 302
         assert _response_header(second, "location") == "/applications/echo-2"
         assert services.repo.get_character_by_slug(community.id, "echo").name == "Echo"
         assert services.repo.get_character_by_slug(community.id, "echo-2").name == "Echo"
+        assert "duplicate-face" not in [
+            character.slug for character in services.repo.list_community_characters(community.id)
+        ]
 
     asyncio.run(run())
 
@@ -2084,15 +2184,37 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
         app = _app()
         async with TestClient(app) as client:
             claims = await client.get("/claims")
+            open_claims = await client.get("/claims?status=available")
+            magneto_claims = await client.get("/claims?q=magneto")
+            claimed_brotherhood = await client.get("/claims?status=claimed&q=brotherhood")
+            no_results = await client.get("/claims?q=not-a-real-claim")
             studio = await client.get("/studio")
 
         assert claims.status == 200
         assert "What is taken, open, and expected." in claims.text
+        assert "Claimed" in claims.text
+        assert "Reserved" in claims.text
+        assert "Open slots" in claims.text
         assert "Face Claim" in claims.text
         assert "Faction Claim" in claims.text
         assert "Magneto visual reference" in claims.text
         assert "Brotherhood" in claims.text
         assert "Collected by Face claim on the application template." in claims.text
+        assert open_claims.status == 200
+        assert "What is taken, open, and expected." in open_claims.text
+        assert "X-Men" in open_claims.text
+        assert "Magneto visual reference" not in open_claims.text
+        assert "No available claims match this type yet." in open_claims.text
+        assert magneto_claims.status == 200
+        assert "Magneto visual reference" in magneto_claims.text
+        assert "Rogue visual reference" not in magneto_claims.text
+        assert 'href="/claims?status=claimed&amp;q=magneto"' in magneto_claims.text
+        assert claimed_brotherhood.status == 200
+        assert "Brotherhood" in claimed_brotherhood.text
+        assert "Rogue visual reference" not in claimed_brotherhood.text
+        assert no_results.status == 200
+        assert 'value="not-a-real-claim"' in no_results.text
+        assert 'No claims match "not-a-real-claim" in this type.' in no_results.text
         assert studio.status == 200
         assert "Claims and fields" in studio.text
         assert 'href="/claims"' in studio.text
@@ -2155,6 +2277,7 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
                 headers=_FORM,
             )
             updated_directory = await client.get("/claims")
+            reserved_directory = await client.get("/claims?status=reserved")
 
         manual_claim = services.repo.get_character_claim(
             community.id,
@@ -2182,6 +2305,9 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
         assert "Cyclops visor reserve" in updated_directory.text
         assert "Holding the visual slot during a costume refresh." in updated_directory.text
         assert "Save claim" in updated_directory.text
+        assert reserved_directory.status == 200
+        assert "Cyclops visor reserve" in reserved_directory.text
+        assert "Cyclops tactical visor" not in reserved_directory.text
 
     asyncio.run(run())
 

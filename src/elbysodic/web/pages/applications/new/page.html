@@ -1,4 +1,5 @@
 {% imports %}
+  {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import cluster, container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
 {% end %}
@@ -79,9 +80,13 @@
       <div class="elbysodic-claim-field-grid">
         {% for field_view in onboarding.template_fields %}
         {% set field_name = "application_field_" ~ field_view.field.id %}
+        {% set claim_check = field_claim_checks.get(field_view.field.id) %}
         <label>
           <span class="chirpui-field__label">
             {{ field_view.field.label }}{% if field_view.field.is_required %} <small>required</small>{% end %}
+            {% if claim_check %}
+            {{ badge(claim_check.label, variant=claim_check.variant) }}
+            {% end %}
           </span>
           {% if field_view.field.field_type == "select" and field_view.options %}
           <select class="chirpui-field__input"
@@ -109,6 +114,18 @@
           {% end %}
           {% if field_view.field.help_text %}
           <span class="elbysodic-field-hint">{{ field_view.field.help_text }}</span>
+          {% end %}
+          {% if claim_check and claim_check.claim %}
+          <span class="elbysodic-field-hint">
+            {% if claim_check.claim.character %}
+            Held by
+            <a class="chirpui-link" href="/characters/{{ claim_check.claim.character.slug }}">
+              {{ claim_check.claim.character.name }}
+            </a>
+            {% else %}
+            Held by the casting desk
+            {% end %}
+          </span>
           {% end %}
         </label>
         {% end %}

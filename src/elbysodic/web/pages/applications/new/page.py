@@ -9,7 +9,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
-from elbysodic.services.read_models import ApplicationTemplateFieldView
+from elbysodic.services.read_models import ApplicationClaimCheck, ApplicationTemplateFieldView
 from elbysodic.web.state import get_services
 
 
@@ -34,6 +34,7 @@ async def post(request: Request) -> Page | Redirect:
     body = str(form.get("body") or "")
     onboarding = services.application_onboarding()
     field_values: dict[int, str] = {}
+    field_claim_checks: dict[int, ApplicationClaimCheck] = {}
     facet_slugs = _facet_slugs(form)
     if not name.strip():
         return _render_new_application(
@@ -47,6 +48,18 @@ async def post(request: Request) -> Page | Redirect:
         )
     try:
         field_values = _template_field_values(form, onboarding.template_fields)
+        field_claim_checks = services.application_claim_checks(field_values)
+        if _has_claim_conflicts(field_claim_checks):
+            return _render_new_application(
+                request,
+                error="Some claims need another choice before you create this draft.",
+                name=name,
+                summary=summary,
+                body=body,
+                field_values=field_values,
+                field_claim_checks=field_claim_checks,
+                selected_facet_slugs=facet_slugs,
+            )
         application_body = _application_body_with_template_fields(
             body,
             field_values,
@@ -68,6 +81,7 @@ async def post(request: Request) -> Page | Redirect:
             summary=summary,
             body=body,
             field_values=field_values,
+            field_claim_checks=field_claim_checks,
             selected_facet_slugs=facet_slugs,
         )
     return Redirect(f"/applications/{character.slug}")
@@ -81,6 +95,7 @@ def _render_new_application(
     summary: str = "",
     body: str = "",
     field_values: dict[int, str] | None = None,
+    field_claim_checks: dict[int, ApplicationClaimCheck] | None = None,
     selected_facet_slugs: list[str] | None = None,
 ) -> Page:
     services = get_services(request)
@@ -96,6 +111,7 @@ def _render_new_application(
         summary=summary,
         body=body,
         field_values=field_values or {},
+        field_claim_checks=field_claim_checks or {},
         selected_facet_slugs=selected_facet_slugs or [],
     )
 
@@ -134,6 +150,10 @@ def _application_body_with_template_fields(
         lines.append("Application fields")
         lines.extend(structured_lines)
     return "\n".join(lines)
+
+
+def _has_claim_conflicts(checks: dict[int, ApplicationClaimCheck]) -> bool:
+    return any(check.status == "conflict" for check in checks.values())
 
 
 def _facet_slugs(form: object) -> list[str]:

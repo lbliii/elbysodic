@@ -539,6 +539,37 @@ class ApplicationReviewRoom:
     can_edit_application: bool
     can_review: bool
 
+    @property
+    def blocking_claim_conflicts(self) -> list[ApplicationFieldValueView]:
+        return [
+            item
+            for item in self.field_values
+            if item.claim_check is not None and item.claim_check.status == "conflict"
+        ]
+
+    @property
+    def has_blocking_claim_conflicts(self) -> bool:
+        return bool(self.blocking_claim_conflicts)
+
+    @property
+    def claim_conflict_revision_note(self) -> str:
+        conflicts = self.blocking_claim_conflicts
+        if not conflicts:
+            return ""
+        lines = ["Please revise the mapped claim details before we can accept this face."]
+        for item in conflicts:
+            holder = "the casting desk"
+            if (
+                item.claim_check is not None
+                and item.claim_check.claim is not None
+                and item.claim_check.claim.character is not None
+            ):
+                holder = item.claim_check.claim.character.name
+            lines.append(
+                f"- {item.field.field.label}: {item.value.value} is already held by {holder}."
+            )
+        return "\n".join(lines)
+
 
 @dataclass(frozen=True, slots=True)
 class MemberDirectoryCard:
@@ -613,6 +644,7 @@ class ApplicationTemplateFieldView:
 class ApplicationFieldValueView:
     value: ApplicationFieldValue
     field: ApplicationTemplateFieldView
+    claim_check: ApplicationClaimCheck | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -634,25 +666,53 @@ class CharacterClaimView:
 
 
 @dataclass(frozen=True, slots=True)
+class ApplicationClaimCheck:
+    status: str
+    label: str
+    variant: str
+    claim: CharacterClaimView | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ClaimTypeDirectory:
     claim_type: ClaimType
     claims: list[CharacterClaimView]
     template_fields: list[ApplicationTemplateFieldView]
+    total_count: int = 0
+    claimed_count: int = 0
+    reserved_count: int = 0
+    available_count: int = 0
 
     @property
     def live_count(self) -> int:
-        return len(
-            [claim for claim in self.claims if claim.claim.status in {"claimed", "reserved"}]
-        )
+        return self.claimed_count + self.reserved_count
 
 
 @dataclass(frozen=True, slots=True)
 class ClaimsDirectory:
     groups: list[ClaimTypeDirectory]
+    status_filter: str | None = None
+    search_query: str = ""
 
     @property
     def claim_count(self) -> int:
+        return sum(group.total_count for group in self.groups)
+
+    @property
+    def visible_claim_count(self) -> int:
         return sum(len(group.claims) for group in self.groups)
+
+    @property
+    def claimed_count(self) -> int:
+        return sum(group.claimed_count for group in self.groups)
+
+    @property
+    def reserved_count(self) -> int:
+        return sum(group.reserved_count for group in self.groups)
+
+    @property
+    def available_count(self) -> int:
+        return sum(group.available_count for group in self.groups)
 
     @property
     def required_count(self) -> int:
@@ -661,6 +721,10 @@ class ClaimsDirectory:
     @property
     def claim_type_names(self) -> list[str]:
         return [group.claim_type.name for group in self.groups]
+
+    @property
+    def has_active_filter(self) -> bool:
+        return self.status_filter is not None or bool(self.search_query)
 
 
 @dataclass(frozen=True, slots=True)

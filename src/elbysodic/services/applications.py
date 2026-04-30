@@ -264,6 +264,7 @@ def accept_character_application(
             f"character {character.id} cannot be accepted from {character.application_status}"
         )
     application = repo.ensure_character_application(viewer.community.id, character.id)
+    ensure_application_claims_available(repo, viewer, character, application)
     repo.transition_character_application_status(
         viewer.community.id,
         application.id,
@@ -276,6 +277,52 @@ def accept_character_application(
     character = repo.get_character(viewer.community.id, character.id)
     notify_application_owner(repo, viewer, character, "application_accepted")
     return character
+
+
+def ensure_application_claims_available(
+    repo: ApplicationRepository,
+    viewer: ForumView,
+    character: Character,
+    application: CharacterApplication,
+) -> None:
+    fields = {
+        field.id: field for field in repo.list_application_template_fields(viewer.community.id)
+    }
+    existing_claims = repo.list_character_claims_for_character(
+        viewer.community.id,
+        character.id,
+        status=None,
+    )
+    for field_value in repo.list_application_field_values(viewer.community.id, application.id):
+        field = fields.get(field_value.field_id)
+        if field is None or field.maps_to_claim_type_id is None:
+            continue
+        label = field_value.value.strip()
+        if not label:
+            continue
+        claim_value = _claim_value_key(label)
+        if any(
+            claim.claim_type_id == field.maps_to_claim_type_id
+            and claim.value == claim_value
+            and claim.status in {"claimed", "reserved"}
+            for claim in existing_claims
+        ):
+            continue
+        claim_type = repo.get_claim_type(viewer.community.id, field.maps_to_claim_type_id)
+        if not claim_type.is_exclusive:
+            continue
+        conflicting_claims = repo.list_character_claims(
+            viewer.community.id,
+            status=None,
+            claim_type_id=field.maps_to_claim_type_id,
+        )
+        if any(
+            claim.value == claim_value
+            and claim.status in {"claimed", "reserved"}
+            and claim.character_id != character.id
+            for claim in conflicting_claims
+        ):
+            raise ValueError(f"{field.label} is already claimed: {label}")
 
 
 def request_character_application_revision(

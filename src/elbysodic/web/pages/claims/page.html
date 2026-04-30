@@ -31,6 +31,41 @@
   </section>
   {% end %}
 
+  <nav class="elbysodic-claim-lenses" aria-label="Claim status lenses">
+    <a class="elbysodic-claim-lens {{ 'is-active' if not directory.status_filter else '' }}" href="/claims{{ '?q=' ~ search_query_encoded if directory.search_query else '' }}">
+      <span>All</span>
+      <strong>{{ directory.claim_count }}</strong>
+    </a>
+    <a class="elbysodic-claim-lens {{ 'is-active' if directory.status_filter == 'claimed' else '' }}" href="/claims?status=claimed{{ '&q=' ~ search_query_encoded if directory.search_query else '' }}">
+      <span>Claimed</span>
+      <strong>{{ directory.claimed_count }}</strong>
+    </a>
+    <a class="elbysodic-claim-lens {{ 'is-active' if directory.status_filter == 'reserved' else '' }}" href="/claims?status=reserved{{ '&q=' ~ search_query_encoded if directory.search_query else '' }}">
+      <span>Reserved</span>
+      <strong>{{ directory.reserved_count }}</strong>
+    </a>
+    <a class="elbysodic-claim-lens {{ 'is-active' if directory.status_filter == 'available' else '' }}" href="/claims?status=available{{ '&q=' ~ search_query_encoded if directory.search_query else '' }}">
+      <span>Open slots</span>
+      <strong>{{ directory.available_count }}</strong>
+    </a>
+  </nav>
+
+  <form class="elbysodic-claim-search" method="get" action="/claims">
+    {% if directory.status_filter %}
+    <input type="hidden" name="status" value="{{ directory.status_filter }}">
+    {% end %}
+    <label>
+      <span class="chirpui-field__label">Search claims</span>
+      <input class="chirpui-field__input" name="q" value="{{ directory.search_query }}" placeholder="Face, role, family, faction, writer-facing value...">
+    </label>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      {% if directory.has_active_filter %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/claims">Clear</a>
+      {% end %}
+      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Search</button>
+    </div>
+  </form>
+
   {% if error %}
   {% call surface(variant="elevated") %}
   <p class="chirpui-field__error">{{ error }}</p>
@@ -51,6 +86,7 @@
         <div class="elbysodic-claim-group__badges">
           {{ badge("required", variant="warning") if group.claim_type.is_required else "" }}
           {{ badge(group.live_count ~ " live", variant="info") }}
+          {{ badge(group.available_count ~ " open", variant="muted") }}
         </div>
       </header>
       {% if group.template_fields %}
@@ -119,7 +155,15 @@
         {% end %}
       </div>
       {% else %}
-      <p class="elbysodic-empty-state">No claims have been recorded for this type yet.</p>
+      <p class="elbysodic-empty-state">
+        {% if directory.search_query %}
+        No claims match "{{ directory.search_query }}" in this type.
+        {% elif directory.status_filter %}
+        No {{ directory.status_filter }} claims match this type yet.
+        {% else %}
+        No claims have been recorded for this type yet.
+        {% end %}
+      </p>
       {% end %}
       {% if can_manage %}
       <form method="post" hx-boost="false" class="elbysodic-claim-create-form">

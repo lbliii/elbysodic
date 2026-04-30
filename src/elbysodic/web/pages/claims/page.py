@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote_plus
+
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -13,7 +15,11 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request) -> Page:
-    return _render_claims(request)
+    return _render_claims(
+        request,
+        status_filter=_status_filter(request),
+        search_query=_search_query(request),
+    )
 
 
 async def post(request: Request) -> Page | Redirect:
@@ -48,19 +54,30 @@ async def post(request: Request) -> Page | Redirect:
     return Redirect("/claims")
 
 
-def _render_claims(request: Request, *, error: str | None = None) -> Page:
+def _render_claims(
+    request: Request,
+    *,
+    error: str | None = None,
+    status_filter: str | None = None,
+    search_query: str = "",
+) -> Page:
     services = get_services(request)
     viewer = services.viewer()
+    directory = services.claims_directory(
+        status_filter=status_filter,
+        search_query=search_query,
+    )
     return Page(
         "claims/page.html",
         "page_content",
         page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
-        directory=services.claims_directory(),
+        directory=directory,
         can_manage=policies.can_manage_applications(viewer.membership, viewer.role),
         characters=services.claimable_characters(),
         error=error,
+        search_query_encoded=quote_plus(directory.search_query),
     )
 
 
@@ -69,3 +86,16 @@ def _required_int(raw: object, message: str) -> int:
     if not value:
         raise ValueError(message)
     return int(value)
+
+
+def _status_filter(request: Request) -> str | None:
+    raw = str(request.query.get("status") or "").strip()
+    if raw == "open":
+        raw = "available"
+    if raw in {"claimed", "reserved", "available"}:
+        return raw
+    return None
+
+
+def _search_query(request: Request) -> str:
+    return str(request.query.get("q") or "").strip()
