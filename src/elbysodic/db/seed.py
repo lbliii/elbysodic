@@ -26,6 +26,7 @@ from elbysodic.domain.models import (
     CommunityMembership,
     Facet,
     Material,
+    Role,
     User,
 )
 
@@ -106,6 +107,16 @@ class SeedPersona:
     character_slug: str
     purpose: str
     default_path: str = "/"
+
+
+@dataclass(frozen=True, slots=True)
+class SeedPersonaContext:
+    persona: SeedPersona
+    user: User
+    community: Community
+    membership: CommunityMembership
+    role: Role
+    character: Character | None
 
 
 SEED_PERSONAS: tuple[SeedPersona, ...] = (
@@ -220,6 +231,40 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "/my/threads",
     ),
 )
+
+
+def seed_persona_by_key(persona_key: str) -> SeedPersona:
+    for persona in SEED_PERSONAS:
+        if persona.key == persona_key:
+            return persona
+    raise LookupError(f"seed persona not found: {persona_key}")
+
+
+def resolve_seed_persona(repo: ForumRepository, persona_key: str) -> SeedPersonaContext:
+    persona = seed_persona_by_key(persona_key)
+    community = repo.get_community_by_slug(persona.community_slug)
+    user = repo.get_user_by_email(persona.email)
+    membership = repo.get_membership_by_username(community.id, persona.username)
+    if membership.user_id != user.id:
+        raise LookupError(
+            f"seed persona {persona.key} membership does not belong to {persona.email}"
+        )
+    role = repo.get_role(community.id, membership.role_id)
+    character = None
+    if persona.character_slug:
+        character = repo.get_character_by_slug(community.id, persona.character_slug)
+        if character.membership_id != membership.id:
+            raise LookupError(
+                f"seed persona {persona.key} character does not belong to @{persona.username}"
+            )
+    return SeedPersonaContext(
+        persona=persona,
+        user=user,
+        community=community,
+        membership=membership,
+        role=role,
+        character=character,
+    )
 
 
 STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (

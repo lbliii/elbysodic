@@ -82,3 +82,6 @@ for user-visible private rooms, staff desks, or notification inboxes.
 Use `docs/architecture/rendered-route-privacy-matrix.md` as the standing route
 checklist for rendered privacy coverage. Update it when adding a new route
 family, identity shape, or user-visible scoped data surface.
+
+Use `docs/architecture/seed-personas.md` when a test or browser QA pass needs a
+stable seeded account, membership, role, and active-face combination.

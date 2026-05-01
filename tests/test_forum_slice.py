@@ -14,7 +14,7 @@ from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
 
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.db.seed import DemoSeed
+from elbysodic.db.seed import DemoSeed, resolve_seed_persona
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services
 from elbysodic.web import create_app
@@ -334,6 +334,29 @@ def test_dev_personas_are_gated_by_development_tools() -> None:
         assert "inactive" in enabled.text
 
     asyncio.run(run())
+
+
+def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
+    services = create_services(path=":memory:")
+    xmen_writer = resolve_seed_persona(services.repo, "xmen_writer")
+    hp_director = resolve_seed_persona(services.repo, "hp_director")
+    nyc_writer = resolve_seed_persona(services.repo, "nyc_writer")
+    inactive = resolve_seed_persona(services.repo, "xmen_inactive")
+
+    assert xmen_writer.user.id == hp_director.user.id == nyc_writer.user.id
+    assert xmen_writer.community.slug == "default"
+    assert xmen_writer.role.name == "Member"
+    assert not xmen_writer.role.is_admin
+    assert hp_director.community.slug == "hp-universe"
+    assert hp_director.role.name == "Director"
+    assert hp_director.role.is_admin
+    assert nyc_writer.community.slug == "rl-nyc"
+    assert nyc_writer.role.name == "Member"
+    assert not nyc_writer.role.is_admin
+    assert inactive.membership.username == "sleepingstar"
+    assert not inactive.membership.is_active
+    assert inactive.character is not None
+    assert inactive.character.name == "Sleeping Star"
 
 
 def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:

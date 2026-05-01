@@ -8,7 +8,14 @@ from pathlib import Path
 
 from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.db.seed import SEED_PERSONAS, DemoSeed, SeedPersona, seed_demo_forum
+from elbysodic.db.seed import (
+    SEED_PERSONAS,
+    DemoSeed,
+    SeedPersona,
+    resolve_seed_persona,
+    seed_demo_forum,
+    seed_persona_by_key,
+)
 from elbysodic.domain.boards import (
     BOARD_KIND_GUIDANCE,
     BOARD_KIND_LABELS,
@@ -387,7 +394,7 @@ class AppServices:
         return [self._dev_persona_view(persona, identity) for persona in SEED_PERSONAS]
 
     def switch_dev_persona(self, persona_key: str) -> RequestIdentityContext:
-        persona = _seed_persona_by_key(persona_key)
+        persona = seed_persona_by_key(persona_key)
         view = self._dev_persona_view(
             persona,
             self._identity_context or self._identity_resolver.resolve(),
@@ -406,39 +413,26 @@ class AppServices:
         persona: SeedPersona,
         identity: RequestIdentityContext,
     ) -> DevPersonaView:
-        community = self.repo.get_community_by_slug(persona.community_slug)
-        user = self.repo.get_user_by_email(persona.email)
-        membership = self.repo.get_membership_by_username(community.id, persona.username)
-        if membership.user_id != user.id:
-            raise LookupError(
-                f"seed persona {persona.key} membership does not belong to {persona.email}"
-            )
-        role = self.repo.get_role(community.id, membership.role_id)
-        character = None
-        if persona.character_slug:
-            character = self.repo.get_character_by_slug(community.id, persona.character_slug)
-            if character.membership_id != membership.id:
-                raise LookupError(
-                    f"seed persona {persona.key} character does not belong to @{persona.username}"
-                )
+        context = resolve_seed_persona(self.repo, persona.key)
         return DevPersonaView(
             key=persona.key,
             label=persona.label,
             purpose=persona.purpose,
             default_path=persona.default_path,
-            user=user,
-            community=community,
-            membership=membership,
-            role=role,
-            character=character,
-            can_switch=membership.is_active,
+            user=context.user,
+            community=context.community,
+            membership=context.membership,
+            role=context.role,
+            character=context.character,
+            can_switch=context.membership.is_active,
             is_current=(
-                identity.community_id == community.id and identity.membership_id == membership.id
+                identity.community_id == context.community.id
+                and identity.membership_id == context.membership.id
             ),
             can_manage_studio=(
-                policies.can_manage_world(membership, role)
-                or policies.can_manage_casting(membership, role)
-                or policies.can_manage_navigation(membership, role)
+                policies.can_manage_world(context.membership, context.role)
+                or policies.can_manage_casting(context.membership, context.role)
+                or policies.can_manage_navigation(context.membership, context.role)
             ),
         )
 
@@ -2951,13 +2945,6 @@ def _network_theme_preview(theme: object | None) -> StudioNetworkThemePreview:
             "var(--elbysodic-display-font-family)",
         ),
     )
-
-
-def _seed_persona_by_key(persona_key: str) -> SeedPersona:
-    for persona in SEED_PERSONAS:
-        if persona.key == persona_key:
-            return persona
-    raise LookupError(f"seed persona not found: {persona_key}")
 
 
 def _apply_post_style_preset(
