@@ -89,6 +89,14 @@ class ApplicationFieldSeed:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityMediaSeed:
+    mark_url: str
+    mark_alt: str
+    hero_url: str
+    hero_alt: str
+
+
+@dataclass(frozen=True, slots=True)
 class ClaimSeed:
     claim_type_slug: str
     character_slug: str
@@ -117,6 +125,41 @@ class SeedPersonaContext:
     membership: CommunityMembership
     role: Role
     character: Character | None
+
+
+SEED_MEDIA_BASE = "/elbysodic-static/seed-media"
+X_MEN_MEDIA = CommunityMediaSeed(
+    mark_url=f"{SEED_MEDIA_BASE}/xmen-mark.svg",
+    mark_alt="X-Men Apocalypse academy signal mark",
+    hero_url=f"{SEED_MEDIA_BASE}/xmen-hero.svg",
+    hero_alt="Snow-lit academy and B-24 signal lines",
+)
+STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
+    "hp-universe": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/hp-mark.svg",
+        mark_alt="HP Universe glass staircase mark",
+        hero_url=f"{SEED_MEDIA_BASE}/hp-hero.svg",
+        hero_alt="Glass staircase rising through castle stacks",
+    ),
+    "jurassic-park-universe": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/jurassic-mark.svg",
+        mark_alt="Jurassic Park Universe operations mark",
+        hero_url=f"{SEED_MEDIA_BASE}/jurassic-hero.svg",
+        hero_alt="Island operations fence and paddock monitors",
+    ),
+    "rl-nyc": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/nyc-mark.svg",
+        mark_alt="RL NYC late train mark",
+        hero_url=f"{SEED_MEDIA_BASE}/nyc-hero.svg",
+        hero_alt="Night street windows above a subway platform",
+    ),
+    "rl-small-town": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/smalltown-mark.svg",
+        mark_alt="RL Small Town founders week mark",
+        hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
+        hero_alt="Town square noticeboard and storefront lights",
+    ),
+}
 
 
 SEED_PERSONAS: tuple[SeedPersona, ...] = (
@@ -1412,7 +1455,11 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     duplicating boards, characters, or sample posts.
     """
 
-    community = repo.seed_default_community("X-Men Apocalypse")
+    community = _ensure_community_media_defaults(
+        repo,
+        repo.seed_default_community("X-Men Apocalypse"),
+        X_MEN_MEDIA,
+    )
     member_role = _get_or_create(
         lambda: repo.get_role_by_slug(community.id, "member"),
         lambda: repo.create_role(community.id, "member", "Member"),
@@ -2997,6 +3044,9 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
     ensure_valid_program_blueprints(STUDIO_NETWORK_PROGRAMS)
     for program in STUDIO_NETWORK_PROGRAMS:
         community = _ensure_studio_program_community(repo, program)
+        media_seed = STUDIO_PROGRAM_MEDIA.get(program.slug)
+        if media_seed is not None:
+            community = _ensure_community_media_defaults(repo, community, media_seed)
         if program.theme is not None:
             repo.upsert_default_theme(
                 community.id,
@@ -3138,6 +3188,35 @@ def _ensure_studio_program_community(
     if community.name == program.name and community.slug == program.slug:
         return community
     return repo.update_community_name_and_slug(community.id, slug=program.slug, name=program.name)
+
+
+def _ensure_community_media_defaults(
+    repo: ForumRepository,
+    community: Community,
+    media_seed: CommunityMediaSeed,
+) -> Community:
+    mark_url = community.community_mark_url or media_seed.mark_url
+    mark_alt = community.community_mark_alt
+    if community.community_mark_url is None:
+        mark_alt = media_seed.mark_alt
+    hero_url = community.world_hero_image_url or media_seed.hero_url
+    hero_alt = community.world_hero_image_alt
+    if community.world_hero_image_url is None:
+        hero_alt = media_seed.hero_alt
+    if (
+        mark_url == community.community_mark_url
+        and mark_alt == community.community_mark_alt
+        and hero_url == community.world_hero_image_url
+        and hero_alt == community.world_hero_image_alt
+    ):
+        return community
+    return repo.update_community_media(
+        community.id,
+        community_mark_url=mark_url,
+        community_mark_alt=mark_alt,
+        world_hero_image_url=hero_url,
+        world_hero_image_alt=hero_alt,
+    )
 
 
 def _ensure_character_identity(

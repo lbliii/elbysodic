@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Jurassic Park Universe operations mark</title>
+  <rect width="128" height="128" rx="16" fill="#13251f"/>
+  <path d="M12 78h104v38H12z" fill="#1f3c2b"/>
+  <path d="M20 82h88M30 64l18 52M58 64l18 52M86 64l18 52" stroke="#e8d26e" stroke-width="5"/>
+  <path d="M28 28h72v40H28z" fill="#0f1c19" stroke="#6bbf7a" stroke-width="6"/>
+  <path d="M38 50h18l11-14 18 22 10-10" fill="none" stroke="#efc84a" stroke-width="5"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Snow-lit academy and B-24 signal lines</title>
+  <desc id="desc">A winter academy silhouette crossed by signal grids and containment lines.</desc>
+  <rect width="1600" height="1100" fill="#111722"/>
+  <path d="M0 840h1600v260H0z" fill="#e8edf0"/>
+  <path d="M150 730h1300l75 170H75z" fill="#182536"/>
+  <path d="M330 350h940v430H330z" fill="#26364a"/>
+  <path d="M465 240h670v125H465z" fill="#324963"/>
+  <path d="M570 120h460v135H570z" fill="#405b78"/>
+  <path d="M760 255h80v525h-80z" fill="#111722"/>
+  <path d="M520 455h90v105h-90zM670 455h90v105h-90zM840 455h90v105h-90zM990 455h90v105h-90z" fill="#f5d38b"/>
+  <path d="M390 650h110v130H390zM1100 650h110v130h-110z" fill="#a6c8e5"/>
+  <path d="M80 250c230 180 460 270 690 270s480-90 750-270" fill="none" stroke="#79c6ff" stroke-width="8" stroke-dasharray="20 28" opacity=".72"/>
+  <path d="M180 180c210 220 420 330 630 330s420-110 630-330" fill="none" stroke="#d75b68" stroke-width="7" stroke-dasharray="12 22" opacity=".8"/>
+  <circle cx="800" cy="510" r="145" fill="none" stroke="#79c6ff" stroke-width="10" opacity=".45"/>
+  <path d="M0 905c215-42 430-42 645 0s430 42 645 0 310-40 310-40v235H0z" fill="#cfdde5"/>
+</svg>

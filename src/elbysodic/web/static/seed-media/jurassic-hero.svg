@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Island operations fence and paddock monitors</title>
+  <desc id="desc">A green island operations room looking over paddock fences and warning screens.</desc>
+  <rect width="1600" height="1100" fill="#10251d"/>
+  <path d="M0 650c180-190 360-220 540-90 150-210 390-250 650-80 140-110 275-120 410-30v650H0z" fill="#244b33"/>
+  <path d="M0 805h1600v295H0z" fill="#1b2e27"/>
+  <path d="M240 705h1120v170H240z" fill="#2e463c"/>
+  <path d="M290 615h1020v120H290z" fill="#466458"/>
+  <path d="M350 660h170v110H350zM580 660h170v110H580zM810 660h170v110H810zM1040 660h170v110h-170z" fill="#111e1b"/>
+  <path d="M392 690h86M622 690h86M852 690h86M1082 690h86" stroke="#6bbf7a" stroke-width="10"/>
+  <path d="M90 900h1420M150 780l90 320M330 780l90 320M510 780l90 320M690 780l90 320M870 780l90 320M1050 780l90 320M1230 780l90 320M1410 780l90 320" stroke="#e8d26e" stroke-width="10" opacity=".72"/>
+  <path d="M120 450c240-75 410-74 520 3M960 430c205-54 365-42 480 38" fill="none" stroke="#8ad096" stroke-width="18" opacity=".55"/>
+  <path d="M1110 235h260v165h-260z" fill="#13251f" stroke="#6bbf7a" stroke-width="12"/>
+  <path d="M1145 330h56l35-48 50 72 34-36" fill="none" stroke="#efc84a" stroke-width="12"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">HP Universe glass staircase mark</title>
+  <rect width="128" height="128" rx="16" fill="#1d172a"/>
+  <path d="M20 22h25v82H20zM83 22h25v82H83z" fill="#4a394f"/>
+  <path d="M36 90 88 58l9 12-52 32zM42 70 86 36l10 12-44 34z" fill="#d7c1ff"/>
+  <path d="M55 28h20l9 76H46z" fill="#f3e1aa"/>
+</svg>

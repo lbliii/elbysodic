@@ -7,7 +7,7 @@
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=small-maintenance-1">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=seed-art-direction-1">
     {% if viewer and viewer.program_theme %}
     <style id="elbysodic-program-theme">
       :root {
@@ -51,6 +51,11 @@
 
 {% block brand_link %}
 {% call shell_brand_link(href="/", cls="elbysodic-community-brand") %}
+  {% if viewer and viewer.community.community_mark_url %}
+  <img class="elbysodic-community-brand__mark"
+       src="{{ viewer.community.community_mark_url }}"
+       alt="{{ viewer.community.community_mark_alt }}">
+  {% end %}
   <span class="elbysodic-community-brand__name">{{ viewer.community.name if viewer else "Elbysodic" }}</span>
 {% end %}
 {% end %}

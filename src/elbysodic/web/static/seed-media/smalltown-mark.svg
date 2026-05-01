@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">RL Small Town founders week mark</title>
+  <rect width="128" height="128" rx="16" fill="#f3ead9"/>
+  <path d="M18 47h92v49H18z" fill="#fff7e5"/>
+  <path d="M18 47h92L96 28H32z" fill="#b74b55"/>
+  <path d="M43 66h42v42H43z" fill="#6b4b35"/>
+  <path d="M49 76h30M49 88h30" stroke="#f7e6c8" stroke-width="5"/>
+  <path d="M20 106h88" stroke="#5f7d6a" stroke-width="10"/>
+</svg>

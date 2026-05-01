@@ -847,6 +847,8 @@ def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
             index = await client.get("/")
 
             assert index.status == 200
+            assert "/elbysodic-static/seed-media/xmen-mark.svg" in index.text
+            assert 'alt="X-Men Apocalypse academy signal mark"' in index.text
             assert (
                 '<span class="elbysodic-community-brand__name">X-Men Apocalypse</span>'
                 in index.text
@@ -857,6 +859,38 @@ def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
             assert index.text.count("Writer Desk") == 2
             assert "elbysodic-mobile-realm-nav" in index.text
             assert 'class="elbysodic-topnav__link" href="/notifications"' not in index.text
+
+    asyncio.run(run())
+
+
+def test_seeded_program_homepage_uses_community_media_and_world_status() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            xmen = await client.get("/")
+            hp_home = await client.get("/", headers={"Cookie": cookie})
+
+        assert xmen.status == 200
+        assert "/elbysodic-static/seed-media/xmen-hero.svg" in xmen.text
+        assert 'alt="Snow-lit academy and B-24 signal lines"' in xmen.text
+        assert "Current Event: B-24 Winter" in xmen.text
+        assert "Iceman is infected with B-24" in xmen.text
+
+        assert hp_home.status == 200
+        assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
+        assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
+        assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
+        assert "Current Event: No Reflection" in hp_home.text
+        assert (
+            "One student has gone missing, and every portrait remembers a different last sighting."
+            in hp_home.text
+        )
+        assert "The school has reopened under a fragile truce" not in hp_home.text
 
     asyncio.run(run())
 
