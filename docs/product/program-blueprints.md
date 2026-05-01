@@ -259,3 +259,17 @@ the shared contract: seed data and future YAML imports should describe the same
 kind of PBP hub. The current Studio preview intentionally stops before step 4:
 it validates and summarizes the packet, but does not create or update database
 state.
+
+## Hydration Gate
+
+Keep apply disabled until the hydrator has an explicit service-layer plan for:
+
+- duplicate handling for existing program, role, face, board, material, wanted,
+  and theme slugs
+- ownership defaults for starter faces and director-authored wanted hooks
+- rollback behavior when a later object fails after earlier objects validate
+- tenant tests that prove every created object stays in the selected community
+- a dry-run diff that names create, update, and skipped objects before mutation
+
+Until those pieces exist, Studio intake should keep saying that preview is a
+hydration gate, not a launch button.

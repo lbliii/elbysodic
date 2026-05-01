@@ -112,6 +112,9 @@ from elbysodic.services.materials import (
     update_material_production_state as _update_material_production_state,
 )
 from elbysodic.services.notifications import (
+    count_visible_unread_notifications as _count_visible_unread_notifications,
+)
+from elbysodic.services.notifications import (
     mark_all_notifications_read as _mark_all_notifications_read,
 )
 from elbysodic.services.notifications import notification_inbox as _notification_inbox
@@ -313,8 +316,11 @@ class AppServices:
                 item for item in navigation_boards if is_studio_sidebar_board(item.board)
             ],
             studio_sidebar_section=sidebar_sections["studio"],
-            unread_notification_count=self.repo.count_unread_notifications(
-                community.id, membership.id
+            unread_notification_count=_count_visible_unread_notifications(
+                self.repo,
+                community.id,
+                membership,
+                role,
             ),
             identity_options=self._identity_options(identity),
             program_theme=community_theme_view(self.repo.get_default_theme(community.id)),
@@ -334,9 +340,11 @@ class AppServices:
                     membership=membership,
                     role=role,
                     current_character=_resolve_current_character(self.repo, membership, roster),
-                    unread_notification_count=self.repo.count_unread_notifications(
+                    unread_notification_count=_count_visible_unread_notifications(
+                        self.repo,
                         community.id,
-                        membership.id,
+                        membership,
+                        role,
                     ),
                     is_current=(
                         community.id == identity.community_id
@@ -413,9 +421,11 @@ class AppServices:
                             membership.id,
                         )
                     ),
-                    unread_notification_count=self.repo.count_unread_notifications(
+                    unread_notification_count=_count_visible_unread_notifications(
+                        self.repo,
                         community.id,
-                        membership.id,
+                        membership,
+                        role,
                     ),
                     theme_preview=_network_theme_preview(theme),
                     is_current=(

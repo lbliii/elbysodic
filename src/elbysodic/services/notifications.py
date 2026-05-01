@@ -12,7 +12,9 @@ from elbysodic.domain.models import (
     CommunityMembership,
     Notification,
     PlottingRoom,
+    PlottingRoomParticipant,
     Post,
+    Role,
     Thread,
     WantedAd,
     WantedAdInterest,
@@ -45,6 +47,12 @@ class NotificationRepository(PostViewRepository, Protocol):
     ) -> CharacterPlotHook: ...
 
     def get_plotting_room(self, community_id: int, plotting_room_id: int) -> PlottingRoom: ...
+
+    def list_plotting_room_participants(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+    ) -> list[PlottingRoomParticipant]: ...
 
     def get_notification(self, community_id: int, notification_id: int) -> Notification: ...
 
@@ -103,10 +111,26 @@ def notification_inbox(
             items.append(item)
     return NotificationInbox(
         items=items,
-        unread_count=repo.count_unread_notifications(
+        unread_count=count_visible_unread_notifications(
+            repo,
             viewer.community.id,
-            viewer.membership.id,
+            viewer.membership,
+            viewer.role,
         ),
+    )
+
+
+def count_visible_unread_notifications(
+    repo: NotificationRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    role: Role | None,
+) -> int:
+    return sum(
+        1
+        for notification in repo.list_notifications(community_id, membership.id, limit=1000)
+        if notification.read_at is None
+        and _can_view_notification_target(repo, community_id, membership, role, notification)
     )
 
 
@@ -269,6 +293,14 @@ def notification_item(
         )
     if notification.plotting_room_id is not None:
         room = repo.get_plotting_room(viewer.community.id, notification.plotting_room_id)
+        if not _can_view_plotting_room_notification(
+            repo,
+            viewer.community.id,
+            viewer.membership,
+            viewer.role,
+            room,
+        ):
+            return None
         if notification.kind == "plotting_room_threaded":
             snippet = f"{actor_label} started a scene from this plotting room."
         else:
@@ -313,6 +345,47 @@ def notification_item(
         snippet=rendered_post.snippet,
         href=f"/boards/{board.slug}/threads/{thread.slug}#{rendered_post.anchor}",
     )
+
+
+def _can_view_plotting_room_notification(
+    repo: NotificationRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    role: Role | None,
+    room: PlottingRoom,
+) -> bool:
+    if room.owner_membership_id == membership.id or policies.can_manage_casting(membership, role):
+        return True
+    return any(
+        participant.membership_id == membership.id
+        for participant in repo.list_plotting_room_participants(community_id, room.id)
+    )
+
+
+def _can_view_notification_target(
+    repo: NotificationRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    role: Role | None,
+    notification: Notification,
+) -> bool:
+    try:
+        if notification.thread_id is not None:
+            thread = repo.get_thread(community_id, notification.thread_id)
+            board = repo.get_board(community_id, thread.board_id)
+            return policies.can_view_board(membership, board, role)
+        if notification.plotting_room_id is not None:
+            room = repo.get_plotting_room(community_id, notification.plotting_room_id)
+            return _can_view_plotting_room_notification(
+                repo,
+                community_id,
+                membership,
+                role,
+                room,
+            )
+    except LookupError:
+        return False
+    return True
 
 
 def notification_label(kind: str) -> str:

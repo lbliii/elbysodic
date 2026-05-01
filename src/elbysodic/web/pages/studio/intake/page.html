@@ -59,7 +59,7 @@
       <p class="elbysodic-kicker">Program Blueprint</p>
       <h2 id="program-blueprint-preview">Dry-run YAML intake</h2>
       <p class="elbysodic-copy-section">
-        Paste a director-authored Program Blueprint to parse, validate, and preview the hub counts before any hydration work exists.
+        Paste a director-authored Program Blueprint to parse, validate, and preview the hub counts before hydration is designed.
       </p>
     </div>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
@@ -103,7 +103,12 @@
         {% end %}
       </div>
       {% else %}
-      <p class="elbysodic-copy-status">Ready for a future service-layer hydrator. Nothing has been applied.</p>
+      <div class="chirpui-stack chirpui-stack--xs">
+        <p class="elbysodic-copy-status">Hydration gate: nothing has been applied.</p>
+        <p class="elbysodic-copy-helper">
+          Apply needs a service-layer plan for duplicate handling, ownership defaults, rollback behavior, and tenant tests.
+        </p>
+      </div>
       {% end %}
     </div>
     {% end %}
