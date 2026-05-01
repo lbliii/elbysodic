@@ -111,6 +111,14 @@ async def post(request: Request) -> Page | Redirect:
                 dark=_theme_mode_values(form, "dark"),
             )
             redirect_to = "/studio#appearance-theme"
+        elif intent == "community_media":
+            services.update_community_media(
+                community_mark_url=str(form.get("community_mark_url") or ""),
+                community_mark_alt=str(form.get("community_mark_alt") or ""),
+                world_hero_image_url=str(form.get("world_hero_image_url") or ""),
+                world_hero_image_alt=str(form.get("world_hero_image_alt") or ""),
+            )
+            redirect_to = "/studio#appearance-media"
         elif intent == "material_status":
             services.update_material_production_state(
                 str(form.get("material_slug") or ""),

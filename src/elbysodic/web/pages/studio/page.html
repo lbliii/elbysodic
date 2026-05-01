@@ -294,6 +294,41 @@
   </form>
   {% end %}
   </section>
+  <section id="appearance-media" class="chirpui-stack chirpui-stack--md" aria-label="Community media slots">
+  {% call surface(variant="elevated") %}
+  <form class="chirpui-stack chirpui-stack--md" method="post">
+    <input type="hidden" name="intent" value="community_media">
+    <div>
+      <p class="elbysodic-kicker">Appearance Studio</p>
+      <h2>Community media</h2>
+      <p class="elbysodic-copy-section">
+        Add meaningful image slots that carry the board's first impression without changing layout rules.
+      </p>
+    </div>
+    <div class="elbysodic-theme-editor-grid">
+      <label class="elbysodic-form-field">
+        <span>Community mark URL</span>
+        <input name="community_mark_url" value="{{ viewer.community.community_mark_url or '' }}">
+      </label>
+      <label class="elbysodic-form-field">
+        <span>Community mark alt text</span>
+        <input name="community_mark_alt" value="{{ viewer.community.community_mark_alt }}">
+      </label>
+      <label class="elbysodic-form-field">
+        <span>World hero image URL</span>
+        <input name="world_hero_image_url" value="{{ viewer.community.world_hero_image_url or '' }}">
+      </label>
+      <label class="elbysodic-form-field">
+        <span>World hero alt text</span>
+        <input name="world_hero_image_alt" value="{{ viewer.community.world_hero_image_alt }}">
+      </label>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Save community media</button>
+    </div>
+  </form>
+  {% end %}
+  </section>
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--sm" method="post">
     <input type="hidden" name="intent" value="identity_accent">

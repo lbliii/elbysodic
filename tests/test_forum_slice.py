@@ -4552,6 +4552,52 @@ def test_director_studio_surfaces_theme_health_warnings() -> None:
     asyncio.run(run())
 
 
+def test_director_studio_updates_world_hero_media() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "community_media",
+                        "community_mark_url": "https://example.test/mark.png",
+                        "community_mark_alt": "X-Men mark",
+                        "world_hero_image_url": "https://example.test/world.jpg",
+                        "world_hero_image_alt": "A fog-covered academy at night",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            home = await client.get("/")
+            studio = await client.get("/studio")
+
+        updated = repo.get_community(community.id)
+        assert response.status == 302
+        assert _response_header(response, "location") == "/studio#appearance-media"
+        assert updated.world_hero_image_url == "https://example.test/world.jpg"
+        assert home.status == 200
+        assert "elbysodic-world-hero--with-media" in home.text
+        assert 'src="https://example.test/world.jpg"' in home.text
+        assert 'alt="A fog-covered academy at night"' in home.text
+        assert studio.status == 200
+        assert "Community media" in studio.text
+        assert "https://example.test/world.jpg" in studio.text
+
+    asyncio.run(run())
+
+
 def test_reply_uses_selected_character() -> None:
     async def run() -> None:
         app = _app()

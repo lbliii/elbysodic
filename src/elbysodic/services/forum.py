@@ -1284,6 +1284,33 @@ class AppServices:
             facet_group_id,
         )
 
+    def update_community_media(
+        self,
+        *,
+        community_mark_url: str,
+        community_mark_alt: str,
+        world_hero_image_url: str,
+        world_hero_image_alt: str,
+    ) -> None:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage media")
+        cleaned_mark_url = community_mark_url.strip()
+        cleaned_mark_alt = community_mark_alt.strip()
+        cleaned_hero_url = world_hero_image_url.strip()
+        cleaned_hero_alt = world_hero_image_alt.strip()
+        if cleaned_mark_url and not cleaned_mark_alt:
+            raise ValueError("community mark alt text is required when a mark URL is set")
+        if cleaned_hero_url and not cleaned_hero_alt:
+            raise ValueError("world hero alt text is required when a hero image URL is set")
+        self.repo.update_community_media(
+            viewer.community.id,
+            community_mark_url=cleaned_mark_url or None,
+            community_mark_alt=cleaned_mark_alt,
+            world_hero_image_url=cleaned_hero_url or None,
+            world_hero_image_alt=cleaned_hero_alt,
+        )
+
     def post_style_policy(self) -> PostStylePolicy:
         return _post_style_policy(self.viewer().community)
 

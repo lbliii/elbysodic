@@ -13,7 +13,7 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="xl") %}
-  <section class="elbysodic-world-hero">
+  <section class="elbysodic-world-hero{{ " elbysodic-world-hero--with-media" if viewer.community.world_hero_image_url else "" }}">
     <div class="elbysodic-world-hero__copy">
       <p class="elbysodic-kicker">World status</p>
       <h1>{{ viewer.community.name }}</h1>
@@ -38,6 +38,11 @@
       {{ stat(value=viewer.roster | length, label="Characters") }}
       {{ stat(value=viewer.membership.post_count, label="Posts") }}
     </div>
+    {% if viewer.community.world_hero_image_url %}
+    <figure class="elbysodic-world-hero__media">
+      <img src="{{ viewer.community.world_hero_image_url }}" alt="{{ viewer.community.world_hero_image_alt }}">
+    </figure>
+    {% end %}
   </section>
 
   {% call section_header("Locations") %}
