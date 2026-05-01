@@ -36,6 +36,7 @@ from elbysodic.domain.models import (
     Role,
     SidebarSectionConfig,
     Thread,
+    User,
     WantedAd,
     WantedAdInterest,
 )
@@ -1321,6 +1322,22 @@ class StudioIdentityOption:
     current_character: Character | None
     unread_notification_count: int
     is_current: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DevPersonaView:
+    key: str
+    label: str
+    purpose: str
+    default_path: str
+    user: User
+    community: Community
+    membership: CommunityMembership
+    role: Role
+    character: Character | None
+    can_switch: bool
+    is_current: bool
+    can_manage_studio: bool
 
 
 @dataclass(frozen=True, slots=True)

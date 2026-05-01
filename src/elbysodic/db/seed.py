@@ -96,6 +96,132 @@ class ClaimSeed:
     status: str = "claimed"
 
 
+@dataclass(frozen=True, slots=True)
+class SeedPersona:
+    key: str
+    label: str
+    email: str
+    community_slug: str
+    username: str
+    character_slug: str
+    purpose: str
+    default_path: str = "/"
+
+
+SEED_PERSONAS: tuple[SeedPersona, ...] = (
+    SeedPersona(
+        "xmen_writer",
+        "X-Men writer",
+        "writer@example.com",
+        "default",
+        "starlane",
+        "rogue",
+        "Ordinary writer with accepted faces, active-face queue, and scene posting.",
+        "/my/threads",
+    ),
+    SeedPersona(
+        "xmen_staff",
+        "X-Men staff",
+        "moira@example.com",
+        "default",
+        "moira",
+        "moira-mactaggert",
+        "Staff controls for Studio, applications, claims, and private production rooms.",
+        "/studio",
+    ),
+    SeedPersona(
+        "xmen_mod",
+        "X-Men moderator",
+        "alex@example.com",
+        "default",
+        "alex",
+        "cyclops",
+        "Thread lifecycle and moderation controls without changing the default writer.",
+        "/studio/operations",
+    ),
+    SeedPersona(
+        "xmen_partner",
+        "X-Men plotting partner",
+        "charlie@example.com",
+        "default",
+        "charlie",
+        "charles-xavier",
+        "Wanted, plotter, plotting-room, and notification counterparty checks.",
+        "/plotting",
+    ),
+    SeedPersona(
+        "xmen_applicant",
+        "X-Men applicant",
+        "mira@example.com",
+        "default",
+        "mira",
+        "kitty-pryde",
+        "Submitted application and writer-side revision workflow.",
+        "/applications",
+    ),
+    SeedPersona(
+        "xmen_outsider",
+        "X-Men outsider",
+        "simon@example.com",
+        "default",
+        "simon",
+        "bolivar-trask",
+        "Non-staff outsider for private-room, notification, and denial checks.",
+        "/notifications",
+    ),
+    SeedPersona(
+        "xmen_inactive",
+        "X-Men inactive member",
+        "inactive@example.com",
+        "default",
+        "sleepingstar",
+        "sleeping-star",
+        "Inactive membership for recovery and authorization denial checks.",
+        "/members",
+    ),
+    SeedPersona(
+        "hp_director",
+        "HP director",
+        "writer@example.com",
+        "hp-universe",
+        "starlane",
+        "rowan-ash",
+        "Same login as X-Men writer, but with director powers in another community.",
+        "/studio",
+    ),
+    SeedPersona(
+        "jp_director",
+        "Jurassic Park director",
+        "writer@example.com",
+        "jurassic-park-universe",
+        "starlane",
+        "lena-marquez",
+        "Director controls for a visually different action-survival community.",
+        "/studio",
+    ),
+    SeedPersona(
+        "nyc_writer",
+        "NYC writer",
+        "writer@example.com",
+        "rl-nyc",
+        "starlane",
+        "lena-park",
+        "Same login without staff power in a contemporary city community.",
+        "/my/threads",
+    ),
+    SeedPersona(
+        "smalltown_writer",
+        "Small-town writer",
+        "writer@example.com",
+        "rl-small-town",
+        "starlane",
+        "june-calloway",
+        "Same login in a low-stakes ensemble community.",
+        "/my/threads",
+    ),
+)
+
+
 STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
     ProgramBlueprint(
         slug="hp-universe",
@@ -1339,6 +1465,29 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             "Simon",
         ),
     )
+    inactive_user = _get_or_create(
+        lambda: repo.get_user_by_email("inactive@example.com"),
+        lambda: repo.create_user("inactive@example.com", "dev-password-hash"),
+    )
+    inactive_membership = _get_or_create(
+        lambda: repo.get_membership_for_user(community.id, inactive_user.id),
+        lambda: repo.create_membership(
+            community.id,
+            inactive_user.id,
+            member_role.id,
+            "sleepingstar",
+            "Sleeping Star",
+        ),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET is_active = 0
+        WHERE community_id = ? AND id = ?
+        """,
+        (community.id, inactive_membership.id),
+    )
+    repo.connection.commit()
 
     rogue = _get_or_create(
         lambda: repo.get_character_by_slug(community.id, "rogue"),
@@ -1426,6 +1575,17 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             make_default=True,
         ),
     )
+    sleeping_star = _get_or_create(
+        lambda: repo.get_character_by_slug(community.id, "sleeping-star"),
+        lambda: repo.create_character(
+            community.id,
+            inactive_membership.id,
+            "sleeping-star",
+            "Sleeping Star",
+            summary="Inactive QA face used to prove dormant memberships cannot act.",
+            make_default=True,
+        ),
+    )
     rogue = repo.update_character_application_status(community.id, rogue.id, "accepted")
     storm = repo.update_character_application_status(community.id, storm.id, "accepted")
     magneto = repo.update_character_application_status(community.id, magneto.id, "accepted")
@@ -1434,6 +1594,11 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     cyclops = repo.update_character_application_status(community.id, cyclops.id, "accepted")
     moira = repo.update_character_application_status(community.id, moira.id, "accepted")
     trask = repo.update_character_application_status(community.id, trask.id, "revision_requested")
+    sleeping_star = repo.update_character_application_status(
+        community.id,
+        sleeping_star.id,
+        "accepted",
+    )
 
     rogue = _ensure_character_identity(
         repo,
@@ -1531,6 +1696,18 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         post_title_style="condensed",
         post_density="dramatic",
     )
+    sleeping_star = _ensure_character_identity(
+        repo,
+        community.id,
+        sleeping_star,
+        tagline="Dormant by design.",
+        accent_color="",
+        post_profile_variant="bio",
+        post_accent_style="soft",
+        post_border_style="hairline",
+        post_title_style="standard",
+        post_density="calm",
+    )
 
     membership = repo.get_membership(community.id, membership.id)
     if membership.default_character_id is None:
@@ -1550,6 +1727,9 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     simon_membership = repo.get_membership(community.id, simon_membership.id)
     if simon_membership.default_character_id is None:
         repo.set_default_character(community.id, simon_membership.id, trask.id)
+    inactive_membership = repo.get_membership(community.id, inactive_membership.id)
+    if inactive_membership.default_character_id is None:
+        repo.set_default_character(community.id, inactive_membership.id, sleeping_star.id)
 
     announcements = _ensure_board(
         repo,

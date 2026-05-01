@@ -1,0 +1,72 @@
+"""Development-only seed persona switcher."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
+from chirp.errors import HTTPError
+from chirp.http.cookies import SetCookie
+from chirp.http.request import Request
+from chirp.http.response import Redirect
+from chirp.templating.returns import Page
+
+from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
+from elbysodic.web.state import dev_tools_enabled, get_services
+
+
+@dataclass(frozen=True, slots=True)
+class DevPersonaForm:
+    persona_key: str = ""
+    next: str = "/dev/personas"
+
+
+def get(request: Request) -> Page:
+    if not dev_tools_enabled():
+        raise HTTPError(status=404, detail="dev personas are disabled")
+    services = get_services(request)
+    return Page(
+        "dev/personas/page.html",
+        "page_content",
+        page_block_name="page_root",
+        current_path=request.url,
+        viewer=services.viewer(),
+        personas=services.dev_personas(),
+    )
+
+
+@contract(form=FormContract(DevPersonaForm, "dev/personas/page.html"))
+async def post(request: Request) -> Redirect:
+    if not dev_tools_enabled():
+        raise HTTPError(status=404, detail="dev personas are disabled")
+    services = get_services(request)
+    form = await request.form()
+    persona_key = str(form.get("persona_key") or "")
+    next_url = _safe_next(str(form.get("next") or "/dev/personas"))
+    try:
+        identity = services.switch_dev_persona(persona_key)
+    except PermissionError as exc:
+        raise HTTPError(status=403, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPError(status=404, detail=str(exc)) from exc
+    return Redirect(
+        next_url,
+        headers=(
+            (
+                "Set-Cookie",
+                SetCookie(
+                    DEV_IDENTITY_COOKIE,
+                    dev_identity_cookie_value(identity),
+                    max_age=60 * 60 * 24 * 30,
+                    httponly=True,
+                    samesite="lax",
+                ).to_header_value(),
+            ),
+        ),
+    )
+
+
+def _safe_next(next_url: str) -> str:
+    if not next_url.startswith("/") or next_url.startswith("//"):
+        return "/dev/personas"
+    return next_url

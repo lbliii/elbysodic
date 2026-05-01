@@ -296,6 +296,99 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
     asyncio.run(run())
 
 
+def test_dev_personas_are_gated_by_development_tools() -> None:
+    async def run() -> None:
+        disabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=False,
+        )
+
+        async with TestClient(disabled_app) as client:
+            disabled = await client.get("/dev/personas")
+        enabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        async with TestClient(enabled_app) as client:
+            enabled = await client.get("/dev/personas")
+
+        assert disabled.status == 404
+        assert enabled.status == 200
+        assert "Dev Personas" in enabled.text
+        assert "xmen_staff" in enabled.text
+        assert "HP director" in enabled.text
+        assert "inactive" in enabled.text
+
+    asyncio.run(run())
+
+
+def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/dev/personas")
+            switch = await client.post(
+                "/dev/personas",
+                body=urlencode(
+                    {
+                        "persona_key": "xmen_staff",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            set_cookie = _response_header(switch, "set-cookie")
+            cookie = set_cookie.split(";", 1)[0]
+            studio = await client.get("/studio", headers={"Cookie": cookie})
+
+        assert page.status == 200
+        assert "X-Men staff" in page.text
+        assert switch.status == 302
+        assert _response_header(switch, "location") == "/studio"
+        assert "elbysodic_dev_identity=" in set_cookie
+        assert "HttpOnly" in set_cookie
+        assert "SameSite=lax" in set_cookie
+        assert studio.status == 200
+        assert "Staff in X-Men Apocalypse" in studio.text
+        assert "wearing Moira MacTaggert" in studio.text
+        assert "Save theme tokens" in studio.text
+        assert "Director Studio is visible as a preview" not in studio.text
+
+    asyncio.run(run())
+
+
+def test_dev_persona_switcher_refuses_inactive_seed_persona() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/dev/personas",
+                body=urlencode(
+                    {
+                        "persona_key": "xmen_inactive",
+                        "next": "/members",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 403
+
+    asyncio.run(run())
+
+
 def test_stale_dev_identity_cookie_falls_back_to_membership_for_program() -> None:
     async def run() -> None:
         app = _app()
