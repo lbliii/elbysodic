@@ -1553,9 +1553,14 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert 'href="/world/premise"' in world.text
             assert 'href="/world/b-24-winter"' in world.text
             assert "United Nations" in world.text
+            assert "elbysodic-material-card--premise" in world.text
+            assert "elbysodic-material-card--application" in world.text
+            assert "elbysodic-current-event-card--event" in world.text
 
             event = await client.get("/world/b-24-winter")
             assert event.status == 200
+            assert "elbysodic-material-hero--event" in event.text
+            assert "elbysodic-material-detail-shell--event" in event.text
             assert "Iceman is infected with B-24" in event.text
             assert "Evil Lab" in event.text
             assert "Wanted hooks" in event.text

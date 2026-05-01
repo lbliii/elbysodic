@@ -6267,6 +6267,76 @@ body {
     border-radius: var(--chirpui-radius);
 }
 
+.elbysodic-material-hero--premise,
+.elbysodic-material-card--premise,
+.elbysodic-material-detail-shell--premise {
+    --elbysodic-material-variant-accent: var(--chirpui-accent-secondary);
+}
+
+.elbysodic-material-hero--guide,
+.elbysodic-material-card--guide,
+.elbysodic-material-detail-shell--guide {
+    --elbysodic-material-variant-accent: var(--chirpui-accent);
+}
+
+.elbysodic-material-hero--factions,
+.elbysodic-material-card--factions,
+.elbysodic-material-detail-shell--factions {
+    --elbysodic-material-variant-accent: var(--chirpui-warning);
+}
+
+.elbysodic-material-hero--application,
+.elbysodic-material-card--application,
+.elbysodic-material-detail-shell--application {
+    --elbysodic-material-variant-accent: var(--chirpui-success);
+}
+
+.elbysodic-material-hero--event,
+.elbysodic-current-event-card--event,
+.elbysodic-material-card--event,
+.elbysodic-material-detail-shell--event {
+    --elbysodic-material-variant-accent: var(--chirpui-error);
+}
+
+.elbysodic-material-hero[class*="elbysodic-material-hero--"] {
+    background:
+        radial-gradient(circle at 74% 18%, color-mix(in srgb, var(--elbysodic-material-variant-accent) 28%, transparent), transparent 32%),
+        linear-gradient(145deg, var(--chirpui-surface-alt), var(--chirpui-bg-subtle));
+}
+
+.elbysodic-material-card[class*="elbysodic-material-card--"] {
+    border-block-start: 0.28rem solid var(--elbysodic-material-variant-accent, var(--chirpui-accent));
+}
+
+.elbysodic-material-card--premise h2,
+.elbysodic-material-detail-shell--premise .elbysodic-material-detail h2 {
+    font-family: var(--elbysodic-display-font-family, var(--chirpui-font-family));
+}
+
+.elbysodic-material-card--event,
+.elbysodic-material-detail-shell--event {
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--elbysodic-material-variant-accent) 9%, transparent),
+            transparent 42%
+        ),
+        var(--chirpui-surface-elevated);
+}
+
+.elbysodic-material-card--application,
+.elbysodic-material-detail-shell--application {
+    outline: 1px dashed color-mix(in srgb, var(--elbysodic-material-variant-accent) 52%, var(--chirpui-border));
+    outline-offset: -0.35rem;
+}
+
+.elbysodic-material-card--factions,
+.elbysodic-material-detail-shell--factions {
+    box-shadow:
+        var(--chirpui-elevation-2),
+        inset 0 0 0 1px color-mix(in srgb, var(--elbysodic-material-variant-accent) 24%, transparent);
+}
+
 .elbysodic-material-studio-hero,
 .elbysodic-material-hero {
     display: grid;
