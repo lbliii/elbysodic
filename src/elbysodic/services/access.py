@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from elbysodic.domain.context import RequestIdentityContext
-from elbysodic.domain.models import Community, CommunityMembership, User
+from elbysodic.domain.models import Community, CommunityMembership, User, UserSession
+from elbysodic.services.auth import SESSION_COOKIE, user_for_session_token
 
 DEV_COMMUNITY_HEADER = "x-elbysodic-community"
 DEV_MEMBERSHIP_HEADER = "x-elbysodic-membership-id"
@@ -26,6 +27,10 @@ class AccessRepository(Protocol):
     def get_membership_for_user(self, community_id: int, user_id: int) -> CommunityMembership: ...
 
     def get_user(self, user_id: int) -> User: ...
+
+    def get_user_session_by_token_hash(self, token_hash: str) -> UserSession: ...
+
+    def touch_user_session(self, session_id: int) -> UserSession: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +58,8 @@ class RequestIdentityResolver:
         community = self._resolve_community(request)
         header_user_id = _optional_int_header(request, DEV_USER_HEADER)
         header_membership_id = _optional_int_header(request, DEV_MEMBERSHIP_HEADER)
-        user_id = header_user_id
+        session_user = None if header_user_id is not None else _session_user(self._repo, request)
+        user_id = header_user_id if header_user_id is not None else _user_id(session_user)
         membership_id = header_membership_id
         user_from_cookie = False
         membership_from_cookie = False
@@ -177,6 +183,23 @@ def _dev_identity_cookie(request: object | None) -> RequestIdentityContext | Non
         user_id=user_id,
         membership_id=membership_id,
     )
+
+
+def _session_user(repo: AccessRepository, request: object | None) -> User | None:
+    cookies = getattr(request, "cookies", None)
+    if cookies is None:
+        return None
+    getter = getattr(cookies, "get", None)
+    if getter is None:
+        return None
+    raw_value = getter(SESSION_COOKIE)
+    if raw_value is None:
+        return None
+    return user_for_session_token(repo, str(raw_value))
+
+
+def _user_id(user: User | None) -> int | None:
+    return user.id if user is not None else None
 
 
 def _request_host(request: object | None) -> str | None:

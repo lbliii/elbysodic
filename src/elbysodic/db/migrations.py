@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 7
+CURRENT_SCHEMA_VERSION = 8
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -353,6 +353,28 @@ def _add_community_media_slots(connection: sqlite3.Connection) -> None:
             )
 
 
+def _add_user_sessions(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash TEXT NOT NULL UNIQUE,
+            created_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL,
+            expires_at TEXT,
+            revoked_at TEXT
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_user_sessions_user
+        ON user_sessions(user_id, revoked_at, expires_at)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -360,6 +382,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(5, "realm-interactions", _add_realm_interactions),
     Migration(6, "intake-claims", _add_intake_claims),
     Migration(7, "community-media-slots", _add_community_media_slots),
+    Migration(8, "user-sessions", _add_user_sessions),
 )
 
 

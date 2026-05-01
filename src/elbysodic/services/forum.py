@@ -57,6 +57,7 @@ from elbysodic.services.applications import (
 )
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
+from elbysodic.services.auth import LoginSession, create_login_session, session_token_hash
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
 from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
@@ -383,10 +384,7 @@ class AppServices:
 
     def dev_personas(self) -> list[DevPersonaView]:
         identity = self._identity_context or self._identity_resolver.resolve()
-        personas: list[DevPersonaView] = []
-        for persona in SEED_PERSONAS:
-            personas.append(self._dev_persona_view(persona, identity))
-        return personas
+        return [self._dev_persona_view(persona, identity) for persona in SEED_PERSONAS]
 
     def switch_dev_persona(self, persona_key: str) -> RequestIdentityContext:
         persona = _seed_persona_by_key(persona_key)
@@ -443,6 +441,50 @@ class AppServices:
                 or policies.can_manage_navigation(membership, role)
             ),
         )
+
+    def login(self, email: str, password: str) -> tuple[LoginSession, RequestIdentityContext]:
+        session = create_login_session(self.repo, email, password)
+        current_identity = self._identity_context or self._identity_resolver.resolve()
+        identity = self._default_identity_for_user(
+            session.user.id,
+            preferred_community_id=current_identity.community_id,
+        )
+        return session, identity
+
+    def logout(self, session_token: str) -> None:
+        if session_token:
+            self.repo.revoke_user_session_by_token_hash(session_token_hash(session_token))
+
+    def _default_identity_for_user(
+        self,
+        user_id: int,
+        *,
+        preferred_community_id: int | None = None,
+    ) -> RequestIdentityContext:
+        if preferred_community_id is not None:
+            try:
+                membership = self.repo.get_membership_for_user(preferred_community_id, user_id)
+                if membership.is_active:
+                    community = self.repo.get_community(preferred_community_id)
+                    return RequestIdentityContext(
+                        community_id=community.id,
+                        community_slug=community.slug,
+                        user_id=user_id,
+                        membership_id=membership.id,
+                    )
+            except LookupError:
+                pass
+        for membership in self.repo.list_memberships_for_user(user_id):
+            if not membership.is_active:
+                continue
+            community = self.repo.get_community(membership.community_id)
+            return RequestIdentityContext(
+                community_id=community.id,
+                community_slug=community.slug,
+                user_id=user_id,
+                membership_id=membership.id,
+            )
+        raise PermissionError(f"user {user_id} has no active memberships")
 
     def studio_network(self) -> StudioNetworkDirectory:
         identity = self._identity_context or self._identity_resolver.resolve()
