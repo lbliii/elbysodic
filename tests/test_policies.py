@@ -74,9 +74,7 @@ def test_page_handlers_and_services_do_not_check_admin_flag_directly() -> None:
     ]
 
     offenders = [
-        str(path)
-        for path in checked_paths
-        if ".is_admin" in path.read_text(encoding="utf-8")
+        str(path) for path in checked_paths if ".is_admin" in path.read_text(encoding="utf-8")
     ]
 
     assert offenders == []
