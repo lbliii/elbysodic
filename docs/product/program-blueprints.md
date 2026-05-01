@@ -155,6 +155,9 @@ typed objects before validation.
 ## Theme Boundary
 
 Program themes change atmosphere through design tokens, not arbitrary CSS.
+Use `docs/product/appearance-studio.md` for the broader product boundary around
+theme tokens, ritual-surface variants, media slots, previews, and health
+warnings.
 
 Allowed theme controls:
 
