@@ -617,11 +617,14 @@ def test_director_studio_surfaces_community_production_work() -> None:
         app = _app()
         async with TestClient(app) as client:
             studio = await client.get("/studio")
+            operations = await client.get("/studio/operations")
 
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
             assert "Studio rooms" in studio.text
+            assert 'href="/studio/operations"' in studio.text
+            assert "Daily director console" in studio.text
             assert 'href="#world-structure"' in studio.text
             assert 'href="#navigation"' in studio.text
             assert 'href="#identity-appearance"' in studio.text
@@ -664,6 +667,20 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/applications"' in studio.text
             assert 'href="/wanted"' in studio.text
             assert "Current Event" in studio.text
+            assert operations.status == 200
+            assert "Director Operations" in operations.text
+            assert "What needs a director?" in operations.text
+            assert "Review queue" in operations.text
+            assert "Claim conflicts" in operations.text
+            assert "Active reserves" in operations.text
+            assert "Hooks with movement" in operations.text
+            assert "Staff notifications" in operations.text
+            assert "Production health" in operations.text
+            assert "Draft materials" in operations.text
+            assert "Application Triage" in operations.text
+            assert 'href="/applications"' in operations.text
+            assert 'href="/casting"' in operations.text
+            assert 'href="/notifications"' in operations.text
 
     asyncio.run(run())
 
@@ -1900,6 +1917,32 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert "Jean Grey" in applications.text
 
         async with TestClient(app) as client:
+            conflict_save_response = await client.post(
+                "/applications/jean-grey",
+                body=urlencode(
+                    {
+                        "intent": "save_application",
+                        "summary": "A powerful telepath trying to stay gentle.",
+                        "body": "Trying a visual that directors should catch.",
+                        f"application_field_{fields['face_claim'].id}": "Magneto Visual",
+                        f"application_field_{fields['faction_claim'].id}": "X-Men",
+                        f"application_field_{fields['power_claim'].id}": "Telekinesis",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            conflict_room = await client.get("/applications/jean-grey")
+            conflict_applications = await client.get("/applications")
+            conflict_submit_response = await client.post(
+                "/applications",
+                body=urlencode(
+                    {
+                        "intent": "submit_application",
+                        "character_slug": "jean-grey",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
             save_response = await client.post(
                 "/applications/jean-grey",
                 body=urlencode(
@@ -1925,6 +1968,15 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 headers=_FORM,
             )
         assert save_response.status == 302
+        assert conflict_save_response.status == 302
+        assert conflict_room.status == 200
+        assert "Already claimed" in conflict_room.text
+        assert 'href="/characters/magneto"' in conflict_room.text
+        assert conflict_applications.status == 200
+        assert "1 claim conflict" in conflict_applications.text
+        assert "First conflict is held by Magneto." in conflict_applications.text
+        assert conflict_submit_response.status == 400
+        assert "Face claim is already claimed: Magneto Visual" in conflict_submit_response.text
         updated_field_values = services.repo.list_application_field_values(
             community.id,
             application.id,
@@ -1999,7 +2051,18 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
                 fields["faction_claim"].id: "X-Men",
             },
         )
-        services.submit_character_application(character.slug)
+        application = services.repo.get_character_application_for_character(
+            community.id,
+            character.id,
+        )
+        services.repo.transition_character_application_status(
+            community.id,
+            application.id,
+            status="submitted",
+            actor_membership_id=services.seed.membership.id,
+            actor_character_id=character.id,
+            note="Imported submitted application.",
+        )
 
         alex_membership = services.repo.get_membership_by_username(community.id, "alex")
         alex_user = services.repo.get_user(alex_membership.user_id)
@@ -2010,6 +2073,7 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
         )
         alex_app = create_app(debug=False, services=alex_services)
         async with TestClient(alex_app) as alex_client:
+            applications = await alex_client.get("/applications")
             review_room = await alex_client.get("/applications/duplicate-face")
             accept_response = await alex_client.post(
                 "/applications/duplicate-face",
@@ -2034,6 +2098,9 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
         )
 
         assert review_room.status == 200
+        assert applications.status == 200
+        assert "1 claim conflict" in applications.text
+        assert "First conflict is held by Magneto." in applications.text
         assert "Already claimed" in review_room.text
         assert "Resolve exclusive claims before accepting" in review_room.text
         assert "Please revise the mapped claim details" in review_room.text

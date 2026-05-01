@@ -99,6 +99,7 @@
   </section>
 
   {% call local_rail("Studio rooms", "elbysodic-local-rail--outlined") %}
+    {{ local_rail_link("Operations", "/studio/operations") }}
     {{ local_rail_link("World structure", "#world-structure") }}
     {{ local_rail_link("Navigation", "#navigation") }}
     {{ local_rail_link("Identity and appearance", "#identity-appearance") }}
@@ -107,6 +108,14 @@
   {% end %}
 
   <section class="elbysodic-studio-overview" aria-label="Studio room overview">
+    {{ production_room_card(
+      "Operations",
+      "Daily director console",
+      "Applications, claims, reserves, hooks, and production health.",
+      "/studio/operations",
+      studio.review_queue_count ~ " in review",
+      studio.claims.reserved_count ~ " reserves"
+    ) }}
     {{ production_room_card(
       "World structure",
       "Boards and places",

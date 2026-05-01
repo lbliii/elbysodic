@@ -20,7 +20,11 @@ from elbysodic.domain.models import (
 )
 from elbysodic.services import policies
 from elbysodic.services.casting import CastingReadRepository, character_reserve_view
-from elbysodic.services.claims import application_field_value_view, application_template_field_view
+from elbysodic.services.claims import (
+    application_claim_checks,
+    application_field_value_view,
+    application_template_field_view,
+)
 from elbysodic.services.facets import facet_tags
 from elbysodic.services.materials import MaterialSummaryRepository, material_summary
 from elbysodic.services.read_models import (
@@ -238,6 +242,7 @@ def submit_character_application(
             f"character {character.id} cannot be submitted from {character.application_status}"
         )
     application = repo.ensure_character_application(viewer.community.id, character.id)
+    ensure_application_claims_available(repo, viewer, character, application)
     repo.transition_character_application_status(
         viewer.community.id,
         application.id,
@@ -386,6 +391,13 @@ def read_application_review_room(
         for value in repo.list_application_field_values(viewer.community.id, application.id)
     ]
     values_by_field_id = {value.field.field.id: value.value.value for value in field_values}
+    claim_checks_by_field_id = application_claim_checks(
+        repo,
+        viewer.community.id,
+        values_by_field_id,
+        character_id=character.id,
+        application_id=application.id,
+    )
     return ApplicationReviewRoom(
         application=application,
         character_view=character_view,
@@ -393,6 +405,7 @@ def read_application_review_room(
             ApplicationFieldDraftView(
                 field=field,
                 value=values_by_field_id.get(field.field.id, ""),
+                claim_check=claim_checks_by_field_id.get(field.field.id),
             )
             for field in template_fields
         ],
@@ -529,12 +542,14 @@ def application_character_view(
     viewer: ForumView,
     character: Character,
 ) -> ApplicationCharacterView:
+    application = repo.get_character_application_for_character_or_none(
+        viewer.community.id,
+        character.id,
+    )
+    conflict_summary = application_claim_conflict_summary(repo, viewer, character, application)
     return ApplicationCharacterView(
         character=character,
-        application=repo.get_character_application_for_character_or_none(
-            viewer.community.id,
-            character.id,
-        ),
+        application=application,
         membership=repo.get_membership(viewer.community.id, character.membership_id),
         facets=facet_tags(
             repo,
@@ -548,7 +563,37 @@ def application_character_view(
         status_label=application_status_label(character.application_status),
         status_variant=application_status_variant(character.application_status),
         is_owned_by_viewer=character.membership_id == viewer.membership.id,
+        claim_conflict_count=conflict_summary[0],
+        claim_conflict_summary=conflict_summary[1],
     )
+
+
+def application_claim_conflict_summary(
+    repo: ApplicationRepository,
+    viewer: ForumView,
+    character: Character,
+    application: CharacterApplication | None,
+) -> tuple[int, str]:
+    if application is None:
+        return 0, ""
+    values_by_field_id = {
+        value.field_id: value.value
+        for value in repo.list_application_field_values(viewer.community.id, application.id)
+    }
+    checks = application_claim_checks(
+        repo,
+        viewer.community.id,
+        values_by_field_id,
+        character_id=character.id,
+        application_id=application.id,
+    )
+    conflicts = [check for check in checks.values() if check.status == "conflict"]
+    if not conflicts:
+        return 0, ""
+    first_claim = conflicts[0].claim
+    if first_claim is not None and first_claim.character is not None:
+        return len(conflicts), f"First conflict is held by {first_claim.character.name}."
+    return len(conflicts), "First conflict is held by the casting desk."
 
 
 def application_review_event_view(

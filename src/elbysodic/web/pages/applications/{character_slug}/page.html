@@ -115,6 +115,9 @@
           <label>
             <span class="chirpui-field__label">
               {{ item.field.field.label }}{% if item.field.field.is_required %} <small>required</small>{% end %}
+              {% if item.claim_check %}
+              {{ badge(item.claim_check.label, variant=item.claim_check.variant) }}
+              {% end %}
             </span>
             {% if item.field.field.field_type == "select" and item.field.options %}
             <select class="chirpui-field__input"
@@ -142,6 +145,18 @@
             {% end %}
             {% if item.field.field.help_text %}
             <span class="elbysodic-field-hint">{{ item.field.field.help_text }}</span>
+            {% end %}
+            {% if item.claim_check and item.claim_check.claim %}
+            <span class="elbysodic-field-hint">
+              {% if item.claim_check.claim.character %}
+              Held by
+              <a class="chirpui-link" href="/characters/{{ item.claim_check.claim.character.slug }}">
+                {{ item.claim_check.claim.character.name }}
+              </a>
+              {% else %}
+              Held by the casting desk
+              {% end %}
+            </span>
             {% end %}
           </label>
           {% end %}

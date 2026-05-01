@@ -1,0 +1,112 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% def operations_card(card) %}
+{% call surface(variant="elevated") %}
+<article class="elbysodic-operations-card elbysodic-operations-card--{{ card.variant }}">
+  <header class="elbysodic-operations-card__header">
+    <div>
+      <p class="elbysodic-section-kicker">{{ card.kicker }}</p>
+      <h2><a class="chirpui-link" href="{{ card.href }}">{{ card.title }}</a></h2>
+    </div>
+    <strong>{{ card.count }}</strong>
+  </header>
+  <p class="elbysodic-copy-summary">{{ card.summary }}</p>
+  {% if card.items %}
+  <ul class="elbysodic-operations-list">
+    {% for item in card.items %}
+    <li>{{ item }}</li>
+    {% end %}
+  </ul>
+  {% else %}
+  <p class="elbysodic-copy-meta">No active items in this lane.</p>
+  {% end %}
+  <a class="chirpui-btn chirpui-btn--secondary" href="{{ card.href }}">{{ card.cta }}</a>
+</article>
+{% end %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="76rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Director Operations") %}
+  Daily production console for {{ viewer.community.name }}.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-hero" aria-labelledby="operations-heading">
+    <div>
+      <p class="elbysodic-section-kicker">Daily desk</p>
+      <h1 id="operations-heading">What needs a director?</h1>
+      <p class="elbysodic-copy-section">
+        Applications, claims, reserves, hooks, navigation, and unread signals in one calm scan.
+      </p>
+    </div>
+    <div class="elbysodic-operations-hero__badges">
+      {{ badge("read-only", variant="muted") if not operations.can_manage else "" }}
+      {{ badge(operations.ready_applications | length ~ " ready apps", variant="success") }}
+      {{ badge(operations.blocked_applications | length ~ " blocked apps", variant="warning") }}
+    </div>
+  </section>
+  {% end %}
+
+  <section class="elbysodic-operations-grid" aria-label="Director operation signals">
+    {% for card in operations.cards %}
+    {{ operations_card(card) }}
+    {% end %}
+  </section>
+
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">
+    {% call section_header("Application Triage") %}
+    The fastest split between ready review and claim-blocked submissions.
+    {% end %}
+    <div class="elbysodic-operations-columns">
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-operations-panel">
+        <h2 id="application-triage-heading">Ready to review</h2>
+        {% if operations.ready_applications %}
+        <ul class="elbysodic-operations-list">
+          {% for item in operations.ready_applications %}
+          <li>
+            <a class="chirpui-link" href="/applications/{{ item.character.slug }}">{{ item.character.name }}</a>
+            <span>{{ item.membership.display_name }}</span>
+          </li>
+          {% end %}
+        </ul>
+        {% else %}
+        <p class="elbysodic-empty-state">No submitted applications are ready right now.</p>
+        {% end %}
+      </article>
+      {% end %}
+
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-operations-panel">
+        <h2>Blocked by claims</h2>
+        {% if operations.blocked_applications %}
+        <ul class="elbysodic-operations-list">
+          {% for item in operations.blocked_applications %}
+          <li>
+            <a class="chirpui-link" href="/applications/{{ item.character.slug }}">{{ item.character.name }}</a>
+            <span>{{ item.claim_conflict_summary }}</span>
+          </li>
+          {% end %}
+        </ul>
+        {% else %}
+        <p class="elbysodic-empty-state">No submitted applications are blocked by claims.</p>
+        {% end %}
+      </article>
+      {% end %}
+    </div>
+  </section>
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

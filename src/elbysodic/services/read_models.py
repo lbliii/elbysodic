@@ -499,6 +499,12 @@ class ApplicationCharacterView:
     status_label: str
     status_variant: str
     is_owned_by_viewer: bool
+    claim_conflict_count: int = 0
+    claim_conflict_summary: str = ""
+
+    @property
+    def has_claim_conflicts(self) -> bool:
+        return self.claim_conflict_count > 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -651,6 +657,7 @@ class ApplicationFieldValueView:
 class ApplicationFieldDraftView:
     field: ApplicationTemplateFieldView
     value: str
+    claim_check: ApplicationClaimCheck | None = None
 
 
 @dataclass(frozen=True, slots=True)
