@@ -116,6 +116,8 @@ focused plans, issues, or follow-up PRs.
 - Expand the rendered-route privacy matrix beyond the first draft-material and
   inactive-identity cases. Prioritize staff desks, notification surfaces,
   application review rooms, plotting rooms, and cross-community recovery pages.
+  Plotting-room notification leakage now has a rendered regression; continue
+  with staff desks, application review rooms, and cross-community recovery pages.
 - Decide the next Program Blueprint step: keep dry-run preview as-is, or design
   a separate hydration plan with repository/service boundaries, duplicate
   handling, rollback behavior, and tenant tests.
@@ -175,3 +177,9 @@ focused plans, issues, or follow-up PRs.
   plan's backlog split into an explicit remaining-work list and moving material
   production-state orchestration into `services/materials.py`, leaving
   `AppServices` as a route-facing delegator.
+- 2026-05-01: Continued the next priority batch on
+  `codex/steward-next-priorities`: plotting room notifications now filter
+  private room targets from non-participant inboxes, visible unread counts honor
+  target visibility, notifications expose current-face discovery and plotter
+  handoffs, Studio operations links to dry-run blueprint intake, and the Program
+  Blueprint docs/UI name the hydration gate before apply work.

@@ -143,6 +143,19 @@ def _director_operations(
             cta="Review materials",
             items=tuple(item.material.title for item in studio.draft_materials[:4]),
         ),
+        OperationsCard(
+            kicker="Blueprints",
+            title="Dry-run intake",
+            summary="Validate director starter packets before any hydration work is allowed.",
+            count=0,
+            href="/studio/intake#program-blueprint-preview",
+            cta="Open intake",
+            variant="status",
+            items=(
+                "Apply stays gated behind a service-layer hydration plan.",
+                "Preview checks counts, slugs, references, and safe theme tokens.",
+            ),
+        ),
     ]
     return DirectorOperations(
         cards=cards,

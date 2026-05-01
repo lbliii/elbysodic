@@ -710,6 +710,8 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Staff notifications" in operations.text
             assert "Production health" in operations.text
             assert "Draft materials" in operations.text
+            assert "Dry-run intake" in operations.text
+            assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
             assert "Application Triage" in operations.text
             assert 'href="/applications"' in operations.text
             assert 'href="/casting"' in operations.text
@@ -790,9 +792,8 @@ wanted:
         assert "1 scene hubs" in response.text
         assert "1 materials" in response.text
         assert "1 wanted hooks" in response.text
-        assert (
-            "Ready for a future service-layer hydrator. Nothing has been applied." in response.text
-        )
+        assert "Hydration gate: nothing has been applied." in response.text
+        assert "duplicate handling, ownership defaults, rollback behavior" in response.text
         after_count = repo.connection.execute(
             "SELECT COUNT(*) FROM communities",
         ).fetchone()[0]
@@ -3278,6 +3279,78 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
 
         lane_inbox = services.notifications()
         assert any(item.label == "Scene started" for item in lane_inbox.items)
+
+    asyncio.run(run())
+
+
+def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+        room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+        outsider_services, _character_id = _outsider_services(services, prefix="room-notify")
+        notification = repo.create_notification(
+            community.id,
+            outsider_services.seed.membership.id,
+            kind="plotting_room_created",
+            plotting_room_id=room.id,
+            actor_membership_id=charlie_membership.id,
+            actor_character_id=xavier.id,
+        )
+        outsider_app = create_app(debug=False, services=outsider_services)
+        async with TestClient(outsider_app) as outsider_client:
+            inbox = await outsider_client.get("/notifications")
+            open_attempt = await outsider_client.post(
+                "/notifications",
+                body=urlencode(
+                    {
+                        "intent": "open",
+                        "notification_id": str(notification.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            room_attempt = await outsider_client.get(f"/plotting/{room.id}")
+
+        assert outsider_services.viewer().unread_notification_count == 0
+        assert outsider_services.notifications().unread_count == 0
+        assert inbox.status == 200
+        assert "No notifications are waiting on you." in inbox.text
+        assert "Find hooks for Room-Notify Face" in inbox.text
+        assert 'href="/characters/room-notify-face#plotter"' in inbox.text
+        assert room.title not in inbox.text
+        assert "Human UN liaison for B-24 talks: Rogue" not in inbox.text
+        assert open_attempt.status == 404
+        assert room_attempt.status == 403
 
     asyncio.run(run())
 

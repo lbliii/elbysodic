@@ -59,3 +59,6 @@ control appears or does not appear than to snapshot large HTML sections.
 - Inactive memberships are absent from `/members`, `/members/{username}`, and
   direct character profile routes, and recovery does not offer cross-realm
   switches for inactive faces.
+- Plotting room notifications do not render private room titles, unread counts,
+  or open redirects for memberships that are not room owners, participants, or
+  casting-capable staff.

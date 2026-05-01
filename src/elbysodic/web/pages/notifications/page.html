@@ -21,6 +21,12 @@
         {{ metric_item(inbox.unread_count, "Unread") }}
         {{ metric_item(inbox.items | length, "Recent") }}
       </div>
+      {% if viewer.current_character %}
+      <div class="chirpui-cluster chirpui-cluster--sm">
+        <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find hooks for {{ viewer.current_character.name }}</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ viewer.current_character.slug }}#plotter">Open plotter</a>
+      </div>
+      {% end %}
       {% if inbox.unread_count %}
       <form method="post" hx-boost="false">
         <input type="hidden" name="intent" value="mark_all_read">
