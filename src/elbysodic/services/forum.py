@@ -213,7 +213,12 @@ from elbysodic.services.read_models import (
 from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
-from elbysodic.services.themes import community_theme_view
+from elbysodic.services.themes import (
+    build_theme_tokens,
+    community_theme_editor,
+    community_theme_view,
+    theme_tokens_json,
+)
 from elbysodic.services.threads import (
     board_thread_summaries as _board_thread_summaries,
 )
@@ -1001,6 +1006,7 @@ class AppServices:
             current_event = events[0] if events else None
         sidebar_sections = self.repo.list_sidebar_sections(viewer.community.id)
         facet_groups = self.repo.list_facet_groups(viewer.community.id)
+        default_theme = self.repo.get_default_theme(viewer.community.id)
         identity_accent_group = next(
             (
                 group
@@ -1011,6 +1017,7 @@ class AppServices:
         )
         return DirectorStudio(
             can_manage=can_manage_studio,
+            theme_editor=community_theme_editor(default_theme),
             facet_groups=facet_groups,
             identity_accent_group=identity_accent_group,
             post_style_policy=_post_style_policy(viewer.community),
@@ -1042,6 +1049,42 @@ class AppServices:
             open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
             applications=self.applications_desk(),
             claims=_claims_directory(self.repo, viewer),
+        )
+
+    def update_default_theme(
+        self,
+        *,
+        slug: str,
+        name: str,
+        typography_display: str,
+        typography_body: str,
+        typography_mono: str,
+        radius: str,
+        density: str,
+        texture: str,
+        light: dict[str, str],
+        dark: dict[str, str],
+    ) -> None:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage appearance")
+        tokens = build_theme_tokens(
+            slug=slug,
+            name=name,
+            typography_display=typography_display,
+            typography_body=typography_body,
+            typography_mono=typography_mono,
+            radius=radius,
+            density=density,
+            texture=texture,
+            light=light,
+            dark=dark,
+        )
+        self.repo.upsert_default_theme(
+            viewer.community.id,
+            slug=str(tokens["slug"]),
+            name=str(tokens["name"]),
+            tokens_json=theme_tokens_json(tokens),
         )
 
     def preview_program_blueprint(self, source: str) -> ProgramBlueprintPreview:

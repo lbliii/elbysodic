@@ -15,6 +15,13 @@ from elbysodic.services.read_models import (
     POST_PROFILE_VARIANT_LABELS,
     POST_TITLE_STYLE_LABELS,
 )
+from elbysodic.services.themes import (
+    DENSITY_LABELS,
+    FONT_STACK_LABELS,
+    RADIUS_LABELS,
+    TEXTURE_LABELS,
+    THEME_MODE_FIELDS,
+)
 from elbysodic.web.state import get_services
 
 
@@ -90,6 +97,20 @@ async def post(request: Request) -> Page | Redirect:
                     "enabled_post_densities",
                 ),
             )
+        elif intent == "default_theme":
+            services.update_default_theme(
+                slug=str(form.get("theme_slug") or ""),
+                name=str(form.get("theme_name") or ""),
+                typography_display=str(form.get("theme_typography_display") or ""),
+                typography_body=str(form.get("theme_typography_body") or ""),
+                typography_mono=str(form.get("theme_typography_mono") or ""),
+                radius=str(form.get("theme_radius") or ""),
+                density=str(form.get("theme_density") or ""),
+                texture=str(form.get("theme_texture") or ""),
+                light=_theme_mode_values(form, "light"),
+                dark=_theme_mode_values(form, "dark"),
+            )
+            redirect_to = "/studio#appearance-theme"
         elif intent == "material_status":
             services.update_material_production_state(
                 str(form.get("material_slug") or ""),
@@ -126,6 +147,11 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page:
         post_density_labels=POST_DENSITY_LABELS,
         board_kind_labels=BOARD_KIND_LABELS,
         sidebar_section_labels=BOARD_SIDEBAR_SECTION_LABELS,
+        theme_mode_field_defs=THEME_MODE_FIELDS,
+        theme_font_labels=FONT_STACK_LABELS,
+        theme_radius_labels=RADIUS_LABELS,
+        theme_density_labels=DENSITY_LABELS,
+        theme_texture_labels=TEXTURE_LABELS,
     )
 
 
@@ -145,3 +171,10 @@ def _required_int(raw: object, message: str) -> int:
     if not value:
         raise ValueError(message)
     return int(value)
+
+
+def _theme_mode_values(form: object, mode: str) -> dict[str, str]:
+    return {
+        key: str(getattr(form, "get", lambda _name: "")(f"theme_{mode}_{key}") or "")
+        for key, _label in THEME_MODE_FIELDS
+    }

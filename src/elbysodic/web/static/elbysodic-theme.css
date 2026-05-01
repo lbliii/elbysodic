@@ -1689,6 +1689,100 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
 }
 
+.elbysodic-theme-editor-grid,
+.elbysodic-theme-mode-layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.elbysodic-theme-mode-fields {
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius);
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 1rem;
+}
+
+.elbysodic-theme-mode-fields legend {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 900;
+    padding: 0 0.35rem;
+}
+
+.elbysodic-theme-token-grid {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.elbysodic-theme-token-field {
+    align-items: center;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, 10rem);
+}
+
+.elbysodic-theme-token-field > span:first-child {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 800;
+}
+
+.elbysodic-theme-token-field__input {
+    align-items: center;
+    display: grid;
+    gap: 0.45rem;
+    grid-template-columns: 2rem minmax(0, 1fr);
+}
+
+.elbysodic-theme-token-field__input input[type="color"] {
+    block-size: 2rem;
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius-sm);
+    inline-size: 2rem;
+    opacity: 1;
+    padding: 0;
+}
+
+.elbysodic-theme-token-field__input input:not([type="color"]) {
+    min-width: 0;
+}
+
+.elbysodic-theme-preview {
+    background:
+        var(--elbysodic-program-texture),
+        var(--elbysodic-preview-bg);
+    border: 1px solid var(--elbysodic-preview-border);
+    border-radius: var(--chirpui-radius);
+    color: var(--elbysodic-preview-text);
+    display: grid;
+    gap: 0.5rem;
+    padding: 1rem;
+}
+
+.elbysodic-theme-preview h3,
+.elbysodic-theme-preview p {
+    margin: 0;
+}
+
+.elbysodic-theme-preview p:not(.elbysodic-kicker) {
+    color: var(--elbysodic-preview-muted);
+    line-height: 1.45;
+    max-width: 58ch;
+}
+
+.elbysodic-theme-preview span {
+    background: var(--elbysodic-preview-accent);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--elbysodic-preview-bg);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    justify-self: start;
+    padding: 0.3rem 0.55rem;
+}
+
 .elbysodic-board-taxonomy {
     display: grid;
     gap: 0.75rem;

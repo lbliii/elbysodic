@@ -4389,6 +4389,85 @@ def test_studio_can_set_identity_accent_source() -> None:
     asyncio.run(run())
 
 
+def test_director_studio_updates_default_theme_tokens() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        body = {
+            "intent": "default_theme",
+            "theme_slug": "gothic-folk-horror",
+            "theme_name": "Gothic Folk Horror",
+            "theme_typography_display": "serif",
+            "theme_typography_body": "serif",
+            "theme_typography_mono": "mono",
+            "theme_radius": "square",
+            "theme_density": "dramatic",
+            "theme_texture": "scanline",
+            "theme_light_bg": "#f7f0e8",
+            "theme_light_bg_subtle": "#eadfd5",
+            "theme_light_surface": "#fffaf4",
+            "theme_light_surface_elevated": "#f1e4d9",
+            "theme_light_border": "#c8a994",
+            "theme_light_text": "#261b18",
+            "theme_light_text_muted": "#705c54",
+            "theme_light_accent": "#7a2639",
+            "theme_light_accent_hover": "#5a1a29",
+            "theme_light_accent_dim": "#b36a78",
+            "theme_light_accent_secondary": "#315f55",
+            "theme_light_success": "#3f7557",
+            "theme_light_warning": "#94651d",
+            "theme_light_error": "#963333",
+            "theme_dark_bg": "#100d0f",
+            "theme_dark_bg_subtle": "#1b1518",
+            "theme_dark_surface": "#241b20",
+            "theme_dark_surface_elevated": "#30242a",
+            "theme_dark_border": "#6a4b55",
+            "theme_dark_text": "#f7ece7",
+            "theme_dark_text_muted": "#c9b2ac",
+            "theme_dark_accent": "#d98aa0",
+            "theme_dark_accent_hover": "#efafbf",
+            "theme_dark_accent_dim": "#7c4050",
+            "theme_dark_accent_secondary": "#8ec0a0",
+            "theme_dark_success": "#8ec0a0",
+            "theme_dark_warning": "#d7ad63",
+            "theme_dark_error": "#ec8b8b",
+        }
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(body).encode(),
+                headers=_FORM,
+            )
+            index = await client.get("/")
+
+        theme = repo.get_default_theme(community.id)
+        assert response.status == 302
+        assert _response_header(response, "location") == "/studio#appearance-theme"
+        assert theme is not None
+        assert theme.slug == "gothic-folk-horror"
+        assert theme.name == "Gothic Folk Horror"
+        tokens = json.loads(theme.tokens_json)
+        assert tokens["texture"] == "scanline"
+        assert tokens["density"] == "dramatic"
+        assert tokens["typography"]["display"] == "serif"
+        assert tokens["dark"]["accent"] == "#d98aa0"
+        assert index.status == 200
+        assert "--chirpui-accent: #d98aa0;" in index.text
+        assert "--elbysodic-program-density: dramatic;" in index.text
+
+    asyncio.run(run())
+
+
 def test_reply_uses_selected_character() -> None:
     async def run() -> None:
         app = _app()

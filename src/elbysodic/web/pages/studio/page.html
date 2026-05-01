@@ -75,6 +75,40 @@
 </section>
 {% end %}
 
+{% def theme_select(name, label, current, options) %}
+<label class="elbysodic-form-field">
+  <span>{{ label }}</span>
+  <select name="{{ name }}">
+    {% for value, option_label in options.items() %}
+    <option value="{{ value }}" {% if current == value %}selected{% end %}>{{ option_label }}</option>
+    {% end %}
+  </select>
+</label>
+{% end %}
+
+{% def theme_mode_palette(mode_name, mode, fields) %}
+<fieldset class="elbysodic-theme-mode-fields">
+  <legend>{{ "Light palette" if mode_name == "light" else "Dark palette" }}</legend>
+  <div class="elbysodic-theme-token-grid">
+    {% for key, label in fields %}
+    <label class="elbysodic-theme-token-field">
+      <span>{{ label }}</span>
+      <span class="elbysodic-theme-token-field__input">
+        <input type="color"
+               value="{{ mode.value_for(key) }}"
+               aria-label="{{ label }} {{ mode_name }} color preview"
+               disabled>
+        <input name="theme_{{ mode_name }}_{{ key }}"
+               value="{{ mode.value_for(key) }}"
+               pattern="#[0-9a-fA-F]{6}"
+               aria-label="{{ label }} {{ mode_name }} hex">
+      </span>
+    </label>
+    {% end %}
+  </div>
+</fieldset>
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
@@ -185,6 +219,56 @@
   {% else %}
   <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
   {{ room_header("Identity and appearance", "The board's visual language", "Set the defaults that make character identity and post styling feel guided, not accidental.", "identity-appearance-heading") }}
+  <section id="appearance-theme" class="chirpui-stack chirpui-stack--md" aria-label="Theme tokens">
+  {% call surface(variant="elevated") %}
+  <form class="chirpui-stack chirpui-stack--md" method="post">
+    <input type="hidden" name="intent" value="default_theme">
+    <div>
+      <p class="elbysodic-kicker">Appearance Studio</p>
+      <h2>Theme tokens</h2>
+      <p class="elbysodic-copy-section">
+        Set the safe light and dark tokens that shape the board without changing its controls.
+      </p>
+    </div>
+    {% if error %}
+    <p class="elbysodic-form-error">{{ error }}</p>
+    {% end %}
+    <div class="elbysodic-theme-editor-grid">
+      <label class="elbysodic-form-field">
+        <span>Theme slug</span>
+        <input name="theme_slug" value="{{ studio.theme_editor.slug }}" required>
+      </label>
+      <label class="elbysodic-form-field">
+        <span>Theme name</span>
+        <input name="theme_name" value="{{ studio.theme_editor.name }}" required>
+      </label>
+      {{ theme_select("theme_typography_display", "Display font", studio.theme_editor.typography_display, theme_font_labels) }}
+      {{ theme_select("theme_typography_body", "Body font", studio.theme_editor.typography_body, theme_font_labels) }}
+      {{ theme_select("theme_typography_mono", "Mono font", studio.theme_editor.typography_mono, theme_font_labels) }}
+      {{ theme_select("theme_radius", "Radius", studio.theme_editor.radius, theme_radius_labels) }}
+      {{ theme_select("theme_density", "Density", studio.theme_editor.density, theme_density_labels) }}
+      {{ theme_select("theme_texture", "Texture", studio.theme_editor.texture, theme_texture_labels) }}
+    </div>
+    <div class="elbysodic-theme-mode-layout">
+      {{ theme_mode_palette("light", studio.theme_editor.light, theme_mode_field_defs) }}
+      {{ theme_mode_palette("dark", studio.theme_editor.dark, theme_mode_field_defs) }}
+    </div>
+    <div class="elbysodic-theme-preview"
+         style="--elbysodic-preview-bg: {{ studio.theme_editor.dark.bg }}; --elbysodic-preview-surface: {{ studio.theme_editor.dark.surface }}; --elbysodic-preview-border: {{ studio.theme_editor.dark.border }}; --elbysodic-preview-text: {{ studio.theme_editor.dark.text }}; --elbysodic-preview-muted: {{ studio.theme_editor.dark.text_muted }}; --elbysodic-preview-accent: {{ studio.theme_editor.dark.accent }};">
+      <p class="elbysodic-kicker">Preview</p>
+      <h3>{{ studio.theme_editor.name }}</h3>
+      <p>
+        A theme should carry the board's mood while keeping prose, actions, and status
+        signals readable for long writing sessions.
+      </p>
+      <span>Accent</span>
+    </div>
+    <div class="chirpui-cluster chirpui-cluster--end">
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Save theme tokens</button>
+    </div>
+  </form>
+  {% end %}
+  </section>
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--sm" method="post">
     <input type="hidden" name="intent" value="identity_accent">
