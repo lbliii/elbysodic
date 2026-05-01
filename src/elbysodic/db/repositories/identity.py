@@ -9,9 +9,17 @@ from elbysodic.db.repositories.rows import (
     _membership_from_row,
     _role_from_row,
     _user_from_row,
+    _user_session_from_row,
 )
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
-from elbysodic.domain.models import Community, CommunityMembership, CommunityTheme, Role, User
+from elbysodic.domain.models import (
+    Community,
+    CommunityMembership,
+    CommunityTheme,
+    Role,
+    User,
+    UserSession,
+)
 
 
 class IdentityRepositoryMixin(RepositoryBase):
@@ -401,6 +409,76 @@ class IdentityRepositoryMixin(RepositoryBase):
         if row is None:
             raise LookupError(f"user not found: {email}")
         return _user_from_row(row)
+
+    def create_user_session(
+        self,
+        user_id: int,
+        token_hash: str,
+        *,
+        expires_at: str | None = None,
+    ) -> UserSession:
+        self.get_user(user_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO user_sessions (
+                user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at
+            )
+            VALUES (?, ?, ?, ?, ?, NULL)
+            """,
+            (user_id, token_hash, now, now, expires_at),
+        )
+        self.connection.commit()
+        return self.get_user_session(_last_id(cursor))
+
+    def get_user_session(self, session_id: int) -> UserSession:
+        row = self.connection.execute(
+            """
+            SELECT id, user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at
+            FROM user_sessions
+            WHERE id = ?
+            """,
+            (session_id,),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"user session not found: {session_id}")
+        return _user_session_from_row(row)
+
+    def get_user_session_by_token_hash(self, token_hash: str) -> UserSession:
+        row = self.connection.execute(
+            """
+            SELECT id, user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at
+            FROM user_sessions
+            WHERE token_hash = ?
+            """,
+            (token_hash,),
+        ).fetchone()
+        if row is None:
+            raise LookupError("user session not found")
+        return _user_session_from_row(row)
+
+    def touch_user_session(self, session_id: int) -> UserSession:
+        self.connection.execute(
+            """
+            UPDATE user_sessions
+            SET last_seen_at = ?
+            WHERE id = ?
+            """,
+            (_utc_now(), session_id),
+        )
+        self.connection.commit()
+        return self.get_user_session(session_id)
+
+    def revoke_user_session_by_token_hash(self, token_hash: str) -> None:
+        self.connection.execute(
+            """
+            UPDATE user_sessions
+            SET revoked_at = COALESCE(revoked_at, ?)
+            WHERE token_hash = ?
+            """,
+            (_utc_now(), token_hash),
+        )
+        self.connection.commit()
 
     def create_role(
         self,

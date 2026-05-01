@@ -48,6 +48,17 @@ class User:
 
 
 @dataclass(frozen=True, slots=True)
+class UserSession:
+    id: int
+    user_id: int
+    token_hash: str
+    created_at: str
+    last_seen_at: str
+    expires_at: str | None
+    revoked_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class Role:
     id: int
     community_id: int

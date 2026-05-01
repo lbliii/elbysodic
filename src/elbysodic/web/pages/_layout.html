@@ -196,6 +196,24 @@
           <span>Theme</span>
           {{ theme_toggle() }}
         </div>
+        {% if dev_tools_enabled() %}
+        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if topbar_path == "/dev/personas" or topbar_path.startswith("/dev/personas/") else "" }}"
+           href="/dev/personas"
+           {% if topbar_path == "/dev/personas" or topbar_path.startswith("/dev/personas/") %}aria-current="page"{% end %}>
+          Dev personas
+          <span>QA switcher</span>
+        </a>
+        {% end %}
+        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if topbar_path == "/login" else "" }}"
+           href="/login?next={{ current_path or "/" }}"
+           {% if topbar_path == "/login" %}aria-current="page"{% end %}>
+          Log in
+          <span>account session</span>
+        </a>
+        <a class="elbysodic-identity-menu__notification-link" href="/logout">
+          Log out
+          <span>clear session</span>
+        </a>
       </div>
       {% if viewer.current_character %}
       <form action="/identity" method="post" hx-boost="false" class="elbysodic-identity-menu__face-form">

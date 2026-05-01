@@ -84,6 +84,25 @@ def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     assert user_version == CURRENT_SCHEMA_VERSION
 
 
+def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository) -> None:
+    user = repo.create_user("session@example.com", "hash")
+    session = repo.create_user_session(
+        user.id,
+        "abc123",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+
+    stored = repo.get_user_session_by_token_hash("abc123")
+    touched = repo.touch_user_session(session.id)
+    repo.revoke_user_session_by_token_hash("abc123")
+    revoked = repo.get_user_session_by_token_hash("abc123")
+
+    assert stored.user_id == user.id
+    assert stored.expires_at == "2026-06-01T00:00:00+00:00"
+    assert touched.last_seen_at >= session.last_seen_at
+    assert revoked.revoked_at is not None
+
+
 def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     connection = connect()
     connection.executescript(

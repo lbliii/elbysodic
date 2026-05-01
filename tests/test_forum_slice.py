@@ -14,7 +14,7 @@ from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
 
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.db.seed import DemoSeed
+from elbysodic.db.seed import DemoSeed, resolve_seed_persona
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services
 from elbysodic.web import create_app
@@ -46,6 +46,18 @@ def _response_header(response: Any, name: str) -> str:
         if str(key).lower() == name.lower():
             return str(value)
     raise AssertionError(f"response header not found: {name}")
+
+
+def _response_headers(response: Any, name: str) -> list[str]:
+    headers = response.headers
+    if isinstance(headers, dict):
+        value = headers.get(name)
+        return [] if value is None else [str(value)]
+    values = []
+    for key, value in headers:
+        if str(key).lower() == name.lower():
+            values.append(str(value))
+    return values
 
 
 def _app():
@@ -292,6 +304,242 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
         assert '<style id="elbysodic-program-theme">' in after.text
         assert "--chirpui-accent: #c8a6ff;" in after.text
         assert "--chirpui-ui-font-family: Georgia, serif;" in after.text
+
+    asyncio.run(run())
+
+
+def test_dev_personas_are_gated_by_development_tools() -> None:
+    async def run() -> None:
+        disabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=False,
+        )
+
+        async with TestClient(disabled_app) as client:
+            disabled = await client.get("/dev/personas")
+        enabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        async with TestClient(enabled_app) as client:
+            enabled = await client.get("/dev/personas")
+
+        assert disabled.status == 404
+        assert enabled.status == 200
+        assert "Dev Personas" in enabled.text
+        assert "xmen_staff" in enabled.text
+        assert "HP director" in enabled.text
+        assert "inactive" in enabled.text
+
+    asyncio.run(run())
+
+
+def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
+    services = create_services(path=":memory:")
+    xmen_writer = resolve_seed_persona(services.repo, "xmen_writer")
+    hp_director = resolve_seed_persona(services.repo, "hp_director")
+    nyc_writer = resolve_seed_persona(services.repo, "nyc_writer")
+    inactive = resolve_seed_persona(services.repo, "xmen_inactive")
+
+    assert xmen_writer.user.id == hp_director.user.id == nyc_writer.user.id
+    assert xmen_writer.community.slug == "default"
+    assert xmen_writer.role.name == "Member"
+    assert not xmen_writer.role.is_admin
+    assert hp_director.community.slug == "hp-universe"
+    assert hp_director.role.name == "Director"
+    assert hp_director.role.is_admin
+    assert nyc_writer.community.slug == "rl-nyc"
+    assert nyc_writer.role.name == "Member"
+    assert not nyc_writer.role.is_admin
+    assert inactive.membership.username == "sleepingstar"
+    assert not inactive.membership.is_active
+    assert inactive.character is not None
+    assert inactive.character.name == "Sleeping Star"
+
+
+def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/dev/personas")
+            switch = await client.post(
+                "/dev/personas",
+                body=urlencode(
+                    {
+                        "persona_key": "xmen_staff",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            set_cookie = _response_header(switch, "set-cookie")
+            cookie = set_cookie.split(";", 1)[0]
+            studio = await client.get("/studio", headers={"Cookie": cookie})
+
+        assert page.status == 200
+        assert "X-Men staff" in page.text
+        assert switch.status == 302
+        assert _response_header(switch, "location") == "/studio"
+        assert "elbysodic_dev_identity=" in set_cookie
+        assert "HttpOnly" in set_cookie
+        assert "SameSite=lax" in set_cookie
+        assert studio.status == 200
+        assert "Staff in X-Men Apocalypse" in studio.text
+        assert "wearing Moira MacTaggert" in studio.text
+        assert "Save theme tokens" in studio.text
+        assert "Director Studio is visible as a preview" not in studio.text
+
+    asyncio.run(run())
+
+
+def test_dev_persona_switcher_refuses_inactive_seed_persona() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/dev/personas",
+                body=urlencode(
+                    {
+                        "persona_key": "xmen_inactive",
+                        "next": "/members",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 403
+
+    asyncio.run(run())
+
+
+def test_login_route_creates_account_session_and_membership_context() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/login?next=/studio")
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "moira@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            set_cookies = _response_headers(login, "set-cookie")
+            cookie_header = "; ".join(cookie.split(";", 1)[0] for cookie in set_cookies)
+            studio = await client.get("/studio", headers={"Cookie": cookie_header})
+
+        assert page.status == 200
+        assert "Seed accounts use password" in page.text
+        assert login.status == 302
+        assert _response_header(login, "location") == "/studio"
+        assert any(cookie.startswith("elbysodic_session=") for cookie in set_cookies)
+        assert any(cookie.startswith("elbysodic_dev_identity=") for cookie in set_cookies)
+        assert studio.status == 200
+        assert "Staff in X-Men Apocalypse" in studio.text
+        assert "Save theme tokens" in studio.text
+
+    asyncio.run(run())
+
+
+def test_session_user_overrides_forged_dev_identity_cookie() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        services = get_services()
+        community = services.seed.community
+        moira = services.repo.get_membership_by_username(community.id, "moira")
+
+        async with TestClient(app) as client:
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "writer@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            session_cookie = next(
+                cookie.split(";", 1)[0]
+                for cookie in _response_headers(login, "set-cookie")
+                if cookie.startswith("elbysodic_session=")
+            )
+            forged_identity = f"elbysodic_dev_identity={community.id}:{moira.user_id}:{moira.id}"
+            studio = await client.get(
+                "/studio",
+                headers={"Cookie": f"{session_cookie}; {forged_identity}"},
+            )
+
+        assert studio.status == 200
+        assert "Member in X-Men Apocalypse" in studio.text
+        assert "Director Studio is visible as a preview" in studio.text
+        assert "Staff in X-Men Apocalypse" not in studio.text
+
+    asyncio.run(run())
+
+
+def test_logout_revokes_session_and_clears_identity_cookies() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+
+        async with TestClient(app) as client:
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "moira@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            cookie_header = "; ".join(
+                cookie.split(";", 1)[0] for cookie in _response_headers(login, "set-cookie")
+            )
+            logout = await client.get("/logout", headers={"Cookie": cookie_header})
+
+        set_cookies = _response_headers(logout, "set-cookie")
+        assert logout.status == 302
+        assert _response_header(logout, "location") == "/login"
+        assert any(
+            cookie.startswith("elbysodic_session=") and "Max-Age=0" in cookie
+            for cookie in set_cookies
+        )
+        assert any(
+            cookie.startswith("elbysodic_dev_identity=") and "Max-Age=0" in cookie
+            for cookie in set_cookies
+        )
 
     asyncio.run(run())
 

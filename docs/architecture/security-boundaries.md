@@ -51,6 +51,12 @@ When adding a staff workflow, add or reuse a named capability in
 `src/elbysodic/services/policies.py` and route service-layer checks through the
 helper. Avoid direct `role.is_admin` checks outside the policy module.
 
+V1 keeps `roles.is_admin` as the storage shorthand for "has every current
+staff capability." Do not add role-capability rows until partial staff roles
+become product-visible. Even while storage is coarse, page handlers and
+workflow services should still depend on named policy helpers rather than the
+storage flag.
+
 ## Nullable Identity Shapes
 
 Some PBP workflows support a character-backed path and a prospective-character
@@ -82,3 +88,6 @@ for user-visible private rooms, staff desks, or notification inboxes.
 Use `docs/architecture/rendered-route-privacy-matrix.md` as the standing route
 checklist for rendered privacy coverage. Update it when adding a new route
 family, identity shape, or user-visible scoped data surface.
+
+Use `docs/architecture/seed-personas.md` when a test or browser QA pass needs a
+stable seeded account, membership, role, and active-face combination.

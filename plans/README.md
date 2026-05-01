@@ -42,4 +42,5 @@ Prefer stable topic names over vague labels. Good names:
 | Plan | Status | Owner | Review By | Closure Criteria |
 | --- | --- | --- | --- | --- |
 | [Appearance Studio roadmap 2026-05-01](in-progress/appearance-studio-roadmap-2026-05-01.md) | in-progress | Product/UI stewardship | 2026-05-22 | Split into implementation issues or PR-sized plans covering the theme editor, ritual-surface variants, validation, and import/export support. |
+| [Auth and seed QA roadmap 2026-05-01](in-progress/auth-seed-qa-roadmap-2026-05-01.md) | in-progress | Auth, seed, and browser QA stewardship | 2026-05-22 | Split into PR-sized tasks for seed personas, local login sessions, persona matrix docs, and capability granularity. |
 | [Steward backlog rollup 2026-05-01](in-progress/steward-backlog-rollup-2026-05-01.md) | in-progress | Steward workflow | 2026-05-15 | Split into concrete backlog items or archive as superseded. |

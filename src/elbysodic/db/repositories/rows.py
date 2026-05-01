@@ -44,6 +44,7 @@ from elbysodic.domain.models import (
     ThreadParticipant,
     ThreadWatch,
     User,
+    UserSession,
     WantedAd,
     WantedAdInterest,
 )
@@ -89,6 +90,18 @@ def _user_from_row(row: sqlite3.Row) -> User:
         email=row["email"],
         password_hash=row["password_hash"],
         created_at=row["created_at"],
+    )
+
+
+def _user_session_from_row(row: sqlite3.Row) -> UserSession:
+    return UserSession(
+        id=row["id"],
+        user_id=row["user_id"],
+        token_hash=row["token_hash"],
+        created_at=row["created_at"],
+        last_seen_at=row["last_seen_at"],
+        expires_at=row["expires_at"],
+        revoked_at=row["revoked_at"],
     )
 
 
