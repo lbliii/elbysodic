@@ -85,6 +85,7 @@
         {{ badge(blueprint_preview.material_count ~ " materials", variant="info") }}
         {{ badge(blueprint_preview.wanted_count ~ " wanted hooks", variant="info") }}
         {{ badge(blueprint_preview.theme_count ~ " theme", variant="muted") }}
+        {{ badge(blueprint_preview.appearance_count ~ " appearance", variant="muted") }}
       </div>
       {% if blueprint_preview.blueprint %}
       <p class="elbysodic-copy-summary">
@@ -92,6 +93,7 @@
         {{ blueprint_preview.board_count }} scene hubs, {{ blueprint_preview.material_count }} materials,
         {{ blueprint_preview.wanted_count }} wanted hooks.
       </p>
+      <p class="elbysodic-copy-meta">{{ blueprint_preview.appearance_summary }}</p>
       {% end %}
       {% if blueprint_preview.errors %}
       <div class="chirpui-stack chirpui-stack--xs">

@@ -3,9 +3,12 @@ from __future__ import annotations
 import pytest
 
 from elbysodic.blueprints import (
+    BlueprintAppearance,
     BlueprintBoard,
     BlueprintCharacter,
     BlueprintMaterial,
+    BlueprintMaterialVariant,
+    BlueprintPostStyle,
     BlueprintTheme,
     BlueprintThemeMode,
     BlueprintTypography,
@@ -26,6 +29,7 @@ def _blueprint(
     materials: tuple[BlueprintMaterial, ...] | None = None,
     wanted: tuple[BlueprintWanted, ...] = (),
     theme: BlueprintTheme | None = None,
+    appearance: BlueprintAppearance | None = None,
 ) -> ProgramBlueprint:
     return ProgramBlueprint(
         slug="demo-program",
@@ -64,6 +68,7 @@ def _blueprint(
         ),
         wanted=wanted,
         theme=theme,
+        appearance=appearance,
     )
 
 
@@ -143,6 +148,107 @@ def test_program_blueprint_reports_invalid_theme_font_key() -> None:
     errors = validate_program_blueprint(_blueprint(theme=_theme(display="papyrus")))
 
     assert "program demo-program.theme.typography.display must be one of: " in "\n".join(errors)
+
+
+def test_program_blueprint_accepts_safe_appearance_payload() -> None:
+    appearance = BlueprintAppearance(
+        post_style=BlueprintPostStyle(
+            profile_variant="poster",
+            accent_style="line",
+            border_style="hairline",
+            title_style="serif",
+            density="dramatic",
+        ),
+        material_variants=(
+            BlueprintMaterialVariant("event", "noticeboard"),
+            BlueprintMaterialVariant("premise", "chapter"),
+        ),
+    )
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+program:
+  slug: demo-program
+  name: Demo Program
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+appearance:
+  post_style:
+    profile_variant: poster
+    accent_style: line
+    border_style: hairline
+    title_style: serif
+    density: dramatic
+  material_variants:
+    event: noticeboard
+    premise: chapter
+"""
+    )
+
+    assert validate_program_blueprint(_blueprint(appearance=appearance)) == ()
+    assert preview.is_valid
+    assert preview.appearance_count == 1
+    assert preview.appearance_summary == "postbit: poster rail, hairline frame; 2 guidebook variants"
+
+
+def test_program_blueprint_rejects_unsafe_appearance_payload() -> None:
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+program:
+  slug: demo-program
+  name: Demo Program
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+appearance:
+  raw_css: ".postbit { display: none; }"
+  post_style:
+    profile_variant: marquee
+  material_variants:
+    event: freeform-css
+"""
+    )
+
+    assert not preview.is_valid
+    assert "appearance.raw_css is not supported in Program Blueprints" in preview.errors
+    assert any(".profile_variant must be one of:" in error for error in preview.errors)
+    assert any(".variant must be one of:" in error for error in preview.errors)
 
 
 def test_program_blueprint_reports_duplicate_slugs() -> None:

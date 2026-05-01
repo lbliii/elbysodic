@@ -766,6 +766,15 @@ wanted:
     related_material: premise
     summary: A homecoming character with history.
     body: Someone left, came back, and knows where the deed is hidden.
+appearance:
+  post_style:
+    profile_variant: poster
+    accent_style: line
+    border_style: hairline
+    title_style: serif
+    density: calm
+  material_variants:
+    premise: chapter
 """
 
         async with TestClient(app) as client:
@@ -790,6 +799,8 @@ wanted:
         assert "1 scene hubs" in response.text
         assert "1 materials" in response.text
         assert "1 wanted hooks" in response.text
+        assert "1 appearance" in response.text
+        assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert (
             "Ready for a future service-layer hydrator. Nothing has been applied." in response.text
         )
