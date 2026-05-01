@@ -51,6 +51,12 @@ When adding a staff workflow, add or reuse a named capability in
 `src/elbysodic/services/policies.py` and route service-layer checks through the
 helper. Avoid direct `role.is_admin` checks outside the policy module.
 
+V1 keeps `roles.is_admin` as the storage shorthand for "has every current
+staff capability." Do not add role-capability rows until partial staff roles
+become product-visible. Even while storage is coarse, page handlers and
+workflow services should still depend on named policy helpers rather than the
+storage flag.
+
 ## Nullable Identity Shapes
 
 Some PBP workflows support a character-backed path and a prospective-character

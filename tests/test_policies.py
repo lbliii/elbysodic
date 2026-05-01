@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -60,6 +61,25 @@ def test_admin_role_grants_named_capabilities(
     assert policies.can_manage_navigation(membership, admin_role)
     assert policies.can_manage_casting(membership, admin_role)
     assert policies.can_manage_applications(membership, admin_role)
+
+
+def test_page_handlers_and_services_do_not_check_admin_flag_directly() -> None:
+    checked_paths = [
+        *Path("src/elbysodic/web/pages").rglob("page.py"),
+        *(
+            path
+            for path in Path("src/elbysodic/services").glob("*.py")
+            if path.name != "policies.py"
+        ),
+    ]
+
+    offenders = [
+        str(path)
+        for path in checked_paths
+        if ".is_admin" in path.read_text(encoding="utf-8")
+    ]
+
+    assert offenders == []
 
 
 def test_capabilities_require_active_membership_and_matching_role(
