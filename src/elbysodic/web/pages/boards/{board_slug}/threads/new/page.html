@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/composer.html" import composer_toolbar, composer_view_toggle %}
 {% end %}
 
 {% block page_root %}
@@ -190,31 +191,11 @@
           <h3 id="thread-writing">Writing</h3>
           <p class="elbysodic-copy-helper">Drafts stay in this browser.</p>
         </div>
-        <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
-          <label>
-            <input type="radio"
-                   name="thread-composer-view"
-                   value="write"
-                   x-model="viewMode">
-            <span>Write</span>
-          </label>
-          <label>
-            <input type="radio"
-                   name="thread-composer-view"
-                   value="preview"
-                   x-model="viewMode">
-            <span>Preview</span>
-          </label>
-        </div>
+        {{ composer_view_toggle("thread-composer-view") }}
       </div>
       <div class="elbysodic-composer-body" x-show="!previewMode">
         <label class="chirpui-field__label" for="thread-body">Opening post</label>
-        <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
-          <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'thread-body')">B</button>
-          <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'thread-body')">I</button>
-          <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'thread-body')">&gt;</button>
-          <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'thread-body')">[]</button>
-        </div>
+        {{ composer_toolbar("thread-body") }}
       <textarea id="thread-body"
                 class="chirpui-field__input"
                 name="body"

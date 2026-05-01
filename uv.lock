@@ -394,6 +394,7 @@ source = { editable = "." }
 dependencies = [
     { name = "bengal-chirp", extra = ["config", "forms", "sessions", "ui"] },
     { name = "chirp-ui" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -417,6 +418,7 @@ docs = [
 requires-dist = [
     { name = "bengal-chirp", extras = ["config", "forms", "sessions", "ui"], editable = "../python/b-stack/chirp" },
     { name = "chirp-ui", editable = "../python/chirp-ui" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [package.metadata.requires-dev]

@@ -159,11 +159,59 @@ The current prototype already has:
 
 ## Scoped Agent Guides
 
-Root `AGENTS.md` is currently the source of truth. Add nested `AGENTS.md` files
-only when a subtree has materially different rules, such as a future package
-with its own design contract, migration workflow, or generated assets. When
-nested guides exist, the closest guide should refine this one rather than
-contradicting the mission or tenant-boundary rules.
+Root `AGENTS.md` is the product constitution. Nested `AGENTS.md` files are
+scoped steward files: short local domain guides for package boundaries, docs,
+domain primitives, services, storage, web/UI, blueprints, and tests.
+
+When editing a subtree, read this root guide and the nearest nested
+`AGENTS.md` before making product or architecture decisions. The nested guide
+may add local checks, contracts, and safety boundaries, but it must refine this
+constitution rather than contradicting the mission, tenant model, product voice,
+or PBP-native shape.
+
+Cross-cutting PRs should include brief **Steward Notes** in the summary:
+which steward files were consulted, which boundary decisions were made, and
+which risks or follow-up gaps remain. Keep the notes small and practical.
+
+### Ask Stewards Workflow
+
+The trigger phrase **"ask stewards"** means run this consultation workflow and
+produce a short prioritization rollup.
+
+1. Verify the checkout/ref is current enough for the question. Run `git status
+   --short --branch`; fetch or compare with upstream when prioritization depends
+   on current remote state.
+2. Enumerate scoped steward files with `find . -name AGENTS.md -print | sort`.
+3. For implementation work, consult the stewards nearest the affected paths.
+   For backlog, roadmap, or product sequencing work, consult all stewards.
+4. Ask each consulted steward for:
+   - top priority
+   - confidence
+   - evidence from code, docs, tests, or product spine
+   - dependencies and ordering constraints
+   - risks and blast radius
+   - tempting "not now" items
+   - upstream or downstream service opportunities
+5. Synthesize with weighted voting. Favor convergence, dependency order,
+   blast-radius reduction, public-contract risk, user-visible correctness, risk
+   reduction, and reversibility.
+6. Preserve minority reports when a steward sees a real risk the majority
+   downweights.
+7. Return a short rollup: recommendation, why now, consulted stewards,
+   confidence, dependencies, risks, not-now items, and suggested next checks.
+
+The workflow is a thinking aid, not a committee. Use it to surface domain-aware
+tradeoffs quickly, then keep moving.
+
+### Plan Snapshots
+
+Save durable steward rollups, roadmap sequences, and multi-step implementation
+plans under `plans/`. Active plans live in `plans/in-progress/` and must be
+listed in `plans/README.md` with a review-by date and closure criteria.
+
+Do not use plan files as scratch notes. If a plan has gone stale, refresh it,
+split it into concrete work, or move it to `plans/archive/YYYY/` as completed,
+superseded, or abandoned.
 
 ## Development Commands
 

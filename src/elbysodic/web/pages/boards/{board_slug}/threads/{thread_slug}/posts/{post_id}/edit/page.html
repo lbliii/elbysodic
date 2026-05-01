@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/composer.html" import composer_toolbar, composer_view_toggle %}
 {% end %}
 
 {% block page_root %}
@@ -54,30 +55,10 @@
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>
     {% end %}
-    <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
-      <label>
-        <input type="radio"
-               name="edit-post-composer-view"
-               value="write"
-               x-model="viewMode">
-        <span>Write</span>
-      </label>
-      <label>
-        <input type="radio"
-               name="edit-post-composer-view"
-               value="preview"
-               x-model="viewMode">
-        <span>Preview</span>
-      </label>
-    </div>
+    {{ composer_view_toggle("edit-post-composer-view") }}
     <div class="elbysodic-composer-body" x-show="!previewMode">
       <label class="chirpui-field__label" for="edit-post-body">Post body</label>
-      <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
-        <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'edit-post-body')">B</button>
-        <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'edit-post-body')">I</button>
-        <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'edit-post-body')">&gt;</button>
-        <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'edit-post-body')">[]</button>
-      </div>
+      {{ composer_toolbar("edit-post-body") }}
       <textarea id="edit-post-body"
                 class="chirpui-field__input"
                 name="body"

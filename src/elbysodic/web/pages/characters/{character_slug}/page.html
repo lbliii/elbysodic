@@ -160,6 +160,49 @@
   </section>
   {% end %}
 
+  {% if profile.can_manage %}
+  {% call surface(variant="elevated") %}
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="face-next-actions-heading">
+    <div class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-section-kicker">Next actions</p>
+        <h2 id="face-next-actions-heading">{{ profile.character.name }} as your working face</h2>
+      </div>
+      {% if profile.is_default %}
+      {{ badge("active-face defaults on", variant="success") }}
+      {% else %}
+      {{ badge("set current for discovery", variant="warning") }}
+      {% end %}
+    </div>
+    <div class="elbysodic-profile-section-actions">
+      {% if profile.activity.needs_reply %}
+      {% set next_reply = profile.activity.needs_reply[0] %}
+      <a class="chirpui-btn chirpui-btn--primary"
+         href="/boards/{{ next_reply.board.slug }}/threads/{{ next_reply.thread.slug }}{{ "#" ~ next_reply.jump_post.anchor if next_reply.jump_post else "" }}">
+        Reply as {{ profile.character.name }}
+      </a>
+      {% else %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">
+        Open {{ profile.character.name }}'s queue
+      </a>
+      {% end %}
+      {% if profile.is_default %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find play for {{ profile.character.name }}</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Casting as {{ profile.character.name }}</a>
+      {% else %}
+      <form method="post" hx-boost="false">
+        <input type="hidden" name="intent" value="set_default">
+        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+          Make {{ profile.character.name }} current
+        </button>
+      </form>
+      {% end %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="#new-plot-hook">Publish plot hook</a>
+    </div>
+  </section>
+  {% end %}
+  {% end %}
+
   <section id="plotter" class="chirpui-stack chirpui-stack--md">
     {% call section_header("Plotter") %}
     Character hooks, wanted hooks, and story invitations orbiting this face.

@@ -75,11 +75,9 @@
           Accept
         </button>
       </form>
-      <form method="post" hx-boost="false">
-        <input type="hidden" name="intent" value="request_revision">
-        <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
-      </form>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">
+        Request revisions
+      </a>
       {% end %}
     </div>
   </div>

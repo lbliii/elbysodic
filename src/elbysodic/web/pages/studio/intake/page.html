@@ -52,6 +52,63 @@
   {% end %}
   {% end %}
 
+  {% if studio.can_manage %}
+  {% call surface(variant="elevated") %}
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="program-blueprint-preview">
+    <div>
+      <p class="elbysodic-kicker">Program Blueprint</p>
+      <h2 id="program-blueprint-preview">Dry-run YAML intake</h2>
+      <p class="elbysodic-copy-section">
+        Paste a director-authored Program Blueprint to parse, validate, and preview the hub counts before any hydration work exists.
+      </p>
+    </div>
+    <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+      <input type="hidden" name="intent" value="preview_blueprint">
+      <label>
+        <span class="chirpui-field__label">Blueprint YAML</span>
+        <textarea class="chirpui-field__input"
+                  name="blueprint_yaml"
+                  rows="10"
+                  placeholder="elbysodic_blueprint: 1&#10;&#10;program:&#10;  slug: rl-small-town">{{ blueprint_yaml }}</textarea>
+      </label>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button type="submit" class="chirpui-btn chirpui-btn--primary">Preview blueprint</button>
+      </div>
+    </form>
+    {% if blueprint_preview %}
+    <div class="chirpui-stack chirpui-stack--sm">
+      <div class="elbysodic-claim-group__badges">
+        {{ badge("valid dry run", variant="success") if blueprint_preview.is_valid else badge("needs fixes", variant="warning") }}
+        {{ badge(blueprint_preview.program_count ~ " program", variant="info") }}
+        {{ badge(blueprint_preview.character_count ~ " faces", variant="info") }}
+        {{ badge(blueprint_preview.board_count ~ " scene hubs", variant="info") }}
+        {{ badge(blueprint_preview.material_count ~ " materials", variant="info") }}
+        {{ badge(blueprint_preview.wanted_count ~ " wanted hooks", variant="info") }}
+        {{ badge(blueprint_preview.theme_count ~ " theme", variant="muted") }}
+      </div>
+      {% if blueprint_preview.blueprint %}
+      <p class="elbysodic-copy-summary">
+        {{ blueprint_preview.program_count }} program, {{ blueprint_preview.character_count }} starter faces,
+        {{ blueprint_preview.board_count }} scene hubs, {{ blueprint_preview.material_count }} materials,
+        {{ blueprint_preview.wanted_count }} wanted hooks.
+      </p>
+      {% end %}
+      {% if blueprint_preview.errors %}
+      <div class="chirpui-stack chirpui-stack--xs">
+        <p class="chirpui-field__label">Validation notes</p>
+        {% for item in blueprint_preview.errors %}
+        <p class="chirpui-field__error">{{ item }}</p>
+        {% end %}
+      </div>
+      {% else %}
+      <p class="elbysodic-copy-status">Ready for a future service-layer hydrator. Nothing has been applied.</p>
+      {% end %}
+    </div>
+    {% end %}
+  </section>
+  {% end %}
+  {% end %}
+
   <section class="elbysodic-intake-editor-layout">
     <div class="chirpui-stack chirpui-stack--md">
       {% call section_header("Claim Types") %}

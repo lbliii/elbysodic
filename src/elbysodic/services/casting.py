@@ -29,6 +29,8 @@ from elbysodic.services.read_models import (
 )
 from elbysodic.services.timestamps import timestamp_label
 
+WANTED_STATUSES: tuple[str, ...] = ("open", "reserved", "filled", "archived")
+
 
 class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
     def get_character(self, community_id: int, character_id: int) -> Character: ...
@@ -212,7 +214,8 @@ def read_wanted_ad(
     wanted_slug: str,
 ) -> WantedAdDetail:
     wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
-    if wanted_ad.status == "archived":
+    can_manage = can_manage_wanted_ad(viewer, wanted_ad)
+    if wanted_ad.status == "archived" and not can_manage:
         raise LookupError(f"wanted ad not found in community {viewer.community.id}: {wanted_slug}")
     facets = facet_tags(
         repo,
@@ -307,8 +310,7 @@ def read_wanted_ad(
             and not is_created_by_viewer
         ),
         is_created_by_viewer=is_created_by_viewer,
-        can_manage=is_created_by_viewer
-        or policies.can_manage_casting(viewer.membership, viewer.role),
+        can_manage=can_manage,
         rendered_body=render_prose_body(
             wanted_ad.body,
             mentions=post_mention_links(repo, viewer.community.id),
@@ -316,6 +318,27 @@ def read_wanted_ad(
         type_label=wanted_type_label(wanted_ad.wanted_type),
         related_ads=related[:4],
     )
+
+
+def update_wanted_ad_lifecycle_status(
+    repo: CastingRepository,
+    viewer: ForumView,
+    wanted_slug: str,
+    *,
+    status: str,
+) -> WantedAd:
+    wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
+    if not can_manage_wanted_ad(viewer, wanted_ad):
+        raise PermissionError(
+            f"membership {viewer.membership.id} cannot manage wanted hook {wanted_ad.id}"
+        )
+    normalized_status = status.strip().lower()
+    if normalized_status not in WANTED_STATUSES:
+        allowed = ", ".join(WANTED_STATUSES)
+        raise ValueError(f"wanted hook status must be one of: {allowed}")
+    if wanted_ad.status == normalized_status:
+        return wanted_ad
+    return repo.update_wanted_ad_status(viewer.community.id, wanted_ad.id, normalized_status)
 
 
 def express_wanted_interest(
@@ -546,6 +569,13 @@ def character_reserve_view(
             else None
         ),
         created_at_label=timestamp_label(reserve.created_at),
+    )
+
+
+def can_manage_wanted_ad(viewer: ForumView, wanted_ad: WantedAd) -> bool:
+    return wanted_ad.creator_membership_id == viewer.membership.id or policies.can_manage_casting(
+        viewer.membership,
+        viewer.role,
     )
 
 

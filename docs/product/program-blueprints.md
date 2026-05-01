@@ -214,9 +214,9 @@ Hydration should keep tenant scope explicit. Every created object belongs to
 one community, and every character or wanted hook has an intentional membership
 owner.
 
-## Future Import Flow
+## Import Flow
 
-A future studio setup screen should use a four-step flow:
+Studio intake now supports the first dry-run milestone. The complete flow is:
 
 1. Upload or paste a YAML Program Blueprint.
 2. Parse into typed blueprint objects.
@@ -228,4 +228,6 @@ The dry-run preview should summarize the resulting program in director language:
 
 Do not make file import the first user-facing milestone. The first milestone is
 the shared contract: seed data and future YAML imports should describe the same
-kind of PBP hub.
+kind of PBP hub. The current Studio preview intentionally stops before step 4:
+it validates and summarizes the packet, but does not create or update database
+state.

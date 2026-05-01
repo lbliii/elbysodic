@@ -202,6 +202,10 @@ def character_profile(
 ) -> CharacterProfile:
     character = repo.get_character_by_slug(viewer.community.id, character_slug)
     owner_membership = repo.get_membership(viewer.community.id, character.membership_id)
+    if not owner_membership.is_active:
+        raise LookupError(
+            f"character not found in community {viewer.community.id}: {character_slug}"
+        )
     can_manage = character.membership_id == viewer.membership.id
     activity = character_activity(repo, viewer, character)
     character_facets = repo.list_character_facets(viewer.community.id, character.id)

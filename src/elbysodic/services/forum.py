@@ -6,6 +6,7 @@ import os
 import re
 from pathlib import Path
 
+from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, seed_demo_forum
 from elbysodic.domain.boards import (
@@ -36,6 +37,7 @@ from elbysodic.domain.models import (
     Role,
     SidebarSectionConfig,
     Thread,
+    WantedAd,
     WantedAdInterest,
 )
 from elbysodic.services import policies
@@ -55,6 +57,7 @@ from elbysodic.services.applications import (
 )
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
+from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
 from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
     create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
@@ -65,6 +68,9 @@ from elbysodic.services.casting import (
 from elbysodic.services.casting import express_wanted_interest as _express_wanted_interest
 from elbysodic.services.casting import read_wanted_ad as _read_wanted_ad
 from elbysodic.services.casting import reserve_wanted_interest as _reserve_wanted_interest
+from elbysodic.services.casting import (
+    update_wanted_ad_lifecycle_status as _update_wanted_ad_lifecycle_status,
+)
 from elbysodic.services.casting import wanted_ad_summary as _wanted_ad_summary
 from elbysodic.services.casting import wanted_board as _wanted_board
 from elbysodic.services.claims import (
@@ -102,6 +108,9 @@ from elbysodic.services.materials import (
 )
 from elbysodic.services.materials import material_detail as _material_detail
 from elbysodic.services.materials import material_summary as _material_summary
+from elbysodic.services.materials import (
+    update_material_production_state as _update_material_production_state,
+)
 from elbysodic.services.notifications import (
     mark_all_notifications_read as _mark_all_notifications_read,
 )
@@ -1035,6 +1044,9 @@ class AppServices:
             claims=_claims_directory(self.repo, viewer),
         )
 
+    def preview_program_blueprint(self, source: str) -> ProgramBlueprintPreview:
+        return _preview_program_blueprint(self.viewer(), source)
+
     def update_board_taxonomy(
         self,
         board_id: int,
@@ -1364,6 +1376,21 @@ class AppServices:
             is_featured=is_featured,
         )
 
+    def update_material_production_state(
+        self,
+        material_slug: str,
+        *,
+        status: str,
+        is_featured: bool | None = None,
+    ) -> Material:
+        return _update_material_production_state(
+            self.repo,
+            self.viewer(),
+            material_slug,
+            status=status,
+            is_featured=is_featured,
+        )
+
     def wanted_ads(self) -> WantedBoard:
         return _wanted_board(self.repo, self.viewer())
 
@@ -1397,6 +1424,14 @@ class AppServices:
         interest_id: int,
     ) -> WantedAdInterest:
         return _reserve_wanted_interest(self.repo, self.viewer(), wanted_slug, interest_id)
+
+    def update_wanted_ad_lifecycle_status(self, wanted_slug: str, *, status: str) -> WantedAd:
+        return _update_wanted_ad_lifecycle_status(
+            self.repo,
+            self.viewer(),
+            wanted_slug,
+            status=status,
+        )
 
     def create_reserve_for_wanted_interest(
         self,

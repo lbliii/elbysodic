@@ -3,7 +3,11 @@ from __future__ import annotations
 import pytest
 
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.db.migrations import BASELINE_MIGRATION_NAME, CURRENT_SCHEMA_VERSION
+from elbysodic.db.migrations import (
+    BASELINE_MIGRATION_NAME,
+    CURRENT_SCHEMA_VERSION,
+    MIGRATIONS,
+)
 from elbysodic.db.repositories.base import TenantBoundaryError
 
 
@@ -44,6 +48,39 @@ def test_schema_records_migration_baseline() -> None:
             "name": BASELINE_MIGRATION_NAME,
         }
     ]
+    assert user_version == CURRENT_SCHEMA_VERSION
+
+
+def test_schema_migration_versions_are_contiguous_after_baseline() -> None:
+    versions = [migration.version for migration in MIGRATIONS]
+
+    assert versions == list(range(2, CURRENT_SCHEMA_VERSION + 1))
+    assert len({migration.name for migration in MIGRATIONS}) == len(MIGRATIONS)
+
+
+def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (1, ?, '2026-01-01T00:00:00+00:00')
+        """,
+        (BASELINE_MIGRATION_NAME,),
+    )
+    connection.execute("PRAGMA user_version = 1")
+    connection.commit()
+
+    create_schema(connection)
+
+    rows = connection.execute(
+        "SELECT version, name FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    user_version = connection.execute("PRAGMA user_version").fetchone()[0]
+
+    assert [row["version"] for row in rows] == list(range(1, CURRENT_SCHEMA_VERSION + 1))
+    assert [row["name"] for row in rows][1:] == [migration.name for migration in MIGRATIONS]
     assert user_version == CURRENT_SCHEMA_VERSION
 
 
