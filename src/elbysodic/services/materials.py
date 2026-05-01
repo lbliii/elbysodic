@@ -20,6 +20,7 @@ from elbysodic.services.facets import FacetReadRepository, facet_tags
 from elbysodic.services.markup import post_snippet, render_prose_body
 from elbysodic.services.posts import PostViewRepository, post_mention_links
 from elbysodic.services.read_models import (
+    MATERIAL_STATUSES,
     BoardSummary,
     ContinuityBeat,
     DiscoveryThreadResult,
@@ -41,6 +42,22 @@ class MaterialSummaryRepository(FacetReadRepository, Protocol):
 
 
 class MaterialReadRepository(MaterialSummaryRepository, PostViewRepository, Protocol):
+    def get_material_by_slug(self, community_id: int, slug: str) -> Material: ...
+
+    def update_material(
+        self,
+        community_id: int,
+        material_id: int,
+        *,
+        title: str,
+        material_type: str,
+        summary: str,
+        body: str,
+        status: str = "published",
+        sort_order: int = 0,
+        is_featured: bool = False,
+    ) -> Material: ...
+
     def list_materials(self, community_id: int, *, status: str | None = None) -> list[Material]: ...
 
     def list_boards(self, community_id: int) -> list[Board]: ...
@@ -136,6 +153,49 @@ def material_detail(
             related_wanted_ads,
         ),
         can_manage=policies.can_manage_world(viewer.membership, viewer.role),
+    )
+
+
+def update_material_production_state(
+    repo: MaterialReadRepository,
+    viewer: ForumView,
+    material_slug: str,
+    *,
+    status: str,
+    is_featured: bool | None = None,
+) -> Material:
+    if not policies.can_manage_world(viewer.membership, viewer.role):
+        raise PermissionError(f"membership {viewer.membership.id} cannot manage world materials")
+    material = repo.get_material_by_slug(viewer.community.id, material_slug)
+    cleaned_status = status.strip()
+    if cleaned_status not in MATERIAL_STATUSES:
+        raise ValueError("choose a supported material status")
+    next_featured = material.is_featured if is_featured is None else is_featured
+    if material.material_type == "event" and next_featured:
+        for event in repo.list_materials(viewer.community.id, status=None):
+            if event.id == material.id or event.material_type != "event" or not event.is_featured:
+                continue
+            repo.update_material(
+                viewer.community.id,
+                event.id,
+                title=event.title,
+                material_type=event.material_type,
+                summary=event.summary,
+                body=event.body,
+                status=event.status,
+                sort_order=event.sort_order,
+                is_featured=False,
+            )
+    return repo.update_material(
+        viewer.community.id,
+        material.id,
+        title=material.title,
+        material_type=material.material_type,
+        summary=material.summary,
+        body=material.body,
+        status=cleaned_status,
+        sort_order=material.sort_order,
+        is_featured=next_featured,
     )
 
 

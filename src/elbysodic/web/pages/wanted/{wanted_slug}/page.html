@@ -133,6 +133,30 @@
       </details>
       {% end %}
     </div>
+    {% if wanted.can_manage %}
+    <details class="elbysodic-management-disclosure elbysodic-action-disclosure">
+      <summary>
+        <span id="wanted-lifecycle">Manage hook lifecycle</span>
+        <small>Open, reserve, fill, or archive this wanted without changing its history.</small>
+      </summary>
+      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm" aria-labelledby="wanted-lifecycle">
+        <input type="hidden" name="intent" value="update_lifecycle_status">
+        <label class="chirpui-field__label" for="wanted-status">Lifecycle status</label>
+        <select id="wanted-status" class="chirpui-field__input" name="status">
+          <option value="open" {{ "selected" if wanted.wanted_ad.status == "open" else "" }}>Open</option>
+          <option value="reserved" {{ "selected" if wanted.wanted_ad.status == "reserved" else "" }}>Reserved</option>
+          <option value="filled" {{ "selected" if wanted.wanted_ad.status == "filled" else "" }}>Filled</option>
+          <option value="archived" {{ "selected" if wanted.wanted_ad.status == "archived" else "" }}>Archived</option>
+        </select>
+        <p class="elbysodic-copy-helper">
+          Archived hooks disappear from ordinary wanted browsing, but directors can still inspect them here.
+        </p>
+        <div class="chirpui-cluster chirpui-cluster--end">
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save lifecycle</button>
+        </div>
+      </form>
+    </details>
+    {% end %}
   </article>
   {% end %}
 

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from typing import Any
+
+import yaml
 
 from elbysodic.domain.boards import BOARD_KINDS
 
@@ -107,6 +109,76 @@ class BlueprintValidationError(ValueError):
     def __init__(self, errors: Sequence[str]) -> None:
         self.errors = tuple(errors)
         super().__init__("\n".join(self.errors))
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramBlueprintPreview:
+    blueprint: ProgramBlueprint | None
+    errors: tuple[str, ...]
+
+    @property
+    def is_valid(self) -> bool:
+        return self.blueprint is not None and not self.errors
+
+    @property
+    def program_count(self) -> int:
+        return 1 if self.blueprint is not None else 0
+
+    @property
+    def character_count(self) -> int:
+        return len(self.blueprint.characters) if self.blueprint is not None else 0
+
+    @property
+    def board_count(self) -> int:
+        return len(self.blueprint.boards) if self.blueprint is not None else 0
+
+    @property
+    def material_count(self) -> int:
+        return len(self.blueprint.materials) if self.blueprint is not None else 0
+
+    @property
+    def wanted_count(self) -> int:
+        return len(self.blueprint.wanted) if self.blueprint is not None else 0
+
+    @property
+    def theme_count(self) -> int:
+        return 1 if self.blueprint is not None and self.blueprint.theme is not None else 0
+
+
+def preview_program_blueprint_yaml(source: str) -> ProgramBlueprintPreview:
+    """Parse and validate director-authored YAML without hydrating anything."""
+
+    if not source.strip():
+        return ProgramBlueprintPreview(None, ("Blueprint YAML is required.",))
+    try:
+        loaded = yaml.safe_load(source)
+    except yaml.YAMLError as exc:
+        return ProgramBlueprintPreview(
+            None,
+            (f"Blueprint YAML could not be parsed: {exc}",),
+        )
+    errors: list[str] = []
+    root = _mapping(loaded, "blueprint", errors)
+    if root is None:
+        return ProgramBlueprintPreview(None, tuple(errors))
+    if root.get("elbysodic_blueprint") != 1:
+        errors.append("elbysodic_blueprint must be 1")
+    program_data = _mapping(root.get("program"), "program", errors) or {}
+    role_data = _mapping(program_data.get("role"), "program.role", errors) or {}
+    blueprint = ProgramBlueprint(
+        slug=_text(program_data.get("slug")),
+        name=_text(program_data.get("name")),
+        role_slug=_field(role_data, "slug"),
+        role_name=_field(role_data, "name"),
+        is_admin=bool(role_data.get("is_admin")),
+        characters=_characters_from_yaml(root.get("characters"), errors),
+        boards=_boards_from_yaml(root.get("boards"), errors),
+        materials=_materials_from_yaml(root.get("materials"), errors),
+        wanted=_wanted_from_yaml(root.get("wanted", ()), errors),
+        theme=_theme_from_yaml(root.get("theme"), errors),
+    )
+    errors.extend(validate_program_blueprint(blueprint))
+    return ProgramBlueprintPreview(blueprint, tuple(errors))
 
 
 def validate_program_blueprint(blueprint: ProgramBlueprint) -> tuple[str, ...]:
@@ -299,3 +371,134 @@ def _duplicate_slug_errors(label: str, slugs: Iterable[str]) -> list[str]:
             duplicates.add(slug)
         seen.add(slug)
     return [f"{label} contains duplicate slug: {slug}" for slug in sorted(duplicates)]
+
+
+def _mapping(value: object, path: str, errors: list[str]) -> dict[str, Any] | None:
+    if isinstance(value, Mapping):
+        return {str(key): item for key, item in value.items()}
+    errors.append(f"{path} must be a mapping")
+    return None
+
+
+def _mapping_items(value: object, path: str, errors: list[str]) -> tuple[dict[str, Any], ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, Sequence) or isinstance(value, str):
+        errors.append(f"{path} must be a list")
+        return ()
+    items: list[dict[str, Any]] = []
+    for index, item in enumerate(value):
+        mapping = _mapping(item, f"{path}[{index}]", errors)
+        if mapping is not None:
+            items.append(mapping)
+    return tuple(items)
+
+
+def _text(value: object) -> str:
+    return value if isinstance(value, str) else ""
+
+
+def _field(mapping: dict[str, Any], key: str) -> str:
+    return _text(mapping.get(key))
+
+
+def _characters_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintCharacter, ...]:
+    return tuple(
+        BlueprintCharacter(
+            slug=_field(item, "slug"),
+            name=_field(item, "name"),
+            summary=_field(item, "summary"),
+            tagline=_field(item, "tagline"),
+        )
+        for item in _mapping_items(value, "characters", errors)
+    )
+
+
+def _boards_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintBoard, ...]:
+    return tuple(
+        BlueprintBoard(
+            slug=_field(item, "slug"),
+            name=_field(item, "name"),
+            board_kind=_field(item, "kind") or _field(item, "board_kind"),
+            tagline=_field(item, "tagline"),
+            description=_field(item, "description"),
+        )
+        for item in _mapping_items(value, "boards", errors)
+    )
+
+
+def _materials_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintMaterial, ...]:
+    return tuple(
+        BlueprintMaterial(
+            slug=_field(item, "slug"),
+            title=_field(item, "title"),
+            material_type=_field(item, "type") or _field(item, "material_type"),
+            summary=_field(item, "summary"),
+            body=_field(item, "body"),
+        )
+        for item in _mapping_items(value, "materials", errors)
+    )
+
+
+def _wanted_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintWanted, ...]:
+    return tuple(
+        BlueprintWanted(
+            slug=_field(item, "slug"),
+            title=_field(item, "title"),
+            wanted_type=_field(item, "type") or _field(item, "wanted_type"),
+            summary=_field(item, "summary"),
+            body=_field(item, "body"),
+            related_material_slug=_field(item, "related_material")
+            or _field(item, "related_material_slug"),
+        )
+        for item in _mapping_items(value, "wanted", errors)
+    )
+
+
+def _theme_from_yaml(value: object, errors: list[str]) -> BlueprintTheme | None:
+    if value is None:
+        return None
+    theme = _mapping(value, "theme", errors)
+    if theme is None:
+        return None
+    typography = _mapping(theme.get("typography"), "theme.typography", errors) or {}
+    light = _theme_mode_from_yaml(theme.get("light"), "theme.light", errors)
+    dark = _theme_mode_from_yaml(theme.get("dark"), "theme.dark", errors)
+    return BlueprintTheme(
+        slug=_field(theme, "slug"),
+        name=_field(theme, "name"),
+        typography=BlueprintTypography(
+            display=_field(typography, "display") or "system",
+            body=_field(typography, "body") or "system",
+            mono=_field(typography, "mono") or "mono",
+        ),
+        light=light,
+        dark=dark,
+        radius=_field(theme, "radius") or "sm",
+        density=_field(theme, "density") or "calm",
+        texture=_field(theme, "texture") or "none",
+    )
+
+
+def _theme_mode_from_yaml(
+    value: object,
+    path: str,
+    errors: list[str],
+) -> BlueprintThemeMode:
+    mode = _mapping(value, path, errors) or {}
+    return BlueprintThemeMode(
+        bg=_field(mode, "bg"),
+        bg_subtle=_field(mode, "bg_subtle"),
+        surface=_field(mode, "surface"),
+        surface_elevated=_field(mode, "surface_elevated"),
+        border=_field(mode, "border"),
+        text=_field(mode, "text"),
+        text_muted=_field(mode, "text_muted"),
+        accent=_field(mode, "accent"),
+        accent_hover=_field(mode, "accent_hover"),
+        accent_dim=_field(mode, "accent_dim"),
+        accent_secondary=_field(mode, "accent_secondary"),
+        success=_field(mode, "success"),
+        warning=_field(mode, "warning"),
+        error=_field(mode, "error"),
+    )

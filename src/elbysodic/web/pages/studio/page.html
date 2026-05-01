@@ -657,7 +657,29 @@
       {% if studio.draft_materials %}
       <ul class="elbysodic-director-list">
         {% for item in studio.draft_materials[:4] %}
-        <li><a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></li>
+        <li>
+          <div class="chirpui-stack chirpui-stack--xs">
+            <a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+            <div class="chirpui-cluster chirpui-cluster--start">
+              {{ badge(item.type_label, variant="muted") }}
+              <form method="post">
+                <input type="hidden" name="intent" value="material_status">
+                <input type="hidden" name="material_slug" value="{{ item.material.slug }}">
+                <input type="hidden" name="status" value="published">
+                <button class="chirpui-btn chirpui-btn--secondary" type="submit">Publish</button>
+              </form>
+              {% if item.material.material_type == "event" %}
+              <form method="post">
+                <input type="hidden" name="intent" value="material_status">
+                <input type="hidden" name="material_slug" value="{{ item.material.slug }}">
+                <input type="hidden" name="status" value="published">
+                <input type="hidden" name="is_featured" value="on">
+                <button class="chirpui-btn chirpui-btn--secondary" type="submit">Publish as current</button>
+              </form>
+              {% end %}
+            </div>
+          </div>
+        </li>
         {% end %}
       </ul>
       {% else %}

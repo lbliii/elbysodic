@@ -6,14 +6,17 @@ upgrades. Fresh databases are created from the current schema in
 legacy compatibility helpers in that module and then recorded in the migration
 ledger.
 
-## Current Baseline
+## Current Version
 
-The current checked-in schema is baseline version `1`. Calling `create_schema()`
-creates or upgrades the database, ensures `schema_migrations` exists, records
-the baseline when no ledger row exists, and sets SQLite `PRAGMA user_version`.
+The checked-in schema currently creates databases at version `6`. Calling
+`create_schema()` creates or upgrades the database, ensures
+`schema_migrations` exists, records the current schema as a baseline when no
+ledger row exists, and sets SQLite `PRAGMA user_version`.
 
-This baseline keeps the prototype's existing schema bootstrap intact while
-giving future schema changes an ordered migration path.
+Version `1` is the historical baseline. Versions `2` and later are ordered
+post-baseline migrations in `src/elbysodic/db/migrations.py`. This keeps the
+prototype's existing schema bootstrap intact while giving future schema changes
+an ordered migration path.
 
 ## Adding A Schema Change
 
@@ -21,9 +24,10 @@ When adding a table, column, index, or constraint:
 
 1. Update the fresh schema in `SCHEMA`.
 2. Add an ordered migration in `src/elbysodic/db/migrations.py`.
-3. Keep the migration idempotent where possible.
-4. Add a test that starts from an older shape and calls `create_schema()`.
-5. Include tenant scope in new tables and indexes unless the table is truly
+3. Increment `CURRENT_SCHEMA_VERSION` and keep `MIGRATIONS` contiguous.
+4. Keep the migration idempotent where possible.
+5. Add a test that starts from an older shape and calls `create_schema()`.
+6. Include tenant scope in new tables and indexes unless the table is truly
    global infrastructure.
 
 Migration names should describe the product primitive or boundary being

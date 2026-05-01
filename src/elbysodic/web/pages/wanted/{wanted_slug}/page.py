@@ -82,6 +82,19 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
         return Redirect(f"/wanted/{wanted_slug}")
+    if intent == "update_lifecycle_status":
+        try:
+            services.update_wanted_ad_lifecycle_status(
+                wanted_slug,
+                status=str(form.get("status") or ""),
+            )
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPError(status=400, detail=str(exc)) from exc
+        return Redirect(f"/wanted/{wanted_slug}")
     raise HTTPError(status=400, detail=f"unknown wanted intent: {intent}")
 
 

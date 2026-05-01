@@ -178,7 +178,11 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 communities.updated_at
             FROM communities
             JOIN characters ON characters.community_id = communities.id
+            JOIN community_memberships
+              ON community_memberships.community_id = characters.community_id
+             AND community_memberships.id = characters.membership_id
             WHERE characters.slug = ?
+              AND community_memberships.is_active = 1
             ORDER BY communities.name, communities.id
             """,
             (slug,),

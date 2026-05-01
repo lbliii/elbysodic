@@ -21,6 +21,13 @@ async def post(request: Request) -> Page | Redirect:
     form = await request.form()
     intent = str(form.get("intent") or "")
     try:
+        if intent == "preview_blueprint":
+            blueprint_yaml = str(form.get("blueprint_yaml") or "")
+            return _render_intake_editor(
+                request,
+                blueprint_yaml=blueprint_yaml,
+                blueprint_preview=services.preview_program_blueprint(blueprint_yaml),
+            )
         if intent == "create_claim_type":
             services.create_claim_type_config(
                 name=str(form.get("name") or ""),
@@ -76,7 +83,13 @@ async def post(request: Request) -> Page | Redirect:
     return Redirect("/studio/intake")
 
 
-def _render_intake_editor(request: Request, *, error: str | None = None) -> Page:
+def _render_intake_editor(
+    request: Request,
+    *,
+    error: str | None = None,
+    blueprint_yaml: str = "",
+    blueprint_preview: object | None = None,
+) -> Page:
     services = get_services(request)
     return Page(
         "studio/intake/page.html",
@@ -87,6 +100,8 @@ def _render_intake_editor(request: Request, *, error: str | None = None) -> Page
         studio=services.director_studio(),
         directory=services.claims_directory(),
         onboarding=services.application_onboarding(),
+        blueprint_yaml=blueprint_yaml,
+        blueprint_preview=blueprint_preview,
         error=error,
     )
 

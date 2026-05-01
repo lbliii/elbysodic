@@ -363,6 +363,39 @@ def test_cross_realm_character_url_renders_switchable_recovery() -> None:
     asyncio.run(run())
 
 
+def test_cross_realm_character_recovery_ignores_inactive_faces() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hosted, _user_id, inactive_membership_id, _character_id = _add_hosted_membership(
+            services,
+            slug="retired-program",
+            user_id=services.seed.user.id,
+            username="retired-realm",
+        )
+        services.repo.create_character(
+            hosted.id,
+            inactive_membership_id,
+            "retired-cross-face",
+            "Retired Cross Face",
+        )
+        services.repo.connection.execute(
+            "UPDATE community_memberships SET is_active = 0 WHERE community_id = ? AND id = ?",
+            (hosted.id, inactive_membership_id),
+        )
+        services.repo.connection.commit()
+
+        async with TestClient(app) as client:
+            response = await client.get("/characters/retired-cross-face")
+
+        assert response.status == 200
+        assert "That face is not in X-Men Apocalypse." in response.text
+        assert "That face lives in Hosted Program." not in response.text
+        assert "Switch to Hosted Program" not in response.text
+
+    asyncio.run(run())
+
+
 def test_cross_realm_material_url_renders_switchable_recovery() -> None:
     async def run() -> None:
         app = _app()
@@ -681,6 +714,89 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/applications"' in operations.text
             assert 'href="/casting"' in operations.text
             assert 'href="/notifications"' in operations.text
+
+    asyncio.run(run())
+
+
+def test_studio_intake_previews_program_blueprint_yaml_without_hydration() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        before_count = repo.connection.execute(
+            "SELECT COUNT(*) FROM communities",
+        ).fetchone()[0]
+        blueprint_yaml = """
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town-preview
+  name: RL Small Town Preview
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+wanted:
+  - slug: returning-sibling
+    title: Returning sibling
+    type: relationship
+    related_material: premise
+    summary: A homecoming character with history.
+    body: Someone left, came back, and knows where the deed is hidden.
+"""
+
+        async with TestClient(app) as client:
+            page = await client.get("/studio/intake")
+            response = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "preview_blueprint",
+                        "blueprint_yaml": blueprint_yaml,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert page.status == 200
+        assert "Dry-run YAML intake" in page.text
+        assert response.status == 200
+        assert "valid dry run" in response.text
+        assert "1 program" in response.text
+        assert "1 starter faces" in response.text
+        assert "1 scene hubs" in response.text
+        assert "1 materials" in response.text
+        assert "1 wanted hooks" in response.text
+        assert (
+            "Ready for a future service-layer hydrator. Nothing has been applied." in response.text
+        )
+        after_count = repo.connection.execute(
+            "SELECT COUNT(*) FROM communities",
+        ).fetchone()[0]
+        assert after_count == before_count
 
     asyncio.run(run())
 
@@ -1480,6 +1596,137 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
     asyncio.run(run())
 
 
+def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        community = services.seed.community
+        services.repo.create_material(
+            community.id,
+            "director-only-event",
+            "Director Only Event",
+            material_type="event",
+            summary="This draft should stay inside Studio.",
+            body="Private director continuity that should not leak.",
+            status="draft",
+        )
+        member_services, _member_character_id = _outsider_services(
+            services,
+            prefix="draft-material-member",
+        )
+        member_app = create_app(debug=False, services=member_services)
+        async with TestClient(member_app) as member_client:
+            member_world = await member_client.get("/world")
+            member_direct = await member_client.get("/world/director-only-event")
+
+        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
+        alex_user = services.repo.get_user(alex_membership.user_id)
+        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
+        alex_services = AppServices(
+            services.repo,
+            DemoSeed(community, alex_user, alex_membership, cyclops),
+        )
+        staff_app = create_app(debug=False, services=alex_services)
+        async with TestClient(staff_app) as staff_client:
+            staff_studio = await staff_client.get("/studio")
+            staff_direct = await staff_client.get("/world/director-only-event")
+
+        assert member_world.status == 200
+        assert "Director Only Event" not in member_world.text
+        assert "Private director continuity that should not leak." not in member_direct.text
+        assert "That world material is not in X-Men Apocalypse." in member_direct.text
+        assert staff_studio.status == 200
+        assert "Director Only Event" in staff_studio.text
+        assert staff_direct.status == 200
+        assert "Director Only Event" in staff_direct.text
+        assert "Private director continuity that should not leak." in staff_direct.text
+        assert "Material studio" in staff_direct.text
+
+    asyncio.run(run())
+
+
+def test_directors_can_publish_draft_materials_from_studio_queue() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        draft_event = repo.create_material(
+            community.id,
+            "new-canon-pulse",
+            "New Canon Pulse",
+            material_type="event",
+            summary="Director draft for the next canon beat.",
+            body="A production note waiting for publication.",
+            status="draft",
+        )
+        member_services, _member_character_id = _outsider_services(
+            services,
+            prefix="studio-material-member",
+        )
+        member_app = create_app(debug=False, services=member_services)
+        async with TestClient(member_app) as member_client:
+            forbidden = await member_client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "material_status",
+                        "material_slug": draft_event.slug,
+                        "status": "published",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert forbidden.status == 403
+        assert repo.get_material_by_slug(community.id, draft_event.slug).status == "draft"
+
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+            assert studio.status == 200
+            assert "New Canon Pulse" in studio.text
+            assert "Publish as current" in studio.text
+
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "material_status",
+                        "material_slug": draft_event.slug,
+                        "status": "published",
+                        "is_featured": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert response.status == 302
+            assert _response_header(response, "location") == "/studio#continuity-events"
+
+            world = await client.get("/world/new-canon-pulse")
+            studio_after = await client.get("/studio")
+
+        updated = repo.get_material_by_slug(community.id, draft_event.slug)
+        old_event = repo.get_material_by_slug(community.id, "b-24-winter")
+        assert updated.status == "published"
+        assert updated.is_featured is True
+        assert old_event.is_featured is False
+        current_event = admin_services.director_studio().current_event
+        assert current_event is not None
+        assert current_event.material.slug == draft_event.slug
+        assert world.status == 200
+        assert "New Canon Pulse" in world.text
+        assert studio_after.status == 200
+        assert "New Canon Pulse" in studio_after.text
+
+    asyncio.run(run())
+
+
 def test_applications_desk_tracks_character_statuses() -> None:
     async def run() -> None:
         app = _app()
@@ -1594,6 +1841,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 assert "Jubilee" in review.text
                 assert "Accept" in review.text
                 assert "Request revisions" in review.text
+                assert 'name="intent" value="request_revision"' not in review.text
 
                 review_room = await alex_client.get("/applications/jubilee")
                 assert review_room.status == 200
@@ -1644,6 +1892,17 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 ).application_status
                 == "accepted"
             )
+            applicant_app = create_app(
+                debug=False, services=AppServices(services.repo, services.seed)
+            )
+            async with TestClient(applicant_app) as applicant_client:
+                accepted_room = await applicant_client.get("/applications/jubilee")
+            assert accepted_room.status == 200
+            assert "Jubilee is looking for a found-family first scene." in accepted_room.text
+            assert "Director Review" not in accepted_room.text
+            assert "Voice is clear." not in accepted_room.text
+            assert "Starter hook" not in accepted_room.text
+            assert "Cast tie" not in accepted_room.text
             assert any(
                 item.label == "Application accepted" and item.title == "Jubilee"
                 for item in services.notifications().items
@@ -1840,6 +2099,80 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "Active Reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
                 assert "Rogue&#39;s Reserves" in casting.text
+
+            charlie_app = create_app(debug=False, services=charlie_services)
+            async with TestClient(charlie_app) as charlie_client:
+                filled_response = await charlie_client.post(
+                    "/wanted/human-un-liaison-for-b24",
+                    body=urlencode(
+                        {
+                            "intent": "update_lifecycle_status",
+                            "status": "filled",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+                filled_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+
+                archive_response = await charlie_client.post(
+                    "/wanted/human-un-liaison-for-b24",
+                    body=urlencode(
+                        {
+                            "intent": "update_lifecycle_status",
+                            "status": "archived",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+                archived_manager_view = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+
+                reopen_response = await charlie_client.post(
+                    "/wanted/human-un-liaison-for-b24",
+                    body=urlencode(
+                        {
+                            "intent": "update_lifecycle_status",
+                            "status": "open",
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+
+            outsider_services, _outsider_character_id = _outsider_services(
+                services,
+                prefix="wanted-archive-outsider",
+            )
+            archived_wanted = services.repo.update_wanted_ad_status(
+                community.id,
+                wanted_ad.id,
+                "archived",
+            )
+            outsider_app = create_app(debug=False, services=outsider_services)
+            async with TestClient(outsider_app) as outsider_client:
+                archived_outsider_view = await outsider_client.get(
+                    "/wanted/human-un-liaison-for-b24"
+                )
+                archived_wanted_board = await outsider_client.get("/wanted")
+
+            reopened = services.repo.update_wanted_ad_status(
+                community.id,
+                wanted_ad.id,
+                "open",
+            )
+
+            assert filled_response.status == 302
+            assert "Manage hook lifecycle" in filled_view.text
+            assert '<option value="filled" selected>Filled</option>' in filled_view.text
+            assert archive_response.status == 302
+            assert archived_manager_view.status == 200
+            assert (
+                '<option value="archived" selected>Archived</option>' in archived_manager_view.text
+            )
+            assert reopen_response.status == 302
+            assert archived_wanted.status == "archived"
+            assert archived_outsider_view.status == 200
+            assert "That wanted hook is not in X-Men Apocalypse." in archived_outsider_view.text
+            assert "Human UN liaison for B-24 talks" not in archived_wanted_board.text
+            assert reopened.status == "open"
 
             missing = await client.get("/wanted/not-a-hook")
             assert missing.status == 200
@@ -3330,6 +3663,27 @@ def test_members_directory_and_profile_show_visible_community_cast() -> None:
             character.id,
             "Private activity should stay private.",
         )
+        role = repo.get_role_by_slug(community.id, "member")
+        inactive_user = repo.create_user("retired@example.com", "hash")
+        inactive_membership = repo.create_membership(
+            community.id,
+            inactive_user.id,
+            role.id,
+            "retiredlane",
+            "Retired Lane",
+        )
+        repo.create_character(
+            community.id,
+            inactive_membership.id,
+            "retired-face",
+            "Retired Face",
+            summary="Retired profile copy should not render.",
+        )
+        repo.connection.execute(
+            "UPDATE community_memberships SET is_active = 0 WHERE community_id = ? AND id = ?",
+            (community.id, inactive_membership.id),
+        )
+        repo.connection.commit()
 
         async with TestClient(app) as client:
             directory = await client.get("/members")
@@ -3341,6 +3695,8 @@ def test_members_directory_and_profile_show_visible_community_cast() -> None:
             assert "Rogue" in directory.text
             assert "/members/starlane" in directory.text
             assert "Private activity should stay private." not in directory.text
+            assert "Retired Lane" not in directory.text
+            assert "Retired Face" not in directory.text
 
             profile = await client.get("/members/starlane")
             assert profile.status == 200
@@ -3356,6 +3712,12 @@ def test_members_directory_and_profile_show_visible_community_cast() -> None:
 
             missing = await client.get("/members/nope")
             assert missing.status == 404
+            inactive_member = await client.get("/members/retiredlane")
+            assert inactive_member.status == 404
+            inactive_character = await client.get("/characters/retired-face")
+            assert inactive_character.status == 200
+            assert "That face is not in X-Men Apocalypse." in inactive_character.text
+            assert "Retired profile copy should not render." not in inactive_character.text
 
     asyncio.run(run())
 
@@ -3770,6 +4132,11 @@ def test_character_activity_center_tracks_identity_specific_threads() -> None:
 
             profile = await client.get("/characters/rogue")
             assert profile.status == 200
+            assert "Next actions" in profile.text
+            assert "active-face defaults on" in profile.text
+            assert "Reply as Rogue" in profile.text
+            assert "Find play for Rogue" in profile.text
+            assert "Casting as Rogue" in profile.text
             assert "Tracker" in profile.text
             assert "Open filtered queue" in profile.text
             assert "Open thread roster" in profile.text
@@ -3815,6 +4182,11 @@ def test_character_profile_can_set_current_face() -> None:
         app = _app()
 
         async with TestClient(app) as client:
+            pending_profile = await client.get("/characters/storm")
+            assert pending_profile.status == 200
+            assert "set current for discovery" in pending_profile.text
+            assert "Make Storm current" in pending_profile.text
+
             response = await client.post(
                 "/characters/storm",
                 body=b"intent=set_default",
@@ -3825,6 +4197,8 @@ def test_character_profile_can_set_current_face() -> None:
 
             profile = await client.get("/characters/storm")
             assert "current" in profile.text
+            assert "active-face defaults on" in profile.text
+            assert "Find play for Storm" in profile.text
 
             index = await client.get("/")
             assert "Current face: Storm" in index.text

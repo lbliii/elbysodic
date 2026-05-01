@@ -26,6 +26,7 @@ async def post(request: Request) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "identity_accent")
+    redirect_to = "/studio"
     try:
         if intent == "board_taxonomy":
             raw_parent_id = str(form.get("parent_board_id") or "")
@@ -89,6 +90,13 @@ async def post(request: Request) -> Page | Redirect:
                     "enabled_post_densities",
                 ),
             )
+        elif intent == "material_status":
+            services.update_material_production_state(
+                str(form.get("material_slug") or ""),
+                status=str(form.get("status") or ""),
+                is_featured=form.get("is_featured") == "on",
+            )
+            redirect_to = "/studio#continuity-events"
         else:
             raw_group_id = str(form.get("identity_accent_facet_group_id") or "")
             facet_group_id = int(raw_group_id) if raw_group_id else None
@@ -97,7 +105,7 @@ async def post(request: Request) -> Page | Redirect:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except (LookupError, ValueError) as exc:
         return _render_studio(request, error=str(exc))
-    return Redirect("/studio")
+    return Redirect(redirect_to)
 
 
 def _render_studio(request: Request, *, error: str | None = None) -> Page:

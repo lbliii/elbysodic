@@ -78,3 +78,7 @@ two communities and proves:
 Rendered page tests should cover privacy when a workflow exposes a new route or
 surface. Repository-only tests are enough for low-level constraints, but not
 for user-visible private rooms, staff desks, or notification inboxes.
+
+Use `docs/architecture/rendered-route-privacy-matrix.md` as the standing route
+checklist for rendered privacy coverage. Update it when adding a new route
+family, identity shape, or user-visible scoped data surface.

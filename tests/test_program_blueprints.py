@@ -13,6 +13,7 @@ from elbysodic.blueprints import (
     BlueprintWanted,
     ProgramBlueprint,
     ensure_valid_program_blueprint,
+    preview_program_blueprint_yaml,
     validate_program_blueprint,
 )
 from elbysodic.db import ForumRepository, connect, create_schema
@@ -196,6 +197,83 @@ def test_program_blueprint_reports_missing_wanted_material_reference() -> None:
         "program demo-program.wanted.missing-deed.related_material_slug "
         "references unknown material: current-event"
     ) in errors
+
+
+def test_program_blueprint_yaml_preview_maps_director_friendly_keys() -> None:
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town
+  name: RL Small Town
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+wanted:
+  - slug: returning-sibling
+    title: Returning sibling
+    type: relationship
+    related_material: premise
+    summary: A homecoming character with history.
+    body: Someone left, came back, and knows where the deed is hidden.
+"""
+    )
+
+    assert preview.is_valid
+    assert preview.blueprint is not None
+    assert preview.blueprint.slug == "rl-small-town"
+    assert preview.blueprint.boards[0].board_kind == "location"
+    assert preview.blueprint.materials[0].material_type == "premise"
+    assert preview.blueprint.wanted[0].wanted_type == "relationship"
+    assert preview.blueprint.wanted[0].related_material_slug == "premise"
+    assert preview.character_count == 1
+    assert preview.board_count == 1
+    assert preview.material_count == 1
+    assert preview.wanted_count == 1
+
+
+def test_program_blueprint_yaml_preview_reports_parse_and_validation_errors() -> None:
+    parse_preview = preview_program_blueprint_yaml("program: [")
+    validation_preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 2
+program:
+  slug: broken
+  name: Broken
+  role:
+    slug: director
+    name: Director
+characters: []
+boards: []
+materials: []
+"""
+    )
+
+    assert not parse_preview.is_valid
+    assert "Blueprint YAML could not be parsed:" in parse_preview.errors[0]
+    assert not validation_preview.is_valid
+    assert "elbysodic_blueprint must be 1" in validation_preview.errors
+    assert (
+        "program broken.characters must include at least one starter face"
+        in validation_preview.errors
+    )
 
 
 def test_seed_hydrates_program_blueprints_into_network_programs() -> None:

@@ -1,0 +1,27 @@
+{% def composer_view_toggle(name) %}
+<div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
+  <label>
+    <input type="radio"
+           name="{{ name }}"
+           value="write"
+           x-model="viewMode">
+    <span>Write</span>
+  </label>
+  <label>
+    <input type="radio"
+           name="{{ name }}"
+           value="preview"
+           x-model="viewMode">
+    <span>Preview</span>
+  </label>
+</div>
+{% end %}
+
+{% def composer_toolbar(field_id) %}
+<div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
+  <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', '{{ field_id }}')">B</button>
+  <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', '{{ field_id }}')">I</button>
+  <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', '{{ field_id }}')">&gt;</button>
+  <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', '{{ field_id }}')">[]</button>
+</div>
+{% end %}

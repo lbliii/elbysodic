@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/composer.html" import composer_toolbar, composer_view_toggle %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/posts.html" import post_frame %}
   {% from "_components/ui.html" import cast_faces, event_bridge, scene_state_badges %}
@@ -426,31 +427,11 @@
             <h3 id="reply-writing">Writing</h3>
             <p class="elbysodic-copy-helper">Drafts stay in this browser.</p>
           </div>
-          <div class="elbysodic-composer-toggle" role="radiogroup" aria-label="Composer view">
-            <label>
-              <input type="radio"
-                     name="reply-composer-view"
-                     value="write"
-                     x-model="viewMode">
-              <span>Write</span>
-            </label>
-            <label>
-              <input type="radio"
-                     name="reply-composer-view"
-                     value="preview"
-                     x-model="viewMode">
-              <span>Preview</span>
-            </label>
-          </div>
+          {{ composer_view_toggle("reply-composer-view") }}
         </div>
         <div class="elbysodic-composer-body" x-show="!previewMode">
           <label class="chirpui-visually-hidden" for="reply-body">Reply body</label>
-          <div class="elbysodic-composer-toolbar" role="toolbar" aria-label="Formatting">
-            <button type="button" class="elbysodic-composer-tool" title="Bold" aria-label="Bold" @click="applyFormat('bold', 'reply-body')">B</button>
-            <button type="button" class="elbysodic-composer-tool" title="Italic" aria-label="Italic" @click="applyFormat('italic', 'reply-body')">I</button>
-            <button type="button" class="elbysodic-composer-tool" title="Quote" aria-label="Quote" @click="applyFormat('quote', 'reply-body')">&gt;</button>
-            <button type="button" class="elbysodic-composer-tool" title="Link" aria-label="Link" @click="applyFormat('link', 'reply-body')">[]</button>
-          </div>
+          {{ composer_toolbar("reply-body") }}
           <textarea id="reply-body"
                     name="body"
                     class="chirpui-field__input"
