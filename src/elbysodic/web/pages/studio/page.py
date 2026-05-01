@@ -117,6 +117,10 @@ async def post(request: Request) -> Page | Redirect:
                 community_mark_alt=str(form.get("community_mark_alt") or ""),
                 world_hero_image_url=str(form.get("world_hero_image_url") or ""),
                 world_hero_image_alt=str(form.get("world_hero_image_alt") or ""),
+                world_hero_treatment=str(form.get("world_hero_treatment") or ""),
+                world_hero_focal_point=str(form.get("world_hero_focal_point") or ""),
+                world_hero_overlay=str(form.get("world_hero_overlay") or ""),
+                world_hero_height=str(form.get("world_hero_height") or ""),
             )
             redirect_to = "/studio#appearance-media"
         elif intent == "material_status":

@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS communities (
     community_mark_alt TEXT NOT NULL DEFAULT '',
     world_hero_image_url TEXT,
     world_hero_image_alt TEXT NOT NULL DEFAULT '',
+    world_hero_treatment TEXT NOT NULL DEFAULT 'split',
+    world_hero_focal_point TEXT NOT NULL DEFAULT 'center',
+    world_hero_overlay TEXT NOT NULL DEFAULT 'medium',
+    world_hero_height TEXT NOT NULL DEFAULT 'standard',
     enabled_post_profile_variants TEXT NOT NULL DEFAULT '',
     enabled_post_accent_styles TEXT NOT NULL DEFAULT '',
     enabled_post_border_styles TEXT NOT NULL DEFAULT '',
@@ -747,6 +751,16 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         if name not in community_columns:
             connection.execute(
                 f"ALTER TABLE communities ADD COLUMN {name} TEXT NOT NULL DEFAULT ''"
+            )
+    for name, default in {
+        "world_hero_treatment": "split",
+        "world_hero_focal_point": "center",
+        "world_hero_overlay": "medium",
+        "world_hero_height": "standard",
+    }.items():
+        if name not in community_columns:
+            connection.execute(
+                f"ALTER TABLE communities ADD COLUMN {name} TEXT NOT NULL DEFAULT '{default}'"
             )
     for name in {"community_mark_url", "world_hero_image_url"}:
         if name not in community_columns:

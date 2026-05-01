@@ -245,6 +245,10 @@ from elbysodic.services.timestamps import timestamp_key as _timestamp_key
 
 DEFAULT_DATABASE_PATH = Path("var/elbysodic.sqlite3")
 DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
+HERO_TREATMENTS = frozenset({"split", "background", "poster", "text"})
+HERO_FOCAL_POINTS = frozenset({"center", "top", "bottom", "left", "right"})
+HERO_OVERLAYS = frozenset({"none", "light", "medium", "heavy"})
+HERO_HEIGHTS = frozenset({"compact", "standard", "immersive"})
 
 
 class AppServices:
@@ -1401,6 +1405,10 @@ class AppServices:
         community_mark_alt: str,
         world_hero_image_url: str,
         world_hero_image_alt: str,
+        world_hero_treatment: str,
+        world_hero_focal_point: str,
+        world_hero_overlay: str,
+        world_hero_height: str,
     ) -> None:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
@@ -1409,16 +1417,32 @@ class AppServices:
         cleaned_mark_alt = community_mark_alt.strip()
         cleaned_hero_url = world_hero_image_url.strip()
         cleaned_hero_alt = world_hero_image_alt.strip()
+        cleaned_treatment = world_hero_treatment.strip() or "split"
+        cleaned_focal_point = world_hero_focal_point.strip() or "center"
+        cleaned_overlay = world_hero_overlay.strip() or "medium"
+        cleaned_height = world_hero_height.strip() or "standard"
         if cleaned_mark_url and not cleaned_mark_alt:
             raise ValueError("community mark alt text is required when a mark URL is set")
         if cleaned_hero_url and not cleaned_hero_alt:
             raise ValueError("world hero alt text is required when a hero image URL is set")
+        if cleaned_treatment not in HERO_TREATMENTS:
+            raise ValueError("world hero treatment is not supported")
+        if cleaned_focal_point not in HERO_FOCAL_POINTS:
+            raise ValueError("world hero focal point is not supported")
+        if cleaned_overlay not in HERO_OVERLAYS:
+            raise ValueError("world hero overlay is not supported")
+        if cleaned_height not in HERO_HEIGHTS:
+            raise ValueError("world hero height is not supported")
         self.repo.update_community_media(
             viewer.community.id,
             community_mark_url=cleaned_mark_url or None,
             community_mark_alt=cleaned_mark_alt,
             world_hero_image_url=cleaned_hero_url or None,
             world_hero_image_alt=cleaned_hero_alt,
+            world_hero_treatment=cleaned_treatment,
+            world_hero_focal_point=cleaned_focal_point,
+            world_hero_overlay=cleaned_overlay,
+            world_hero_height=cleaned_height,
         )
 
     def post_style_policy(self) -> PostStylePolicy:

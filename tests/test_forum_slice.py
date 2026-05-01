@@ -876,12 +876,15 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
             hp_home = await client.get("/", headers={"Cookie": cookie})
 
         assert xmen.status == 200
+        assert "elbysodic-world-hero--split" in xmen.text
         assert "/elbysodic-static/seed-media/xmen-hero.svg" in xmen.text
         assert 'alt="Snow-lit academy and B-24 signal lines"' in xmen.text
         assert "Current Event: B-24 Winter" in xmen.text
         assert "Iceman is infected with B-24" in xmen.text
 
         assert hp_home.status == 200
+        assert "elbysodic-world-hero--poster" in hp_home.text
+        assert "elbysodic-world-hero--focal-top" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
         assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
@@ -4931,6 +4934,10 @@ def test_director_studio_updates_world_hero_media() -> None:
                         "community_mark_alt": "X-Men mark",
                         "world_hero_image_url": "https://example.test/world.jpg",
                         "world_hero_image_alt": "A fog-covered academy at night",
+                        "world_hero_treatment": "background",
+                        "world_hero_focal_point": "top",
+                        "world_hero_overlay": "heavy",
+                        "world_hero_height": "immersive",
                     }
                 ).encode(),
                 headers=_FORM,
@@ -4942,13 +4949,63 @@ def test_director_studio_updates_world_hero_media() -> None:
         assert response.status == 302
         assert _response_header(response, "location") == "/studio#appearance-media"
         assert updated.world_hero_image_url == "https://example.test/world.jpg"
+        assert updated.world_hero_treatment == "background"
+        assert updated.world_hero_focal_point == "top"
+        assert updated.world_hero_overlay == "heavy"
+        assert updated.world_hero_height == "immersive"
         assert home.status == 200
         assert "elbysodic-world-hero--with-media" in home.text
+        assert "elbysodic-world-hero--background" in home.text
+        assert "elbysodic-world-hero--height-immersive" in home.text
+        assert "elbysodic-world-hero--overlay-heavy" in home.text
+        assert "elbysodic-world-hero--focal-top" in home.text
         assert 'src="https://example.test/world.jpg"' in home.text
         assert 'alt="A fog-covered academy at night"' in home.text
         assert studio.status == 200
         assert "Community media" in studio.text
         assert "https://example.test/world.jpg" in studio.text
+        assert '<option value="background" selected>Full background</option>' in studio.text
+
+    asyncio.run(run())
+
+
+def test_director_studio_rejects_unsupported_hero_treatment() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "community_media",
+                        "community_mark_url": "",
+                        "community_mark_alt": "",
+                        "world_hero_image_url": "https://example.test/world.jpg",
+                        "world_hero_image_alt": "A fog-covered academy at night",
+                        "world_hero_treatment": "raw-css",
+                        "world_hero_focal_point": "center",
+                        "world_hero_overlay": "medium",
+                        "world_hero_height": "standard",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        updated = repo.get_community(community.id)
+        assert response.status == 200
+        assert "world hero treatment is not supported" in response.text
+        assert updated.world_hero_treatment == "split"
 
     asyncio.run(run())
 
