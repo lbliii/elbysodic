@@ -18,10 +18,7 @@
       <p class="elbysodic-kicker">World status</p>
       <h1>{{ viewer.community.name }}</h1>
       <p class="elbysodic-copy-lead">
-        The school has reopened under a fragile truce while B-24 turns mutant fear into
-        policy, prediction, and weaponry. Choose a door into the crisis: academy halls,
-        frozen streets, underground networks, diplomatic rooms, or the labs pretending
-        this was all inevitable.
+        <strong>{{ world_status_label }}</strong> {{ world_status_copy }}
       </p>
       {% if viewer.current_character %}
       <p class="elbysodic-copy-helper">

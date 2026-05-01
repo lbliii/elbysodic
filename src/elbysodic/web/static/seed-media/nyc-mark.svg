@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">RL NYC late train mark</title>
+  <rect width="128" height="128" rx="16" fill="#111820"/>
+  <path d="M18 20h24v70H18zM52 12h30v78H52zM92 25h22v65H92z" fill="#243541"/>
+  <path d="M25 32h9v12h-9zM61 27h10v13H61zM62 56h10v13H62zM100 43h8v12h-8z" fill="#f1c76f"/>
+  <path d="M10 86h108v24H10z" fill="#2f3640"/>
+  <path d="M16 94h96" stroke="#d75667" stroke-width="5"/>
+  <path d="M28 99h22M62 99h22M96 99h12" stroke="#7bbfbd" stroke-width="4"/>
+</svg>

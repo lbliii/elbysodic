@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Town square noticeboard and storefront lights</title>
+  <desc id="desc">A town square with storefront awnings, a noticeboard, and founders week lights.</desc>
+  <rect width="1600" height="1100" fill="#f3ead9"/>
+  <path d="M0 740h1600v360H0z" fill="#5f7d6a"/>
+  <path d="M120 330h390v430H120zM560 260h450v500H560zM1060 360h420v400h-420z" fill="#fff7e5"/>
+  <path d="M120 330h390l-55-92H175zM560 260h450l-70-110H630zM1060 360h420l-50-88h-320z" fill="#b74b55"/>
+  <path d="M185 430h105v130H185zM340 430h105v130H340zM635 370h120v145H635zM815 370h120v145H815zM1135 455h115v125h-115zM1310 455h115v125h-115z" fill="#f2c56d"/>
+  <path d="M640 660h300v290H640z" fill="#6b4b35"/>
+  <path d="M688 705h205M688 755h205M688 805h205" stroke="#f7e6c8" stroke-width="16"/>
+  <path d="M250 830c180-90 365-90 555 0s365 90 535 0" fill="none" stroke="#fff4bf" stroke-width="14" stroke-dasharray="18 20"/>
+  <path d="M0 990c185-58 380-58 585 0s410 58 615 0 338-58 400-58v168H0z" fill="#d9ccb8"/>
+</svg>

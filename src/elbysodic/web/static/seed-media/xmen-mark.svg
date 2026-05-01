@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">X-Men Apocalypse academy signal mark</title>
+  <rect width="128" height="128" rx="16" fill="#142033"/>
+  <path d="M18 102h92L96 70H32z" fill="#e8edf0"/>
+  <path d="M35 42h58v39H35z" fill="#314862"/>
+  <path d="M48 30h32v12H48z" fill="#496c8d"/>
+  <path d="M61 42h7v39h-7z" fill="#101722"/>
+  <path d="M20 29c26 22 54 33 84 0" fill="none" stroke="#79c6ff" stroke-width="5"/>
+  <path d="M28 22c22 32 50 48 72 0" fill="none" stroke="#d75b68" stroke-width="4"/>
+</svg>

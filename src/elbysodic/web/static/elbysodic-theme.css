@@ -383,7 +383,21 @@ body {
 }
 
 .elbysodic-community-brand {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.65rem;
     min-width: 0;
+}
+
+.elbysodic-community-brand__mark {
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 74%, transparent);
+    border-radius: calc(var(--chirpui-radius) * 0.75);
+    display: block;
+    flex: 0 0 auto;
+    height: 2rem;
+    object-fit: cover;
+    width: 2rem;
 }
 
 .elbysodic-community-brand__name {

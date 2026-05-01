@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Glass staircase rising through castle stacks</title>
+  <desc id="desc">An old castle library with suspended staircases and violet glass light.</desc>
+  <rect width="1600" height="1100" fill="#171020"/>
+  <path d="M0 820h1600v280H0z" fill="#2a2032"/>
+  <path d="M160 140h300v720H160zM1140 140h300v720h-300z" fill="#3d2f40"/>
+  <path d="M218 220h184v34H218zM218 310h184v34H218zM218 400h184v34H218zM218 490h184v34H218zM218 580h184v34H218zM1198 220h184v34h-184zM1198 310h184v34h-184zM1198 400h184v34h-184zM1198 490h184v34h-184zM1198 580h184v34h-184z" fill="#c8b174"/>
+  <path d="M430 760 980 500l80 80-550 260z" fill="#d7c1ff" opacity=".72"/>
+  <path d="M620 620 1050 330l70 85-430 290z" fill="#95d7cf" opacity=".68"/>
+  <path d="M500 850h600l-110 120H390z" fill="#705c85"/>
+  <path d="M760 120h150l70 650H690z" fill="#23172f"/>
+  <path d="M790 180h88v500h-88z" fill="#f3e1aa"/>
+  <path d="M710 255h250M725 365h235M742 475h230M760 585h205" stroke="#7b4f9f" stroke-width="18" opacity=".7"/>
+  <path d="M0 920c210 44 450 44 720 0s520-44 880 0v180H0z" fill="#f8f2df" opacity=".16"/>
+</svg>

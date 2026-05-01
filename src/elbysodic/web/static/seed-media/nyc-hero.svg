@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Night street windows above a subway platform</title>
+  <desc id="desc">Tall city apartment blocks, late windows, and a subway platform under rain.</desc>
+  <rect width="1600" height="1100" fill="#111820"/>
+  <path d="M90 180h260v650H90zM410 80h310v750H410zM790 230h240v600H790zM1090 120h330v710h-330z" fill="#22313d"/>
+  <path d="M130 235h48v64h-48zM235 235h48v64h-48zM130 380h48v64h-48zM235 525h48v64h-48zM470 150h54v70h-54zM590 260h54v70h-54zM470 410h54v70h-54zM590 540h54v70h-54zM840 305h48v64h-48zM930 445h48v64h-48zM1150 190h55v72h-55zM1280 335h55v72h-55zM1150 505h55v72h-55zM1280 640h55v72h-55z" fill="#f1c76f"/>
+  <path d="M0 815h1600v285H0z" fill="#2f3640"/>
+  <path d="M0 900h1600" stroke="#d75667" stroke-width="16"/>
+  <path d="M140 930h1320v90H140z" fill="#141b22"/>
+  <path d="M205 955h160v34H205zM470 955h160v34H470zM735 955h160v34H735zM1000 955h160v34h-160zM1265 955h160v34h-160z" fill="#7bbfbd"/>
+  <path d="M180 845h1240" stroke="#f0eadf" stroke-width="8" stroke-dasharray="34 28" opacity=".75"/>
+  <path d="M250 60v730M540 35v760M890 90v705M1220 55v740M1430 110v685" stroke="#7bbfbd" stroke-width="4" opacity=".35"/>
+</svg>
