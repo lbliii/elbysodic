@@ -332,8 +332,7 @@ def theme_health_warnings(editor: ThemeEditorView) -> tuple[ThemeHealthWarning, 
             minimum=3.0,
             title="Error states may be too quiet",
             message=(
-                "Validation and blocked workflow states need clearer contrast in "
-                f"{mode_name} mode."
+                f"Validation and blocked workflow states need clearer contrast in {mode_name} mode."
             ),
         )
     return tuple(warnings)
@@ -418,7 +417,9 @@ def _theme_tokens(theme: CommunityTheme | None) -> dict[str, Any]:
         return tokens
     if not isinstance(raw, dict):
         return tokens
-    tokens.update({key: value for key, value in raw.items() if key not in {"typography", "light", "dark"}})
+    tokens.update(
+        {key: value for key, value in raw.items() if key not in {"typography", "light", "dark"}}
+    )
     tokens["typography"].update(_clean_mapping(raw.get("typography")))
     tokens["light"].update(_clean_mapping(raw.get("light")))
     tokens["dark"].update(_clean_mapping(raw.get("dark")))
@@ -445,10 +446,7 @@ def _required_choice(value: str, labels: dict[str, str], label: str) -> str:
 def _mode_editor(value: object, mode_name: str) -> ThemeModeEditor:
     raw = _clean_mapping(value)
     defaults = cast(dict[str, str], DEFAULT_THEME_TOKENS[mode_name])
-    values = {
-        key: str(raw.get(key) or defaults[key])
-        for key, _label in THEME_MODE_FIELDS
-    }
+    values = {key: str(raw.get(key) or defaults[key]) for key, _label in THEME_MODE_FIELDS}
     return ThemeModeEditor(**values)
 
 

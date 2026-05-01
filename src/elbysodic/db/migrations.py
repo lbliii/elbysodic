@@ -348,7 +348,9 @@ def _add_community_media_slots(connection: sqlite3.Connection) -> None:
             connection.execute(f"ALTER TABLE communities ADD COLUMN {name} TEXT")
     for name in ("community_mark_alt", "world_hero_image_alt"):
         if name not in columns:
-            connection.execute(f"ALTER TABLE communities ADD COLUMN {name} TEXT NOT NULL DEFAULT ''")
+            connection.execute(
+                f"ALTER TABLE communities ADD COLUMN {name} TEXT NOT NULL DEFAULT ''"
+            )
 
 
 MIGRATIONS: tuple[Migration, ...] = (

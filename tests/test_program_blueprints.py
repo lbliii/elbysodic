@@ -206,7 +206,9 @@ appearance:
     assert validate_program_blueprint(_blueprint(appearance=appearance)) == ()
     assert preview.is_valid
     assert preview.appearance_count == 1
-    assert preview.appearance_summary == "postbit: poster rail, hairline frame; 2 guidebook variants"
+    assert (
+        preview.appearance_summary == "postbit: poster rail, hairline frame; 2 guidebook variants"
+    )
 
 
 def test_program_blueprint_rejects_unsafe_appearance_payload() -> None:

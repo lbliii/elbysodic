@@ -14,21 +14,11 @@ THEME_FONT_KEYS: frozenset[str] = frozenset({"system", "serif", "condensed", "mo
 THEME_RADIUS_KEYS: frozenset[str] = frozenset({"square", "sm", "md"})
 THEME_DENSITY_KEYS: frozenset[str] = frozenset({"calm", "compact", "dramatic"})
 THEME_TEXTURE_KEYS: frozenset[str] = frozenset({"none", "grid", "paper", "scanline"})
-APPEARANCE_POST_PROFILE_VARIANTS: frozenset[str] = frozenset(
-    {"bio", "poster", "dock", "crest"}
-)
-APPEARANCE_POST_ACCENT_STYLES: frozenset[str] = frozenset(
-    {"soft", "line", "glow", "block"}
-)
-APPEARANCE_POST_BORDER_STYLES: frozenset[str] = frozenset(
-    {"none", "hairline", "bracket", "double"}
-)
-APPEARANCE_POST_TITLE_STYLES: frozenset[str] = frozenset(
-    {"standard", "serif", "condensed", "mono"}
-)
-APPEARANCE_POST_DENSITIES: frozenset[str] = frozenset(
-    {"calm", "compact", "dramatic"}
-)
+APPEARANCE_POST_PROFILE_VARIANTS: frozenset[str] = frozenset({"bio", "poster", "dock", "crest"})
+APPEARANCE_POST_ACCENT_STYLES: frozenset[str] = frozenset({"soft", "line", "glow", "block"})
+APPEARANCE_POST_BORDER_STYLES: frozenset[str] = frozenset({"none", "hairline", "bracket", "double"})
+APPEARANCE_POST_TITLE_STYLES: frozenset[str] = frozenset({"standard", "serif", "condensed", "mono"})
+APPEARANCE_POST_DENSITIES: frozenset[str] = frozenset({"calm", "compact", "dramatic"})
 APPEARANCE_MATERIAL_TYPES: frozenset[str] = frozenset(
     {"premise", "guide", "factions", "application", "event"}
 )
