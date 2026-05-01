@@ -15,6 +15,8 @@ output; Elbysodic is a text-first app, so prose, summaries, helper copy, and
 metadata need distinct paragraph roles.
 Use `docs/product/notices-admonitions.md` before adding current-event bridges,
 warnings, staff notices, toasts, or other page-local alerts.
+Use `docs/product/appearance-studio.md` before adding theme controls,
+community media slots, or presentation variants for ritual surfaces.
 
 ## Audit Baseline
 

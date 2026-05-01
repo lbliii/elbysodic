@@ -604,6 +604,10 @@ def test_schema_migrates_existing_characters_for_post_profile_variants() -> None
     assert "post_title_style" in columns
     assert "post_density" in columns
     assert "identity_accent_facet_group_id" in community_columns
+    assert "community_mark_url" in community_columns
+    assert "community_mark_alt" in community_columns
+    assert "world_hero_image_url" in community_columns
+    assert "world_hero_image_alt" in community_columns
     assert "enabled_post_profile_variants" in community_columns
     assert "enabled_post_accent_styles" in community_columns
     assert "enabled_post_border_styles" in community_columns
@@ -644,6 +648,25 @@ def test_community_post_style_policy_is_tenant_scoped(repo: ForumRepository) -> 
 
     assert updated.enabled_post_profile_variants == "bio,poster"
     assert repo.get_community(hosted.id).enabled_post_profile_variants == ""
+
+
+def test_community_media_slots_are_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted", "Hosted Test")
+
+    updated = repo.update_community_media(
+        default.id,
+        community_mark_url="https://example.test/mark.png",
+        community_mark_alt="Board mark",
+        world_hero_image_url="https://example.test/world.jpg",
+        world_hero_image_alt="A foggy town square",
+    )
+
+    assert updated.community_mark_url == "https://example.test/mark.png"
+    assert updated.community_mark_alt == "Board mark"
+    assert updated.world_hero_image_url == "https://example.test/world.jpg"
+    assert updated.world_hero_image_alt == "A foggy town square"
+    assert repo.get_community(hosted.id).world_hero_image_url is None
 
 
 def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:

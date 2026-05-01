@@ -39,7 +39,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
-from elbysodic.services.themes import ProgramThemeView
+from elbysodic.services.themes import ProgramThemeView, ThemeEditorView, ThemeHealthWarning
 
 type BoardThreadFilter = Literal["all", "unread", "attention", "mine", "pinned", "locked"]
 type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "archived"]
@@ -954,6 +954,8 @@ class StudioBoardEditor:
 @dataclass(frozen=True, slots=True)
 class DirectorStudio:
     can_manage: bool
+    theme_editor: ThemeEditorView
+    theme_warnings: tuple[ThemeHealthWarning, ...]
     facet_groups: list[FacetGroup]
     identity_accent_group: FacetGroup | None
     post_style_policy: PostStylePolicy

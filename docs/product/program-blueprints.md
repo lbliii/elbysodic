@@ -101,6 +101,17 @@ theme:
     warning: "#dbb168"
     error: "#ee8d8d"
 
+appearance:
+  post_style:
+    profile_variant: poster
+    accent_style: line
+    border_style: hairline
+    title_style: serif
+    density: calm
+  material_variants:
+    premise: chapter
+    event: noticeboard
+
 characters:
   - slug: june-calloway
     name: June Calloway
@@ -146,6 +157,9 @@ The current Python contract is intentionally close to this shape:
 - `BlueprintTheme`
 - `BlueprintThemeMode`
 - `BlueprintTypography`
+- `BlueprintAppearance`
+- `BlueprintPostStyle`
+- `BlueprintMaterialVariant`
 
 The Python field names use repository-facing terms such as `board_kind`,
 `material_type`, `wanted_type`, and `related_material_slug`. A future YAML parser
@@ -155,6 +169,9 @@ typed objects before validation.
 ## Theme Boundary
 
 Program themes change atmosphere through design tokens, not arbitrary CSS.
+Use `docs/product/appearance-studio.md` for the broader product boundary around
+theme tokens, ritual-surface variants, media slots, previews, and health
+warnings.
 
 Allowed theme controls:
 
@@ -164,6 +181,13 @@ Allowed theme controls:
 - Density preset.
 - Texture preset.
 
+Allowed appearance controls:
+
+- Post style defaults from the same approved vocabulary Studio exposes:
+  profile variant, accent style, border style, title style, and density.
+- Guidebook material presentation variants keyed by material type, such as
+  `chapter`, `dossier`, `noticeboard`, and `archive`.
+
 Disallowed theme controls:
 
 - Raw CSS selectors.
@@ -171,6 +195,7 @@ Disallowed theme controls:
 - External font URLs.
 - Layout rules that can break app structure.
 - Per-component overrides outside approved token names.
+- Raw HTML templates or template overrides.
 
 The goal is for Jurassic Park, HP, RL NYC, and RL Small Town to feel like
 different rooms in one studio network while sharing Elbysodic's operational
@@ -190,6 +215,9 @@ Blueprint validation should fail before hydration when:
   blueprint.
 - A theme color is not a 6-digit hex color.
 - A theme font, radius, density, or texture preset is outside the allowlist.
+- An appearance post style or material variant is outside the allowlist.
+- An appearance payload includes raw CSS, script, HTML, template, or external
+  font keys.
 
 Errors should be written for humans first, because directors need to fix these
 files. Avoid raw database exceptions or stack traces in import preview flows.

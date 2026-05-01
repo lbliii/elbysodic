@@ -15,6 +15,10 @@ class Community:
     host: str | None
     default_theme_id: int | None
     identity_accent_facet_group_id: int | None
+    community_mark_url: str | None
+    community_mark_alt: str
+    world_hero_image_url: str | None
+    world_hero_image_alt: str
     enabled_post_profile_variants: str
     enabled_post_accent_styles: str
     enabled_post_border_styles: str

@@ -1,9 +1,12 @@
 """Director-authored blueprint contracts for composing Elbysodic hubs."""
 
 from elbysodic.blueprints.programs import (
+    BlueprintAppearance,
     BlueprintBoard,
     BlueprintCharacter,
     BlueprintMaterial,
+    BlueprintMaterialVariant,
+    BlueprintPostStyle,
     BlueprintTheme,
     BlueprintThemeMode,
     BlueprintTypography,
@@ -20,9 +23,12 @@ from elbysodic.blueprints.programs import (
 )
 
 __all__ = [
+    "BlueprintAppearance",
     "BlueprintBoard",
     "BlueprintCharacter",
     "BlueprintMaterial",
+    "BlueprintMaterialVariant",
+    "BlueprintPostStyle",
     "BlueprintTheme",
     "BlueprintThemeMode",
     "BlueprintTypography",

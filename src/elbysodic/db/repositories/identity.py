@@ -49,6 +49,10 @@ class IdentityRepositoryMixin(RepositoryBase):
                 host,
                 default_theme_id,
                 identity_accent_facet_group_id,
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
                 enabled_post_profile_variants,
                 enabled_post_accent_styles,
                 enabled_post_border_styles,
@@ -75,6 +79,10 @@ class IdentityRepositoryMixin(RepositoryBase):
                 host,
                 default_theme_id,
                 identity_accent_facet_group_id,
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
                 enabled_post_profile_variants,
                 enabled_post_accent_styles,
                 enabled_post_border_styles,
@@ -101,6 +109,10 @@ class IdentityRepositoryMixin(RepositoryBase):
                 host,
                 default_theme_id,
                 identity_accent_facet_group_id,
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
                 enabled_post_profile_variants,
                 enabled_post_accent_styles,
                 enabled_post_border_styles,
@@ -143,6 +155,38 @@ class IdentityRepositoryMixin(RepositoryBase):
             WHERE id = ?
             """,
             (facet_group_id, _utc_now(), community_id),
+        )
+        self.connection.commit()
+        return self.get_community(community_id)
+
+    def update_community_media(
+        self,
+        community_id: int,
+        *,
+        community_mark_url: str | None,
+        community_mark_alt: str,
+        world_hero_image_url: str | None,
+        world_hero_image_alt: str,
+    ) -> Community:
+        self.get_community(community_id)
+        self.connection.execute(
+            """
+            UPDATE communities
+            SET community_mark_url = ?,
+                community_mark_alt = ?,
+                world_hero_image_url = ?,
+                world_hero_image_alt = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
+                _utc_now(),
+                community_id,
+            ),
         )
         self.connection.commit()
         return self.get_community(community_id)

@@ -768,6 +768,15 @@ wanted:
     related_material: premise
     summary: A homecoming character with history.
     body: Someone left, came back, and knows where the deed is hidden.
+appearance:
+  post_style:
+    profile_variant: poster
+    accent_style: line
+    border_style: hairline
+    title_style: serif
+    density: calm
+  material_variants:
+    premise: chapter
 """
 
         async with TestClient(app) as client:
@@ -792,6 +801,8 @@ wanted:
         assert "1 scene hubs" in response.text
         assert "1 materials" in response.text
         assert "1 wanted hooks" in response.text
+        assert "1 appearance" in response.text
+        assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
         after_count = repo.connection.execute(
@@ -1554,9 +1565,14 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert 'href="/world/premise"' in world.text
             assert 'href="/world/b-24-winter"' in world.text
             assert "United Nations" in world.text
+            assert "elbysodic-material-card--premise" in world.text
+            assert "elbysodic-material-card--application" in world.text
+            assert "elbysodic-current-event-card--event" in world.text
 
             event = await client.get("/world/b-24-winter")
             assert event.status == 200
+            assert "elbysodic-material-hero--event" in event.text
+            assert "elbysodic-material-detail-shell--event" in event.text
             assert "Iceman is infected with B-24" in event.text
             assert "Evil Lab" in event.text
             assert "Wanted hooks" in event.text
@@ -4458,6 +4474,199 @@ def test_studio_can_set_identity_accent_source() -> None:
             assert response.status == 302
             assert dict(response.headers)["location"] == "/studio"
             assert repo.get_community(community.id).identity_accent_facet_group_id == species.id
+
+    asyncio.run(run())
+
+
+def test_director_studio_updates_default_theme_tokens() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+        body = {
+            "intent": "default_theme",
+            "theme_slug": "gothic-folk-horror",
+            "theme_name": "Gothic Folk Horror",
+            "theme_typography_display": "serif",
+            "theme_typography_body": "serif",
+            "theme_typography_mono": "mono",
+            "theme_radius": "square",
+            "theme_density": "dramatic",
+            "theme_texture": "scanline",
+            "theme_light_bg": "#f7f0e8",
+            "theme_light_bg_subtle": "#eadfd5",
+            "theme_light_surface": "#fffaf4",
+            "theme_light_surface_elevated": "#f1e4d9",
+            "theme_light_border": "#c8a994",
+            "theme_light_text": "#261b18",
+            "theme_light_text_muted": "#705c54",
+            "theme_light_accent": "#7a2639",
+            "theme_light_accent_hover": "#5a1a29",
+            "theme_light_accent_dim": "#b36a78",
+            "theme_light_accent_secondary": "#315f55",
+            "theme_light_success": "#3f7557",
+            "theme_light_warning": "#94651d",
+            "theme_light_error": "#963333",
+            "theme_dark_bg": "#100d0f",
+            "theme_dark_bg_subtle": "#1b1518",
+            "theme_dark_surface": "#241b20",
+            "theme_dark_surface_elevated": "#30242a",
+            "theme_dark_border": "#6a4b55",
+            "theme_dark_text": "#f7ece7",
+            "theme_dark_text_muted": "#c9b2ac",
+            "theme_dark_accent": "#d98aa0",
+            "theme_dark_accent_hover": "#efafbf",
+            "theme_dark_accent_dim": "#7c4050",
+            "theme_dark_accent_secondary": "#8ec0a0",
+            "theme_dark_success": "#8ec0a0",
+            "theme_dark_warning": "#d7ad63",
+            "theme_dark_error": "#ec8b8b",
+        }
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(body).encode(),
+                headers=_FORM,
+            )
+            index = await client.get("/")
+
+        theme = repo.get_default_theme(community.id)
+        assert response.status == 302
+        assert _response_header(response, "location") == "/studio#appearance-theme"
+        assert theme is not None
+        assert theme.slug == "gothic-folk-horror"
+        assert theme.name == "Gothic Folk Horror"
+        tokens = json.loads(theme.tokens_json)
+        assert tokens["texture"] == "scanline"
+        assert tokens["density"] == "dramatic"
+        assert tokens["typography"]["display"] == "serif"
+        assert tokens["dark"]["accent"] == "#d98aa0"
+        assert index.status == 200
+        assert "--chirpui-accent: #d98aa0;" in index.text
+        assert "--elbysodic-program-density: dramatic;" in index.text
+
+    asyncio.run(run())
+
+
+def test_director_studio_surfaces_theme_health_warnings() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        admin_services.update_default_theme(
+            slug="low-contrast",
+            name="Low Contrast",
+            typography_display="system",
+            typography_body="system",
+            typography_mono="mono",
+            radius="sm",
+            density="calm",
+            texture="none",
+            light={
+                "bg": "#f0f0f0",
+                "bg_subtle": "#eeeeee",
+                "surface": "#f2f2f2",
+                "surface_elevated": "#f3f3f3",
+                "border": "#dddddd",
+                "text": "#f1f1f1",
+                "text_muted": "#eeeeee",
+                "accent": "#f0eeee",
+                "accent_hover": "#e8e8e8",
+                "accent_dim": "#eeeeee",
+                "accent_secondary": "#eeeeee",
+                "success": "#eeeeee",
+                "warning": "#eeeeee",
+                "error": "#eeeeee",
+            },
+            dark={
+                "bg": "#101010",
+                "bg_subtle": "#161616",
+                "surface": "#181818",
+                "surface_elevated": "#202020",
+                "border": "#343434",
+                "text": "#f8f8f8",
+                "text_muted": "#bbbbbb",
+                "accent": "#d98aa0",
+                "accent_hover": "#efafbf",
+                "accent_dim": "#7c4050",
+                "accent_secondary": "#8ec0a0",
+                "success": "#8ec0a0",
+                "warning": "#d7ad63",
+                "error": "#ec8b8b",
+            },
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+
+        assert studio.status == 200
+        assert "Theme Health" in studio.text
+        assert "Guidebook body text may be hard to read" in studio.text
+        assert "Muted metadata may fade too far back" in studio.text
+        assert "Accent actions may not stand out" in studio.text
+
+    asyncio.run(run())
+
+
+def test_director_studio_updates_world_hero_media() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "community_media",
+                        "community_mark_url": "https://example.test/mark.png",
+                        "community_mark_alt": "X-Men mark",
+                        "world_hero_image_url": "https://example.test/world.jpg",
+                        "world_hero_image_alt": "A fog-covered academy at night",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            home = await client.get("/")
+            studio = await client.get("/studio")
+
+        updated = repo.get_community(community.id)
+        assert response.status == 302
+        assert _response_header(response, "location") == "/studio#appearance-media"
+        assert updated.world_hero_image_url == "https://example.test/world.jpg"
+        assert home.status == 200
+        assert "elbysodic-world-hero--with-media" in home.text
+        assert 'src="https://example.test/world.jpg"' in home.text
+        assert 'alt="A fog-covered academy at night"' in home.text
+        assert studio.status == 200
+        assert "Community media" in studio.text
+        assert "https://example.test/world.jpg" in studio.text
 
     asyncio.run(run())
 

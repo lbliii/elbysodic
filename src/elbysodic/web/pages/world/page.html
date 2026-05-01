@@ -7,7 +7,7 @@
 
 {% def material_card(item) %}
 {% call surface(variant="elevated") %}
-<article class="chirpui-stack chirpui-stack--sm elbysodic-material-card">
+<article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
   <div class="chirpui-cluster chirpui-cluster--between">
     <div>
       <p class="elbysodic-material-card__type">{{ item.type_label }}</p>
@@ -77,7 +77,7 @@
 
   {% if hub.events %}
   {% set current_event = hub.events[0] %}
-  <a class="elbysodic-current-event-card" href="/world/{{ current_event.material.slug }}">
+  <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ current_event.material.material_type }}" href="/world/{{ current_event.material.slug }}">
     <span class="elbysodic-material-card__type">{{ current_event.type_label }}</span>
     <strong>{{ current_event.material.title }}</strong>
     <span>{{ current_event.rendered_summary }}</span>

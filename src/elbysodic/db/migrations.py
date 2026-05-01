@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 6
+CURRENT_SCHEMA_VERSION = 7
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -339,12 +339,27 @@ def _add_intake_claims(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_community_media_slots(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+    }
+    for name in ("community_mark_url", "world_hero_image_url"):
+        if name not in columns:
+            connection.execute(f"ALTER TABLE communities ADD COLUMN {name} TEXT")
+    for name in ("community_mark_alt", "world_hero_image_alt"):
+        if name not in columns:
+            connection.execute(
+                f"ALTER TABLE communities ADD COLUMN {name} TEXT NOT NULL DEFAULT ''"
+            )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
     Migration(4, "application-review-rooms", _add_application_review_rooms),
     Migration(5, "realm-interactions", _add_realm_interactions),
     Migration(6, "intake-claims", _add_intake_claims),
+    Migration(7, "community-media-slots", _add_community_media_slots),
 )
 
 

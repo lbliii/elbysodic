@@ -99,7 +99,7 @@
   </section>
   {% end %}
 
-  {% call surface(variant="elevated") %}
+  {% call surface(variant="elevated", cls="elbysodic-material-detail-shell elbysodic-material-detail-shell--" ~ material.material.material_type) %}
   <article id="canon" class="chirpui-stack chirpui-stack--md elbysodic-material-detail">
     <div class="elbysodic-prose-body elbysodic-prose-body--canon elbysodic-material-body">
       {{ material.rendered_body }}
