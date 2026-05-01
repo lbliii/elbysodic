@@ -168,6 +168,14 @@ class ThemeEditorView:
     dark: ThemeModeEditor
 
 
+@dataclass(frozen=True, slots=True)
+class ThemeHealthWarning:
+    severity: str
+    title: str
+    message: str
+    mode: str
+
+
 def community_theme_view(theme: CommunityTheme | None) -> ProgramThemeView | None:
     if theme is None:
         return None
@@ -263,6 +271,72 @@ def build_theme_tokens(
 
 def theme_tokens_json(tokens: dict[str, Any]) -> str:
     return json.dumps(tokens, sort_keys=True)
+
+
+def theme_health_warnings(editor: ThemeEditorView) -> tuple[ThemeHealthWarning, ...]:
+    warnings: list[ThemeHealthWarning] = []
+    for mode_name, mode in (("light", editor.light), ("dark", editor.dark)):
+        _append_contrast_warning(
+            warnings,
+            mode_name,
+            foreground=mode.text,
+            background=mode.bg,
+            minimum=4.5,
+            title="Guidebook body text may be hard to read",
+            message=(
+                "Story prose and canon material need stronger contrast against the "
+                f"{mode_name} background."
+            ),
+        )
+        _append_contrast_warning(
+            warnings,
+            mode_name,
+            foreground=mode.text_muted,
+            background=mode.bg,
+            minimum=3.0,
+            title="Muted metadata may fade too far back",
+            message=(
+                "Writer names, latest lines, and helper copy may be difficult to scan "
+                f"in {mode_name} mode."
+            ),
+        )
+        _append_contrast_warning(
+            warnings,
+            mode_name,
+            foreground=mode.accent,
+            background=mode.surface,
+            minimum=3.0,
+            title="Accent actions may not stand out",
+            message=(
+                "Links, selected states, and character accents need enough contrast "
+                f"against {mode_name} surfaces."
+            ),
+        )
+        _append_contrast_warning(
+            warnings,
+            mode_name,
+            foreground=mode.warning,
+            background=mode.surface,
+            minimum=3.0,
+            title="Warnings may be too quiet",
+            message=(
+                "Director notes and revision requests should remain visible without "
+                f"shouting in {mode_name} mode."
+            ),
+        )
+        _append_contrast_warning(
+            warnings,
+            mode_name,
+            foreground=mode.error,
+            background=mode.surface,
+            minimum=3.0,
+            title="Error states may be too quiet",
+            message=(
+                "Validation and blocked workflow states need clearer contrast in "
+                f"{mode_name} mode."
+            ),
+        )
+    return tuple(warnings)
 
 
 def _base_variables(tokens: dict[str, Any]) -> tuple[tuple[str, str], ...]:
@@ -386,6 +460,49 @@ def _validated_mode(values: dict[str, str], mode_name: str) -> dict[str, str]:
             raise ValueError(f"{mode_name} {label.lower()} must be a 6-digit hex color")
         mode[key] = value
     return mode
+
+
+def _append_contrast_warning(
+    warnings: list[ThemeHealthWarning],
+    mode: str,
+    *,
+    foreground: str,
+    background: str,
+    minimum: float,
+    title: str,
+    message: str,
+) -> None:
+    ratio = _contrast_ratio(foreground, background)
+    if ratio < minimum:
+        warnings.append(
+            ThemeHealthWarning(
+                severity="warning",
+                title=title,
+                message=f"{message} Current ratio: {ratio:.2f}:1.",
+                mode=mode,
+            )
+        )
+
+
+def _contrast_ratio(foreground: str, background: str) -> float:
+    foreground_luminance = _relative_luminance(foreground)
+    background_luminance = _relative_luminance(background)
+    lighter = max(foreground_luminance, background_luminance)
+    darker = min(foreground_luminance, background_luminance)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _relative_luminance(hex_color: str) -> float:
+    channels = tuple(int(hex_color[index : index + 2], 16) / 255 for index in (1, 3, 5))
+    linear_channels = tuple(_linear_channel(channel) for channel in channels)
+    red, green, blue = linear_channels
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+
+def _linear_channel(channel: float) -> float:
+    if channel <= 0.03928:
+        return channel / 12.92
+    return ((channel + 0.055) / 1.055) ** 2.4
 
 
 def _is_hex_color(value: str) -> bool:

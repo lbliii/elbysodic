@@ -263,6 +263,31 @@
       </p>
       <span>Accent</span>
     </div>
+    <section class="elbysodic-theme-health" aria-labelledby="appearance-theme-health-heading">
+      <div class="elbysodic-theme-health__header">
+        <div>
+          <p class="elbysodic-kicker">Theme Health</p>
+          <h3 id="appearance-theme-health-heading">Readability notes</h3>
+        </div>
+        <span>{{ studio.theme_warnings | length }} warnings</span>
+      </div>
+      {% if studio.theme_warnings %}
+      <ol class="elbysodic-navigation-health__list">
+        {% for warning in studio.theme_warnings %}
+        <li class="elbysodic-notice elbysodic-notice--{{ warning.severity }}">
+          <b class="elbysodic-notice__mark" aria-hidden="true">!</b>
+          <em class="elbysodic-notice__label">{{ warning.mode }} {{ warning.severity }}</em>
+          <div class="elbysodic-notice__body">
+            <strong class="elbysodic-notice__title">{{ warning.title }}</strong>
+            <p class="elbysodic-notice__summary">{{ warning.message }}</p>
+          </div>
+        </li>
+        {% end %}
+      </ol>
+      {% else %}
+      <p class="elbysodic-empty-state">Theme contrast is healthy for the checked surfaces.</p>
+      {% end %}
+    </section>
     <div class="chirpui-cluster chirpui-cluster--end">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Save theme tokens</button>
     </div>

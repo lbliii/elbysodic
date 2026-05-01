@@ -217,6 +217,7 @@ from elbysodic.services.themes import (
     build_theme_tokens,
     community_theme_editor,
     community_theme_view,
+    theme_health_warnings,
     theme_tokens_json,
 )
 from elbysodic.services.threads import (
@@ -1007,6 +1008,7 @@ class AppServices:
         sidebar_sections = self.repo.list_sidebar_sections(viewer.community.id)
         facet_groups = self.repo.list_facet_groups(viewer.community.id)
         default_theme = self.repo.get_default_theme(viewer.community.id)
+        theme_editor = community_theme_editor(default_theme)
         identity_accent_group = next(
             (
                 group
@@ -1017,7 +1019,8 @@ class AppServices:
         )
         return DirectorStudio(
             can_manage=can_manage_studio,
-            theme_editor=community_theme_editor(default_theme),
+            theme_editor=theme_editor,
+            theme_warnings=theme_health_warnings(theme_editor),
             facet_groups=facet_groups,
             identity_accent_group=identity_accent_group,
             post_style_policy=_post_style_policy(viewer.community),

@@ -4468,6 +4468,74 @@ def test_director_studio_updates_default_theme_tokens() -> None:
     asyncio.run(run())
 
 
+def test_director_studio_surfaces_theme_health_warnings() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        admin_services.update_default_theme(
+            slug="low-contrast",
+            name="Low Contrast",
+            typography_display="system",
+            typography_body="system",
+            typography_mono="mono",
+            radius="sm",
+            density="calm",
+            texture="none",
+            light={
+                "bg": "#f0f0f0",
+                "bg_subtle": "#eeeeee",
+                "surface": "#f2f2f2",
+                "surface_elevated": "#f3f3f3",
+                "border": "#dddddd",
+                "text": "#f1f1f1",
+                "text_muted": "#eeeeee",
+                "accent": "#f0eeee",
+                "accent_hover": "#e8e8e8",
+                "accent_dim": "#eeeeee",
+                "accent_secondary": "#eeeeee",
+                "success": "#eeeeee",
+                "warning": "#eeeeee",
+                "error": "#eeeeee",
+            },
+            dark={
+                "bg": "#101010",
+                "bg_subtle": "#161616",
+                "surface": "#181818",
+                "surface_elevated": "#202020",
+                "border": "#343434",
+                "text": "#f8f8f8",
+                "text_muted": "#bbbbbb",
+                "accent": "#d98aa0",
+                "accent_hover": "#efafbf",
+                "accent_dim": "#7c4050",
+                "accent_secondary": "#8ec0a0",
+                "success": "#8ec0a0",
+                "warning": "#d7ad63",
+                "error": "#ec8b8b",
+            },
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+
+        assert studio.status == 200
+        assert "Theme Health" in studio.text
+        assert "Guidebook body text may be hard to read" in studio.text
+        assert "Muted metadata may fade too far back" in studio.text
+        assert "Accent actions may not stand out" in studio.text
+
+    asyncio.run(run())
+
+
 def test_reply_uses_selected_character() -> None:
     async def run() -> None:
         app = _app()

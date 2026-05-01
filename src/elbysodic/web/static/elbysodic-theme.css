@@ -1783,6 +1783,36 @@ body {
     padding: 0.3rem 0.55rem;
 }
 
+.elbysodic-theme-health {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.75rem;
+    padding-top: 1rem;
+}
+
+.elbysodic-theme-health__header {
+    align-items: start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.elbysodic-theme-health__header h3,
+.elbysodic-theme-health__header p {
+    margin: 0;
+}
+
+.elbysodic-theme-health__header > span {
+    background: color-mix(in srgb, var(--chirpui-warning, var(--chirpui-accent)) 12%, var(--chirpui-surface));
+    border: 1px solid color-mix(in srgb, var(--chirpui-warning, var(--chirpui-accent)) 35%, var(--chirpui-border));
+    border-radius: 999px;
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    padding: 0.25rem 0.55rem;
+    white-space: nowrap;
+}
+
 .elbysodic-board-taxonomy {
     display: grid;
     gap: 0.75rem;
