@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from chirp.http.cookies import SetCookie
 from chirp.http.request import Request
 from chirp.http.response import Response
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE
 from elbysodic.services.auth import SESSION_COOKIE
-from elbysodic.web.state import get_services
+from elbysodic.web.security import clear_session_cookie
+from elbysodic.web.state import get_services, get_web_security_config
 
 
 def get(request: Request) -> Response:
@@ -25,13 +25,14 @@ def _logout(request: Request) -> Response:
     token = _cookie_value(request, SESSION_COOKIE)
     if token is not None:
         services.logout(token)
+    security = get_web_security_config()
     return Response(
         "",
         status=302,
         headers=(("Location", "/login"),),
         cookies=(
-            SetCookie(SESSION_COOKIE, "", max_age=0, httponly=True, samesite="lax"),
-            SetCookie(DEV_IDENTITY_COOKIE, "", max_age=0, httponly=True, samesite="lax"),
+            clear_session_cookie(SESSION_COOKIE, security=security),
+            clear_session_cookie(DEV_IDENTITY_COOKIE, security=security),
         ),
     )
 

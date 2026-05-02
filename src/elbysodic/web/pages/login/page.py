@@ -5,14 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from chirp.contracts import FormContract, contract
-from chirp.http.cookies import SetCookie
 from chirp.http.request import Request
 from chirp.http.response import Response
 from chirp.templating.returns import Page
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
 from elbysodic.services.auth import SESSION_COOKIE
-from elbysodic.web.state import get_services
+from elbysodic.web.security import session_cookie
+from elbysodic.web.state import get_services, get_web_security_config
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,24 +37,23 @@ async def post(request: Request) -> Page | Response:
         session, identity = services.login(email, password)
     except PermissionError as exc:
         return _render_login(request, email=email, next_url=next_url, error=str(exc))
+    security = get_web_security_config()
     return Response(
         "",
         status=302,
         headers=(("Location", next_url),),
         cookies=(
-            SetCookie(
+            session_cookie(
                 SESSION_COOKIE,
                 session.token,
                 max_age=60 * 60 * 24 * 30,
-                httponly=True,
-                samesite="lax",
+                security=security,
             ),
-            SetCookie(
+            session_cookie(
                 DEV_IDENTITY_COOKIE,
                 dev_identity_cookie_value(identity),
                 max_age=60 * 60 * 24 * 30,
-                httponly=True,
-                samesite="lax",
+                security=security,
             ),
         ),
     )

@@ -13,6 +13,7 @@ from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.navigation import location_nav_tree_items
+from elbysodic.web.security import resolve_web_security_config
 from elbysodic.web.state import configure_services, dev_tools_enabled
 
 PAGES_DIR = Path(__file__).parent / "pages"
@@ -27,12 +28,21 @@ def create_app(
     db_path: str | Path | None = None,
     dev_tools: bool | None = None,
 ) -> App:
-    config = AppConfig(template_dir=PAGES_DIR, debug=debug)
+    security = resolve_web_security_config(debug=debug)
+    config = AppConfig(
+        template_dir=PAGES_DIR,
+        debug=debug,
+        env=security.env,
+        secret_key=security.secret_key,
+        allowed_hosts=security.allowed_hosts,
+        strict_transport_security=security.strict_transport_security,
+    )
     app = App(config=config)
 
     configure_services(
         services or create_services(db_path),
         dev_tools_enabled=_resolve_dev_tools(debug=debug, dev_tools=dev_tools),
+        web_security_config=security,
     )
     use_chirp_ui(app)
     app.template_global()(location_nav_tree_items)
