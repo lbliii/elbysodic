@@ -109,7 +109,7 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             selected_character_id=character_id,
         )
 
-    return Redirect(f"{request.path}#post-{post.id}")
+    return Redirect(f"{request.path}#post-{post.post_number}")
 
 
 def _render_thread(

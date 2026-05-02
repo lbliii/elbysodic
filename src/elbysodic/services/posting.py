@@ -95,6 +95,8 @@ class PostingRepository(NotificationRepository, Protocol):
 
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]: ...
 
+    def get_post_by_number(self, community_id: int, thread_id: int, post_number: int) -> Post: ...
+
     def create_post_revision(
         self,
         community_id: int,
@@ -176,9 +178,9 @@ def read_post_editor(
     viewer: ForumView,
     board_slug: str,
     thread_slug: str,
-    post_id: int,
+    post_number: int,
 ) -> EditablePostView:
-    board, thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_id)
+    board, thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_number)
     return EditablePostView(
         board=board,
         thread=thread,
@@ -197,9 +199,9 @@ def read_post_revisions(
     viewer: ForumView,
     board_slug: str,
     thread_slug: str,
-    post_id: int,
+    post_number: int,
 ) -> PostRevisionHistory:
-    board, thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_id)
+    board, thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_number)
     revisions = [
         post_revision_view(repo, viewer.community.id, revision)
         for revision in repo.list_post_revisions(viewer.community.id, post.id)
@@ -223,10 +225,10 @@ def update_post(
     viewer: ForumView,
     board_slug: str,
     thread_slug: str,
-    post_id: int,
+    post_number: int,
     body: str,
 ) -> Post:
-    _board, _thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_id)
+    _board, _thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_number)
     cleaned = body.strip()
     if not cleaned:
         raise ValueError("post body is required")
@@ -239,7 +241,7 @@ def update_post(
         post.body,
         cleaned,
     )
-    return repo.update_post_body(viewer.community.id, post_id, cleaned)
+    return repo.update_post_body(viewer.community.id, post.id, cleaned)
 
 
 def update_thread_scene(
@@ -425,12 +427,10 @@ def editable_post(
     viewer: ForumView,
     board_slug: str,
     thread_slug: str,
-    post_id: int,
+    post_number: int,
 ) -> tuple[Board, Thread, Post]:
     board, thread = visible_thread(repo, viewer, board_slug, thread_slug)
-    post = repo.get_post(viewer.community.id, post_id)
-    if post.thread_id != thread.id:
-        raise LookupError(f"post {post_id} does not belong to thread {thread.id}")
+    post = repo.get_post_by_number(viewer.community.id, thread.id, post_number)
     if not policies.can_edit_post(viewer.membership, post, viewer.role):
         raise PermissionError(f"membership {viewer.membership.id} cannot edit post {post.id}")
     return board, thread, post

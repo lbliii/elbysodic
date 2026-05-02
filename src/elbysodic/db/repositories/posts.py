@@ -26,20 +26,31 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
         self.get_thread(community_id, thread_id)
         character = self.get_character(community_id, author_character_id)
         now = _utc_now()
+        post_number = self._next_post_number(community_id, thread_id)
         cursor = self.connection.execute(
             """
             INSERT INTO posts (
                 community_id,
                 thread_id,
+                post_number,
                 author_membership_id,
                 author_character_id,
                 body,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (community_id, thread_id, character.membership_id, author_character_id, body, now, now),
+            (
+                community_id,
+                thread_id,
+                post_number,
+                character.membership_id,
+                author_character_id,
+                body,
+                now,
+                now,
+            ),
         )
         self.connection.execute(
             """
@@ -68,6 +79,17 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
         )
         self.connection.commit()
         return self.get_post(community_id, _last_id(cursor))
+
+    def _next_post_number(self, community_id: int, thread_id: int) -> int:
+        row = self.connection.execute(
+            """
+            SELECT COALESCE(MAX(post_number), 0) + 1 AS next_post_number
+            FROM posts
+            WHERE community_id = ? AND thread_id = ?
+            """,
+            (community_id, thread_id),
+        ).fetchone()
+        return int(row["next_post_number"])
 
     def update_post_body(self, community_id: int, post_id: int, body: str) -> Post:
         post = self.get_post(community_id, post_id)
@@ -156,6 +178,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
                 id,
                 community_id,
                 thread_id,
+                post_number,
                 author_membership_id,
                 author_character_id,
                 body,
@@ -170,6 +193,31 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             raise LookupError(f"post not found in community {community_id}: {post_id}")
         return _post_from_row(row)
 
+    def get_post_by_number(self, community_id: int, thread_id: int, post_number: int) -> Post:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                thread_id,
+                post_number,
+                author_membership_id,
+                author_character_id,
+                body,
+                created_at,
+                updated_at
+            FROM posts
+            WHERE community_id = ? AND thread_id = ? AND post_number = ?
+            """,
+            (community_id, thread_id, post_number),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"post number {post_number} not found in community {community_id} "
+                f"thread {thread_id}"
+            )
+        return _post_from_row(row)
+
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]:
         rows = self.connection.execute(
             """
@@ -177,6 +225,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
                 id,
                 community_id,
                 thread_id,
+                post_number,
                 author_membership_id,
                 author_character_id,
                 body,
@@ -184,7 +233,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
                 updated_at
             FROM posts
             WHERE community_id = ? AND thread_id = ?
-            ORDER BY created_at, id
+            ORDER BY post_number
             """,
             (community_id, thread_id),
         ).fetchall()
@@ -198,6 +247,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
                 id,
                 community_id,
                 thread_id,
+                post_number,
                 author_membership_id,
                 author_character_id,
                 body,

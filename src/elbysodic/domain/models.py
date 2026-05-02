@@ -512,6 +512,7 @@ class Post:
     id: int
     community_id: int
     thread_id: int
+    post_number: int
     author_membership_id: int
     author_character_id: int
     body: str

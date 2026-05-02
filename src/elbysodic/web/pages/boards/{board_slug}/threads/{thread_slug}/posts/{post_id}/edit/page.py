@@ -21,12 +21,17 @@ async def post(
     thread_slug: str,
     post_id: str,
 ) -> Page | Redirect:
-    parsed_post_id = _parse_post_id(post_id)
+    parsed_post_number = _parse_post_number(post_id)
     form = await request.form()
     body = str(form.get("body") or "")
 
     try:
-        post_view = get_services(request).update_post(board_slug, thread_slug, parsed_post_id, body)
+        post_view = get_services(request).update_post(
+            board_slug,
+            thread_slug,
+            parsed_post_number,
+            body,
+        )
     except ValueError as exc:
         return _render_form(
             request,
@@ -41,7 +46,7 @@ async def post(
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
 
-    return Redirect(f"/boards/{board_slug}/threads/{thread_slug}#post-{post_view.id}")
+    return Redirect(f"/boards/{board_slug}/threads/{thread_slug}#post-{post_view.post_number}")
 
 
 def _render_form(
@@ -53,11 +58,11 @@ def _render_form(
     error: str | None = None,
     body: str | None = None,
 ) -> Page:
-    parsed_post_id = _parse_post_id(post_id)
+    parsed_post_number = _parse_post_number(post_id)
     services = get_services(request)
     viewer = services.viewer()
     try:
-        edit_view = services.read_post_editor(board_slug, thread_slug, parsed_post_id)
+        edit_view = services.read_post_editor(board_slug, thread_slug, parsed_post_number)
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
     except PermissionError as exc:
@@ -85,7 +90,7 @@ def _render_form(
     )
 
 
-def _parse_post_id(raw: object) -> int:
+def _parse_post_number(raw: object) -> int:
     try:
         return int(str(raw or ""))
     except ValueError as exc:

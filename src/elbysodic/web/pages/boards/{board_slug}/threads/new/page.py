@@ -59,7 +59,9 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             body=body,
         )
 
-    return Redirect(f"/boards/{board_slug}/threads/{created.thread.slug}#post-{created.post.id}")
+    return Redirect(
+        f"/boards/{board_slug}/threads/{created.thread.slug}#post-{created.post.post_number}"
+    )
 
 
 def _render_form(

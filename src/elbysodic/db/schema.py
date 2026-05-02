@@ -562,6 +562,7 @@ CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
     thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+    post_number INTEGER NOT NULL,
     author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id),
     author_character_id INTEGER NOT NULL REFERENCES characters(id),
     body TEXT NOT NULL,
@@ -901,11 +902,46 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
         GROUP BY community_id, thread_id, author_character_id
         """
     )
+    _migrate_posts_schema(connection)
     _migrate_wanted_ad_interests_schema(connection)
     _migrate_notifications_schema(connection)
     _migrate_plotting_rooms_schema(connection)
     _migrate_plotting_room_messages_schema(connection)
     _migrate_applications_schema(connection)
+
+
+def _migrate_posts_schema(connection: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(posts)").fetchall()}
+    if "post_number" not in columns:
+        connection.execute("ALTER TABLE posts ADD COLUMN post_number INTEGER")
+
+    rows = connection.execute(
+        """
+        SELECT id, community_id, thread_id
+        FROM posts
+        ORDER BY community_id, thread_id, created_at, id
+        """
+    ).fetchall()
+    next_numbers: dict[tuple[int, int], int] = {}
+    for row in rows:
+        key = (int(row["community_id"]), int(row["thread_id"]))
+        post_number = next_numbers.get(key, 1)
+        connection.execute(
+            """
+            UPDATE posts
+            SET post_number = ?
+            WHERE community_id = ? AND id = ? AND post_number IS NULL
+            """,
+            (post_number, row["community_id"], row["id"]),
+        )
+        next_numbers[key] = post_number + 1
+
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_thread_post_number
+        ON posts(community_id, thread_id, post_number)
+        """
+    )
 
 
 def _migrate_applications_schema(connection: sqlite3.Connection) -> None:

@@ -1961,16 +1961,21 @@ class AppServices:
             interest_id,
         )
 
-    def read_post_editor(self, board_slug: str, thread_slug: str, post_id: int) -> EditablePostView:
-        return _read_post_editor(self.repo, self.viewer(), board_slug, thread_slug, post_id)
+    def read_post_editor(
+        self,
+        board_slug: str,
+        thread_slug: str,
+        post_number: int,
+    ) -> EditablePostView:
+        return _read_post_editor(self.repo, self.viewer(), board_slug, thread_slug, post_number)
 
     def read_post_revisions(
         self,
         board_slug: str,
         thread_slug: str,
-        post_id: int,
+        post_number: int,
     ) -> PostRevisionHistory:
-        return _read_post_revisions(self.repo, self.viewer(), board_slug, thread_slug, post_id)
+        return _read_post_revisions(self.repo, self.viewer(), board_slug, thread_slug, post_number)
 
     def create_character(
         self,
@@ -2212,8 +2217,8 @@ class AppServices:
             post_density=cleaned_post_density,
         )
 
-    def update_post(self, board_slug: str, thread_slug: str, post_id: int, body: str) -> Post:
-        return _update_post(self.repo, self.viewer(), board_slug, thread_slug, post_id, body)
+    def update_post(self, board_slug: str, thread_slug: str, post_number: int, body: str) -> Post:
+        return _update_post(self.repo, self.viewer(), board_slug, thread_slug, post_number, body)
 
     def update_thread_state(
         self,

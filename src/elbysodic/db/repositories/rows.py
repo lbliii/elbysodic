@@ -595,6 +595,7 @@ def _post_from_row(row: sqlite3.Row) -> Post:
         id=row["id"],
         community_id=row["community_id"],
         thread_id=row["thread_id"],
+        post_number=row["post_number"],
         author_membership_id=row["author_membership_id"],
         author_character_id=row["author_character_id"],
         body=row["body"],
