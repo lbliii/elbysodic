@@ -10,16 +10,24 @@ from elbysodic.web.state import get_services
 
 def get(request: Request) -> Page:
     services = get_services(request)
+    viewer = services.viewer()
     return Page(
         "my/threads/page.html",
         "page_content",
         page_block_name="page_root",
         current_path=request.url,
-        viewer=services.viewer(),
-        dashboard=services.my_threads(character_slug=_selected_character_slug(request)),
+        viewer=viewer,
+        dashboard=services.my_threads(character_slug=_selected_character_slug(request, viewer)),
     )
 
 
-def _selected_character_slug(request: Request) -> str | None:
-    value = str(request.query.get("character") or "").strip()
+def _selected_character_slug(request: Request, viewer: object) -> str | None:
+    raw_value = request.query.get("character")
+    if raw_value is None:
+        current_character = getattr(viewer, "current_character", None)
+        slug = getattr(current_character, "slug", "")
+        return str(slug) if slug else None
+    value = str(raw_value or "").strip().lower()
+    if value in {"", "all", "none"}:
+        return None
     return value or None

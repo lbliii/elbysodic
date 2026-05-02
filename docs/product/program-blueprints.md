@@ -291,3 +291,6 @@ Keep apply disabled until the hydrator has an explicit service-layer plan for:
 
 Until those pieces exist, Studio intake should keep saying that preview is a
 hydration gate, not a launch button.
+
+The active hydration design snapshot lives in
+`plans/in-progress/program-blueprint-hydration-2026-05-02.md`.
