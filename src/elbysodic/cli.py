@@ -1,4 +1,4 @@
-"""Command-line entrypoint for the Elbysodic development app."""
+"""Command-line entrypoint for the Elbysodic app."""
 
 from __future__ import annotations
 
@@ -25,8 +25,8 @@ def main(argv: list[str] | None = None) -> None:
         sys.stdout.write(f"seeded {db_path}\n")
         return
 
-    app = create_app(db_path=args.db_path)
-    app.run(port=args.port)
+    app = create_app(debug=args.debug, db_path=args.db_path)
+    app.run(host=args.host, port=args.port)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -44,7 +44,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=default_database_path(),
         help="SQLite database path. Defaults to ELBYSODIC_DB_PATH or var/elbysodic.sqlite3.",
     )
-    parser.add_argument("--port", type=int, default=8000, help="Port for the development server.")
+    _add_serve_options(parser, include_defaults=True)
     subparsers = parser.add_subparsers(dest="command")
 
     init_db = subparsers.add_parser(
@@ -63,6 +63,27 @@ def _build_parser() -> argparse.ArgumentParser:
         parents=[shared],
         help="Create schema and idempotently seed demo data.",
     )
-    serve = subparsers.add_parser("serve", parents=[shared], help="Run the development server.")
-    serve.add_argument("--port", type=int, default=8000, help="Port for the development server.")
+    serve = subparsers.add_parser("serve", parents=[shared], help="Run the web server.")
+    _add_serve_options(serve, include_defaults=False)
     return parser
+
+
+def _add_serve_options(parser: argparse.ArgumentParser, *, include_defaults: bool) -> None:
+    default: object = None if include_defaults else argparse.SUPPRESS
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1" if include_defaults else default,
+        help="Host interface for the web server.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000 if include_defaults else default,
+        help="Port for the web server.",
+    )
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        default=True if include_defaults else default,
+        help="Enable or disable Chirp debug mode.",
+    )

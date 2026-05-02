@@ -144,6 +144,51 @@ def _dev_request(headers: dict[str, str]) -> SimpleNamespace:
     return SimpleNamespace(headers=headers)
 
 
+def test_unknown_external_host_falls_back_to_default_community() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/",
+                headers={"host": "elbysodic-demo.up.railway.app"},
+            )
+
+        assert response.status == 200
+        assert "X-Men Apocalypse" in response.text
+        assert "Rogue" in response.text
+
+    asyncio.run(run())
+
+
+def test_unknown_external_host_is_rejected_after_default_community_has_host() -> None:
+    services = create_services(path=":memory:")
+    services.repo.connection.execute(
+        "UPDATE communities SET host = ? WHERE id = ?",
+        ("demo.example.com", services.seed.community.id),
+    )
+    services.repo.connection.commit()
+
+    with pytest.raises(LookupError, match=r"community not found for host: unknown\.example\.com"):
+        services.for_request(_dev_request({"host": "unknown.example.com"}))
+
+
+def test_health_check_does_not_require_registered_community_host() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/health",
+                headers={"host": "elbysodic-demo.up.railway.app"},
+            )
+
+        assert response.status == 200
+        assert response.text == "ok\n"
+
+    asyncio.run(run())
+
+
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
     services = create_services(path=":memory:")
     community, user_id, membership_id, character_id = _add_hosted_membership(

@@ -167,6 +167,21 @@ In this workspace, the direct app form is also useful:
 .venv/bin/python -c "from elbysodic.web import create_app; create_app(debug=False).run(port=8001)"
 ```
 
+## Deploying To Railway
+
+The repository includes `railway.json` for Railpack deployments. Railway starts
+the app with:
+
+```bash
+elbysodic --host 0.0.0.0 --port $PORT --no-debug
+```
+
+The app creates the SQLite schema and idempotently seeds the demo forum on
+startup. For a long-lived demo, attach a Railway Volume to the service at
+`/app/var`; the default database path `var/elbysodic.sqlite3` will then persist
+across redeploys. Seed users can log in with password `password`, including
+`writer@example.com`, `moira@example.com`, and `alex@example.com`.
+
 ## Product Voice
 
 Use language that fits roleplayers. Prefer face, roster, thread, scene,

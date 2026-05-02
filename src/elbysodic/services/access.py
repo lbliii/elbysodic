@@ -123,8 +123,12 @@ class RequestIdentityResolver:
             return self._repo.get_community_by_slug(explicit)
 
         host = _request_host(request)
-        if host and not _is_local_dev_host(host):
-            return self._repo.get_community_by_host(host)
+        external_host = host if host is not None and not _is_local_dev_host(host) else None
+        if external_host is not None:
+            try:
+                return self._repo.get_community_by_host(external_host)
+            except LookupError:
+                pass
 
         cookie_identity = _dev_identity_cookie(request)
         if cookie_identity is not None:
@@ -133,7 +137,10 @@ class RequestIdentityResolver:
             except LookupError:
                 pass
 
-        return self._repo.get_community(self._default.community_id)
+        default_community = self._repo.get_community(self._default.community_id)
+        if external_host is not None and default_community.host:
+            raise LookupError(f"community not found for host: {external_host}")
+        return default_community
 
 
 def _optional_int_header(request: object | None, name: str) -> int | None:
