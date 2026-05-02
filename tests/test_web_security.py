@@ -168,6 +168,38 @@ def test_production_routes_require_session(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            protected = await client.get("/c/jurassic-park-universe/boards/paddock-twelve")
+            login, cookies = await _production_login(
+                client,
+                email="writer@example.com",
+                next_url="/c/jurassic-park-universe/boards/paddock-twelve",
+            )
+            board = await client.get(
+                "/c/jurassic-park-universe/boards/paddock-twelve",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert protected.status == 302
+        assert dict(protected.headers)["location"] == (
+            "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve"
+        )
+        assert login.status == 302
+        assert dict(login.headers)["location"] == (
+            "/c/jurassic-park-universe/boards/paddock-twelve"
+        )
+        assert board.status == 200
+        assert "Jurassic Park Universe" in board.text
+        assert "Paddock Twelve" in board.text
+
+    asyncio.run(run())
+
+
 def test_production_security_headers_are_set(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
