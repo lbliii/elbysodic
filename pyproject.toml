@@ -30,7 +30,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "bengal-chirp[config,forms,sessions,ui]>=0.5.0",
+    "bengal-chirp[config,forms,sessions,ui]>=0.6.0",
     "chirp-ui>=0.6.0",
     "pyyaml>=6.0",
 ]
@@ -145,7 +145,7 @@ exclude_lines = [
 
 [dependency-groups]
 docs = [
-    "bengal>=0.3.0",
+    "bengal>=0.3.2",
     "lunr>=0.7.0",
 ]
 dev = [
