@@ -288,6 +288,24 @@ class AppServices:
             identity_context=self._identity_resolver.resolve(request),
         )
 
+    def with_request_auth(self, *, production: bool) -> AppServices:
+        """Return a facade with request identity rules for the runtime mode."""
+
+        return AppServices(
+            self.repo,
+            self.seed,
+            identity_resolver=RequestIdentityResolver(
+                self.repo,
+                DefaultRequestIdentity(
+                    community_id=self.seed.community.id,
+                    user_id=self.seed.user.id,
+                    membership_id=self.seed.membership.id,
+                ),
+                allow_development_identity=not production,
+                require_session=production,
+            ),
+        )
+
     def viewer(self) -> ForumView:
         identity = self._identity_context or self._identity_resolver.resolve()
         community = self.repo.get_community(identity.community_id)
@@ -446,10 +464,14 @@ class AppServices:
 
     def login(self, email: str, password: str) -> tuple[LoginSession, RequestIdentityContext]:
         session = create_login_session(self.repo, email, password)
-        current_identity = self._identity_context or self._identity_resolver.resolve()
+        try:
+            current_identity = self._identity_context or self._identity_resolver.resolve()
+            preferred_community_id = current_identity.community_id
+        except PermissionError:
+            preferred_community_id = self.seed.community.id
         identity = self._default_identity_for_user(
             session.user.id,
-            preferred_community_id=current_identity.community_id,
+            preferred_community_id=preferred_community_id,
         )
         return session, identity
 

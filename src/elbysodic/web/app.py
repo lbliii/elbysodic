@@ -13,7 +13,7 @@ from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.navigation import location_nav_tree_items
-from elbysodic.web.security import resolve_web_security_config
+from elbysodic.web.security import RequireLoginMiddleware, resolve_web_security_config
 from elbysodic.web.state import configure_services, dev_tools_enabled
 
 PAGES_DIR = Path(__file__).parent / "pages"
@@ -38,15 +38,23 @@ def create_app(
         strict_transport_security=security.strict_transport_security,
     )
     app = App(config=config)
+    configured_services = (services or create_services(db_path)).with_request_auth(
+        production=security.production
+    )
 
     configure_services(
-        services or create_services(db_path),
-        dev_tools_enabled=_resolve_dev_tools(debug=debug, dev_tools=dev_tools),
+        configured_services,
+        dev_tools_enabled=_resolve_dev_tools(
+            debug=debug,
+            dev_tools=dev_tools,
+            production=security.production,
+        ),
         web_security_config=security,
     )
     use_chirp_ui(app)
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
+    app.add_middleware(RequireLoginMiddleware(security))
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))
     _copy_page_contracts(app)
@@ -54,7 +62,9 @@ def create_app(
     return app
 
 
-def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None) -> bool:
+def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool) -> bool:
+    if production:
+        return False
     if dev_tools is not None:
         return dev_tools
     configured = os.environ.get(DEV_TOOLS_ENV)

@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from urllib.parse import quote
 
 from chirp.http.cookies import SetCookie
+from chirp.http.request import Request
+from chirp.http.response import Response
+from chirp.middleware.protocol import AnyResponse, Next
+
+from elbysodic.services.auth import SESSION_COOKIE, user_for_session_token
 
 ELBYSODIC_ENV = "ELBYSODIC_ENV"
 ELBYSODIC_SECRET_KEY = "ELBYSODIC_SECRET_KEY"  # noqa: S105
@@ -14,6 +20,8 @@ ELBYSODIC_HSTS = "ELBYSODIC_HSTS"
 MIN_SECRET_KEY_LENGTH = 32
 PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
+PUBLIC_PATHS = frozenset({"/health", "/login", "/logout"})
+PUBLIC_PREFIXES = ("/elbysodic-static/",)
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +83,31 @@ def clear_session_cookie(name: str, *, security: WebSecurityConfig) -> SetCookie
     return session_cookie(name, "", max_age=0, security=security)
 
 
+class RequireLoginMiddleware:
+    """Require a valid app session for normal production routes."""
+
+    __slots__ = ("_security",)
+
+    def __init__(self, security: WebSecurityConfig) -> None:
+        self._security = security
+
+    async def __call__(self, request: Request, call_next: Next) -> AnyResponse:
+        if not self._security.production or _is_public_path(request.path):
+            return await call_next(request)
+
+        if _session_is_valid(request):
+            return await call_next(request)
+
+        if request.method in {"GET", "HEAD"}:
+            next_url = request.path
+            raw_query = getattr(request.query, "_raw", b"")
+            if isinstance(raw_query, bytes) and raw_query:
+                next_url = f"{next_url}?{raw_query.decode('latin-1')}"
+            location = f"/login?next={quote(next_url, safe='/')}"
+            return Response("", status=302, headers=(("Location", location),))
+        return Response("Login required", status=403, content_type="text/plain")
+
+
 def _parse_allowed_hosts(raw: str | None) -> tuple[str, ...]:
     if raw is None:
         return ()
@@ -92,3 +125,16 @@ def _strict_transport_security() -> str | None:
     if normalized.lower() in {"1", "true", "yes", "on"}:
         return "max-age=31536000; includeSubDomains"
     return normalized
+
+
+def _is_public_path(path: str) -> bool:
+    return path in PUBLIC_PATHS or any(path.startswith(prefix) for prefix in PUBLIC_PREFIXES)
+
+
+def _session_is_valid(request: Request) -> bool:
+    from elbysodic.web.state import get_services
+
+    token = request.cookies.get(SESSION_COOKIE)
+    if token is None:
+        return False
+    return user_for_session_token(get_services().repo, str(token)) is not None

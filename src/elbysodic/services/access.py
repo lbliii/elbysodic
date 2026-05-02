@@ -49,20 +49,42 @@ class RequestIdentityResolver:
     belong to both the resolved community and resolved user.
     """
 
-    def __init__(self, repo: AccessRepository, default: DefaultRequestIdentity) -> None:
+    def __init__(
+        self,
+        repo: AccessRepository,
+        default: DefaultRequestIdentity,
+        *,
+        allow_development_identity: bool = True,
+        require_session: bool = False,
+    ) -> None:
         self._repo = repo
         self._default = default
+        self._allow_development_identity = allow_development_identity
+        self._require_session = require_session
 
     def resolve(self, request: object | None = None) -> RequestIdentityContext:
-        cookie_identity = _dev_identity_cookie(request)
+        cookie_identity = (
+            _dev_identity_cookie(request) if self._allow_development_identity else None
+        )
         community = self._resolve_community(request)
-        header_user_id = _optional_int_header(request, DEV_USER_HEADER)
-        header_membership_id = _optional_int_header(request, DEV_MEMBERSHIP_HEADER)
+        header_user_id = (
+            _optional_int_header(request, DEV_USER_HEADER)
+            if self._allow_development_identity
+            else None
+        )
+        header_membership_id = (
+            _optional_int_header(request, DEV_MEMBERSHIP_HEADER)
+            if self._allow_development_identity
+            else None
+        )
         session_user = None if header_user_id is not None else _session_user(self._repo, request)
         user_id = header_user_id if header_user_id is not None else _user_id(session_user)
         membership_id = header_membership_id
         user_from_cookie = False
         membership_from_cookie = False
+
+        if self._require_session and session_user is None:
+            raise PermissionError("login is required")
 
         if cookie_identity is not None and cookie_identity.community_id == community.id:
             if user_id is None:
@@ -116,7 +138,11 @@ class RequestIdentityResolver:
         )
 
     def _resolve_community(self, request: object | None) -> Community:
-        explicit = _optional_header(request, DEV_COMMUNITY_HEADER)
+        explicit = (
+            _optional_header(request, DEV_COMMUNITY_HEADER)
+            if self._allow_development_identity
+            else None
+        )
         if explicit:
             if explicit.isdecimal():
                 return self._repo.get_community(int(explicit))
@@ -130,7 +156,9 @@ class RequestIdentityResolver:
             except LookupError:
                 pass
 
-        cookie_identity = _dev_identity_cookie(request)
+        cookie_identity = (
+            _dev_identity_cookie(request) if self._allow_development_identity else None
+        )
         if cookie_identity is not None:
             try:
                 return self._repo.get_community(cookie_identity.community_id)

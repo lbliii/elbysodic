@@ -21,7 +21,7 @@ async def post(request: Request) -> Response:
 
 
 def _logout(request: Request) -> Response:
-    services = get_services(request)
+    services = get_services()
     token = _cookie_value(request, SESSION_COOKIE)
     if token is not None:
         services.logout(token)
