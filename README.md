@@ -101,8 +101,8 @@ bengal-chirp[config,forms,sessions,ui]>=0.5.0
 chirp-ui>=0.5.0
 ```
 
-For local development, `uv` overrides the owned stack with editable sibling
-checkouts:
+For local development, you can keep editable sibling checkout overrides in an
+ignored `uv.toml`:
 
 ```toml
 [tool.uv.sources]
@@ -112,9 +112,9 @@ kida-templates = { path = "../python/b-stack/kida", editable = true }
 bengal-pounce = { path = "../python/b-stack/pounce", editable = true }
 ```
 
-`make install` runs `uv sync --active --group dev --frozen`, so those local
-paths must exist when working from the checked-in lockfile. Third-party
-dependencies still resolve from the lockfile and registry.
+The checked-in `pyproject.toml` and `uv.lock` intentionally do not include
+those local paths, so Railway and other clean builders resolve the Chirp stack
+from the registry. Third-party dependencies still resolve from the lockfile.
 
 ## Development
 
@@ -187,8 +187,18 @@ startup. For a long-lived demo, attach a Railway Volume to the service. Railway
 exposes the mount at `RAILWAY_VOLUME_MOUNT_PATH`, and Elbysodic stores SQLite at
 `$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3` unless `ELBYSODIC_DB_PATH` is set.
 The recommended mount path is `/app/var`, which also matches the local
-`var/elbysodic.sqlite3` layout. Seed users can log in with password `password`,
+`var/elbysodic.sqlite3` layout.
+
+Set these Railway variables before sharing the app:
+
+- `ELBYSODIC_ENV=production`
+- `ELBYSODIC_SECRET_KEY` to a random value of at least 32 characters
+- `ELBYSODIC_ALLOWED_HOSTS` to the Railway/custom host list, comma-separated
+- `ELBYSODIC_DEMO_MODE=1` only when seeded demo credentials should work
+
+When demo mode is enabled, seed users can log in with password `password`,
 including `writer@example.com`, `moira@example.com`, and `alex@example.com`.
+Without `ELBYSODIC_DEMO_MODE=1`, production rejects those seed password hashes.
 
 ## Product Voice
 

@@ -43,6 +43,16 @@ def _csrf_token(html: str) -> str:
     return match.group(1)
 
 
+def _set_production_env(monkeypatch, *, demo_mode: bool = True) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "production")
+    monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+    monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+    if demo_mode:
+        monkeypatch.setenv("ELBYSODIC_DEMO_MODE", "1")
+    else:
+        monkeypatch.delenv("ELBYSODIC_DEMO_MODE", raising=False)
+
+
 async def _production_login(client: TestClient, *, email: str, next_url: str = "/studio"):
     page = await client.get(f"/login?next={next_url}")
     cookies = _cookie_values(page)
@@ -86,9 +96,7 @@ def test_production_config_parses_allowed_hosts_and_hsts(monkeypatch) -> None:
 
 def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
     async def run() -> None:
-        monkeypatch.setenv("ELBYSODIC_ENV", "production")
-        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
-        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        _set_production_env(monkeypatch)
         app = create_app(debug=False, services=create_services(path=":memory:"))
 
         async with TestClient(app) as client:
@@ -105,11 +113,36 @@ def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_seed_password_requires_demo_mode(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch, demo_mode=False)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            page = await client.get("/login")
+            response = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "moira@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                        "_csrf_token": _csrf_token(page.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(_cookie_values(page))},
+            )
+
+        assert response.status == 200
+        assert "email or password is incorrect" in response.text
+        assert "elbysodic_session=" not in "\n".join(_response_headers(response, "set-cookie"))
+
+    asyncio.run(run())
+
+
 def test_production_routes_require_session(monkeypatch) -> None:
     async def run() -> None:
-        monkeypatch.setenv("ELBYSODIC_ENV", "production")
-        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
-        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        _set_production_env(monkeypatch)
         app = create_app(debug=False, services=create_services(path=":memory:"), dev_tools=True)
 
         async with TestClient(app) as client:
@@ -137,9 +170,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
 
 def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
     async def run() -> None:
-        monkeypatch.setenv("ELBYSODIC_ENV", "production")
-        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
-        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        _set_production_env(monkeypatch)
         app = create_app(debug=False, services=create_services(path=":memory:"), dev_tools=True)
         services = get_services()
         community = services.seed.community
@@ -166,9 +197,7 @@ def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
 
 def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
     async def run() -> None:
-        monkeypatch.setenv("ELBYSODIC_ENV", "production")
-        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
-        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        _set_production_env(monkeypatch)
         app = create_app(debug=False, services=create_services(path=":memory:"))
         services = get_services()
         hp = services.repo.get_community_by_slug("hp-universe")
@@ -216,9 +245,7 @@ def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
 
 def test_production_membership_switch_rejects_cross_user_membership(monkeypatch) -> None:
     async def run() -> None:
-        monkeypatch.setenv("ELBYSODIC_ENV", "production")
-        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
-        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        _set_production_env(monkeypatch)
         app = create_app(debug=False, services=create_services(path=":memory:"))
         services = get_services()
         community = services.seed.community

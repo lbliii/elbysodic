@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import os
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -17,6 +18,9 @@ SESSION_TTL = timedelta(days=30)
 HASH_SCHEME = "pbkdf2_sha256"
 HASH_ITERATIONS = 210_000
 SEED_LOGIN_PHRASE = "password"
+ENVIRONMENT_ENV = "ELBYSODIC_ENV"
+DEMO_MODE_ENV = "ELBYSODIC_DEMO_MODE"
+PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 
 
 class AuthRepository(Protocol):
@@ -77,6 +81,8 @@ def hash_password(password: str, *, salt: str | None = None) -> str:
 
 def verify_password(password: str, stored_hash: str) -> bool:
     if stored_hash == "dev-password-hash":
+        if not seed_passwords_enabled():
+            return False
         return hmac.compare_digest(password, SEED_LOGIN_PHRASE)
     parts = stored_hash.split("$")
     if len(parts) != 4 or parts[0] != HASH_SCHEME:
@@ -94,6 +100,14 @@ def verify_password(password: str, stored_hash: str) -> bool:
     )
     actual = base64.urlsafe_b64encode(derived).decode("ascii").rstrip("=")
     return hmac.compare_digest(actual, expected)
+
+
+def seed_passwords_enabled() -> bool:
+    env = (os.environ.get(ENVIRONMENT_ENV) or "development").strip().lower()
+    if env not in PRODUCTION_ENVS:
+        return True
+    configured = (os.environ.get(DEMO_MODE_ENV) or "").strip().lower()
+    return configured in {"1", "true", "yes", "on"}
 
 
 def create_login_session(repo: AuthRepository, email: str, password: str) -> LoginSession:
