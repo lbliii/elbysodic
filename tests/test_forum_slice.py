@@ -489,6 +489,57 @@ def test_tenant_prefixed_identity_and_casting_routes_scope_rendered_links() -> N
     asyncio.run(run())
 
 
+def test_tenant_prefixed_thread_routes_scope_composer_redirects() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        community_slug = services.seed.community.slug
+        character = services.viewer().current_character
+        assert character is not None
+
+        async with TestClient(app) as client:
+            thread = await client.get(
+                f"/c/{community_slug}/boards/danger-room/threads/sentinel-drill"
+            )
+            composer = await client.get(f"/c/{community_slug}/boards/danger-room/threads/new")
+            created = await client.post(
+                f"/c/{community_slug}/boards/danger-room/threads/new",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "title": "Tenant Prefix Drill",
+                        "status": "active",
+                        "location": "Danger Room",
+                        "timeline": "After class",
+                        "summary": "A prefixed composer regression.",
+                        "posting_mode": "freeform",
+                        "body": "Opening from a tenant-prefixed composer.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert thread.status == 200
+        assert "Sentinel drill after midnight" in thread.text
+        assert f'href="/c/{community_slug}/boards/danger-room"' in thread.text
+        assert (
+            f'name="next" value="/c/{community_slug}/boards/danger-room/threads/sentinel-drill"'
+            in thread.text
+        )
+
+        assert composer.status == 200
+        assert "Start thread" in composer.text
+        assert f'href="/c/{community_slug}/boards/danger-room"' in composer.text
+        assert f"/c/{community_slug}/mentionables/search" in composer.text
+
+        assert created.status == 302
+        assert _response_header(created, "location").startswith(
+            f"/c/{community_slug}/boards/danger-room/threads/tenant-prefix-drill#post-"
+        )
+
+    asyncio.run(run())
+
+
 def test_identity_switcher_persists_dev_membership_cookie() -> None:
     async def run() -> None:
         app = _app()

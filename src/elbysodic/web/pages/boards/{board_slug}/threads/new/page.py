@@ -12,6 +12,7 @@ from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
 from elbysodic.services.threads import taggable_characters
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import request_scoped_path
 
 
 def get(request: Request, board_slug: str) -> Page:
@@ -82,6 +83,7 @@ def _render_form(
     services = get_services(request)
     viewer = services.viewer()
     board, _threads = services.board_threads(board_slug)
+    mention_endpoint = request_scoped_path(request, "/mentionables/search")
     if viewer.current_character is None:
         return Page(
             "boards/{board_slug}/threads/new/page.html",
@@ -105,7 +107,7 @@ def _render_form(
             selected_participant_ids=set(),
             cast_picker_config_id="thread-cast-picker-config",
             cast_picker_config=mention_picker_config(
-                endpoint="/mentionables/search",
+                endpoint=mention_endpoint,
                 hidden_name="participant_ids",
                 scope="cast",
                 selected=[],
@@ -151,7 +153,7 @@ def _render_form(
         selected_participant_ids=selected_participant_ids,
         cast_picker_config_id="thread-cast-picker-config",
         cast_picker_config=mention_picker_config(
-            endpoint="/mentionables/search",
+            endpoint=mention_endpoint,
             hidden_name="participant_ids",
             scope="cast",
             selected=selected_cast,
@@ -164,6 +166,7 @@ def _render_form(
             selected_character_id=selected_character.id,
             initial_body=body,
             initial_title=title,
+            mention_endpoint=mention_endpoint,
         ),
         composer_config_id=config_id,
     )

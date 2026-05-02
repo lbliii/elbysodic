@@ -29,6 +29,7 @@ _SCOPED_PATH_PREFIXES = (
     "/discover",
     "/interactions",
     "/locations",
+    "/mentionables",
     "/members",
     "/my",
     "/notifications",
@@ -101,6 +102,13 @@ def request_tenant_slug(request: object | None) -> str | None:
         return None
     value = cache.get(TENANT_SLUG_CACHE_KEY)
     return value if isinstance(value, str) and value else None
+
+
+def request_scoped_path(request: object | None, path: str) -> str:
+    """Scope a local community endpoint when the current request is prefixed."""
+
+    tenant_slug = request_tenant_slug(request)
+    return scoped_path(tenant_slug, path) if tenant_slug is not None else path
 
 
 def scoped_path(community_slug: str, path: str) -> str:
