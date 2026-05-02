@@ -97,8 +97,8 @@ Important invariants:
 The package declares normal published dependencies:
 
 ```toml
-bengal-chirp[config,forms,sessions,ui]>=0.5.0
-chirp-ui>=0.5.0
+bengal-chirp[config,forms,sessions,ui]>=0.6.0
+chirp-ui>=0.6.0
 ```
 
 For local development, you can keep editable sibling checkout overrides in an

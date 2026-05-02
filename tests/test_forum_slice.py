@@ -395,7 +395,7 @@ def test_unknown_tenant_prefix_returns_not_found() -> None:
     asyncio.run(run())
 
 
-def test_boosted_main_navigation_reselects_page_root_until_chirp_outlet_release() -> None:
+def test_boosted_main_navigation_uses_chirp_shell_outlet() -> None:
     async def run() -> None:
         app = _app()
 
@@ -410,14 +410,14 @@ def test_boosted_main_navigation_reselects_page_root_until_chirp_outlet_release(
             )
 
         assert response.status == 200
+        assert 'id="page-content"' in response.text
         assert 'id="page-root"' in response.text
-        assert 'id="page-content"' not in response.text
-        assert _response_header(response, "HX-Reselect") == "#page-root"
+        assert "HX-Reselect" not in response.headers
 
     asyncio.run(run())
 
 
-def test_tenant_prefixed_boosted_main_navigation_keeps_links_and_reselects_page_root() -> None:
+def test_tenant_prefixed_boosted_main_navigation_keeps_links_in_chirp_shell_outlet() -> None:
     async def run() -> None:
         app = _app()
 
@@ -432,9 +432,10 @@ def test_tenant_prefixed_boosted_main_navigation_keeps_links_and_reselects_page_
             )
 
         assert response.status == 200
+        assert 'id="page-content"' in response.text
         assert 'id="page-root"' in response.text
         assert 'href="/c/jurassic-park-universe/boards/paddock-twelve/threads/new"' in response.text
-        assert _response_header(response, "HX-Reselect") == "#page-root"
+        assert "HX-Reselect" not in response.headers
 
     asyncio.run(run())
 
