@@ -4,7 +4,7 @@ Created: 2026-05-02
 Last updated: 2026-05-02
 Review by: 2026-05-09
 Owner: Auth, service, web, and deployment stewardship
-Status: in-progress
+Status: implemented; awaiting Railway smoke
 
 ## Problem
 
@@ -366,3 +366,24 @@ This plan can close when:
 
 When closed, archive this plan or replace it with a narrower account-onboarding
 or anonymous-read-only plan.
+
+## Implementation Notes
+
+Implemented on branch `codex/railway-auth-hardening-plan`:
+
+- deployment foundation included the Railway volume path and registry-only lock
+  file work
+- production app config resolves `ELBYSODIC_ENV`,
+  `ELBYSODIC_SECRET_KEY`, `ELBYSODIC_ALLOWED_HOSTS`, and optional HSTS
+- production routes require a valid `elbysodic_session` except health, login,
+  logout, and static assets
+- production ignores dev identity headers and unsigned dev identity cookies
+- current community/membership selection is stored on `user_sessions`
+- production uses Chirp session-backed CSRF and injects the CSRF field into
+  rendered POST forms
+- `dev-password-hash` works in production only with `ELBYSODIC_DEMO_MODE=1`
+- production login rate limiting and security headers are enabled
+
+Remaining closure check: deploy the merged branch to Railway with the required
+environment variables, attached volume, and one replica, then smoke `/health`,
+login, a membership switch, and one write.

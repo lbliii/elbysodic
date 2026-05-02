@@ -57,6 +57,35 @@ become product-visible. Even while storage is coarse, page handlers and
 workflow services should still depend on named policy helpers rather than the
 storage flag.
 
+## Production Request Identity
+
+Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
+Production request identity is session-backed:
+
+- normal app routes require a valid `elbysodic_session`
+- `/health`, `/login`, `/logout`, and static assets are public
+- dev identity headers are ignored
+- unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
+- `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
+
+Current community and membership selection is stored on `user_sessions` as
+`selected_community_id` and `selected_membership_id`. Switching membership
+validates that the target membership belongs to the session user and is active
+before updating the session row. Staff power continues to resolve from the
+selected membership's community-local role.
+
+Development mode can still use seed fallback identity, dev headers,
+`elbysodic_dev_identity`, and the `/dev/personas` switcher for browser QA.
+Those shortcuts must not participate in production request resolution.
+
+Production also requires `ELBYSODIC_SECRET_KEY` with at least 32 characters.
+Seed `dev-password-hash` accounts are accepted in production only when
+`ELBYSODIC_DEMO_MODE=1` is set; otherwise those hashes are rejected.
+
+Production mutating requests are protected by Chirp session-backed CSRF. The
+app injects the active CSRF field into rendered POST forms and rejects unsafe
+methods when the token is missing or invalid.
+
 ## Nullable Identity Shapes
 
 Some PBP workflows support a character-backed path and a prospective-character
