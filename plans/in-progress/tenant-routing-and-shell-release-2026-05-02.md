@@ -4,7 +4,7 @@ Created: 2026-05-02
 Last updated: 2026-05-02
 Review by: 2026-05-16
 Owner: Web, service, storage, domain, and Chirp integration stewardship
-Status: drafted
+Status: in-progress
 
 ## Problem
 
@@ -347,6 +347,15 @@ Acceptance checks:
    program recovery, browser QA.
 6. **Performance instrumentation PR**: request timing logs and initial Railway
    timing report.
+
+## Progress Log
+
+- 2026-05-02: Started the tenant prefix resolver PR on
+  `codex/tenant-prefix-resolver`. Explicit `/c/{community_slug}` routes now
+  have regression coverage against production session selection, development
+  headers, cross-realm recovery actions, app-global route exclusions, Studio
+  Network entry targets, thread composer JSON endpoints, plotting-room SSE
+  streams, and production login redirects back to prefixed destinations.
 
 ## Not Now
 
