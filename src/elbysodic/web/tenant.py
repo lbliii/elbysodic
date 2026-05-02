@@ -6,6 +6,7 @@ from dataclasses import replace
 from html import escape
 import re
 from typing import Any
+from urllib.parse import parse_qsl, urlencode
 
 from chirp.http.request import Request
 from chirp.http.response import Redirect, Response
@@ -47,7 +48,10 @@ _UNSCOPED_PATH_PREFIXES = (
     "/network",
     "/static",
 )
-_LINK_ATTR_RE = re.compile(r'(?P<attr>\b(?:href|action)=["\'])(?P<url>/[^"\']*)')
+_URL_ATTR_RE = re.compile(
+    r'(?P<attr>\b(?:href|action|value|hx-(?:get|post|put|patch|delete))=["\'])'
+    r'(?P<url>/[^"\']*)'
+)
 
 
 class TenantPrefixMiddleware:
@@ -101,13 +105,16 @@ def scoped_path(community_slug: str, path: str) -> str:
 
     if not path.startswith("/"):
         return path
-    if path == TENANT_PREFIX or path.startswith(TENANT_PREFIX + "/"):
-        return path
-    if not _is_scoped_path(path):
-        return path
-    if path == "/":
-        return f"{TENANT_PREFIX}/{community_slug}"
-    return f"{TENANT_PREFIX}/{community_slug}{path}"
+    fragment = ""
+    if "#" in path:
+        path, fragment = path.split("#", 1)
+        fragment = f"#{fragment}"
+    query = ""
+    if "?" in path:
+        path, query = path.split("?", 1)
+        query = _scope_query(community_slug, query)
+    scoped = _scope_local_path(community_slug, path)
+    return f"{scoped}{query}{fragment}"
 
 
 def scope_response_urls(response: Any, community_slug: str) -> Any:
@@ -149,7 +156,32 @@ def _scope_html_links(html: str, community_slug: str) -> str:
         url = match.group("url")
         return f"{match.group('attr')}{scoped_path(community_slug, url)}"
 
-    return _LINK_ATTR_RE.sub(replace_match, html)
+    return _URL_ATTR_RE.sub(replace_match, html)
+
+
+def _scope_query(community_slug: str, query: str) -> str:
+    if not query:
+        return ""
+    pairs = [
+        (
+            key,
+            scoped_path(community_slug, value)
+            if key in {"next", "redirect", "return_to"} and value.startswith("/")
+            else value,
+        )
+        for key, value in parse_qsl(query, keep_blank_values=True)
+    ]
+    return f"?{urlencode(pairs)}" if pairs else f"?{query}"
+
+
+def _scope_local_path(community_slug: str, path: str) -> str:
+    if path == TENANT_PREFIX or path.startswith(TENANT_PREFIX + "/"):
+        return path
+    if not _is_scoped_path(path):
+        return path
+    if path == "/":
+        return f"{TENANT_PREFIX}/{community_slug}"
+    return f"{TENANT_PREFIX}/{community_slug}{path}"
 
 
 def _is_scoped_path(path: str) -> bool:

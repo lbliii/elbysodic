@@ -364,6 +364,8 @@ def test_tenant_prefixed_route_keeps_scoped_links_inside_prefix() -> None:
         assert 'href="/c/jurassic-park-universe"' in response.text
         assert 'href="/c/jurassic-park-universe/world"' in response.text
         assert 'href="/c/jurassic-park-universe/boards/paddock-twelve/threads/new"' in response.text
+        assert 'name="next" value="/c/jurassic-park-universe/boards/paddock-twelve"' in response.text
+        assert "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve" in response.text
         assert 'href="/elbysodic-static/elbysodic-theme.css' in response.text
         assert 'href="/c/jurassic-park-universe/elbysodic-static' not in response.text
 
