@@ -110,9 +110,11 @@ focused plans, issues, or follow-up PRs.
 - Stabilize and curate the current cross-cutting change set before adding more
   surface area. Confirm the diff is reviewable, Steward Notes are ready, and
   full CI remains green.
-- Split Studio production workflow follow-ups into smaller work: board/world
-  editor ergonomics, application/claims reviewer operations, wanted lifecycle
-  outcomes, and director operations console shortcuts.
+- Split Studio production workflow follow-ups into smaller work. The active
+  split now lives in
+  `plans/in-progress/studio-production-workflows-2026-05-02.md` and covers
+  board/world editor ergonomics, application/claims reviewer operations, wanted
+  lifecycle outcomes, director operations shortcuts, and docs/QA alignment.
 - Expand the rendered-route privacy matrix beyond the first draft-material and
   inactive-identity cases. Prioritize staff desks, notification surfaces,
   application review rooms, plotting rooms, and cross-community recovery pages.

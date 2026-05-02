@@ -62,3 +62,5 @@ control appears or does not appear than to snapshot large HTML sections.
 - Plotting room notifications do not render private room titles, unread counts,
   or open redirects for memberships that are not room owners, participants, or
   casting-capable staff.
+- Studio operations renders as a read-only console for ordinary members without
+  exposing submitted application names or review queue counts.

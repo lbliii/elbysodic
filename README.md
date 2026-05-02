@@ -200,6 +200,20 @@ When demo mode is enabled, seed users can log in with password `password`,
 including `writer@example.com`, `moira@example.com`, and `alex@example.com`.
 Without `ELBYSODIC_DEMO_MODE=1`, production rejects those seed password hashes.
 
+Post-deploy smoke for the shared Railway host:
+
+- confirm `/health` returns `200`
+- log in with the intended demo account policy
+- open `/c/x-men-apocalypse/world/b-24-winter`
+- open `/c/jurassic-park-universe/boards/paddock-twelve`
+- hard-refresh both tenant-prefixed routes in a fresh browser session
+- click boosted navigation between world, wanted, board, and thread routes and
+  confirm the shell never swaps to an empty main area
+- submit one low-risk write path, such as a membership or face switch, to prove
+  session cookies and CSRF work together
+- confirm seed media under `/elbysodic-static/seed-media/...` returns `200`
+- keep the Railway service at one replica while SQLite is volume-backed
+
 ## Product Voice
 
 Use language that fits roleplayers. Prefer face, roster, thread, scene,
