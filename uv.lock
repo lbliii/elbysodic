@@ -139,12 +139,16 @@ wheels = [
 
 [[package]]
 name = "bengal-chirp"
-version = "0.6.0"
-source = { editable = "../python/b-stack/chirp" }
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "bengal-pounce" },
     { name = "kida-templates" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/15/4d/0aea781d2cb379a28a91f782ab0076a91e14f8774d84cc21c08586257aca/bengal_chirp-0.5.0.tar.gz", hash = "sha256:9093192193c9f26081fae3a1623a9e9cfd17a548095e564cc266c55b31b5b91d", size = 529078, upload-time = "2026-04-23T14:05:55.809Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/21/145e1c92cb01346dd0321cacb46b0625210d1046b5b046e483c583929742/bengal_chirp-0.5.0-py3-none-any.whl", hash = "sha256:6769c307550c11505f0ca3ea75bd4331abd15cd8d445215f32d2b192afe635b3", size = 456343, upload-time = "2026-04-23T14:05:53.964Z" },
 ]
 
 [package.optional-dependencies]
@@ -161,122 +165,17 @@ ui = [
     { name = "chirp-ui" },
 ]
 
-[package.metadata]
-requires-dist = [
-    { name = "anyio", specifier = ">=4.0" },
-    { name = "argon2-cffi", marker = "extra == 'all'", specifier = ">=23.1.0" },
-    { name = "argon2-cffi", marker = "extra == 'auth'", specifier = ">=23.1.0" },
-    { name = "argon2-cffi", marker = "extra == 'full'", specifier = ">=23.1.0" },
-    { name = "asyncpg", marker = "extra == 'all'", specifier = ">=0.30.0" },
-    { name = "asyncpg", marker = "extra == 'data-pg'", specifier = ">=0.30.0" },
-    { name = "asyncpg", marker = "extra == 'full'", specifier = ">=0.30.0" },
-    { name = "bengal-pounce", editable = "../python/b-stack/pounce" },
-    { name = "chirp-ui", marker = "extra == 'ui'", editable = "../python/b-stack/chirp-ui" },
-    { name = "fastapi", marker = "extra == 'benchmark'", specifier = ">=0.115.0" },
-    { name = "flask", marker = "extra == 'benchmark'", specifier = ">=3.0.0" },
-    { name = "gunicorn", marker = "extra == 'benchmark'", specifier = ">=23.0.0" },
-    { name = "httpx", marker = "extra == 'ai'", specifier = ">=0.27.0" },
-    { name = "httpx", marker = "extra == 'all'", specifier = ">=0.27.0" },
-    { name = "httpx", marker = "extra == 'benchmark'", specifier = ">=0.27.0" },
-    { name = "httpx", marker = "extra == 'full'", specifier = ">=0.27.0" },
-    { name = "httpx", marker = "extra == 'testing'", specifier = ">=0.27.0" },
-    { name = "itsdangerous", marker = "extra == 'all'", specifier = ">=2.2.0" },
-    { name = "itsdangerous", marker = "extra == 'full'", specifier = ">=2.2.0" },
-    { name = "itsdangerous", marker = "extra == 'sessions'", specifier = ">=2.2.0" },
-    { name = "kida-templates", editable = "../python/b-stack/kida" },
-    { name = "patitas", extras = ["syntax"], marker = "extra == 'all'", editable = "../python/b-stack/patitas" },
-    { name = "patitas", extras = ["syntax"], marker = "extra == 'full'", editable = "../python/b-stack/patitas" },
-    { name = "patitas", extras = ["syntax"], marker = "extra == 'markdown'", editable = "../python/b-stack/patitas" },
-    { name = "python-dotenv", marker = "extra == 'config'", specifier = ">=1.0.0" },
-    { name = "python-multipart", marker = "extra == 'all'", specifier = ">=0.0.18" },
-    { name = "python-multipart", marker = "extra == 'forms'", specifier = ">=0.0.18" },
-    { name = "python-multipart", marker = "extra == 'full'", specifier = ">=0.0.18" },
-    { name = "redis", marker = "extra == 'redis'", specifier = ">=5.0.0" },
-    { name = "uvicorn", marker = "extra == 'benchmark'", specifier = ">=0.32.0" },
-]
-provides-extras = ["forms", "sessions", "auth", "testing", "data-pg", "ai", "markdown", "ui", "config", "redis", "all", "benchmark", "full"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "chirp-ui", editable = "../python/b-stack/chirp-ui" },
-    { name = "httpx", specifier = ">=0.27.0" },
-    { name = "hypothesis", specifier = ">=6.100.0" },
-    { name = "itsdangerous", specifier = ">=2.2.0" },
-    { name = "patitas", extras = ["syntax"], editable = "../python/b-stack/patitas" },
-    { name = "prek", specifier = ">=0.3.2" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-asyncio", specifier = ">=0.23" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-timeout", specifier = ">=2.3.0" },
-    { name = "pytest-xdist", specifier = ">=3.5.0" },
-    { name = "python-multipart", specifier = ">=0.0.18" },
-    { name = "ruff", specifier = ">=0.15.1" },
-    { name = "towncrier", specifier = ">=24.8.0" },
-    { name = "ty", specifier = ">=0.0.11" },
-]
-docs = [
-    { name = "bengal", editable = "../python/b-stack/bengal" },
-    { name = "lunr", specifier = ">=0.7.0" },
-]
-
 [[package]]
 name = "bengal-pounce"
 version = "0.6.0"
-source = { editable = "../python/b-stack/pounce" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "h11" },
     { name = "milo-cli" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "bengal-zoomies", marker = "extra == 'full'", specifier = ">=0.3.1" },
-    { name = "bengal-zoomies", marker = "extra == 'h3'", specifier = ">=0.3.1" },
-    { name = "h11", specifier = ">=0.16.0" },
-    { name = "h2", marker = "extra == 'full'", specifier = ">=4.3.0" },
-    { name = "h2", marker = "extra == 'h2'", specifier = ">=4.3.0" },
-    { name = "milo-cli", specifier = ">=0.2.2" },
-    { name = "truststore", marker = "extra == 'full'", specifier = ">=0.10.4" },
-    { name = "truststore", marker = "extra == 'tls'", specifier = ">=0.10.4" },
-    { name = "wsproto", marker = "extra == 'full'", specifier = ">=1.3.2" },
-    { name = "wsproto", marker = "extra == 'ws'", specifier = ">=1.3.2" },
-]
-provides-extras = ["h2", "ws", "tls", "h3", "full"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "bengal-zoomies", specifier = ">=0.3.1" },
-    { name = "h2", specifier = ">=4.3.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "hypothesis", specifier = ">=6.151.10" },
-    { name = "milo-cli", specifier = ">=0.2.2" },
-    { name = "opentelemetry-api", specifier = ">=1.40.0" },
-    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.40.0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.40.0" },
-    { name = "pre-commit", specifier = ">=4.5.1" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-asyncio", specifier = ">=1.3.0" },
-    { name = "pytest-benchmark", specifier = ">=5.2.3" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-mock", specifier = ">=3.15.1" },
-    { name = "pytest-timeout", specifier = ">=2.4.0" },
-    { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.15.9" },
-    { name = "sentry-sdk", specifier = ">=2.57.0" },
-    { name = "towncrier", specifier = ">=24.0" },
-    { name = "ty", specifier = ">=0.0.28" },
-    { name = "wsproto", specifier = ">=1.3.2" },
-]
-docs = [
-    { name = "bengal", editable = "../python/b-stack/bengal" },
-    { name = "lunr", specifier = ">=0.8.0" },
-]
-test-frameworks = [
-    { name = "django", specifier = ">=5.0" },
-    { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "litestar", specifier = ">=2.0" },
-    { name = "starlette", specifier = ">=0.40.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/a9/99/3bf019a9c1c4a0f710d897c72e669b2133cc3be7278b6d53d9548753cab8/bengal_pounce-0.6.0.tar.gz", hash = "sha256:3c5834a3ba7e5822f292661286e77ad7c651d80b34149a1dc02f653532acdde6", size = 181583, upload-time = "2026-04-14T00:27:59.006Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/4e/b28ad5fcf2e6ef8152738e8982aadeeb24f81035521774a87af69d495c06/bengal_pounce-0.6.0-py3-none-any.whl", hash = "sha256:48a192de4b926aefd1f053aca25271c9b8e6e637e1e617e92b449aca8f72b5e9", size = 210857, upload-time = "2026-04-14T00:27:57.346Z" },
 ]
 
 [[package]]
@@ -291,40 +190,13 @@ wheels = [
 [[package]]
 name = "chirp-ui"
 version = "0.6.0"
-source = { editable = "../python/b-stack/chirp-ui" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "kida-templates" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "bengal-chirp", marker = "extra == 'showcase'", editable = "../python/b-stack/chirp" },
-    { name = "kida-templates", editable = "../python/b-stack/kida" },
-]
-provides-extras = ["showcase"]
-
-[package.metadata.requires-dev]
-browser = [
-    { name = "bengal-chirp", editable = "../python/b-stack/chirp" },
-    { name = "bengal-pounce", editable = "../python/b-stack/pounce" },
-    { name = "playwright", specifier = ">=1.50.0" },
-    { name = "pytest-asyncio", specifier = ">=0.25.0" },
-]
-dev = [
-    { name = "bengal", editable = "../python/b-stack/bengal" },
-    { name = "poethepoet", specifier = ">=0.32.0" },
-    { name = "pre-commit", specifier = ">=4.0.0" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-timeout", specifier = ">=2.3.0" },
-    { name = "ruff", specifier = ">=0.15.1" },
-    { name = "tinycss2", specifier = ">=1.4.0" },
-    { name = "towncrier", specifier = ">=24.8.0" },
-    { name = "ty", specifier = ">=0.0.11" },
-]
-docs = [
-    { name = "bengal", editable = "../python/b-stack/bengal" },
-    { name = "lunr", specifier = ">=0.7.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/57/d8/164178298a6e606b2f9602766e8e62a72170fb9be8ca1ab6bc790f2cca7a/chirp_ui-0.6.0.tar.gz", hash = "sha256:67404f1ef0bd4691ac45e643de8ad3592bbc5cf0500407ebfea459c2cbfde655", size = 1814331, upload-time = "2026-04-26T19:45:15.639Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1b/f5/d4ecf4db9677bcfb52c7aee539b6946c5fff1a1e82f6fc8d561f11e6376f/chirp_ui-0.6.0-py3-none-any.whl", hash = "sha256:8c4f4c038e44c59a10ddcc5f49f11a589cb46a19617f8adb56ef0373af929849", size = 2043367, upload-time = "2026-04-26T19:45:13.679Z" },
 ]
 
 [[package]]
@@ -416,8 +288,8 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bengal-chirp", extras = ["config", "forms", "sessions", "ui"], editable = "../python/b-stack/chirp" },
-    { name = "chirp-ui", editable = "../python/chirp-ui" },
+    { name = "bengal-chirp", extras = ["config", "forms", "sessions", "ui"], specifier = ">=0.5.0" },
+    { name = "chirp-ui", specifier = ">=0.5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]
 
@@ -573,32 +445,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/5e/73/e01e4c5e11ad0494f
 [[package]]
 name = "kida-templates"
 version = "0.8.0"
-source = { editable = "../python/b-stack/kida" }
-
-[package.metadata]
-requires-dist = [
-    { name = "bengal", marker = "extra == 'docs'", editable = "../python/b-stack/bengal" },
-    { name = "markupsafe", marker = "extra == 'perf'" },
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/81/ef95a7342505b682d4c0948901096bca3a760fd6332ad8e4dab2808015bb/kida_templates-0.8.0.tar.gz", hash = "sha256:c80c0cbb53fa88723454c79ca4485fcc85f6ebaa920eb675ba1866a9e461168c", size = 590629, upload-time = "2026-04-24T18:33:26.577Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/2a/8c7345b3449ea92aa45820d47fccdfd51a7a1a04a7e4ba9a9d9bc4d02560/kida_templates-0.8.0-py3-none-any.whl", hash = "sha256:01f7240f7228ebda14a66c367071fe6e8a47b0ef6775f84006ae1c1f5dfadbc3", size = 408281, upload-time = "2026-04-24T18:33:24.745Z" },
 ]
-provides-extras = ["docs", "perf"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis", specifier = ">=6.100.0" },
-    { name = "jinja2", specifier = ">=3.1.6,<3.2" },
-    { name = "milo-cli", specifier = ">=0.2.1" },
-    { name = "pre-commit", specifier = ">=4.0.0" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23" },
-    { name = "pytest-benchmark", specifier = ">=4.0.0" },
-    { name = "pytest-cov", specifier = ">=4.0" },
-    { name = "pytest-timeout", specifier = ">=2.3.0" },
-    { name = "pytest-xdist", specifier = ">=3.3.0" },
-    { name = "ruff", specifier = ">=0.15.1" },
-    { name = "towncrier", specifier = ">=24.0" },
-    { name = "ty", specifier = ">=0.0.11" },
-]
-docs = [{ name = "bengal", editable = "../python/b-stack/bengal" }]
 
 [[package]]
 name = "linkify-it-py"

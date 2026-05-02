@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from chirp.contracts import FormContract, contract
-from chirp.http.cookies import SetCookie
+from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
+from elbysodic.services.auth import SESSION_COOKIE
 from elbysodic.web.recovery import recover_next_url
-from elbysodic.web.state import get_services
+from elbysodic.web.security import session_cookie
+from elbysodic.web.state import get_services, get_web_security_config
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +31,17 @@ async def post(request: Request) -> Redirect:
     next_url = _safe_next(str(form.get("next") or "/"))
     intent = str(form.get("intent") or "set_default_character")
     if intent == "switch_membership":
+        security = get_web_security_config()
+        if security.production:
+            try:
+                identity = services.switch_session_identity(
+                    _cookie_value(request, SESSION_COOKIE) or "",
+                    int(str(form.get("membership_id") or "0")),
+                )
+            except PermissionError as exc:
+                raise HTTPError(status=403, detail=str(exc)) from exc
+            next_url = recover_next_url(services.repo, identity, next_url)
+            return Redirect(next_url)
         identity = services.switch_dev_identity(int(str(form.get("membership_id") or "0")))
         next_url = recover_next_url(services.repo, identity, next_url)
         return Redirect(
@@ -36,10 +49,11 @@ async def post(request: Request) -> Redirect:
             headers=(
                 (
                     "Set-Cookie",
-                    SetCookie(
+                    session_cookie(
                         DEV_IDENTITY_COOKIE,
                         dev_identity_cookie_value(identity),
                         max_age=60 * 60 * 24 * 30,
+                        security=get_web_security_config(),
                     ).to_header_value(),
                 ),
             ),
@@ -55,3 +69,8 @@ def _safe_next(next_url: str) -> str:
     if not next_url.startswith("/") or next_url.startswith("//"):
         return "/"
     return next_url
+
+
+def _cookie_value(request: Request, name: str) -> str | None:
+    value = request.cookies.get(name)
+    return str(value) if value is not None else None

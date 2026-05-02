@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 10
+CURRENT_SCHEMA_VERSION = 11
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -404,6 +404,20 @@ def _add_board_media_presentation(connection: sqlite3.Connection) -> None:
             )
 
 
+def _add_user_session_identity_selection(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(user_sessions)").fetchall()
+    }
+    for name, definition in {
+        "selected_community_id": "INTEGER REFERENCES communities(id) ON DELETE SET NULL",
+        "selected_membership_id": (
+            "INTEGER REFERENCES community_memberships(id) ON DELETE SET NULL"
+        ),
+    }.items():
+        if name not in columns:
+            connection.execute(f"ALTER TABLE user_sessions ADD COLUMN {name} {definition}")
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -414,6 +428,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(8, "user-sessions", _add_user_sessions),
     Migration(9, "hero-treatments", _add_hero_treatments),
     Migration(10, "board-media-presentation", _add_board_media_presentation),
+    Migration(11, "user-session-identity-selection", _add_user_session_identity_selection),
 )
 
 

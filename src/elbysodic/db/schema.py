@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL UNIQUE,
+    selected_community_id INTEGER REFERENCES communities(id) ON DELETE SET NULL,
+    selected_membership_id INTEGER REFERENCES community_memberships(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL,
     last_seen_at TEXT NOT NULL,
     expires_at TEXT,

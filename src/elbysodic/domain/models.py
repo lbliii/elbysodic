@@ -56,6 +56,8 @@ class UserSession:
     id: int
     user_id: int
     token_hash: str
+    selected_community_id: int | None
+    selected_membership_id: int | None
     created_at: str
     last_seen_at: str
     expires_at: str | None

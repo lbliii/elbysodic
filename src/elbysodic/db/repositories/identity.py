@@ -446,9 +446,16 @@ class IdentityRepositoryMixin(RepositoryBase):
         cursor = self.connection.execute(
             """
             INSERT INTO user_sessions (
-                user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at
+                user_id,
+                token_hash,
+                selected_community_id,
+                selected_membership_id,
+                created_at,
+                last_seen_at,
+                expires_at,
+                revoked_at
             )
-            VALUES (?, ?, ?, ?, ?, NULL)
+            VALUES (?, ?, NULL, NULL, ?, ?, ?, NULL)
             """,
             (user_id, token_hash, now, now, expires_at),
         )
@@ -458,7 +465,16 @@ class IdentityRepositoryMixin(RepositoryBase):
     def get_user_session(self, session_id: int) -> UserSession:
         row = self.connection.execute(
             """
-            SELECT id, user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at
+            SELECT
+                id,
+                user_id,
+                token_hash,
+                selected_community_id,
+                selected_membership_id,
+                created_at,
+                last_seen_at,
+                expires_at,
+                revoked_at
             FROM user_sessions
             WHERE id = ?
             """,
@@ -471,7 +487,16 @@ class IdentityRepositoryMixin(RepositoryBase):
     def get_user_session_by_token_hash(self, token_hash: str) -> UserSession:
         row = self.connection.execute(
             """
-            SELECT id, user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at
+            SELECT
+                id,
+                user_id,
+                token_hash,
+                selected_community_id,
+                selected_membership_id,
+                created_at,
+                last_seen_at,
+                expires_at,
+                revoked_at
             FROM user_sessions
             WHERE token_hash = ?
             """,
@@ -489,6 +514,34 @@ class IdentityRepositoryMixin(RepositoryBase):
             WHERE id = ?
             """,
             (_utc_now(), session_id),
+        )
+        self.connection.commit()
+        return self.get_user_session(session_id)
+
+    def update_user_session_identity(
+        self,
+        session_id: int,
+        *,
+        community_id: int,
+        membership_id: int,
+    ) -> UserSession:
+        session = self.get_user_session(session_id)
+        membership = self.get_membership(community_id, membership_id)
+        if membership.user_id != session.user_id:
+            raise PermissionError(
+                f"membership {membership_id} does not belong to session user {session.user_id}"
+            )
+        if not membership.is_active:
+            raise PermissionError(f"membership {membership.id} is not active")
+        self.connection.execute(
+            """
+            UPDATE user_sessions
+            SET selected_community_id = ?,
+                selected_membership_id = ?,
+                last_seen_at = ?
+            WHERE id = ?
+            """,
+            (community_id, membership_id, _utc_now(), session_id),
         )
         self.connection.commit()
         return self.get_user_session(session_id)

@@ -1,0 +1,337 @@
+from __future__ import annotations
+
+import asyncio
+import re
+from urllib.parse import urlencode
+
+import pytest
+from chirp.testing import TestClient
+
+from elbysodic.services import create_services
+from elbysodic.web import create_app
+from elbysodic.web.state import get_services
+
+_FORM = {"Content-Type": "application/x-www-form-urlencoded"}
+_CSRF_RE = re.compile(r'name="_csrf_token" value="([^"]+)"')
+
+
+def _response_headers(response, name: str) -> list[str]:
+    headers = response.headers
+    if isinstance(headers, dict):
+        value = headers.get(name)
+        return [] if value is None else [str(value)]
+    return [str(value) for key, value in headers if str(key).lower() == name.lower()]
+
+
+def _cookie_values(*responses) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for response in responses:
+        for cookie in _response_headers(response, "set-cookie"):
+            pair = cookie.split(";", 1)[0]
+            name, _, value = pair.partition("=")
+            values[name] = value
+    return values
+
+
+def _cookie_header(cookies: dict[str, str]) -> str:
+    return "; ".join(f"{name}={value}" for name, value in cookies.items())
+
+
+def _csrf_token(html: str) -> str:
+    match = _CSRF_RE.search(html)
+    assert match is not None
+    return match.group(1)
+
+
+def _set_production_env(monkeypatch, *, demo_mode: bool = True) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "production")
+    monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+    monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+    if demo_mode:
+        monkeypatch.setenv("ELBYSODIC_DEMO_MODE", "1")
+    else:
+        monkeypatch.delenv("ELBYSODIC_DEMO_MODE", raising=False)
+
+
+async def _production_login(client: TestClient, *, email: str, next_url: str = "/studio"):
+    page = await client.get(f"/login?next={next_url}")
+    cookies = _cookie_values(page)
+    login = await client.post(
+        "/login",
+        body=urlencode(
+            {
+                "email": email,
+                "password": "password",
+                "next": next_url,
+                "_csrf_token": _csrf_token(page.text),
+            }
+        ).encode(),
+        headers={**_FORM, "Cookie": _cookie_header(cookies)},
+    )
+    cookies.update(_cookie_values(login))
+    return login, cookies
+
+
+def test_production_config_requires_secret_key(monkeypatch) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "production")
+    monkeypatch.delenv("ELBYSODIC_SECRET_KEY", raising=False)
+
+    with pytest.raises(RuntimeError, match="ELBYSODIC_SECRET_KEY"):
+        create_app(debug=False, services=create_services(path=":memory:"))
+
+
+def test_production_config_parses_allowed_hosts_and_hsts(monkeypatch) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "production")
+    monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+    monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "example.com, .up.railway.app")
+    monkeypatch.setenv("ELBYSODIC_HSTS", "max-age=31536000")
+
+    app = create_app(debug=False, services=create_services(path=":memory:"))
+
+    assert app.config.env == "production"
+    assert app.config.secret_key == "x" * 32
+    assert app.config.allowed_hosts == ("example.com", ".up.railway.app")
+    assert app.config.strict_transport_security == "max-age=31536000"
+
+
+def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response, _cookies = await _production_login(client, email="moira@example.com")
+
+        assert response.status == 302
+        set_cookie = "\n".join(_response_headers(response, "set-cookie"))
+        assert "elbysodic_session=" in set_cookie
+        assert "elbysodic_dev_identity=" not in set_cookie
+        assert "Secure" in set_cookie
+        assert "HttpOnly" in set_cookie
+        assert "SameSite=lax" in set_cookie
+
+    asyncio.run(run())
+
+
+def test_production_seed_password_requires_demo_mode(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch, demo_mode=False)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            page = await client.get("/login")
+            response = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "moira@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                        "_csrf_token": _csrf_token(page.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(_cookie_values(page))},
+            )
+
+        assert response.status == 200
+        assert "email or password is incorrect" in response.text
+        assert "elbysodic_session=" not in "\n".join(_response_headers(response, "set-cookie"))
+
+    asyncio.run(run())
+
+
+def test_production_routes_require_session(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"), dev_tools=True)
+
+        async with TestClient(app) as client:
+            health = await client.get("/health")
+            login = await client.get("/login")
+            studio = await client.get("/studio")
+            post = await client.post(
+                "/identity",
+                body=urlencode({"intent": "set_default_character", "character_id": "0"}).encode(),
+                headers=_FORM,
+            )
+            personas = await client.get("/dev/personas")
+
+        assert health.status == 200
+        assert login.status == 200
+        assert "_csrf_token" in login.text
+        assert "Staff in X-Men Apocalypse" not in login.text
+        assert studio.status == 302
+        assert dict(studio.headers)["location"] == "/login?next=/studio"
+        assert post.status == 403
+        assert personas.status == 302
+
+    asyncio.run(run())
+
+
+def test_production_security_headers_are_set(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        monkeypatch.setenv("ELBYSODIC_HSTS", "max-age=31536000")
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/login")
+
+        headers = dict(response.headers)
+        assert headers["x-frame-options"] == "DENY"
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
+        assert headers["strict-transport-security"] == "max-age=31536000"
+        assert "frame-ancestors 'none'" in headers["content-security-policy"]
+
+    asyncio.run(run())
+
+
+def test_production_login_rate_limit_blocks_repeated_posts(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            responses = [
+                await client.post("/login", body=b"", headers=_FORM) for _attempt in range(11)
+            ]
+
+        assert [response.status for response in responses[:10]] == [403] * 10
+        assert responses[10].status == 429
+        assert dict(responses[10].headers)["retry-after"] == "300"
+
+    asyncio.run(run())
+
+
+def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"), dev_tools=True)
+        services = get_services()
+        community = services.seed.community
+        moira = services.repo.get_membership_by_username(community.id, "moira")
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            forged_identity = f"elbysodic_dev_identity={community.id}:{moira.user_id}:{moira.id}"
+            studio = await client.get(
+                "/studio",
+                headers={
+                    "Cookie": f"{_cookie_header(cookies)}; {forged_identity}",
+                    "x-elbysodic-user-id": str(moira.user_id),
+                    "x-elbysodic-membership-id": str(moira.id),
+                },
+            )
+
+        assert studio.status == 200
+        assert "Member in X-Men Apocalypse" in studio.text
+        assert "Staff in X-Men Apocalypse" not in studio.text
+
+    asyncio.run(run())
+
+
+def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio_form = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(studio_form))
+            missing_csrf = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "next": "/studio",
+                        "_csrf_token": _csrf_token(studio_form.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+            cookies.update(_cookie_values(switch))
+            studio = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+
+        assert missing_csrf.status == 403
+        assert switch.status == 302
+        assert "elbysodic_dev_identity=" not in "\n".join(_response_headers(switch, "set-cookie"))
+        assert studio.status == 200
+        assert "Director in HP Universe" in studio.text
+        assert "Member in X-Men Apocalypse" not in studio.text
+
+    asyncio.run(run())
+
+
+def test_production_membership_switch_rejects_cross_user_membership(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        community = services.seed.community
+        moira = services.repo.get_membership_by_username(community.id, "moira")
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio_form = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(studio_form))
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(moira.id),
+                        "next": "/studio",
+                        "_csrf_token": _csrf_token(studio_form.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+
+        assert switch.status == 403
+
+    asyncio.run(run())
+
+
+def test_session_cookies_stay_http_local_in_development(monkeypatch) -> None:
+    async def run() -> None:
+        monkeypatch.delenv("ELBYSODIC_ENV", raising=False)
+        monkeypatch.delenv("ELBYSODIC_SECRET_KEY", raising=False)
+        monkeypatch.delenv("ELBYSODIC_ALLOWED_HOSTS", raising=False)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "moira@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 302
+        set_cookie = "\n".join(_response_headers(response, "set-cookie"))
+        assert "elbysodic_session=" in set_cookie
+        assert "Secure" not in set_cookie
+
+    asyncio.run(run())
