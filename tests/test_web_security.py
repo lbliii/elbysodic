@@ -168,6 +168,42 @@ def test_production_routes_require_session(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_security_headers_are_set(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        monkeypatch.setenv("ELBYSODIC_HSTS", "max-age=31536000")
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/login")
+
+        headers = dict(response.headers)
+        assert headers["x-frame-options"] == "DENY"
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
+        assert headers["strict-transport-security"] == "max-age=31536000"
+        assert "frame-ancestors 'none'" in headers["content-security-policy"]
+
+    asyncio.run(run())
+
+
+def test_production_login_rate_limit_blocks_repeated_posts(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            responses = [
+                await client.post("/login", body=b"", headers=_FORM) for _attempt in range(11)
+            ]
+
+        assert [response.status for response in responses[:10]] == [403] * 10
+        assert responses[10].status == 429
+        assert dict(responses[10].headers)["retry-after"] == "300"
+
+    asyncio.run(run())
+
+
 def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)

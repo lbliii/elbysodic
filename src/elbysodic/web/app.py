@@ -9,7 +9,9 @@ from typing import Any, cast
 from chirp.app import App
 from chirp.config import AppConfig
 from chirp.ext.chirp_ui import use_chirp_ui
+from chirp.middleware.auth_rate_limit import AuthRateLimitConfig, AuthRateLimitMiddleware
 from chirp.middleware.csrf import CSRFConfig, CSRFMiddleware
+from chirp.middleware.security_headers import SecurityHeadersConfig, SecurityHeadersMiddleware
 from chirp.middleware.sessions import SessionConfig, SessionMiddleware
 from chirp.middleware.static import StaticFiles
 
@@ -62,6 +64,16 @@ def create_app(
     app.template_global()(dev_tools_enabled)
     if security.production:
         app.add_middleware(
+            AuthRateLimitMiddleware(
+                AuthRateLimitConfig(
+                    paths=("/login",),
+                    requests=10,
+                    window_seconds=60,
+                    block_seconds=300,
+                )
+            )
+        )
+        app.add_middleware(
             SessionMiddleware(
                 SessionConfig(
                     secret_key=security.secret_key,
@@ -73,6 +85,13 @@ def create_app(
         )
         app.add_middleware(CSRFMiddleware(CSRFConfig()))
         app.add_middleware(AutoCSRFFormsMiddleware())
+        app.add_middleware(
+            SecurityHeadersMiddleware(
+                SecurityHeadersConfig(
+                    strict_transport_security=security.strict_transport_security,
+                )
+            )
+        )
     app.add_middleware(RequireLoginMiddleware(security))
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))
