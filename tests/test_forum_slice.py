@@ -383,6 +383,50 @@ def test_unknown_tenant_prefix_returns_not_found() -> None:
     asyncio.run(run())
 
 
+def test_boosted_main_navigation_reselects_page_root_until_chirp_outlet_release() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/wanted/brotherhood-rival-for-rogue",
+                headers={
+                    "HX-Request": "true",
+                    "HX-Boosted": "true",
+                    "HX-Target": "main",
+                },
+            )
+
+        assert response.status == 200
+        assert 'id="page-root"' in response.text
+        assert 'id="page-content"' not in response.text
+        assert _response_header(response, "HX-Reselect") == "#page-root"
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_boosted_main_navigation_keeps_links_and_reselects_page_root() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/c/jurassic-park-universe/boards/paddock-twelve",
+                headers={
+                    "HX-Request": "true",
+                    "HX-Boosted": "true",
+                    "HX-Target": "main",
+                },
+            )
+
+        assert response.status == 200
+        assert 'id="page-root"' in response.text
+        assert 'href="/c/jurassic-park-universe/boards/paddock-twelve/threads/new"' in response.text
+        assert _response_header(response, "HX-Reselect") == "#page-root"
+
+    asyncio.run(run())
+
+
 def test_identity_switcher_persists_dev_membership_cookie() -> None:
     async def run() -> None:
         app = _app()
