@@ -7,7 +7,7 @@ from typing import Protocol
 
 from elbysodic.domain.context import RequestIdentityContext
 from elbysodic.domain.models import Community, CommunityMembership, User, UserSession
-from elbysodic.services.auth import SESSION_COOKIE, user_for_session_token
+from elbysodic.services.auth import SESSION_COOKIE, session_for_session_token
 
 DEV_COMMUNITY_HEADER = "x-elbysodic-community"
 DEV_MEMBERSHIP_HEADER = "x-elbysodic-membership-id"
@@ -66,7 +66,8 @@ class RequestIdentityResolver:
         cookie_identity = (
             _dev_identity_cookie(request) if self._allow_development_identity else None
         )
-        community = self._resolve_community(request)
+        session = _session_for_request(self._repo, request)
+        community = self._resolve_community(request, session)
         header_user_id = (
             _optional_int_header(request, DEV_USER_HEADER)
             if self._allow_development_identity
@@ -77,9 +78,13 @@ class RequestIdentityResolver:
             if self._allow_development_identity
             else None
         )
-        session_user = None if header_user_id is not None else _session_user(self._repo, request)
+        session_user = None if session is None else self._repo.get_user(session.user_id)
         user_id = header_user_id if header_user_id is not None else _user_id(session_user)
-        membership_id = header_membership_id
+        membership_id = (
+            header_membership_id
+            if header_membership_id is not None
+            else _selected_membership_id(session, community.id)
+        )
         user_from_cookie = False
         membership_from_cookie = False
 
@@ -137,7 +142,11 @@ class RequestIdentityResolver:
             membership_id=membership.id,
         )
 
-    def _resolve_community(self, request: object | None) -> Community:
+    def _resolve_community(
+        self,
+        request: object | None,
+        session: UserSession | None = None,
+    ) -> Community:
         explicit = (
             _optional_header(request, DEV_COMMUNITY_HEADER)
             if self._allow_development_identity
@@ -153,6 +162,12 @@ class RequestIdentityResolver:
         if external_host is not None:
             try:
                 return self._repo.get_community_by_host(external_host)
+            except LookupError:
+                pass
+
+        if session is not None and session.selected_community_id is not None:
+            try:
+                return self._repo.get_community(session.selected_community_id)
             except LookupError:
                 pass
 
@@ -220,7 +235,13 @@ def _dev_identity_cookie(request: object | None) -> RequestIdentityContext | Non
     )
 
 
-def _session_user(repo: AccessRepository, request: object | None) -> User | None:
+def _selected_membership_id(session: UserSession | None, community_id: int) -> int | None:
+    if session is None or session.selected_community_id != community_id:
+        return None
+    return session.selected_membership_id
+
+
+def _session_for_request(repo: AccessRepository, request: object | None) -> UserSession | None:
     cookies = getattr(request, "cookies", None)
     if cookies is None:
         return None
@@ -230,7 +251,7 @@ def _session_user(repo: AccessRepository, request: object | None) -> User | None
     raw_value = getter(SESSION_COOKIE)
     if raw_value is None:
         return None
-    return user_for_session_token(repo, str(raw_value))
+    return session_for_session_token(repo, str(raw_value))
 
 
 def _user_id(user: User | None) -> int | None:

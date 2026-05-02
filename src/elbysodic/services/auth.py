@@ -32,6 +32,14 @@ class AuthRepository(Protocol):
         expires_at: str | None = None,
     ) -> UserSession: ...
 
+    def update_user_session_identity(
+        self,
+        session_id: int,
+        *,
+        community_id: int,
+        membership_id: int,
+    ) -> UserSession: ...
+
     def get_user_session_by_token_hash(self, token_hash: str) -> UserSession: ...
 
     def touch_user_session(self, session_id: int) -> UserSession: ...
@@ -49,6 +57,7 @@ class SessionLookupRepository(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class LoginSession:
+    session_id: int
     user: User
     token: str
     expires_at: str
@@ -99,12 +108,17 @@ def create_login_session(repo: AuthRepository, email: str, password: str) -> Log
         raise PermissionError("email or password is incorrect")
     token = secrets.token_urlsafe(32)
     expires_at = (datetime.now(UTC) + SESSION_TTL).isoformat(timespec="seconds")
-    repo.create_user_session(
+    stored_session = repo.create_user_session(
         user.id,
         session_token_hash(token),
         expires_at=expires_at,
     )
-    return LoginSession(user=user, token=token, expires_at=expires_at)
+    return LoginSession(
+        session_id=stored_session.id,
+        user=user,
+        token=token,
+        expires_at=expires_at,
+    )
 
 
 def session_token_hash(token: str) -> str:
@@ -112,6 +126,16 @@ def session_token_hash(token: str) -> str:
 
 
 def user_for_session_token(repo: SessionLookupRepository, token: str) -> User | None:
+    session = session_for_session_token(repo, token)
+    if session is None:
+        return None
+    return repo.get_user(session.user_id)
+
+
+def session_for_session_token(
+    repo: SessionLookupRepository,
+    token: str,
+) -> UserSession | None:
     if not token:
         return None
     try:
@@ -127,5 +151,4 @@ def user_for_session_token(repo: SessionLookupRepository, token: str) -> User | 
             return None
         if expires_at <= datetime.now(UTC):
             return None
-    repo.touch_user_session(session.id)
-    return repo.get_user(session.user_id)
+    return repo.touch_user_session(session.id)

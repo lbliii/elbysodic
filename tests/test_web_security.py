@@ -147,6 +147,99 @@ def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
+    async def run() -> None:
+        monkeypatch.setenv("ELBYSODIC_ENV", "production")
+        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
+
+        async with TestClient(app) as client:
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "writer@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            session_cookie = next(
+                cookie.split(";", 1)[0]
+                for cookie in _response_headers(login, "set-cookie")
+                if cookie.startswith("elbysodic_session=")
+            )
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": session_cookie},
+            )
+            studio = await client.get("/studio", headers={"Cookie": session_cookie})
+
+        assert switch.status == 302
+        assert _response_headers(switch, "set-cookie") == []
+        assert studio.status == 200
+        assert "Director in HP Universe" in studio.text
+        assert "Member in X-Men Apocalypse" not in studio.text
+
+    asyncio.run(run())
+
+
+def test_production_membership_switch_rejects_cross_user_membership(monkeypatch) -> None:
+    async def run() -> None:
+        monkeypatch.setenv("ELBYSODIC_ENV", "production")
+        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        community = services.seed.community
+        moira = services.repo.get_membership_by_username(community.id, "moira")
+
+        async with TestClient(app) as client:
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "writer@example.com",
+                        "password": "password",
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            session_cookie = next(
+                cookie.split(";", 1)[0]
+                for cookie in _response_headers(login, "set-cookie")
+                if cookie.startswith("elbysodic_session=")
+            )
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(moira.id),
+                        "next": "/studio",
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": session_cookie},
+            )
+
+        assert switch.status == 403
+
+    asyncio.run(run())
+
+
 def test_session_cookies_stay_http_local_in_development(monkeypatch) -> None:
     async def run() -> None:
         monkeypatch.delenv("ELBYSODIC_ENV", raising=False)

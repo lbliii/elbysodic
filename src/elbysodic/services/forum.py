@@ -67,7 +67,12 @@ from elbysodic.services.applications import (
 )
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
-from elbysodic.services.auth import LoginSession, create_login_session, session_token_hash
+from elbysodic.services.auth import (
+    LoginSession,
+    create_login_session,
+    session_for_session_token,
+    session_token_hash,
+)
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
 from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
@@ -399,7 +404,30 @@ class AppServices:
 
     def switch_dev_identity(self, membership_id: int) -> RequestIdentityContext:
         identity = self._identity_context or self._identity_resolver.resolve()
-        for membership in self.repo.list_memberships_for_user(identity.user_id):
+        return self._identity_for_membership(identity.user_id, membership_id)
+
+    def switch_session_identity(
+        self,
+        session_token: str,
+        membership_id: int,
+    ) -> RequestIdentityContext:
+        session = session_for_session_token(self.repo, session_token)
+        if session is None:
+            raise PermissionError("login is required")
+        identity = self._identity_for_membership(session.user_id, membership_id)
+        self.repo.update_user_session_identity(
+            session.id,
+            community_id=identity.community_id,
+            membership_id=identity.membership_id,
+        )
+        return identity
+
+    def _identity_for_membership(
+        self,
+        user_id: int,
+        membership_id: int,
+    ) -> RequestIdentityContext:
+        for membership in self.repo.list_memberships_for_user(user_id):
             if membership.id != membership_id:
                 continue
             if not membership.is_active:
@@ -408,12 +436,10 @@ class AppServices:
             return RequestIdentityContext(
                 community_id=community.id,
                 community_slug=community.slug,
-                user_id=identity.user_id,
+                user_id=user_id,
                 membership_id=membership.id,
             )
-        raise PermissionError(
-            f"user {identity.user_id} cannot switch to membership {membership_id}"
-        )
+        raise PermissionError(f"user {user_id} cannot switch to membership {membership_id}")
 
     def dev_personas(self) -> list[DevPersonaView]:
         identity = self._identity_context or self._identity_resolver.resolve()
@@ -472,6 +498,11 @@ class AppServices:
         identity = self._default_identity_for_user(
             session.user.id,
             preferred_community_id=preferred_community_id,
+        )
+        self.repo.update_user_session_identity(
+            session.session_id,
+            community_id=identity.community_id,
+            membership_id=identity.membership_id,
         )
         return session, identity
 

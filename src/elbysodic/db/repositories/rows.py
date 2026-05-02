@@ -105,6 +105,8 @@ def _user_session_from_row(row: sqlite3.Row) -> UserSession:
         id=row["id"],
         user_id=row["user_id"],
         token_hash=row["token_hash"],
+        selected_community_id=row["selected_community_id"],
+        selected_membership_id=row["selected_membership_id"],
         created_at=row["created_at"],
         last_seen_at=row["last_seen_at"],
         expires_at=row["expires_at"],
