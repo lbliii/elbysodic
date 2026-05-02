@@ -143,6 +143,9 @@ Acceptance checks:
 
 Implemented in this branch with a location throughline band, visible active-face
 relevance on location stages, and focused dense/quiet location coverage.
+The throughline side panel is framed as plot pressure so future event boosts,
+location pins, or per-post reward modifiers can occupy that slot without
+turning nearby/scene links into redundant jump controls.
 
 Goal: make board pages feel like playable locations, not just thread lists with
 art.

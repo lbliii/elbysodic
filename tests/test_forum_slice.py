@@ -1893,10 +1893,15 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "elbysodic-location-compass" in academy.text
             assert "What is playable here" in academy.text
             assert "Relevant for Rogue" in academy.text
-            assert "Latest scene" in academy.text
-            assert 'href="#board-thread-region"' in academy.text
-            assert 'href="#sublocations"' in academy.text
-            assert 'href="#nearby"' in academy.text
+            assert "Plot pressure" in academy.text
+            assert "No scene spotlight yet" in academy.text
+            assert "Total" in academy.text
+            assert (
+                "Event boosts, location pins, or first direct scenes can surface here."
+                in academy.text
+            )
+            assert "Doors" in academy.text
+            assert "Nearby" in academy.text
             assert 'id="sublocations"' in academy.text
             assert 'id="nearby"' in academy.text
             assert "Choose a door inside Xavier Institute" in academy.text
@@ -1938,8 +1943,8 @@ def test_quiet_location_page_keeps_actions_visible_without_empty_door_sections()
         assert page.status == 200
         assert "elbysodic-location-compass" in page.text
         assert "Open for scenes" in page.text
-        assert "Direct scene list and filters." in page.text
-        assert 'href="#board-thread-region"' in page.text
+        assert "No scene spotlight yet" in page.text
+        assert "Event boosts, location pins, or first direct scenes can surface here." in page.text
         assert 'href="#sublocations"' not in page.text
         assert 'id="sublocations"' not in page.text
         assert "No scenes have opened directly here yet." in page.text

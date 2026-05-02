@@ -4,7 +4,7 @@
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
-  {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link, latest_line %}
+  {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link %}
 {% end %}
 
 {% def next_unread_link(item) %}
@@ -81,9 +81,6 @@
       <p class="elbysodic-kicker">At this location</p>
       <h2>What is playable here</h2>
       <p class="elbysodic-location-compass__description">{{ board.description }}</p>
-      {% if board_summary.latest_thread and board_summary.latest_href %}
-      {{ latest_line("Latest scene", board_summary.latest_href, board_summary.latest_thread.title, board_summary.latest_post.author.name if board_summary.latest_post else None, "/characters/" ~ board_summary.latest_post.author.slug if board_summary.latest_post else None, board_summary.latest_post.author_membership.username if board_summary.latest_post else None, "/members/" ~ board_summary.latest_post.author_membership.username if board_summary.latest_post else None, board_summary.latest_post.updated_at_label if board_summary.latest_post else None) }}
-      {% endif %}
     </div>
     <div class="elbysodic-location-compass__signals">
       {% if current_event %}
@@ -95,27 +92,48 @@
         <em>Use the local scene list and doors below to choose where the pressure lands.</em>
       </aside>
       {% end %}
-      <nav class="elbysodic-location-compass__links" aria-label="{{ board.name }} shortcuts">
-        <a href="#board-thread-region">
-          <span>Scenes</span>
-          <strong>{{ board.name }} threads</strong>
-          <em>Direct scene list and filters.</em>
-        </a>
+      <aside class="elbysodic-location-compass__activity" aria-label="{{ board.name }} plot pressure">
+        <span>Plot pressure</span>
+        {% if direct_thread_count %}
+        <strong>{{ direct_thread_count }} direct {{ "scene" if direct_thread_count == 1 else "scenes" }} open</strong>
+        {% if board_summary.thread_count != direct_thread_count %}
+        <em>{{ board_summary.thread_count }} total scenes including doors inside this location.</em>
+        {% else %}
+        <em>Direct scenes are already listed below.</em>
+        {% end %}
+        {% else %}
+        <strong>No scene spotlight yet</strong>
+        <em>Event boosts, location pins, or first direct scenes can surface here.</em>
+        {% end %}
+        <dl class="elbysodic-location-compass__facts">
+          <div>
+            <dt>Direct</dt>
+            <dd>{{ direct_thread_count }}</dd>
+          </div>
+          {% if board_summary.thread_count != direct_thread_count %}
+          <div>
+            <dt>Total</dt>
+            <dd>{{ board_summary.thread_count }}</dd>
+          </div>
+          {% end %}
+          <div>
+            <dt>New</dt>
+            <dd>{{ board_summary.unread_thread_count }}</dd>
+          </div>
         {% if subboards %}
-        <a href="#sublocations">
-          <span>Doors</span>
-          <strong>{{ subboards | length }} playable rooms</strong>
-          <em>Rooms, districts, and pressure points inside this location.</em>
-        </a>
+          <div>
+            <dt>Doors</dt>
+            <dd>{{ subboards | length }}</dd>
+          </div>
         {% end %}
         {% if sibling_boards %}
-        <a href="#nearby">
-          <span>Nearby</span>
-          <strong>{{ sibling_boards | length }} adjacent places</strong>
-          <em>Other places in the same branch.</em>
-        </a>
+          <div>
+            <dt>Nearby</dt>
+            <dd>{{ sibling_boards | length }}</dd>
+          </div>
         {% end %}
-      </nav>
+        </dl>
+      </aside>
     </div>
   </section>
   {% end %}
