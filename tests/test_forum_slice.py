@@ -4929,7 +4929,7 @@ def test_my_threads_tracks_obligations_after_threads_are_read() -> None:
             read_thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert read_thread.status == 200
 
-            dashboard = await client.get("/my/threads")
+            dashboard = await client.get("/my/threads?character=all")
             assert dashboard.status == 200
             assert "My threads" in dashboard.text
             assert "Needs reply" in dashboard.text
@@ -4947,6 +4947,27 @@ def test_my_threads_tracks_obligations_after_threads_are_read() -> None:
             assert "waiting" in dashboard.text
             assert "Welcome to the rebuild" not in dashboard.text
             assert "/boards/plotting/threads/open-thread-roster#post-" in dashboard.text
+
+    asyncio.run(run())
+
+
+def test_my_threads_defaults_to_current_face_lens() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            dashboard = await client.get("/my/threads")
+            whole_roster = await client.get("/my/threads?character=all")
+
+        assert dashboard.status == 200
+        assert "Character threads" in dashboard.text
+        assert "Rogue" in dashboard.text
+        assert "Queue lens: Rogue" in dashboard.text
+        assert 'href="/my/threads?character=all"' in dashboard.text
+        assert "Open thread roster" in dashboard.text
+        assert "Welcome to the rebuild" not in dashboard.text
+        assert whole_roster.status == 200
+        assert "My threads" in whole_roster.text
+        assert "Queue lens: whole roster" in whole_roster.text
 
     asyncio.run(run())
 

@@ -108,7 +108,7 @@
     </summary>
     <nav class="elbysodic-filter-bar" aria-label="Queue lens">
       <a class="chirpui-btn {{ "chirpui-btn--primary" if not dashboard.selected_character else "chirpui-btn--secondary" }}"
-         href="/my/threads">
+         href="/my/threads?character=all">
         Whole roster
       </a>
       {% for activity in dashboard.roster_activity %}
