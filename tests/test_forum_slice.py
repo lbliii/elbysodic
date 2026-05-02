@@ -199,6 +199,8 @@ def test_health_check_does_not_require_registered_community_host() -> None:
 
         assert response.status == 200
         assert response.text == "ok\n"
+        assert "app;dur=" in _response_header(response, "Server-Timing")
+        assert float(_response_header(response, "X-Elbysodic-Route-Time-Ms")) >= 0
 
     asyncio.run(run())
 
