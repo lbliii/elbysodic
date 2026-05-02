@@ -349,6 +349,15 @@ Acceptance checks:
 6. **Performance instrumentation PR**: request timing logs and initial Railway
    timing report.
 
+## Progress Log
+
+- 2026-05-02: Started the tenant prefix resolver PR on
+  `codex/tenant-prefix-resolver`. Explicit `/c/{community_slug}` routes now
+  have regression coverage against production session selection, development
+  headers, cross-realm recovery actions, app-global route exclusions, Studio
+  Network entry targets, thread composer JSON endpoints, plotting-room SSE
+  streams, and production login redirects back to prefixed destinations.
+
 ## Not Now
 
 - Full multi-tenant hosted billing or account provisioning.

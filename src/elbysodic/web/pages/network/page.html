@@ -51,26 +51,26 @@
   </div>
   <div class="elbysodic-network-card__actions">
     {% if program.current_event %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/world/{{ program.current_event.material.slug }}">Current event</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.current_event_href }}">Current event</a>
     {% elif program.premise %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/world/{{ program.premise.material.slug }}">Premise</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.premise_href }}">Premise</a>
     {% end %}
     {% if program.is_current %}
-    <a class="chirpui-btn chirpui-btn--primary" href="/">Enter realm</a>
-    <a class="chirpui-btn chirpui-btn--secondary" href="/applications/new">Start application</a>
+    <a class="chirpui-btn chirpui-btn--primary" href="{{ program.entry_href }}">Enter realm</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.application_href }}">Start application</a>
     {% else %}
     <form action="/identity" method="post" hx-boost="false">
       <input type="hidden" name="intent" value="switch_membership">
       <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
       <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
-      <input type="hidden" name="next" value="/">
+      <input type="hidden" name="next" value="{{ program.entry_href }}">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Enter realm</button>
     </form>
     <form action="/identity" method="post" hx-boost="false">
       <input type="hidden" name="intent" value="switch_membership">
       <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
       <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
-      <input type="hidden" name="next" value="/applications/new">
+      <input type="hidden" name="next" value="{{ program.application_href }}">
       <button class="chirpui-btn chirpui-btn--secondary" type="submit">Start application</button>
     </form>
     {% end %}

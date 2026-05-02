@@ -9,6 +9,7 @@ from chirp.templating.returns import Page
 
 from elbysodic.web.composer import composer_config
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import request_scoped_path
 
 
 def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Page:
@@ -85,6 +86,7 @@ def _render_form(
             roster=[edit_view.post.author],
             selected_character_id=edit_view.post.author.id,
             initial_body=initial_body,
+            mention_endpoint=request_scoped_path(request, "/mentionables/search"),
         ),
         composer_config_id=config_id,
     )
