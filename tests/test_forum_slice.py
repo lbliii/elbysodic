@@ -1302,6 +1302,75 @@ def test_director_studio_surfaces_community_production_work() -> None:
     asyncio.run(run())
 
 
+def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = services.seed.community
+        member_role = repo.get_role_by_slug(community.id, "member")
+        applicant_user = repo.create_user("privacy-applicant@example.com", "hash")
+        applicant_membership = repo.create_membership(
+            community.id,
+            applicant_user.id,
+            member_role.id,
+            "privacy-applicant",
+            "Privacy Applicant",
+        )
+        applicant_face = repo.create_character(
+            community.id,
+            applicant_membership.id,
+            "privacy-queue-face",
+            "Privacy Queue Face",
+            summary="A submitted face that only staff should triage.",
+            application_status="draft",
+        )
+        application = repo.ensure_character_application(community.id, applicant_face.id)
+        repo.update_character_application_draft(
+            community.id,
+            application.id,
+            title="Privacy Queue Face",
+            summary="A submitted face that only staff should triage.",
+            body="Private application body should not leak through Studio operations.",
+        )
+        repo.transition_character_application_status(
+            community.id,
+            application.id,
+            status="submitted",
+            actor_membership_id=applicant_membership.id,
+            actor_character_id=applicant_face.id,
+            note="Submitted for director review.",
+        )
+
+        member_services, _character_id = _outsider_services(
+            services,
+            prefix="studio-operations-member",
+        )
+        member_app = create_app(debug=False, services=member_services)
+        async with TestClient(member_app) as member_client:
+            member_operations = await member_client.get("/studio/operations")
+
+        alex_membership = repo.get_membership_by_username(community.id, "alex")
+        alex_user = repo.get_user(alex_membership.user_id)
+        cyclops = repo.get_character_by_slug(community.id, "cyclops")
+        staff_app = create_app(
+            debug=False,
+            services=AppServices(repo, DemoSeed(community, alex_user, alex_membership, cyclops)),
+        )
+        async with TestClient(staff_app) as staff_client:
+            staff_operations = await staff_client.get("/studio/operations")
+
+        assert member_operations.status == 200
+        assert "read-only" in member_operations.text
+        assert "Privacy Queue Face" not in member_operations.text
+        assert "Private application body should not leak" not in member_operations.text
+        assert "0 ready apps" in member_operations.text
+        assert staff_operations.status == 200
+        assert "Privacy Queue Face - ready" in staff_operations.text
+        assert "ready apps" in staff_operations.text
+
+    asyncio.run(run())
+
+
 def test_studio_intake_previews_program_blueprint_yaml_without_hydration() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
