@@ -16,7 +16,7 @@ from chirp_ui.alpine import check_alpine_runtime
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
-from elbysodic.services import AppServices, create_services
+from elbysodic.services import AppServices, create_services, default_database_path
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 
@@ -142,6 +142,20 @@ def _add_hosted_membership(
 
 def _dev_request(headers: dict[str, str]) -> SimpleNamespace:
     return SimpleNamespace(headers=headers)
+
+
+def test_default_database_path_uses_railway_volume_when_available(monkeypatch) -> None:
+    monkeypatch.delenv("ELBYSODIC_DB_PATH", raising=False)
+    monkeypatch.setenv("RAILWAY_VOLUME_MOUNT_PATH", "/app/var")
+
+    assert default_database_path() == Path("/app/var/elbysodic.sqlite3")
+
+
+def test_explicit_database_path_overrides_railway_volume(monkeypatch) -> None:
+    monkeypatch.setenv("ELBYSODIC_DB_PATH", "/app/custom/forum.sqlite3")
+    monkeypatch.setenv("RAILWAY_VOLUME_MOUNT_PATH", "/app/var")
+
+    assert default_database_path() == Path("/app/custom/forum.sqlite3")
 
 
 def test_unknown_external_host_falls_back_to_default_community() -> None:

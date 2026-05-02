@@ -42,12 +42,6 @@ elbysodic = "elbysodic.cli:main"
 Repository = "https://github.com/lbliii/elbysodic"
 Changelog = "https://github.com/lbliii/elbysodic/blob/main/CHANGELOG.md"
 
-[tool.uv.sources]
-bengal-chirp = { path = "../python/b-stack/chirp", editable = true }
-chirp-ui = { path = "../python/chirp-ui", editable = true }
-kida-templates = { path = "../python/b-stack/kida", editable = true }
-bengal-pounce = { path = "../python/b-stack/pounce", editable = true }
-
 [tool.setuptools.packages.find]
 where = ["src"]
 
