@@ -11,6 +11,7 @@ from chirp.templating.returns import Page
 from elbysodic.domain.models import Community
 from elbysodic.services.read_models import ForumView
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import scoped_path, split_tenant_path
 
 RecoveryKind = Literal["character", "application", "wanted", "material", "plotting"]
 
@@ -121,14 +122,24 @@ def recovery_view(
 
 def recover_next_url(repo: RecoveryRepository, identity: object, next_url: str) -> str:
     community_id = getattr(identity, "community_id", 0)
-    kind_and_slug = _kind_and_slug_for_next_url(next_url)
+    community_slug = str(getattr(identity, "community_slug", "") or "")
+    tenant_slug, local_next_url = _tenant_and_local_next_url(next_url)
+    kind_and_slug = _kind_and_slug_for_next_url(local_next_url)
     if kind_and_slug is None:
         return next_url
     kind, slug = kind_and_slug
+    if tenant_slug is not None and tenant_slug != community_slug:
+        fallback = _fallback_path(kind)
+        return scoped_path(community_slug, fallback) if community_slug else fallback
     for community in _communities_for_slug(repo, kind, slug):
         if community.id == community_id:
             return next_url
-    return _fallback_path(kind)
+    fallback = _fallback_path(kind)
+    return (
+        scoped_path(community_slug, fallback)
+        if tenant_slug is not None and community_slug
+        else fallback
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,7 +201,7 @@ def _switch_action(
             label=f"Switch to {option.community.name}",
             membership_id=option.membership.id,
             character_id=option.current_character.id if option.current_character else 0,
-            next_url=next_url,
+            next_url=scoped_path(target.slug, next_url),
             community_name=option.community.name,
         )
     return None
@@ -263,3 +274,12 @@ def _kind_and_slug_for_next_url(next_url: str) -> tuple[RecoveryKind, str] | Non
         if slug:
             return kind, slug
     return None
+
+
+def _tenant_and_local_next_url(next_url: str) -> tuple[str | None, str]:
+    path, separator, suffix = next_url.partition("?")
+    split = split_tenant_path(path)
+    if split is None:
+        return None, next_url
+    tenant_slug, local_path = split
+    return tenant_slug, f"{local_path}{separator}{suffix}" if separator else local_path

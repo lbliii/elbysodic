@@ -845,6 +845,49 @@ def test_cross_realm_material_url_renders_switchable_recovery() -> None:
     asyncio.run(run())
 
 
+def test_prefixed_cross_realm_recovery_switches_to_target_tenant() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        jurassic = services.repo.get_community_by_slug("jurassic-park-universe")
+        jurassic_membership = services.repo.get_membership_for_user(
+            jurassic.id,
+            services.seed.user.id,
+        )
+
+        async with TestClient(app) as client:
+            recovery = await client.get(
+                f"/c/{services.seed.community.slug}/world/paddock-twelve-incident",
+            )
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(jurassic_membership.id),
+                        "character_id": "0",
+                        "next": "/c/jurassic-park-universe/world/paddock-twelve-incident",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert recovery.status == 200
+        assert "That world material lives in Jurassic Park Universe." in recovery.text
+        assert (
+            'name="next" value="/c/jurassic-park-universe/world/paddock-twelve-incident"'
+            in recovery.text
+        )
+        assert f'href="/c/{services.seed.community.slug}/world"' in recovery.text
+        assert switch.status == 302
+        assert (
+            _response_header(switch, "location")
+            == "/c/jurassic-park-universe/world/paddock-twelve-incident"
+        )
+
+    asyncio.run(run())
+
+
 def test_identity_switch_sanitizes_cross_realm_next_url() -> None:
     async def run() -> None:
         app = _app()
