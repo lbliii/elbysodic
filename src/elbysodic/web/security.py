@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from urllib.parse import quote
 
 from chirp.http.cookies import SetCookie
 from chirp.http.request import Request
 from chirp.http.response import Response
+from chirp.middleware.csrf import csrf_field
 from chirp.middleware.protocol import AnyResponse, Next
 
 from elbysodic.services.auth import SESSION_COOKIE, user_for_session_token
@@ -108,6 +110,32 @@ class RequireLoginMiddleware:
         return Response("Login required", status=403, content_type="text/plain")
 
 
+class AutoCSRFFormsMiddleware:
+    """Attach the active CSRF field to rendered POST forms."""
+
+    __slots__ = ()
+
+    async def __call__(self, request: Request, call_next: Next) -> AnyResponse:
+        response = await call_next(request)
+        if not isinstance(response, Response) or "text/html" not in response.content_type:
+            return response
+        body = response.body
+        if isinstance(body, bytes):
+            body = body.decode("utf-8", errors="replace")
+        if "_csrf_token" not in body:
+            field = str(csrf_field())
+            body = _POST_FORM_RE.sub(rf"\1{field}", body)
+            return Response(
+                body,
+                status=response.status,
+                content_type=response.content_type,
+                headers=response.headers,
+                cookies=response.cookies,
+                render_intent=response.render_intent,
+            )
+        return response
+
+
 def _parse_allowed_hosts(raw: str | None) -> tuple[str, ...]:
     if raw is None:
         return ()
@@ -138,3 +166,9 @@ def _session_is_valid(request: Request) -> bool:
     if token is None:
         return False
     return user_for_session_token(get_services().repo, str(token)) is not None
+
+
+_POST_FORM_RE = re.compile(
+    r"(<form\b(?=[^>]*\bmethod=[\"']post[\"'])[^>]*>)",
+    re.IGNORECASE | re.DOTALL,
+)

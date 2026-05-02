@@ -9,11 +9,17 @@ from typing import Any, cast
 from chirp.app import App
 from chirp.config import AppConfig
 from chirp.ext.chirp_ui import use_chirp_ui
+from chirp.middleware.csrf import CSRFConfig, CSRFMiddleware
+from chirp.middleware.sessions import SessionConfig, SessionMiddleware
 from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.navigation import location_nav_tree_items
-from elbysodic.web.security import RequireLoginMiddleware, resolve_web_security_config
+from elbysodic.web.security import (
+    AutoCSRFFormsMiddleware,
+    RequireLoginMiddleware,
+    resolve_web_security_config,
+)
 from elbysodic.web.state import configure_services, dev_tools_enabled
 
 PAGES_DIR = Path(__file__).parent / "pages"
@@ -54,6 +60,19 @@ def create_app(
     use_chirp_ui(app)
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
+    if security.production:
+        app.add_middleware(
+            SessionMiddleware(
+                SessionConfig(
+                    secret_key=security.secret_key,
+                    secure=security.secure_cookies,
+                    httponly=True,
+                    samesite="lax",
+                )
+            )
+        )
+        app.add_middleware(CSRFMiddleware(CSRFConfig()))
+        app.add_middleware(AutoCSRFFormsMiddleware())
     app.add_middleware(RequireLoginMiddleware(security))
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))

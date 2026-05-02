@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from urllib.parse import urlencode
 
 import pytest
@@ -11,6 +12,7 @@ from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
+_CSRF_RE = re.compile(r'name="_csrf_token" value="([^"]+)"')
 
 
 def _response_headers(response, name: str) -> list[str]:
@@ -19,6 +21,45 @@ def _response_headers(response, name: str) -> list[str]:
         value = headers.get(name)
         return [] if value is None else [str(value)]
     return [str(value) for key, value in headers if str(key).lower() == name.lower()]
+
+
+def _cookie_values(*responses) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for response in responses:
+        for cookie in _response_headers(response, "set-cookie"):
+            pair = cookie.split(";", 1)[0]
+            name, _, value = pair.partition("=")
+            values[name] = value
+    return values
+
+
+def _cookie_header(cookies: dict[str, str]) -> str:
+    return "; ".join(f"{name}={value}" for name, value in cookies.items())
+
+
+def _csrf_token(html: str) -> str:
+    match = _CSRF_RE.search(html)
+    assert match is not None
+    return match.group(1)
+
+
+async def _production_login(client: TestClient, *, email: str, next_url: str = "/studio"):
+    page = await client.get(f"/login?next={next_url}")
+    cookies = _cookie_values(page)
+    login = await client.post(
+        "/login",
+        body=urlencode(
+            {
+                "email": email,
+                "password": "password",
+                "next": next_url,
+                "_csrf_token": _csrf_token(page.text),
+            }
+        ).encode(),
+        headers={**_FORM, "Cookie": _cookie_header(cookies)},
+    )
+    cookies.update(_cookie_values(login))
+    return login, cookies
 
 
 def test_production_config_requires_secret_key(monkeypatch) -> None:
@@ -51,17 +92,7 @@ def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
         app = create_app(debug=False, services=create_services(path=":memory:"))
 
         async with TestClient(app) as client:
-            response = await client.post(
-                "/login",
-                body=urlencode(
-                    {
-                        "email": "moira@example.com",
-                        "password": "password",
-                        "next": "/studio",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
+            response, _cookies = await _production_login(client, email="moira@example.com")
 
         assert response.status == 302
         set_cookie = "\n".join(_response_headers(response, "set-cookie"))
@@ -94,6 +125,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
 
         assert health.status == 200
         assert login.status == 200
+        assert "_csrf_token" in login.text
         assert "Staff in X-Men Apocalypse" not in login.text
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
@@ -114,27 +146,12 @@ def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
         moira = services.repo.get_membership_by_username(community.id, "moira")
 
         async with TestClient(app) as client:
-            login = await client.post(
-                "/login",
-                body=urlencode(
-                    {
-                        "email": "writer@example.com",
-                        "password": "password",
-                        "next": "/studio",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
-            session_cookie = next(
-                cookie.split(";", 1)[0]
-                for cookie in _response_headers(login, "set-cookie")
-                if cookie.startswith("elbysodic_session=")
-            )
+            _login, cookies = await _production_login(client, email="writer@example.com")
             forged_identity = f"elbysodic_dev_identity={community.id}:{moira.user_id}:{moira.id}"
             studio = await client.get(
                 "/studio",
                 headers={
-                    "Cookie": f"{session_cookie}; {forged_identity}",
+                    "Cookie": f"{_cookie_header(cookies)}; {forged_identity}",
                     "x-elbysodic-user-id": str(moira.user_id),
                     "x-elbysodic-membership-id": str(moira.id),
                 },
@@ -158,23 +175,10 @@ def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
         hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
 
         async with TestClient(app) as client:
-            login = await client.post(
-                "/login",
-                body=urlencode(
-                    {
-                        "email": "writer@example.com",
-                        "password": "password",
-                        "next": "/studio",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
-            session_cookie = next(
-                cookie.split(";", 1)[0]
-                for cookie in _response_headers(login, "set-cookie")
-                if cookie.startswith("elbysodic_session=")
-            )
-            switch = await client.post(
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio_form = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(studio_form))
+            missing_csrf = await client.post(
                 "/identity",
                 body=urlencode(
                     {
@@ -183,12 +187,26 @@ def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
                         "next": "/studio",
                     }
                 ).encode(),
-                headers={**_FORM, "Cookie": session_cookie},
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
             )
-            studio = await client.get("/studio", headers={"Cookie": session_cookie})
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "next": "/studio",
+                        "_csrf_token": _csrf_token(studio_form.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+            cookies.update(_cookie_values(switch))
+            studio = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
 
+        assert missing_csrf.status == 403
         assert switch.status == 302
-        assert _response_headers(switch, "set-cookie") == []
+        assert "elbysodic_dev_identity=" not in "\n".join(_response_headers(switch, "set-cookie"))
         assert studio.status == 200
         assert "Director in HP Universe" in studio.text
         assert "Member in X-Men Apocalypse" not in studio.text
@@ -207,22 +225,9 @@ def test_production_membership_switch_rejects_cross_user_membership(monkeypatch)
         moira = services.repo.get_membership_by_username(community.id, "moira")
 
         async with TestClient(app) as client:
-            login = await client.post(
-                "/login",
-                body=urlencode(
-                    {
-                        "email": "writer@example.com",
-                        "password": "password",
-                        "next": "/studio",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
-            session_cookie = next(
-                cookie.split(";", 1)[0]
-                for cookie in _response_headers(login, "set-cookie")
-                if cookie.startswith("elbysodic_session=")
-            )
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio_form = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(studio_form))
             switch = await client.post(
                 "/identity",
                 body=urlencode(
@@ -230,9 +235,10 @@ def test_production_membership_switch_rejects_cross_user_membership(monkeypatch)
                         "intent": "switch_membership",
                         "membership_id": str(moira.id),
                         "next": "/studio",
+                        "_csrf_token": _csrf_token(studio_form.text),
                     }
                 ).encode(),
-                headers={**_FORM, "Cookie": session_cookie},
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
             )
 
         assert switch.status == 403
