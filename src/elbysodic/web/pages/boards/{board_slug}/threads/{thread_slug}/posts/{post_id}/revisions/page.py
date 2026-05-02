@@ -10,11 +10,11 @@ from elbysodic.web.state import get_services
 
 
 def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Page:
-    parsed_post_id = _parse_post_id(post_id)
+    parsed_post_number = _parse_post_number(post_id)
     services = get_services(request)
     viewer = services.viewer()
     try:
-        history = services.read_post_revisions(board_slug, thread_slug, parsed_post_id)
+        history = services.read_post_revisions(board_slug, thread_slug, parsed_post_number)
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
     except PermissionError as exc:
@@ -29,7 +29,7 @@ def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Pa
     )
 
 
-def _parse_post_id(raw: object) -> int:
+def _parse_post_number(raw: object) -> int:
     try:
         return int(str(raw or ""))
     except ValueError as exc:

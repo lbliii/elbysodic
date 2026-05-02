@@ -4206,11 +4206,11 @@ def test_thread_cards_jump_to_first_unread_then_latest() -> None:
             assert board_response.status == 200
             assert "First unread" in board_response.text
             assert (
-                f"/boards/plotting/threads/open-thread-roster#post-{first_unread.id}"
+                f"/boards/plotting/threads/open-thread-roster#post-{first_unread.post_number}"
                 in board_response.text
             )
             assert (
-                f"/boards/plotting/threads/open-thread-roster#post-{latest_unread.id}"
+                f"/boards/plotting/threads/open-thread-roster#post-{latest_unread.post_number}"
                 not in board_response.text
             )
 
@@ -4221,7 +4221,7 @@ def test_thread_cards_jump_to_first_unread_then_latest() -> None:
             assert board_after_read.status == 200
             assert "Jump to latest" in board_after_read.text
             assert (
-                f"/boards/plotting/threads/open-thread-roster#post-{latest_unread.id}"
+                f"/boards/plotting/threads/open-thread-roster#post-{latest_unread.post_number}"
                 in board_after_read.text
             )
 
@@ -4317,7 +4317,9 @@ def test_board_page_next_unread_jumps_to_first_unread_post() -> None:
             page = await client.get("/boards/board-next")
             assert page.status == 200
             assert "Next unread" in page.text
-            assert f"/boards/board-next/threads/board-next-thread#post-{post.id}" in page.text
+            assert (
+                f"/boards/board-next/threads/board-next-thread#post-{post.post_number}" in page.text
+            )
 
             thread_response = await client.get("/boards/board-next/threads/board-next-thread")
             assert thread_response.status == 200
@@ -4411,7 +4413,7 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
             )
             assert opened.status == 302
             assert dict(opened.headers)["location"] == (
-                f"/boards/plotting/threads/open-thread-roster#post-{post.id}"
+                f"/boards/plotting/threads/open-thread-roster#post-{post.post_number}"
             )
             assert services.viewer().unread_notification_count == 0
 
@@ -4652,7 +4654,7 @@ def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
             assert "Next" in page.text
             assert "Older thread" in page.text
             assert "Next unread" in page.text
-            assert f"/boards/navigation/threads/older#post-{older_post.id}" in page.text
+            assert f"/boards/navigation/threads/older#post-{older_post.post_number}" in page.text
 
     asyncio.run(run())
 
@@ -4697,7 +4699,10 @@ def test_thread_page_bottom_next_unread_uses_visible_community_queue() -> None:
             page = await client.get("/boards/current-nav/threads/current-scene")
             assert page.status == 200
             assert "Next unread" in page.text
-            assert f"/boards/unread-nav/threads/elsewhere-scene#post-{unread_post.id}" in page.text
+            assert (
+                f"/boards/unread-nav/threads/elsewhere-scene#post-{unread_post.post_number}"
+                in page.text
+            )
 
     asyncio.run(run())
 
@@ -5551,10 +5556,10 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
                 headers=_FORM,
             )
             assert created.status == 302
-            post_id = dict(created.headers)["location"].split("#post-")[1]
+            post_number = dict(created.headers)["location"].split("#post-")[1]
 
             edit_form = await client.get(
-                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit"
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_number}/edit"
             )
             assert edit_form.status == 200
             assert "Edit post" in edit_form.text
@@ -5564,7 +5569,7 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
             assert 'aria-label="Bold"' in edit_form.text
 
             edited = await client.post(
-                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit",
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_number}/edit",
                 body=urlencode(
                     {
                         "body": (
@@ -5576,7 +5581,7 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
             )
             assert edited.status == 302
             assert dict(edited.headers)["location"] == (
-                f"/boards/plotting/threads/open-thread-roster#post-{post_id}"
+                f"/boards/plotting/threads/open-thread-roster#post-{post_number}"
             )
 
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
@@ -5586,11 +5591,11 @@ def test_writer_can_edit_own_post_with_safe_markup() -> None:
             assert '<script>alert("x")</script>' not in thread.text
             assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in thread.text
             assert "edited" in thread.text
-            assert f"/posts/{post_id}/revisions" in thread.text
-            assert f"/posts/{post_id}/edit" in thread.text
+            assert f"/posts/{post_number}/revisions" in thread.text
+            assert f"/posts/{post_number}/edit" in thread.text
 
             revisions = await client.get(
-                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/revisions"
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_number}/revisions"
             )
             assert revisions.status == 200
             assert "Post history" in revisions.text
@@ -5618,19 +5623,29 @@ def test_noop_post_edit_does_not_create_revision() -> None:
                 headers=_FORM,
             )
             assert created.status == 302
-            post_id = int(dict(created.headers)["location"].split("#post-")[1])
-            original = repo.get_post(services.seed.community.id, post_id)
+            post_number = int(dict(created.headers)["location"].split("#post-")[1])
+            board = repo.get_board_by_slug(services.seed.community.id, "plotting")
+            thread = repo.get_thread_by_slug(
+                services.seed.community.id,
+                board.id,
+                "open-thread-roster",
+            )
+            original = repo.get_post_by_number(
+                services.seed.community.id,
+                thread.id,
+                post_number,
+            )
 
             edited = await client.post(
-                f"/boards/plotting/threads/open-thread-roster/posts/{post_id}/edit",
+                f"/boards/plotting/threads/open-thread-roster/posts/{post_number}/edit",
                 body=urlencode({"body": "Already polished."}).encode(),
                 headers=_FORM,
             )
             assert edited.status == 302
 
-            unchanged = repo.get_post(services.seed.community.id, post_id)
+            unchanged = repo.get_post(services.seed.community.id, original.id)
             assert unchanged.updated_at == original.updated_at
-            assert repo.list_post_revisions(services.seed.community.id, post_id) == []
+            assert repo.list_post_revisions(services.seed.community.id, original.id) == []
 
     asyncio.run(run())
 
@@ -5667,12 +5682,14 @@ def test_writer_cannot_edit_someone_elses_post() -> None:
 
         async with TestClient(app) as client:
             edit_form = await client.get(
-                f"/boards/plotting/threads/open-thread-roster/posts/{outsider_post.id}/edit"
+                "/boards/plotting/threads/open-thread-roster/posts/"
+                f"{outsider_post.post_number}/edit"
             )
             assert edit_form.status == 403
 
             edited = await client.post(
-                f"/boards/plotting/threads/open-thread-roster/posts/{outsider_post.id}/edit",
+                "/boards/plotting/threads/open-thread-roster/posts/"
+                f"{outsider_post.post_number}/edit",
                 body=urlencode({"body": "Trying to overwrite."}).encode(),
                 headers=_FORM,
             )
@@ -5697,7 +5714,8 @@ def test_locked_threads_still_allow_editing_own_existing_post() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                f"/boards/announcements/threads/welcome-to-the-rebuild/posts/{post.id}/edit",
+                "/boards/announcements/threads/welcome-to-the-rebuild/posts/"
+                f"{post.post_number}/edit",
                 body=urlencode({"body": "Updated staff note."}).encode(),
                 headers=_FORM,
             )

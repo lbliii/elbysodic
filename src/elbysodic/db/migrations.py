@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 11
+CURRENT_SCHEMA_VERSION = 12
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -418,6 +418,40 @@ def _add_user_session_identity_selection(connection: sqlite3.Connection) -> None
             connection.execute(f"ALTER TABLE user_sessions ADD COLUMN {name} {definition}")
 
 
+def _add_post_public_numbers(connection: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(posts)").fetchall()}
+    if "post_number" not in columns:
+        connection.execute("ALTER TABLE posts ADD COLUMN post_number INTEGER")
+
+    rows = connection.execute(
+        """
+        SELECT id, community_id, thread_id
+        FROM posts
+        ORDER BY community_id, thread_id, created_at, id
+        """
+    ).fetchall()
+    next_numbers: dict[tuple[int, int], int] = {}
+    for row in rows:
+        key = (int(row["community_id"]), int(row["thread_id"]))
+        post_number = next_numbers.get(key, 1)
+        connection.execute(
+            """
+            UPDATE posts
+            SET post_number = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (post_number, row["community_id"], row["id"]),
+        )
+        next_numbers[key] = post_number + 1
+
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_thread_post_number
+        ON posts(community_id, thread_id, post_number)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -429,6 +463,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(9, "hero-treatments", _add_hero_treatments),
     Migration(10, "board-media-presentation", _add_board_media_presentation),
     Migration(11, "user-session-identity-selection", _add_user_session_identity_selection),
+    Migration(12, "post-public-numbers", _add_post_public_numbers),
 )
 
 

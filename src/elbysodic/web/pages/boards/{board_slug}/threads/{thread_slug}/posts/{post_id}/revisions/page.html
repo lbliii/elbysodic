@@ -17,7 +17,7 @@
 
   {% call section_header("Post history") %}
   {{ badge(history.board.name, variant="muted") }}
-  {{ badge("post #" ~ history.post.post.id) }}
+  {{ badge("post #" ~ history.post.post.post_number) }}
   {% end %}
 
   {% call surface(variant="elevated") %}
@@ -31,7 +31,7 @@
         </p>
       </div>
       <a class="chirpui-link"
-         href="/boards/{{ history.board.slug }}/threads/{{ history.thread.slug }}/posts/{{ history.post.post.id }}/edit">
+         href="/boards/{{ history.board.slug }}/threads/{{ history.thread.slug }}/posts/{{ history.post.post.post_number }}/edit">
         Edit current post
       </a>
     </div>

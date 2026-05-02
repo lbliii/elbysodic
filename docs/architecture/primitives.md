@@ -15,6 +15,28 @@ belong here.
 `Character` is the public posting identity. Characters are not global. A
 character belongs to exactly one membership in exactly one community.
 
+## Public Identifiers
+
+Database ids are internal persistence identities. They are for foreign keys,
+repository joins, audit trails, and service internals, not public URLs or
+visible labels.
+
+Public identities should be scoped to the object writers already understand:
+
+- named community objects use community-scoped slugs, such as character,
+  material, wanted, board, and claim-type slugs
+- named child objects use parent-scoped slugs, such as thread slugs under a
+  board or plot-hook slugs under a character
+- visible append-only records use parent-scoped ordinals, such as post numbers
+  inside one thread
+- private, sensitive, or capability-bearing records should use opaque public
+  ids when they need public links at all
+
+Ordinals are assigned once and are not reused. A later hide, tombstone, or
+moderation action must not renumber the surrounding stream, because
+notifications, read jumps, exports, and copied scene links should keep pointing
+at the same beat.
+
 ## Character Roster
 
 When a user enters a community, that community resolves the user's membership

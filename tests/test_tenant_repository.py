@@ -84,6 +84,75 @@ def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     assert user_version == CURRENT_SCHEMA_VERSION
 
 
+def test_schema_migrates_existing_posts_for_thread_local_public_numbers() -> None:
+    connection = connect()
+    create_schema(connection)
+    repository = ForumRepository(connection)
+    repository.seed_default_community()
+    community = repository.get_community(1)
+    role = repository.create_role(community.id, "member", "Member")
+    user = repository.create_user("public-numbers@example.com", "hash")
+    membership = repository.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "numbers",
+        "Numbers",
+    )
+    character = repository.create_character(community.id, membership.id, "numbers", "Numbers")
+    board = repository.create_board(community.id, "numbered-scenes", "Numbered Scenes")
+    first_thread = repository.create_thread(
+        community.id,
+        board.id,
+        character.id,
+        "first-scene",
+        "First Scene",
+    )
+    second_thread = repository.create_thread(
+        community.id,
+        board.id,
+        character.id,
+        "second-scene",
+        "Second Scene",
+    )
+    first_post = repository.create_post(community.id, first_thread.id, character.id, "First beat.")
+    second_thread_post = repository.create_post(
+        community.id,
+        second_thread.id,
+        character.id,
+        "Other opener.",
+    )
+    reply = repository.create_post(community.id, first_thread.id, character.id, "Second beat.")
+
+    connection.execute("DROP INDEX idx_posts_thread_post_number")
+    connection.execute("ALTER TABLE posts DROP COLUMN post_number")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (11, 'user-session-identity-selection', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 11")
+    connection.commit()
+
+    create_schema(connection)
+
+    rows = connection.execute(
+        """
+        SELECT thread_id, id, post_number
+        FROM posts
+        ORDER BY thread_id, post_number
+        """
+    ).fetchall()
+
+    assert [tuple(row) for row in rows] == [
+        (first_thread.id, first_post.id, 1),
+        (first_thread.id, reply.id, 2),
+        (second_thread.id, second_thread_post.id, 1),
+    ]
+
+
 def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository) -> None:
     user = repo.create_user("session@example.com", "hash")
     session = repo.create_user_session(
@@ -1512,13 +1581,35 @@ def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumReposito
         "opening-scene",
         "Opening Scene Elsewhere",
     )
+    second_thread = repo.create_thread(
+        default.id,
+        default_board.id,
+        default_character.id,
+        "second-scene",
+        "Second Scene",
+    )
     post = repo.create_post(default.id, thread.id, default_character.id, "First post.")
+    reply = repo.create_post(default.id, thread.id, default_character.id, "Second post.")
+    second_thread_post = repo.create_post(
+        default.id,
+        second_thread.id,
+        default_character.id,
+        "Other scene opener.",
+    )
 
-    assert [item.title for item in repo.list_threads(default.id)] == ["Opening Scene"]
+    assert sorted(item.title for item in repo.list_threads(default.id)) == [
+        "Opening Scene",
+        "Second Scene",
+    ]
     assert repo.get_thread(default.id, thread.id).author_character_id == default_character.id
-    assert [item.body for item in repo.list_posts(default.id, thread.id)] == ["First post."]
+    assert [item.body for item in repo.list_posts(default.id, thread.id)] == [
+        "First post.",
+        "Second post.",
+    ]
     assert post.author_character_id == default_character.id
     assert post.author_membership_id == default_membership.id
+    assert (post.post_number, reply.post_number, second_thread_post.post_number) == (1, 2, 1)
+    assert repo.get_post_by_number(default.id, thread.id, 2) == reply
 
     with pytest.raises(LookupError):
         repo.create_thread(default.id, hosted_board.id, default_character.id, "bad", "Bad")

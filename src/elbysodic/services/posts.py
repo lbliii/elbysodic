@@ -75,7 +75,7 @@ def post_view(
         created_at_relative_label=relative_timestamp_label(post.created_at),
         updated_at_label=timestamp_label(post.updated_at),
         updated_at_relative_label=relative_timestamp_label(post.updated_at),
-        anchor=f"post-{post.id}",
+        anchor=f"post-{post.post_number}",
     )
 
 

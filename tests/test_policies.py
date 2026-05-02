@@ -154,6 +154,7 @@ def test_staff_can_edit_posts_through_thread_management_capability(
         id=5,
         community_id=1,
         thread_id=2,
+        post_number=1,
         author_membership_id=99,
         author_character_id=100,
         body="A post from someone else.",

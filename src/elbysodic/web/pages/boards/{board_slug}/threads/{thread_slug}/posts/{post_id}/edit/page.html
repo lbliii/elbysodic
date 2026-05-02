@@ -18,7 +18,7 @@
 
   {% call section_header("Edit post") %}
   {{ badge(edit_view.board.name, variant="muted") }}
-  {{ badge("post #" ~ edit_view.post.post.id) }}
+  {{ badge("post #" ~ edit_view.post.post.post_number) }}
   {% end %}
 
   {% call surface(variant="elevated") %}
