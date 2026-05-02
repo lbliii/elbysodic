@@ -63,6 +63,9 @@ class TenantPrefixMiddleware:
             return await call_next(request)
 
         community_slug, local_path = split
+        if not _is_scoped_path(local_path):
+            return await call_next(request)
+
         try:
             get_services().repo.get_community_by_slug(community_slug)
         except LookupError:

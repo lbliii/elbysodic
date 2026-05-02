@@ -395,6 +395,22 @@ def test_unknown_tenant_prefix_returns_not_found() -> None:
     asyncio.run(run())
 
 
+def test_tenant_prefix_does_not_wrap_app_global_routes() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            login = await client.get("/c/default/login")
+            health = await client.get("/c/default/health")
+            static = await client.get("/c/default/elbysodic-static/elbysodic-theme.css")
+
+        assert login.status == 404
+        assert health.status == 404
+        assert static.status == 404
+
+    asyncio.run(run())
+
+
 def test_boosted_main_navigation_uses_chirp_shell_outlet() -> None:
     async def run() -> None:
         app = _app()
