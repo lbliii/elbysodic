@@ -101,6 +101,9 @@ class Board:
     description: str
     image_url: str | None
     image_alt: str
+    image_treatment: str
+    image_focal_point: str
+    image_overlay: str
     sort_order: int
     navigation_order: int
     show_in_navigation: bool

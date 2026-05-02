@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Late shift hospital and train lights after midnight</title>
+  <rect width="1200" height="700" fill="#101820"/>
+  <path d="M130 120h430v420H130zM650 220h420v320H650z" fill="#22313d"/>
+  <path d="M210 190h70v70h-70zM340 190h70v70h-70zM210 330h70v70h-70zM340 330h70v70h-70zM710 285h95v55h-95zM855 285h95v55h-95z" fill="#f1c76f"/>
+  <path d="M300 435h90v105h-90z" fill="#7bbfbd"/>
+  <path d="M0 560h1200v140H0z" fill="#2f3640"/>
+  <path d="M650 585h390v65H650z" fill="#141b22"/>
+  <path d="M695 610h85M830 610h85M965 610h50" stroke="#d75667" stroke-width="10"/>
+  <path d="M585 220h60M615 190v60" stroke="#7bbfbd" stroke-width="18"/>
+</svg>

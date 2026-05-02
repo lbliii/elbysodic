@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Emergency council chamber under blue crisis feeds</title>
+  <rect width="1200" height="700" fill="#12191f"/>
+  <path d="M140 120h920v350H140z" fill="#233444"/>
+  <path d="M210 190h210v120H210zM495 190h210v120H495zM780 190h210v120H780z" fill="#101820" stroke="#75bdf5" stroke-width="7"/>
+  <path d="M170 525c150-95 300-140 450-140s300 45 450 140" fill="none" stroke="#d9d6c8" stroke-width="42"/>
+  <path d="M240 525c120-55 245-82 380-82s260 27 380 82" fill="none" stroke="#2b3440" stroke-width="36"/>
+  <path d="M255 240h120M545 250h105M835 230h110" stroke="#c99a46" stroke-width="9"/>
+  <circle cx="600" cy="435" r="55" fill="#75bdf5" opacity=".45"/>
+</svg>

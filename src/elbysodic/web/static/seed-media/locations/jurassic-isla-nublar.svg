@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Rainy island ridge with operations lights beyond the trees</title>
+  <rect width="1200" height="700" fill="#10231c"/>
+  <path d="M0 440c170-160 330-175 480-45 160-190 380-205 660-35v340H0z" fill="#244b33"/>
+  <path d="M95 530h1010v170H95z" fill="#1a2e27"/>
+  <path d="M190 410h270v120H190zM740 390h280v140H740z" fill="#345b45"/>
+  <path d="M230 450h70v45h-70zM340 450h70v45h-70zM785 435h75v45h-75zM900 435h75v45h-75z" fill="#efc84a"/>
+  <path d="M160 160l-30 380M285 130l-60 410M1010 150l-70 400" stroke="#3d7b50" stroke-width="22"/>
+  <path d="M0 0l1200 700M180 0l1020 595M360 0l840 490" stroke="#8ad096" stroke-width="3" opacity=".28"/>
+</svg>

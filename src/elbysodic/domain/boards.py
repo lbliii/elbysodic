@@ -6,6 +6,9 @@ from typing import Literal, Protocol, cast
 
 type BoardKind = Literal["location", "sublocation", "community", "desk", "archive", "staff"]
 type BoardSidebarSection = Literal["locations", "community", "desk", "studio"]
+type BoardImageTreatment = Literal["poster", "background", "compact", "text"]
+type BoardImageFocalPoint = Literal["center", "top", "bottom", "left", "right"]
+type BoardImageOverlay = Literal["light", "medium", "heavy"]
 type SidebarRealm = Literal["world", "desk", "studio"]
 
 BOARD_KINDS: frozenset[str] = frozenset(
@@ -44,6 +47,27 @@ BOARD_KIND_GUIDANCE: dict[BoardKind, str] = {
     "staff": "Director-only production board.",
 }
 BOARD_SIDEBAR_SECTIONS: frozenset[str] = frozenset({"locations", "community", "desk", "studio"})
+BOARD_IMAGE_TREATMENTS: frozenset[str] = frozenset({"poster", "background", "compact", "text"})
+BOARD_IMAGE_TREATMENT_LABELS: dict[BoardImageTreatment, str] = {
+    "poster": "Poster/card",
+    "background": "Full background",
+    "compact": "Compact thumbnail",
+    "text": "Text first",
+}
+BOARD_IMAGE_FOCAL_POINTS: frozenset[str] = frozenset({"center", "top", "bottom", "left", "right"})
+BOARD_IMAGE_FOCAL_POINT_LABELS: dict[BoardImageFocalPoint, str] = {
+    "center": "Center",
+    "top": "Top",
+    "bottom": "Bottom",
+    "left": "Left",
+    "right": "Right",
+}
+BOARD_IMAGE_OVERLAYS: frozenset[str] = frozenset({"light", "medium", "heavy"})
+BOARD_IMAGE_OVERLAY_LABELS: dict[BoardImageOverlay, str] = {
+    "light": "Light",
+    "medium": "Medium",
+    "heavy": "Heavy",
+}
 BOARD_SIDEBAR_SECTION_LABELS: dict[BoardSidebarSection, str] = {
     "locations": "Locations",
     "community": "Community",
@@ -121,6 +145,24 @@ def normalize_board_sidebar_section(
     if value in BOARD_SIDEBAR_SECTIONS:
         return cast(BoardSidebarSection, value)
     return default_sidebar_section_for_kind(board_kind)
+
+
+def normalize_board_image_treatment(value: str | None) -> BoardImageTreatment:
+    if value in BOARD_IMAGE_TREATMENTS:
+        return cast(BoardImageTreatment, value)
+    return "poster"
+
+
+def normalize_board_image_focal_point(value: str | None) -> BoardImageFocalPoint:
+    if value in BOARD_IMAGE_FOCAL_POINTS:
+        return cast(BoardImageFocalPoint, value)
+    return "center"
+
+
+def normalize_board_image_overlay(value: str | None) -> BoardImageOverlay:
+    if value in BOARD_IMAGE_OVERLAYS:
+        return cast(BoardImageOverlay, value)
+    return "medium"
 
 
 def is_location_board(board: BoardLike) -> bool:

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Snowbound academy windows under B-24 signal arcs</title>
+  <rect width="1200" height="700" fill="#101820"/>
+  <path d="M0 520h1200v180H0z" fill="#d9e8ef"/>
+  <path d="M190 435h820l50 105H140z" fill="#172638"/>
+  <path d="M270 235h660v260H270z" fill="#2d4159"/>
+  <path d="M390 155h420v95H390z" fill="#45637f"/>
+  <path d="M455 325h80v82h-80zM610 325h80v82h-80zM765 325h80v82h-80z" fill="#f3d28a"/>
+  <path d="M560 250h80v245h-80z" fill="#111820"/>
+  <path d="M120 175c180 135 350 205 520 205s310-70 440-205" fill="none" stroke="#75bdf5" stroke-width="7" stroke-dasharray="18 24"/>
+  <path d="M205 130c150 165 295 250 435 250s270-85 390-250" fill="none" stroke="#df6570" stroke-width="6" stroke-dasharray="10 18"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Main Street storefronts around the town noticeboard</title>
+  <rect width="1200" height="700" fill="#f3ead9"/>
+  <path d="M0 505h1200v195H0z" fill="#6f8b73"/>
+  <path d="M110 285h280v250H110zM465 235h310v300H465zM850 305h260v230H850z" fill="#fff7e5"/>
+  <path d="M110 285h280l-45-70H155zM465 235h310l-55-85H520zM850 305h260l-40-65H890z" fill="#b74b55"/>
+  <path d="M165 360h70v80h-70zM285 360h70v80h-70zM530 315h85v95h-85zM650 315h85v95h-85zM895 375h75v72h-75zM1000 375h75v72h-75z" fill="#f2c56d"/>
+  <path d="M520 515h160v110H520z" fill="#6b4b35"/>
+  <path d="M550 548h100M550 580h100" stroke="#f7e6c8" stroke-width="9"/>
+</svg>

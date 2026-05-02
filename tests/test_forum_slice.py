@@ -14,7 +14,7 @@ from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
 
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.db.seed import DemoSeed, resolve_seed_persona
+from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services
 from elbysodic.web import create_app
@@ -898,6 +898,124 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
     asyncio.run(run())
 
 
+def test_seeded_location_boards_have_media_throughlines() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        expected = {
+            services.seed.community.slug: 6,
+            "hp-universe": 3,
+            "jurassic-park-universe": 4,
+            "rl-nyc": 3,
+            "rl-small-town": 4,
+        }
+
+        for community_slug, minimum in expected.items():
+            community = repo.get_community_by_slug(community_slug)
+            location_boards = [
+                board
+                for board in repo.list_boards(community.id)
+                if board.board_kind == "location" and board.image_url
+            ]
+            assert len(location_boards) >= minimum
+            assert all(board.image_alt for board in location_boards)
+            assert all(
+                board.image_url is not None
+                and board.image_url.startswith("/elbysodic-static/seed-media/locations/")
+                for board in location_boards
+            )
+
+        hp = repo.get_community_by_slug("hp-universe")
+        hp_membership = repo.get_membership_for_user(hp.id, 1)
+        hp_cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            home = await client.get("/")
+            hp_home = await client.get("/", headers={"Cookie": hp_cookie})
+            xavier = await client.get("/boards/xavier-institute")
+
+        assert home.status == 200
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in home.text
+        assert 'alt="Snowbound academy windows under B-24 signal arcs"' in home.text
+        assert hp_home.status == 200
+        assert "/elbysodic-static/seed-media/locations/hp-castle-corridors.svg" in hp_home.text
+        assert 'alt="Castle corridor with shifting stairs and portrait light"' in hp_home.text
+        assert xavier.status == 200
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in xavier.text
+
+    asyncio.run(run())
+
+
+def test_seeded_location_media_does_not_overwrite_custom_board_media() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    board = repo.get_board_by_slug(community.id, "xavier-institute")
+
+    repo.update_board(
+        community.id,
+        board.id,
+        name=board.name,
+        description=board.description,
+        sort_order=board.sort_order,
+        parent_board_id=board.parent_board_id,
+        board_kind=board.board_kind,
+        sidebar_section=board.sidebar_section,
+        tagline=board.tagline,
+        image_url="https://example.test/custom-academy.jpg",
+        image_alt="Custom academy image",
+        is_private=board.is_private,
+        navigation_order=board.navigation_order,
+        show_in_navigation=board.show_in_navigation,
+    )
+
+    seed_demo_forum(repo)
+
+    updated = repo.get_board_by_slug(community.id, "xavier-institute")
+    assert updated.image_url == "https://example.test/custom-academy.jpg"
+    assert updated.image_alt == "Custom academy image"
+
+
+def test_text_first_board_media_treatment_keeps_image_out_of_public_stage() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "xavier-institute")
+        repo.update_board(
+            community.id,
+            board.id,
+            name=board.name,
+            description=board.description,
+            sort_order=board.sort_order,
+            parent_board_id=board.parent_board_id,
+            board_kind=board.board_kind,
+            sidebar_section=board.sidebar_section,
+            tagline=board.tagline,
+            image_url="https://example.test/text-first.jpg",
+            image_alt="Text first image",
+            image_treatment="text",
+            image_focal_point="right",
+            image_overlay="light",
+            is_private=board.is_private,
+            navigation_order=board.navigation_order,
+            show_in_navigation=board.show_in_navigation,
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/xavier-institute")
+
+        assert page.status == 200
+        assert "elbysodic-board-media-treatment--text" in page.text
+        assert "elbysodic-board-media-focal--right" in page.text
+        assert "elbysodic-board-media-overlay--light" in page.text
+        assert 'src="https://example.test/text-first.jpg"' not in page.text
+
+    asyncio.run(run())
+
+
 def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
     async def run() -> None:
         app = _app()
@@ -1391,6 +1509,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert "Edit Announcements" in editor.text
             assert "Show in sidebar navigation" in editor.text
             assert "Sidebar placement" in editor.text
+            assert "Image treatment" in editor.text
+            assert "Image focal point" in editor.text
+            assert "Overlay strength" in editor.text
             assert "Composer effect" in editor.text
 
             response = await client.post(
@@ -1404,6 +1525,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
                         "description": "Formal staff notices for the current continuity.",
                         "image_url": "https://example.test/notices.jpg",
                         "image_alt": "Notice board under red light",
+                        "image_treatment": "background",
+                        "image_focal_point": "top",
+                        "image_overlay": "heavy",
                         "sort_order": 12,
                         "navigation_order": 7,
                         "sidebar_section": "locations",
@@ -1413,6 +1537,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
                 ).encode(),
                 headers=_FORM,
             )
+            board_page = await client.get("/boards/announcements")
+            parent_page = await client.get("/boards/xavier-institute")
+            editor_after = await client.get("/studio/boards/announcements")
 
             assert response.status == 302
             assert dict(response.headers)["location"] == "/studio/boards/announcements"
@@ -1424,11 +1551,124 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert updated.description == "Formal staff notices for the current continuity."
             assert updated.image_url == "https://example.test/notices.jpg"
             assert updated.image_alt == "Notice board under red light"
+            assert updated.image_treatment == "background"
+            assert updated.image_focal_point == "top"
+            assert updated.image_overlay == "heavy"
             assert updated.sort_order == 12
             assert updated.navigation_order == 7
             assert updated.sidebar_section == "locations"
             assert updated.show_in_navigation is True
             assert updated.is_private is True
+            assert board_page.status == 200
+            assert 'src="https://example.test/notices.jpg"' in board_page.text
+            assert 'alt="Notice board under red light"' in board_page.text
+            assert "elbysodic-board-media-treatment--background" in board_page.text
+            assert "elbysodic-board-media-focal--top" in board_page.text
+            assert "elbysodic-board-media-overlay--heavy" in board_page.text
+            assert "url('https://example.test/notices.jpg')" not in board_page.text
+            assert parent_page.status == 200
+            assert 'src="https://example.test/notices.jpg"' in parent_page.text
+            assert 'alt="Notice board under red light"' in parent_page.text
+            assert editor_after.status == 200
+            assert 'src="https://example.test/notices.jpg"' in editor_after.text
+            assert 'alt="Notice board under red light"' in editor_after.text
+            assert 'option value="background" selected' in editor_after.text
+            assert 'option value="top" selected' in editor_after.text
+            assert 'option value="heavy" selected' in editor_after.text
+
+    asyncio.run(run())
+
+
+def test_studio_board_editor_requires_alt_text_for_board_media() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio/boards/announcements",
+                body=urlencode(
+                    {
+                        "name": "Announcements",
+                        "board_kind": "community",
+                        "parent_board_id": "",
+                        "tagline": "Staff notes.",
+                        "description": "Formal staff notices for the current continuity.",
+                        "image_url": "https://example.test/notices.jpg",
+                        "image_alt": "",
+                        "image_treatment": "poster",
+                        "image_focal_point": "center",
+                        "image_overlay": "medium",
+                        "sort_order": 10,
+                        "navigation_order": 10,
+                        "sidebar_section": "community",
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        updated = repo.get_board_by_slug(community.id, "announcements")
+        assert response.status == 200
+        assert "board image alt text is required when an image URL is set" in response.text
+        assert updated.image_url is None
+        assert updated.image_alt == ""
+
+    asyncio.run(run())
+
+
+def test_studio_board_editor_rejects_unsupported_board_media_controls() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio/boards/announcements",
+                body=urlencode(
+                    {
+                        "name": "Announcements",
+                        "board_kind": "community",
+                        "parent_board_id": "",
+                        "tagline": "Staff notes.",
+                        "description": "Formal staff notices for the current continuity.",
+                        "image_url": "https://example.test/notices.jpg",
+                        "image_alt": "Notice board under red light",
+                        "image_treatment": "raw-css",
+                        "image_focal_point": "center",
+                        "image_overlay": "medium",
+                        "sort_order": 10,
+                        "navigation_order": 10,
+                        "sidebar_section": "community",
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        updated = repo.get_board_by_slug(community.id, "announcements")
+        assert response.status == 200
+        assert "choose a supported board image treatment" in response.text
+        assert updated.image_url is None
+        assert updated.image_treatment == "poster"
 
     asyncio.run(run())
 
@@ -1459,6 +1699,9 @@ def test_studio_board_editor_validates_sublocation_parent() -> None:
                         "description": "Needs a parent.",
                         "image_url": "",
                         "image_alt": "",
+                        "image_treatment": "poster",
+                        "image_focal_point": "center",
+                        "image_overlay": "medium",
                         "sort_order": 10,
                         "navigation_order": 10,
                         "sidebar_section": "locations",
@@ -1647,6 +1890,20 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert academy.status == 200
             assert "elbysodic-board-stage" in academy.text
             assert "elbysodic-board-media--xavier-institute" in academy.text
+            assert "elbysodic-location-compass" in academy.text
+            assert "What is playable here" in academy.text
+            assert "Relevant for Rogue" in academy.text
+            assert "Plot pressure" in academy.text
+            assert "No scene spotlight yet" in academy.text
+            assert "Total" in academy.text
+            assert (
+                "Event boosts, location pins, or first direct scenes can surface here."
+                in academy.text
+            )
+            assert "Doors" in academy.text
+            assert "Nearby" in academy.text
+            assert 'id="sublocations"' in academy.text
+            assert 'id="nearby"' in academy.text
             assert "Choose a door inside Xavier Institute" in academy.text
             assert "Xavier Institute threads" in academy.text
             assert "No scenes have opened directly here yet." in academy.text
@@ -1660,6 +1917,37 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "Nearby" in midtown.text
             assert "New York City" in midtown.text
             assert "/boards/transit-tunnels" in midtown.text
+
+    asyncio.run(run())
+
+
+def test_quiet_location_page_keeps_actions_visible_without_empty_door_sections() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = services.seed.community
+        repo.create_board(
+            community.id,
+            "quiet-courtyard",
+            "Quiet Courtyard",
+            "A low-pressure place for slower scenes and first meetings.",
+            board_kind="location",
+            tagline="A softer corner of the grounds.",
+            sort_order=999,
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/quiet-courtyard")
+
+        assert page.status == 200
+        assert "elbysodic-location-compass" in page.text
+        assert "Open for scenes" in page.text
+        assert "No scene spotlight yet" in page.text
+        assert "Event boosts, location pins, or first direct scenes can surface here." in page.text
+        assert 'href="#sublocations"' not in page.text
+        assert 'id="sublocations"' not in page.text
+        assert "No scenes have opened directly here yet." in page.text
 
     asyncio.run(run())
 

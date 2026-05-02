@@ -1,9 +1,15 @@
 """Domain models and community context for Elbysodic."""
 
 from elbysodic.domain.boards import (
+    BOARD_IMAGE_FOCAL_POINTS,
+    BOARD_IMAGE_OVERLAYS,
+    BOARD_IMAGE_TREATMENTS,
     BOARD_KINDS,
     BOARD_SIDEBAR_SECTIONS,
     DEFAULT_SIDEBAR_SECTION_CONFIGS,
+    BoardImageFocalPoint,
+    BoardImageOverlay,
+    BoardImageTreatment,
     BoardKind,
     BoardSidebarSection,
     SidebarRealm,
@@ -14,6 +20,9 @@ from elbysodic.domain.boards import (
     is_location_board,
     is_location_sidebar_board,
     is_studio_sidebar_board,
+    normalize_board_image_focal_point,
+    normalize_board_image_overlay,
+    normalize_board_image_treatment,
     normalize_board_kind,
     normalize_board_sidebar_section,
 )
@@ -40,12 +49,18 @@ from elbysodic.domain.models import (
 )
 
 __all__ = [
+    "BOARD_IMAGE_FOCAL_POINTS",
+    "BOARD_IMAGE_OVERLAYS",
+    "BOARD_IMAGE_TREATMENTS",
     "BOARD_KINDS",
     "BOARD_SIDEBAR_SECTIONS",
     "DEFAULT_COMMUNITY_ID",
     "DEFAULT_COMMUNITY_SLUG",
     "DEFAULT_SIDEBAR_SECTION_CONFIGS",
     "Board",
+    "BoardImageFocalPoint",
+    "BoardImageOverlay",
+    "BoardImageTreatment",
     "BoardKind",
     "BoardSidebarSection",
     "Character",
@@ -70,6 +85,9 @@ __all__ = [
     "is_location_board",
     "is_location_sidebar_board",
     "is_studio_sidebar_board",
+    "normalize_board_image_focal_point",
+    "normalize_board_image_overlay",
+    "normalize_board_image_treatment",
     "normalize_board_kind",
     "normalize_board_sidebar_section",
 ]

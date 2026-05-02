@@ -2,7 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/boards.html" import board_stat_row %}
+  {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row %}
 {% end %}
 
 {% block page_root %}
@@ -136,6 +136,38 @@
                  value="{{ values.image_alt }}">
         </div>
       </div>
+      <div class="elbysodic-form-grid">
+        <div>
+          <label class="chirpui-field__label" for="board-image-treatment">Image treatment</label>
+          <select id="board-image-treatment" class="chirpui-field__input" name="image_treatment">
+            {% for value, label in image_treatment_labels.items() %}
+            <option value="{{ value }}" {{ "selected" if value == values.image_treatment else "" }}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-image-focal-point">Image focal point</label>
+          <select id="board-image-focal-point" class="chirpui-field__input" name="image_focal_point">
+            {% for value, label in image_focal_point_labels.items() %}
+            <option value="{{ value }}" {{ "selected" if value == values.image_focal_point else "" }}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+        <div>
+          <label class="chirpui-field__label" for="board-image-overlay">Overlay strength</label>
+          <select id="board-image-overlay" class="chirpui-field__input" name="image_overlay">
+            {% for value, label in image_overlay_labels.items() %}
+            <option value="{{ value }}" {{ "selected" if value == values.image_overlay else "" }}>
+              {{ label }}
+            </option>
+            {% end %}
+          </select>
+        </div>
+      </div>
 
       <div>
         <p class="elbysodic-kicker">Structure</p>
@@ -198,8 +230,8 @@
       <section class="chirpui-stack chirpui-stack--sm">
         <p class="elbysodic-kicker">Preview</p>
         <h2>Board surface</h2>
-        <div class="elbysodic-board-editor-preview-stage elbysodic-board-media--{{ editor.board.slug }}"
-             {% if editor.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86)), url('{{ editor.board.image_url }}');"{% end %}>
+        <div class="elbysodic-board-editor-preview-stage {{ board_media_classes(editor.board) }}">
+          {{ board_media_image(editor.board, "elbysodic-board-editor-preview-stage__media") }}
           <span>{{ editor.kind_label }}</span>
           <strong>{{ editor.board.name }}</strong>
           {% if editor.board.tagline %}

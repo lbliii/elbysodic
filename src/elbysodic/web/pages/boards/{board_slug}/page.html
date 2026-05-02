@@ -1,7 +1,7 @@
 {% imports %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/boards.html" import board_stat_row, subboard_card %}
+  {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
   {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link %}
@@ -44,8 +44,8 @@
     </div>
   </div>
 
-  <section class="elbysodic-board-stage elbysodic-board-media--{{ board.slug }}"
-           {% if board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86)), url('{{ board.image_url }}');"{% end %}>
+  <section class="elbysodic-board-stage {{ board_media_classes(board) }}">
+    {{ board_media_image(board, "elbysodic-board-stage__media") }}
     <div class="chirpui-stack chirpui-stack--md elbysodic-board-stage__copy">
       {% if parent_board %}
       <p class="elbysodic-kicker">{{ parent_board.name }}</p>
@@ -60,7 +60,14 @@
       {% if board.tagline %}
       <p class="elbysodic-board-stage__logline">{{ board.tagline }}</p>
       {% end %}
+      {% if board_summary.is_relevant_to_current_face and viewer.current_character %}
+      <p class="elbysodic-board-stage__face-line">
+        Relevant for {{ viewer.current_character.name }}
+      </p>
+      {% end %}
+      {% if not is_location_board %}
       <p class="elbysodic-board-stage__description elbysodic-copy-lead">{{ board.description }}</p>
+      {% end %}
       <div class="elbysodic-board-stage__signals">
         {{ board_stat_row(board_summary, viewer) }}
         {{ facet_pills(board_facets) }}
@@ -69,11 +76,70 @@
   </section>
 
   {% if is_location_board %}
-  {{ event_bridge(current_event, "Current event in this location") }}
+  <section class="elbysodic-location-compass" aria-label="{{ board.name }} throughline">
+    <div class="elbysodic-location-compass__copy">
+      <p class="elbysodic-kicker">At this location</p>
+      <h2>What is playable here</h2>
+      <p class="elbysodic-location-compass__description">{{ board.description }}</p>
+    </div>
+    <div class="elbysodic-location-compass__signals">
+      {% if current_event %}
+      {{ event_bridge(current_event, "Current event in this location") }}
+      {% else %}
+      <aside class="elbysodic-location-compass__quiet" aria-label="Continuity state">
+        <span>Continuity</span>
+        <strong>Open for scenes</strong>
+        <em>Use the local scene list and doors below to choose where the pressure lands.</em>
+      </aside>
+      {% end %}
+      <aside class="elbysodic-location-compass__activity" aria-label="{{ board.name }} plot pressure">
+        <span>Plot pressure</span>
+        {% if direct_thread_count %}
+        <strong>{{ direct_thread_count }} direct {{ "scene" if direct_thread_count == 1 else "scenes" }} open</strong>
+        {% if board_summary.thread_count != direct_thread_count %}
+        <em>{{ board_summary.thread_count }} total scenes including doors inside this location.</em>
+        {% else %}
+        <em>Direct scenes are already listed below.</em>
+        {% end %}
+        {% else %}
+        <strong>No scene spotlight yet</strong>
+        <em>Event boosts, location pins, or first direct scenes can surface here.</em>
+        {% end %}
+        <dl class="elbysodic-location-compass__facts">
+          <div>
+            <dt>Direct</dt>
+            <dd>{{ direct_thread_count }}</dd>
+          </div>
+          {% if board_summary.thread_count != direct_thread_count %}
+          <div>
+            <dt>Total</dt>
+            <dd>{{ board_summary.thread_count }}</dd>
+          </div>
+          {% end %}
+          <div>
+            <dt>New</dt>
+            <dd>{{ board_summary.unread_thread_count }}</dd>
+          </div>
+        {% if subboards %}
+          <div>
+            <dt>Doors</dt>
+            <dd>{{ subboards | length }}</dd>
+          </div>
+        {% end %}
+        {% if sibling_boards %}
+          <div>
+            <dt>Nearby</dt>
+            <dd>{{ sibling_boards | length }}</dd>
+          </div>
+        {% end %}
+        </dl>
+      </aside>
+    </div>
+  </section>
   {% end %}
 
   {% if is_location_board and subboards %}
-  <section class="elbysodic-place-section elbysodic-place-section--sublocations">
+  <section id="sublocations" class="elbysodic-place-section elbysodic-place-section--sublocations">
     <header class="elbysodic-place-section__header">
       <p class="elbysodic-kicker">Sublocations</p>
       <h2>Choose a door inside {{ board.name }}</h2>
@@ -88,7 +154,7 @@
   {% end %}
 
   {% if is_location_board and sibling_boards %}
-  <section class="elbysodic-place-section elbysodic-place-section--nearby">
+  <section id="nearby" class="elbysodic-place-section elbysodic-place-section--nearby">
     <header class="elbysodic-place-section__header elbysodic-place-section__header--compact">
       {% if parent_board %}
       <p class="elbysodic-kicker">Nearby</p>

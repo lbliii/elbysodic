@@ -17,6 +17,9 @@ from elbysodic.db.seed import (
     seed_persona_by_key,
 )
 from elbysodic.domain.boards import (
+    BOARD_IMAGE_FOCAL_POINTS,
+    BOARD_IMAGE_OVERLAYS,
+    BOARD_IMAGE_TREATMENTS,
     BOARD_KIND_GUIDANCE,
     BOARD_KIND_LABELS,
     BOARD_KIND_REALMS,
@@ -1242,6 +1245,9 @@ class AppServices:
             tagline=board.tagline,
             image_url=board.image_url,
             image_alt=board.image_alt,
+            image_treatment=board.image_treatment,
+            image_focal_point=board.image_focal_point,
+            image_overlay=board.image_overlay,
             is_private=board.is_private,
         )
 
@@ -1271,6 +1277,9 @@ class AppServices:
             tagline=board.tagline,
             image_url=board.image_url,
             image_alt=board.image_alt,
+            image_treatment=board.image_treatment,
+            image_focal_point=board.image_focal_point,
+            image_overlay=board.image_overlay,
             is_private=board.is_private,
             navigation_order=navigation_order,
             show_in_navigation=show_in_navigation,
@@ -1346,6 +1355,9 @@ class AppServices:
         description: str,
         image_url: str,
         image_alt: str,
+        image_treatment: str,
+        image_focal_point: str,
+        image_overlay: str,
         sort_order: int,
         navigation_order: int,
         show_in_navigation: bool,
@@ -1359,6 +1371,19 @@ class AppServices:
         cleaned_name = name.strip()
         if not cleaned_name:
             raise ValueError("board name is required")
+        cleaned_image_url = image_url.strip()
+        cleaned_image_alt = image_alt.strip()
+        if cleaned_image_url and not cleaned_image_alt:
+            raise ValueError("board image alt text is required when an image URL is set")
+        cleaned_image_treatment = image_treatment.strip()
+        cleaned_image_focal_point = image_focal_point.strip()
+        cleaned_image_overlay = image_overlay.strip()
+        if cleaned_image_treatment not in BOARD_IMAGE_TREATMENTS:
+            raise ValueError("choose a supported board image treatment")
+        if cleaned_image_focal_point not in BOARD_IMAGE_FOCAL_POINTS:
+            raise ValueError("choose a supported board image focal point")
+        if cleaned_image_overlay not in BOARD_IMAGE_OVERLAYS:
+            raise ValueError("choose a supported board image overlay")
         normalized_kind = normalize_board_kind(board_kind)
         normalized_sidebar_section = normalize_board_sidebar_section(
             sidebar_section,
@@ -1380,8 +1405,11 @@ class AppServices:
             board_kind=normalized_kind,
             sidebar_section=normalized_sidebar_section,
             tagline=tagline.strip(),
-            image_url=image_url.strip() or None,
-            image_alt=image_alt.strip(),
+            image_url=cleaned_image_url or None,
+            image_alt=cleaned_image_alt,
+            image_treatment=cleaned_image_treatment,
+            image_focal_point=cleaned_image_focal_point,
+            image_overlay=cleaned_image_overlay,
             is_private=is_private,
             navigation_order=navigation_order,
             show_in_navigation=show_in_navigation,

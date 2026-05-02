@@ -6,11 +6,23 @@
   {% from "_components/ui.html" import counter, latest_line, meta_hint %}
 {% end %}
 
+{% def board_media_image(board, cls) %}
+{% if board.image_url and board.image_treatment != "text" %}
+<span class="{{ cls }}">
+  <img src="{{ board.image_url }}" alt="{{ board.image_alt }}">
+</span>
+{% end %}
+{% end %}
+
+{% def board_media_classes(board) %}
+elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ board.image_treatment }} elbysodic-board-media-focal--{{ board.image_focal_point }} elbysodic-board-media-overlay--{{ board.image_overlay }}
+{% end %}
+
 {% def board_poster(summary, viewer=None, compact=False, tile=False, title_level="h2") %}
-<a class="elbysodic-board-poster elbysodic-board-media--{{ summary.board.slug }} {{ "elbysodic-board-poster--compact" if compact else "" }}{{ " elbysodic-board-poster--tile" if tile else "" }}"
+<a class="elbysodic-board-poster {{ board_media_classes(summary.board) }} {{ "elbysodic-board-poster--compact" if compact else "" }}{{ " elbysodic-board-poster--tile" if tile else "" }}"
    href="{{ summary.href }}"
-   aria-label="{{ summary.board.name }}"
-   {% if summary.board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.82)), url('{{ summary.board.image_url }}');"{% end %}>
+   aria-label="{{ summary.board.name }}">
+  {{ board_media_image(summary.board, "elbysodic-board-poster__media") }}
   {% if viewer and summary.is_relevant_to_current_face and viewer.current_character %}
   {% call meta_hint("Relevant for " ~ viewer.current_character.name ~ ": this location shares one of their world lenses.", position="left", cls="elbysodic-board-poster__face-signal-hint") %}
     <span class="elbysodic-board-poster__face-signal"

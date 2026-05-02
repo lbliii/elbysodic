@@ -2113,7 +2113,6 @@ body {
 .elbysodic-board-editor-preview-stage {
     aspect-ratio: 16 / 10;
     background:
-        linear-gradient(180deg, rgba(10, 12, 16, 0.12), rgba(10, 12, 16, 0.9)),
         radial-gradient(circle at 72% 24%, color-mix(in srgb, var(--chirpui-accent) 28%, transparent), transparent 38%),
         var(--chirpui-bg-subtle);
     background-position: center;
@@ -2124,6 +2123,84 @@ body {
     gap: 0.35rem;
     padding: 1rem;
     place-content: end start;
+    position: relative;
+    --elbysodic-board-overlay-opacity: 0.84;
+}
+
+.elbysodic-board-editor-preview-stage::before {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.12),
+            rgba(10, 12, 16, var(--elbysodic-board-overlay-opacity))
+        );
+    content: "";
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+}
+
+.elbysodic-board-editor-preview-stage__media,
+.elbysodic-board-poster__media,
+.elbysodic-board-stage__media {
+    inset: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: 0;
+}
+
+.elbysodic-board-editor-preview-stage__media img,
+.elbysodic-board-poster__media img,
+.elbysodic-board-stage__media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.elbysodic-board-media-focal--top img {
+    object-position: center top;
+}
+
+.elbysodic-board-media-focal--bottom img {
+    object-position: center bottom;
+}
+
+.elbysodic-board-media-focal--left img {
+    object-position: left center;
+}
+
+.elbysodic-board-media-focal--right img {
+    object-position: right center;
+}
+
+.elbysodic-board-media-focal--center img {
+    object-position: center;
+}
+
+.elbysodic-board-media-overlay--light {
+    --elbysodic-board-overlay-opacity: 0.48;
+}
+
+.elbysodic-board-media-overlay--medium {
+    --elbysodic-board-overlay-opacity: 0.72;
+}
+
+.elbysodic-board-media-overlay--heavy {
+    --elbysodic-board-overlay-opacity: 0.88;
+}
+
+.elbysodic-board-media-treatment--text::before {
+    display: none;
+}
+
+.elbysodic-board-media-treatment--compact.elbysodic-board-editor-preview-stage {
+    aspect-ratio: 5 / 3;
+}
+
+.elbysodic-board-editor-preview-stage > :not(.elbysodic-board-editor-preview-stage__media) {
+    position: relative;
+    z-index: 2;
 }
 
 .elbysodic-board-editor-preview-stage span {
@@ -2701,6 +2778,21 @@ body {
     min-height: 9rem;
     overflow: hidden;
     position: relative;
+    --elbysodic-board-overlay-opacity: 0.72;
+}
+
+.elbysodic-board-poster::before,
+.elbysodic-board-stage::before {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.1),
+            rgba(10, 12, 16, var(--elbysodic-board-overlay-opacity))
+        );
+    content: "";
+    inset: 0;
+    position: absolute;
+    z-index: 1;
 }
 
 .elbysodic-board-poster {
@@ -2731,6 +2823,10 @@ body {
     min-height: 9rem;
 }
 
+.elbysodic-board-media-treatment--compact.elbysodic-board-poster {
+    min-height: 8.5rem;
+}
+
 .elbysodic-board-poster h2,
 .elbysodic-board-poster h3 {
     color: var(--elbysodic-on-media-text);
@@ -2748,6 +2844,11 @@ body {
     inset-block-start: 0.75rem;
     inset-inline-end: 0.75rem;
     position: absolute;
+    z-index: 2;
+}
+
+.elbysodic-board-poster > :not(.elbysodic-board-poster__media) {
+    position: relative;
     z-index: 2;
 }
 
@@ -3028,8 +3129,31 @@ body {
     padding: clamp(1.25rem, 3vw, 2rem);
 }
 
+.elbysodic-board-stage::before {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.1),
+            rgba(10, 12, 16, var(--elbysodic-board-overlay-opacity))
+        );
+}
+
+.elbysodic-board-media-treatment--compact.elbysodic-board-stage {
+    min-height: min(42vh, 22rem);
+}
+
+.elbysodic-board-media-treatment--background.elbysodic-board-stage {
+    min-height: min(68vh, 34rem);
+}
+
+.elbysodic-board-media-treatment--text.elbysodic-board-stage {
+    min-height: auto;
+}
+
 .elbysodic-board-stage__copy {
     max-width: 48rem;
+    position: relative;
+    z-index: 2;
 }
 
 .elbysodic-board-stage__signals {
@@ -3064,6 +3188,151 @@ body {
     line-height: 1.6;
     margin: 0;
     max-width: 42rem;
+}
+
+.elbysodic-board-stage__face-line {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-success) 20%, rgba(10, 12, 16, 0.68));
+    border: 1px solid color-mix(in srgb, var(--chirpui-success) 52%, rgba(255, 255, 255, 0.2));
+    border-radius: 999px;
+    color: var(--elbysodic-on-media-text);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 850;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0.35rem 0.7rem;
+    width: fit-content;
+}
+
+.elbysodic-location-compass {
+    border-block: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 0.9fr) minmax(min(100%, 24rem), 1fr);
+    padding-block: 1.1rem;
+}
+
+.elbysodic-location-compass__copy {
+    align-content: start;
+    display: grid;
+    gap: 0.55rem;
+}
+
+.elbysodic-location-compass__copy h2,
+.elbysodic-location-compass__copy p,
+.elbysodic-location-compass__quiet strong,
+.elbysodic-location-compass__quiet em {
+    margin: 0;
+}
+
+.elbysodic-location-compass__copy h2 {
+    font-size: var(--chirpui-font-2xl);
+    letter-spacing: 0;
+    line-height: 1.05;
+}
+
+.elbysodic-location-compass__description {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.55;
+    max-width: 48rem;
+}
+
+.elbysodic-location-compass .elbysodic-latest {
+    border-top: 0;
+    padding-top: 0.2rem;
+}
+
+.elbysodic-location-compass__signals {
+    align-content: start;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.elbysodic-location-compass__signals .elbysodic-notice {
+    margin: 0;
+}
+
+.elbysodic-location-compass__quiet {
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 82%, transparent);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.85rem 1rem;
+}
+
+.elbysodic-location-compass__quiet span,
+.elbysodic-location-compass__activity > span {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 850;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.elbysodic-location-compass__quiet strong {
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.15;
+}
+
+.elbysodic-location-compass__quiet em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-style: normal;
+    line-height: 1.4;
+}
+
+.elbysodic-location-compass__activity {
+    border-left: 2px solid color-mix(in srgb, var(--chirpui-accent) 54%, var(--chirpui-border));
+    display: grid;
+    gap: 0.24rem;
+    padding: 0.15rem 0 0.15rem 0.75rem;
+}
+
+.elbysodic-location-compass__activity strong {
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.15;
+}
+
+.elbysodic-location-compass__activity em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-style: normal;
+    line-height: 1.35;
+}
+
+.elbysodic-location-compass__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0.55rem 0 0;
+}
+
+.elbysodic-location-compass__facts div {
+    align-items: baseline;
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 78%, transparent);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 0.35rem;
+    min-height: 1.75rem;
+    padding: 0.22rem 0.6rem;
+}
+
+.elbysodic-location-compass__facts dt {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.elbysodic-location-compass__facts dd {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 900;
+    margin: 0;
 }
 
 .elbysodic-board-stage .chirpui-stat__value {
@@ -3207,6 +3476,12 @@ body {
 #guides,
 #events,
 #applications {
+    scroll-margin-top: 5.5rem;
+}
+
+#sublocations,
+#nearby,
+#board-thread-region {
     scroll-margin-top: 5.5rem;
 }
 
@@ -7798,6 +8073,23 @@ body {
 
     .elbysodic-board-hero h1 {
         font-size: 2.25rem;
+    }
+
+    .elbysodic-board-stage {
+        min-height: min(44vh, 24rem);
+    }
+
+    .elbysodic-board-media-treatment--background.elbysodic-board-stage {
+        min-height: min(52vh, 27rem);
+    }
+
+    .elbysodic-board-stage h1 {
+        font-size: 2.6rem;
+        line-height: 0.98;
+    }
+
+    .elbysodic-location-compass {
+        grid-template-columns: 1fr;
     }
 
     .elbysodic-composer-heading {

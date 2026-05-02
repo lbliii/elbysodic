@@ -153,6 +153,9 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
             tagline,
             image_url,
             image_alt,
+            image_treatment,
+            image_focal_point,
+            image_overlay,
             navigation_order,
             show_in_navigation
         FROM boards
@@ -175,6 +178,9 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
         "tagline",
         "image_url",
         "image_alt",
+        "image_treatment",
+        "image_focal_point",
+        "image_overlay",
         "navigation_order",
         "show_in_navigation",
     }.issubset(columns)
@@ -187,6 +193,9 @@ def test_schema_migrates_existing_boards_for_place_navigation() -> None:
         "tagline": "",
         "image_url": None,
         "image_alt": "",
+        "image_treatment": "poster",
+        "image_focal_point": "center",
+        "image_overlay": "medium",
         "navigation_order": 10,
         "show_in_navigation": 1,
     }

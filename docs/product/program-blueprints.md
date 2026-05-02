@@ -124,6 +124,12 @@ boards:
     kind: location
     tagline: "One stoplight, twelve opinions, and a bakery that hears everything."
     description: "The town's public spine for errands, arguments, festivals, and reunions."
+    media:
+      url: "/elbysodic-static/seed-media/locations/smalltown-main-street.svg"
+      alt: "Storefronts and civic lights along Main Street at dusk."
+      treatment: poster
+      focal_point: center
+      overlay: medium
 
 materials:
   - slug: premise
@@ -187,6 +193,11 @@ Allowed appearance controls:
   profile variant, accent style, border style, title style, and density.
 - Guidebook material presentation variants keyed by material type, such as
   `chapter`, `dossier`, `noticeboard`, and `archive`.
+- Board media slots for playable hubs:
+  `media.url`, `media.alt`, `media.treatment`, `media.focal_point`, and
+  `media.overlay`. These map to the same safe Studio board media controls:
+  poster/background/compact/text treatment, center/top/bottom/left/right focal
+  point, and light/medium/heavy overlay.
 
 Disallowed theme controls:
 
@@ -211,6 +222,11 @@ Blueprint validation should fail before hydration when:
 - A blueprint has no director materials.
 - Program, character, board, material, or wanted slugs are duplicated.
 - A board uses an unknown `board_kind`.
+- A board media URL is present without alt text, or alt text is present without
+  a URL.
+- A board media treatment, focal point, or overlay is outside the Studio
+  allowlist.
+- A board media URL uses an unsafe scheme such as `javascript:` or `data:`.
 - A wanted hook references a material slug that does not exist in the same
   blueprint.
 - A theme color is not a 6-digit hex color.
@@ -235,6 +251,8 @@ Hydration should be idempotent where practical:
 - Theme tokens are stored as the community's default theme.
 - Materials and boards can be updated from the blueprint so seed and preview
   content can improve over time.
+- Board media from blueprints can hydrate into the same board media fields used
+  by Studio, but only after passing alt-text and enum validation.
 - Wanted hooks are created if missing. A later edit workflow can decide how
   aggressive updates should be for already-edited wanted ads.
 
