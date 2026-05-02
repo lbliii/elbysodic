@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Restricted library stacks glowing behind locked rails</title>
+  <rect width="1200" height="700" fill="#15101c"/>
+  <path d="M100 90h180v520H100zM330 90h180v520H330zM690 90h180v520H690zM920 90h180v520H920z" fill="#3a2e3d"/>
+  <path d="M130 155h120M130 245h120M130 335h120M360 155h120M360 245h120M720 155h120M720 245h120M950 155h120M950 245h120M950 335h120" stroke="#c8b174" stroke-width="13"/>
+  <path d="M500 130h200v500H500z" fill="#22172d"/>
+  <path d="M540 230h120v190H540z" fill="#f3e1aa" opacity=".85"/>
+  <path d="M430 505h340" stroke="#7b4f9f" stroke-width="18"/>
+  <path d="M475 505v80M565 505v80M655 505v80M745 505v80" stroke="#d7c1ff" stroke-width="8"/>
+</svg>

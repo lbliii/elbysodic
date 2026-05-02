@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Underground safehouse platform lit by mutant network signals</title>
+  <rect width="1200" height="700" fill="#0f1512"/>
+  <path d="M0 420h1200v280H0z" fill="#18241d"/>
+  <path d="M120 390h960v65H120z" fill="#2a362e"/>
+  <path d="M210 215h250v175H210zM740 215h250v175H740z" fill="#20342b"/>
+  <path d="M250 250h70v80h-70zM350 250h70v80h-70zM780 250h70v80h-70zM880 250h70v80h-70z" fill="#8bc79a"/>
+  <path d="M100 520h1000" stroke="#c99a46" stroke-width="10" stroke-dasharray="28 18"/>
+  <path d="M180 160c170 95 330 140 480 140s270-45 360-140" fill="none" stroke="#c7a4e3" stroke-width="8" opacity=".72"/>
+  <circle cx="600" cy="300" r="70" fill="none" stroke="#79a889" stroke-width="9"/>
+</svg>

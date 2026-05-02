@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Hogsmeade lane with warm windows after dark</title>
+  <rect width="1200" height="700" fill="#191321"/>
+  <path d="M0 520h1200v180H0z" fill="#2d2430"/>
+  <path d="M100 300h250v240H100zM430 250h300v290H430zM810 320h280v220H810z" fill="#4a3841"/>
+  <path d="M100 300l125-115 125 115M430 250l150-125 150 125M810 320l140-100 140 100" fill="#6d4a52"/>
+  <path d="M145 370h70v80h-70zM245 370h70v80h-70zM485 335h80v90h-80zM610 335h80v90h-80zM860 385h75v80h-75zM975 385h75v80h-75z" fill="#f3d28a"/>
+  <path d="M190 600c170-65 340-65 510 0s330 65 500 0" fill="none" stroke="#d7c1ff" stroke-width="8" stroke-dasharray="18 20"/>
+</svg>

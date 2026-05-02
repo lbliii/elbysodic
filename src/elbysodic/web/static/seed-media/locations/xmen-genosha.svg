@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Island relay tower broadcasting over a red horizon</title>
+  <rect width="1200" height="700" fill="#171614"/>
+  <path d="M0 430c190-70 380-70 570 0s390 70 630 0v270H0z" fill="#27352c"/>
+  <path d="M420 485h360l55 90H365z" fill="#1d2522"/>
+  <path d="M575 140h50l70 385H505z" fill="#323f3a"/>
+  <path d="M505 270h190M530 385h140" stroke="#c99a46" stroke-width="16"/>
+  <path d="M360 160c70 82 150 123 240 123s170-41 240-123" fill="none" stroke="#df6570" stroke-width="9"/>
+  <path d="M270 100c95 145 205 218 330 218s235-73 330-218" fill="none" stroke="#df6570" stroke-width="6" opacity=".7"/>
+  <path d="M0 315h1200v185H0z" fill="#9b3f45" opacity=".32"/>
+</svg>

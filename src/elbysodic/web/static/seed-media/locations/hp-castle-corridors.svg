@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Castle corridor with shifting stairs and portrait light</title>
+  <rect width="1200" height="700" fill="#171020"/>
+  <path d="M120 110h960v480H120z" fill="#2d2435"/>
+  <path d="M210 185h130v170H210zM430 185h130v170H430zM650 185h130v170H650zM870 185h130v170H870z" fill="#4b3b55" stroke="#c8b174" stroke-width="8"/>
+  <path d="M220 520 790 280l60 70-570 240z" fill="#d7c1ff" opacity=".68"/>
+  <path d="M455 610 900 360l58 75-445 250z" fill="#95d7cf" opacity=".56"/>
+  <path d="M590 120h70v500h-70z" fill="#21172c"/>
+  <path d="M235 255h90M455 250h85M675 260h80M895 245h85" stroke="#f3e1aa" stroke-width="10"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Worker village bunks under rain and utility lights</title>
+  <rect width="1200" height="700" fill="#10231c"/>
+  <path d="M0 500h1200v200H0z" fill="#1a2e27"/>
+  <path d="M110 330h280v190H110zM460 300h300v220H460zM835 345h260v175H835z" fill="#2f4b3e"/>
+  <path d="M110 330l140-85 140 85M460 300l150-95 150 95M835 345l130-75 130 75" fill="#466458"/>
+  <path d="M155 385h70v70h-70zM275 385h70v70h-70zM515 360h80v80h-80zM635 360h80v80h-80zM885 395h70v65h-70zM990 395h70v65h-70z" fill="#efc84a"/>
+  <path d="M0 0l1200 700M240 0l960 560M480 0l720 420" stroke="#8ad096" stroke-width="4" opacity=".28"/>
+</svg>

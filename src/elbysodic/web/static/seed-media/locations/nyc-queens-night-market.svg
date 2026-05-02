@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Queens night market stalls under wet string lights</title>
+  <rect width="1200" height="700" fill="#111820"/>
+  <path d="M0 520h1200v180H0z" fill="#29323a"/>
+  <path d="M110 360h240v170H110zM480 340h240v190H480zM850 370h240v160H850z" fill="#2f4350"/>
+  <path d="M110 360h240l-38-75H148zM480 340h240l-38-75H518zM850 370h240l-38-75H888z" fill="#d75667"/>
+  <path d="M160 420h70v65h-70zM255 420h70v65h-70zM530 410h70v65h-70zM625 410h70v65h-70zM900 430h70v58h-70zM995 430h70v58h-70z" fill="#f1c76f"/>
+  <path d="M140 210c190 85 380 85 570 0s350-85 490 0" fill="none" stroke="#f1c76f" stroke-width="8" stroke-dasharray="16 18"/>
+  <path d="M0 610c160-35 320-35 480 0s320 35 480 0 240-35 240-35v125H0z" fill="#38444d"/>
+</svg>

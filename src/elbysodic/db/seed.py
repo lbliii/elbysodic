@@ -101,6 +101,12 @@ class CommunityMediaSeed:
 
 
 @dataclass(frozen=True, slots=True)
+class BoardMediaSeed:
+    image_url: str
+    image_alt: str
+
+
+@dataclass(frozen=True, slots=True)
 class ClaimSeed:
     claim_type_slug: str
     character_slug: str
@@ -132,6 +138,7 @@ class SeedPersonaContext:
 
 
 SEED_MEDIA_BASE = "/elbysodic-static/seed-media"
+LOCATION_MEDIA_BASE = f"{SEED_MEDIA_BASE}/locations"
 X_MEN_MEDIA = CommunityMediaSeed(
     mark_url=f"{SEED_MEDIA_BASE}/xmen-mark.svg",
     mark_alt="X-Men Apocalypse academy signal mark",
@@ -173,6 +180,98 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
         hero_treatment="poster",
         hero_focal_point="bottom",
     ),
+}
+X_MEN_BOARD_MEDIA: dict[str, BoardMediaSeed] = {
+    "xavier-institute": BoardMediaSeed(
+        f"{LOCATION_MEDIA_BASE}/xmen-xavier-institute.svg",
+        "Snowbound academy windows under B-24 signal arcs",
+    ),
+    "new-york-city": BoardMediaSeed(
+        f"{LOCATION_MEDIA_BASE}/xmen-new-york-city.svg",
+        "Frozen New York street with emergency lights",
+    ),
+    "mutant-underground": BoardMediaSeed(
+        f"{LOCATION_MEDIA_BASE}/xmen-mutant-underground.svg",
+        "Underground safehouse platform lit by mutant network signals",
+    ),
+    "trask-b24-facilities": BoardMediaSeed(
+        f"{LOCATION_MEDIA_BASE}/xmen-trask-b24-facilities.svg",
+        "Sterile B-24 server lab with containment monitors",
+    ),
+    "united-nations": BoardMediaSeed(
+        f"{LOCATION_MEDIA_BASE}/xmen-united-nations.svg",
+        "Emergency council chamber under blue crisis feeds",
+    ),
+    "genosha": BoardMediaSeed(
+        f"{LOCATION_MEDIA_BASE}/xmen-genosha.svg",
+        "Island relay tower broadcasting over a red horizon",
+    ),
+}
+STUDIO_PROGRAM_BOARD_MEDIA: dict[str, dict[str, BoardMediaSeed]] = {
+    "hp-universe": {
+        "castle-corridors": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/hp-castle-corridors.svg",
+            "Castle corridor with shifting stairs and portrait light",
+        ),
+        "restricted-stacks": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/hp-restricted-stacks.svg",
+            "Restricted library stacks glowing behind locked rails",
+        ),
+        "hogsmeade-after-dark": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/hp-hogsmeade-after-dark.svg",
+            "Hogsmeade lane with warm windows after dark",
+        ),
+    },
+    "jurassic-park-universe": {
+        "isla-nublar": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/jurassic-isla-nublar.svg",
+            "Rainy island ridge with operations lights beyond the trees",
+        ),
+        "paddock-twelve": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/jurassic-paddock-twelve.svg",
+            "Paddock fence warning lights during a storm",
+        ),
+        "control-room": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/jurassic-control-room.svg",
+            "Control room monitors showing paddock alerts",
+        ),
+        "worker-village": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/jurassic-worker-village.svg",
+            "Worker village bunks under rain and utility lights",
+        ),
+    },
+    "rl-nyc": {
+        "brooklyn": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/nyc-brooklyn.svg",
+            "Brooklyn storefronts and apartment windows at night",
+        ),
+        "queens-night-market": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/nyc-queens-night-market.svg",
+            "Queens night market stalls under wet string lights",
+        ),
+        "shift-work": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/nyc-shift-work.svg",
+            "Late shift hospital and train lights after midnight",
+        ),
+    },
+    "rl-small-town": {
+        "main-street": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/smalltown-main-street.svg",
+            "Main Street storefronts around the town noticeboard",
+        ),
+        "lake-road": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/smalltown-lake-road.svg",
+            "Lake road cabins and dusk water beyond the trees",
+        ),
+        "town-hall": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/smalltown-town-hall.svg",
+            "Town hall windows over meeting notices and steps",
+        ),
+        "county-fairgrounds": BoardMediaSeed(
+            f"{LOCATION_MEDIA_BASE}/smalltown-county-fairgrounds.svg",
+            "County fairgrounds with tents and founders week lights",
+        ),
+    },
 }
 
 
@@ -2073,6 +2172,15 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         board_kind="sublocation",
         tagline="Hope, broadcast loudly.",
     )
+    for board in (
+        xavier_institute,
+        new_york,
+        mutant_underground,
+        b24_facilities,
+        united_nations,
+        genosha,
+    ):
+        _ensure_board_media_default(repo, community.id, board, X_MEN_BOARD_MEDIA[board.slug])
     facets = _seed_world_facets(repo, community.id)
     community = repo.update_community_identity_accent_group(
         community.id,
@@ -3129,7 +3237,7 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             repo.set_default_character(community.id, membership.id, default_character.id)
 
         for index, board_seed in enumerate(program.boards, start=1):
-            _ensure_board(
+            board = _ensure_board(
                 repo,
                 community.id,
                 board_seed.slug,
@@ -3139,6 +3247,9 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 board_kind=board_seed.board_kind,
                 tagline=board_seed.tagline,
             )
+            media_seed = STUDIO_PROGRAM_BOARD_MEDIA.get(program.slug, {}).get(board_seed.slug)
+            if media_seed is not None:
+                _ensure_board_media_default(repo, community.id, board, media_seed)
         materials_by_slug: dict[str, Material] = {}
         for index, material_seed in enumerate(program.materials, start=1):
             material = _ensure_material(
@@ -3327,6 +3438,8 @@ def _ensure_board(
             is_private=is_private,
         ),
     )
+    effective_image_url = image_url if image_url is not None else board.image_url
+    effective_image_alt = image_alt if image_url is not None else board.image_alt
     return repo.update_board(
         community_id,
         board.id,
@@ -3336,9 +3449,35 @@ def _ensure_board(
         parent_board_id=parent_board_id,
         board_kind=board_kind,
         tagline=tagline,
-        image_url=image_url,
-        image_alt=image_alt,
+        image_url=effective_image_url,
+        image_alt=effective_image_alt,
         is_private=is_private,
+    )
+
+
+def _ensure_board_media_default(
+    repo: ForumRepository,
+    community_id: int,
+    board: Board,
+    media_seed: BoardMediaSeed,
+) -> Board:
+    if board.image_url is not None:
+        return board
+    return repo.update_board(
+        community_id,
+        board.id,
+        name=board.name,
+        description=board.description,
+        sort_order=board.sort_order,
+        parent_board_id=board.parent_board_id,
+        board_kind=board.board_kind,
+        sidebar_section=board.sidebar_section,
+        tagline=board.tagline,
+        image_url=media_seed.image_url,
+        image_alt=media_seed.image_alt,
+        is_private=board.is_private,
+        navigation_order=board.navigation_order,
+        show_in_navigation=board.show_in_navigation,
     )
 
 

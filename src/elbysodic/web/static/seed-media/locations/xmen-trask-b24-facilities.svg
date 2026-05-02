@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Sterile B-24 server lab with containment monitors</title>
+  <rect width="1200" height="700" fill="#0f1418"/>
+  <path d="M120 110h960v470H120z" fill="#1d2a33"/>
+  <path d="M190 170h180v110H190zM420 170h180v110H420zM650 170h180v110H650zM880 170h130v110H880z" fill="#101820" stroke="#73c7ff" stroke-width="6"/>
+  <path d="M210 245h130M450 210h110M690 240h100M905 220h82" stroke="#df6570" stroke-width="8"/>
+  <path d="M255 340h90v220h-90zM430 340h90v220h-90zM605 340h90v220h-90zM780 340h90v220h-90z" fill="#263b49"/>
+  <path d="M0 600h1200" stroke="#73c7ff" stroke-width="12" opacity=".55"/>
+  <path d="M120 600h960" stroke="#ffffff" stroke-width="2" opacity=".45"/>
+</svg>

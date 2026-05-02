@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Lake road cabins and dusk water beyond the trees</title>
+  <rect width="1200" height="700" fill="#e8d9c5"/>
+  <path d="M0 390c180-70 360-70 540 0s360 70 660 0v310H0z" fill="#6f8b73"/>
+  <path d="M0 510c180 45 360 45 540 0s360-45 660 0v190H0z" fill="#7f9aa0"/>
+  <path d="M140 345h240v150H140zM800 330h250v160H800z" fill="#fff7e5"/>
+  <path d="M140 345l120-85 120 85M800 330l125-85 125 85" fill="#9b5949"/>
+  <path d="M195 390h65v65h-65zM305 390h45v65h-45zM860 375h70v65h-70zM965 375h45v65h-45z" fill="#f2c56d"/>
+  <path d="M130 585c170-35 340-35 510 0s330 35 500 0" fill="none" stroke="#f3ead9" stroke-width="8"/>
+</svg>

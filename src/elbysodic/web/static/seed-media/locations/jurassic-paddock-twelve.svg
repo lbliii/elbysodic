@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Paddock fence warning lights during a storm</title>
+  <rect width="1200" height="700" fill="#101d18"/>
+  <path d="M0 430h1200v270H0z" fill="#20392a"/>
+  <path d="M80 520h1040M150 330l110 370M340 330l110 370M530 330l110 370M720 330l110 370M910 330l110 370" stroke="#e8d26e" stroke-width="12"/>
+  <path d="M120 360h960" stroke="#6bbf7a" stroke-width="9"/>
+  <path d="M160 270h120v65H160zM510 255h120v65H510zM860 270h120v65H860z" fill="#281d15" stroke="#efc84a" stroke-width="7"/>
+  <path d="M195 302h50M545 287h50M895 302h50" stroke="#ff7f6e" stroke-width="8"/>
+  <path d="M0 0l1200 700M250 0l950 555M520 0l680 395" stroke="#8ad096" stroke-width="4" opacity=".3"/>
+</svg>

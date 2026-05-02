@@ -14,7 +14,7 @@ from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
 
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.db.seed import DemoSeed, resolve_seed_persona
+from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services
 from elbysodic.web import create_app
@@ -896,6 +896,85 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         assert "The school has reopened under a fragile truce" not in hp_home.text
 
     asyncio.run(run())
+
+
+def test_seeded_location_boards_have_media_throughlines() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        expected = {
+            services.seed.community.slug: 6,
+            "hp-universe": 3,
+            "jurassic-park-universe": 4,
+            "rl-nyc": 3,
+            "rl-small-town": 4,
+        }
+
+        for community_slug, minimum in expected.items():
+            community = repo.get_community_by_slug(community_slug)
+            location_boards = [
+                board
+                for board in repo.list_boards(community.id)
+                if board.board_kind == "location" and board.image_url
+            ]
+            assert len(location_boards) >= minimum
+            assert all(board.image_alt for board in location_boards)
+            assert all(
+                board.image_url is not None
+                and board.image_url.startswith("/elbysodic-static/seed-media/locations/")
+                for board in location_boards
+            )
+
+        hp = repo.get_community_by_slug("hp-universe")
+        hp_membership = repo.get_membership_for_user(hp.id, 1)
+        hp_cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            home = await client.get("/")
+            hp_home = await client.get("/", headers={"Cookie": hp_cookie})
+            xavier = await client.get("/boards/xavier-institute")
+
+        assert home.status == 200
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in home.text
+        assert 'alt="Snowbound academy windows under B-24 signal arcs"' in home.text
+        assert hp_home.status == 200
+        assert "/elbysodic-static/seed-media/locations/hp-castle-corridors.svg" in hp_home.text
+        assert 'alt="Castle corridor with shifting stairs and portrait light"' in hp_home.text
+        assert xavier.status == 200
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in xavier.text
+
+    asyncio.run(run())
+
+
+def test_seeded_location_media_does_not_overwrite_custom_board_media() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    board = repo.get_board_by_slug(community.id, "xavier-institute")
+
+    repo.update_board(
+        community.id,
+        board.id,
+        name=board.name,
+        description=board.description,
+        sort_order=board.sort_order,
+        parent_board_id=board.parent_board_id,
+        board_kind=board.board_kind,
+        sidebar_section=board.sidebar_section,
+        tagline=board.tagline,
+        image_url="https://example.test/custom-academy.jpg",
+        image_alt="Custom academy image",
+        is_private=board.is_private,
+        navigation_order=board.navigation_order,
+        show_in_navigation=board.show_in_navigation,
+    )
+
+    seed_demo_forum(repo)
+
+    updated = repo.get_board_by_slug(community.id, "xavier-institute")
+    assert updated.image_url == "https://example.test/custom-academy.jpg"
+    assert updated.image_alt == "Custom academy image"
 
 
 def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:

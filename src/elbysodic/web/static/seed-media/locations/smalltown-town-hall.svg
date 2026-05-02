@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Town hall windows over meeting notices and steps</title>
+  <rect width="1200" height="700" fill="#f3ead9"/>
+  <path d="M260 210h680v330H260z" fill="#fff7e5"/>
+  <path d="M220 210h760l-380-115z" fill="#b74b55"/>
+  <path d="M330 300h80v95h-80zM470 300h80v95h-80zM650 300h80v95h-80zM790 300h80v95h-80z" fill="#f2c56d"/>
+  <path d="M520 420h160v120H520z" fill="#6b4b35"/>
+  <path d="M390 575h420M350 620h500" stroke="#6f8b73" stroke-width="24"/>
+  <path d="M120 560h180v110H120z" fill="#6b4b35"/>
+  <path d="M150 592h120M150 625h120" stroke="#f7e6c8" stroke-width="9"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">County fairgrounds with tents and founders week lights</title>
+  <rect width="1200" height="700" fill="#f3ead9"/>
+  <path d="M0 500h1200v200H0z" fill="#6f8b73"/>
+  <path d="M130 360h260l-130-150zM470 335h300L620 165zM850 380h250L975 230z" fill="#fff7e5"/>
+  <path d="M130 360h260l-65 130H195zM470 335h300l-75 155H545zM850 380h250l-60 110H910z" fill="#d9ccb8"/>
+  <path d="M195 445h130M545 435h150M910 450h130" stroke="#b74b55" stroke-width="12"/>
+  <path d="M110 210c190 90 380 90 570 0s350-90 490 0" fill="none" stroke="#f2c56d" stroke-width="9" stroke-dasharray="16 18"/>
+  <path d="M0 610c160-35 320-35 480 0s320 35 480 0 240-35 240-35v125H0z" fill="#d9ccb8"/>
+</svg>

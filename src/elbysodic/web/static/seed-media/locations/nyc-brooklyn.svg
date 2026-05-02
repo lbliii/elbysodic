@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Brooklyn storefronts and apartment windows at night</title>
+  <rect width="1200" height="700" fill="#111820"/>
+  <path d="M80 130h260v430H80zM410 80h310v480H410zM800 155h300v405H800z" fill="#22313d"/>
+  <path d="M120 205h48v55h-48zM230 205h48v55h-48zM470 150h55v65h-55zM590 265h55v65h-55zM855 230h55v60h-55zM980 360h55v60h-55z" fill="#f1c76f"/>
+  <path d="M0 560h1200v140H0z" fill="#2f3640"/>
+  <path d="M110 560h260v70H110zM440 560h320v70H440zM830 560h260v70H830z" fill="#d75667"/>
+  <path d="M0 625h1200" stroke="#7bbfbd" stroke-width="8" stroke-dasharray="28 22"/>
+</svg>

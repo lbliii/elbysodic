@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Control room monitors showing paddock alerts</title>
+  <rect width="1200" height="700" fill="#0f1b18"/>
+  <path d="M120 110h960v460H120z" fill="#1b2e27"/>
+  <path d="M185 170h230v150H185zM485 170h230v150H485zM785 170h230v150H785z" fill="#081310" stroke="#6bbf7a" stroke-width="8"/>
+  <path d="M225 260h56l45-62 48 78M520 240h75l38-40 52 80M825 260h56l38-82 52 98" fill="none" stroke="#efc84a" stroke-width="10"/>
+  <path d="M190 395h820v105H190z" fill="#2e463c"/>
+  <path d="M240 430h145M440 430h145M640 430h145M840 430h120" stroke="#ff7f6e" stroke-width="12"/>
+</svg>
