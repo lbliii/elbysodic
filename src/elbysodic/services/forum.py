@@ -248,6 +248,7 @@ from elbysodic.services.timestamps import timestamp_key as _timestamp_key
 
 DEFAULT_DATABASE_PATH = Path("var/elbysodic.sqlite3")
 DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
+RAILWAY_VOLUME_MOUNT_PATH_ENV = "RAILWAY_VOLUME_MOUNT_PATH"
 HERO_TREATMENTS = frozenset({"split", "background", "poster", "text"})
 HERO_FOCAL_POINTS = frozenset({"center", "top", "bottom", "left", "right"})
 HERO_OVERLAYS = frozenset({"none", "light", "medium", "heavy"})
@@ -2354,6 +2355,9 @@ def default_database_path() -> Path:
     configured = os.environ.get(DATABASE_PATH_ENV)
     if configured:
         return Path(configured)
+    railway_volume = os.environ.get(RAILWAY_VOLUME_MOUNT_PATH_ENV)
+    if railway_volume:
+        return Path(railway_volume) / "elbysodic.sqlite3"
     return DEFAULT_DATABASE_PATH
 
 

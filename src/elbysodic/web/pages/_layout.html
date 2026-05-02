@@ -344,7 +344,7 @@
   {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
   {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
   {% call sidebar_section() %}
-    {{ sidebar_destination_link(url_for("index"), "Overview", "home", sidebar_path == "/") }}
+    {{ sidebar_destination_link("/", "Overview", "home", sidebar_path == "/") }}
   {% end %}
 
   {% if viewer and viewer.location_navigation_groups %}

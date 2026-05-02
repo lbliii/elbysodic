@@ -36,13 +36,19 @@ def _build_parser() -> argparse.ArgumentParser:
         "--db-path",
         type=Path,
         default=default_database_path(),
-        help="SQLite database path. Defaults to ELBYSODIC_DB_PATH or var/elbysodic.sqlite3.",
+        help=(
+            "SQLite database path. Defaults to ELBYSODIC_DB_PATH, then "
+            "RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3, then var/elbysodic.sqlite3."
+        ),
     )
     parser.add_argument(
         "--db-path",
         type=Path,
         default=default_database_path(),
-        help="SQLite database path. Defaults to ELBYSODIC_DB_PATH or var/elbysodic.sqlite3.",
+        help=(
+            "SQLite database path. Defaults to ELBYSODIC_DB_PATH, then "
+            "RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3, then var/elbysodic.sqlite3."
+        ),
     )
     _add_serve_options(parser, include_defaults=True)
     subparsers = parser.add_subparsers(dest="command")

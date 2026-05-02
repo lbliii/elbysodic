@@ -64,6 +64,7 @@ coverage.xml
 Thumbs.db
 
 # Project specific
+uv.toml
 *.log
 *.db
 *.db-shm
