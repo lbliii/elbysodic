@@ -4,7 +4,7 @@ Created: 2026-05-02
 Last updated: 2026-05-02
 Review by: 2026-05-16
 Owner: Web, service, storage, domain, and Chirp integration stewardship
-Status: drafted
+Status: implemented; awaiting shared-host smoke and timing readout
 
 ## Problem
 
@@ -64,15 +64,16 @@ Consulted stewards:
   before session/default resolution.
 - `communities.slug` exists and is unique.
 - Most repository and service reads are already community-scoped.
-- Filesystem page routes are local-path routes such as `/world/{material_slug}`
-  and `/boards/{board_slug}`.
-- Route recovery already detects when a slug exists in another community and
-  can offer a switch action, but recovery is a fallback, not canonical routing.
-- Templates currently hardcode many local links, such as `/world/{{ slug }}` and
-  `/boards/{{ slug }}`.
-- Local environment has `chirp-ui==0.6.0`, but the installed `bengal-chirp`
-  release does not appear to include the newer outlet-aware shell rendering
-  behavior needed by `{# outlet: main #}`.
+- Filesystem page routes are still authored as local-path routes such as
+  `/world/{material_slug}` and `/boards/{board_slug}`.
+- `TenantPrefixMiddleware` resolves `/c/{community_slug}` before page routing,
+  strips the prefix for the page tree, and scopes rendered links back into the
+  prefixed URL space.
+- Boosted shell navigation has Chirp 0.6 outlet regression coverage for both
+  local and tenant-prefixed routes.
+- Route timing headers are available for measuring local route work before a
+  Railway timing readout.
+- Remaining verification is live shared-host QA, not core implementation.
 
 ## Phase 0: Production Triage
 
