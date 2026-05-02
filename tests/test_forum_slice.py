@@ -417,6 +417,27 @@ def test_boosted_main_navigation_uses_chirp_shell_outlet() -> None:
     asyncio.run(run())
 
 
+def test_shell_brand_navigation_selects_page_content_for_boosted_swap() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get("/boards/cerebro")
+
+        assert response.status == 200
+        brand_link = re.search(
+            r'<a href="/"[^>]*class="[^"]*elbysodic-community-brand[^"]*"[^>]*>',
+            response.text,
+        )
+        assert brand_link is not None
+        assert 'hx-boost="true"' in brand_link.group(0)
+        assert 'hx-target="#main"' in brand_link.group(0)
+        assert 'hx-swap="innerHTML"' in brand_link.group(0)
+        assert 'hx-select="#page-content"' in brand_link.group(0)
+
+    asyncio.run(run())
+
+
 def test_tenant_prefixed_boosted_main_navigation_keeps_links_in_chirp_shell_outlet() -> None:
     async def run() -> None:
         app = _app()

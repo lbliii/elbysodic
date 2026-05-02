@@ -1,7 +1,8 @@
 {# target: body #}
 {% extends "chirpui/app_shell_layout.html" %}
 {% from "chirpui/drawer.html" import drawer, drawer_trigger %}
-{% from "chirpui/sidebar.html" import shell_brand_link, sidebar, sidebar_link, sidebar_section %}
+{% from "chirpui/sidebar.html" import sidebar, sidebar_link, sidebar_section %}
+{% from "chirpui/shell_frame.html" import shell_outlet_attrs %}
 {% from "chirpui/theme_toggle.html" import theme_toggle %}
 
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
@@ -50,14 +51,16 @@
 {% end %}
 
 {% block brand_link %}
-{% call shell_brand_link(href="/", cls="elbysodic-community-brand") %}
+<a href="/"
+   class="chirpui-app-shell__brand elbysodic-community-brand"
+   {{ shell_outlet_attrs() }}>
   {% if viewer and viewer.community.community_mark_url %}
   <img class="elbysodic-community-brand__mark"
        src="{{ viewer.community.community_mark_url }}"
        alt="{{ viewer.community.community_mark_alt }}">
   {% end %}
   <span class="elbysodic-community-brand__name">{{ viewer.community.name if viewer else "Elbysodic" }}</span>
-{% end %}
+</a>
 {% end %}
 
 {% def topnav_link(href, label, is_active=False) %}
