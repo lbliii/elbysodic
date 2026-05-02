@@ -322,6 +322,42 @@
         <span>World hero alt text</span>
         <input name="world_hero_image_alt" value="{{ viewer.community.world_hero_image_alt }}">
       </label>
+      <label class="elbysodic-form-field">
+        <span>Hero treatment</span>
+        <select name="world_hero_treatment">
+          <option value="split" {% if viewer.community.world_hero_treatment == "split" %}selected{% end %}>Split media</option>
+          <option value="background" {% if viewer.community.world_hero_treatment == "background" %}selected{% end %}>Full background</option>
+          <option value="poster" {% if viewer.community.world_hero_treatment == "poster" %}selected{% end %}>Poster masthead</option>
+          <option value="text" {% if viewer.community.world_hero_treatment == "text" %}selected{% end %}>Text first</option>
+        </select>
+      </label>
+      <label class="elbysodic-form-field">
+        <span>Image focal point</span>
+        <select name="world_hero_focal_point">
+          <option value="center" {% if viewer.community.world_hero_focal_point == "center" %}selected{% end %}>Center</option>
+          <option value="top" {% if viewer.community.world_hero_focal_point == "top" %}selected{% end %}>Top</option>
+          <option value="bottom" {% if viewer.community.world_hero_focal_point == "bottom" %}selected{% end %}>Bottom</option>
+          <option value="left" {% if viewer.community.world_hero_focal_point == "left" %}selected{% end %}>Left</option>
+          <option value="right" {% if viewer.community.world_hero_focal_point == "right" %}selected{% end %}>Right</option>
+        </select>
+      </label>
+      <label class="elbysodic-form-field">
+        <span>Overlay strength</span>
+        <select name="world_hero_overlay">
+          <option value="none" {% if viewer.community.world_hero_overlay == "none" %}selected{% end %}>None</option>
+          <option value="light" {% if viewer.community.world_hero_overlay == "light" %}selected{% end %}>Light</option>
+          <option value="medium" {% if viewer.community.world_hero_overlay == "medium" %}selected{% end %}>Medium</option>
+          <option value="heavy" {% if viewer.community.world_hero_overlay == "heavy" %}selected{% end %}>Heavy</option>
+        </select>
+      </label>
+      <label class="elbysodic-form-field">
+        <span>Hero height</span>
+        <select name="world_hero_height">
+          <option value="compact" {% if viewer.community.world_hero_height == "compact" %}selected{% end %}>Compact</option>
+          <option value="standard" {% if viewer.community.world_hero_height == "standard" %}selected{% end %}>Standard</option>
+          <option value="immersive" {% if viewer.community.world_hero_height == "immersive" %}selected{% end %}>Immersive</option>
+        </select>
+      </label>
     </div>
     <div class="chirpui-cluster chirpui-cluster--end">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Save community media</button>

@@ -1043,14 +1043,84 @@ body {
     gap: 2rem;
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 2rem 0 2.5rem;
+    position: relative;
 }
 
-.elbysodic-world-hero--with-media {
+.elbysodic-world-hero--split.elbysodic-world-hero--with-media {
     grid-template-columns: minmax(22rem, 1fr) minmax(14rem, 42%);
+}
+
+.elbysodic-world-hero--background {
+    align-content: end;
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius);
+    grid-template-columns: minmax(0, 44rem);
+    min-height: var(--elbysodic-hero-height);
+    overflow: hidden;
+    padding: 3rem;
+}
+
+.elbysodic-world-hero--background.elbysodic-world-hero--with-media {
+    color: var(--elbysodic-on-media-text);
+}
+
+.elbysodic-world-hero--background.elbysodic-world-hero--with-media::before {
+    background: rgba(8, 10, 12, var(--elbysodic-hero-overlay-opacity));
+    content: "";
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+}
+
+.elbysodic-world-hero--poster {
+    grid-template-columns: 1fr;
+}
+
+.elbysodic-world-hero--poster.elbysodic-world-hero--with-media {
+    gap: 1.5rem;
+}
+
+.elbysodic-world-hero--height-compact {
+    --elbysodic-hero-height: 16rem;
+}
+
+.elbysodic-world-hero--height-standard {
+    --elbysodic-hero-height: 22rem;
+}
+
+.elbysodic-world-hero--height-immersive {
+    --elbysodic-hero-height: min(34rem, 72vh);
+}
+
+.elbysodic-world-hero--overlay-none {
+    --elbysodic-hero-overlay-opacity: 0;
+}
+
+.elbysodic-world-hero--overlay-light {
+    --elbysodic-hero-overlay-opacity: 0.28;
+}
+
+.elbysodic-world-hero--overlay-medium {
+    --elbysodic-hero-overlay-opacity: 0.48;
+}
+
+.elbysodic-world-hero--overlay-heavy {
+    --elbysodic-hero-overlay-opacity: 0.68;
 }
 
 .elbysodic-world-hero__copy {
     max-width: 58rem;
+}
+
+.elbysodic-world-hero--background .elbysodic-world-hero__copy,
+.elbysodic-world-hero--background .elbysodic-world-hero__stats {
+    position: relative;
+    z-index: 2;
+}
+
+.elbysodic-world-hero--background .elbysodic-copy-helper,
+.elbysodic-world-hero--background .elbysodic-kicker {
+    color: var(--elbysodic-on-media-muted);
 }
 
 .elbysodic-world-hero__copy h1 {
@@ -1089,11 +1159,56 @@ body {
     overflow: hidden;
 }
 
+.elbysodic-world-hero--background .elbysodic-world-hero__media {
+    border: 0;
+    border-radius: 0;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    inset: 0;
+    min-height: 100%;
+    position: absolute;
+}
+
+.elbysodic-world-hero--poster .elbysodic-world-hero__media {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: var(--elbysodic-hero-height);
+}
+
+.elbysodic-world-hero--poster .elbysodic-world-hero__copy {
+    grid-row: 2;
+}
+
+.elbysodic-world-hero--poster .elbysodic-world-hero__stats {
+    grid-row: 3;
+    justify-content: start;
+}
+
 .elbysodic-world-hero__media img {
     display: block;
     height: 100%;
     object-fit: cover;
     width: 100%;
+}
+
+.elbysodic-world-hero--focal-center .elbysodic-world-hero__media img {
+    object-position: center;
+}
+
+.elbysodic-world-hero--focal-top .elbysodic-world-hero__media img {
+    object-position: top;
+}
+
+.elbysodic-world-hero--focal-bottom .elbysodic-world-hero__media img {
+    object-position: bottom;
+}
+
+.elbysodic-world-hero--focal-left .elbysodic-world-hero__media img {
+    object-position: left;
+}
+
+.elbysodic-world-hero--focal-right .elbysodic-world-hero__media img {
+    object-position: right;
 }
 
 .elbysodic-desk-hero {

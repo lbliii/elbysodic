@@ -627,6 +627,10 @@ def test_schema_migrates_existing_characters_for_post_profile_variants() -> None
     assert "community_mark_alt" in community_columns
     assert "world_hero_image_url" in community_columns
     assert "world_hero_image_alt" in community_columns
+    assert "world_hero_treatment" in community_columns
+    assert "world_hero_focal_point" in community_columns
+    assert "world_hero_overlay" in community_columns
+    assert "world_hero_height" in community_columns
     assert "enabled_post_profile_variants" in community_columns
     assert "enabled_post_accent_styles" in community_columns
     assert "enabled_post_border_styles" in community_columns
@@ -679,13 +683,22 @@ def test_community_media_slots_are_tenant_scoped(repo: ForumRepository) -> None:
         community_mark_alt="Board mark",
         world_hero_image_url="https://example.test/world.jpg",
         world_hero_image_alt="A foggy town square",
+        world_hero_treatment="background",
+        world_hero_focal_point="top",
+        world_hero_overlay="heavy",
+        world_hero_height="immersive",
     )
 
     assert updated.community_mark_url == "https://example.test/mark.png"
     assert updated.community_mark_alt == "Board mark"
     assert updated.world_hero_image_url == "https://example.test/world.jpg"
     assert updated.world_hero_image_alt == "A foggy town square"
+    assert updated.world_hero_treatment == "background"
+    assert updated.world_hero_focal_point == "top"
+    assert updated.world_hero_overlay == "heavy"
+    assert updated.world_hero_height == "immersive"
     assert repo.get_community(hosted.id).world_hero_image_url is None
+    assert repo.get_community(hosted.id).world_hero_treatment == "split"
 
 
 def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:

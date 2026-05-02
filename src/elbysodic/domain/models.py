@@ -19,6 +19,10 @@ class Community:
     community_mark_alt: str
     world_hero_image_url: str | None
     world_hero_image_alt: str
+    world_hero_treatment: str
+    world_hero_focal_point: str
+    world_hero_overlay: str
+    world_hero_height: str
     enabled_post_profile_variants: str
     enabled_post_accent_styles: str
     enabled_post_border_styles: str

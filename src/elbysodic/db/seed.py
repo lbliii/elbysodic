@@ -94,6 +94,10 @@ class CommunityMediaSeed:
     mark_alt: str
     hero_url: str
     hero_alt: str
+    hero_treatment: str = "split"
+    hero_focal_point: str = "center"
+    hero_overlay: str = "medium"
+    hero_height: str = "standard"
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,24 +144,34 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
         mark_alt="HP Universe glass staircase mark",
         hero_url=f"{SEED_MEDIA_BASE}/hp-hero.svg",
         hero_alt="Glass staircase rising through castle stacks",
+        hero_treatment="poster",
+        hero_focal_point="top",
     ),
     "jurassic-park-universe": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/jurassic-mark.svg",
         mark_alt="Jurassic Park Universe operations mark",
         hero_url=f"{SEED_MEDIA_BASE}/jurassic-hero.svg",
         hero_alt="Island operations fence and paddock monitors",
+        hero_treatment="background",
+        hero_focal_point="bottom",
+        hero_overlay="heavy",
     ),
     "rl-nyc": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/nyc-mark.svg",
         mark_alt="RL NYC late train mark",
         hero_url=f"{SEED_MEDIA_BASE}/nyc-hero.svg",
         hero_alt="Night street windows above a subway platform",
+        hero_treatment="background",
+        hero_overlay="heavy",
+        hero_height="compact",
     ),
     "rl-small-town": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/smalltown-mark.svg",
         mark_alt="RL Small Town founders week mark",
         hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
         hero_alt="Town square noticeboard and storefront lights",
+        hero_treatment="poster",
+        hero_focal_point="bottom",
     ),
 }
 
@@ -3203,11 +3217,24 @@ def _ensure_community_media_defaults(
     hero_alt = community.world_hero_image_alt
     if community.world_hero_image_url is None:
         hero_alt = media_seed.hero_alt
+    hero_treatment = community.world_hero_treatment
+    hero_focal_point = community.world_hero_focal_point
+    hero_overlay = community.world_hero_overlay
+    hero_height = community.world_hero_height
+    if community.world_hero_image_url is None:
+        hero_treatment = media_seed.hero_treatment
+        hero_focal_point = media_seed.hero_focal_point
+        hero_overlay = media_seed.hero_overlay
+        hero_height = media_seed.hero_height
     if (
         mark_url == community.community_mark_url
         and mark_alt == community.community_mark_alt
         and hero_url == community.world_hero_image_url
         and hero_alt == community.world_hero_image_alt
+        and hero_treatment == community.world_hero_treatment
+        and hero_focal_point == community.world_hero_focal_point
+        and hero_overlay == community.world_hero_overlay
+        and hero_height == community.world_hero_height
     ):
         return community
     return repo.update_community_media(
@@ -3216,6 +3243,10 @@ def _ensure_community_media_defaults(
         community_mark_alt=mark_alt,
         world_hero_image_url=hero_url,
         world_hero_image_alt=hero_alt,
+        world_hero_treatment=hero_treatment,
+        world_hero_focal_point=hero_focal_point,
+        world_hero_overlay=hero_overlay,
+        world_hero_height=hero_height,
     )
 
 
