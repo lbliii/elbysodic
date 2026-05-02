@@ -1,7 +1,7 @@
 {% imports %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/boards.html" import board_stat_row, subboard_card %}
+  {% from "_components/boards.html" import board_media_image, board_stat_row, subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
   {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link %}
@@ -44,8 +44,8 @@
     </div>
   </div>
 
-  <section class="elbysodic-board-stage elbysodic-board-media--{{ board.slug }}"
-           {% if board.image_url %}style="background-image: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86)), url('{{ board.image_url }}');"{% end %}>
+  <section class="elbysodic-board-stage elbysodic-board-media--{{ board.slug }}">
+    {{ board_media_image(board, "elbysodic-board-stage__media") }}
     <div class="chirpui-stack chirpui-stack--md elbysodic-board-stage__copy">
       {% if parent_board %}
       <p class="elbysodic-kicker">{{ parent_board.name }}</p>

@@ -2113,7 +2113,6 @@ body {
 .elbysodic-board-editor-preview-stage {
     aspect-ratio: 16 / 10;
     background:
-        linear-gradient(180deg, rgba(10, 12, 16, 0.12), rgba(10, 12, 16, 0.9)),
         radial-gradient(circle at 72% 24%, color-mix(in srgb, var(--chirpui-accent) 28%, transparent), transparent 38%),
         var(--chirpui-bg-subtle);
     background-position: center;
@@ -2124,6 +2123,38 @@ body {
     gap: 0.35rem;
     padding: 1rem;
     place-content: end start;
+    position: relative;
+}
+
+.elbysodic-board-editor-preview-stage::before {
+    background: linear-gradient(180deg, rgba(10, 12, 16, 0.12), rgba(10, 12, 16, 0.9));
+    content: "";
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+}
+
+.elbysodic-board-editor-preview-stage__media,
+.elbysodic-board-poster__media,
+.elbysodic-board-stage__media {
+    inset: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: 0;
+}
+
+.elbysodic-board-editor-preview-stage__media img,
+.elbysodic-board-poster__media img,
+.elbysodic-board-stage__media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.elbysodic-board-editor-preview-stage > :not(.elbysodic-board-editor-preview-stage__media) {
+    position: relative;
+    z-index: 2;
 }
 
 .elbysodic-board-editor-preview-stage span {
@@ -2703,6 +2734,15 @@ body {
     position: relative;
 }
 
+.elbysodic-board-poster::before,
+.elbysodic-board-stage::before {
+    background: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.84));
+    content: "";
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+}
+
 .elbysodic-board-poster {
     align-items: end;
     color: var(--elbysodic-on-media-text);
@@ -2748,6 +2788,11 @@ body {
     inset-block-start: 0.75rem;
     inset-inline-end: 0.75rem;
     position: absolute;
+    z-index: 2;
+}
+
+.elbysodic-board-poster > :not(.elbysodic-board-poster__media) {
+    position: relative;
     z-index: 2;
 }
 
@@ -3028,8 +3073,14 @@ body {
     padding: clamp(1.25rem, 3vw, 2rem);
 }
 
+.elbysodic-board-stage::before {
+    background: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86));
+}
+
 .elbysodic-board-stage__copy {
     max-width: 48rem;
+    position: relative;
+    z-index: 2;
 }
 
 .elbysodic-board-stage__signals {

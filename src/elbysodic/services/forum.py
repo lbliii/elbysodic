@@ -1359,6 +1359,10 @@ class AppServices:
         cleaned_name = name.strip()
         if not cleaned_name:
             raise ValueError("board name is required")
+        cleaned_image_url = image_url.strip()
+        cleaned_image_alt = image_alt.strip()
+        if cleaned_image_url and not cleaned_image_alt:
+            raise ValueError("board image alt text is required when an image URL is set")
         normalized_kind = normalize_board_kind(board_kind)
         normalized_sidebar_section = normalize_board_sidebar_section(
             sidebar_section,
@@ -1380,8 +1384,8 @@ class AppServices:
             board_kind=normalized_kind,
             sidebar_section=normalized_sidebar_section,
             tagline=tagline.strip(),
-            image_url=image_url.strip() or None,
-            image_alt=image_alt.strip(),
+            image_url=cleaned_image_url or None,
+            image_alt=cleaned_image_alt,
             is_private=is_private,
             navigation_order=navigation_order,
             show_in_navigation=show_in_navigation,

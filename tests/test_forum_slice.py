@@ -1413,6 +1413,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
                 ).encode(),
                 headers=_FORM,
             )
+            board_page = await client.get("/boards/announcements")
+            parent_page = await client.get("/boards/xavier-institute")
+            editor_after = await client.get("/studio/boards/announcements")
 
             assert response.status == 302
             assert dict(response.headers)["location"] == "/studio/boards/announcements"
@@ -1429,6 +1432,60 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert updated.sidebar_section == "locations"
             assert updated.show_in_navigation is True
             assert updated.is_private is True
+            assert board_page.status == 200
+            assert 'src="https://example.test/notices.jpg"' in board_page.text
+            assert 'alt="Notice board under red light"' in board_page.text
+            assert "url('https://example.test/notices.jpg')" not in board_page.text
+            assert parent_page.status == 200
+            assert 'src="https://example.test/notices.jpg"' in parent_page.text
+            assert 'alt="Notice board under red light"' in parent_page.text
+            assert editor_after.status == 200
+            assert 'src="https://example.test/notices.jpg"' in editor_after.text
+            assert 'alt="Notice board under red light"' in editor_after.text
+
+    asyncio.run(run())
+
+
+def test_studio_board_editor_requires_alt_text_for_board_media() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio/boards/announcements",
+                body=urlencode(
+                    {
+                        "name": "Announcements",
+                        "board_kind": "community",
+                        "parent_board_id": "",
+                        "tagline": "Staff notes.",
+                        "description": "Formal staff notices for the current continuity.",
+                        "image_url": "https://example.test/notices.jpg",
+                        "image_alt": "",
+                        "sort_order": 10,
+                        "navigation_order": 10,
+                        "sidebar_section": "community",
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        updated = repo.get_board_by_slug(community.id, "announcements")
+        assert response.status == 200
+        assert "board image alt text is required when an image URL is set" in response.text
+        assert updated.image_url is None
+        assert updated.image_alt == ""
 
     asyncio.run(run())
 
