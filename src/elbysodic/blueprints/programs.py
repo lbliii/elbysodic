@@ -8,7 +8,12 @@ from typing import Any
 
 import yaml
 
-from elbysodic.domain.boards import BOARD_KINDS
+from elbysodic.domain.boards import (
+    BOARD_IMAGE_FOCAL_POINTS,
+    BOARD_IMAGE_OVERLAYS,
+    BOARD_IMAGE_TREATMENTS,
+    BOARD_KINDS,
+)
 
 THEME_FONT_KEYS: frozenset[str] = frozenset({"system", "serif", "condensed", "mono"})
 THEME_RADIUS_KEYS: frozenset[str] = frozenset({"square", "sm", "md"})
@@ -45,6 +50,11 @@ class BlueprintBoard:
     board_kind: str
     tagline: str
     description: str
+    image_url: str = ""
+    image_alt: str = ""
+    image_treatment: str = "poster"
+    image_focal_point: str = "center"
+    image_overlay: str = "medium"
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,6 +195,12 @@ class ProgramBlueprintPreview:
         return 1 if self.blueprint is not None and self.blueprint.appearance is not None else 0
 
     @property
+    def board_media_count(self) -> int:
+        if self.blueprint is None:
+            return 0
+        return sum(1 for board in self.blueprint.boards if board.image_url)
+
+    @property
     def appearance_summary(self) -> str:
         if self.blueprint is None or self.blueprint.appearance is None:
             return "No appearance payload."
@@ -200,6 +216,13 @@ class ProgramBlueprintPreview:
             material_count = len(appearance.material_variants)
             parts.append(f"{material_count} guidebook variants")
         return "; ".join(parts) if parts else "Appearance payload is empty."
+
+    @property
+    def board_media_summary(self) -> str:
+        count = self.board_media_count
+        if count == 0:
+            return "No board media payload."
+        return f"{count} board media {'slot' if count == 1 else 'slots'}."
 
 
 def preview_program_blueprint_yaml(source: str) -> ProgramBlueprintPreview:
@@ -324,6 +347,38 @@ def _validate_board_blueprints(
         if board.board_kind not in BOARD_KINDS:
             allowed = ", ".join(sorted(BOARD_KINDS))
             errors.append(f"{board_path}.board_kind must be one of: {allowed}")
+        _validate_board_media_blueprint(errors, board_path, board)
+
+
+def _validate_board_media_blueprint(
+    errors: list[str],
+    board_path: str,
+    board: BlueprintBoard,
+) -> None:
+    if board.image_url and not board.image_alt.strip():
+        errors.append(f"{board_path}.image_alt is required when image_url is set")
+    if board.image_alt.strip() and not board.image_url:
+        errors.append(f"{board_path}.image_url is required when image_alt is set")
+    if board.image_url and not _is_safe_media_url(board.image_url):
+        errors.append(f"{board_path}.image_url must be a safe image URL or local path")
+    _validate_choice(
+        errors,
+        f"{board_path}.image_treatment",
+        board.image_treatment,
+        BOARD_IMAGE_TREATMENTS,
+    )
+    _validate_choice(
+        errors,
+        f"{board_path}.image_focal_point",
+        board.image_focal_point,
+        BOARD_IMAGE_FOCAL_POINTS,
+    )
+    _validate_choice(
+        errors,
+        f"{board_path}.image_overlay",
+        board.image_overlay,
+        BOARD_IMAGE_OVERLAYS,
+    )
 
 
 def _validate_material_blueprints(
@@ -475,6 +530,15 @@ def _is_hex_color(value: object) -> bool:
     return all(character in "0123456789abcdefABCDEF" for character in value[1:])
 
 
+def _is_safe_media_url(value: str) -> bool:
+    normalized = value.strip().lower()
+    if not normalized:
+        return False
+    return not (
+        normalized.startswith(("javascript:", "data:")) or "<" in normalized or ">" in normalized
+    )
+
+
 def _duplicate_slug_errors(label: str, slugs: Iterable[str]) -> list[str]:
     seen: set[str] = set()
     duplicates: set[str] = set()
@@ -498,6 +562,12 @@ def _mapping(value: object, path: str, errors: list[str]) -> dict[str, Any] | No
         return mapped
     errors.append(f"{path} must be a mapping")
     return None
+
+
+def _optional_mapping(value: object, path: str, errors: list[str]) -> dict[str, Any]:
+    if value is None:
+        return {}
+    return _mapping(value, path, errors) or {}
 
 
 def _mapping_items(value: object, path: str, errors: list[str]) -> tuple[dict[str, Any], ...]:
@@ -535,16 +605,37 @@ def _characters_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintCh
 
 
 def _boards_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintBoard, ...]:
-    return tuple(
-        BlueprintBoard(
-            slug=_field(item, "slug"),
-            name=_field(item, "name"),
-            board_kind=_field(item, "kind") or _field(item, "board_kind"),
-            tagline=_field(item, "tagline"),
-            description=_field(item, "description"),
+    boards: list[BlueprintBoard] = []
+    for index, item in enumerate(_mapping_items(value, "boards", errors)):
+        media = _optional_mapping(item.get("media"), f"boards[{index}].media", errors)
+        boards.append(
+            BlueprintBoard(
+                slug=_field(item, "slug"),
+                name=_field(item, "name"),
+                board_kind=_field(item, "kind") or _field(item, "board_kind"),
+                tagline=_field(item, "tagline"),
+                description=_field(item, "description"),
+                image_url=_field(item, "image_url")
+                or _field(media, "image_url")
+                or _field(media, "url"),
+                image_alt=_field(item, "image_alt")
+                or _field(media, "image_alt")
+                or _field(media, "alt"),
+                image_treatment=_field(item, "image_treatment")
+                or _field(media, "image_treatment")
+                or _field(media, "treatment")
+                or "poster",
+                image_focal_point=_field(item, "image_focal_point")
+                or _field(media, "image_focal_point")
+                or _field(media, "focal_point")
+                or "center",
+                image_overlay=_field(item, "image_overlay")
+                or _field(media, "image_overlay")
+                or _field(media, "overlay")
+                or "medium",
+            )
         )
-        for item in _mapping_items(value, "boards", errors)
-    )
+    return tuple(boards)
 
 
 def _materials_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintMaterial, ...]:

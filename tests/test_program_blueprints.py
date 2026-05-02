@@ -20,6 +20,7 @@ from elbysodic.blueprints import (
     validate_program_blueprint,
 )
 from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db import seed as seed_module
 from elbysodic.db.seed import seed_demo_forum
 
 
@@ -285,6 +286,113 @@ def test_program_blueprint_reports_unknown_board_kind() -> None:
     assert any(".board_kind must be one of:" in error for error in errors)
 
 
+def test_program_blueprint_accepts_safe_board_media_payload() -> None:
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town
+  name: RL Small Town
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+    media:
+      url: /elbysodic-static/seed-media/locations/smalltown-main-street.svg
+      alt: Main street storefronts under Founder's Week lights
+      treatment: background
+      focal_point: top
+      overlay: heavy
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+"""
+    )
+
+    assert preview.is_valid
+    assert preview.blueprint is not None
+    board = preview.blueprint.boards[0]
+    assert board.image_url == "/elbysodic-static/seed-media/locations/smalltown-main-street.svg"
+    assert board.image_alt == "Main street storefronts under Founder's Week lights"
+    assert board.image_treatment == "background"
+    assert board.image_focal_point == "top"
+    assert board.image_overlay == "heavy"
+    assert preview.board_media_count == 1
+    assert preview.board_media_summary == "1 board media slot."
+
+
+def test_program_blueprint_rejects_unsafe_board_media_payload() -> None:
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+program:
+  slug: broken-media
+  name: Broken Media
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+    image_url: javascript:alert(1)
+    image_treatment: raw-css
+    image_focal_point: middle
+    image_overlay: opaque
+  - slug: town-hall
+    name: Town Hall
+    kind: location
+    tagline: Everybody has a permit problem.
+    description: Civic scenes and public pressure.
+    media:
+      alt: Town hall without a URL
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+"""
+    )
+
+    assert not preview.is_valid
+    assert (
+        "program broken-media.boards.main-street.image_alt is required when image_url is set"
+        in preview.errors
+    )
+    assert (
+        "program broken-media.boards.main-street.image_url must be a safe image URL or local path"
+        in preview.errors
+    )
+    assert any(".image_treatment must be one of:" in error for error in preview.errors)
+    assert any(".image_focal_point must be one of:" in error for error in preview.errors)
+    assert any(".image_overlay must be one of:" in error for error in preview.errors)
+    assert (
+        "program broken-media.boards.town-hall.image_url is required when image_alt is set"
+        in preview.errors
+    )
+
+
 def test_program_blueprint_reports_missing_wanted_material_reference() -> None:
     blueprint = _blueprint(
         wanted=(
@@ -418,3 +526,38 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         ("rl-nyc", "rent-week"),
         ("rl-small-town", "founders-week"),
     ]
+
+
+def test_seed_hydrates_blueprint_board_media_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    program = _blueprint(
+        boards=(
+            BlueprintBoard(
+                "main-street",
+                "Main Street",
+                "location",
+                "One stoplight, twelve opinions.",
+                "The town's public spine.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.svg",
+                image_alt="Main Street under string lights",
+                image_treatment="background",
+                image_focal_point="top",
+                image_overlay="heavy",
+            ),
+        )
+    )
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    monkeypatch.setattr(seed_module, "STUDIO_NETWORK_PROGRAMS", (program,))
+    monkeypatch.setattr(seed_module, "STUDIO_PROGRAM_MEDIA", {})
+    monkeypatch.setattr(seed_module, "STUDIO_PROGRAM_BOARD_MEDIA", {})
+
+    seed_demo_forum(repo)
+
+    community = repo.get_community_by_slug("demo-program")
+    board = repo.get_board_by_slug(community.id, "main-street")
+    assert board.image_url == "/elbysodic-static/seed-media/locations/smalltown-main-street.svg"
+    assert board.image_alt == "Main Street under string lights"
+    assert board.image_treatment == "background"
+    assert board.image_focal_point == "top"
+    assert board.image_overlay == "heavy"

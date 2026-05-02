@@ -1,6 +1,6 @@
 # Location And Board Media Epic
 
-Status: in-progress, PRs 1-4 implemented
+Status: in-progress, PRs 1-5 implemented
 Owner: Product/UI stewardship  
 Created: 2026-05-02  
 Last updated: 2026-05-02  
@@ -169,6 +169,10 @@ Acceptance checks:
 - Text never collapses to one-word columns.
 
 ### PR 5: Blueprint And Export Alignment
+
+Implemented in this branch for Program Blueprint parsing, preview summaries,
+validation, docs, and seed hydration of safe board media fields. Export remains
+future work because there is not yet a board export surface.
 
 Goal: only after Studio and seed behavior settle, decide how board media belongs
 in starter packets.

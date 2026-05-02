@@ -3249,6 +3249,11 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 index * 10,
                 board_kind=board_seed.board_kind,
                 tagline=board_seed.tagline,
+                image_url=board_seed.image_url or None,
+                image_alt=board_seed.image_alt,
+                image_treatment=board_seed.image_treatment,
+                image_focal_point=board_seed.image_focal_point,
+                image_overlay=board_seed.image_overlay,
             )
             media_seed = STUDIO_PROGRAM_BOARD_MEDIA.get(program.slug, {}).get(board_seed.slug)
             if media_seed is not None:
