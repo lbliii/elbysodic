@@ -29,6 +29,7 @@ _SCOPED_PATH_PREFIXES = (
     "/discover",
     "/interactions",
     "/locations",
+    "/mentionables",
     "/members",
     "/my",
     "/notifications",
@@ -49,7 +50,7 @@ _UNSCOPED_PATH_PREFIXES = (
     "/static",
 )
 _URL_ATTR_RE = re.compile(
-    r'(?P<attr>\b(?:href|action|value|hx-(?:get|post|put|patch|delete))=["\'])'
+    r'(?P<attr>\b(?:href|action|value|sse-connect|hx-(?:get|post|put|patch|delete))=["\'])'
     r'(?P<url>/[^"\']*)'
 )
 
@@ -63,6 +64,9 @@ class TenantPrefixMiddleware:
             return await call_next(request)
 
         community_slug, local_path = split
+        if not _is_scoped_path(local_path):
+            return await call_next(request)
+
         try:
             get_services().repo.get_community_by_slug(community_slug)
         except LookupError:
@@ -98,6 +102,13 @@ def request_tenant_slug(request: object | None) -> str | None:
         return None
     value = cache.get(TENANT_SLUG_CACHE_KEY)
     return value if isinstance(value, str) and value else None
+
+
+def request_scoped_path(request: object | None, path: str) -> str:
+    """Scope a local community endpoint when the current request is prefixed."""
+
+    tenant_slug = request_tenant_slug(request)
+    return scoped_path(tenant_slug, path) if tenant_slug is not None else path
 
 
 def scoped_path(community_slug: str, path: str) -> str:

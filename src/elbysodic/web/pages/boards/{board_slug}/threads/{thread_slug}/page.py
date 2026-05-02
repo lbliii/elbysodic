@@ -12,6 +12,7 @@ from elbysodic.services import Mentionable
 from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import request_scoped_path
 
 
 def get(request: Request, board_slug: str, thread_slug: str) -> Page:
@@ -131,8 +132,9 @@ def _render_thread(
             if character.id in thread_view.tagged_character_ids
         ]
     )
+    mention_endpoint = request_scoped_path(request, "/mentionables/search")
     cast_picker_config = mention_picker_config(
-        endpoint="/mentionables/search",
+        endpoint=mention_endpoint,
         hidden_name="participant_ids",
         scope="cast",
         selected=selected_cast,
@@ -186,6 +188,7 @@ def _render_thread(
             roster=viewer.roster,
             selected_character_id=selected_character.id,
             initial_body=body,
+            mention_endpoint=mention_endpoint,
         ),
         composer_config_id=config_id,
         thread_statuses=THREAD_STATUSES,

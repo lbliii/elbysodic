@@ -4,7 +4,7 @@ Created: 2026-05-02
 Last updated: 2026-05-02
 Review by: 2026-05-09
 Owner: Auth, service, web, and deployment stewardship
-Status: implemented; awaiting Railway smoke
+Status: local verification green; awaiting Railway smoke
 
 ## Problem
 
@@ -387,3 +387,27 @@ Implemented on branch `codex/railway-auth-hardening-plan`:
 Remaining closure check: deploy the merged branch to Railway with the required
 environment variables, attached volume, and one replica, then smoke `/health`,
 login, a membership switch, and one write.
+
+## Local Verification Snapshot
+
+Captured on `main` at `61827ec` and refreshed on
+`codex/post-railway-pass`.
+
+Confirmed locally:
+
+- production config requires `ELBYSODIC_SECRET_KEY`
+- production ignores forged development identity inputs
+- production routes require a valid session outside public endpoints
+- membership switching is session-bound
+- mutating production forms require CSRF
+- secure cookies, rate limiting, and security headers have regression coverage
+- `uv run pytest -q --tb=short` passes
+
+Still needs live Railway smoke:
+
+- `/health` returns `200` after deploy
+- login succeeds with the intended demo account policy
+- member and staff views resolve through the attached volume
+- one write path succeeds with CSRF
+- seeded media URLs resolve from the packaged static tree
+- only one Railway replica is configured for SQLite volume use

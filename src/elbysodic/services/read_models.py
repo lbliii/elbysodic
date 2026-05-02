@@ -1364,6 +1364,34 @@ class StudioNetworkProgramView:
     theme_preview: StudioNetworkThemePreview
     is_current: bool
 
+    @property
+    def entry_href(self) -> str:
+        return _program_href(self, "/")
+
+    @property
+    def application_href(self) -> str:
+        return _program_href(self, "/applications/new")
+
+    @property
+    def premise_href(self) -> str | None:
+        if self.premise is None:
+            return None
+        return _program_href(self, f"/world/{self.premise.material.slug}")
+
+    @property
+    def current_event_href(self) -> str | None:
+        if self.current_event is None:
+            return None
+        return _program_href(self, f"/world/{self.current_event.material.slug}")
+
+
+def _program_href(program: StudioNetworkProgramView, path: str) -> str:
+    if program.is_current:
+        return path
+    if path == "/":
+        return f"/c/{program.community.slug}"
+    return f"/c/{program.community.slug}{path}"
+
 
 @dataclass(frozen=True, slots=True)
 class StudioNetworkDirectory:

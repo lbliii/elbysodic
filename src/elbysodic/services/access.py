@@ -44,8 +44,9 @@ class DefaultRequestIdentity:
 class RequestIdentityResolver:
     """Resolve community, user, and membership identity for a request.
 
-    The current app does not have login/session UI yet, so this resolver supports
-    explicit development headers and then falls back to the seeded dev identity.
+    Explicit tenant prefixes win before host, session, development, or fallback
+    identity. Development mode can still use QA headers and the dev identity
+    cookie, while production mode resolves user identity from the signed session.
     The boundary checks are intentionally real: the resolved membership must
     belong to both the resolved community and resolved user.
     """
