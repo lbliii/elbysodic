@@ -4049,6 +4049,65 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
     asyncio.run(run())
 
 
+def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+            room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            room_page = await charlie_client.get(f"/c/{community.slug}/plotting/{room.id}")
+            saved = await charlie_client.post(
+                f"/c/{community.slug}/plotting/{room.id}",
+                body=urlencode(
+                    {
+                        "intent": "save_plan",
+                        "notes": "Talk through the UN pressure point.",
+                        "next_step": "Pick the first scene.",
+                        "status": "brainstorming",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert room_page.status == 200
+        assert "Human UN liaison for B-24 talks: Rogue" in room_page.text
+        assert f'href="/c/{community.slug}/plotting"' in room_page.text
+        assert f'sse-connect="/c/{community.slug}/plotting/{room.id}/stream"' in room_page.text
+        assert f'hx-post="/c/{community.slug}/plotting/{room.id}"' in room_page.text
+        assert saved.status == 302
+        assert _response_header(saved, "location") == f"/c/{community.slug}/plotting/{room.id}"
+
+    asyncio.run(run())
+
+
 def test_plotting_room_plan_can_turn_into_scene() -> None:
     async def run() -> None:
         app = _app()

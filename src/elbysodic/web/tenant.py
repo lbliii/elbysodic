@@ -50,7 +50,7 @@ _UNSCOPED_PATH_PREFIXES = (
     "/static",
 )
 _URL_ATTR_RE = re.compile(
-    r'(?P<attr>\b(?:href|action|value|hx-(?:get|post|put|patch|delete))=["\'])'
+    r'(?P<attr>\b(?:href|action|value|sse-connect|hx-(?:get|post|put|patch|delete))=["\'])'
     r'(?P<url>/[^"\']*)'
 )
 
