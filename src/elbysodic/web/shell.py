@@ -11,8 +11,8 @@ from chirp.http.response import Response
 class BoostedMainReselectMiddleware:
     """Bridge boosted main navigation until Chirp outlet rendering is released."""
 
-    async def __call__(self, request: Request, next: Any) -> Any:
-        response = await next(request)
+    async def __call__(self, request: Request, call_next: Any) -> Any:
+        response = await call_next(request)
         if not _needs_page_root_reselect(request, response):
             return response
         return response.with_hx_reselect("#page-root")

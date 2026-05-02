@@ -332,7 +332,9 @@ def test_tenant_prefixed_route_resolves_community_before_local_slug() -> None:
         assert response.status == 200
         assert "Jurassic Park Universe" in response.text
         assert "Paddock Twelve" in response.text
-        assert 'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
+        assert (
+            'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
+        )
 
     asyncio.run(run())
 
@@ -350,7 +352,9 @@ def test_tenant_prefixed_route_overrides_development_community_header() -> None:
         assert response.status == 200
         assert "Jurassic Park Universe" in response.text
         assert "Current Event: Paddock Twelve" in response.text
-        assert 'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
+        assert (
+            'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
+        )
 
     asyncio.run(run())
 
@@ -366,8 +370,12 @@ def test_tenant_prefixed_route_keeps_scoped_links_inside_prefix() -> None:
         assert 'href="/c/jurassic-park-universe"' in response.text
         assert 'href="/c/jurassic-park-universe/world"' in response.text
         assert 'href="/c/jurassic-park-universe/boards/paddock-twelve/threads/new"' in response.text
-        assert 'name="next" value="/c/jurassic-park-universe/boards/paddock-twelve"' in response.text
-        assert "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve" in response.text
+        assert (
+            'name="next" value="/c/jurassic-park-universe/boards/paddock-twelve"' in response.text
+        )
+        assert (
+            "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve" in response.text
+        )
         assert 'href="/elbysodic-static/elbysodic-theme.css' in response.text
         assert 'href="/c/jurassic-park-universe/elbysodic-static' not in response.text
 

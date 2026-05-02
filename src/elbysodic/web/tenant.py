@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import replace
 from html import escape
-import re
 from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
@@ -57,10 +57,10 @@ _URL_ATTR_RE = re.compile(
 class TenantPrefixMiddleware:
     """Resolve `/c/{community_slug}` before filesystem page routing."""
 
-    async def __call__(self, request: Request, next: Any) -> Any:
+    async def __call__(self, request: Request, call_next: Any) -> Any:
         split = split_tenant_path(request.path)
         if split is None:
-            return await next(request)
+            return await call_next(request)
 
         community_slug, local_path = split
         try:
@@ -75,7 +75,7 @@ class TenantPrefixMiddleware:
         scoped_request = replace(request, path=local_path)
         scoped_request._cache[TENANT_SLUG_CACHE_KEY] = community_slug
         scoped_request._cache[ORIGINAL_PATH_CACHE_KEY] = request.path
-        response = await next(scoped_request)
+        response = await call_next(scoped_request)
         return scope_response_urls(response, community_slug)
 
 

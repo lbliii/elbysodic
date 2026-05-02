@@ -13,9 +13,9 @@ from chirp.http.response import Redirect, Response
 class RequestTimingMiddleware:
     """Expose app handling duration through standard Server-Timing headers."""
 
-    async def __call__(self, request: Request, next: Any) -> Any:
+    async def __call__(self, request: Request, call_next: Any) -> Any:
         started = perf_counter()
-        response = await next(request)
+        response = await call_next(request)
         duration_ms = (perf_counter() - started) * 1000
         return _with_timing_headers(response, duration_ms)
 
