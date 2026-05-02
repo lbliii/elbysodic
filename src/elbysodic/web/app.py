@@ -23,6 +23,7 @@ from elbysodic.web.security import (
     resolve_web_security_config,
 )
 from elbysodic.web.state import configure_services, dev_tools_enabled
+from elbysodic.web.tenant import TenantPrefixMiddleware
 
 PAGES_DIR = Path(__file__).parent / "pages"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -62,6 +63,7 @@ def create_app(
     use_chirp_ui(app)
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
+    app.add_middleware(TenantPrefixMiddleware())
     if security.production:
         app.add_middleware(
             AuthRateLimitMiddleware(
