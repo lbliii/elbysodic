@@ -3475,18 +3475,20 @@ def test_network_start_application_switches_to_realm_form() -> None:
                         "intent": "switch_membership",
                         "membership_id": str(hp_membership.id),
                         "character_id": "0",
-                        "next": "/applications/new",
+                        "next": "/c/hp-universe/applications/new",
                     }
                 ).encode(),
                 headers=_FORM,
             )
             set_cookie = _response_header(response, "set-cookie").split(";", 1)[0]
-            form = await client.get("/applications/new", headers={"Cookie": set_cookie})
+            form = await client.get(
+                "/c/hp-universe/applications/new", headers={"Cookie": set_cookie}
+            )
 
         assert network.status == 200
-        assert 'name="next" value="/applications/new"' in network.text
+        assert 'name="next" value="/c/hp-universe/applications/new"' in network.text
         assert response.status == 302
-        assert _response_header(response, "location") == "/applications/new"
+        assert _response_header(response, "location") == "/c/hp-universe/applications/new"
         assert form.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in form.text
         assert "Begin a new face for this realm." in form.text
