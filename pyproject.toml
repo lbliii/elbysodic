@@ -31,7 +31,7 @@ classifiers = [
 ]
 dependencies = [
     "bengal-chirp[config,forms,sessions,ui]>=0.5.0",
-    "chirp-ui>=0.5.0",
+    "chirp-ui>=0.6.0",
     "pyyaml>=6.0",
 ]
 
@@ -46,7 +46,7 @@ Changelog = "https://github.com/lbliii/elbysodic/blob/main/CHANGELOG.md"
 where = ["src"]
 
 [tool.setuptools.package-data]
-elbysodic = ["py.typed", "web/pages/**/*.html", "web/static/*"]
+elbysodic = ["py.typed", "web/pages/**/*.html", "web/static/**/*"]
 
 # =============================================================================
 # Ruff - Linter & Formatter
