@@ -977,6 +977,45 @@ def test_seeded_location_media_does_not_overwrite_custom_board_media() -> None:
     assert updated.image_alt == "Custom academy image"
 
 
+def test_text_first_board_media_treatment_keeps_image_out_of_public_stage() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "xavier-institute")
+        repo.update_board(
+            community.id,
+            board.id,
+            name=board.name,
+            description=board.description,
+            sort_order=board.sort_order,
+            parent_board_id=board.parent_board_id,
+            board_kind=board.board_kind,
+            sidebar_section=board.sidebar_section,
+            tagline=board.tagline,
+            image_url="https://example.test/text-first.jpg",
+            image_alt="Text first image",
+            image_treatment="text",
+            image_focal_point="right",
+            image_overlay="light",
+            is_private=board.is_private,
+            navigation_order=board.navigation_order,
+            show_in_navigation=board.show_in_navigation,
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/xavier-institute")
+
+        assert page.status == 200
+        assert "elbysodic-board-media-treatment--text" in page.text
+        assert "elbysodic-board-media-focal--right" in page.text
+        assert "elbysodic-board-media-overlay--light" in page.text
+        assert 'src="https://example.test/text-first.jpg"' not in page.text
+
+    asyncio.run(run())
+
+
 def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
     async def run() -> None:
         app = _app()
@@ -1470,6 +1509,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert "Edit Announcements" in editor.text
             assert "Show in sidebar navigation" in editor.text
             assert "Sidebar placement" in editor.text
+            assert "Image treatment" in editor.text
+            assert "Image focal point" in editor.text
+            assert "Overlay strength" in editor.text
             assert "Composer effect" in editor.text
 
             response = await client.post(
@@ -1483,6 +1525,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
                         "description": "Formal staff notices for the current continuity.",
                         "image_url": "https://example.test/notices.jpg",
                         "image_alt": "Notice board under red light",
+                        "image_treatment": "background",
+                        "image_focal_point": "top",
+                        "image_overlay": "heavy",
                         "sort_order": 12,
                         "navigation_order": 7,
                         "sidebar_section": "locations",
@@ -1506,6 +1551,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert updated.description == "Formal staff notices for the current continuity."
             assert updated.image_url == "https://example.test/notices.jpg"
             assert updated.image_alt == "Notice board under red light"
+            assert updated.image_treatment == "background"
+            assert updated.image_focal_point == "top"
+            assert updated.image_overlay == "heavy"
             assert updated.sort_order == 12
             assert updated.navigation_order == 7
             assert updated.sidebar_section == "locations"
@@ -1514,6 +1562,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert board_page.status == 200
             assert 'src="https://example.test/notices.jpg"' in board_page.text
             assert 'alt="Notice board under red light"' in board_page.text
+            assert "elbysodic-board-media-treatment--background" in board_page.text
+            assert "elbysodic-board-media-focal--top" in board_page.text
+            assert "elbysodic-board-media-overlay--heavy" in board_page.text
             assert "url('https://example.test/notices.jpg')" not in board_page.text
             assert parent_page.status == 200
             assert 'src="https://example.test/notices.jpg"' in parent_page.text
@@ -1521,6 +1572,9 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert editor_after.status == 200
             assert 'src="https://example.test/notices.jpg"' in editor_after.text
             assert 'alt="Notice board under red light"' in editor_after.text
+            assert 'option value="background" selected' in editor_after.text
+            assert 'option value="top" selected' in editor_after.text
+            assert 'option value="heavy" selected' in editor_after.text
 
     asyncio.run(run())
 
@@ -1551,6 +1605,9 @@ def test_studio_board_editor_requires_alt_text_for_board_media() -> None:
                         "description": "Formal staff notices for the current continuity.",
                         "image_url": "https://example.test/notices.jpg",
                         "image_alt": "",
+                        "image_treatment": "poster",
+                        "image_focal_point": "center",
+                        "image_overlay": "medium",
                         "sort_order": 10,
                         "navigation_order": 10,
                         "sidebar_section": "community",
@@ -1565,6 +1622,53 @@ def test_studio_board_editor_requires_alt_text_for_board_media() -> None:
         assert "board image alt text is required when an image URL is set" in response.text
         assert updated.image_url is None
         assert updated.image_alt == ""
+
+    asyncio.run(run())
+
+
+def test_studio_board_editor_rejects_unsupported_board_media_controls() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community(services.seed.community.id)
+        user = repo.get_user_by_email("moira@example.com")
+        membership = repo.get_membership_by_username(community.id, "moira")
+        character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        admin_services = AppServices(
+            repo,
+            DemoSeed(community, user, membership, character),
+        )
+        app = create_app(debug=False, services=admin_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio/boards/announcements",
+                body=urlencode(
+                    {
+                        "name": "Announcements",
+                        "board_kind": "community",
+                        "parent_board_id": "",
+                        "tagline": "Staff notes.",
+                        "description": "Formal staff notices for the current continuity.",
+                        "image_url": "https://example.test/notices.jpg",
+                        "image_alt": "Notice board under red light",
+                        "image_treatment": "raw-css",
+                        "image_focal_point": "center",
+                        "image_overlay": "medium",
+                        "sort_order": 10,
+                        "navigation_order": 10,
+                        "sidebar_section": "community",
+                        "show_in_navigation": "on",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        updated = repo.get_board_by_slug(community.id, "announcements")
+        assert response.status == 200
+        assert "choose a supported board image treatment" in response.text
+        assert updated.image_url is None
+        assert updated.image_treatment == "poster"
 
     asyncio.run(run())
 
@@ -1595,6 +1699,9 @@ def test_studio_board_editor_validates_sublocation_parent() -> None:
                         "description": "Needs a parent.",
                         "image_url": "",
                         "image_alt": "",
+                        "image_treatment": "poster",
+                        "image_focal_point": "center",
+                        "image_overlay": "medium",
                         "sort_order": 10,
                         "navigation_order": 10,
                         "sidebar_section": "locations",

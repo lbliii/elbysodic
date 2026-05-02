@@ -2124,10 +2124,16 @@ body {
     padding: 1rem;
     place-content: end start;
     position: relative;
+    --elbysodic-board-overlay-opacity: 0.84;
 }
 
 .elbysodic-board-editor-preview-stage::before {
-    background: linear-gradient(180deg, rgba(10, 12, 16, 0.12), rgba(10, 12, 16, 0.9));
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.12),
+            rgba(10, 12, 16, var(--elbysodic-board-overlay-opacity))
+        );
     content: "";
     inset: 0;
     position: absolute;
@@ -2150,6 +2156,46 @@ body {
     height: 100%;
     object-fit: cover;
     width: 100%;
+}
+
+.elbysodic-board-media-focal--top img {
+    object-position: center top;
+}
+
+.elbysodic-board-media-focal--bottom img {
+    object-position: center bottom;
+}
+
+.elbysodic-board-media-focal--left img {
+    object-position: left center;
+}
+
+.elbysodic-board-media-focal--right img {
+    object-position: right center;
+}
+
+.elbysodic-board-media-focal--center img {
+    object-position: center;
+}
+
+.elbysodic-board-media-overlay--light {
+    --elbysodic-board-overlay-opacity: 0.48;
+}
+
+.elbysodic-board-media-overlay--medium {
+    --elbysodic-board-overlay-opacity: 0.72;
+}
+
+.elbysodic-board-media-overlay--heavy {
+    --elbysodic-board-overlay-opacity: 0.88;
+}
+
+.elbysodic-board-media-treatment--text::before {
+    display: none;
+}
+
+.elbysodic-board-media-treatment--compact.elbysodic-board-editor-preview-stage {
+    aspect-ratio: 5 / 3;
 }
 
 .elbysodic-board-editor-preview-stage > :not(.elbysodic-board-editor-preview-stage__media) {
@@ -2732,11 +2778,17 @@ body {
     min-height: 9rem;
     overflow: hidden;
     position: relative;
+    --elbysodic-board-overlay-opacity: 0.72;
 }
 
 .elbysodic-board-poster::before,
 .elbysodic-board-stage::before {
-    background: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.84));
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.1),
+            rgba(10, 12, 16, var(--elbysodic-board-overlay-opacity))
+        );
     content: "";
     inset: 0;
     position: absolute;
@@ -2769,6 +2821,10 @@ body {
 
 .elbysodic-board-poster--compact {
     min-height: 9rem;
+}
+
+.elbysodic-board-media-treatment--compact.elbysodic-board-poster {
+    min-height: 8.5rem;
 }
 
 .elbysodic-board-poster h2,
@@ -3074,7 +3130,24 @@ body {
 }
 
 .elbysodic-board-stage::before {
-    background: linear-gradient(180deg, rgba(10, 12, 16, 0.1), rgba(10, 12, 16, 0.86));
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.1),
+            rgba(10, 12, 16, var(--elbysodic-board-overlay-opacity))
+        );
+}
+
+.elbysodic-board-media-treatment--compact.elbysodic-board-stage {
+    min-height: min(42vh, 22rem);
+}
+
+.elbysodic-board-media-treatment--background.elbysodic-board-stage {
+    min-height: min(68vh, 34rem);
+}
+
+.elbysodic-board-media-treatment--text.elbysodic-board-stage {
+    min-height: auto;
 }
 
 .elbysodic-board-stage__copy {

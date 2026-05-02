@@ -6,6 +6,9 @@ import sqlite3
 
 from elbysodic.domain.boards import (
     BOARD_SIDEBAR_SECTION_REALMS,
+    normalize_board_image_focal_point,
+    normalize_board_image_overlay,
+    normalize_board_image_treatment,
     normalize_board_kind,
     normalize_board_sidebar_section,
 )
@@ -153,6 +156,9 @@ def _board_from_row(row: sqlite3.Row) -> Board:
         description=row["description"],
         image_url=row["image_url"],
         image_alt=row["image_alt"],
+        image_treatment=normalize_board_image_treatment(row["image_treatment"]),
+        image_focal_point=normalize_board_image_focal_point(row["image_focal_point"]),
+        image_overlay=normalize_board_image_overlay(row["image_overlay"]),
         sort_order=row["sort_order"],
         navigation_order=row["navigation_order"],
         show_in_navigation=bool(row["show_in_navigation"]),

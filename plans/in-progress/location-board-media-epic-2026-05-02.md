@@ -1,6 +1,6 @@
 # Location And Board Media Epic
 
-Status: in-progress  
+Status: in-progress, PRs 1-3 implemented
 Owner: Product/UI stewardship  
 Created: 2026-05-02  
 Last updated: 2026-05-02  
@@ -53,6 +53,8 @@ consistent presentation rules.
 
 ### PR 1: Accessible Board Media Rendering
 
+Implemented in commit `db44c3c`.
+
 Goal: make existing board images render through product components instead of
 inline background-image shortcuts.
 
@@ -79,6 +81,8 @@ Acceptance checks:
 - `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
 
 ### PR 2: Seed Location Art Throughlines
+
+Implemented in commit `cc731a7`.
 
 Goal: give seeded boards distinct images that belong to each community's visual
 language.
@@ -109,6 +113,9 @@ Acceptance checks:
 - Browser QA covers home location cards, a board page, and Studio board preview.
 
 ### PR 3: Board Media Presentation Controls
+
+Implemented in this branch after seeded art QA showed boards need safe focal,
+treatment, and overlay controls across cards, stages, and Studio previews.
 
 Goal: decide whether board media needs a small safe control set like community
 hero treatment, after the seeded assets expose the real layout pressures.

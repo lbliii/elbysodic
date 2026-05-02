@@ -7,7 +7,13 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
-from elbysodic.domain.boards import BOARD_KIND_LABELS, BOARD_SIDEBAR_SECTION_LABELS
+from elbysodic.domain.boards import (
+    BOARD_IMAGE_FOCAL_POINT_LABELS,
+    BOARD_IMAGE_OVERLAY_LABELS,
+    BOARD_IMAGE_TREATMENT_LABELS,
+    BOARD_KIND_LABELS,
+    BOARD_SIDEBAR_SECTION_LABELS,
+)
 from elbysodic.domain.models import Board
 from elbysodic.web.state import get_services
 
@@ -30,6 +36,9 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             description=str(form.get("description") or ""),
             image_url=str(form.get("image_url") or ""),
             image_alt=str(form.get("image_alt") or ""),
+            image_treatment=str(form.get("image_treatment") or ""),
+            image_focal_point=str(form.get("image_focal_point") or ""),
+            image_overlay=str(form.get("image_overlay") or ""),
             sort_order=_required_int(form.get("sort_order"), "choose a board sort order"),
             navigation_order=_required_int(
                 form.get("navigation_order"),
@@ -56,6 +65,9 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
                 "description": str(form.get("description") or ""),
                 "image_url": str(form.get("image_url") or ""),
                 "image_alt": str(form.get("image_alt") or ""),
+                "image_treatment": str(form.get("image_treatment") or ""),
+                "image_focal_point": str(form.get("image_focal_point") or ""),
+                "image_overlay": str(form.get("image_overlay") or ""),
                 "sort_order": str(form.get("sort_order") or ""),
                 "navigation_order": str(form.get("navigation_order") or ""),
                 "show_in_navigation": form.get("show_in_navigation") == "on",
@@ -89,6 +101,9 @@ def _render_board_editor(
         editor=editor,
         board=editor.board,
         board_kind_labels=BOARD_KIND_LABELS,
+        image_treatment_labels=BOARD_IMAGE_TREATMENT_LABELS,
+        image_focal_point_labels=BOARD_IMAGE_FOCAL_POINT_LABELS,
+        image_overlay_labels=BOARD_IMAGE_OVERLAY_LABELS,
         sidebar_section_labels=BOARD_SIDEBAR_SECTION_LABELS,
         error=error,
         values=values,
@@ -104,6 +119,9 @@ def _values_from_board(board: Board) -> dict[str, object]:
         "description": board.description,
         "image_url": board.image_url or "",
         "image_alt": board.image_alt,
+        "image_treatment": board.image_treatment,
+        "image_focal_point": board.image_focal_point,
+        "image_overlay": board.image_overlay,
         "sort_order": str(board.sort_order),
         "navigation_order": str(board.navigation_order),
         "show_in_navigation": board.show_in_navigation,

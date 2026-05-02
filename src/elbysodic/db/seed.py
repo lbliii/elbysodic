@@ -104,6 +104,9 @@ class CommunityMediaSeed:
 class BoardMediaSeed:
     image_url: str
     image_alt: str
+    image_treatment: str = "poster"
+    image_focal_point: str = "center"
+    image_overlay: str = "medium"
 
 
 @dataclass(frozen=True, slots=True)
@@ -3420,6 +3423,9 @@ def _ensure_board(
     tagline: str = "",
     image_url: str | None = None,
     image_alt: str = "",
+    image_treatment: str = "poster",
+    image_focal_point: str = "center",
+    image_overlay: str = "medium",
     is_private: bool = False,
 ) -> Board:
     board = _get_or_create(
@@ -3434,6 +3440,9 @@ def _ensure_board(
             tagline=tagline,
             image_url=image_url,
             image_alt=image_alt,
+            image_treatment=image_treatment,
+            image_focal_point=image_focal_point,
+            image_overlay=image_overlay,
             sort_order=sort_order,
             is_private=is_private,
         ),
@@ -3451,6 +3460,9 @@ def _ensure_board(
         tagline=tagline,
         image_url=effective_image_url,
         image_alt=effective_image_alt,
+        image_treatment=image_treatment if image_url is not None else board.image_treatment,
+        image_focal_point=image_focal_point if image_url is not None else board.image_focal_point,
+        image_overlay=image_overlay if image_url is not None else board.image_overlay,
         is_private=is_private,
     )
 
@@ -3475,6 +3487,9 @@ def _ensure_board_media_default(
         tagline=board.tagline,
         image_url=media_seed.image_url,
         image_alt=media_seed.image_alt,
+        image_treatment=media_seed.image_treatment,
+        image_focal_point=media_seed.image_focal_point,
+        image_overlay=media_seed.image_overlay,
         is_private=board.is_private,
         navigation_order=board.navigation_order,
         show_in_navigation=board.show_in_navigation,
