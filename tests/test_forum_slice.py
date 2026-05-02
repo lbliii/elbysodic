@@ -199,6 +199,8 @@ def test_health_check_does_not_require_registered_community_host() -> None:
 
         assert response.status == 200
         assert response.text == "ok\n"
+        assert "app;dur=" in _response_header(response, "Server-Timing")
+        assert float(_response_header(response, "X-Elbysodic-Route-Time-Ms")) >= 0
 
     asyncio.run(run())
 
@@ -316,6 +318,123 @@ def test_request_scoped_page_renders_selected_community_membership() -> None:
         assert "Hosted Lane" in hosted_members.text
         assert "Hosted Face" in hosted_members.text
         assert "Cyclops" not in hosted_members.text
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_route_resolves_community_before_local_slug() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/jurassic-park-universe/boards/paddock-twelve")
+
+        assert response.status == 200
+        assert "Jurassic Park Universe" in response.text
+        assert "Paddock Twelve" in response.text
+        assert (
+            'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
+        )
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_route_overrides_development_community_header() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/c/jurassic-park-universe/world/paddock-twelve-incident",
+                headers={"x-elbysodic-community": "x-men-apocalypse"},
+            )
+
+        assert response.status == 200
+        assert "Jurassic Park Universe" in response.text
+        assert "Current Event: Paddock Twelve" in response.text
+        assert (
+            'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
+        )
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_route_keeps_scoped_links_inside_prefix() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/jurassic-park-universe/boards/paddock-twelve")
+
+        assert response.status == 200
+        assert 'href="/c/jurassic-park-universe"' in response.text
+        assert 'href="/c/jurassic-park-universe/world"' in response.text
+        assert 'href="/c/jurassic-park-universe/boards/paddock-twelve/threads/new"' in response.text
+        assert (
+            'name="next" value="/c/jurassic-park-universe/boards/paddock-twelve"' in response.text
+        )
+        assert (
+            "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve" in response.text
+        )
+        assert 'href="/elbysodic-static/elbysodic-theme.css' in response.text
+        assert 'href="/c/jurassic-park-universe/elbysodic-static' not in response.text
+
+    asyncio.run(run())
+
+
+def test_unknown_tenant_prefix_returns_not_found() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/not-a-program/world")
+
+        assert response.status == 404
+        assert response.text == "Community not found: not-a-program\n"
+
+    asyncio.run(run())
+
+
+def test_boosted_main_navigation_reselects_page_root_until_chirp_outlet_release() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/wanted/brotherhood-rival-for-rogue",
+                headers={
+                    "HX-Request": "true",
+                    "HX-Boosted": "true",
+                    "HX-Target": "main",
+                },
+            )
+
+        assert response.status == 200
+        assert 'id="page-root"' in response.text
+        assert 'id="page-content"' not in response.text
+        assert _response_header(response, "HX-Reselect") == "#page-root"
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_boosted_main_navigation_keeps_links_and_reselects_page_root() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/c/jurassic-park-universe/boards/paddock-twelve",
+                headers={
+                    "HX-Request": "true",
+                    "HX-Boosted": "true",
+                    "HX-Target": "main",
+                },
+            )
+
+        assert response.status == 200
+        assert 'id="page-root"' in response.text
+        assert 'href="/c/jurassic-park-universe/boards/paddock-twelve/threads/new"' in response.text
+        assert _response_header(response, "HX-Reselect") == "#page-root"
 
     asyncio.run(run())
 

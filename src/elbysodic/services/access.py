@@ -13,6 +13,7 @@ DEV_COMMUNITY_HEADER = "x-elbysodic-community"
 DEV_MEMBERSHIP_HEADER = "x-elbysodic-membership-id"
 DEV_USER_HEADER = "x-elbysodic-user-id"
 DEV_IDENTITY_COOKIE = "elbysodic_dev_identity"
+TENANT_SLUG_CACHE_KEY = "elbysodic.tenant_slug"
 
 
 class AccessRepository(Protocol):
@@ -147,6 +148,10 @@ class RequestIdentityResolver:
         request: object | None,
         session: UserSession | None = None,
     ) -> Community:
+        tenant_slug = request_tenant_slug(request)
+        if tenant_slug is not None:
+            return self._repo.get_community_by_slug(tenant_slug)
+
         explicit = (
             _optional_header(request, DEV_COMMUNITY_HEADER)
             if self._allow_development_identity
@@ -194,6 +199,14 @@ def _optional_int_header(request: object | None, name: str) -> int | None:
         return int(value)
     except ValueError as exc:
         raise PermissionError(f"{name} must be an integer") from exc
+
+
+def request_tenant_slug(request: object | None) -> str | None:
+    cache = getattr(request, "_cache", None)
+    if not isinstance(cache, dict):
+        return None
+    value = cache.get(TENANT_SLUG_CACHE_KEY)
+    return value if isinstance(value, str) and value else None
 
 
 def _optional_header(request: object | None, name: str) -> str | None:

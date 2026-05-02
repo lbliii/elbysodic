@@ -22,7 +22,10 @@ from elbysodic.web.security import (
     RequireLoginMiddleware,
     resolve_web_security_config,
 )
+from elbysodic.web.shell import BoostedMainReselectMiddleware
 from elbysodic.web.state import configure_services, dev_tools_enabled
+from elbysodic.web.tenant import TenantPrefixMiddleware
+from elbysodic.web.timing import RequestTimingMiddleware
 
 PAGES_DIR = Path(__file__).parent / "pages"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -62,6 +65,9 @@ def create_app(
     use_chirp_ui(app)
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
+    app.add_middleware(RequestTimingMiddleware())
+    app.add_middleware(TenantPrefixMiddleware())
+    app.add_middleware(BoostedMainReselectMiddleware())
     if security.production:
         app.add_middleware(
             AuthRateLimitMiddleware(
