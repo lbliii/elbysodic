@@ -3190,6 +3190,131 @@ body {
     max-width: 42rem;
 }
 
+.elbysodic-board-stage__face-line {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-success) 20%, rgba(10, 12, 16, 0.68));
+    border: 1px solid color-mix(in srgb, var(--chirpui-success) 52%, rgba(255, 255, 255, 0.2));
+    border-radius: 999px;
+    color: var(--elbysodic-on-media-text);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 850;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0.35rem 0.7rem;
+    width: fit-content;
+}
+
+.elbysodic-location-compass {
+    border-block: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 0.9fr) minmax(min(100%, 24rem), 1fr);
+    padding-block: 1.1rem;
+}
+
+.elbysodic-location-compass__copy {
+    align-content: start;
+    display: grid;
+    gap: 0.55rem;
+}
+
+.elbysodic-location-compass__copy h2,
+.elbysodic-location-compass__copy p,
+.elbysodic-location-compass__quiet strong,
+.elbysodic-location-compass__quiet em {
+    margin: 0;
+}
+
+.elbysodic-location-compass__copy h2 {
+    font-size: var(--chirpui-font-2xl);
+    letter-spacing: 0;
+    line-height: 1.05;
+}
+
+.elbysodic-location-compass__description {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.55;
+    max-width: 48rem;
+}
+
+.elbysodic-location-compass .elbysodic-latest {
+    border-top: 0;
+    padding-top: 0.2rem;
+}
+
+.elbysodic-location-compass__signals {
+    align-content: start;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.elbysodic-location-compass__signals .elbysodic-notice {
+    margin: 0;
+}
+
+.elbysodic-location-compass__quiet {
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 82%, transparent);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.85rem 1rem;
+}
+
+.elbysodic-location-compass__quiet span,
+.elbysodic-location-compass__links span {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 850;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.elbysodic-location-compass__quiet strong {
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.15;
+}
+
+.elbysodic-location-compass__quiet em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-style: normal;
+    line-height: 1.4;
+}
+
+.elbysodic-location-compass__links {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.elbysodic-location-compass__links a {
+    border-left: 2px solid color-mix(in srgb, var(--chirpui-accent) 54%, var(--chirpui-border));
+    color: var(--chirpui-text);
+    display: grid;
+    gap: 0.16rem;
+    padding: 0.15rem 0 0.15rem 0.75rem;
+    text-decoration: none;
+}
+
+.elbysodic-location-compass__links a:hover,
+.elbysodic-location-compass__links a:focus-visible {
+    border-left-color: var(--chirpui-accent);
+}
+
+.elbysodic-location-compass__links strong {
+    font-size: var(--chirpui-font-base);
+    line-height: 1.2;
+}
+
+.elbysodic-location-compass__links em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-style: normal;
+    line-height: 1.35;
+}
+
 .elbysodic-board-stage .chirpui-stat__value {
     color: var(--elbysodic-on-media-text);
 }
@@ -3331,6 +3456,12 @@ body {
 #guides,
 #events,
 #applications {
+    scroll-margin-top: 5.5rem;
+}
+
+#sublocations,
+#nearby,
+#board-thread-region {
     scroll-margin-top: 5.5rem;
 }
 
@@ -7922,6 +8053,23 @@ body {
 
     .elbysodic-board-hero h1 {
         font-size: 2.25rem;
+    }
+
+    .elbysodic-board-stage {
+        min-height: min(44vh, 24rem);
+    }
+
+    .elbysodic-board-media-treatment--background.elbysodic-board-stage {
+        min-height: min(52vh, 27rem);
+    }
+
+    .elbysodic-board-stage h1 {
+        font-size: 2.6rem;
+        line-height: 0.98;
+    }
+
+    .elbysodic-location-compass {
+        grid-template-columns: 1fr;
     }
 
     .elbysodic-composer-heading {

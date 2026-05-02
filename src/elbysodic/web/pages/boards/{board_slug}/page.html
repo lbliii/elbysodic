@@ -4,7 +4,7 @@
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
-  {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link %}
+  {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link, latest_line %}
 {% end %}
 
 {% def next_unread_link(item) %}
@@ -60,7 +60,14 @@
       {% if board.tagline %}
       <p class="elbysodic-board-stage__logline">{{ board.tagline }}</p>
       {% end %}
+      {% if board_summary.is_relevant_to_current_face and viewer.current_character %}
+      <p class="elbysodic-board-stage__face-line">
+        Relevant for {{ viewer.current_character.name }}
+      </p>
+      {% end %}
+      {% if not is_location_board %}
       <p class="elbysodic-board-stage__description elbysodic-copy-lead">{{ board.description }}</p>
+      {% end %}
       <div class="elbysodic-board-stage__signals">
         {{ board_stat_row(board_summary, viewer) }}
         {{ facet_pills(board_facets) }}
@@ -69,11 +76,52 @@
   </section>
 
   {% if is_location_board %}
-  {{ event_bridge(current_event, "Current event in this location") }}
+  <section class="elbysodic-location-compass" aria-label="{{ board.name }} throughline">
+    <div class="elbysodic-location-compass__copy">
+      <p class="elbysodic-kicker">At this location</p>
+      <h2>What is playable here</h2>
+      <p class="elbysodic-location-compass__description">{{ board.description }}</p>
+      {% if board_summary.latest_thread and board_summary.latest_href %}
+      {{ latest_line("Latest scene", board_summary.latest_href, board_summary.latest_thread.title, board_summary.latest_post.author.name if board_summary.latest_post else None, "/characters/" ~ board_summary.latest_post.author.slug if board_summary.latest_post else None, board_summary.latest_post.author_membership.username if board_summary.latest_post else None, "/members/" ~ board_summary.latest_post.author_membership.username if board_summary.latest_post else None, board_summary.latest_post.updated_at_label if board_summary.latest_post else None) }}
+      {% endif %}
+    </div>
+    <div class="elbysodic-location-compass__signals">
+      {% if current_event %}
+      {{ event_bridge(current_event, "Current event in this location") }}
+      {% else %}
+      <aside class="elbysodic-location-compass__quiet" aria-label="Continuity state">
+        <span>Continuity</span>
+        <strong>Open for scenes</strong>
+        <em>Use the local scene list and doors below to choose where the pressure lands.</em>
+      </aside>
+      {% end %}
+      <nav class="elbysodic-location-compass__links" aria-label="{{ board.name }} shortcuts">
+        <a href="#board-thread-region">
+          <span>Scenes</span>
+          <strong>{{ board.name }} threads</strong>
+          <em>Direct scene list and filters.</em>
+        </a>
+        {% if subboards %}
+        <a href="#sublocations">
+          <span>Doors</span>
+          <strong>{{ subboards | length }} playable rooms</strong>
+          <em>Rooms, districts, and pressure points inside this location.</em>
+        </a>
+        {% end %}
+        {% if sibling_boards %}
+        <a href="#nearby">
+          <span>Nearby</span>
+          <strong>{{ sibling_boards | length }} adjacent places</strong>
+          <em>Other places in the same branch.</em>
+        </a>
+        {% end %}
+      </nav>
+    </div>
+  </section>
   {% end %}
 
   {% if is_location_board and subboards %}
-  <section class="elbysodic-place-section elbysodic-place-section--sublocations">
+  <section id="sublocations" class="elbysodic-place-section elbysodic-place-section--sublocations">
     <header class="elbysodic-place-section__header">
       <p class="elbysodic-kicker">Sublocations</p>
       <h2>Choose a door inside {{ board.name }}</h2>
@@ -88,7 +136,7 @@
   {% end %}
 
   {% if is_location_board and sibling_boards %}
-  <section class="elbysodic-place-section elbysodic-place-section--nearby">
+  <section id="nearby" class="elbysodic-place-section elbysodic-place-section--nearby">
     <header class="elbysodic-place-section__header elbysodic-place-section__header--compact">
       {% if parent_board %}
       <p class="elbysodic-kicker">Nearby</p>

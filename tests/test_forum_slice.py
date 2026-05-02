@@ -1890,6 +1890,15 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert academy.status == 200
             assert "elbysodic-board-stage" in academy.text
             assert "elbysodic-board-media--xavier-institute" in academy.text
+            assert "elbysodic-location-compass" in academy.text
+            assert "What is playable here" in academy.text
+            assert "Relevant for Rogue" in academy.text
+            assert "Latest scene" in academy.text
+            assert 'href="#board-thread-region"' in academy.text
+            assert 'href="#sublocations"' in academy.text
+            assert 'href="#nearby"' in academy.text
+            assert 'id="sublocations"' in academy.text
+            assert 'id="nearby"' in academy.text
             assert "Choose a door inside Xavier Institute" in academy.text
             assert "Xavier Institute threads" in academy.text
             assert "No scenes have opened directly here yet." in academy.text
@@ -1903,6 +1912,37 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "Nearby" in midtown.text
             assert "New York City" in midtown.text
             assert "/boards/transit-tunnels" in midtown.text
+
+    asyncio.run(run())
+
+
+def test_quiet_location_page_keeps_actions_visible_without_empty_door_sections() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = services.seed.community
+        repo.create_board(
+            community.id,
+            "quiet-courtyard",
+            "Quiet Courtyard",
+            "A low-pressure place for slower scenes and first meetings.",
+            board_kind="location",
+            tagline="A softer corner of the grounds.",
+            sort_order=999,
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/quiet-courtyard")
+
+        assert page.status == 200
+        assert "elbysodic-location-compass" in page.text
+        assert "Open for scenes" in page.text
+        assert "Direct scene list and filters." in page.text
+        assert 'href="#board-thread-region"' in page.text
+        assert 'href="#sublocations"' not in page.text
+        assert 'id="sublocations"' not in page.text
+        assert "No scenes have opened directly here yet." in page.text
 
     asyncio.run(run())
 

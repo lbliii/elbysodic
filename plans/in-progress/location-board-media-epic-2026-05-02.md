@@ -1,6 +1,6 @@
 # Location And Board Media Epic
 
-Status: in-progress, PRs 1-3 implemented
+Status: in-progress, PRs 1-4 implemented
 Owner: Product/UI stewardship  
 Created: 2026-05-02  
 Last updated: 2026-05-02  
@@ -140,6 +140,9 @@ Acceptance checks:
 - Rendered pages preserve readable text at desktop and mobile widths.
 
 ### PR 4: Location Page Throughline Pass
+
+Implemented in this branch with a location throughline band, visible active-face
+relevance on location stages, and focused dense/quiet location coverage.
 
 Goal: make board pages feel like playable locations, not just thread lists with
 art.
