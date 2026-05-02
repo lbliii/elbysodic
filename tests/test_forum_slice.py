@@ -932,7 +932,10 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "current realm" in response.text
         assert "wearing Rogue" in response.text
         assert response.text.count('name="intent" value="switch_membership"') >= 4
-        assert response.text.count('name="next" value="/"') >= 4
+        assert 'name="next" value="/c/hp-universe"' in response.text
+        assert 'name="next" value="/c/hp-universe/applications/new"' in response.text
+        assert 'name="next" value="/c/jurassic-park-universe"' in response.text
+        assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' in response.text
 
     asyncio.run(run())
 
