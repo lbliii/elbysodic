@@ -440,6 +440,39 @@ def test_tenant_prefixed_boosted_main_navigation_keeps_links_in_chirp_shell_outl
     asyncio.run(run())
 
 
+def test_tenant_prefixed_identity_and_casting_routes_scope_rendered_links() -> None:
+    async def run() -> None:
+        app = _app()
+        community_slug = get_services().seed.community.slug
+
+        async with TestClient(app) as client:
+            character = await client.get(f"/c/{community_slug}/characters/rogue")
+            wanted = await client.get(f"/c/{community_slug}/wanted/brotherhood-rival-for-rogue")
+            application = await client.get(f"/c/{community_slug}/applications/new")
+
+        assert character.status == 200
+        assert "Rogue" in character.text
+        assert f'href="/c/{community_slug}/my/threads?character=rogue"' in character.text
+        assert f'href="/c/{community_slug}/wanted/brotherhood-rival-for-rogue"' in character.text
+
+        assert wanted.status == 200
+        assert "Brotherhood rival from Rogue" in wanted.text
+        assert f'href="/c/{community_slug}/characters/rogue"' in wanted.text
+        assert (
+            f'name="next" value="/c/{community_slug}/wanted/brotherhood-rival-for-rogue"'
+            in wanted.text
+        )
+
+        assert application.status == 200
+        assert "Start Application" in application.text
+        assert "Create draft face" in application.text
+        assert f'href="/c/{community_slug}/applications"' in application.text
+        assert 'href="/elbysodic-static/elbysodic-theme.css' in application.text
+        assert f'href="/c/{community_slug}/elbysodic-static' not in application.text
+
+    asyncio.run(run())
+
+
 def test_identity_switcher_persists_dev_membership_cookie() -> None:
     async def run() -> None:
         app = _app()
