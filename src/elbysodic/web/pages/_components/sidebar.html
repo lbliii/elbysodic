@@ -1,0 +1,87 @@
+{% from "chirpui/sidebar.html" import sidebar_section %}
+
+{% def sidebar_count(count) %}
+  {% if count %}
+  <span class="elbysodic-sidebar-count">{{ count }}</span>
+  {% end %}
+{% end %}
+
+{% def sidebar_link(href, label, is_active=False, count=0, cls="") %}
+<a class="chirpui-sidebar__link elbysodic-sidebar-link{{ " " ~ cls if cls else "" }}"
+   href="{{ href }}"
+   title="{{ label }}"
+   {% if is_active %}aria-current="page"{% end %}>
+  <span>{{ label }}</span>
+  {{ sidebar_count(count) }}
+</a>
+{% end %}
+
+{% def sidebar_destination(href, label, icon, is_active=False, count=none) %}
+<a class="chirpui-sidebar__link elbysodic-sidebar-destination"
+   href="{{ href }}"
+   title="{{ label }}"
+   {% if is_active %}aria-current="page"{% end %}>
+  <span class="chirpui-sidebar__icon">{{ icon | icon }}</span>
+  <span class="chirpui-sidebar__label">{{ label }}</span>
+  {% if count is not none %}
+  {{ sidebar_count(count) }}
+  {% end %}
+</a>
+{% end %}
+
+{% def sidebar_attention_link(href, label, count=0, is_active=False) %}
+{{ sidebar_link(href, label, is_active, count, "elbysodic-sidebar-link--attention") }}
+{% end %}
+
+{% def sidebar_plain_link(href, label, is_active=False) %}
+<a class="chirpui-sidebar__link"
+   href="{{ href }}"
+   title="{{ label }}"
+   {% if is_active %}aria-current="page"{% end %}>{{ label }}</a>
+{% end %}
+
+{% def sidebar_location_tree(items) %}
+<nav class="elbysodic-sidebar-tree" aria-label="Location map">
+  {% for item in items %}
+  <a class="chirpui-sidebar__link elbysodic-sidebar-link elbysodic-sidebar-tree__link{{ " elbysodic-sidebar-tree__link--branch" if item.get("open") else "" }}{{ " elbysodic-sidebar-tree__link--active" if item.get("active") else "" }}"
+     href="{{ item.href }}"
+     title="{{ item.title }}"
+     {% if item.get("active") %}aria-current="page"{% end %}>
+    <span>{{ item.title }}</span>
+    {% if item.get("badge") %}
+    <span class="elbysodic-sidebar-count">{{ item.badge }}</span>
+    {% end %}
+  </a>
+  {% if item.get("open") and item.get("children") %}
+  <div class="elbysodic-sidebar-tree__children">
+    {% for child in item.children %}
+    <a class="chirpui-sidebar__link elbysodic-sidebar-link elbysodic-sidebar-tree__link elbysodic-sidebar-tree__link--child{{ " elbysodic-sidebar-tree__link--active" if child.get("active") else "" }}"
+       href="{{ child.href }}"
+       title="{{ child.title }}"
+       {% if child.get("active") %}aria-current="page"{% end %}>
+      <span>{{ child.title }}</span>
+      {% if child.get("badge") %}
+      <span class="elbysodic-sidebar-count">{{ child.badge }}</span>
+      {% end %}
+    </a>
+    {% end %}
+  </div>
+  {% end %}
+  {% end %}
+</nav>
+{% end %}
+
+{% def sidebar_active_face(viewer) %}
+{% if viewer and viewer.current_character %}
+{% call sidebar_section("Active Face") %}
+  {{ sidebar_plain_link("/characters/" ~ viewer.current_character.slug, viewer.current_character.name) }}
+{% end %}
+{% end %}
+{% end %}
+
+{% def sidebar_footer() %}
+  <div class="elbysodic-platform-mark" aria-label="Built on Elbysodic">
+    <span>Built on</span>
+    <strong>Elbysodic</strong>
+  </div>
+{% end %}
