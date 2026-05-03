@@ -16,6 +16,7 @@ from chirp.middleware.sessions import SessionConfig, SessionMiddleware
 from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
+from elbysodic.web.errors import register_error_handlers
 from elbysodic.web.navigation import location_nav_tree_items
 from elbysodic.web.security import (
     AutoCSRFFormsMiddleware,
@@ -49,6 +50,7 @@ def create_app(
         strict_transport_security=security.strict_transport_security,
     )
     app = App(config=config)
+    register_error_handlers(app, include_internal=not debug)
     configured_services = (services or create_services(db_path)).with_request_auth(
         production=security.production
     )

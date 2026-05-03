@@ -9,7 +9,7 @@
 {% set shell_has_community = show_community_shell | default(true) %}
 {% set shell_sidebar_hidden = shell_has_community and sidebar_is_hidden() %}
 
-{% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
+{% block title %}{{ page_title if page_title is defined else (viewer.community.name if shell_has_community and viewer else "Elbysodic") }}{% end %}
 
 {% block head_extra %}
     <script>
@@ -112,7 +112,7 @@
 {% end %}
 
 {% block title_oob %}
-<title id="chirpui-document-title">{{ viewer.community.name if viewer else "Elbysodic" }}</title>
+<title id="chirpui-document-title">{{ page_title if page_title is defined else (viewer.community.name if shell_has_community and viewer else "Elbysodic") }}</title>
 {% end %}
 
 {% block brand_link %}
@@ -167,7 +167,7 @@
 </nav>
 {% end %}
 <nav class="elbysodic-topnav elbysodic-topnav--global" aria-label="Global">
-  {{ topnav_link("/network", "Explore", (not shell_has_community and topbar_path == "/") or topbar_path == "/network" or topbar_path.startswith("/network/")) }}
+  {{ topnav_link("/network", "Explore", topbar_path == "/network" or topbar_path.startswith("/network/")) }}
 </nav>
 {% if shell_has_community %}
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}

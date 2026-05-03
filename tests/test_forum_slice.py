@@ -390,7 +390,9 @@ def test_unknown_tenant_prefix_returns_not_found() -> None:
             response = await client.get("/c/not-a-program/world")
 
         assert response.status == 404
-        assert response.text == "Community not found: not-a-program\n"
+        assert "We could not find that realm." in response.text
+        assert "not-a-program is not a program on this studio network" in response.text
+        assert "Open Studio Network" in response.text
 
     asyncio.run(run())
 
@@ -1043,8 +1045,8 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
             response = await client.get("/network")
 
         assert response.status == 200
-        assert "Studio Network" in response.text
-        assert "Choose the realm you are writing in." in response.text
+        assert "Explore Elbysodic" in response.text
+        assert "Search worlds, wanted hooks, and writing lanes." in response.text
         assert "X-Men Apocalypse" in response.text
         assert "HP Universe" in response.text
         assert "Jurassic Park Universe" in response.text
@@ -1057,6 +1059,20 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert 'name="next" value="/c/hp-universe/applications/new"' in response.text
         assert 'name="next" value="/c/jurassic-park-universe"' in response.text
         assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' in response.text
+
+    asyncio.run(run())
+
+
+def test_network_explore_search_filters_programs() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/network?q=magic")
+
+        assert response.status == 200
+        assert 'value="magic"' in response.text
+        assert "1</strong>\n  <span>realms found</span>" in response.text
+        assert "HP Universe" in response.text
 
     asyncio.run(run())
 
@@ -1216,7 +1232,8 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert 'aria-label="Community"' not in root.text
         assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
         assert 'href="/c/x-men-apocalypse"' in root.text
-        assert "/elbysodic-static/seed-media/xmen-mark.svg" not in root.text
+        assert "/elbysodic-static/seed-media/xmen-mark.svg" in root.text
+        assert "/elbysodic-static/seed-media/xmen-hero.svg" in root.text
 
     asyncio.run(run())
 

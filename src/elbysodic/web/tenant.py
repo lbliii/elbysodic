@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
-from html import escape
 from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
 from chirp.http.request import Request
 from chirp.http.response import Redirect, Response
 
+from elbysodic.web.errors import error_response
 from elbysodic.web.state import get_services
 
 TENANT_PREFIX = "/c"
@@ -70,10 +70,10 @@ class TenantPrefixMiddleware:
         try:
             get_services().repo.get_community_by_slug(community_slug)
         except LookupError:
-            return Response(
-                body=f"Community not found: {escape(community_slug)}\n",
+            return error_response(
+                request,
                 status=404,
-                content_type="text/plain; charset=utf-8",
+                detail=f"Community not found: {community_slug}",
             )
 
         scoped_request = replace(request, path=local_path)
