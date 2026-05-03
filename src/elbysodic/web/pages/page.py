@@ -8,6 +8,7 @@ from chirp.templating.returns import Page
 from elbysodic.domain.boards import is_community_board, is_desk_board, is_location_board
 from elbysodic.services.read_models import MaterialSummary, WorldHub
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import request_tenant_slug
 
 
 def _home_world_status(hub: WorldHub) -> tuple[str, str]:
@@ -32,6 +33,17 @@ def _first_material(materials: list[MaterialSummary]) -> MaterialSummary | None:
 
 def get(request: Request) -> Page:
     services = get_services(request)
+    if request_tenant_slug(request) is None:
+        return Page(
+            "network/page.html",
+            "page_content",
+            page_block_name="page_root",
+            current_path=request.url,
+            viewer=services.viewer(),
+            network=services.studio_network(),
+            show_community_shell=False,
+        )
+
     viewer = services.viewer()
     boards = services.list_boards()
     hub = services.world_hub()

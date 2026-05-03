@@ -6,6 +6,8 @@
 {% from "chirpui/theme_toggle.html" import theme_toggle %}
 {% from "_components/sidebar.html" import sidebar_active_face, sidebar_attention_link, sidebar_destination, sidebar_footer, sidebar_link as elbysodic_sidebar_link, sidebar_location_tree, sidebar_plain_link %}
 
+{% set shell_has_community = show_community_shell | default(true) %}
+
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
@@ -44,6 +46,17 @@
       }
     </style>
     {% end %}
+    {% if not shell_has_community %}
+    <style id="elbysodic-product-shell">
+      .chirpui-app-shell {
+        --chirpui-sidebar-width: 0rem;
+      }
+
+      .chirpui-app-shell__sidebar {
+        display: none;
+      }
+    </style>
+    {% end %}
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=resizable-destination-rail"></script>
 {% end %}
 
@@ -55,12 +68,12 @@
 <a href="/"
    class="chirpui-app-shell__brand elbysodic-community-brand"
    {{ shell_outlet_attrs() }}>
-  {% if viewer and viewer.community.community_mark_url %}
+  {% if shell_has_community and viewer and viewer.community.community_mark_url %}
   <img class="elbysodic-community-brand__mark"
        src="{{ viewer.community.community_mark_url }}"
        alt="{{ viewer.community.community_mark_alt }}">
   {% end %}
-  <span class="elbysodic-community-brand__name">{{ viewer.community.name if viewer else "Elbysodic" }}</span>
+  <span class="elbysodic-community-brand__name">{{ viewer.community.name if shell_has_community and viewer else "Elbysodic" }}</span>
 </a>
 {% end %}
 
@@ -83,19 +96,32 @@
 
 {% block topbar_center %}
 {% set topbar_path = current_path or "/" %}
-{% set world_active = topbar_path == "/" or topbar_path == "/locations" or topbar_path.startswith("/locations/") or topbar_path == "/community" or topbar_path.startswith("/community/") or topbar_path.startswith("/boards/") %}
-{% set guidebook_active = topbar_path == "/world" or topbar_path.startswith("/world/") %}
-{% set wanted_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/claims" or topbar_path.startswith("/claims/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") %}
+{% set topbar_board_section = "" %}
+{% if board is defined %}
+{% set topbar_board_section = board?.sidebar_section ?? "" %}
+{% end %}
+{% set world_active = topbar_path == "/locations" or topbar_path.startswith("/locations/") or topbar_path == "/world" or topbar_path.startswith("/world/") or topbar_path == "/community" or topbar_path.startswith("/community/") or topbar_path == "/members" or topbar_path.startswith("/members/") or topbar_path.startswith("/boards/") or topbar_board_section == "locations" or topbar_board_section == "community" %}
+{% set play_active = topbar_path == "/wanted" or topbar_path.startswith("/wanted/") or topbar_path == "/claims" or topbar_path.startswith("/claims/") or topbar_path == "/casting" or topbar_path.startswith("/casting/") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set studio_active = topbar_path == "/studio" or topbar_path.startswith("/studio/") %}
-{% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/network" or topbar_path.startswith("/network/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/interactions" or topbar_path.startswith("/interactions/") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
+{% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/interactions" or topbar_path.startswith("/interactions/") or topbar_board_section == "desk" %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
 {% set mobile_nav_label = "Navigation" %}
+{% if shell_has_community %}
 {{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
-<nav class="elbysodic-topnav elbysodic-topnav--global" aria-label="Global">
-  {{ topnav_link("/network", "Explore", topbar_path == "/network" or topbar_path.startswith("/network/")) }}
+<nav class="elbysodic-topnav elbysodic-topnav--community" aria-label="Community">
+  {{ topnav_link("/locations", "World", world_active) }}
+  {{ topnav_link("/wanted", "Play", play_active) }}
+  {{ topnav_link("/desk", "Desk", desk_active) }}
+  {{ topnav_link("/studio", "Studio", studio_active) }}
 </nav>
+{% end %}
+<nav class="elbysodic-topnav elbysodic-topnav--global" aria-label="Global">
+  {{ topnav_link("/network", "Explore", (not shell_has_community and topbar_path == "/") or topbar_path == "/network" or topbar_path.startswith("/network/")) }}
+</nav>
+{% if shell_has_community %}
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
-  {{ elbysodic_sidebar() }}
+  {{ elbysodic_sidebar(include_community_map=True) }}
+{% end %}
 {% end %}
 {% end %}
 
@@ -249,39 +275,46 @@
 {% end %}
 
 {% def community_map_sidebar(active_room) %}
-  {% call sidebar_section("Rooms") %}
-    {{ sidebar_destination("/", "World", "home", active_room == "world") }}
-    {{ sidebar_destination("/world", "Guidebook", "list", active_room == "guidebook") }}
-    {{ sidebar_destination("/wanted", "Wanted", "star", active_room == "wanted") }}
-    {{ sidebar_destination("/desk", "Writer Desk", "pencil", active_room == "desk") }}
+  {% call sidebar_section("Community") %}
+    {{ sidebar_destination("/locations", "World", "grid", active_room == "world") }}
+    {{ sidebar_destination("/wanted", "Play", "star", active_room == "play") }}
+    {{ sidebar_destination("/desk", "Desk", "pencil", active_room == "desk") }}
     {{ sidebar_destination("/studio", "Studio", "diamond", active_room == "studio") }}
+  {% end %}
+{% end %}
+
+{% def world_context_sidebar() %}
+  {% set sidebar_path = current_path or "/" %}
+  {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
+  {% set locations_label = viewer.location_sidebar_section.label if viewer else "Locations" %}
+  {% set community_label = viewer.community_sidebar_section.label if viewer else "Community Table" %}
+  {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
+  {% set guidebook_active = sidebar_path == "/world" or sidebar_path.startswith("/world/") %}
+  {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
+  {% call sidebar_section("In World") %}
+    {{ sidebar_destination("/locations", locations_label, "grid", locations_active, viewer.location_navigation_boards | length if viewer else none) }}
+    {{ sidebar_destination("/world", "Guidebook", "list", guidebook_active) }}
+    {{ sidebar_destination("/community", community_label, "user", community_active, viewer.community_navigation_boards | length if viewer else none) }}
   {% end %}
 {% end %}
 
 {% def world_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
   {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
-  {% set locations_label = viewer.location_sidebar_section.label if viewer else "Locations" %}
-  {% set community_label = viewer.community_sidebar_section.label if viewer else "Community" %}
   {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
   {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
-  {% if sidebar_path != "/" %}
-  {% call sidebar_section() %}
-    {{ sidebar_destination("/", "World home", "home") }}
-  {% end %}
-  {% end %}
+
+  {{ world_context_sidebar() }}
 
   {% if viewer and viewer.location_navigation_groups %}
-  {% call sidebar_section(viewer.location_sidebar_section.label if viewer.location_sidebar_section.show_label else none) %}
-    {{ sidebar_destination("/locations", locations_label, "grid", locations_active, viewer.location_navigation_boards | length) }}
+  {% call sidebar_section(viewer.location_sidebar_section.label if viewer.location_sidebar_section.show_label else "Location Map") %}
     {% set current_board_id = board.id if board is defined else 0 %}
     {% set current_parent_id = parent_board.id if parent_board is defined and parent_board else 0 %}
     {{ sidebar_location_tree(location_nav_tree_items(viewer, current_board_id, current_parent_id)) }}
   {% end %}
   {% end %}
 
-  {% call sidebar_section(viewer.community_sidebar_section.label if viewer and viewer.community_sidebar_section.show_label else none) %}
-    {{ sidebar_destination("/community", community_label, "user", community_active, viewer.community_navigation_boards | length if viewer else none) }}
+  {% call sidebar_section(viewer.community_sidebar_section.label if viewer and viewer.community_sidebar_section.show_label else "Community Table") %}
     {{ sidebar_plain_link("/members", "Members") }}
     {% if viewer %}
     {% for item in viewer.community_navigation_boards %}
@@ -293,15 +326,11 @@
 
 {% def guidebook_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% if sidebar_path != "/world" %}
-  {% call sidebar_section() %}
-    {{ sidebar_destination("/world", "Guidebook home", "list") }}
-  {% end %}
-  {% end %}
+  {{ world_context_sidebar() }}
 
   {% if guidebook is defined %}
     {% if guidebook.featured %}
-    {% call sidebar_section() %}
+    {% call sidebar_section("Guidebook Index") %}
       {{ sidebar_destination("/world#start-here", "Start Here", "star") }}
       {% for item in guidebook.featured %}
       {{ sidebar_plain_link("/world/" ~ item.material.slug, item.material.title) }}
@@ -309,7 +338,7 @@
     {% end %}
     {% end %}
     {% if guidebook.guides %}
-    {% call sidebar_section() %}
+    {% call sidebar_section("Guides") %}
       {{ sidebar_destination("/world#guides", "Guides", "nib") }}
       {% for item in guidebook.guides %}
       {{ sidebar_plain_link("/world/" ~ item.material.slug, item.material.title) }}
@@ -317,7 +346,7 @@
     {% end %}
     {% end %}
     {% if guidebook.events %}
-    {% call sidebar_section() %}
+    {% call sidebar_section("Events") %}
       {{ sidebar_destination("/world#events", "Events", "bolt") }}
       {% for item in guidebook.events %}
       {{ sidebar_plain_link("/world/" ~ item.material.slug, item.material.title) }}
@@ -325,7 +354,7 @@
     {% end %}
     {% end %}
     {% if guidebook.application_materials %}
-    {% call sidebar_section() %}
+    {% call sidebar_section("Applications") %}
       {{ sidebar_destination("/world#applications", "Applications", "pencil") }}
       {% for item in guidebook.application_materials %}
       {{ sidebar_plain_link("/world/" ~ item.material.slug, item.material.title) }}
@@ -348,7 +377,7 @@
 
 {% def desk_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% call sidebar_section(viewer.desk_sidebar_section.label if viewer and viewer.desk_sidebar_section.show_label else none) %}
+  {% call sidebar_section("On Your Desk") %}
     {% if sidebar_path != "/desk" %}
     {{ sidebar_destination("/desk", "Desk home", "home") }}
     {% end %}
@@ -369,7 +398,7 @@
 
 {% def studio_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% call sidebar_section(viewer.studio_sidebar_section.label if viewer and viewer.studio_sidebar_section.show_label else none) %}
+  {% call sidebar_section("In Studio") %}
     {% if sidebar_path != "/studio" %}
     {{ sidebar_destination("/studio", "Studio home", "diamond") }}
     {% end %}
@@ -379,7 +408,7 @@
     {{ sidebar_plain_link("/", "World map") }}
   {% end %}
 
-  {% call sidebar_section() %}
+  {% call sidebar_section("Production") %}
     {{ sidebar_destination("/applications", "Production", "pencil", sidebar_path == "/applications" or sidebar_path.startswith("/applications/")) }}
     {{ sidebar_plain_link("/applications", "Applications") }}
     {{ sidebar_plain_link("/wanted", "Wanted board") }}
@@ -401,13 +430,15 @@
 
 {% def casting_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
-  {% call sidebar_section() %}
+  {% call sidebar_section("In Play") %}
     {% if sidebar_path != "/wanted" %}
     {{ sidebar_destination("/wanted", "Wanted board", "star", sidebar_path.startswith("/wanted/")) }}
     {% end %}
     {{ sidebar_plain_link("/casting", "Casting desk", sidebar_path == "/casting" or sidebar_path.startswith("/casting/")) }}
     {{ sidebar_plain_link("/claims", "Claims", sidebar_path == "/claims" or sidebar_path.startswith("/claims/")) }}
     {{ sidebar_plain_link("/applications", "Applications", sidebar_path == "/applications" or sidebar_path.startswith("/applications")) }}
+    {{ sidebar_plain_link("/plotting", "Plotting", sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/")) }}
+    {{ sidebar_plain_link("/discover", "Discovery", sidebar_path == "/discover" or sidebar_path.startswith("/discover")) }}
   {% end %}
 
   {{ sidebar_active_face(viewer) }}
@@ -427,20 +458,22 @@
   {% end %}
 {% end %}
 
-{% def elbysodic_sidebar() %}
+{% def elbysodic_sidebar(include_community_map=False) %}
 {% set sidebar_path = current_path or "/" %}
 {% set is_guidebook = sidebar_path == "/world" or sidebar_path.startswith("/world/") %}
-{% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/claims" or sidebar_path.startswith("/claims/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") %}
+{% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/claims" or sidebar_path.startswith("/claims/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") or sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
 {% set is_studio = sidebar_path == "/studio" or sidebar_path.startswith("/studio/") %}
-{% set is_desk = sidebar_path == "/desk" or sidebar_path.startswith("/desk/") or sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads") or sidebar_path == "/notifications" or sidebar_path.startswith("/notifications") or sidebar_path == "/characters" or sidebar_path.startswith("/characters/") or sidebar_path == "/applications" or sidebar_path.startswith("/applications") or sidebar_path == "/interactions" or sidebar_path.startswith("/interactions/") or sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
+{% set is_desk = sidebar_path == "/desk" or sidebar_path.startswith("/desk/") or sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads") or sidebar_path == "/notifications" or sidebar_path.startswith("/notifications") or sidebar_path == "/characters" or sidebar_path.startswith("/characters/") or sidebar_path == "/applications" or sidebar_path.startswith("/applications") or sidebar_path == "/interactions" or sidebar_path.startswith("/interactions/") %}
 {% set board_sidebar_section = board?.sidebar_section ?? "" if board is defined else "" %}
-{% set active_room = "guidebook" if is_guidebook else ("wanted" if is_casting else ("studio" if is_studio or board_sidebar_section == "studio" else ("desk" if is_desk or board_sidebar_section == "desk" else "world"))) %}
+{% set active_room = "home" if sidebar_path == "/" else ("play" if is_casting else ("studio" if is_studio or board_sidebar_section == "studio" else ("desk" if is_desk or board_sidebar_section == "desk" else "world"))) %}
 {% call sidebar(cls="elbysodic-sidebar") %}
   {% slot footer %}
   {{ sidebar_footer() }}
   {% end %}
 
+  {% if include_community_map %}
   {{ community_map_sidebar(active_room) }}
+  {% end %}
 
   {% if is_guidebook %}
   {{ guidebook_sidebar() }}
@@ -457,6 +490,7 @@
 {% end %}
 
 {% block sidebar %}
+{% if show_community_shell | default(true) %}
 {{ elbysodic_sidebar() }}
 <div class="chirpui-app-shell__sidebar-resize elbysodic-sidebar-resize"
      data-elbysodic-sidebar-toggle
@@ -466,7 +500,10 @@
      aria-label="Hide navigation"
      aria-expanded="true"></div>
 {% end %}
+{% end %}
 
 {% block sidebar_oob %}
+{% if show_community_shell | default(true) %}
 {{ elbysodic_sidebar() }}
+{% end %}
 {% end %}

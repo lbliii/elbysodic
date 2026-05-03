@@ -84,22 +84,25 @@ Risks:
 
 ## Product Decision
 
-Keep the topbar and sidebar.
+Keep the topbar and sidebar, but let the topbar own the stable community modes
+and let the sidebar own the current mode's contents.
 
-Remove primary community-room navigation from the topbar.
-
-The topbar becomes the LBSodic/platform layer. The sidebar becomes the
-community/local layer.
+On shared hosts, `/` is the Elbysodic/LBSodic home for exploring reachable
+communities. A community home lives at `/c/{community_slug}`. The seeded X-Men
+community uses `/c/x-men-apocalypse`, not `/c/default`, so the URL names the
+actual community.
 
 ### Topbar Job
 
 The topbar answers:
 
-> Where am I globally, and what cross-cutting thing can I do?
+> Which major part of this community am I in?
 
 Topbar owns:
 
 - Current community identity and future community switcher.
+- The community brand/title as the community home affordance.
+- Primary community modes after home: `World`, `Play`, `Desk`, and `Studio`.
 - Future global/community search entry.
 - Future explore/browse communities entry from the LBSodic home.
 - Notifications indicator.
@@ -110,11 +113,6 @@ Topbar owns:
 
 Topbar does not own:
 
-- World.
-- Guidebook.
-- Wanted.
-- Writer Desk.
-- Studio.
 - Boards, locations, threads, materials, applications, claims, roster, plotting,
   or discovery route families.
 
@@ -122,51 +120,51 @@ Topbar does not own:
 
 The sidebar answers:
 
-> Inside this community or local object, what can I reach?
+> What is inside this place?
 
 Sidebar owns:
 
-- Community rooms: World, Guidebook, Wanted, Writer Desk, Studio.
-- Current room children.
+- Current mode children.
 - Current board/location branch.
 - Current material/event/related object collections.
 - Counts that help a writer move: unread, needs reply, inbox, open wants.
 - Director-configured community language and ordering within allowed sections.
 
-The sidebar is the only primary community route map. It may contain community
-rooms at the top, then hydrate with the current room's local map below.
+The sidebar is not the primary community mode map on desktop. It should hydrate
+with the current mode's local map. Mobile may include the topbar's community
+mode map in the drawer because the horizontal topbar nav is hidden there.
 
 ## Canonical Sidebar Shape
 
-Use one stable room map plus one current-room map. Avoid two separate sidebars,
-duplicate root links, or a mode switch.
+Use one stable topbar mode map plus one current-mode sidebar map. Avoid two
+separate desktop sidebars, duplicate root links, or a mode switch.
 
-Default room map:
+Topbar community modes:
 
 ```text
-Rooms
-  World
-  Guidebook
-  Wanted
-  Writer Desk
-  Studio
+Community brand/title
+World
+Play
+Desk
+Studio
 ```
 
-Current-room hydration examples:
+Sidebar context examples:
 
 ```text
-World
+In World
   Locations
     Xavier Institute
       Med Bay
       Cerebro
-  Community
+  Guidebook
+  Community Table
     Members
     Announcements
 ```
 
 ```text
-Writer Desk
+On Your Desk
   Desk home (only away from /desk)
   Queue
   Inbox
@@ -177,7 +175,7 @@ Writer Desk
 ```
 
 ```text
-Wanted
+In Play
   Wanted board (only away from /wanted)
   Casting desk
   Claims
@@ -186,11 +184,11 @@ Wanted
   Related Wants
 ```
 
-The first band is stable enough to orient writers. The hydrated section is
-where the current location, material, desk lane, or wanted hook gets local
-context. At a room root, do not repeat an active `Overview` row immediately
-under the active room. When someone is deeper inside a room, use a plain
-`World home`, `Guidebook home`, `Desk home`, or `Studio home` escape link.
+The topbar is stable enough to orient writers. The sidebar is where the current
+location, material, desk lane, or wanted hook gets local context. At a mode
+root, do not repeat an active `Overview` row immediately under the active mode.
+When someone is deeper inside a mode, use a plain home escape link only if it
+clarifies the route.
 
 ## Toggle Decision
 

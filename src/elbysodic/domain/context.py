@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 DEFAULT_COMMUNITY_ID = 1
-DEFAULT_COMMUNITY_SLUG = "default"
+DEFAULT_COMMUNITY_SLUG = "x-men-apocalypse"
 
 
 @dataclass(frozen=True, slots=True)

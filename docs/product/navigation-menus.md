@@ -14,8 +14,8 @@ Every navigation surface should have one clear job.
 
 | Surface | Job | Question It Answers |
 | --- | --- | --- |
-| Topbar | Platform/global shell utilities | "Where am I globally, and what cross-cutting thing can I do?" |
-| Sidebar | Canonical community and local route map | "Inside this community or object, what can I reach?" |
+| Topbar | Community mode switcher plus global utilities | "Which major part of this community am I in?" |
+| Sidebar | Current mode/object contents | "What is inside this place?" |
 | Breadcrumbs | Object lineage | "How did I get to this object?" |
 | Inline nav/filter rail | Local page movement or list narrowing | "What part of this object/list am I viewing?" |
 | Action bar/buttons | Doing work | "What can I do now?" |
@@ -26,13 +26,21 @@ links are sometimes useful, but duplicated hierarchy is usually confusing.
 
 ## Topbar
 
-The topbar is the LBSodic/platform shell. It should stay quiet and global,
-helping a writer understand their account/community context and reach
-cross-cutting utilities without duplicating community navigation.
+The topbar is the stable community switcher plus the LBSodic/platform shell.
+It should stay quiet, but it may own the handful of major community modes so
+writers do not have to hunt in the sidebar for the primary shape of the
+community.
+
+On shared hosts, `/` is the Elbysodic/LBSodic home for exploring reachable
+communities. A community home lives at `/c/{community_slug}`. Inside a
+community, the brand/title links to that community home and replaces any
+separate `Home` or `Now` topbar item.
 
 Topbar owns:
 
 - Current community identity and future community switching.
+- The community brand/title as the community home affordance.
+- Primary community modes after home: `World`, `Play`, `Desk`, and `Studio`.
 - Future global/community search entry.
 - Future explore/browse communities entry from the LBSodic home.
 - Notifications indicator.
@@ -41,23 +49,21 @@ Topbar owns:
 - Mobile navigation trigger.
 - At most one cross-cutting create/action control when it is truly global.
 
-Topbar does not own community rooms or route families. `World`, `Guidebook`,
-`Wanted`, `Writer Desk`, `Studio`, boards, locations, threads, materials,
-applications, claims, roster, plotting, and discovery belong in the sidebar or
-object-local controls.
+Topbar does not own local contents. Boards, locations, threads, materials,
+applications, claims, roster, plotting rooms, wanted hooks, and discovery
+filters belong in the sidebar or object-local controls.
 
 Avoid adding topbar items for:
 
 - One-off tools.
 - Individual boards, materials, characters, or rooms.
-- Community rooms.
 - Filters or local page modes.
 - Staff-only tasks that belong inside `Studio`.
 - Future features that are not yet part of the daily loop.
 
-If a topbar item starts to act like a route family, move that family into the
-sidebar. Topbar dropdowns are reserved for global/account utilities because
-they hide structure and add hover/tap fragility on mobile.
+If a topbar item starts to need children, keep the parent in the topbar and put
+the children in the sidebar. Topbar dropdowns are reserved for global/account
+utilities because they hide structure and add hover/tap fragility on mobile.
 
 ### Topbar Exceptions
 
@@ -83,54 +89,54 @@ directory.
 
 ## Sidebar
 
-The sidebar is the canonical route map for the current community and local
+The sidebar is the contextual map for the current community mode or local
 object. It is not a second topbar, a marketing menu, or a dumping ground for
-every tool. Inside a community, the sidebar is the only primary route surface.
+every tool. Inside a community, the topbar chooses the major mode and the
+sidebar shows what is inside that mode.
 
 The sidebar has two jobs:
 
-- Keep a stable community map visible enough to orient the writer.
-- Hydrate with local context for the current room, location, material, wanted
-  hook, desk lane, or Studio surface.
+- Show the current mode's contents using distinct local language.
+- Hydrate with context for the current location, material, wanted hook, desk
+  lane, or Studio surface.
 
 Sidebar rules:
 
-- Show the current community's most useful destinations.
-- Include community rooms: `World`, `Guidebook`, `Wanted`, `Writer Desk`, and
-  `Studio` when the viewer can access it.
+- Do not repeat the topbar's primary mode menu on desktop.
 - Keep route parents clickable, active, and count-bearing when counts matter.
 - Prefer route rows over section labels when the row itself names the group.
 - Use labels only as optional dividers between unlike contextual lists.
-- Avoid repeating the same room name as both a section label and first route.
+- Use local labels such as `In World`, `In Play`, `On Your Desk`, and
+  `In Studio` so the sidebar reads as contents, not another main menu.
 - Keep visible items biased toward writer movement; staff/director controls can
   live in `Studio` or in object-local management areas.
 
-Default room map:
+Topbar community modes:
 
 ```text
-Rooms
-  World
-  Guidebook
-  Wanted
-  Writer Desk
-  Studio
+Community brand/title
+World
+Play
+Desk
+Studio
 ```
 
-Current-room hydration examples:
+Sidebar context examples:
 
 ```text
-World
+In World
   Locations
     Xavier Institute
       Med Bay
       Cerebro
-  Community
+  Guidebook
+  Community Table
     Members
     Announcements
 ```
 
 ```text
-Writer Desk
+On Your Desk
   Desk home (only away from /desk)
   Queue
   Inbox
@@ -141,7 +147,7 @@ Writer Desk
 ```
 
 ```text
-Wanted
+In Play
   Wanted board (only away from /wanted)
   Casting desk
   Claims
@@ -150,9 +156,9 @@ Wanted
   Related Wants
 ```
 
-Use fewer labels if browser QA shows the visual rhythm is calmer, but do not
-move community room ownership back to the topbar. Do not repeat the active room
-as an active `Overview` row directly below itself.
+Mobile may show both the community mode list and the local context inside the
+drawer because the horizontal topbar nav is hidden. Desktop should not show both
+at the same time.
 
 ### Sidebar Toggle
 

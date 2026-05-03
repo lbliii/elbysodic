@@ -513,7 +513,7 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
     ).fetchall()
 
     assert [row["slug"] for row in communities] == [
-        "default",
+        "x-men-apocalypse",
         "hp-universe",
         "jurassic-park-universe",
         "rl-nyc",

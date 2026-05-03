@@ -465,6 +465,35 @@ body {
     align-items: center;
     display: flex;
     gap: 0.25rem;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.chirpui-app-shell__topbar-center {
+    align-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.elbysodic-topnav--community {
+    flex: 0 1 auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+.elbysodic-topnav--global {
+    border-left: 1px solid color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+    flex: 0 0 auto;
+    margin-left: 0.25rem;
+    padding-left: 0.5rem;
+}
+
+.elbysodic-topnav--community::-webkit-scrollbar {
+    display: none;
 }
 
 .elbysodic-mobile-nav-trigger {
