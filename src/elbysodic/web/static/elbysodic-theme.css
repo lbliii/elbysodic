@@ -263,7 +263,8 @@ body {
         padding: 0 0.75rem 0.75rem;
     }
 
-    .elbysodic-app-shell--sidebar-hidden {
+    .elbysodic-app-shell--sidebar-hidden,
+    .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell {
         --chirpui-sidebar-width: 0.875rem;
     }
 

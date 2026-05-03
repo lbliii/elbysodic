@@ -7,11 +7,35 @@
 {% from "_components/sidebar.html" import sidebar_active_face, sidebar_attention_link, sidebar_destination, sidebar_footer, sidebar_link as elbysodic_sidebar_link, sidebar_location_tree, sidebar_plain_link %}
 
 {% set shell_has_community = show_community_shell | default(true) %}
+{% set shell_sidebar_hidden = shell_has_community and sidebar_is_hidden() %}
 
 {% block title %}{{ viewer.community.name if viewer else "Elbysodic" }}{% end %}
 
 {% block head_extra %}
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=hero-treatment-1">
+    <script>
+    (function () {
+      var cookieName = "elbysodic_sidebar_hidden";
+      var cookieMatch = document.cookie.match(new RegExp("(^|; )" + cookieName + "=([^;]*)"));
+      if (cookieMatch) {
+        return;
+      }
+      var legacyKeys = ["chirpui-sidebar-collapsed", "elbysodic:sidebar-collapsed"];
+      var hiddenClass = "elbysodic-app-shell--sidebar-hidden";
+      try {
+        var value = null;
+        for (var index = 0; value === null && index < legacyKeys.length; index += 1) {
+          value = window.localStorage.getItem(legacyKeys[index]);
+        }
+        if (value === "true") {
+          document.documentElement.classList.add(hiddenClass);
+          document.cookie = cookieName + "=true; Max-Age=31536000; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
+        }
+      } catch (_error) {
+        document.documentElement.classList.remove(hiddenClass);
+      }
+    })();
+    </script>
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-cookie-1">
     {% if viewer and viewer.program_theme %}
     <style id="elbysodic-program-theme">
       :root {
@@ -57,7 +81,34 @@
       }
     </style>
     {% end %}
-    <script defer src="/elbysodic-static/elbysodic-composer.js?v=resizable-destination-rail"></script>
+    {% if shell_sidebar_hidden %}
+    <style id="elbysodic-sidebar-cookie-state">
+      @media (min-width: 48.001rem) {
+        .chirpui-app-shell {
+          --chirpui-sidebar-width: 0.875rem;
+        }
+
+        .chirpui-app-shell__sidebar {
+          background: transparent;
+          border-right-color: transparent;
+          box-shadow: none;
+          overflow: visible;
+        }
+
+        .chirpui-sidebar {
+          opacity: 0;
+          pointer-events: none;
+          transform: translateX(-0.5rem);
+        }
+      }
+
+      .elbysodic-sidebar-resize::before {
+        left: 0.35rem;
+      }
+    </style>
+    {% end %}
+    <script defer src="/elbysodic-static/elbysodic-shell.js?v=sidebar-cookie-1"></script>
+    <script defer src="/elbysodic-static/elbysodic-composer.js?v=sidebar-cookie-1"></script>
 {% end %}
 
 {% block title_oob %}
@@ -496,9 +547,9 @@
      data-elbysodic-sidebar-toggle
      role="button"
      tabindex="0"
-     title="Hide navigation"
-     aria-label="Hide navigation"
-     aria-expanded="true"></div>
+     title="{{ "Show navigation" if shell_sidebar_hidden else "Hide navigation" }}"
+     aria-label="{{ "Show navigation" if shell_sidebar_hidden else "Hide navigation" }}"
+     aria-expanded="{{ "false" if shell_sidebar_hidden else "true" }}"></div>
 {% end %}
 {% end %}
 
