@@ -1186,7 +1186,7 @@ def test_seeded_world_surfaces_place_hierarchy() -> None:
     asyncio.run(run())
 
 
-def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
+def test_shell_keeps_global_topbar_and_community_sidebar_separate() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
@@ -1202,8 +1202,26 @@ def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
             assert "Built on" in index.text
             assert "<strong>Elbysodic</strong>" in index.text
             assert 'href="/desk"' in index.text
-            assert index.text.count("Writer Desk") == 2
-            assert "elbysodic-mobile-realm-nav" in index.text
+            assert 'aria-label="Global"' in index.text
+            assert re.search(
+                r'<a class="elbysodic-topnav__link"\s+href="/network"[^>]*>Explore</a>',
+                index.text,
+            )
+            topbar = re.search(
+                r'<nav class="elbysodic-topnav elbysodic-topnav--global"[^>]*>(?P<body>.*?)</nav>',
+                index.text,
+                re.S,
+            )
+            assert topbar is not None
+            assert 'href="/"' not in topbar.group("body")
+            assert 'href="/world"' not in topbar.group("body")
+            assert 'href="/wanted"' not in topbar.group("body")
+            assert 'href="/desk"' not in topbar.group("body")
+            assert 'href="/studio"' not in topbar.group("body")
+            assert '<span class="chirpui-sidebar__section-title">Community</span>' in index.text
+            assert '<span class="chirpui-sidebar__section-title">Writer</span>' in index.text
+            assert '<span class="chirpui-sidebar__section-title">Director</span>' in index.text
+            assert "elbysodic-mobile-realm-nav" not in index.text
             assert 'class="elbysodic-topnav__link" href="/notifications"' not in index.text
 
     asyncio.run(run())
@@ -2197,8 +2215,8 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert 'class="chirpui-sidebar elbysodic-sidebar"' in world.text
             assert "elbysodic-mobile-nav-trigger" in world.text
             assert "elbysodic-mobile-shell-drawer" in world.text
-            assert '<h2 class="chirpui-drawer__title">Menu: World</h2>' in world.text
-            assert "elbysodic-mobile-realm-nav" in world.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in world.text
+            assert "elbysodic-mobile-realm-nav" not in world.text
 
             locations = await client.get("/locations")
             assert locations.status == 200
@@ -2223,7 +2241,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert 'class="chirpui-sidebar__section-title">Start Here</span>' not in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Guides</span>' not in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Events</span>' not in guidebook.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Guidebook</h2>' in guidebook.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in guidebook.text
 
             desk = await client.get("/desk")
             assert desk.status == 200
@@ -2233,7 +2251,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Roster" in desk.text
             assert "World Map" not in desk.text
             assert 'class="chirpui-sidebar__section-title">Writer Desk</span>' not in desk.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Desk</h2>' in desk.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in desk.text
 
             studio = await client.get("/studio")
             assert studio.status == 200
@@ -2245,7 +2263,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
                 'class="chirpui-sidebar__section-title">Director Studio</span>' not in studio.text
             )
             assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Studio</h2>' in studio.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in studio.text
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
@@ -2254,7 +2272,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
             assert 'class="chirpui-sidebar__section-title">Casting</span>' not in wanted.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Casting</h2>' in wanted.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in wanted.text
 
     asyncio.run(run())
 
