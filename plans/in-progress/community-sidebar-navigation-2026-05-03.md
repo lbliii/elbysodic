@@ -138,24 +138,17 @@ rooms at the top, then hydrate with the current room's local map below.
 
 ## Canonical Sidebar Shape
 
-Use one stable community map plus one current-room map. Avoid two separate
-sidebars or a mode switch.
+Use one stable room map plus one current-room map. Avoid two separate sidebars,
+duplicate root links, or a mode switch.
 
-Default community map:
+Default room map:
 
 ```text
-Community
+Rooms
   World
   Guidebook
   Wanted
-
-Writer
   Writer Desk
-  Roster
-  Queue
-  Plotting
-
-Director
   Studio
 ```
 
@@ -163,7 +156,6 @@ Current-room hydration examples:
 
 ```text
 World
-  Overview
   Locations
     Xavier Institute
       Med Bay
@@ -175,6 +167,7 @@ World
 
 ```text
 Writer Desk
+  Desk home (only away from /desk)
   Queue
   Inbox
   Roster
@@ -185,7 +178,7 @@ Writer Desk
 
 ```text
 Wanted
-  Wanted board
+  Wanted board (only away from /wanted)
   Casting desk
   Claims
   Active Face
@@ -195,7 +188,9 @@ Wanted
 
 The first band is stable enough to orient writers. The hydrated section is
 where the current location, material, desk lane, or wanted hook gets local
-context.
+context. At a room root, do not repeat an active `Overview` row immediately
+under the active room. When someone is deeper inside a room, use a plain
+`World home`, `Guidebook home`, `Desk home`, or `Studio home` escape link.
 
 ## Toggle Decision
 
@@ -216,6 +211,10 @@ Deferred/optional state:
 
 The toggle means "show or hide navigation." It never means "switch to IC,"
 "switch to OOC," "switch to in-world," or "switch to out-of-world."
+
+Use the sidebar edge itself as the desktop visibility affordance. Do not render
+a separate visible arrow pill such as `<` or `>`; the pointer/focus edge is the
+control.
 
 ## In-World / Out-Of-World Decision
 

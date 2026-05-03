@@ -105,21 +105,14 @@ Sidebar rules:
 - Keep visible items biased toward writer movement; staff/director controls can
   live in `Studio` or in object-local management areas.
 
-Default community map:
+Default room map:
 
 ```text
-Community
+Rooms
   World
   Guidebook
   Wanted
-
-Writer
   Writer Desk
-  Roster
-  Queue
-  Plotting
-
-Director
   Studio
 ```
 
@@ -127,7 +120,6 @@ Current-room hydration examples:
 
 ```text
 World
-  Overview
   Locations
     Xavier Institute
       Med Bay
@@ -139,6 +131,7 @@ World
 
 ```text
 Writer Desk
+  Desk home (only away from /desk)
   Queue
   Inbox
   Roster
@@ -149,7 +142,7 @@ Writer Desk
 
 ```text
 Wanted
-  Wanted board
+  Wanted board (only away from /wanted)
   Casting desk
   Claims
   Active Face
@@ -158,7 +151,8 @@ Wanted
 ```
 
 Use fewer labels if browser QA shows the visual rhythm is calmer, but do not
-move community room ownership back to the topbar.
+move community room ownership back to the topbar. Do not repeat the active room
+as an active `Overview` row directly below itself.
 
 ### Sidebar Toggle
 
@@ -174,6 +168,10 @@ Allowed states:
 Do not use the sidebar toggle for IC/OOC, in-world/out-of-world, director/writer
 mode, or active-face mode switching. Those distinctions are represented through
 grouping, object context, permissions, and the active-face lens.
+
+On desktop, the sidebar edge is the visibility affordance. Do not add a
+separate visible `<` or `>` pill when the hit edge already changes cursor and
+can receive focus.
 
 An icon rail is deferred. If added later, it must be a secondary compact state
 for stable universal destinations, not the main navigation experience. PBP
@@ -207,13 +205,11 @@ Labels are not navigation. They are dividers.
 
 Use unlabeled groups when the first row already names the category:
 
-- `Overview`
 - `Locations`
 - `Community`
 - `Start Here`
 - `Guides`
 - `Events`
-- `Wanted board`
 - `Production`
 
 Use labels when they introduce a contextual list that is not itself a route
@@ -274,7 +270,7 @@ Community
 ```
 
 ```text
-Overview
+Desk home
 My threads
 Notifications
 Characters

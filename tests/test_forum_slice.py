@@ -1218,9 +1218,10 @@ def test_shell_keeps_global_topbar_and_community_sidebar_separate() -> None:
             assert 'href="/wanted"' not in topbar.group("body")
             assert 'href="/desk"' not in topbar.group("body")
             assert 'href="/studio"' not in topbar.group("body")
-            assert '<span class="chirpui-sidebar__section-title">Community</span>' in index.text
-            assert '<span class="chirpui-sidebar__section-title">Writer</span>' in index.text
-            assert '<span class="chirpui-sidebar__section-title">Director</span>' in index.text
+            assert '<span class="chirpui-sidebar__section-title">Rooms</span>' in index.text
+            assert '<span class="chirpui-sidebar__label">World</span>' in index.text
+            assert '<span class="chirpui-sidebar__label">Writer Desk</span>' in index.text
+            assert '<span class="chirpui-sidebar__label">Studio</span>' in index.text
             assert "elbysodic-mobile-realm-nav" not in index.text
             assert 'class="elbysodic-topnav__link" href="/notifications"' not in index.text
 
@@ -2268,7 +2269,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             wanted = await client.get("/wanted")
             assert wanted.status == 200
             assert "Casting" in wanted.text
-            assert "Wanted board" in wanted.text
+            assert "Wanted board" not in wanted.text
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
             assert 'class="chirpui-sidebar__section-title">Casting</span>' not in wanted.text

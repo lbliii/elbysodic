@@ -249,20 +249,11 @@
 {% end %}
 
 {% def community_map_sidebar(active_room) %}
-  {% call sidebar_section("Community") %}
+  {% call sidebar_section("Rooms") %}
     {{ sidebar_destination("/", "World", "home", active_room == "world") }}
     {{ sidebar_destination("/world", "Guidebook", "list", active_room == "guidebook") }}
     {{ sidebar_destination("/wanted", "Wanted", "star", active_room == "wanted") }}
-  {% end %}
-
-  {% call sidebar_section("Writer") %}
     {{ sidebar_destination("/desk", "Writer Desk", "pencil", active_room == "desk") }}
-    {{ sidebar_plain_link("/characters", "Roster") }}
-    {{ sidebar_attention_link("/my/threads", "Queue", 0, false) }}
-    {{ sidebar_plain_link("/plotting", "Plotting") }}
-  {% end %}
-
-  {% call sidebar_section("Director") %}
     {{ sidebar_destination("/studio", "Studio", "diamond", active_room == "studio") }}
   {% end %}
 {% end %}
@@ -274,8 +265,10 @@
   {% set community_label = viewer.community_sidebar_section.label if viewer else "Community" %}
   {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
   {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
+  {% if sidebar_path != "/" %}
   {% call sidebar_section() %}
-    {{ sidebar_destination("/", "Overview", "home", sidebar_path == "/") }}
+    {{ sidebar_destination("/", "World home", "home") }}
+  {% end %}
   {% end %}
 
   {% if viewer and viewer.location_navigation_groups %}
@@ -300,8 +293,10 @@
 
 {% def guidebook_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
+  {% if sidebar_path != "/world" %}
   {% call sidebar_section() %}
-    {{ sidebar_destination("/world", "Overview", "list", sidebar_path == "/world") }}
+    {{ sidebar_destination("/world", "Guidebook home", "list") }}
+  {% end %}
   {% end %}
 
   {% if guidebook is defined %}
@@ -354,7 +349,9 @@
 {% def desk_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
   {% call sidebar_section(viewer.desk_sidebar_section.label if viewer and viewer.desk_sidebar_section.show_label else none) %}
-    {{ sidebar_destination("/desk", "Overview", "home", sidebar_path == "/desk") }}
+    {% if sidebar_path != "/desk" %}
+    {{ sidebar_destination("/desk", "Desk home", "home") }}
+    {% end %}
     {{ sidebar_plain_link("/my/threads", "Queue", sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads")) }}
     {{ sidebar_attention_link("/notifications", "Inbox", viewer.unread_notification_count if viewer else 0, sidebar_path == "/notifications" or sidebar_path.startswith("/notifications")) }}
     {{ sidebar_plain_link("/characters", "Roster", sidebar_path == "/characters" or sidebar_path.startswith("/characters/")) }}
@@ -373,7 +370,9 @@
 {% def studio_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
   {% call sidebar_section(viewer.studio_sidebar_section.label if viewer and viewer.studio_sidebar_section.show_label else none) %}
-    {{ sidebar_destination("/studio", "Overview", "diamond", sidebar_path == "/studio") }}
+    {% if sidebar_path != "/studio" %}
+    {{ sidebar_destination("/studio", "Studio home", "diamond") }}
+    {% end %}
     {{ sidebar_plain_link("/studio#board-taxonomy", "Board taxonomy") }}
     {{ sidebar_plain_link("/studio#navigation-composer", "Navigation composer") }}
     {{ sidebar_plain_link("/world", "Guidebook") }}
@@ -403,7 +402,9 @@
 {% def casting_sidebar() %}
   {% set sidebar_path = current_path or "/" %}
   {% call sidebar_section() %}
-    {{ sidebar_destination("/wanted", "Wanted board", "star", sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/")) }}
+    {% if sidebar_path != "/wanted" %}
+    {{ sidebar_destination("/wanted", "Wanted board", "star", sidebar_path.startswith("/wanted/")) }}
+    {% end %}
     {{ sidebar_plain_link("/casting", "Casting desk", sidebar_path == "/casting" or sidebar_path.startswith("/casting/")) }}
     {{ sidebar_plain_link("/claims", "Claims", sidebar_path == "/claims" or sidebar_path.startswith("/claims/")) }}
     {{ sidebar_plain_link("/applications", "Applications", sidebar_path == "/applications" or sidebar_path.startswith("/applications")) }}
