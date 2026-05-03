@@ -163,6 +163,8 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
         assert post.status == 403
+        assert "Log in to keep writing." in post.text
+        assert "/login?next=/identity" in post.text
         assert personas.status == 302
 
     asyncio.run(run())
@@ -378,6 +380,77 @@ def test_production_membership_switch_rejects_cross_user_membership(monkeypatch)
             )
 
         assert switch.status == 403
+
+    asyncio.run(run())
+
+
+def test_production_identity_failures_render_elbysodic_error_page(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio_form = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(studio_form))
+
+            def fail_identity_update(*_args, **_kwargs):
+                raise RuntimeError("database write failed")
+
+            monkeypatch.setattr(
+                services.repo,
+                "update_user_session_identity",
+                fail_identity_update,
+            )
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "next": "/c/hp-universe",
+                        "_csrf_token": _csrf_token(studio_form.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+
+        assert switch.status == 500
+        assert "Something broke backstage." in switch.text
+        assert "Open Studio Network" in switch.text
+        assert switch.text != "Internal Server Error"
+
+    asyncio.run(run())
+
+
+def test_production_identity_rejects_malformed_membership_id(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio_form = await client.get("/studio", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(studio_form))
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": "not-a-membership",
+                        "next": "/network",
+                        "_csrf_token": _csrf_token(studio_form.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+
+        assert switch.status == 400
+        assert "That request could not be read." in switch.text
+        assert "membership_id must be an integer" in switch.text
 
     asyncio.run(run())
 

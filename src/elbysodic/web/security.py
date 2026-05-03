@@ -14,6 +14,7 @@ from chirp.middleware.csrf import csrf_field
 from chirp.middleware.protocol import AnyResponse, Next
 
 from elbysodic.services.auth import SESSION_COOKIE, user_for_session_token
+from elbysodic.web.errors import error_response
 
 ELBYSODIC_ENV = "ELBYSODIC_ENV"
 ELBYSODIC_SECRET_KEY = "ELBYSODIC_SECRET_KEY"  # noqa: S105
@@ -107,7 +108,7 @@ class RequireLoginMiddleware:
                 next_url = f"{next_url}?{raw_query.decode('latin-1')}"
             location = f"/login?next={quote(next_url, safe='/')}"
             return Response("", status=302, headers=(("Location", location),))
-        return Response("Login required", status=403, content_type="text/plain")
+        return error_response(request, status=403, detail="Login required")
 
 
 class AutoCSRFFormsMiddleware:

@@ -31,18 +31,19 @@ async def post(request: Request) -> Redirect:
     next_url = _safe_next(str(form.get("next") or "/"))
     intent = str(form.get("intent") or "set_default_character")
     if intent == "switch_membership":
+        membership_id = _form_int(form.get("membership_id"), "membership_id")
         security = get_web_security_config()
         if security.production:
             try:
                 identity = services.switch_session_identity(
                     _cookie_value(request, SESSION_COOKIE) or "",
-                    int(str(form.get("membership_id") or "0")),
+                    membership_id,
                 )
             except PermissionError as exc:
                 raise HTTPError(status=403, detail=str(exc)) from exc
             next_url = recover_next_url(services.repo, identity, next_url)
             return Redirect(next_url)
-        identity = services.switch_dev_identity(int(str(form.get("membership_id") or "0")))
+        identity = services.switch_dev_identity(membership_id)
         next_url = recover_next_url(services.repo, identity, next_url)
         return Redirect(
             next_url,
@@ -59,7 +60,7 @@ async def post(request: Request) -> Redirect:
             ),
         )
     if intent == "set_default_character":
-        character_id = int(str(form.get("character_id") or "0"))
+        character_id = _form_int(form.get("character_id"), "character_id")
         services.set_default_character(character_id)
         return Redirect(next_url)
     return Redirect(next_url)
@@ -74,3 +75,10 @@ def _safe_next(next_url: str) -> str:
 def _cookie_value(request: Request, name: str) -> str | None:
     value = request.cookies.get(name)
     return str(value) if value is not None else None
+
+
+def _form_int(value: object, field_name: str) -> int:
+    try:
+        return int(str(value or "0"))
+    except ValueError as exc:
+        raise HTTPError(status=400, detail=f"{field_name} must be an integer") from exc

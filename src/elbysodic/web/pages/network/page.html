@@ -1,19 +1,144 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import cluster, container, stack, section_header %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
 
+{% def program_summary(program) %}
+{% if program.current_event %}
+{{ program.current_event.material.summary }}
+{% elif program.premise %}
+{{ program.premise.material.summary }}
+{% else %}
+A studio program ready for scenes, casting, and writer movement.
+{% end %}
+{% end %}
+
+{% def switch_form(program, next_href, label, variant="primary") %}
+<form action="/identity" method="post" hx-boost="false">
+  <input type="hidden" name="intent" value="switch_membership">
+  <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
+  <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
+  <input type="hidden" name="next" value="{{ next_href }}">
+  <button class="chirpui-btn chirpui-btn--{{ variant }}" type="submit">{{ label }}</button>
+</form>
+{% end %}
+
+{% def program_action(program, href, label, variant="primary") %}
+{% if program.is_current %}
+<a class="chirpui-btn chirpui-btn--{{ variant }}" href="{{ href }}">{{ label }}</a>
+{% else %}
+{{ switch_form(program, href, label, variant) }}
+{% end %}
+{% end %}
+
+{% def network_billboard(program) %}
+<section class="elbysodic-network-billboard"
+         aria-labelledby="network-heading"
+         style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
+  {% if program.community.world_hero_image_url %}
+  <figure class="elbysodic-network-billboard__media">
+    <img src="{{ program.community.world_hero_image_url }}" alt="{{ program.community.world_hero_image_alt }}">
+  </figure>
+  {% else %}
+  <div class="elbysodic-network-billboard__media elbysodic-network-billboard__media--fallback" aria-hidden="true"></div>
+  {% end %}
+  <div class="elbysodic-network-billboard__shade" aria-hidden="true"></div>
+  <div class="elbysodic-network-billboard__copy">
+    <p class="elbysodic-section-kicker">Elbysodic originals</p>
+    <div class="elbysodic-network-billboard__identity">
+      {% if program.community.community_mark_url %}
+      <img src="{{ program.community.community_mark_url }}" alt="{{ program.community.community_mark_alt }}">
+      {% end %}
+      <span>{{ program.role.name }} realm</span>
+    </div>
+    <h1 id="network-heading">{{ program.community.name }}</h1>
+    <p class="elbysodic-network-billboard__summary">{{ program_summary(program) }}</p>
+    <div class="elbysodic-network-billboard__signals" aria-label="{{ program.community.name }} network signals">
+      {{ metric_item(program.roster_count, "faces") }}
+      {{ metric_item(program.open_wanted_count, "wanted") }}
+      {{ metric_item(program.plotting_room_count, "rooms") }}
+      {% if program.unread_notification_count %}
+      {{ metric_item(program.unread_notification_count, "unread") }}
+      {% end %}
+    </div>
+    <div class="elbysodic-network-billboard__actions">
+      {{ program_action(program, program.entry_href, "Enter realm") }}
+      {% if program.current_event %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.current_event_href }}">Current event</a>
+      {% elif program.premise %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.premise_href }}">Premise</a>
+      {% end %}
+      {{ program_action(program, program.application_href, "Start application", "secondary") }}
+    </div>
+  </div>
+</section>
+{% end %}
+
+{% def continue_card(program) %}
+<article class="elbysodic-network-continue-card"
+         style="--elbysodic-network-accent: {{ program.theme_preview.accent }};">
+  <p class="elbysodic-section-kicker">
+    {% if program.unread_notification_count %}
+    {{ program.unread_notification_count }} unread
+    {% elif program.plotting_room_count %}
+    {{ program.plotting_room_count }} plotting
+    {% elif program.application_count %}
+    {{ program.application_count }} applications
+    {% else %}
+    {{ program.open_wanted_count }} wanted
+    {% end %}
+  </p>
+  <h2>{{ program.community.name }}</h2>
+  <p>
+    {% if program.current_character %}
+    Wearing {{ program.current_character.name }}.
+    {% else %}
+    No active face selected.
+    {% end %}
+    {% if program.unread_notification_count %}
+    Check what needs you.
+    {% elif program.plotting_room_count %}
+    Return to rooms forming scenes.
+    {% elif program.application_count %}
+    Review application movement.
+    {% else %}
+    Browse open casting hooks.
+    {% end %}
+  </p>
+  <div class="elbysodic-network-continue-card__actions">
+    {{ program_action(program, program.entry_href, "Enter realm", "secondary") }}
+    {{ program_action(program, program.application_href, "Application", "secondary") }}
+  </div>
+</article>
+{% end %}
+
 {% def program_card(program) %}
-{% call surface(variant="elevated") %}
 <article class="elbysodic-network-card{{ " elbysodic-network-card--current" if program.is_current else "" }}"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
-  <div class="elbysodic-network-card__swatch" aria-hidden="true"></div>
+  <a class="elbysodic-network-card__poster" href="{{ program.entry_href }}">
+    {% if program.community.world_hero_image_url %}
+    <img src="{{ program.community.world_hero_image_url }}" alt="{{ program.community.world_hero_image_alt }}">
+    {% else %}
+    <span aria-hidden="true"></span>
+    {% end %}
+    {% if program.community.community_mark_url %}
+    <em><img src="{{ program.community.community_mark_url }}" alt=""></em>
+    {% end %}
+  </a>
   <div class="elbysodic-network-card__main">
     <header class="elbysodic-network-card__header">
       <div>
-        <p class="elbysodic-section-kicker">{{ program.role.name }} realm</p>
+        <p class="elbysodic-section-kicker">
+          {% if program.current_event %}
+          Current event
+          {% elif program.premise %}
+          World premise
+          {% else %}
+          {{ program.role.name }} realm
+          {% end %}
+        </p>
         <h2>{{ program.community.name }}</h2>
       </div>
       <div class="elbysodic-network-card__badges">
@@ -25,15 +150,7 @@
         {% end %}
       </div>
     </header>
-    <p class="elbysodic-copy-summary">
-      {% if program.current_event %}
-      {{ program.current_event.material.summary }}
-      {% elif program.premise %}
-      {{ program.premise.material.summary }}
-      {% else %}
-      A studio program ready for scenes, casting, and writer movement.
-      {% end %}
-    </p>
+    <p class="elbysodic-copy-summary">{{ program_summary(program) }}</p>
     <p class="elbysodic-copy-meta">
       {{ program.membership.display_name or program.membership.username }}
       {% if program.current_character %}
@@ -55,62 +172,219 @@
     {% elif program.premise %}
     <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.premise_href }}">Premise</a>
     {% end %}
-    {% if program.is_current %}
-    <a class="chirpui-btn chirpui-btn--primary" href="{{ program.entry_href }}">Enter realm</a>
-    <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.application_href }}">Start application</a>
-    {% else %}
-    <form action="/identity" method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="switch_membership">
-      <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
-      <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
-      <input type="hidden" name="next" value="{{ program.entry_href }}">
-      <button class="chirpui-btn chirpui-btn--primary" type="submit">Enter realm</button>
-    </form>
-    <form action="/identity" method="post" hx-boost="false">
-      <input type="hidden" name="intent" value="switch_membership">
-      <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
-      <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
-      <input type="hidden" name="next" value="{{ program.application_href }}">
-      <button class="chirpui-btn chirpui-btn--secondary" type="submit">Start application</button>
-    </form>
-    {% end %}
+    {{ program_action(program, program.entry_href, "Enter realm") }}
+    {{ program_action(program, program.application_href, "Start application", "secondary") }}
   </div>
 </article>
-{% end %}
 {% end %}
 
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="76rem") %}
+{% call container(max_width="84rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("Studio Network") %}
-  Your reachable play-by-post programs, active faces, and the rooms asking for attention.
-  {% end %}
-
-  {% call surface(variant="elevated") %}
-  <section class="elbysodic-network-hero" aria-labelledby="network-heading">
+  {% if network.programs %}
+  {% set featured = network.programs[0] %}
+  {% if network_mode == "explore" %}
+  <section class="elbysodic-network-explore-hero" aria-labelledby="network-heading">
     <div>
-      <p class="elbysodic-section-kicker">Studio layer</p>
-      <h1 id="network-heading">Choose the realm you are writing in.</h1>
-      <p class="elbysodic-copy-section">
-        Each program keeps its own world, cast, theme, queues, and active face.
-      </p>
+      <p class="elbysodic-section-kicker">Explore Elbysodic</p>
+      <h1 id="network-heading">Search worlds, wanted hooks, and writing lanes.</h1>
+      <p>Move by genre, mood, open roles, current events, or the face you want to wear next.</p>
     </div>
-    <div class="elbysodic-network-hero__metrics" aria-label="Network totals">
+    <form class="elbysodic-network-search" action="/network" method="get" role="search">
+      <label for="network-search">Search the studio network</label>
+      <div>
+        <input id="network-search"
+               name="q"
+               type="search"
+               value="{{ network_search_query }}"
+               placeholder="magic school, survival, wanted, Rogue">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="elbysodic-network-discovery-band" aria-label="Discovery lenses">
+    <a href="/network?q=magic">magic school</a>
+    <a href="/network?q=superhero">superhero crisis</a>
+    <a href="/network?q=survival">survival sci-fi</a>
+    <a href="/network?q=town">small town</a>
+    <a href="/network?q=wanted">wanted hooks</a>
+    <a href="/network?q=event">current events</a>
+    <a href="/network?q=application">applications</a>
+    <a href="/network?q=plotting">plotting rooms</a>
+  </section>
+
+  <section class="elbysodic-network-rail" aria-labelledby="explore-results-heading">
+    <div class="elbysodic-network-rail__header">
+      <div>
+        <p class="elbysodic-section-kicker">
+          {% if network_search_query %}
+          Search results
+          {% else %}
+          Catalog
+          {% end %}
+        </p>
+        <h2 id="explore-results-heading">
+          {% if network_search_query %}
+          Realms matching "{{ network_search_query }}"
+          {% else %}
+          Every reachable realm in the studio network.
+          {% end %}
+        </h2>
+      </div>
+      <div class="elbysodic-network-strip__metrics">
+        {{ metric_item(explore_programs | length, "realms found") }}
+      </div>
+      {% if network_search_query %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Clear search</a>
+      {% end %}
+    </div>
+    {% if explore_programs %}
+    <div class="elbysodic-network-grid" aria-label="Matching studio programs">
+      {% for program in explore_programs %}
+      {{ program_card(program) }}
+      {% end %}
+    </div>
+    {% else %}
+    {% call surface(variant="elevated") %}
+    <p class="elbysodic-empty-state">No reachable realms match that search yet.</p>
+    {% end %}
+    {% end %}
+  </section>
+
+  <section class="elbysodic-network-two-up" aria-label="Explore support lanes">
+    {% call surface(variant="elevated") %}
+    <div class="elbysodic-network-editorial-panel">
+      <p class="elbysodic-section-kicker">Casting index</p>
+      <h2>Open roles and story pressure across the network.</h2>
+      <div class="elbysodic-network-casting-list">
+        {% for program in network.programs %}
+        {% if program.open_wanted_count %}
+        <a href="{{ program.entry_href }}/wanted">
+          <strong>{{ program.community.name }}</strong>
+          <span>{{ program.open_wanted_count }} wanted hooks</span>
+        </a>
+        {% end %}
+        {% end %}
+      </div>
+    </div>
+    {% end %}
+
+    {% call surface(variant="elevated") %}
+    <div class="elbysodic-network-editorial-panel">
+      <p class="elbysodic-section-kicker">Your lanes</p>
+      <h2>Memberships and face defaults that can shape discovery.</h2>
+      <div class="elbysodic-network-casting-list">
+        {% for program in network.programs %}
+        <a href="{{ program.entry_href }}">
+          <strong>{{ program.community.name }}</strong>
+          <span>
+            {% if program.current_character %}
+            wearing {{ program.current_character.name }}
+            {% else %}
+            no active face
+            {% end %}
+          </span>
+        </a>
+        {% end %}
+      </div>
+    </div>
+    {% end %}
+  </section>
+  {% else %}
+  {{ network_billboard(featured) }}
+
+  <section class="elbysodic-network-strip" aria-label="Studio network totals">
+    <div>
+      <p class="elbysodic-section-kicker">Studio Network</p>
+      <h2>Choose the realm you are writing in.</h2>
+      <p>Playable worlds with their own casts, themes, queues, wanted hooks, and current face defaults.</p>
+    </div>
+    <div class="elbysodic-network-strip__metrics">
       {{ metric_item(network.programs | length, "programs") }}
       {{ metric_item(viewer.identity_options | length, "memberships") }}
       {{ metric_item(viewer.unread_notification_count, "current unread") }}
     </div>
   </section>
-  {% end %}
 
-  <section class="elbysodic-network-grid" aria-label="Studio programs">
-    {% for program in network.programs %}
-    {{ program_card(program) }}
+  <section class="elbysodic-network-rail" aria-labelledby="continue-writing-heading">
+    <div class="elbysodic-network-rail__header">
+      <div>
+        <p class="elbysodic-section-kicker">Continue writing</p>
+        <h2 id="continue-writing-heading">Pick up the work that is already warm.</h2>
+      </div>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/notifications">Notification inbox</a>
+    </div>
+    <div class="elbysodic-network-continue-grid">
+      {% for program in network.programs %}
+      {% if program.is_current or program.unread_notification_count or program.plotting_room_count or program.application_count %}
+      {{ continue_card(program) }}
+      {% end %}
+      {% end %}
+    </div>
+  </section>
+
+  <section class="elbysodic-network-rail" aria-labelledby="featured-worlds-heading">
+    <div class="elbysodic-network-rail__header">
+      <div>
+        <p class="elbysodic-section-kicker">Featured worlds</p>
+        <h2 id="featured-worlds-heading">A network of realms built for scenes, casts, and continuity.</h2>
+      </div>
+    </div>
+    <div class="elbysodic-network-grid" aria-label="Featured studio programs">
+      {% for program in network.programs %}
+      {{ program_card(program) }}
+      {% end %}
+    </div>
+  </section>
+
+  <section class="elbysodic-network-two-up" aria-label="Casting and browse lanes">
+    {% call surface(variant="elevated") %}
+    <div class="elbysodic-network-editorial-panel">
+      <p class="elbysodic-section-kicker">Casting now</p>
+      <h2>Open roles, rivals, factions, and faces wanted in play.</h2>
+      <div class="elbysodic-network-casting-list">
+        {% for program in network.programs %}
+        {% if program.open_wanted_count %}
+        <a href="{{ program.entry_href }}/wanted">
+          <strong>{{ program.community.name }}</strong>
+          <span>{{ program.open_wanted_count }} wanted hooks</span>
+        </a>
+        {% end %}
+        {% end %}
+      </div>
+    </div>
+    {% end %}
+
+    {% call surface(variant="elevated") %}
+    <div class="elbysodic-network-editorial-panel">
+      <p class="elbysodic-section-kicker">Browse by mood</p>
+      <h2>Find the writing room that matches the night.</h2>
+      <div class="elbysodic-network-mood-grid" aria-label="Network moods">
+        <span>magic school</span>
+        <span>superhero crisis</span>
+        <span>survival sci-fi</span>
+        <span>small town</span>
+        <span>urban real life</span>
+        <span>found family</span>
+        <span>slow burn</span>
+        <span>canon pressure</span>
+      </div>
+    </div>
     {% end %}
   </section>
+  {% end %}
+  {% else %}
+  {% call section_header("Studio Network") %}
+  Elbysodic is ready for its first play-by-post program.
+  {% end %}
+  {% call surface(variant="elevated") %}
+  <p class="elbysodic-empty-state">No programs are available yet.</p>
+  {% end %}
+  {% end %}
 {% end %}
 {% end %}
 {% end %}

@@ -34,13 +34,18 @@ def _first_material(materials: list[MaterialSummary]) -> MaterialSummary | None:
 def get(request: Request) -> Page:
     services = get_services(request)
     if request_tenant_slug(request) is None:
+        network = services.studio_network()
         return Page(
             "network/page.html",
             "page_content",
             page_block_name="page_root",
             current_path=request.url,
+            page_title="Elbysodic",
+            network_mode="home",
+            network_search_query="",
+            explore_programs=network.programs,
             viewer=services.viewer(),
-            network=services.studio_network(),
+            network=network,
             show_community_shell=False,
         )
 
