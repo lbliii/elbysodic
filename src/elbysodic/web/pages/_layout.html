@@ -81,12 +81,6 @@
 </a>
 {% end %}
 
-{% def mobile_realm_link(href, label, is_active=False) %}
-<a class="elbysodic-mobile-realm-link{{ " elbysodic-mobile-realm-link--active" if is_active else "" }}"
-   href="{{ href }}"
-   {% if is_active %}aria-current="page"{% end %}>{{ label }}</a>
-{% end %}
-
 {% block topbar_center %}
 {% set topbar_path = current_path or "/" %}
 {% set world_active = topbar_path == "/" or topbar_path == "/locations" or topbar_path.startswith("/locations/") or topbar_path == "/community" or topbar_path.startswith("/community/") or topbar_path.startswith("/boards/") %}
@@ -95,24 +89,12 @@
 {% set studio_active = topbar_path == "/studio" or topbar_path.startswith("/studio/") %}
 {% set desk_active = topbar_path == "/desk" or topbar_path.startswith("/desk/") or topbar_path == "/network" or topbar_path.startswith("/network/") or topbar_path == "/my/threads" or topbar_path.startswith("/my/threads") or topbar_path == "/notifications" or topbar_path.startswith("/notifications") or topbar_path == "/characters" or topbar_path.startswith("/characters/") or topbar_path == "/applications" or topbar_path.startswith("/applications") or topbar_path == "/interactions" or topbar_path.startswith("/interactions/") or topbar_path == "/plotting" or topbar_path.startswith("/plotting/") or topbar_path == "/discover" or topbar_path.startswith("/discover") %}
 {% set notifications_active = topbar_path == "/notifications" or topbar_path.startswith("/notifications") %}
-{% set mobile_nav_label = "Menu: Guidebook" if guidebook_active else ("Menu: Casting" if wanted_active else ("Menu: Studio" if studio_active else ("Menu: Desk" if desk_active or notifications_active else "Menu: World"))) %}
+{% set mobile_nav_label = "Navigation" %}
 {{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
-<nav class="elbysodic-topnav" aria-label="Primary">
-  {{ topnav_link("/", "World", world_active) }}
-  {{ topnav_link("/world", "Guidebook", guidebook_active) }}
-  {{ topnav_link("/wanted", "Wanted", wanted_active) }}
-  <span class="elbysodic-topnav__divider" aria-hidden="true"></span>
-  {{ topnav_link("/desk", "Writer Desk", desk_active) }}
-  {{ topnav_link("/studio", "Studio", studio_active) }}
+<nav class="elbysodic-topnav elbysodic-topnav--global" aria-label="Global">
+  {{ topnav_link("/network", "Explore", topbar_path == "/network" or topbar_path.startswith("/network/")) }}
 </nav>
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
-  <nav class="elbysodic-mobile-realm-nav" aria-label="Primary">
-    {{ mobile_realm_link("/", "World", world_active) }}
-    {{ mobile_realm_link("/world", "Guidebook", guidebook_active) }}
-    {{ mobile_realm_link("/wanted", "Wanted", wanted_active) }}
-    {{ mobile_realm_link("/desk", "Writer Desk", desk_active) }}
-    {{ mobile_realm_link("/studio", "Studio", studio_active) }}
-  </nav>
   {{ elbysodic_sidebar() }}
 {% end %}
 {% end %}
@@ -264,6 +246,25 @@
 {% if shell_actions %}
 {{ shell_actions_bar(shell_actions) }}
 {% end %}
+{% end %}
+
+{% def community_map_sidebar(active_room) %}
+  {% call sidebar_section("Community") %}
+    {{ sidebar_destination("/", "World", "home", active_room == "world") }}
+    {{ sidebar_destination("/world", "Guidebook", "list", active_room == "guidebook") }}
+    {{ sidebar_destination("/wanted", "Wanted", "star", active_room == "wanted") }}
+  {% end %}
+
+  {% call sidebar_section("Writer") %}
+    {{ sidebar_destination("/desk", "Writer Desk", "pencil", active_room == "desk") }}
+    {{ sidebar_plain_link("/characters", "Roster") }}
+    {{ sidebar_attention_link("/my/threads", "Queue", 0, false) }}
+    {{ sidebar_plain_link("/plotting", "Plotting") }}
+  {% end %}
+
+  {% call sidebar_section("Director") %}
+    {{ sidebar_destination("/studio", "Studio", "diamond", active_room == "studio") }}
+  {% end %}
 {% end %}
 
 {% def world_sidebar() %}
@@ -432,10 +433,13 @@
 {% set is_studio = sidebar_path == "/studio" or sidebar_path.startswith("/studio/") %}
 {% set is_desk = sidebar_path == "/desk" or sidebar_path.startswith("/desk/") or sidebar_path == "/my/threads" or sidebar_path.startswith("/my/threads") or sidebar_path == "/notifications" or sidebar_path.startswith("/notifications") or sidebar_path == "/characters" or sidebar_path.startswith("/characters/") or sidebar_path == "/applications" or sidebar_path.startswith("/applications") or sidebar_path == "/interactions" or sidebar_path.startswith("/interactions/") or sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
 {% set board_sidebar_section = board?.sidebar_section ?? "" if board is defined else "" %}
+{% set active_room = "guidebook" if is_guidebook else ("wanted" if is_casting else ("studio" if is_studio or board_sidebar_section == "studio" else ("desk" if is_desk or board_sidebar_section == "desk" else "world"))) %}
 {% call sidebar(cls="elbysodic-sidebar") %}
   {% slot footer %}
   {{ sidebar_footer() }}
   {% end %}
+
+  {{ community_map_sidebar(active_room) }}
 
   {% if is_guidebook %}
   {{ guidebook_sidebar() }}
