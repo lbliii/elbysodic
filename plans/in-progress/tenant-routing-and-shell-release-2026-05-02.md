@@ -1,10 +1,10 @@
 # Tenant Routing And Shell Release Plan
 
 Created: 2026-05-02
-Last updated: 2026-05-02
+Last updated: 2026-05-03
 Review by: 2026-05-16
 Owner: Web, service, storage, domain, and Chirp integration stewardship
-Status: implemented; awaiting shared-host smoke and timing readout
+Status: implemented; tightening identity, shared-host homepage, and Railway smoke
 
 ## Problem
 
@@ -73,7 +73,43 @@ Consulted stewards:
   local and tenant-prefixed routes.
 - Route timing headers are available for measuring local route work before a
   Railway timing readout.
-- Remaining verification is live shared-host QA, not core implementation.
+- Remaining verification is live shared-host QA, plus tightening the global
+  Elbysodic/LBSodic home and any cross-program entry controls that still emit
+  unprefixed community routes.
+
+## Priority Reset: 2026-05-03
+
+Recommendation: treat the shared-host studio network as the next production
+spine. Community forums are now solid enough that the highest leverage work is
+making the platform layer explicit: `/` as the Elbysodic/LBSodic home,
+`/c/{community_slug}` as the canonical community home on shared hosts, and
+community switching that always carries the target program in the URL.
+
+Why now:
+
+- Railway exposes multiple seeded programs on one host, so unprefixed routes
+  are no longer only a developer convenience.
+- The identity dropdown is a high-frequency cross-program control; if it posts
+  an unprefixed `next`, it trains the app back toward session-hydrated global
+  paths.
+- The product narrative is shifting from "one forum install" to "a hub of
+  playable communities," and the routing contract needs to be visible in daily
+  navigation before adding more studio/global pages.
+
+Immediate order:
+
+1. Finish identity and entry controls so every cross-program move targets
+   `/c/{target_community_slug}` or a scoped child path.
+2. Audit root/global pages and decide the small outside-community set for the
+   first production cut: `/`, `/network`, `/login`, `/logout`, `/health`,
+   static assets, and future account/browse pages.
+3. Promote the network page from a QA directory into the Elbysodic/LBSodic home
+   pattern: clear platform brand, reachable programs, current membership/face,
+   and no community sidebar.
+4. Run Railway shared-host browser QA against hard refresh, fresh session, and
+   boosted navigation across at least X-Men and Jurassic.
+5. Add timing readout only after the route contract is stable enough that the
+   measured paths are the paths users will actually share.
 
 ## Phase 0: Production Triage
 
