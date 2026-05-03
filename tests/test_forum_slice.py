@@ -2325,6 +2325,46 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
     asyncio.run(run())
 
 
+def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            world = await client.get("/boards/xavier-institute")
+            assert world.status == 200
+            assert 'var cookieName = "elbysodic_sidebar_hidden";' in world.text
+            assert "elbysodic-theme.css?v=sidebar-cookie-1" in world.text
+            assert "elbysodic-shell.js?v=sidebar-cookie-1" in world.text
+            assert "elbysodic-composer.js?v=sidebar-cookie-1" in world.text
+            assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
+            assert 'aria-label="Hide navigation"' in world.text
+            assert 'aria-expanded="true"' in world.text
+
+            hidden_world = await client.get(
+                "/boards/xavier-institute",
+                headers={"Cookie": "elbysodic_sidebar_hidden=true"},
+            )
+            assert hidden_world.status == 200
+            assert 'id="elbysodic-sidebar-cookie-state"' in hidden_world.text
+            assert 'aria-label="Show navigation"' in hidden_world.text
+            assert 'aria-expanded="false"' in hidden_world.text
+
+            stylesheet = await client.get("/elbysodic-static/elbysodic-theme.css")
+            assert stylesheet.status == 200
+            assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet.text
+
+            script = await client.get("/elbysodic-static/elbysodic-shell.js")
+            assert script.status == 200
+            assert 'const COOKIE_NAME = "elbysodic_sidebar_hidden";' in script.text
+            assert "document.documentElement.classList.toggle(HIDDEN_CLASS, hidden)" in script.text
+            assert "window.localStorage.removeItem(key)" in script.text
+
+            composer = await client.get("/elbysodic-static/elbysodic-composer.js")
+            assert composer.status == 200
+            assert "data-elbysodic-sidebar-toggle" not in composer.text
+
+    asyncio.run(run())
+
+
 def test_world_map_sidebar_anchors_current_location_branch() -> None:
     async def run() -> None:
         app = _app()
