@@ -25,7 +25,7 @@ _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
 def _sidebar_board_count(html: str, board_slug: str) -> int:
     match = re.search(
-        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*" href="/boards/{re.escape(board_slug)}"[^>]*>'
+        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*"\s+href="/boards/{re.escape(board_slug)}"[^>]*>'
         r"(?P<body>.*?)</a>",
         html,
         re.DOTALL,
@@ -2415,55 +2415,56 @@ def test_community_board_pages_use_community_language_and_sidebar_state() -> Non
     asyncio.run(run())
 
 
-def test_topbar_marks_active_product_realm() -> None:
+def test_sidebar_marks_active_community_room() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'class="[^"]*elbysodic-sidebar-destination[^"]*"'
                 r'\s+href="/"',
                 world.text,
             )
+            world_room = re.search(
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/"[^>]*>',
+                world.text,
+            )
+            assert world_room is not None
+            assert 'aria-current="page"' in world_room.group(0)
 
             guidebook = await client.get("/world")
             assert guidebook.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/world"',
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/world"[^>]*aria-current="page"',
                 guidebook.text,
             )
 
             desk = await client.get("/desk")
             assert desk.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/desk"',
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/desk"[^>]*aria-current="page"',
                 desk.text,
             )
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/wanted"',
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/wanted"[^>]*aria-current="page"',
                 wanted.text,
             )
 
             studio = await client.get("/studio")
             assert studio.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/studio"',
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/studio"[^>]*aria-current="page"',
                 studio.text,
             )
 
             notifications = await client.get("/notifications")
             assert notifications.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/desk"',
+                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/desk"[^>]*aria-current="page"',
                 notifications.text,
             )
             assert re.search(
