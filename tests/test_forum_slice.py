@@ -2333,7 +2333,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             assert world.status == 200
             assert 'var cookieName = "elbysodic_sidebar_hidden";' in world.text
             assert "elbysodic-theme.css?v=sidebar-cookie-1" in world.text
-            assert "elbysodic-shell.js?v=sidebar-cookie-1" in world.text
+            assert "elbysodic-shell.js?v=sidebar-cookie-2" in world.text
             assert "elbysodic-composer.js?v=sidebar-cookie-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
             assert 'aria-label="Hide navigation"' in world.text
@@ -2355,6 +2355,8 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             script = await client.get("/elbysodic-static/elbysodic-shell.js")
             assert script.status == 200
             assert 'const COOKIE_NAME = "elbysodic_sidebar_hidden";' in script.text
+            assert 'document.getElementById("elbysodic-sidebar-cookie-state")' in script.text
+            assert "serverStyle.disabled = !hidden" in script.text
             assert "document.documentElement.classList.toggle(HIDDEN_CLASS, hidden)" in script.text
             assert "window.localStorage.removeItem(key)" in script.text
 

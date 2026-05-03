@@ -41,6 +41,13 @@
     document.cookie = `${COOKIE_NAME}=${hidden ? "true" : "false"}; Max-Age=${YEAR_SECONDS}; Path=/; SameSite=Lax${secure}`;
   }
 
+  function setServerHiddenStyle(hidden) {
+    const serverStyle = document.getElementById("elbysodic-sidebar-cookie-state");
+    if (serverStyle) {
+      serverStyle.disabled = !hidden;
+    }
+  }
+
   function readHiddenPreference() {
     const cookieValue = readCookiePreference();
     if (cookieValue !== null) {
@@ -59,6 +66,7 @@
   function setSidebarState(shell, button, hidden) {
     document.documentElement.classList.toggle(HIDDEN_CLASS, hidden);
     shell.classList.toggle(HIDDEN_CLASS, hidden);
+    setServerHiddenStyle(hidden);
     button.setAttribute("aria-expanded", hidden ? "false" : "true");
     const label = hidden ? "Show navigation" : "Hide navigation";
     button.setAttribute("aria-label", label);
