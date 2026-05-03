@@ -1,40 +1,76 @@
 # Blueprint Contract Steward
 
-## Steward
+This domain represents Program Blueprints: the director-authored starter packet
+contract for creating a PBP hub from validated structured input.
 
-Blueprint steward for `src/elbysodic/blueprints/` and the director-authored
-program starter packet contract.
+Related docs:
 
-## Protects
+- root `AGENTS.md`
+- `docs/product/program-blueprints.md`
+- `docs/architecture/primitives.md`
+- `docs/architecture/multi-tenancy.md`
 
-- Program Blueprints describe PBP hubs in director language: program, roster
-  faces, playable boards, materials, wanted hooks, and safe theme tokens.
+## Point Of View
+
+Represent directors importing a community concept and the services/storage that
+must hydrate it safely into one tenant without treating the input as trusted
+runtime code.
+
+## Protect
+
+- Blueprints use director language: program, roster faces, playable boards,
+  materials, wanted hooks, facets, and safe theme tokens.
 - Validation errors stay human-readable for directors and import previews.
-- Hydration paths go through repository/service boundaries, not ad hoc writes.
-- Seed data and future YAML imports remain aligned to one shared shape.
+- Hydration routes through service and repository boundaries.
+- Seed data, future YAML imports, docs, and tests stay aligned to one shared
+  shape.
+- Input cannot smuggle raw CSS, script tags, external font URLs, or
+  layout-breaking theme controls.
+- Duplicate slugs, missing starter content, unknown board/wanted types, invalid
+  theme tokens, and broken material references are caught before hydration.
 
-## Must Not Become
+## Contract Checklist
 
-- A live state store or replacement for normal staff tools.
-- A free-form CSS/theme engine.
-- A generic CMS import format without roleplay-specific shape.
+- Protocol: parser, validation output, and hydration expectations agree.
+- Schema/types: Blueprint data structures align with domain records and service
+  hydration needs.
+- Storage/services: created objects are scoped to one community and intentional
+  owners.
+- Docs: `docs/product/program-blueprints.md` updates with any contract,
+  validation, hydration, or allowed-token change.
+- Tests: `tests/test_program_blueprints.py` covers parsing/validation; tenant
+  repository tests cover hydration boundary changes.
+- Changelog: add a fragment for user-visible Blueprint behavior.
 
-## Documentation Ownership
+## Advocate
 
-Owns `docs/product/program-blueprints.md` and should update it with any
-contract, validation, hydration, or allowed-token change.
+- Add dry-run diffs and clearer validation diagnostics before expanding import
+  power.
+- Keep Blueprint shape roleplay-specific instead of turning it into a generic
+  CMS format.
+- Promote safe reusable starter content when seed data and Blueprint imports
+  need the same examples.
 
-## Local Checks
+## Serve Peers
 
-- `uv run pytest tests/test_program_blueprints.py -q --tb=short`
-- `uv run pytest tests/test_tenant_repository.py -q --tb=short` when hydration
-  touches repositories or tenant boundaries.
-- `uv run ty check src/elbysodic/ tests/`
+- Give domain steward concrete pressure for missing primitive fields.
+- Give service/storage stewards explicit hydration contracts.
+- Give web steward validation/preflight states that directors can understand.
+- Give docs/tests consistent examples for program setup.
 
-## Public Contracts And Safety
+## Do Not
 
-- Do not allow raw CSS, script tags, external font URLs, or layout-breaking
-  theme controls in blueprint input.
-- Keep created objects scoped to one community and one intentional owner.
-- Validate duplicate slugs, missing starter content, unknown board/wanted
-  types, invalid theme tokens, and broken material references before hydration.
+- Become a live state store or replacement for normal staff tools.
+- Bypass service/repository boundaries during hydration.
+- Accept arbitrary CSS, scripts, remote fonts, or generic free-form page
+  builders.
+- Let Blueprint defaults create cross-community or ownerless records.
+
+## Own
+
+- `src/elbysodic/blueprints/`
+- Blueprint workflow logic in coordination with
+  `src/elbysodic/services/blueprints.py`
+- `docs/product/program-blueprints.md`
+- `tests/test_program_blueprints.py`
+- seed/fixture examples that demonstrate the Blueprint contract

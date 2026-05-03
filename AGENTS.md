@@ -1,249 +1,238 @@
-# Elbysodic Agent Guide
+# Elbysodic Agent Constitution
 
-This file is the handoff note for future coding agents. Read it before making
-product or architecture decisions.
+## North Star
 
-## Mission
+Elbysodic is a roleplay-native play-by-post studio layer. It exists to preserve
+character identity, thread continuity, community aesthetic control, and the
+emotional safety of pseudonymous writing spaces while making the board-running
+work of directors, writers, faces, scenes, locations, events, canon, casting,
+claims, reserves, and continuity native to the product.
 
-Elbysodic is a roleplay-native play-by-post forum platform. It is not a generic
-forum skin. The product should understand the culture of Jcink, InvisionFree,
-all things roleplay directories, Tumblr roleplay, and long-form collaborative
-fiction communities.
+## Non-Negotiables
 
-Elbysodic is becoming the studio layer for PBP. Treat a community as a small
-creative production with directors, writers, characters, scenes, locations,
-events, canon, casting needs, and continuity. The product should make those
-ideas native to the code instead of forcing communities to fake them with
-generic forums, templates, and manual lists.
-
-The north star is to give PBP a new lease on life: preserve character identity,
-thread continuity, community aesthetic control, and the emotional safety of
-pseudonymous writing spaces, while removing the repetitive manual work older
-platforms forced roleplayers to do.
-
-## Stack And Style
-
-- The app is built on Chirp and Chirp-UI.
-- Prefer server-rendered Chirp pages and small progressive-enhancement islands.
-- Chirp supports Alpine; use it for focused client-side interactions like the
-  composer, not for turning the app into an SPA.
-- Use Chirp-UI components, shell patterns, and token names first.
-- Elbysodic-specific design belongs in `src/elbysodic/web/static/elbysodic-theme.css`
-  as an app token layer on top of Chirp-UI, including light, dark, and system
-  theme behavior.
-- Repeated PBP UI concepts belong in the Elbysodic vocabulary components under
-  `src/elbysodic/web/pages/_components/` before they become page-local CSS.
-  Use `docs/product/information-hierarchy.md` for the meaning of counters,
-  facets, state badges, latest lines, cast faces, and metadata.
-- Use `docs/product/control-topology.md` before adding, hiding, combining, or
-  changing controls. It is the decision guide for visible actions, disclosure,
-  overflow menus, icon-only buttons, inline editing, and input component choice.
-- Use `docs/product/navigation-menus.md` before changing topbar realms,
-  sidebar grouping, route pathing, breadcrumbs, tabs, dropdowns, active states,
-  or mobile navigation behavior.
-- Use `docs/product/paragraph-rhythm.md` before adding or changing `<p>` output
-  or paragraph styling. Posts, hero leads, card summaries, helper copy,
-  metadata, and empty states need distinct text roles.
-- Use `docs/product/notices-admonitions.md` before adding current-event bridges,
-  warnings, staff notices, toasts, or other page-local alerts.
-- Keep frontend controls complete and ergonomic for roleplayers doing real
-  writing: stable composer dimensions, previews, drafts, toolbar affordances,
-  and clear character context.
-
-## Product Decisions
-
-- MVP experience is one community per install.
-- Architecture is tenant-aware from day one; forum-domain rows and service
-  operations stay scoped by `community_id`.
-- Users are global login accounts.
-- `CommunityMembership` is the user's identity inside one community.
-- Permissions, roles, usernames, display names, and default character settings
-  belong to membership, not user.
-- There are no global characters. A character belongs to exactly one membership
-  in exactly one community.
-- Characters are public posting identities, aliases, and roster faces. They are
-  core product primitives, not profile decoration.
-- The active/default face is a product lens, not just a composer default. When
-  a writer is browsing as a character, discovery, queues, joins, and future
-  filters should reduce cognitive load by assuming that face where safe.
-- Facets are director-defined world lenses. They can describe species,
-  factions, locations, plot lanes, application categories, or any other
-  community-specific dimension the board uses to make its world playable.
-- Pillar content does not have to be a thread. World materials, events,
-  application guides, claims, reserves, and wanted hooks can be first-class
-  objects when that better fits the PBP ritual.
-
-## Current Product Spine
-
-The current prototype already has:
-
-- Seeded SQLite development forum with one default community.
-- Boards, threads, posts, and character-authored posting.
-- Community-local character roster and active/default face switching.
-- Board, thread, home, character, and "My threads" views.
-- Safe post markup rendering, composer toolbar, preview toggle, and local draft
-  restore.
-- Thread read state, first-unread jumps, next-unread navigation, sidebar board
-  counts, and "caught up" status.
-- Queue language for "needs reply" and "waiting on others" rather than generic
-  unread-only forum language.
-- Post editing and revision history.
-- Staff thread lifecycle controls: pin, lock, unlock, unpin, and move.
-- Thread watches, character and writer mention detection, notification inbox,
-  and shell notification counts.
-- Director-defined facets for characters, boards, threads, materials, discovery,
-  and wanted hooks.
-- World materials for premise, rules, factions, application guidance, and
-  events outside the forum/thread format.
-- Wanted hooks as first-class plot and casting invitations linked to characters,
-  world materials, and facets.
-- Character plot hooks as writer-authored invitations attached to a face,
-  membership, and community, with lightweight interest from active faces.
-- Wanted interest supports both active-face interest and prospective concepts
-  from writers willing to create a new character for the hook.
-- Plotting rooms collect accepted plot-hook and wanted interest into shared
-  planning spaces without forcing that work into ordinary threads.
-- Character profiles are becoming hubs: profile identity, plotter hooks,
-  writing tracker, and recent posts.
-
-## Product Shape To Preserve
-
-- The world should be the default emotional surface. Writer/admin tooling should
-  support the fiction without visually outshouting the community's atmosphere.
-- Character pages should continue moving toward a hub model: identity at the
-  top, plotter and wanted material near the character, tracker/queue below it,
-  and world/facet context where it helps.
-- Wanted hooks should stay more structured than ordinary plotter threads. They
-  can become claimable/reservable, notify creators, spawn applications, or spawn
-  plotting threads, but they should remain a first-class object.
-- Character plot hooks are lighter than wanted hooks: they are invitations to
-  connect with an existing face, not a full casting workflow. Keep prospective
-  "I would make someone new" behavior in wanted/casting unless a future design
-  deliberately expands plot hooks.
-- Plotting rooms are private planning surfaces for turning interest into play.
-  Keep them compact and action-oriented, with clear links back to the character,
-  wanted hook, plot hook, and eventual scene.
-- Applications, claims, reserves, canons, face claims, and wanted ads belong near
-  the "materials of running a board." They may integrate with threads, but they
-  should not be forced to be threads by default.
-- Plot discovery should use facets and the active face to help writers find
-  compatible people, open scenes, event roles, and faction pressure.
-- Keep visual and cognitive load low by using the current face, current lens,
-  and director-authored structure to choose sensible defaults.
-- When a feature feels like board production material, consider whether it
-  belongs in the studio layer: world materials, events, applications, claims,
-  reserves, casting, wanted hooks, and future director tools.
-
-## Architecture Rules
-
-- Keep tenant boundaries explicit in schema, repository, services, permissions,
+- This is not a generic forum skin. Use PBP language: face, roster, thread,
+  scene, plotter, wanted, claims, reserves, needs reply, waiting, caught up,
+  and watching.
+- The MVP is one community per install, but the architecture is tenant-aware
+  from day one.
+- Keep `community_id` explicit in schema, repositories, services, permissions,
   cache keys, exports, and tests.
-- Add service-layer methods that accept or resolve community/membership context
-  rather than reaching around it in page handlers.
-- Prefer repository methods over ad hoc SQL in web pages.
-- New structured content should be community-scoped from the first schema, even
-  when the MVP only exposes one community.
-- If a feature can involve a writer identity and a character identity, store both
-  intentionally: membership for ownership/permissions, character for public
-  authorship or story context.
-- When adding a new forum primitive, ask:
-  - Is it community-scoped?
-  - Is it membership-scoped or character-scoped?
-  - Is it director-authored, writer-authored, or both?
-  - Should it be a thread, or does it deserve a structured primitive?
-  - Does the active face provide a safe default?
-  - Does it need export support later?
-  - Can it leak staff/private data across communities or roles?
-- Tests should cover behavior through both repository boundaries and rendered
-  pages when the feature affects user workflow.
+- Users are global login accounts. `CommunityMembership` is the user's identity
+  inside one community. Permissions, roles, names, and default face settings
+  belong to membership, not user.
+- Characters are public posting identities owned by exactly one membership in
+  exactly one community. There are no global characters.
+- Store membership for ownership and permissions, and character for public
+  authorship or story context when a flow has both.
+- Prefer server-rendered Chirp pages and small progressive-enhancement islands.
+  Do not turn the app into an SPA.
+- Use Chirp-UI patterns and token names first. Put Elbysodic theme tokens in
+  `src/elbysodic/web/static/elbysodic-theme.css`.
+- Repeated PBP UI concepts belong in
+  `src/elbysodic/web/pages/_components/` before they become page-local CSS.
+- Prefer repository and service methods over ad hoc SQL in page handlers.
 
-## Scoped Agent Guides
+## Architecture Boundaries
 
-Root `AGENTS.md` is the product constitution. Nested `AGENTS.md` files are
-scoped steward files: short local domain guides for package boundaries, docs,
-domain primitives, services, storage, web/UI, blueprints, and tests.
+- `src/elbysodic/domain/` owns typed product primitives and vocabulary.
+- `src/elbysodic/db/` owns SQLite schema, migrations, repositories, and seed
+  data. Repository APIs stay tenant-aware.
+- `src/elbysodic/services/` owns workflows, policy checks, read models,
+  identity resolution, and orchestration.
+- `src/elbysodic/web/` owns Chirp app setup, routes/pages/templates/static
+  assets, navigation, composer behavior, security wrappers, and rendered
+  privacy.
+- `src/elbysodic/blueprints/` owns the director-authored Program Blueprint
+  import/validation contract.
+- `docs/` owns product and architecture decision guides.
+- `tests/` owns regression proof for repository boundaries, services, policies,
+  rendered pages, markup, CLI behavior, and security.
+- `plans/` owns durable roadmap and steward rollup snapshots, not scratch notes.
+- `changelog.d/` owns user-visible release fragments.
 
-When editing a subtree, read this root guide and the nearest nested
-`AGENTS.md` before making product or architecture decisions. The nested guide
-may add local checks, contracts, and safety boundaries, but it must refine this
-constitution rather than contradicting the mission, tenant model, product voice,
-or PBP-native shape.
+## Stakes
 
-Cross-cutting PRs should include brief **Steward Notes** in the summary:
-which steward files were consulted, which boundary decisions were made, and
-which risks or follow-up gaps remain. Keep the notes small and practical.
+When this repo regresses, writers can post as the wrong face, private/staff data
+can leak across communities, directors can lose structured board-running
+material, seeded demos can misrepresent the product, rendered pages can break
+long-form writing flow, and future agents can drift into generic forum or SaaS
+decisions that erase the culture the platform is meant to protect.
 
-### Ask Stewards Workflow
+## Stop And Ask
 
-The trigger phrase **"ask stewards"** means run this consultation workflow and
-produce a short prioritization rollup.
+Check in with a human before:
 
-1. Verify the checkout/ref is current enough for the question. Run `git status
-   --short --branch`; fetch or compare with upstream when prioritization depends
-   on current remote state.
-2. Enumerate scoped steward files with `find . -name AGENTS.md -print | sort`.
-3. For implementation work, consult the stewards nearest the affected paths.
-   For backlog, roadmap, or product sequencing work, consult all stewards.
-4. Ask each consulted steward for:
-   - top priority
-   - confidence
-   - evidence from code, docs, tests, or product spine
-   - dependencies and ordering constraints
-   - risks and blast radius
-   - tempting "not now" items
-   - upstream or downstream service opportunities
-5. Synthesize with weighted voting. Favor convergence, dependency order,
-   blast-radius reduction, public-contract risk, user-visible correctness, risk
-   reduction, and reversibility.
-6. Preserve minority reports when a steward sees a real risk the majority
-   downweights.
-7. Return a short rollup: recommendation, why now, consulted stewards,
-   confidence, dependencies, risks, not-now items, and suggested next checks.
+- public API, CLI, route, import path, blueprint, or release-protocol changes
+- new runtime dependencies or dependency-source changes
+- config, build, deployment, Railway, or release-surface changes
+- data model, schema, migration, seed, or irreversible data changes
+- irreversible operations or destructive filesystem/git actions
+- security, auth, CSRF, session, role, permission, or privacy-boundary changes
+- concurrency, lifecycle, startup, request-context, or persistence changes
+- test/code disagreement where the intended product behavior is unclear
+- unreproduced bugs or fixes based only on speculation
 
-The workflow is a thinking aid, not a committee. Use it to surface domain-aware
-tradeoffs quickly, then keep moving.
+## Anti-Patterns
 
-### Plan Snapshots
+- Global characters, user-level staff power, or role checks detached from
+  membership.
+- Page handlers with one-off SQL for product rows.
+- Structured board-running material forced into threads when it deserves its
+  own primitive.
+- Generic tags replacing director-defined facets.
+- UI that hides writing context, active face, preview, drafts, or control
+  affordances roleplayers need during long sessions.
+- Theme or Blueprint inputs that accept raw CSS, script tags, external font
+  URLs, or layout-breaking controls.
+- Docs or tests that describe a different tenant, identity, navigation, or
+  product vocabulary contract than the code implements.
 
-Save durable steward rollups, roadmap sequences, and multi-step implementation
-plans under `plans/`. Active plans live in `plans/in-progress/` and must be
-listed in `plans/README.md` with a review-by date and closure criteria.
+## Steward System
 
-Do not use plan files as scratch notes. If a plan has gone stale, refresh it,
-split it into concrete work, or move it to `plans/archive/YYYY/` as completed,
-superseded, or abandoned.
+Agents read this root constitution plus the closest scoped `AGENTS.md` before
+making product or architecture decisions. Root is the constitution and routing
+guide. Scoped files are domain stewards: they own local invariants, refusal
+patterns, docs, tests, examples, fixtures, and checks.
 
-## Development Commands
+Each steward uses this operating model:
 
-Use the project tools before handing work back:
+- Point of View: who or what the domain represents
+- Protect: invariants, contracts, quality bars, and failure modes
+- Contract Checklist: concrete surfaces to inspect when this domain changes
+- Advocate: features, fixes, and investments the domain should push for
+- Serve Peers: upstream/downstream domains that need clearer contracts,
+  diagnostics, docs, tests, or ergonomics
+- Do Not: local anti-patterns
+- Own: tests, docs, examples, fixtures, maintenance checks
 
-```bash
-uv run ruff check .
-uv run ruff format . --check
-uv run pytest -q --tb=short
-uv run ty check src/elbysodic/ tests/
-uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"
-```
+Cross-boundary PRs should include short **Steward Notes** naming consulted
+stewards, accepted/deferred findings, proof, collateral updates, and remaining
+risks.
 
-For local browser QA, run the app on port 8001:
+## Contract Checklist
 
-```bash
-elbysodic serve --port 8001
-```
+For cross-surface changes:
 
-or, in this workspace, the known direct form:
+- Identify every surface that should agree: CLI/API, programmatic use,
+  protocol, schema/types, UI, docs, examples, scaffold/templates, tests,
+  benchmarks, and changelog.
+- Every accepted finding must name required proof and collateral updates, or
+  explicitly say `no collateral: <reason>`.
+- Docs, examples, and scaffold/templates move in the same PR as user-facing
+  behavior unless synthesis records why they are unaffected.
+- Contract-affecting PRs include a parity matrix when behavior spans multiple
+  entrypoints.
 
-```bash
-.venv/bin/python -c "from elbysodic.web import create_app; create_app(debug=False).run(port=8001)"
-```
+## Steward Signal Format
 
-## Product Voice
+Steward findings should be contract-oriented, evidence-backed, and
+collateral-aware.
 
-Use language that fits roleplayers. Prefer "face", "roster", "thread",
-"scene", "plotter", "wanted", "claims", "reserves", "needs reply", "waiting",
-"caught up", and "watching" over generic forum jargon when the PBP concept is
-more precise.
+Use this format:
 
-The interface should feel like a calm, capable writing room: dense enough for
-regular players, gentle enough for long sessions, and expressive enough to let
-communities feel like themselves.
+- Steward:
+- Area:
+- Severity: P0/P1/P2/P3
+- Invariant:
+- Evidence:
+- User Impact:
+- Required Fix:
+- Required Proof:
+- Collateral:
+- Confidence:
+
+## Steward Swarms
+
+When the user asks for `ask stewards`, `bugbash`, `review swarm`, or
+`steward synthesis`, and delegation is available:
+
+- spawn independent steward agents for affected domains
+- each steward reads root plus its closest scoped `AGENTS.md`
+- each steward advocates only for that domain's interests
+- each steward returns findings in the Steward Signal Format
+- implementing agent owns synthesis and final decisions
+- stewards advise and create useful tension; they do not own the integrated
+  implementation
+- keep PR scope bounded to accepted findings and their proof/collateral
+- defer unrelated steward suggestions to not-now/follow-up
+
+For backlog, roadmap, or prioritization work, consult all scoped stewards and
+produce raw steward signals, confidence, dependencies, risks, convergence,
+minority reports, ranked backlog, and not-now items.
+
+## Steward Feedback Loop
+
+- Steward miss: when a bug escapes an applicable steward, update the checklist,
+  a regression test, a docs/snippet check, a routing rule, or record why the
+  miss should not become policy.
+- Steward overreach: when a steward repeatedly pulls unrelated work into PRs,
+  narrow the checklist, split the steward, or move the concern to follow-up.
+- Repeated high-quality findings should become checklist items.
+- Repeated noisy findings should be pruned or clarified.
+- Steward guidance evolves from evidence: escaped bugs, late collateral
+  updates, CI/review misses, and recurring review comments.
+
+## When To Consult
+
+- Proactively consult stewards for cross-boundary, public-facing,
+  hard-to-reverse, performance-sensitive, concurrency-sensitive,
+  security-sensitive, or contract-affecting work.
+- Use the nearest steward for local work.
+- Use multiple stewards when ownership lines cross.
+- Parallelize steward consultation only when questions are independent.
+- Keep final synthesis and implementation accountability with the implementing
+  agent.
+
+## Ask Stewards
+
+Trigger phrase: `ask stewards`.
+
+For implementation work, consult affected stewards and return synthesis before
+or during the change. Include accepted/deferred findings, merged duplicates,
+minority reports, required proof, collateral updates, and not-now items.
+
+For multi-surface work, include a parity matrix like:
+
+| Contract | API/CLI | Programmatic | Protocol | Schema/Types | Docs | Examples | Tests |
+|---|---|---|---|---|---|---|---|
+
+For backlog, roadmap, or product sequencing work, consult all scoped stewards.
+Favor convergence, dependency order, blast-radius reduction, public-contract
+risk, user-visible correctness, risk reduction, and reversibility. Preserve
+minority reports when a steward sees a real risk the majority downweights.
+
+## Extension Routing
+
+Elbysodic does not currently expose a general plugin system. The extension-like
+contract is Program Blueprints:
+
+- Blueprint parser and validation: `src/elbysodic/blueprints/`
+- Blueprint hydration and workflow logic: `src/elbysodic/services/blueprints.py`
+- Blueprint product contract: `docs/product/program-blueprints.md`
+- Blueprint tests: `tests/test_program_blueprints.py`
+
+## Done Criteria
+
+- Run the relevant local gate: `uv run ruff check .`,
+  `uv run ruff format . --check`, `uv run pytest -q --tb=short`,
+  `uv run ty check src/elbysodic/ tests/`, and
+  `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`.
+- For doc-only changes, run the lightest relevant checks and say what was not
+  run.
+- Update docs, changelog fragments, migration notes, examples, scaffold, or
+  templates when user-facing behavior or public contracts change.
+- Add performance, concurrency, security, or privacy notes when relevant.
+- Every accepted steward finding has test/docs/example/benchmark proof or an
+  explicit no-impact note.
+
+## Review Notes
+
+Flag these in commits, PRs, or final handoff when they appear:
+
+- weird tests or brittle assertions
+- unused public names or dead code
+- suppressions and why they remain justified
+- benchmark gaps for performance-sensitive changes
+- free-threading, request-lifecycle, or SQLite persistence assumptions
+- steward disagreement, minority reports, and deferred/not-now findings
+- product-code/docs/tests/changelog drift

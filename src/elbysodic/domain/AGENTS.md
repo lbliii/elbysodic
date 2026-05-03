@@ -1,45 +1,76 @@
 # Domain Model Steward
 
-## Steward
+This domain represents Elbysodic's typed product primitives and vocabulary: the
+names future code, docs, repositories, services, and UI use to understand a PBP
+community as a creative production.
 
-Domain model steward for `src/elbysodic/domain/` and the typed records and enum
-vocabulary that name Elbysodic's product primitives.
+Related docs:
 
-## Protects
+- root `AGENTS.md`
+- `docs/architecture/primitives.md`
+- `docs/architecture/multi-tenancy.md`
+- `docs/architecture/security-boundaries.md`
+- `docs/product/information-hierarchy.md`
 
-- Community, membership, character, board, thread, post, material, wanted,
-  plotting, application, claim, reserve, and interaction records remain
-  explicit and typed.
-- Board kind, sidebar section, and realm vocabulary match navigation and
-  product docs.
+## Point Of View
+
+Represent the product ontology: communities, memberships, faces, boards,
+threads, posts, materials, wanted hooks, plot hooks, plotting rooms,
+applications, claims, reserves, facets, notifications, and read state.
+
+## Protect
+
+- Product records stay explicit, typed, and PBP-native.
+- `community_id` remains explicit on community-scoped records.
 - Character identity stays separate from membership ownership and global user
   login identity.
-- New structured primitives start with tenant scope and intentional authorship.
+- Board kinds, sidebar sections, realms, facets, and state vocabulary match
+  navigation and product docs.
+- New primitives declare authorship deliberately: director-authored,
+  writer-authored, character-contextual, or some intentional combination.
+- Enum/dataclass changes move with repository rows, services, templates, docs,
+  and tests.
 
-## Must Not Become
+## Contract Checklist
 
-- A persistence layer with SQL, connection handling, or database defaults.
-- A service layer with permission decisions or workflow side effects.
-- A generic forum ontology that forgets PBP-specific concepts.
+- Schema/types: dataclasses, enums, row mappers, repository return objects, and
+  service read models agree.
+- Docs: primitives, multi-tenancy, security, and product vocabulary docs stay
+  accurate.
+- UI: rendered labels and facets use the same terms as domain records.
+- Tests: tenant repository and rendered workflow tests cover changed identity
+  or primitive semantics.
+- Changelog: add a fragment for user-visible primitive or vocabulary changes.
 
-## Documentation Ownership
+## Advocate
 
-Co-owns `docs/architecture/primitives.md`,
-`docs/architecture/multi-tenancy.md`, and product vocabulary references that
-depend on core model names.
+- Promote board-running material to structured primitives when threads are the
+  wrong shape.
+- Make active/default face behavior a safe product lens, not just a composer
+  default.
+- Keep future export, moderation, and privacy needs visible when adding
+  records.
 
-## Local Checks
+## Serve Peers
 
-- `uv run ty check src/elbysodic/ tests/`
-- `uv run pytest tests/test_tenant_repository.py -q --tb=short`
-- Add or update focused tests when a model change changes repository rows,
-  read models, or rendered pages.
+- Give storage stable typed targets for schema and row mapping.
+- Give services unambiguous ownership and authorship fields for policy checks.
+- Give web and docs vocabulary that roleplayers recognize.
+- Give tests clear invariants for tenant and identity regression coverage.
 
-## Public Contracts And Safety
+## Do Not
 
-- Do not introduce global characters or user-level staff power.
-- Keep `community_id` explicit on product records.
-- If a flow can involve both writer and face, model membership for ownership
-  and character for public story context.
-- Coordinate enum or dataclass renames with repositories, services, templates,
-  docs, and tests in the same change.
+- Add SQL, connection handling, database defaults, or workflow side effects.
+- Collapse membership, user, and character into one identity.
+- Introduce global characters or user-level staff power.
+- Rename enums or fields casually; treat names as public contracts across code,
+  docs, tests, and UI.
+
+## Own
+
+- `src/elbysodic/domain/`
+- domain portions of `docs/architecture/primitives.md`
+- identity and tenant-model language in architecture/product docs
+- type-check proof through `uv run ty check src/elbysodic/ tests/`
+- focused tests such as `tests/test_tenant_repository.py` when model changes
+  affect persistence or rendered workflows
