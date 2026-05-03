@@ -14,8 +14,8 @@ Every navigation surface should have one clear job.
 
 | Surface | Job | Question It Answers |
 | --- | --- | --- |
-| Topbar | Major product realms | "Which room am I in?" |
-| Sidebar | Contextual route map for that realm | "What can I reach from here?" |
+| Topbar | Platform/global shell utilities | "Where am I globally, and what cross-cutting thing can I do?" |
+| Sidebar | Canonical community and local route map | "Inside this community or object, what can I reach?" |
 | Breadcrumbs | Object lineage | "How did I get to this object?" |
 | Inline nav/filter rail | Local page movement or list narrowing | "What part of this object/list am I viewing?" |
 | Action bar/buttons | Doing work | "What can I do now?" |
@@ -26,36 +26,38 @@ links are sometimes useful, but duplicated hierarchy is usually confusing.
 
 ## Topbar
 
-The topbar is the stable map of Elbysodic's major rooms. It should change
-rarely. It should not become a complete site map.
+The topbar is the LBSodic/platform shell. It should stay quiet and global,
+helping a writer understand their account/community context and reach
+cross-cutting utilities without duplicating community navigation.
 
-Current topbar realms:
+Topbar owns:
 
-- `World`: the emotional surface of the community. Includes the world gateway,
-  location map, community boards, and ordinary forum boards.
-- `Guidebook`: director-authored canon, rules, application guidance, events,
-  and world materials.
-- `Wanted`: structured casting and plot invitations.
-- `Writer Desk`: the writer's workbench: queues, roster, applications,
-  plotting rooms, discovery, notifications when they support writing.
-- `Studio`: director/admin production tools.
+- Current community identity and future community switching.
+- Future global/community search entry.
+- Future explore/browse communities entry from the LBSodic home.
+- Notifications indicator.
+- Writer account, membership, and active-face identity menu.
+- Theme, accessibility, and account utilities.
+- Mobile navigation trigger.
+- At most one cross-cutting create/action control when it is truly global.
 
-Topbar items should be realms, not tasks. A topbar item earns its place when it
-contains a stable family of routes that a writer can name without seeing the
-sidebar.
+Topbar does not own community rooms or route families. `World`, `Guidebook`,
+`Wanted`, `Writer Desk`, `Studio`, boards, locations, threads, materials,
+applications, claims, roster, plotting, and discovery belong in the sidebar or
+object-local controls.
 
 Avoid adding topbar items for:
 
 - One-off tools.
 - Individual boards, materials, characters, or rooms.
+- Community rooms.
 - Filters or local page modes.
 - Staff-only tasks that belong inside `Studio`.
 - Future features that are not yet part of the daily loop.
 
-If a realm starts to need more than one topbar row or a topbar dropdown, first
-ask whether the sidebar or Studio needs a better grouping. Topbar dropdowns are
-a last resort because they hide the app's mental model and add hover/tap
-fragility on mobile.
+If a topbar item starts to act like a route family, move that family into the
+sidebar. Topbar dropdowns are reserved for global/account utilities because
+they hide structure and add hover/tap fragility on mobile.
 
 ### Topbar Exceptions
 
@@ -81,18 +83,123 @@ directory.
 
 ## Sidebar
 
-The sidebar is the contextual route map for the current topbar realm. It is not
-a second topbar, a marketing menu, or a dumping ground for every tool.
+The sidebar is the canonical route map for the current community and local
+object. It is not a second topbar, a marketing menu, or a dumping ground for
+every tool. Inside a community, the sidebar is the only primary route surface.
+
+The sidebar has two jobs:
+
+- Keep a stable community map visible enough to orient the writer.
+- Hydrate with local context for the current room, location, material, wanted
+  hook, desk lane, or Studio surface.
 
 Sidebar rules:
 
-- Show the current realm's most useful destinations.
+- Show the current community's most useful destinations.
+- Include community rooms: `World`, `Guidebook`, `Wanted`, `Writer Desk`, and
+  `Studio` when the viewer can access it.
 - Keep route parents clickable, active, and count-bearing when counts matter.
 - Prefer route rows over section labels when the row itself names the group.
 - Use labels only as optional dividers between unlike contextual lists.
-- Avoid repeating the topbar realm name as a sidebar heading.
+- Avoid repeating the same room name as both a section label and first route.
 - Keep visible items biased toward writer movement; staff/director controls can
   live in `Studio` or in object-local management areas.
+
+Default community map:
+
+```text
+Community
+  World
+  Guidebook
+  Wanted
+
+Writer
+  Writer Desk
+  Roster
+  Queue
+  Plotting
+
+Director
+  Studio
+```
+
+Current-room hydration examples:
+
+```text
+World
+  Overview
+  Locations
+    Xavier Institute
+      Med Bay
+      Cerebro
+  Community
+    Members
+    Announcements
+```
+
+```text
+Writer Desk
+  Queue
+  Inbox
+  Roster
+  Plotting
+  Applications
+  Discovery
+```
+
+```text
+Wanted
+  Wanted board
+  Casting desk
+  Claims
+  Active Face
+    Cass Mercer
+  Related Wants
+```
+
+Use fewer labels if browser QA shows the visual rhythm is calmer, but do not
+move community room ownership back to the topbar.
+
+### Sidebar Toggle
+
+The sidebar may have a hide/show navigation toggle. The toggle changes available
+space; it does not change navigation meaning.
+
+Allowed states:
+
+- Expanded: normal community navigation.
+- Hidden or focus: page gets more room for reading or writing.
+- Mobile: same sidebar content in a drawer.
+
+Do not use the sidebar toggle for IC/OOC, in-world/out-of-world, director/writer
+mode, or active-face mode switching. Those distinctions are represented through
+grouping, object context, permissions, and the active-face lens.
+
+An icon rail is deferred. If added later, it must be a secondary compact state
+for stable universal destinations, not the main navigation experience. PBP
+terms such as `Wanted`, `Roster`, `Queue`, `Plotting`, `Claims`, `Reserves`,
+and `Studio` need visible words.
+
+### In-World And Writer Work
+
+Do not split the sidebar with an IC/OOC or in-world/out-of-world mode switch.
+The product objects do not divide cleanly:
+
+- `World` is story-facing but contains board structure.
+- `Guidebook` is about canon/world materials but is director-authored.
+- `Wanted` is story-facing but operational and casting-oriented.
+- `Writer Desk` is out-of-character work tied to active character obligations.
+- `Studio` is production/admin.
+
+Use language and grouping instead:
+
+- World-facing: `World`, `Guidebook`, `Wanted`.
+- Writer work: `Queue`, `Roster`, `Plotting`, `Applications`, `Discovery`.
+- Director work: `Studio`, `Navigation`, `Board taxonomy`, `Production`.
+
+Active face is a lens and identity state, not a navigation mode. It may appear
+as a compact sidebar context module where relevant, but it must not hide or
+replace the canonical community map.
 
 ### Labels
 
@@ -247,7 +354,8 @@ V1.
 
 Not configurable in ordinary admin UI:
 
-- The existence of topbar realms.
+- The existence of topbar global utilities.
+- The existence of canonical sidebar community rooms.
 - The meaning of board kinds and sidebar sections.
 - The difference between labels and route rows.
 - Accessibility requirements for active states, counts, and mobile drawers.
@@ -390,17 +498,18 @@ contents into visible navigation or a contextual action area.
 
 Mobile keeps the same hierarchy but changes the container.
 
-- The topbar compresses to a drawer trigger for the current major mode.
-- The drawer starts with global realm links, then reuses the same contextual
-  sidebar content. The compact trigger names the current room, but the drawer
-  must still let the writer leave that room without hunting elsewhere.
+- The topbar keeps global/platform utilities and exposes a navigation drawer
+  trigger.
+- The drawer reuses the same canonical community map and current-room
+  hydration as desktop. It must not introduce a separate mobile-only route
+  model.
 - Route parents remain visible links.
 - Active face remains accessible from the shell.
 - Notifications attach to the identity cluster as a compact bubble/count, not
   as an orphaned second control.
 - For signed-in writers, account identity, active face, notifications, and
   theme live inside one identity menu at every width. The topbar should not
-  split them into sibling buttons that compete with the realm navigation.
+  split them into sibling buttons that compete with the community map.
 - Primary page actions stay in the page, not hidden inside the drawer.
 
 Do not create a separate mobile navigation model unless the desktop model is
