@@ -1323,6 +1323,10 @@ class StudioIdentityOption:
     unread_notification_count: int
     is_current: bool
 
+    @property
+    def entry_href(self) -> str:
+        return f"/c/{self.community.slug}"
+
 
 @dataclass(frozen=True, slots=True)
 class DevPersonaView:

@@ -1076,15 +1076,32 @@ def test_network_directory_enter_realm_sets_identity_cookie() -> None:
                         "intent": "switch_membership",
                         "membership_id": str(hp_membership.id),
                         "character_id": "0",
-                        "next": "/",
+                        "next": "/c/hp-universe",
                     }
                 ).encode(),
                 headers=_FORM,
             )
 
         assert response.status == 302
-        assert _response_header(response, "location") == "/"
+        assert _response_header(response, "location") == "/c/hp-universe"
         assert "elbysodic_dev_identity=" in _response_header(response, "set-cookie")
+
+    asyncio.run(run())
+
+
+def test_identity_dropdown_switches_to_canonical_community_path() -> None:
+    async def run() -> None:
+        app = _app()
+        community_slug = get_services().seed.community.slug
+
+        async with TestClient(app) as client:
+            response = await client.get(f"/c/{community_slug}")
+
+        assert response.status == 200
+        assert f'name="next" value="/c/{community_slug}"' in response.text
+        assert 'name="next" value="/c/hp-universe"' in response.text
+        assert 'name="next" value="/c/jurassic-park-universe"' in response.text
+        assert 'name="next" value="/boards/' not in response.text
 
     asyncio.run(run())
 
