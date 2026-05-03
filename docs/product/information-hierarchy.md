@@ -244,9 +244,22 @@ shift between posts.
 
 ### Sidebar Groups
 
-The app sidebar is contextual navigation for the current major mode. It should
-not repeat the topbar's product label, and it should not add a section label
-when the first row is already the named route parent.
+The app sidebar is the canonical community and local navigation map. The topbar
+owns platform/global utilities; the sidebar owns community rooms and current
+object context. Do not duplicate a primary route family in both places.
+
+Use the stable community map to orient writers:
+
+- `World`, `Guidebook`, and `Wanted` are world-facing community rooms.
+- `Writer Desk`, `Roster`, `Queue`, and `Plotting` are writer-work routes.
+- `Studio` is director work and appears only when the viewer can access it.
+
+Hydrate below or within the active room with local context: current location
+branch, current material, related wants, active-face context, desk lane, or
+Studio production surface. Empty contextual collections disappear.
+
+The sidebar should not add a section label when the first row is already the
+named route parent.
 
 Use an unlabeled group when the row itself is the category: `Locations`,
 `Community`, `Overview`, `Start Here`, `Guides`, `Events`, `Wanted board`, or
@@ -256,6 +269,13 @@ or future director-configured sidebar collections.
 
 Route parents stay clickable, active, counted rows. Labels are not routes and
 should never carry the main active state for a category.
+
+### Sidebar Toggle
+
+Use hide/show navigation for focus and space management only. It must not
+switch IC/OOC, in-world/out-of-world, director/writer, or active-face modes.
+The current face is an identity lens that can influence defaults and contextual
+signals; it is not a separate navigation tree.
 
 ### LocationTree
 
@@ -277,9 +297,9 @@ atmospheric surface; PlaceTile and board pages still carry the world feeling.
 
 On small screens, keep the same contextual navigation in a ChirpUI drawer
 rather than turning the sidebar into a horizontal strip. The drawer should
-reuse the current major-mode sidebar content: World, Guidebook, Casting, Studio,
-or Writer Desk. This preserves orientation without making the world compete
-with mobile navigation chrome.
+reuse the same canonical community map and current-room hydration used on
+desktop. This preserves orientation without making the world compete with
+mobile navigation chrome.
 
 ### RouteTabs
 

@@ -32,6 +32,24 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (DEFAULT_COMMUNITY_ID, name, DEFAULT_COMMUNITY_SLUG, now, now),
         )
+        self.connection.execute(
+            """
+            UPDATE communities
+               SET name = ?,
+                   slug = ?,
+                   updated_at = ?
+             WHERE id = ?
+               AND (name != ? OR slug != ?)
+            """,
+            (
+                name,
+                DEFAULT_COMMUNITY_SLUG,
+                now,
+                DEFAULT_COMMUNITY_ID,
+                name,
+                DEFAULT_COMMUNITY_SLUG,
+            ),
+        )
         self.connection.commit()
         return self.get_community(DEFAULT_COMMUNITY_ID)
 

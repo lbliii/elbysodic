@@ -17,4 +17,5 @@ def get(request: Request) -> Page:
         current_path=request.url,
         viewer=services.viewer(),
         network=services.studio_network(),
+        show_community_shell=False,
     )

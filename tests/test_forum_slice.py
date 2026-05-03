@@ -25,7 +25,7 @@ _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
 def _sidebar_board_count(html: str, board_slug: str) -> int:
     match = re.search(
-        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*" href="/boards/{re.escape(board_slug)}"[^>]*>'
+        rf'<a class="[^"]*elbysodic-sidebar-link[^"]*"\s+href="(?:/c/[^"]+)?/boards/{re.escape(board_slug)}"[^>]*>'
         r"(?P<body>.*?)</a>",
         html,
         re.DOTALL,
@@ -400,9 +400,9 @@ def test_tenant_prefix_does_not_wrap_app_global_routes() -> None:
         app = _app()
 
         async with TestClient(app) as client:
-            login = await client.get("/c/default/login")
-            health = await client.get("/c/default/health")
-            static = await client.get("/c/default/elbysodic-static/elbysodic-theme.css")
+            login = await client.get("/c/x-men-apocalypse/login")
+            health = await client.get("/c/x-men-apocalypse/health")
+            static = await client.get("/c/x-men-apocalypse/elbysodic-static/elbysodic-theme.css")
 
         assert login.status == 404
         assert health.status == 404
@@ -644,7 +644,7 @@ def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
     inactive = resolve_seed_persona(services.repo, "xmen_inactive")
 
     assert xmen_writer.user.id == hp_director.user.id == nyc_writer.user.id
-    assert xmen_writer.community.slug == "default"
+    assert xmen_writer.community.slug == "x-men-apocalypse"
     assert xmen_writer.role.name == "Member"
     assert not xmen_writer.role.is_admin
     assert hp_director.community.slug == "hp-universe"
@@ -1093,7 +1093,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "X-Men Apocalypse" in index.text
             assert "Announcements" in index.text
@@ -1164,7 +1164,7 @@ def test_seeded_world_surfaces_place_hierarchy() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "/boards/xavier-institute" in index.text
             assert "/boards/med-bay" in index.text
@@ -1186,11 +1186,29 @@ def test_seeded_world_surfaces_place_hierarchy() -> None:
     asyncio.run(run())
 
 
-def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
+def test_root_renders_elbysodic_network_home_not_default_community() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            index = await client.get("/")
+            root = await client.get("/")
+
+        assert root.status == 200
+        assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
+        assert "Studio Network" in root.text
+        assert "Choose the realm you are writing in." in root.text
+        assert 'aria-label="Community"' not in root.text
+        assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
+        assert 'href="/c/x-men-apocalypse"' in root.text
+        assert "/elbysodic-static/seed-media/xmen-mark.svg" not in root.text
+
+    asyncio.run(run())
+
+
+def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            index = await client.get("/c/x-men-apocalypse")
 
             assert index.status == 200
             assert "/elbysodic-static/seed-media/xmen-mark.svg" in index.text
@@ -1201,9 +1219,41 @@ def test_shell_centers_community_brand_and_quiet_platform_mark() -> None:
             )
             assert "Built on" in index.text
             assert "<strong>Elbysodic</strong>" in index.text
-            assert 'href="/desk"' in index.text
-            assert index.text.count("Writer Desk") == 2
-            assert "elbysodic-mobile-realm-nav" in index.text
+            assert 'href="/c/x-men-apocalypse"' in index.text
+            assert 'href="/c/x-men-apocalypse/desk"' in index.text
+            assert 'aria-label="Community"' in index.text
+            assert 'aria-label="Global"' in index.text
+            assert re.search(
+                r'<nav class="elbysodic-topnav elbysodic-topnav--community"'
+                r"[^>]*>(?P<body>.*?)</nav>",
+                index.text,
+                re.S,
+            )
+            assert ">Home</a>" not in index.text
+            assert re.search(
+                r'<a class="elbysodic-topnav__link"\s+href="/c/x-men-apocalypse/locations"[^>]*>World</a>',
+                index.text,
+            )
+            assert re.search(
+                r'<a class="elbysodic-topnav__link"\s+href="/network"[^>]*>Explore</a>',
+                index.text,
+            )
+            topbar = re.search(
+                r'<nav class="elbysodic-topnav elbysodic-topnav--global"[^>]*>(?P<body>.*?)</nav>',
+                index.text,
+                re.S,
+            )
+            assert topbar is not None
+            assert 'href="/"' not in topbar.group("body")
+            assert 'href="/world"' not in topbar.group("body")
+            assert 'href="/wanted"' not in topbar.group("body")
+            assert 'href="/desk"' not in topbar.group("body")
+            assert 'href="/studio"' not in topbar.group("body")
+            assert '<span class="chirpui-sidebar__section-title">In World</span>' in index.text
+            assert '<span class="chirpui-sidebar__label">Locations</span>' in index.text
+            assert '<span class="chirpui-sidebar__label">Guidebook</span>' in index.text
+            assert '<span class="chirpui-sidebar__label">Community</span>' in index.text
+            assert "elbysodic-mobile-realm-nav" not in index.text
             assert 'class="elbysodic-topnav__link" href="/notifications"' not in index.text
 
     asyncio.run(run())
@@ -1218,8 +1268,8 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
 
         async with TestClient(app) as client:
-            xmen = await client.get("/")
-            hp_home = await client.get("/", headers={"Cookie": cookie})
+            xmen = await client.get("/c/x-men-apocalypse")
+            hp_home = await client.get("/c/hp-universe", headers={"Cookie": cookie})
 
         assert xmen.status == 200
         assert "elbysodic-world-hero--split" in xmen.text
@@ -1277,8 +1327,8 @@ def test_seeded_location_boards_have_media_throughlines() -> None:
         hp_cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
 
         async with TestClient(app) as client:
-            home = await client.get("/")
-            hp_home = await client.get("/", headers={"Cookie": hp_cookie})
+            home = await client.get("/c/x-men-apocalypse")
+            hp_home = await client.get("/c/hp-universe", headers={"Cookie": hp_cookie})
             xavier = await client.get("/boards/xavier-institute")
 
         assert home.status == 200
@@ -2197,8 +2247,8 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert 'class="chirpui-sidebar elbysodic-sidebar"' in world.text
             assert "elbysodic-mobile-nav-trigger" in world.text
             assert "elbysodic-mobile-shell-drawer" in world.text
-            assert '<h2 class="chirpui-drawer__title">Menu: World</h2>' in world.text
-            assert "elbysodic-mobile-realm-nav" in world.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in world.text
+            assert "elbysodic-mobile-realm-nav" not in world.text
 
             locations = await client.get("/locations")
             assert locations.status == 200
@@ -2219,11 +2269,12 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Guidebook" in guidebook.text
             assert "Start Here" in guidebook.text
             assert "World Map" not in guidebook.text
-            assert 'class="chirpui-sidebar__section-title">Guidebook</span>' not in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">In World</span>' in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Guidebook Index</span>' in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Start Here</span>' not in guidebook.text
-            assert 'class="chirpui-sidebar__section-title">Guides</span>' not in guidebook.text
-            assert 'class="chirpui-sidebar__section-title">Events</span>' not in guidebook.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Guidebook</h2>' in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Guides</span>' in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">Events</span>' in guidebook.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in guidebook.text
 
             desk = await client.get("/desk")
             assert desk.status == 200
@@ -2232,8 +2283,8 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Inbox" in desk.text
             assert "Roster" in desk.text
             assert "World Map" not in desk.text
-            assert 'class="chirpui-sidebar__section-title">Writer Desk</span>' not in desk.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Desk</h2>' in desk.text
+            assert 'class="chirpui-sidebar__section-title">On Your Desk</span>' in desk.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in desk.text
 
             studio = await client.get("/studio")
             assert studio.status == 200
@@ -2241,20 +2292,18 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Production" in studio.text
             assert "Wanted board" in studio.text
             assert "World Map" not in studio.text
-            assert (
-                'class="chirpui-sidebar__section-title">Director Studio</span>' not in studio.text
-            )
-            assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Studio</h2>' in studio.text
+            assert 'class="chirpui-sidebar__section-title">In Studio</span>' in studio.text
+            assert 'class="chirpui-sidebar__section-title">Production</span>' in studio.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in studio.text
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
             assert "Casting" in wanted.text
-            assert "Wanted board" in wanted.text
+            assert "Wanted board" not in wanted.text
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
-            assert 'class="chirpui-sidebar__section-title">Casting</span>' not in wanted.text
-            assert '<h2 class="chirpui-drawer__title">Menu: Casting</h2>' in wanted.text
+            assert 'class="chirpui-sidebar__section-title">In Play</span>' in wanted.text
+            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in wanted.text
 
     asyncio.run(run())
 
@@ -2386,66 +2435,59 @@ def test_community_board_pages_use_community_language_and_sidebar_state() -> Non
                 r'[^>]*href="/community"[^>]*aria-current="page"',
                 announcements.text,
             )
-            locations_link = re.search(
-                r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"'
-                r'[^>]*href="/locations"[^>]*>',
-                announcements.text,
-            )
-            assert locations_link is not None
-            assert 'aria-current="page"' not in locations_link.group(0)
 
     asyncio.run(run())
 
 
-def test_topbar_marks_active_product_realm() -> None:
+def test_topbar_marks_active_community_mode() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/"',
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/locations"[^>]*>World</a>',
                 world.text,
             )
 
             guidebook = await client.get("/world")
             assert guidebook.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/world"',
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/locations"[^>]*>World</a>',
                 guidebook.text,
             )
 
             desk = await client.get("/desk")
             assert desk.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/desk"',
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/desk"[^>]*>Desk</a>',
                 desk.text,
             )
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/wanted"',
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/wanted"[^>]*>Play</a>',
                 wanted.text,
             )
 
             studio = await client.get("/studio")
             assert studio.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/studio"',
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/studio"[^>]*>Studio</a>',
                 studio.text,
             )
 
             notifications = await client.get("/notifications")
             assert notifications.status == 200
             assert re.search(
-                r'class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/desk"',
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/desk"[^>]*>Desk</a>',
                 notifications.text,
             )
             assert re.search(
@@ -4691,7 +4733,7 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
         )
 
         async with TestClient(app) as client:
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "Notifications" in index.text
             assert "elbysodic-sidebar-count" in index.text
@@ -5098,7 +5140,7 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
         )
 
         async with TestClient(app) as client:
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "Needs reply" in index.text
             assert "Open thread roster" in index.text
@@ -5117,7 +5159,7 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
             assert cleared.status == 200
             assert "Nothing here needs your roster right now." in cleared.text
 
-            index_after_read = await client.get("/")
+            index_after_read = await client.get("/c/x-men-apocalypse")
             assert "Your roster is caught up for now." in index_after_read.text
 
     asyncio.run(run())
@@ -5242,7 +5284,7 @@ def test_identity_route_changes_default_character_face() -> None:
             )
             assert response.status == 302
 
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert "Current face: Storm" in index.text
 
     asyncio.run(run())
@@ -5252,7 +5294,7 @@ def test_theme_stylesheet_is_loaded_and_theme_aware() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "/elbysodic-static/elbysodic-theme.css" in index.text
 
@@ -5335,7 +5377,7 @@ def test_character_roster_can_create_new_default_character() -> None:
             assert "Jean Grey" in profile.text
             assert "Telepath with a plot-problem." in profile.text
 
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert "Current face: Jean Grey" in index.text
 
     asyncio.run(run())
@@ -5364,7 +5406,7 @@ def test_character_profile_can_set_current_face() -> None:
             assert "active-face defaults on" in profile.text
             assert "Find play for Storm" in profile.text
 
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert "Current face: Storm" in index.text
 
     asyncio.run(run())
@@ -5612,7 +5654,7 @@ def test_director_studio_updates_default_theme_tokens() -> None:
                 body=urlencode(body).encode(),
                 headers=_FORM,
             )
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
 
         theme = repo.get_default_theme(community.id)
         assert response.status == 302
@@ -5732,7 +5774,7 @@ def test_director_studio_updates_world_hero_media() -> None:
                 ).encode(),
                 headers=_FORM,
             )
-            home = await client.get("/")
+            home = await client.get("/c/x-men-apocalypse")
             studio = await client.get("/studio")
 
         updated = repo.get_community(community.id)
@@ -6548,7 +6590,7 @@ def test_composer_pages_point_empty_roster_to_character_setup() -> None:
 
         app = create_app(debug=False, services=services)
         async with TestClient(app) as client:
-            index = await client.get("/")
+            index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "Create your first character" in index.text
 

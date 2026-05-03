@@ -1386,8 +1386,6 @@ class StudioNetworkProgramView:
 
 
 def _program_href(program: StudioNetworkProgramView, path: str) -> str:
-    if program.is_current:
-        return path
     if path == "/":
         return f"/c/{program.community.slug}"
     return f"/c/{program.community.slug}{path}"

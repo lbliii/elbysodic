@@ -6,7 +6,7 @@ agents decide when a control should be visible, collapsed, combined, inline,
 iconic, or expanded into a deliberate editing surface.
 
 Use `docs/product/navigation-menus.md` for navigation-specific decisions:
-topbar realms, sidebar groups, route pathing, breadcrumbs, tabs, dropdowns, and
+topbar utilities, sidebar groups, route pathing, breadcrumbs, tabs, dropdowns, and
 mobile drawer behavior.
 
 The core tradeoff is:
@@ -233,9 +233,10 @@ be learned safely. They do not replace product language.
 
 - Use icon-only controls for shell utilities, repeated row actions, and
   universal operations such as close, search, edit, delete, expand, collapse,
-  previous, next, and more.
+  hide/show navigation, previous, next, and more.
 - Pair icons with text for PBP-specific verbs: plot, reserve, claim, watch,
-  join, caught up, needs reply, waiting, application, face, and roster.
+  join, caught up, needs reply, waiting, application, face, roster, wanted,
+  claims, reserves, queue, plotting, and Studio.
 - Every icon-only control needs an accessible name and a hover/focus tooltip.
 - Avoid icon-only destructive actions unless they live inside a labeled
   overflow menu or confirm step.
