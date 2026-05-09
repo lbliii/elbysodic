@@ -266,29 +266,31 @@ class AppServices:
     def __init__(
         self,
         repo: ForumRepository,
-        seed: DemoSeed,
+        seed: DemoSeed | None,
         *,
         identity_resolver: RequestIdentityResolver | None = None,
         identity_context: RequestIdentityContext | None = None,
     ) -> None:
         self.repo = repo
-        self.seed = seed
+        self._seed = seed
         self._identity_resolver = identity_resolver or RequestIdentityResolver(
             repo,
-            DefaultRequestIdentity(
-                community_id=seed.community.id,
-                user_id=seed.user.id,
-                membership_id=seed.membership.id,
-            ),
+            _default_request_identity(seed),
         )
         self._identity_context = identity_context
+
+    @property
+    def seed(self) -> DemoSeed:
+        if self._seed is None:
+            raise RuntimeError("demo seed is not configured for these services")
+        return self._seed
 
     def for_request(self, request: object) -> AppServices:
         """Return a request-scoped facade sharing the same repository."""
 
         return AppServices(
             self.repo,
-            self.seed,
+            self._seed,
             identity_resolver=self._identity_resolver,
             identity_context=self._identity_resolver.resolve(request),
         )
@@ -298,14 +300,10 @@ class AppServices:
 
         return AppServices(
             self.repo,
-            self.seed,
+            self._seed,
             identity_resolver=RequestIdentityResolver(
                 self.repo,
-                DefaultRequestIdentity(
-                    community_id=self.seed.community.id,
-                    user_id=self.seed.user.id,
-                    membership_id=self.seed.membership.id,
-                ),
+                _default_request_identity(self._seed),
                 allow_development_identity=not production,
                 require_session=production,
             ),
@@ -494,7 +492,7 @@ class AppServices:
             current_identity = self._identity_context or self._identity_resolver.resolve()
             preferred_community_id = current_identity.community_id
         except PermissionError:
-            preferred_community_id = self.seed.community.id
+            preferred_community_id = None if self._seed is None else self._seed.community.id
         identity = self._default_identity_for_user(
             session.user.id,
             preferred_community_id=preferred_community_id,
@@ -2415,18 +2413,18 @@ class AppServices:
         return board, thread
 
 
-def create_services(path: str | Path | None = None) -> AppServices:
+def create_services(path: str | Path | None = None, *, seed_demo: bool = True) -> AppServices:
     database_path = _resolve_database_path(path)
     if database_path != ":memory:":
         Path(database_path).parent.mkdir(parents=True, exist_ok=True)
     connection = connect(database_path, check_same_thread=False)
     create_schema(connection)
     repo = ForumRepository(connection)
-    seed = seed_demo_forum(repo)
+    seed = seed_demo_forum(repo) if seed_demo else None
     return AppServices(repo, seed)
 
 
-def initialize_database(path: str | Path | None = None, *, seed_demo: bool = True) -> Path:
+def initialize_database(path: str | Path | None = None, *, seed_demo: bool = False) -> Path:
     database_path = _resolve_database_path(path)
     if database_path == ":memory:":
         raise ValueError("persistent database initialization requires a filesystem path")
@@ -2456,6 +2454,16 @@ def _resolve_database_path(path: str | Path | None) -> str | Path:
     if path is None:
         return default_database_path()
     return path
+
+
+def _default_request_identity(seed: DemoSeed | None) -> DefaultRequestIdentity | None:
+    if seed is None:
+        return None
+    return DefaultRequestIdentity(
+        community_id=seed.community.id,
+        user_id=seed.user.id,
+        membership_id=seed.membership.id,
+    )
 
 
 def _resolve_current_character(
