@@ -1718,6 +1718,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Claim conflicts" in operations.text
             assert "Active reserves" in operations.text
             assert "Hooks with movement" in operations.text
+            assert "Ready for scene" in operations.text
             assert "Staff notifications" in operations.text
             assert "Production health" in operations.text
             assert "Draft materials" in operations.text
@@ -4438,11 +4439,34 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
             prefix="wanted-note-outsider",
         )
         outsider_app = create_app(debug=False, services=outsider_services)
+        notification = repo.create_notification(
+            community.id,
+            outsider_services.seed.membership.id,
+            kind="wanted_interest",
+            wanted_ad_id=wanted_ad.id,
+            wanted_ad_interest_id=prospective.id,
+            actor_membership_id=newface_membership.id,
+            actor_character_id=None,
+        )
         async with TestClient(outsider_app) as outsider_client:
             outsider_view = await outsider_client.get("/wanted/human-un-liaison-for-b24")
+            outsider_inbox = await outsider_client.get("/notifications")
+            open_attempt = await outsider_client.post(
+                "/notifications",
+                body=urlencode(
+                    {
+                        "intent": "open",
+                        "notification_id": str(notification.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
             assert outsider_view.status == 200
+            assert outsider_inbox.status == 200
             assert "Val Cooper" in outsider_view.text
             assert "I would app her as a UN pressure point." not in outsider_view.text
+            assert "I would app her as a UN pressure point." not in outsider_inbox.text
+            assert open_attempt.status == 404
 
         charlie_membership = repo.get_membership_by_username(community.id, "charlie")
         charlie_user = repo.get_user(charlie_membership.user_id)

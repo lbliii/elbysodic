@@ -240,6 +240,13 @@ def notification_item(
             if notification.wanted_ad_interest_id is not None
             else None
         )
+        if interest is not None and not _can_view_wanted_interest_notification(
+            viewer.membership,
+            viewer.role,
+            wanted_ad,
+            interest,
+        ):
+            return None
         if notification.kind == "wanted_reserved":
             snippet = f"{actor_label} reserved this wanted hook."
         elif notification.kind == "reserve_created":
@@ -383,9 +390,36 @@ def _can_view_notification_target(
                 role,
                 room,
             )
+        if notification.wanted_ad_id is not None:
+            wanted_ad = repo.get_wanted_ad(community_id, notification.wanted_ad_id)
+            if notification.wanted_ad_interest_id is None:
+                return True
+            interest = repo.get_wanted_ad_interest(
+                community_id,
+                notification.wanted_ad_interest_id,
+            )
+            return _can_view_wanted_interest_notification(
+                membership,
+                role,
+                wanted_ad,
+                interest,
+            )
     except LookupError:
         return False
     return True
+
+
+def _can_view_wanted_interest_notification(
+    membership: CommunityMembership,
+    role: Role | None,
+    wanted_ad: WantedAd,
+    interest: WantedAdInterest,
+) -> bool:
+    return (
+        membership.id == interest.membership_id
+        or membership.id == wanted_ad.creator_membership_id
+        or policies.can_manage_casting(membership, role)
+    )
 
 
 def notification_label(kind: str) -> str:

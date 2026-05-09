@@ -11,6 +11,7 @@ from elbysodic.services.read_models import (
     ApplicationCharacterView,
     CastingDesk,
     DirectorStudio,
+    PlottingDesk,
 )
 from elbysodic.web.state import get_services
 
@@ -39,7 +40,13 @@ def get(request: Request) -> Page:
     services = get_services(request)
     studio = services.director_studio()
     casting = services.casting_desk()
-    operations = _director_operations(studio, casting, services.viewer().unread_notification_count)
+    plotting = services.plotting_desk()
+    operations = _director_operations(
+        studio,
+        casting,
+        plotting,
+        services.viewer().unread_notification_count,
+    )
     return Page(
         "studio/operations/page.html",
         "page_content",
@@ -53,6 +60,7 @@ def get(request: Request) -> Page:
 def _director_operations(
     studio: DirectorStudio,
     casting: CastingDesk,
+    plotting: PlottingDesk,
     unread_notification_count: int,
 ) -> DirectorOperations:
     ready_applications = [
@@ -113,6 +121,18 @@ def _director_operations(
             cta="Review casting movement",
             items=tuple(
                 item.wanted_ad.wanted_ad.title for item in casting.wanted_with_interest[:4]
+            ),
+        ),
+        OperationsCard(
+            kicker="Backstage",
+            title="Ready for scene",
+            summary="Wanted handoffs whose plotting rooms are ready to become IC scenes.",
+            count=len(plotting.wanted_ready_interests),
+            href="/plotting#interest-inbox",
+            cta="Open plotting",
+            variant="attention" if plotting.wanted_ready_interests else "status",
+            items=tuple(
+                item.wanted_ad.wanted_ad.title for item in plotting.wanted_ready_interests[:4]
             ),
         ),
         OperationsCard(
