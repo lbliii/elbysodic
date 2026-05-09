@@ -71,7 +71,7 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_wanted_ad(community_id, _last_id(cursor))
 
     def get_wanted_ad(self, community_id: int, wanted_ad_id: int) -> WantedAd:
@@ -261,7 +261,7 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
             """,
             (community_id, wanted_ad_id, character_id, _utc_now()),
         )
-        self.connection.commit()
+        self._commit()
 
     def list_wanted_ad_related_characters(
         self,
@@ -318,7 +318,7 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
             """,
             (status, _utc_now(), community_id, wanted_ad_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_wanted_ad(community_id, wanted_ad_id)
 
     def create_wanted_ad_interest(
@@ -368,7 +368,7 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         if character_id is not None:
             return self.get_wanted_ad_interest_for_character(
                 community_id,
@@ -522,5 +522,5 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
             """,
             (status, _utc_now(), community_id, interest_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_wanted_ad_interest(community_id, interest_id)

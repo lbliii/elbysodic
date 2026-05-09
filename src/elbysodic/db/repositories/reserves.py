@@ -76,7 +76,7 @@ class ReserveRepositoryMixin(PlottingRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         if wanted_ad_interest_id is not None:
             return self.get_character_reserve_for_wanted_interest(
                 community_id,

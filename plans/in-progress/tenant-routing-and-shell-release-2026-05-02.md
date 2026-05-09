@@ -1,10 +1,18 @@
 # Tenant Routing And Shell Release Plan
 
 Created: 2026-05-02
-Last updated: 2026-05-03
+Last updated: 2026-05-09
 Review by: 2026-05-16
 Owner: Web, service, storage, domain, and Chirp integration stewardship
-Status: implemented; tightening identity, shared-host homepage, and Railway smoke
+Status: implemented locally; production smoke and global entry polish remain
+
+## 2026-05-09 Verification Update
+
+Tenant-prefix middleware, scoped link generation, boosted shell regression
+coverage, identity switching, and cross-realm recovery tests exist locally.
+This plan should now track only production shared-host proof and global entry
+polish: hard refresh, boosted navigation, login redirect recovery, membership
+switching, seed media, and canonical `/c/{community_slug}` links on Railway.
 
 ## Problem
 

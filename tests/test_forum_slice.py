@@ -1683,7 +1683,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Production health" in operations.text
             assert "Draft materials" in operations.text
             assert "Dry-run intake" in operations.text
+            assert "Release smoke" in operations.text
+            assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
+            assert 'href="/network"' in operations.text
             assert "Application Triage" in operations.text
             assert 'href="/applications"' in operations.text
             assert 'href="/casting"' in operations.text
@@ -1844,6 +1847,10 @@ appearance:
         assert "1 wanted hooks" in response.text
         assert "1 appearance" in response.text
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
+        assert "Hydration diff preview" in response.text
+        assert "create</strong> program: RL Small Town Preview" in response.text
+        assert "create</strong> scene hub: Main Street" in response.text
+        assert "create</strong> wanted hook: Returning sibling" in response.text
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
         after_count = repo.connection.execute(
@@ -6761,6 +6768,88 @@ def test_file_backed_services_persist_created_threads(tmp_path: Path) -> None:
         "This scene survives the next service boot."
     ]
     assert len(restarted.viewer().roster) == 3
+
+
+def test_start_thread_rolls_back_when_late_write_fails(monkeypatch) -> None:
+    services = create_services(path=":memory:")
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    board = services.repo.get_board_by_slug(viewer.community.id, "danger-room")
+    before = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
+
+    def fail_mark_thread_read(
+        community_id: int,
+        thread_id: int,
+        membership_id: int,
+    ) -> None:
+        raise RuntimeError("simulated read-state failure")
+
+    monkeypatch.setattr(services.repo, "mark_thread_read", fail_mark_thread_read)
+
+    with pytest.raises(RuntimeError, match="simulated read-state failure"):
+        services.start_thread(
+            board_slug="danger-room",
+            character_id=viewer.current_character.id,
+            title="Rollback Drill",
+            body="This scene should not survive a failed read-state write.",
+        )
+
+    after = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
+    assert after == before
+    assert "rollback-drill" not in after
+
+
+def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: Path) -> None:
+    db_path = tmp_path / "elbysodic.sqlite3"
+    services = create_services(path=db_path)
+    repo = services.repo
+    community = services.viewer().community
+    board = repo.get_board_by_slug(community.id, "danger-room")
+    material = repo.get_material_by_slug(community.id, "b-24-winter")
+
+    repo.update_board(
+        community.id,
+        board.id,
+        name="Danger Room After Hours",
+        description="A director-customized simulation wing.",
+        sort_order=board.sort_order,
+        parent_board_id=board.parent_board_id,
+        board_kind=board.board_kind,
+        sidebar_section=board.sidebar_section,
+        tagline="Custom director pressure.",
+        image_url="/custom-danger-room.webp",
+        image_alt="Custom Danger Room art",
+        image_treatment=board.image_treatment,
+        image_focal_point=board.image_focal_point,
+        image_overlay=board.image_overlay,
+        is_private=board.is_private,
+        navigation_order=board.navigation_order,
+        show_in_navigation=board.show_in_navigation,
+    )
+    repo.update_material(
+        community.id,
+        material.id,
+        title="B-24 Winter Custom Briefing",
+        material_type=material.material_type,
+        summary="Director-edited event summary.",
+        body="Director-edited event body.",
+        status=material.status,
+        sort_order=material.sort_order,
+        is_featured=material.is_featured,
+    )
+
+    restarted = create_services(path=db_path)
+    restored_board = restarted.repo.get_board_by_slug(community.id, "danger-room")
+    restored_material = restarted.repo.get_material_by_slug(community.id, "b-24-winter")
+
+    assert restored_board.name == "Danger Room After Hours"
+    assert restored_board.description == "A director-customized simulation wing."
+    assert restored_board.tagline == "Custom director pressure."
+    assert restored_board.image_url == "/custom-danger-room.webp"
+    assert restored_board.image_alt == "Custom Danger Room art"
+    assert restored_material.title == "B-24 Winter Custom Briefing"
+    assert restored_material.summary == "Director-edited event summary."
+    assert restored_material.body == "Director-edited event body."
 
 
 def test_composer_pages_point_empty_roster_to_character_setup() -> None:

@@ -6,10 +6,12 @@ and long-form replies, then makes the surrounding PBP studio work native:
 characters, rosters, facets, world materials, wanted hooks, casting needs,
 applications, queues, notifications, and continuity.
 
-The MVP experience is one community per install. The architecture is
-tenant-aware from the beginning, so community identity, membership permissions,
-rosters, posts, materials, and staff workflows stay scoped by `community_id`
-even while local development seeds a single default community.
+The MVP experience is one primary community per production install, with a
+seeded multi-community network for local and Railway demo QA. The architecture
+is tenant-aware from the beginning, so community identity, membership
+permissions, rosters, posts, materials, and staff workflows stay scoped by
+`community_id`. On shared hosts, community links use `/c/{community_slug}` so a
+realm is resolved before local slugs are looked up.
 
 ## Product Shape
 
@@ -35,10 +37,15 @@ The development app currently includes:
 - Community-scoped boards, threads, posts, and seeded demo content.
 - Global users with community-local memberships, roles, usernames, permissions,
   and default face settings.
+- Local login/logout sessions, production-mode session gating, CSRF-protected
+  forms, and development-only persona switching.
 - Character-authored posting with community-local rosters and active face
   switching.
+- Tenant-prefixed shared-host routing for seeded realms and a platform/network
+  home at `/` and `/network`.
 - Board, thread, home, character, member, community, locations, world, casting,
-  applications, wanted, Writer Desk, My Threads, and notification views.
+  claims, applications, wanted, Writer Desk, My Threads, plotting,
+  interactions, Studio, and notification views.
 - Safe post markup rendering, composer toolbar affordances, preview toggle, and
   local draft restore.
 - Thread read state, first-unread jumps, next-unread navigation, sidebar board
@@ -54,8 +61,19 @@ The development app currently includes:
   events outside the forum/thread format.
 - Wanted hooks as first-class plot and casting invitations linked to
   characters, world materials, and facets.
+- Claims, reserves, applications, review rooms, plotting rooms, and
+  notification-backed writing/workflow handoffs.
 - Character profile hubs with identity, plotter hooks, tracker context, and
   recent posts.
+- Studio production surfaces for operations, boards, Blueprint intake dry-run,
+  and board-running controls.
+- Safe Program Blueprint parsing/validation and dry-run preview. Apply/hydrate
+  remains intentionally gated behind a future diff and transaction contract.
+
+Gated production-readiness work is tracked in
+[plans/in-progress/production-readiness-roadmap-2026-05-09.md](plans/in-progress/production-readiness-roadmap-2026-05-09.md).
+The current launch posture is login-only demo/invite-style access until a
+registration or request-access contract is explicitly designed.
 
 ## Architecture
 

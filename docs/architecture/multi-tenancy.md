@@ -1,18 +1,23 @@
 # Multi-Tenant Strategy
 
-Elbysodic launches as a single-community forum product, but its database and
-service layer are tenant-aware from the beginning.
+Elbysodic launches with one primary community per production install, but its
+database, service layer, and shared-host demo routes are tenant-aware from the
+beginning.
 
 ## Decision
 
-Build the MVP as a single-tenant product experience with tenant-aware
-architecture.
+Build the MVP as a one-community product experience with tenant-aware
+architecture and explicit shared-host routing for seeded/demo networks.
 
-- MVP users see one forum.
-- MVP admins manage one forum.
-- The app seeds one default community.
+- A production install can present one primary community as the default realm.
+- Local development and the Railway demo can seed several communities so
+  cross-realm identity, routing, and privacy are tested before hosted
+  multi-community creation exists.
+- Shared-host community URLs use `/c/{community_slug}` so links resolve the
+  intended realm before local slugs are looked up.
 - Core forum tables include `community_id`.
-- Core services accept `community_id` even while it is always `1`.
+- Core services accept and propagate `community_id`; it must not be assumed to
+  be `1`.
 - New structured primitives, including facets, materials, wanted hooks, claims,
   reserves, and applications, should follow the same rule from their first
   schema.
@@ -54,17 +59,35 @@ The MVP does not include hosted forum creation, billing, custom domains,
 cross-community dashboards, community discovery, tenant analytics, or
 per-community backup UI. The resolver abstraction keeps those options open.
 
+## Deployment Modes
+
+Elbysodic currently has three relevant modes:
+
+- Single-community production install: one primary community is the default
+  realm, while all product rows and service calls remain community-scoped.
+- Local seeded network: several communities exist for QA personas, staff/member
+  role differences, active-face behavior, and cross-tenant route tests.
+- Shared Railway host: `/` and `/network` are platform/network surfaces, and
+  canonical community links use `/c/{community_slug}` unless a community has
+  its own host.
+
+These modes share the same identity model. Users are global login accounts,
+memberships are community-local, and staff power belongs to membership roles.
+
 ## Request Identity Boundary
 
 The web layer treats community and writer identity as request-scoped, even in
 development. A shared `AppServices` instance owns the repository, then
 `for_request(request)` creates a scoped facade that resolves:
 
-- community from an explicit development header, a configured host, or the
-  seeded default community
-- user from a development identity header or the seeded dev user
-- membership from the resolved user inside the resolved community
+- community from an explicit tenant prefix, a configured host, a session
+  selection, development-only identity hints, or the deployment default
+- user from a production session, or development-only identity hints/fallbacks
+  when development mode allows them
+- membership from the resolved user inside the resolved community, with inactive
+  memberships rejected
 
-This is not final authentication. It is the boundary that lets hosted programs,
-membership switching, and real login sessions arrive without service methods
-continuing to depend on the seeded demo identity.
+Production mode requires a valid `elbysodic_session` for normal app routes and
+ignores development identity headers and unsigned development identity cookies.
+Development mode can keep seed fallback identity and `/dev/personas` for QA,
+but those shortcuts must not participate in production request resolution.

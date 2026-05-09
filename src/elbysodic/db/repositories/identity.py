@@ -50,7 +50,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 DEFAULT_COMMUNITY_SLUG,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(DEFAULT_COMMUNITY_ID)
 
     def create_community(self, slug: str, name: str, host: str | None = None) -> Community:
@@ -62,7 +62,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (name, slug, host, now, now),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(_last_id(cursor))
 
     def get_community(self, community_id: int) -> Community:
@@ -194,7 +194,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (facet_group_id, _utc_now(), community_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(community_id)
 
     def update_community_media(
@@ -238,7 +238,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 community_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(community_id)
 
     def update_community_name_and_slug(
@@ -253,7 +253,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (slug, name, _utc_now(), community_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(community_id)
 
     def create_theme(
@@ -272,7 +272,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (community_id, slug, name, tokens_json, now, now),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_theme(community_id, _last_id(cursor))
 
     def get_theme(self, community_id: int, theme_id: int) -> CommunityTheme:
@@ -339,7 +339,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (slug, name, tokens_json, _utc_now(), community_id, theme_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_theme(community_id, theme_id)
 
     def set_default_theme(self, community_id: int, theme_id: int | None) -> Community:
@@ -354,7 +354,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (theme_id, _utc_now(), community_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(community_id)
 
     def upsert_default_theme(
@@ -412,7 +412,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 community_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_community(community_id)
 
     def create_user(self, email: str, password_hash: str) -> User:
@@ -423,7 +423,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (email, password_hash, _utc_now()),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_user(_last_id(cursor))
 
     def get_user(self, user_id: int) -> User:
@@ -477,7 +477,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (user_id, token_hash, now, now, expires_at),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_user_session(_last_id(cursor))
 
     def get_user_session(self, session_id: int) -> UserSession:
@@ -533,7 +533,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (_utc_now(), session_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_user_session(session_id)
 
     def update_user_session_identity(
@@ -561,7 +561,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (community_id, membership_id, _utc_now(), session_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_user_session(session_id)
 
     def revoke_user_session_by_token_hash(self, token_hash: str) -> None:
@@ -573,7 +573,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (_utc_now(), token_hash),
         )
-        self.connection.commit()
+        self._commit()
 
     def create_role(
         self,
@@ -591,7 +591,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (community_id, slug, name, int(is_admin), now, now),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_role(community_id, _last_id(cursor))
 
     def get_role(self, community_id: int, role_id: int) -> Role:
@@ -639,7 +639,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             """,
             (community_id, user_id, username, display_name, avatar_url, role_id, _utc_now()),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_membership(community_id, _last_id(cursor))
 
     def get_membership(self, community_id: int, membership_id: int) -> CommunityMembership:

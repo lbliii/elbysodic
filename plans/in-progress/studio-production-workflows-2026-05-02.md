@@ -1,13 +1,21 @@
 # Studio Production Workflows Plan
 
-Status: drafted  
+Status: active after production gates
 Owner: Product, web, service, storage, and test stewardship  
 Created: 2026-05-02  
-Last updated: 2026-05-02  
-Review by: 2026-05-23  
+Last updated: 2026-05-09
+Review by: 2026-05-30
 Closure criteria: split into focused implementation PRs for board/world
 editing, application and claim review, wanted outcomes, and director operations
 shortcuts; archive when those PRs land or supersede the plan.
+
+## 2026-05-09 Verification Update
+
+The production-readiness roadmap moves broad Studio workflow expansion behind
+auth/Railway smoke, storage/seed persistence, rendered privacy, and transaction
+boundaries. Keep this plan active for application/claims review, wanted
+outcomes, and daily Studio operations, but every new sensitive surface needs
+service-policy proof and rendered privacy coverage in the same PR.
 
 ## Purpose
 

@@ -1,16 +1,24 @@
 # Appearance Studio Roadmap
 
-Status: in-progress  
+Status: partially superseded by production-readiness sequencing
 Owner: Product/UI stewardship  
 Created: 2026-05-01  
-Last updated: 2026-05-01  
-Review by: 2026-05-22  
+Last updated: 2026-05-09
+Review by: 2026-06-06
 Source: `ask stewards` consultation after comparing Avior and Lethe as
 contemporary Jcink/PBP cultural references.  
 Closure criteria: split into implementation issues or PR-sized plans covering
 the theme editor, ritual-surface variants, validation, and import/export
 support; archive this roadmap when those workstreams have owners or have been
 superseded.
+
+## 2026-05-09 Verification Update
+
+The Appearance Studio product doc now exists, and Blueprint/theme parsing has
+safe appearance payload coverage. The production-readiness roadmap defers
+additional theme editor, health warning, and ritual-variant work until
+auth/Railway smoke, storage persistence, privacy proof, and core browser QA are
+stable enough that visual polish is not hiding data-contract risk.
 
 ## Purpose
 
@@ -383,4 +391,3 @@ uv run python -c "from elbysodic.web import create_app; create_app(debug=False, 
 4. Choose the first two demo aesthetics to validate range. Recommended:
    accessible small-town mystery and gothic folk-horror.
 5. Build the Theme Editor MVP before adding new variant families.
-

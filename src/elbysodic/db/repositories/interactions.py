@@ -77,7 +77,7 @@ class InteractionRepositoryMixin(ThreadRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_realm_interaction(community_id, _last_id(cursor))
 
     def get_realm_interaction(
@@ -284,7 +284,7 @@ class InteractionRepositoryMixin(ThreadRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_realm_interaction_question(community_id, _last_id(cursor))
 
     def get_realm_interaction_question(
@@ -386,7 +386,7 @@ class InteractionRepositoryMixin(ThreadRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_realm_interaction_option(community_id, _last_id(cursor))
 
     def get_realm_interaction_option(
@@ -595,7 +595,7 @@ class InteractionRepositoryMixin(ThreadRepositoryMixin):
                 """,
                 (community_id, response_id, question_id, option_id, now),
             )
-        self.connection.commit()
+        self._commit()
         response = self.get_realm_interaction_response_for_membership(
             community_id,
             interaction.id,

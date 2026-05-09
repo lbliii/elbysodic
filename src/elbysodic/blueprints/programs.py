@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 
@@ -157,10 +157,23 @@ class BlueprintValidationError(ValueError):
         super().__init__("\n".join(self.errors))
 
 
+BlueprintDiffAction = Literal["create", "update", "skip", "blocked", "warning"]
+
+
+@dataclass(frozen=True, slots=True)
+class BlueprintDiffRow:
+    section: str
+    slug: str
+    label: str
+    action: BlueprintDiffAction
+    detail: str
+
+
 @dataclass(frozen=True, slots=True)
 class ProgramBlueprintPreview:
     blueprint: ProgramBlueprint | None
     errors: tuple[str, ...]
+    diff_rows: tuple[BlueprintDiffRow, ...] = ()
 
     @property
     def is_valid(self) -> bool:

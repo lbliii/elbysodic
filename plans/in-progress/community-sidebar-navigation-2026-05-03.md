@@ -1,14 +1,23 @@
 # Community Sidebar Navigation Plan
 
-Status: drafted
+Status: active UX polish; browser QA remains
 Owner: Product/UI stewardship
 Created: 2026-05-03
-Last updated: 2026-05-03
-Review by: 2026-05-24
+Last updated: 2026-05-09
+Review by: 2026-05-30
 Closure criteria: topbar/sidebar ownership is documented, the Elbysodic
 sidebar primitives are implemented without duplicate route control, mobile and
 desktop sidebar behavior pass browser QA, and any upstream Chirp UI candidates
 are identified.
+
+## 2026-05-09 Verification Update
+
+Navigation docs and route tests have advanced, but production polish still
+needs browser QA across desktop and mobile, including login, network search,
+tenant-prefixed community entry, board/thread/composer, wanted, application
+review, plotting, notifications, and Studio. Search is currently discoverable
+on `/network`, not as a topbar/global affordance; either add that affordance or
+explicitly defer it in docs and UI copy.
 
 ## Purpose
 

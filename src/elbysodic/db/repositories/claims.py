@@ -65,7 +65,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_claim_type(community_id, _last_id(cursor))
 
     def update_claim_type(
@@ -109,7 +109,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 claim_type_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_claim_type(community_id, claim_type_id)
 
     def get_claim_type(self, community_id: int, claim_type_id: int) -> ClaimType:
@@ -252,7 +252,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_claim(community_id, _last_id(cursor))
 
     def update_character_claim(
@@ -308,7 +308,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 claim_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_claim(community_id, claim_id)
 
     def get_character_claim(self, community_id: int, claim_id: int) -> CharacterClaim:
@@ -462,7 +462,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_application_template_field(community_id, _last_id(cursor))
 
     def update_application_template_field(
@@ -511,7 +511,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 field_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_application_template_field(community_id, field_id)
 
     def get_application_template_field(
@@ -599,7 +599,7 @@ class ClaimRepositoryMixin(InteractionRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_application_field_value(community_id, application_id, field_id)
 
     def get_application_field_value(

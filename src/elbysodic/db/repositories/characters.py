@@ -92,7 +92,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         if make_default:
             self.set_default_character(community_id, membership_id, character.id)
             character = self.get_character(community_id, character.id)
-        self.connection.commit()
+        self._commit()
         return character
 
     def get_character(self, community_id: int, character_id: int) -> Character:
@@ -256,7 +256,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 character_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character(community_id, character_id)
 
     def update_character_application_status(
@@ -282,7 +282,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
             """,
             (application_status, _utc_now(), community_id, character_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character(community_id, character_id)
 
     def ensure_character_application(
@@ -340,7 +340,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_application(community_id, _last_id(cursor))
 
     def get_character_application(
@@ -452,7 +452,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
             """,
             (summary, _utc_now(), community_id, application.character_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_application(community_id, application_id)
 
     def update_character_application_review(
@@ -480,7 +480,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 application_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_application(community_id, application_id)
 
     def transition_character_application_status(
@@ -545,7 +545,7 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         self.get_character_application_event(community_id, _last_id(cursor))
         return self.get_character_application(community_id, application_id)
 
@@ -766,5 +766,5 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
             """,
             (character_id, community_id, membership_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_membership(community_id, membership_id)

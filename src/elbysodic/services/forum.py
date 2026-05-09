@@ -1262,7 +1262,7 @@ class AppServices:
         )
 
     def preview_program_blueprint(self, source: str) -> ProgramBlueprintPreview:
-        return _preview_program_blueprint(self.viewer(), source)
+        return _preview_program_blueprint(self.repo, self.viewer(), source)
 
     def update_board_taxonomy(
         self,

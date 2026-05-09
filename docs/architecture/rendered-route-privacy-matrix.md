@@ -24,16 +24,18 @@ Use these viewer modes when a route can expose scoped data:
 
 ## Route Families
 
-| Route Family | Sensitive Data | Member | Owner | Staff | Cross-Tenant / Missing |
-| --- | --- | --- | --- | --- | --- |
-| `/world`, `/world/{material}` | Draft materials, Material Studio controls, current event links. | Published materials only. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page; no draft body. |
-| `/wanted`, `/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls. | Open/non-archived hooks only. | Own hook controls visible. | Casting controls visible. | Recovery page; no archived body. |
-| `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. |
-| `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. |
-| `/notifications` | Membership-specific inbox and unread counts. | Own notifications only. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. |
-| `/studio`, `/studio/*` | Draft materials, private boards, production health, edit forms. | Read-only preview or forbidden controls absent. | Same as capability. | Capability-scoped controls visible. | No staff power leakage across communities. |
-| `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. |
-| `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. |
+| Route Family | Sensitive Data | Member | Owner | Staff | Cross-Tenant / Missing | Coverage |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/world`, `/world/{material}` | Draft materials, Material Studio controls, current event links. | Published materials only. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page; no draft body. | covered for draft material regressions |
+| `/wanted`, `/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls. | Open/non-archived hooks only. | Own hook controls visible. | Casting controls visible. | Recovery page; no archived body. | partial |
+| `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. | partial |
+| `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. | partial; notification leakage covered |
+| `/notifications` | Membership-specific inbox and unread counts. | Own notifications only. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. | partial |
+| `/studio`, `/studio/*` | Draft materials, private boards, production health, edit forms. | Read-only preview or forbidden controls absent. | Same as capability. | Capability-scoped controls visible. | No staff power leakage across communities. | partial |
+| `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. | partial |
+| `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. | covered for inactive identity regressions |
+| `/network`, `/network?q=...` | Public catalog cards, signed-in continuation, staff/member counts. | Safe public or own membership data only. | Own continuation lanes only. | Staff signals only where policy allows. | No private/staff data from other realms. | missing production public-catalog proof |
+| shell/sidebar counts | Private board counts, notification counts, Studio attention counts. | Own permitted counts only. | Same as member. | Capability-scoped counts only. | No cross-realm or private counts. | partial |
 
 ## Test Checklist
 
@@ -64,3 +66,16 @@ control appears or does not appear than to snapshot large HTML sections.
   casting-capable staff.
 - Studio operations renders as a read-only console for ordinary members without
   exposing submitted application names or review queue counts.
+
+## Current Gaps
+
+- Production public catalog/search proof for signed-out and signed-in users.
+- Application review room owner/staff/outsider route-family coverage.
+- Claims conflict and reserve visibility coverage beyond happy-path directory
+  rendering.
+- Plotting room rendered page coverage across participant, owner, outsider,
+  staff, and cross-tenant identities.
+- Notification inbox and shell/sidebar count coverage across membership,
+  inactive, faceless, and cross-tenant identities.
+- Browser QA evidence for responsive privacy-adjacent surfaces where counts,
+  drawers, or recovery actions can render differently from desktop.

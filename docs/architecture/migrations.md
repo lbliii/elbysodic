@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `6`. Calling
+The checked-in schema currently creates databases at version `12`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -17,6 +17,12 @@ Version `1` is the historical baseline. Versions `2` and later are ordered
 post-baseline migrations in `src/elbysodic/db/migrations.py`. This keeps the
 prototype's existing schema bootstrap intact while giving future schema changes
 an ordered migration path.
+
+Fresh-schema and upgraded-schema parity is a production-readiness requirement:
+new tables, columns, indexes, and constraints must be represented in both the
+checked-in `SCHEMA` and the ordered migration path. When adding a migration,
+include a parity-oriented test if the change affects indexes or constraints
+that are easy to omit from one path.
 
 ## Adding A Schema Change
 

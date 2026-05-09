@@ -156,6 +156,20 @@ def _director_operations(
                 "Preview checks counts, slugs, references, and safe theme tokens.",
             ),
         ),
+        OperationsCard(
+            kicker="Production",
+            title="Release smoke",
+            summary="Core flows to prove before the Railway URL is shared broadly.",
+            count=7,
+            href="/network",
+            cta="Open network home",
+            variant="attention",
+            items=(
+                "Log in, enter a realm, and switch memberships.",
+                "Read a scene, review wanted movement, and check notifications.",
+                "Complete one CSRF-protected write, then log out.",
+            ),
+        ),
     ]
     return DirectorOperations(
         cards=cards,

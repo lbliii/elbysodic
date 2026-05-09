@@ -1,8 +1,7 @@
 # Elbysodic Primitives
 
-These are the first architectural primitives for the play-by-post forum core.
-They are intentionally small, but they name the product rules that should stay
-stable as the implementation grows.
+These are the architectural primitives for the play-by-post studio core. They
+name the product rules that should stay stable as the implementation grows.
 
 ## Identity
 
@@ -174,12 +173,58 @@ Current statuses are intentionally small: open, reserved, filled, and archived.
 Future workflows can add interest, claims, reserve expiry, staff review, and
 application spawning without turning wanted hooks into generic threads.
 
+## Applications, Claims, And Reserves
+
+Applications are casting and roster review records. They are scoped to one
+community, one membership, and one character. Application events store the
+membership that made a review move and optionally the character face that gives
+story context.
+
+Claims and reserves are director-defined casting constraints, not generic tags.
+Claim types are community-scoped, and character claims connect the claimed
+value to the owning character and membership. Reserves protect a future casting
+intention for a membership and community. These surfaces need staff/applicant
+privacy proof because they often include private review notes, conflict
+resolution, or unpublished character intent.
+
+## Plot Hooks And Plotting Rooms
+
+Character plot hooks are face-authored invitations for relationship, scene, or
+arc discovery. They belong to a community, membership, and character.
+
+Plotting rooms are structured handoff spaces between wanted interest, character
+hooks, and scenes. They store participants, messages, planning fields, target
+boards or threads, and notification targets. Because plotting rooms can be
+private or participant-limited, rendered route and notification tests must
+prove that outsiders do not see private room titles, messages, counts, or
+recovery links.
+
 ## Character Hubs
 
 Character profiles are becoming hubs rather than static profile pages. The
 current hub contains identity, facets, wanted hooks, tracker/queue context, and
-recent posts. Future hub sections can add relationships, claims/reserves,
-application status, plot pages, or world-material links.
+recent posts. Character hubs can also surface claims/reserves, application
+status, plot hooks, and world-material links when privacy rules allow them.
+
+## Studio Network And Tenant Routes
+
+The seeded development and Railway demo app can expose multiple communities on
+one shared host. Canonical shared-host community links use
+`/c/{community_slug}` so the realm is resolved before local board, material,
+wanted, character, or thread slugs are looked up.
+
+`/` and `/network` are platform/network surfaces, not one community's world
+home. Current `/network` search is a logged-in directory filter; a production
+public catalog/search contract still needs a service read model that separates
+safe public program data from signed-in continuation lanes.
+
+## Program Blueprints
+
+Program Blueprints are director-authored starter packets for communities,
+starter faces, boards, materials, wanted hooks, theme tokens, appearance
+choices, and board media. Current Studio intake supports parsing, validation,
+and dry-run preview. Apply/hydration is intentionally gated until a typed diff,
+collision handling, transaction, rollback, and tenant tests exist.
 
 ## Moderation
 
@@ -205,14 +250,16 @@ or notification targets.
 - Structured board-running material should not be forced into threads when a
   typed primitive better represents the ritual.
 
-## First Slice
+## Current Slice
 
-The current dev app seeds one community, one membership, a small character
-roster, boards, threads, and posts. The topbar character selector updates the
-membership's default character, while the thread composer and reply composer can
-still choose any character in the active roster for a specific post.
+The current dev app seeds several communities for tenant and persona QA. The
+identity menu updates the membership's default character, while the thread
+composer and reply composer can still choose any character in the active roster
+for a specific post.
 
 The first slice now also includes read-state queues, post editing, revision
 history, staff thread controls, thread watches, character and writer mentions, a
-notification inbox, director-defined facets, world materials, wanted hooks, and
-the first character hub shape.
+notification inbox, director-defined facets, world materials, wanted hooks,
+claims, reserves, applications, plotting rooms, realm interactions, Studio
+operations, Program Blueprint dry-run preview, tenant-prefixed shared-host
+routes, and character hub surfaces.
