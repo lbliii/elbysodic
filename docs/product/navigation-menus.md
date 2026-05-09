@@ -87,6 +87,12 @@ work lanes: Queue, Inbox, Roster, Plotting, Applications, Discovery, and
 Casting/Wanted. Desk should feel like a writing cockpit, not a generic tool
 directory.
 
+Plotting is also the current backstage pulse for wanted-hook handoffs. Keep the
+route as `/plotting` until a broader backstage primitive is proven. The page can
+group raised hands, in-plotting rooms, ready-for-scene rooms, and threaded
+handoffs, but navigation should still present it as a writer/director work lane
+rather than a new global realm.
+
 ## Sidebar
 
 The sidebar is the contextual map for the current community mode or local
@@ -388,6 +394,9 @@ Nested routes should mean ownership or object containment:
 - `/characters/{character_slug}/hooks/{hook_slug}`: a plot hook belongs to a
   character.
 - `/plotting/{room_id}`: a plotting room detail.
+
+Do not add `/backstage` only to rename wanted or plotting movement. Backstage
+needs a broader cross-object contract before it becomes route vocabulary.
 
 Do not force structured primitives into board/thread paths just because old
 forums did. Wanted hooks, materials, applications, reserves, and plot hooks can

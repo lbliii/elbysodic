@@ -27,10 +27,10 @@ Use these viewer modes when a route can expose scoped data:
 | Route Family | Sensitive Data | Member | Owner | Staff | Cross-Tenant / Missing | Coverage |
 | --- | --- | --- | --- | --- | --- | --- |
 | `/world`, `/world/{material}` | Draft materials, Material Studio controls, current event links. | Published materials only. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page; no draft body. | covered for draft material regressions |
-| `/wanted`, `/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls. | Open/non-archived hooks only. | Own hook controls visible. | Casting controls visible. | Recovery page; no archived body. | partial |
+| `/wanted`, `/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls, private interest notes, plotting-room links, and scene-handoff links. | Open/non-archived hooks only; unrelated members do not see another writer's note or room link. | Own hook controls and interest notes visible. | Casting controls and interest notes visible. | Recovery page; no archived body, private note, or room link. | covered for prospective-note privacy and wanted backstage handoff |
 | `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. | partial |
-| `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. | partial; notification leakage covered |
-| `/notifications` | Membership-specific inbox and unread counts. | Own notifications only. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. | partial |
+| `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants, backstage stage grouping. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. | partial; notification leakage and wanted stage grouping covered |
+| `/notifications` | Membership-specific inbox and unread counts, wanted-interest notes, plotting-room targets. | Own visible notifications only; forged inaccessible wanted/room targets are hidden. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. | partial; forged wanted/room target regressions covered |
 | `/studio`, `/studio/*` | Draft materials, private boards, production health, edit forms. | Read-only preview or forbidden controls absent. | Same as capability. | Capability-scoped controls visible. | No staff power leakage across communities. | partial |
 | `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. | partial |
 | `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. | covered for inactive identity regressions |
@@ -64,8 +64,14 @@ control appears or does not appear than to snapshot large HTML sections.
 - Plotting room notifications do not render private room titles, unread counts,
   or open redirects for memberships that are not room owners, participants, or
   casting-capable staff.
+- Wanted-interest notifications do not render prospective pitch notes or open
+  redirects for memberships that are not the interested writer, hook creator,
+  or casting-capable staff.
 - Studio operations renders as a read-only console for ordinary members without
   exposing submitted application names or review queue counts.
+- Wanted detail hides private interest notes from unrelated ordinary members
+  while showing hook creators and casting staff the backstage controls needed
+  to start or open plotting rooms.
 
 ## Current Gaps
 

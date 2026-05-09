@@ -23,6 +23,16 @@ The strongest Elbysodic metaphor from this pass is **backstage**: a place where
 writers, directors, and faces coordinate the production around play without
 turning the public scene text into a noisy social feed.
 
+## 2026-05-09 Implementation Update
+
+Wanted hooks were selected as the first backstage object. The implementation
+now keeps private wanted-interest notes scoped to the interested writer, hook
+creator, and casting-capable staff; shows wanted detail handoff states from
+raised hand to plotting room to ready-for-scene to scene started; groups wanted
+backstage movement on `/plotting`; filters inaccessible wanted-interest
+notifications; and records the shipped privacy contract in
+`docs/architecture/rendered-route-privacy-matrix.md`.
+
 ## Sources Checked
 
 Checked on 2026-05-09:

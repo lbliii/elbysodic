@@ -27,6 +27,9 @@ The current app has several information-heavy surfaces:
 - Thread page: scene state, cast, metadata, posts, and writing actions.
 - Character page: face identity, facets, plotter/wanted hooks, queue, posts.
 - Wanted and casting: structured hooks, interest, reserves, and related faces.
+- Wanted backstage: raised hands, private interest notes, plotting-room
+  handoffs, ready-for-scene state, and scene links for involved writers,
+  hook owners, and casting staff.
 - Writer Desk, My Threads, Notifications: meta-work that supports writing.
 
 These screens repeat the same concepts. When they are styled ad hoc, everything
@@ -221,6 +224,26 @@ Writer names belong in metadata. Character faces belong in cast.
 Cast should compose ChirpUI's `avatar` primitive so status, sizing, fallback
 initials, and future avatar-stack behavior stay consistent across thread cards,
 wanted hooks, casting, and character hubs.
+
+### Wanted Backstage
+
+Use for the coordination lane attached to wanted hooks. Backstage is not a
+global feed and not a generic DM surface. It is the object-bound handoff from a
+writer raising a hand to a hook owner or casting-capable director opening a
+plotting room, marking it ready for scene, and linking the resulting scene.
+
+The public wanted hook can show safe movement signals such as `Raised hand`,
+`In plotting`, `Ready for scene`, `Scene started`, or `Reserved`. Private
+interest notes, prospective pitches, room links, and scene-handoff controls
+belong only to the interested writer, hook creator, room participants, or
+casting staff.
+
+The visual priority is:
+
+1. Hook identity and world context.
+2. Public movement state.
+3. Private backstage action for eligible viewers.
+4. Reserve or lifecycle controls for hook owners and casting staff.
 
 ### PostProfileRail
 

@@ -1,14 +1,27 @@
 # Wanted Backstage Handoff Plan
 
-Status: ready for implementation after production gates
+Status: implemented locally; archive after full gate verification
 Owner: Product, service, web, storage, and test stewardship
 Created: 2026-05-09
 Last updated: 2026-05-09
 Review by: 2026-05-30
-Closure criteria: split or land focused PRs that make wanted interest move
-through a privacy-safe backstage handoff into plotting and scene setup, with
-rendered proof for hook creator, interested writer, staff, ordinary member,
-outsider, and same-user-different-community views.
+Closure criteria: archive after the full local gate passes or any remaining
+same-user-different-community proof gap is moved into the production-readiness
+roadmap.
+
+## 2026-05-09 Implementation Update
+
+The first wanted backstage slice landed locally:
+
+- wanted-interest notes are private to the interested writer, hook creator, and
+  casting-capable staff
+- wanted detail shows derived backstage states and direct plotting-room or
+  scene links for eligible viewers
+- `/plotting` groups wanted handoffs by raised hands, in plotting, ready for
+  scene, and scene started
+- forged wanted-interest notifications are hidden from unrelated members
+- Studio operations includes a Backstage `Ready for scene` card
+- product and rendered privacy docs now capture the shipped contract
 
 ## Purpose
 
@@ -349,4 +362,3 @@ notifications, route registration, policies, schema, or transaction behavior.
 - Tests: accepted. Existing wanted/plotting tests are a strong base, but need
   explicit unrelated-member and same-user-different-community assertions for
   wanted interest notes and room backlinks.
-
