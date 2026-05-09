@@ -1,12 +1,20 @@
 # Location And Board Media Epic
 
-Status: in-progress, PRs 1-5 implemented
+Status: implemented; archive candidate after final verification note
 Owner: Product/UI stewardship  
 Created: 2026-05-02  
-Last updated: 2026-05-02  
-Review by: 2026-05-23  
+Last updated: 2026-05-09
+Review by: 2026-05-16
 Closure criteria: split into PRs for accessible board media rendering, seeded
 location art throughlines, Studio QA controls, and any later Blueprint alignment.
+
+## 2026-05-09 Verification Update
+
+PRs 1-5 are marked implemented in this plan. The remaining useful work is not a
+new media epic; it is final verification and archival hygiene. Keep only
+explicit follow-ups that still matter for production readiness: browser QA for
+board media on dense/mobile pages, Blueprint/export alignment if needed, and
+seed media availability in Railway smoke.
 
 ## Purpose
 
@@ -226,10 +234,7 @@ Acceptance checks:
 
 ## Next Checks
 
-1. Start PR 1 by replacing CSS-only board media with an accessible component.
-2. Verify whether `board.image_alt` should be visible as a hidden image alt,
-   a caption, or both on repeated cards.
-3. Audit mobile card and board-stage screenshots before seeding more images.
-4. After PR 1 lands, create the first seed asset batch for X-Men and one
-   non-X-Men program to validate the throughline model before filling all
-   communities.
+1. Confirm seed media URLs return `200` on Railway.
+2. Include one dense and one quiet board in the production browser QA pass.
+3. Archive this plan after those checks or move any remaining export work into
+   the Program Blueprint roadmap.

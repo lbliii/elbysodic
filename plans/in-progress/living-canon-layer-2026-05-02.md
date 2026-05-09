@@ -1,13 +1,21 @@
 # Living Canon Layer
 
-Status: drafted  
+Status: deferred until production trust gates close
 Owner: Product, domain, storage, service, and web stewardship  
 Created: 2026-05-02  
-Last updated: 2026-05-02  
-Review by: 2026-05-30  
+Last updated: 2026-05-09
+Review by: 2026-06-13
 Closure criteria: split into PR-sized work for scene outcomes, source-linked
 canon entries, proposal review, rendered privacy coverage, and any later
 automation/digest integration.
+
+## 2026-05-09 Verification Update
+
+Living Canon remains a strong future primitive, but stewards converged that it
+should wait behind production trust gates: Railway smoke, schema/seed
+persistence, transaction boundaries, rendered privacy matrix expansion, and
+core flow browser QA. The first future slice should still be manual scene
+outcomes, not automation or public canon indexing.
 
 ## Purpose
 

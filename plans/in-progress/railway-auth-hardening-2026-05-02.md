@@ -1,10 +1,23 @@
 # Railway Auth Hardening Plan
 
 Created: 2026-05-02
-Last updated: 2026-05-02
-Review by: 2026-05-09
+Last updated: 2026-05-09
+Review by: 2026-05-16
 Owner: Auth, service, web, and deployment stewardship
-Status: local verification green; awaiting Railway smoke
+Status: local contract implemented; live Railway smoke still blocks closure
+
+## 2026-05-09 Verification Update
+
+Local production auth has advanced beyond the original plan: production mode
+uses secure session-backed identity, ignores development identity paths, gates
+normal routes behind login, stores selected community/membership on
+`user_sessions`, protects mutating forms with CSRF, configures security
+headers/rate limiting, and has focused tests in `tests/test_web_security.py`.
+
+The remaining blocker is the real Railway surface. Before this plan closes,
+record a live smoke covering `/health`, login, logout, member view, staff view,
+membership switch, a tenant-prefixed route, one CSRF-protected write, seed
+media, attached-volume restart persistence, and one-replica SQLite posture.
 
 ## Problem
 

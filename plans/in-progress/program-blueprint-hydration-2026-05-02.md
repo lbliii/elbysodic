@@ -1,13 +1,22 @@
 # Program Blueprint Hydration Plan
 
-Status: drafted  
+Status: active; dry-run exists and apply remains gated
 Owner: Blueprint, service, storage, and test stewardship  
 Created: 2026-05-02  
-Last updated: 2026-05-02  
-Review by: 2026-05-23  
+Last updated: 2026-05-09
+Review by: 2026-05-30
 Closure criteria: split into PRs for dry-run diffs, service-layer hydration,
 rollback tests, tenant coverage, and Studio apply controls; archive once apply
 is implemented or superseded.
+
+## 2026-05-09 Verification Update
+
+Studio intake remains correctly dry-run-only. The Blueprint steward identified
+the next production work as typed diff rows, unknown-key diagnostics, collision
+semantics, stale-preview fingerprinting, transaction-backed apply, rollback
+proof, idempotency, and ordinary-member denial. Seed hydration already mutates
+demo data through a privileged path; future YAML apply should either share the
+same planning semantics or explicitly document why seed remains privileged.
 
 ## Purpose
 

@@ -1,14 +1,21 @@
 # Steward Backlog Rollup Snapshot
 
-Status: in-progress  
+Status: superseded by production-readiness roadmap; archive candidate
 Owner: Steward workflow  
 Created: 2026-05-01  
-Last updated: 2026-05-01  
-Review by: 2026-05-15  
+Last updated: 2026-05-09
+Review by: 2026-05-16
 Source: `ask stewards` consultation on `main` after `git fetch --prune`  
 Closure criteria: split this into concrete backlog items, implementation
 plans, or issues; then move this file to `plans/archive/2026/` as completed or
 superseded.
+
+## 2026-05-09 Verification Update
+
+This snapshot has been superseded as the active sequencing document by
+`plans/in-progress/production-readiness-roadmap-2026-05-09.md`. Preserve its
+minority reports and progress log as history, but do not use it as the current
+backlog order unless a later agent archives or extracts the remaining items.
 
 ## Purpose
 

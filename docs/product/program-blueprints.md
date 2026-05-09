@@ -262,12 +262,11 @@ owner.
 
 ## Import Flow
 
-Studio intake now supports the first dry-run milestone. The complete flow is:
+Studio intake currently supports the first dry-run milestone:
 
-1. Upload or paste a YAML Program Blueprint.
+1. Paste a YAML Program Blueprint.
 2. Parse into typed blueprint objects.
 3. Validate and show a dry-run preview.
-4. Apply through a service-layer hydrator.
 
 The dry-run preview should summarize the resulting program in director language:
 "1 program, 3 starter faces, 5 scene hubs, 3 materials, 2 wanted hooks."
@@ -277,6 +276,17 @@ the shared contract: seed data and future YAML imports should describe the same
 kind of PBP hub. The current Studio preview intentionally stops before step 4:
 it validates and summarizes the packet, but does not create or update database
 state.
+
+The planned apply flow is separate production work:
+
+1. Build a typed hydration diff with create, update, skip, blocked, and warning
+   rows.
+2. Re-resolve that accepted diff through service and repository boundaries.
+3. Apply it inside one transaction after stale-preview and permission checks.
+
+Until that work lands, Program Blueprints are a validation and preview contract
+for Studio intake, plus the privileged seed-data source used by development
+fixtures.
 
 ## Hydration Gate
 

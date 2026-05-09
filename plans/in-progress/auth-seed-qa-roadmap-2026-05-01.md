@@ -1,10 +1,22 @@
 # Auth And Seed QA Roadmap
 
 Created: 2026-05-01
-Last updated: 2026-05-01
-Review by: 2026-05-22
+Last updated: 2026-05-09
+Review by: 2026-05-30
 Owner: Auth, seed, and browser QA stewardship
-Status: in-progress
+Status: mostly implemented; onboarding posture and capability granularity remain
+
+## 2026-05-09 Verification Update
+
+Seed personas, `/dev/personas`, local login/logout sessions, session-bound
+membership selection, seed persona docs, and production dev-helper gating are
+implemented and covered by focused tests. Public registration remains a
+non-goal in this plan and no `/register` route exists.
+
+The production-readiness follow-up is to decide the first shared-host
+onboarding posture: login-only demo, invite/request-access, or real
+registration. Startup seed persistence also needs hardening so long-lived
+Railway data is not casually overwritten by demo refreshes.
 
 ## Problem
 

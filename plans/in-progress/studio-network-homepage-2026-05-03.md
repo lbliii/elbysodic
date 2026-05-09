@@ -1,13 +1,22 @@
 # Studio Network Homepage Plan
 
-Status: drafted
+Status: partially implemented; public catalog read model and browser QA remain
 Owner: Product/UI and network homepage stewardship
 Created: 2026-05-03
-Last updated: 2026-05-03
-Review by: 2026-05-24
+Last updated: 2026-05-09
+Review by: 2026-05-30
 Closure criteria: split into PR-sized work for the editorial platform home,
 network read models, privacy-safe public browsing, responsive browser QA, and
 later personalization/search lanes.
+
+## 2026-05-09 Verification Update
+
+`/` and `/network` now render a platform/network surface and `/network?q=...`
+has a search form. The search implementation is still page-local filtering over
+`studio_network()`, which is a logged-in membership directory. Production
+readiness requires a service-layer `NetworkHome` or catalog read model that
+separates safe public program cards from signed-in continuation lanes, plus
+signed-out and signed-in privacy tests.
 
 ## Purpose
 
