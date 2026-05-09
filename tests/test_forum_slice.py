@@ -4288,6 +4288,76 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
     asyncio.run(run())
 
 
+def test_unaccepted_faces_cannot_take_story_actions() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    assert services.seed.default_character is not None
+    character = repo.update_character_application_status(
+        community.id,
+        services.seed.default_character.id,
+        "submitted",
+    )
+    thread = repo.get_thread_by_slug(
+        community.id,
+        repo.get_board_by_slug(community.id, "danger-room").id,
+        "sentinel-drill",
+    )
+    role = repo.get_role_by_slug(community.id, "member")
+    other_user = repo.create_user("story-counterparty@example.com", "hash")
+    other_membership = repo.create_membership(
+        community.id,
+        other_user.id,
+        role.id,
+        "storycounter",
+        "Story Counter",
+    )
+    other_character = repo.create_character(
+        community.id,
+        other_membership.id,
+        "story-counter-face",
+        "Story Counter Face",
+    )
+    repo.create_character_plot_hook(
+        community.id,
+        other_membership.id,
+        other_character.id,
+        "outside-hook",
+        "Outside hook",
+        summary="A hook for someone else.",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        other_membership.id,
+        "outside-wanted",
+        "Outside wanted",
+        summary="A wanted hook for someone else.",
+    )
+
+    with pytest.raises(PermissionError):
+        services.start_thread(
+            board_slug="danger-room",
+            character_id=character.id,
+            title="Submitted face scene",
+            body="This should wait for acceptance.",
+        )
+    with pytest.raises(PermissionError):
+        services.reply_to_thread("danger-room", thread.slug, character.id, "Not yet.")
+    with pytest.raises(PermissionError):
+        services.create_plot_hook(
+            character.slug,
+            title="Submitted face hook",
+            hook_type="scene",
+            summary="This should wait.",
+            body="This should wait for acceptance.",
+            facet_slugs=[],
+        )
+    with pytest.raises(PermissionError):
+        services.express_plot_hook_interest("story-counter-face", "outside-hook")
+    with pytest.raises(PermissionError):
+        services.express_wanted_interest("outside-wanted")
+
+
 def test_wanted_hooks_accept_prospective_character_interest() -> None:
     async def run() -> None:
         _app()

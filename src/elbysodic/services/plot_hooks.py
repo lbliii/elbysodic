@@ -241,6 +241,7 @@ def read_plot_hook(
         can_express_interest=(
             plot_hook.status == "open"
             and viewer.current_character is not None
+            and policies.can_story_act_as(viewer.membership, viewer.current_character)
             and viewer_interest is None
             and plot_hook.author_membership_id != viewer.membership.id
         ),
@@ -265,7 +266,7 @@ def create_plot_hook(
     facet_slugs: list[str],
 ) -> CharacterPlotHook:
     character = repo.get_character_by_slug(viewer.community.id, character_slug)
-    if not policies.can_post_as(viewer.membership, character):
+    if not policies.can_story_act_as(viewer.membership, character):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot create hooks for character {character.id}"
         )
@@ -348,6 +349,10 @@ def express_plot_hook_interest(
 ) -> CharacterPlotHookInterest:
     if viewer.current_character is None:
         raise ValueError("create a character before expressing interest")
+    if not policies.can_story_act_as(viewer.membership, viewer.current_character):
+        raise PermissionError(
+            f"membership {viewer.membership.id} cannot use character {viewer.current_character.id}"
+        )
     detail = read_plot_hook(repo, viewer, character_slug, hook_slug)
     if detail.plot_hook.status != "open":
         raise ValueError(f"plot hook {detail.plot_hook.id} is not open")
