@@ -5,7 +5,7 @@ from __future__ import annotations
 from chirp.context import get_request
 from chirp.http.request import Request
 
-SIDEBAR_HIDDEN_COOKIE = "elbysodic_sidebar_hidden"
+SIDEBAR_HIDDEN_COOKIE = "elbysodic_sidebar_hidden_v2"
 SIDEBAR_HIDDEN_CLASS = "elbysodic-app-shell--sidebar-hidden"
 
 

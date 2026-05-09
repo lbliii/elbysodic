@@ -61,22 +61,15 @@
 {% block head_extra %}
     <script>
     (function () {
-      var cookieName = "elbysodic_sidebar_hidden";
+      var cookieName = "elbysodic_sidebar_hidden_v2";
       var cookieMatch = document.cookie.match(new RegExp("(^|; )" + cookieName + "=([^;]*)"));
       if (cookieMatch) {
         return;
       }
-      var legacyKeys = ["chirpui-sidebar-collapsed", "elbysodic:sidebar-collapsed"];
       var hiddenClass = "elbysodic-app-shell--sidebar-hidden";
       try {
-        var value = null;
-        for (var index = 0; value === null && index < legacyKeys.length; index += 1) {
-          value = window.localStorage.getItem(legacyKeys[index]);
-        }
-        if (value === "true") {
-          document.documentElement.classList.add(hiddenClass);
-          document.cookie = cookieName + "=true; Max-Age=31536000; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
-        }
+        window.localStorage.removeItem("chirpui-sidebar-collapsed");
+        window.localStorage.removeItem("elbysodic:sidebar-collapsed");
       } catch (_error) {
         document.documentElement.classList.remove(hiddenClass);
       }

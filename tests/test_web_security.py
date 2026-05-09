@@ -147,8 +147,11 @@ def test_production_routes_require_session(monkeypatch) -> None:
 
         async with TestClient(app) as client:
             health = await client.get("/health")
+            root = await client.get("/")
+            network = await client.get("/network?q=magic")
             login = await client.get("/login")
             studio = await client.get("/studio")
+            tenant = await client.get("/c/x-men-apocalypse")
             post = await client.post(
                 "/identity",
                 body=urlencode({"intent": "set_default_character", "character_id": "0"}).encode(),
@@ -157,11 +160,24 @@ def test_production_routes_require_session(monkeypatch) -> None:
             personas = await client.get("/dev/personas")
 
         assert health.status == 200
+        assert root.status == 200
+        assert "Studio Network" in root.text
+        assert "starlane" not in root.text
+        assert "playing as Rogue" not in root.text
+        assert "elbysodic-identity-menu" not in root.text
+        assert "chirpui-theme-toggle" in root.text
+        assert network.status == 200
+        assert "HP Universe" in network.text
+        assert "starlane" not in network.text
+        assert "current realm" not in network.text
+        assert "Public preview" in network.text
         assert login.status == 200
         assert "_csrf_token" in login.text
         assert "Staff in X-Men Apocalypse" not in login.text
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
+        assert tenant.status == 302
+        assert dict(tenant.headers)["location"] == "/login?next=%2Fc%2Fx-men-apocalypse"
         assert post.status == 403
         assert "Log in to keep writing." in post.text
         assert "/login?next=/identity" in post.text
@@ -254,6 +270,7 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
                 next_url="/c/x-men-apocalypse",
             )
             cookies.update(_cookie_values(login))
+            original_session = cookies["elbysodic_session"]
             xmen_home = await client.get(
                 "/c/x-men-apocalypse",
                 headers={"Cookie": _cookie_header(cookies)},
@@ -294,6 +311,10 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
                 "/studio",
                 headers={"Cookie": _cookie_header(cookies)},
             )
+            studio_with_stale_session = await client.get(
+                "/studio",
+                headers={"Cookie": f"elbysodic_session={original_session}"},
+            )
 
         assert health.status == 200
         assert login.status == 302
@@ -313,6 +334,8 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert logout.status == 302
         assert studio_after_logout.status == 302
         assert dict(studio_after_logout.headers)["location"] == "/login?next=/studio"
+        assert studio_with_stale_session.status == 302
+        assert dict(studio_with_stale_session.headers)["location"] == "/login?next=/studio"
 
     asyncio.run(run())
 

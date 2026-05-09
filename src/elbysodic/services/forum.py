@@ -607,6 +607,39 @@ class AppServices:
             )
         )
 
+    def public_studio_network(self) -> StudioNetworkDirectory:
+        programs: list[StudioNetworkProgramView] = []
+        for community in self.repo.list_communities():
+            materials = self.repo.list_materials(community.id)
+            wanted_ads = self.repo.list_wanted_ads(community.id)
+            community_characters = self.repo.list_community_characters(community.id)
+            theme = community_theme_view(self.repo.get_default_theme(community.id))
+            programs.append(
+                StudioNetworkProgramView(
+                    community=community,
+                    membership=None,
+                    role=None,
+                    current_character=None,
+                    premise=_first_material_summary(materials, "premise", self.repo, community.id),
+                    current_event=_first_material_summary(
+                        materials,
+                        "event",
+                        self.repo,
+                        community.id,
+                    ),
+                    roster_count=len(community_characters),
+                    open_wanted_count=sum(
+                        1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
+                    ),
+                    application_count=0,
+                    plotting_room_count=0,
+                    unread_notification_count=0,
+                    theme_preview=_network_theme_preview(theme),
+                    is_current=False,
+                )
+            )
+        return StudioNetworkDirectory(programs=programs)
+
     def list_boards(self) -> list[BoardSummary]:
         viewer = self.viewer()
         current_facet_ids = _current_character_facet_ids(self.repo, viewer)

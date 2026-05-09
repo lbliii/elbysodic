@@ -63,10 +63,16 @@ Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
 Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
-- `/health`, `/login`, `/logout`, and static assets are public
+- `/health`, `/login`, `/logout`, `/`, `/network`, and static assets are public
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
+
+The logged-out `/` and `/network` surfaces use public catalog read models.
+They can show realm names, public premise or current-event summaries, public
+media, roster counts, and wanted-hook counts. They must not render membership
+names, active faces, unread counts, staff signals, identity switch forms, or
+private writer queues.
 
 Current community and membership selection is stored on `user_sessions` as
 `selected_community_id` and `selected_membership_id`. Switching membership

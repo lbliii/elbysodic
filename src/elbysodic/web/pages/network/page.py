@@ -5,7 +5,8 @@ from __future__ import annotations
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
-from elbysodic.services.read_models import StudioNetworkProgramView
+from elbysodic.services.forum import AppServices
+from elbysodic.services.read_models import ForumView, StudioNetworkProgramView
 from elbysodic.web.state import get_services
 
 
@@ -33,9 +34,9 @@ def _matches_query(program: StudioNetworkProgramView, query: str) -> bool:
         catalog_keywords.append("urban real life city")
     haystack_parts = [
         program.community.name,
-        program.membership.display_name,
-        program.membership.username,
-        program.role.name,
+        program.membership.display_name if program.membership else "",
+        program.membership.username if program.membership else "",
+        program.role.name if program.role else "",
         program.current_character.name if program.current_character else "",
         program.premise.material.title if program.premise else "",
         program.premise.material.summary if program.premise else "",
@@ -48,8 +49,8 @@ def _matches_query(program: StudioNetworkProgramView, query: str) -> bool:
 
 
 def get(request: Request) -> Page:
-    services = get_services(request)
-    network = services.studio_network()
+    services, viewer = _network_services(request)
+    network = services.studio_network() if viewer is not None else services.public_studio_network()
     query = str(request.query.get("q") or "").strip()
     return Page(
         "network/page.html",
@@ -59,10 +60,18 @@ def get(request: Request) -> Page:
         page_title="Explore · Elbysodic",
         network_mode="explore",
         network_search_query=query,
-        viewer=services.viewer(),
+        viewer=viewer,
         network=network,
         explore_programs=[
             program for program in network.programs if _matches_query(program, query)
         ],
         show_community_shell=False,
     )
+
+
+def _network_services(request: Request) -> tuple[AppServices, ForumView | None]:
+    try:
+        services = get_services(request)
+        return services, services.viewer()
+    except PermissionError:
+        return get_services(), None
