@@ -50,8 +50,12 @@ _UNSCOPED_PATH_PREFIXES = (
     "/static",
 )
 _URL_ATTR_RE = re.compile(
-    r'(?P<attr>\b(?:href|action|value|sse-connect|hx-(?:get|post|put|patch|delete))=["\'])'
+    r'(?P<attr>\b(?:href|action|sse-connect|hx-(?:get|post|put|patch|delete))=["\'])'
     r'(?P<url>/[^"\']*)'
+)
+_FORM_URL_VALUE_RE = re.compile(
+    r'(?P<attr><input\b(?=[^>]*\bname=["\'](?:next|redirect|return_to)["\'])'
+    r'[^>]*\bvalue=["\'])(?P<url>/[^"\']*)'
 )
 
 
@@ -167,7 +171,7 @@ def _scope_html_links(html: str, community_slug: str) -> str:
         url = match.group("url")
         return f"{match.group('attr')}{scoped_path(community_slug, url)}"
 
-    return _URL_ATTR_RE.sub(replace_match, html)
+    return _FORM_URL_VALUE_RE.sub(replace_match, _URL_ATTR_RE.sub(replace_match, html))
 
 
 def _scope_query(community_slug: str, query: str) -> str:
