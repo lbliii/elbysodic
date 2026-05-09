@@ -29,8 +29,9 @@
    hx-get="{{ href }}"
    hx-target="{{ hx_target }}"
    hx-swap="{{ hx_swap }}"
-   {% if hx_select %}hx-select="{{ hx_select }}"{% end %}
-   {% if hx_push_url %}hx-push-url="true"{% end %}
+   hx-disinherit="hx-select hx-target hx-swap"
+   {% if hx_select %} hx-select="{{ hx_select }}"{% end %}
+   {% if hx_push_url %} hx-push-url="true"{% end %}
    {% end %}>
   {{ label }}
 </a>

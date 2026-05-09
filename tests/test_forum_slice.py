@@ -1320,6 +1320,8 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Latest" in board.text
             assert 'id="board-thread-region"' in board.text
             assert 'hx-target="#board-thread-region"' in board.text
+            assert 'hx-select="#board-thread-region"' in board.text
+            assert 'hx-disinherit="hx-select hx-target hx-swap"' in board.text
             assert 'hx-swap="outerHTML show:none"' in board.text
             assert "chirpui-breadcrumbs" in board.text
             assert "chirpui-saved-view-strip" in board.text
