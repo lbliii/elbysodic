@@ -415,6 +415,88 @@ def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_application_room_requires_csrf_and_accepts_rendered_token(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        community = services.seed.community
+        kitty = services.repo.get_character_by_slug(community.id, "kitty-pryde")
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(
+                client,
+                email="alex@example.com",
+                next_url="/applications/kitty-pryde",
+            )
+            room = await client.get(
+                "/applications/kitty-pryde",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            cookies.update(_cookie_values(room))
+            missing_csrf = await client.post(
+                "/applications/kitty-pryde",
+                body=urlencode(
+                    {
+                        "intent": "save_review",
+                        "staff_notes": "Private staff note.",
+                        "checklist": "Voice\nHooks",
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+            saved = await client.post(
+                "/applications/kitty-pryde",
+                body=urlencode(
+                    {
+                        "intent": "save_review",
+                        "staff_notes": "Private staff note.",
+                        "checklist": "Voice\nHooks",
+                        "_csrf_token": _csrf_token(room.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+
+        application = services.repo.get_character_application_for_character(
+            community.id,
+            kitty.id,
+        )
+        assert room.status == 200
+        assert missing_csrf.status == 403
+        assert saved.status == 302
+        assert application.staff_notes == "Private staff note."
+        assert application.checklist == "Voice\nHooks"
+
+    asyncio.run(run())
+
+
+def test_production_application_room_denies_same_community_outsider(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(
+                client,
+                email="simon@example.com",
+                next_url="/applications/kitty-pryde",
+            )
+            room = await client.get(
+                "/applications/kitty-pryde",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert room.status == 403
+        assert "Application Review Room" not in room.text
+        assert "Director Review" not in room.text
+        assert "Applicant Notes" not in room.text
+
+    asyncio.run(run())
+
+
 def test_production_tenant_prefix_overrides_session_selected_community(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
