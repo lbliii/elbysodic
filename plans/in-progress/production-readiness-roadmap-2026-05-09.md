@@ -448,3 +448,6 @@ Do these after Gates 0-5 are materially closed:
 - 2026-05-09: Started Gate 4 with a repository transaction context, repository
   commit suppression inside transactions, and rollback proof for the
   multi-write thread creation workflow.
+- 2026-05-09: Started Gate 5 by adding typed Program Blueprint hydration diff
+  rows to the existing dry-run preview. Studio now names planned create/update
+  work without enabling apply or database mutation.

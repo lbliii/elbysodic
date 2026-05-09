@@ -1844,6 +1844,10 @@ appearance:
         assert "1 wanted hooks" in response.text
         assert "1 appearance" in response.text
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
+        assert "Hydration diff preview" in response.text
+        assert "create</strong> program: RL Small Town Preview" in response.text
+        assert "create</strong> scene hub: Main Street" in response.text
+        assert "create</strong> wanted hook: Returning sibling" in response.text
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
         after_count = repo.connection.execute(

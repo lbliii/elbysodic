@@ -96,6 +96,17 @@
       </p>
       <p class="elbysodic-copy-meta">{{ blueprint_preview.appearance_summary }}</p>
       <p class="elbysodic-copy-meta">{{ blueprint_preview.board_media_summary }}</p>
+      {% if blueprint_preview.diff_rows %}
+      <div class="chirpui-stack chirpui-stack--xs">
+        <p class="chirpui-field__label">Hydration diff preview</p>
+        {% for row in blueprint_preview.diff_rows %}
+        <p class="elbysodic-copy-status">
+          <strong>{{ row.action }}</strong> {{ row.section }}: {{ row.label }}
+          <span class="elbysodic-copy-meta">({{ row.slug }}) {{ row.detail }}</span>
+        </p>
+        {% end %}
+      </div>
+      {% end %}
       {% end %}
       {% if blueprint_preview.errors %}
       <div class="chirpui-stack chirpui-stack--xs">
