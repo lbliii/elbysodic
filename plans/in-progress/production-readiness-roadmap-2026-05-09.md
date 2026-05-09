@@ -430,3 +430,10 @@ Do these after Gates 0-5 are materially closed:
 6. Transaction helper PR: repository transaction boundary and one converted
    workflow with forced-failure proof.
 7. Blueprint diff PR: typed dry-run diff rows without apply.
+
+## Progress Log
+
+- 2026-05-09: Started Gate 1 by adding fresh-schema parity for the
+  `idx_user_sessions_user` index, a fresh-vs-upgraded index parity regression,
+  and a file-backed restart regression proving startup seed preserves
+  director-edited boards and materials.

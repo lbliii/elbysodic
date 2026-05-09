@@ -714,6 +714,8 @@ CREATE INDEX IF NOT EXISTS idx_realm_interaction_responses_interaction
 ON realm_interaction_responses(community_id, interaction_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_realm_interaction_answers_response
 ON realm_interaction_answers(community_id, response_id, question_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user
+ON user_sessions(user_id, revoked_at, expires_at);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id, facet_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);

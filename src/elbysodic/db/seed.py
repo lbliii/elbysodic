@@ -3433,9 +3433,10 @@ def _ensure_board(
     image_overlay: str = "medium",
     is_private: bool = False,
 ) -> Board:
-    board = _get_or_create(
-        lambda: repo.get_board_by_slug(community_id, slug),
-        lambda: repo.create_board(
+    try:
+        return repo.get_board_by_slug(community_id, slug)
+    except LookupError:
+        return repo.create_board(
             community_id,
             slug,
             name,
@@ -3450,26 +3451,7 @@ def _ensure_board(
             image_overlay=image_overlay,
             sort_order=sort_order,
             is_private=is_private,
-        ),
-    )
-    effective_image_url = image_url if image_url is not None else board.image_url
-    effective_image_alt = image_alt if image_url is not None else board.image_alt
-    return repo.update_board(
-        community_id,
-        board.id,
-        name=name,
-        description=description,
-        sort_order=sort_order,
-        parent_board_id=parent_board_id,
-        board_kind=board_kind,
-        tagline=tagline,
-        image_url=effective_image_url,
-        image_alt=effective_image_alt,
-        image_treatment=image_treatment if image_url is not None else board.image_treatment,
-        image_focal_point=image_focal_point if image_url is not None else board.image_focal_point,
-        image_overlay=image_overlay if image_url is not None else board.image_overlay,
-        is_private=is_private,
-    )
+        )
 
 
 def _ensure_board_media_default(
@@ -3514,9 +3496,10 @@ def _ensure_material(
     sort_order: int = 0,
     is_featured: bool = False,
 ) -> Material:
-    material = _get_or_create(
-        lambda: repo.get_material_by_slug(community_id, slug),
-        lambda: repo.create_material(
+    try:
+        return repo.get_material_by_slug(community_id, slug)
+    except LookupError:
+        return repo.create_material(
             community_id,
             slug,
             title,
@@ -3526,19 +3509,7 @@ def _ensure_material(
             status=status,
             sort_order=sort_order,
             is_featured=is_featured,
-        ),
-    )
-    return repo.update_material(
-        community_id,
-        material.id,
-        title=title,
-        material_type=material_type,
-        summary=summary,
-        body=body,
-        status=status,
-        sort_order=sort_order,
-        is_featured=is_featured,
-    )
+        )
 
 
 def _seed_realm_interactions(

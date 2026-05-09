@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
 
 from elbysodic.db import ForumRepository, connect, create_schema
@@ -82,6 +84,41 @@ def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     assert [row["version"] for row in rows] == list(range(1, CURRENT_SCHEMA_VERSION + 1))
     assert [row["name"] for row in rows][1:] == [migration.name for migration in MIGRATIONS]
     assert user_version == CURRENT_SCHEMA_VERSION
+
+
+def test_fresh_schema_indexes_match_ordered_migration_indexes() -> None:
+    fresh = connect()
+    create_schema(fresh)
+
+    upgraded = connect()
+    create_schema(upgraded)
+    upgraded.execute("DROP INDEX IF EXISTS idx_user_sessions_user")
+    upgraded.execute("DELETE FROM schema_migrations")
+    upgraded.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (1, ?, '2026-01-01T00:00:00+00:00')
+        """,
+        (BASELINE_MIGRATION_NAME,),
+    )
+    upgraded.execute("PRAGMA user_version = 1")
+    upgraded.commit()
+    create_schema(upgraded)
+
+    assert _index_names(fresh) == _index_names(upgraded)
+
+
+def _index_names(connection: sqlite3.Connection) -> set[str]:
+    rows = connection.execute(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'index'
+            AND name NOT LIKE 'sqlite_autoindex_%'
+        ORDER BY name
+        """
+    ).fetchall()
+    return {row["name"] for row in rows}
 
 
 def test_schema_migrates_existing_posts_for_thread_local_public_numbers() -> None:
