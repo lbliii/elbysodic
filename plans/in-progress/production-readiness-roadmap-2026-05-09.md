@@ -445,3 +445,6 @@ Do these after Gates 0-5 are materially closed:
   regression that covers health, login, tenant-prefixed community entry,
   network search, thread reading, CSRF-protected membership switching,
   cross-realm navigation, and logout.
+- 2026-05-09: Started Gate 4 with a repository transaction context, repository
+  commit suppression inside transactions, and rollback proof for the
+  multi-write thread creation workflow.

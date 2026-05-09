@@ -59,7 +59,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                     now,
                 ),
             )
-        self.connection.commit()
+        self._commit()
 
     def list_sidebar_sections(self, community_id: int) -> list[SidebarSectionConfig]:
         self.ensure_sidebar_section_defaults(community_id)
@@ -159,7 +159,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 section.id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_sidebar_section(community_id, section.section_key)
 
     def create_board(
@@ -238,7 +238,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_board(community_id, _last_id(cursor))
 
     def update_board(
@@ -315,7 +315,7 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 board_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_board(community_id, board_id)
 
     def get_board(self, community_id: int, board_id: int) -> Board:

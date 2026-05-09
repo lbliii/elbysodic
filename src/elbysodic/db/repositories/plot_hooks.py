@@ -66,7 +66,7 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_plot_hook(community_id, _last_id(cursor))
 
     def update_character_plot_hook(
@@ -109,7 +109,7 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
                 plot_hook_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_plot_hook(community_id, plot_hook_id)
 
     def get_character_plot_hook(
@@ -290,7 +290,7 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_plot_hook_interest_for_character(
             community_id,
             plot_hook_id,
@@ -402,5 +402,5 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
             """,
             (status, _utc_now(), community_id, interest_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_character_plot_hook_interest(community_id, interest_id)

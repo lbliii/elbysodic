@@ -77,7 +77,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             """,
             (community_id, thread_id, author_character_id, now),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_post(community_id, _last_id(cursor))
 
     def _next_post_number(self, community_id: int, thread_id: int) -> int:
@@ -101,7 +101,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             """,
             (body, _next_update_stamp(post.updated_at), community_id, post_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_post(community_id, post_id)
 
     def create_post_revision(
@@ -128,7 +128,7 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             """,
             (community_id, post_id, editor_membership_id, previous_body, new_body, _utc_now()),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_post_revision(community_id, _last_id(cursor))
 
     def get_post_revision(self, community_id: int, revision_id: int) -> PostRevision:

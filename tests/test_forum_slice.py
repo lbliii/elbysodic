@@ -6763,6 +6763,35 @@ def test_file_backed_services_persist_created_threads(tmp_path: Path) -> None:
     assert len(restarted.viewer().roster) == 3
 
 
+def test_start_thread_rolls_back_when_late_write_fails(monkeypatch) -> None:
+    services = create_services(path=":memory:")
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    board = services.repo.get_board_by_slug(viewer.community.id, "danger-room")
+    before = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
+
+    def fail_mark_thread_read(
+        community_id: int,
+        thread_id: int,
+        membership_id: int,
+    ) -> None:
+        raise RuntimeError("simulated read-state failure")
+
+    monkeypatch.setattr(services.repo, "mark_thread_read", fail_mark_thread_read)
+
+    with pytest.raises(RuntimeError, match="simulated read-state failure"):
+        services.start_thread(
+            board_slug="danger-room",
+            character_id=viewer.current_character.id,
+            title="Rollback Drill",
+            body="This scene should not survive a failed read-state write.",
+        )
+
+    after = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
+    assert after == before
+    assert "rollback-drill" not in after
+
+
 def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: Path) -> None:
     db_path = tmp_path / "elbysodic.sqlite3"
     services = create_services(path=db_path)

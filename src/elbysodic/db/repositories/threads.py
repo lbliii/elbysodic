@@ -82,7 +82,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (community_id, thread_id, author_character_id, now),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_thread(community_id, thread_id)
 
     def update_thread_scene(
@@ -117,7 +117,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 thread_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_thread(community_id, thread_id)
 
     def update_thread_flags(
@@ -139,7 +139,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (int(locked), int(pinned), community_id, thread_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_thread(community_id, thread_id)
 
     def move_thread(self, community_id: int, thread_id: int, board_id: int) -> Thread:
@@ -153,7 +153,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (board_id, community_id, thread_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_thread(community_id, thread_id)
 
     def get_thread(self, community_id: int, thread_id: int) -> Thread:
@@ -315,7 +315,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (community_id, thread_id, character_id, _utc_now()),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_thread_participant(community_id, thread_id, character_id)
 
     def set_thread_participants(
@@ -358,7 +358,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             [(community_id, thread_id, character_id, now) for character_id in unique_ids],
         )
-        self.connection.commit()
+        self._commit()
         return self.list_thread_participants(community_id, thread_id)
 
     def get_thread_participant(
@@ -466,7 +466,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (community_id, thread_id, membership_id, stamp),
         )
-        self.connection.commit()
+        self._commit()
 
     def watch_thread(
         self,
@@ -486,7 +486,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (community_id, thread_id, membership_id, now),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_thread_watch(community_id, thread_id, membership_id)
 
     def unwatch_thread(self, community_id: int, thread_id: int, membership_id: int) -> None:
@@ -497,7 +497,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             """,
             (community_id, thread_id, membership_id),
         )
-        self.connection.commit()
+        self._commit()
 
     def get_thread_watch(
         self,

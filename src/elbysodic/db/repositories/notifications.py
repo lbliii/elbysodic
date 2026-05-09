@@ -151,7 +151,7 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         if post_target_id is not None:
             return self.get_notification_for_post(community_id, membership_id, kind, post_target_id)
         if wanted_interest_target_id is not None:
@@ -468,7 +468,7 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
                 """,
                 (_utc_now(), community_id, notification_id),
             )
-            self.connection.commit()
+            self._commit()
         return self.get_notification(community_id, notification_id)
 
     def mark_all_notifications_read(self, community_id: int, membership_id: int) -> None:
@@ -481,4 +481,4 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
             """,
             (_utc_now(), community_id, membership_id),
         )
-        self.connection.commit()
+        self._commit()

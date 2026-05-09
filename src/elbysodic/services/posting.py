@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from contextlib import AbstractContextManager
 from typing import Protocol, cast
 
 from elbysodic.domain.models import (
@@ -38,6 +39,8 @@ from elbysodic.services.threads import (
 
 
 class PostingRepository(NotificationRepository, Protocol):
+    def transaction(self) -> AbstractContextManager[None]: ...
+
     def get_board_by_slug(self, community_id: int, slug: str) -> Board: ...
 
     def get_thread_by_slug(self, community_id: int, board_id: int, slug: str) -> Thread: ...
@@ -385,27 +388,28 @@ def start_thread(
     for participant_id in cleaned_participant_ids:
         repo.get_character(viewer.community.id, participant_id)
     slug = unique_thread_slug(repo, viewer.community.id, board.id, cleaned_title)
-    thread = repo.create_thread(
-        viewer.community.id,
-        board.id,
-        character.id,
-        slug,
-        cleaned_title,
-        status=cleaned_status,
-        location=location.strip(),
-        timeline=timeline.strip(),
-        summary=summary.strip(),
-        posting_mode=cleaned_posting_mode,
-    )
-    repo.set_thread_participants(
-        viewer.community.id,
-        thread.id,
-        cleaned_participant_ids,
-    )
-    post = repo.create_post(viewer.community.id, thread.id, character.id, cleaned_body)
-    thread = repo.get_thread(viewer.community.id, thread.id)
-    repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
-    repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+    with repo.transaction():
+        thread = repo.create_thread(
+            viewer.community.id,
+            board.id,
+            character.id,
+            slug,
+            cleaned_title,
+            status=cleaned_status,
+            location=location.strip(),
+            timeline=timeline.strip(),
+            summary=summary.strip(),
+            posting_mode=cleaned_posting_mode,
+        )
+        repo.set_thread_participants(
+            viewer.community.id,
+            thread.id,
+            cleaned_participant_ids,
+        )
+        post = repo.create_post(viewer.community.id, thread.id, character.id, cleaned_body)
+        thread = repo.get_thread(viewer.community.id, thread.id)
+        repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
+        repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
     return CreatedThread(thread=thread, post=post)
 
 

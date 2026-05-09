@@ -55,7 +55,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_material(community_id, _last_id(cursor))
 
     def get_material(self, community_id: int, material_id: int) -> Material:
@@ -183,7 +183,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 material_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_material(community_id, material_id)
 
     def list_materials(

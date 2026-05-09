@@ -65,7 +65,7 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_facet_group(community_id, _last_id(cursor))
 
     def get_facet_group(self, community_id: int, facet_group_id: int) -> FacetGroup:
@@ -178,7 +178,7 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_facet(community_id, _last_id(cursor))
 
     def get_facet(self, community_id: int, facet_id: int) -> Facet:
@@ -430,7 +430,7 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
                 facet_id,
             )
         if not cleaned_facet_ids:
-            self.connection.commit()
+            self._commit()
 
     def _list_facets_for_assignment(
         self,
@@ -504,4 +504,4 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             """,
             (community_id, entity_id, facet_id, _utc_now()),
         )
-        self.connection.commit()
+        self._commit()

@@ -88,7 +88,7 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         if source_plot_hook_interest_id is not None:
             return self.get_plotting_room_for_plot_hook_interest(
                 community_id,
@@ -165,7 +165,7 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 plotting_room_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_plotting_room(community_id, plotting_room_id)
 
     def attach_plotting_room_thread(
@@ -193,7 +193,7 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 plotting_room_id,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_plotting_room(community_id, plotting_room_id)
 
     def get_plotting_room_for_plot_hook_interest(
@@ -432,7 +432,7 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
                 now,
             ),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_plotting_room_participant_for_identity(
             community_id,
             plotting_room_id,
@@ -582,7 +582,7 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
             """,
             (_utc_now(), community_id, plotting_room_id),
         )
-        self.connection.commit()
+        self._commit()
         return self.get_plotting_room_message(community_id, _last_id(cursor))
 
     def get_plotting_room_message(
