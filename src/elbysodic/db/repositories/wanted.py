@@ -11,6 +11,7 @@ from elbysodic.db.repositories.rows import (
     _wanted_ad_interest_from_row,
 )
 from elbysodic.domain.models import Character, Community, WantedAd, WantedAdInterest
+from elbysodic.domain.vocabulary import WANTED_TYPES
 
 
 class WantedRepositoryMixin(MaterialRepositoryMixin):
@@ -29,6 +30,7 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
         status: str = "open",
     ) -> WantedAd:
         self.get_membership(community_id, creator_membership_id)
+        _require_wanted_type(wanted_type)
         if creator_character_id is not None:
             character = self.get_character(community_id, creator_character_id)
             if character.membership_id != creator_membership_id:
@@ -524,3 +526,9 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
         )
         self._commit()
         return self.get_wanted_ad_interest(community_id, interest_id)
+
+
+def _require_wanted_type(wanted_type: str) -> None:
+    if wanted_type not in WANTED_TYPES:
+        allowed = ", ".join(sorted(WANTED_TYPES))
+        raise ValueError(f"wanted_type must be one of: {allowed}")

@@ -140,6 +140,10 @@ World materials are director-authored pillar content outside the thread format.
 They are community-scoped structured pages for premise, rules, factions,
 application guidance, events, or other board-defining material.
 
+Current material types are intentionally bounded: premise, guide, factions,
+application, and event. Repository writes reject unknown material types so
+director-authored material does not become a generic CMS page.
+
 Materials can be facet-tagged so the same world lenses can connect lore,
 characters, boards, scenes, and wanted hooks. This is the current home for
 special pages that old PBP forums often represented as pinned information
@@ -170,6 +174,8 @@ Wanted hooks can also list related characters and facets. That lets a hook like
 characters, threads, and event pages.
 
 Current statuses are intentionally small: open, reserved, filled, and archived.
+Current wanted-hook types are canon, connection, event role, faction need, plot
+role, relationship, and rival.
 Future workflows can add interest, claims, reserve expiry, staff review, and
 application spawning without turning wanted hooks into generic threads.
 
@@ -191,6 +197,7 @@ resolution, or unpublished character intent.
 
 Character plot hooks are face-authored invitations for relationship, scene, or
 arc discovery. They belong to a community, membership, and character.
+Current plot-hook types are scene, relationship, connection, event, and other.
 
 Plotting rooms are structured handoff spaces between wanted interest, character
 hooks, and scenes. They store participants, messages, planning fields, target

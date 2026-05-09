@@ -1579,6 +1579,68 @@ def test_plotting_room_participants_are_unique_for_nullable_identity(
     ]
 
 
+def test_repository_rejects_unknown_story_vocabulary(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("vocabulary@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "writer", "Writer")
+    character = repo.create_character(community.id, membership.id, "rogue", "Rogue")
+    material = repo.create_material(
+        community.id,
+        "premise",
+        "Premise",
+        material_type="premise",
+        summary="A valid director material.",
+    )
+    hook = repo.create_character_plot_hook(
+        community.id,
+        membership.id,
+        character.id,
+        "open-scene",
+        "Open scene",
+        hook_type="scene",
+    )
+
+    with pytest.raises(ValueError, match="material_type must be one of:"):
+        repo.create_material(community.id, "cms-page", "CMS Page", material_type="cms_page")
+    with pytest.raises(ValueError, match="material_type must be one of:"):
+        repo.update_material(
+            community.id,
+            material.id,
+            title=material.title,
+            material_type="cms_page",
+            summary=material.summary,
+            body=material.body,
+        )
+    with pytest.raises(ValueError, match="wanted_type must be one of:"):
+        repo.create_wanted_ad(
+            community.id,
+            membership.id,
+            "generic-listing",
+            "Generic listing",
+            wanted_type="generic_listing",
+        )
+    with pytest.raises(ValueError, match="hook_type must be one of:"):
+        repo.create_character_plot_hook(
+            community.id,
+            membership.id,
+            character.id,
+            "generic-hook",
+            "Generic hook",
+            hook_type="generic_hook",
+        )
+    with pytest.raises(ValueError, match="hook_type must be one of:"):
+        repo.update_character_plot_hook(
+            community.id,
+            hook.id,
+            title=hook.title,
+            hook_type="generic_hook",
+            summary=hook.summary,
+            body=hook.body,
+            status=hook.status,
+        )
+
+
 def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
