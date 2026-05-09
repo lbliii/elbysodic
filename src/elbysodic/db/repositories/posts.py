@@ -23,62 +23,63 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
         author_character_id: int,
         body: str,
     ) -> Post:
-        self.get_thread(community_id, thread_id)
-        character = self.get_character(community_id, author_character_id)
-        now = _utc_now()
-        post_number = self._next_post_number(community_id, thread_id)
-        cursor = self.connection.execute(
-            """
-            INSERT INTO posts (
-                community_id,
-                thread_id,
-                post_number,
-                author_membership_id,
-                author_character_id,
-                body,
-                created_at,
-                updated_at
+        with self.transaction():
+            self.get_thread(community_id, thread_id)
+            character = self.get_character(community_id, author_character_id)
+            now = _utc_now()
+            post_number = self._next_post_number(community_id, thread_id)
+            cursor = self.connection.execute(
+                """
+                INSERT INTO posts (
+                    community_id,
+                    thread_id,
+                    post_number,
+                    author_membership_id,
+                    author_character_id,
+                    body,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    community_id,
+                    thread_id,
+                    post_number,
+                    character.membership_id,
+                    author_character_id,
+                    body,
+                    now,
+                    now,
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                community_id,
-                thread_id,
-                post_number,
-                character.membership_id,
-                author_character_id,
-                body,
-                now,
-                now,
-            ),
-        )
-        self.connection.execute(
-            """
-            UPDATE community_memberships
-            SET post_count = post_count + 1
-            WHERE community_id = ? AND id = ?
-            """,
-            (community_id, character.membership_id),
-        )
-        self.connection.execute(
-            """
-            UPDATE threads
-            SET updated_at = ?
-            WHERE community_id = ? AND id = ?
-            """,
-            (now, community_id, thread_id),
-        )
-        self.connection.execute(
-            """
-            INSERT OR IGNORE INTO thread_participants (
-                community_id, thread_id, character_id, added_at
+            post_id = _last_id(cursor)
+            self.connection.execute(
+                """
+                UPDATE community_memberships
+                SET post_count = post_count + 1
+                WHERE community_id = ? AND id = ?
+                """,
+                (community_id, character.membership_id),
             )
-            VALUES (?, ?, ?, ?)
-            """,
-            (community_id, thread_id, author_character_id, now),
-        )
-        self._commit()
-        return self.get_post(community_id, _last_id(cursor))
+            self.connection.execute(
+                """
+                UPDATE threads
+                SET updated_at = ?
+                WHERE community_id = ? AND id = ?
+                """,
+                (now, community_id, thread_id),
+            )
+            self.connection.execute(
+                """
+                INSERT OR IGNORE INTO thread_participants (
+                    community_id, thread_id, character_id, added_at
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (community_id, thread_id, author_character_id, now),
+            )
+        return self.get_post(community_id, post_id)
 
     def _next_post_number(self, community_id: int, thread_id: int) -> int:
         row = self.connection.execute(

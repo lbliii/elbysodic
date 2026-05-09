@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -1653,6 +1654,50 @@ def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumReposito
 
     with pytest.raises(LookupError):
         repo.create_post(hosted.id, post.id, hosted_character.id, "Wrong community.")
+
+
+def test_concurrent_post_creation_assigns_unique_post_numbers(tmp_path) -> None:
+    connection = connect(tmp_path / "forum.sqlite3", check_same_thread=False)
+    try:
+        create_schema(connection)
+        repository = ForumRepository(connection)
+        community = repository.seed_default_community()
+        user = repository.create_user("writer@example.com", "hash")
+        role = repository.create_role(community.id, "member", "Member")
+        membership = repository.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "lark",
+            "Lark",
+        )
+        character = repository.create_character(community.id, membership.id, "rogue", "Rogue")
+        board = repository.create_board(community.id, "ic", "In Character")
+        thread = repository.create_thread(
+            community.id,
+            board.id,
+            character.id,
+            "opening-scene",
+            "Opening Scene",
+        )
+
+        def create_reply(index: int) -> int:
+            return repository.create_post(
+                community.id,
+                thread.id,
+                character.id,
+                f"Concurrent beat {index}.",
+            ).post_number
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            post_numbers = list(executor.map(create_reply, range(8)))
+
+        posts = repository.list_posts(community.id, thread.id)
+    finally:
+        connection.close()
+
+    assert sorted(post_numbers) == list(range(1, 9))
+    assert [post.post_number for post in posts] == list(range(1, 9))
 
 
 def test_thread_flags_sort_pinned_threads_first(repo: ForumRepository) -> None:
