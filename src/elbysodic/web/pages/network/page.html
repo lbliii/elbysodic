@@ -27,7 +27,9 @@ A studio program ready for scenes, casting, and writer movement.
 {% end %}
 
 {% def program_action(program, href, label, variant="primary") %}
-{% if program.is_current %}
+{% if not program.is_authenticated %}
+<a class="chirpui-btn chirpui-btn--{{ variant }}" href="{{ href }}">{{ label }}</a>
+{% elif program.is_current %}
 <a class="chirpui-btn chirpui-btn--{{ variant }}" href="{{ href }}">{{ label }}</a>
 {% else %}
 {{ switch_form(program, href, label, variant) }}
@@ -48,7 +50,9 @@ A studio program ready for scenes, casting, and writer movement.
 {% def program_metric_links(program) %}
 {{ metric_item(program.roster_count, "faces", href=program.entry_href ~ "/characters") }}
 {{ metric_item(program.open_wanted_count, "wanted", href=program.entry_href ~ "/wanted") }}
+{% if program.is_authenticated %}
 {{ metric_item(program.plotting_room_count, "rooms", href=program.entry_href ~ "/plotting") }}
+{% end %}
 {% end %}
 
 {% def network_billboard(program) %}
@@ -69,16 +73,18 @@ A studio program ready for scenes, casting, and writer movement.
       {% if program.community.community_mark_url %}
       <img src="{{ program.community.community_mark_url }}" alt="{{ program.community.community_mark_alt }}">
       {% end %}
-      <span>{{ program.role.name }} realm</span>
+      <span>{{ program.role.name if program.role else "Public realm" }}</span>
     </div>
     <h1 id="network-heading">{{ program.community.name }}</h1>
     <p class="elbysodic-network-billboard__summary">{{ program_summary(program) }}</p>
     <div class="elbysodic-network-billboard__signals" aria-label="{{ program.community.name }} network signals">
       {{ metric_item(program.roster_count, "faces") }}
       {{ metric_item(program.open_wanted_count, "wanted") }}
+      {% if program.is_authenticated %}
       {{ metric_item(program.plotting_room_count, "rooms") }}
       {% if program.unread_notification_count %}
       {{ metric_item(program.unread_notification_count, "unread") }}
+      {% end %}
       {% end %}
     </div>
     <div class="elbysodic-network-billboard__actions">
@@ -155,7 +161,7 @@ A studio program ready for scenes, casting, and writer movement.
           {% elif program.premise %}
           World premise
           {% else %}
-          {{ program.role.name }} realm
+          {{ program.role.name if program.role else "Public realm" }}
           {% end %}
         </p>
         <h2>{{ program.community.name }}</h2>
@@ -164,12 +170,13 @@ A studio program ready for scenes, casting, and writer movement.
         {% if program.is_current %}
         {{ badge("current realm", variant="success") }}
         {% end %}
-        {% if program.unread_notification_count %}
+        {% if program.is_authenticated and program.unread_notification_count %}
         {{ badge(program.unread_notification_count ~ " unread", variant="info") }}
         {% end %}
       </div>
     </header>
     <p class="elbysodic-copy-summary">{{ program_summary(program) }}</p>
+    {% if program.is_authenticated %}
     <p class="elbysodic-copy-meta">
       {{ program.membership.display_name or program.membership.username }}
       {% if program.current_character %}
@@ -178,6 +185,9 @@ A studio program ready for scenes, casting, and writer movement.
       · no active face
       {% end %}
     </p>
+    {% else %}
+    <p class="elbysodic-copy-meta">Public preview · log in to enter queues, claims, and face controls.</p>
+    {% end %}
     <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
       {{ program_metric_links(program) }}
     </div>
@@ -292,17 +302,25 @@ A studio program ready for scenes, casting, and writer movement.
 
     {% call surface(variant="elevated") %}
     <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Your lanes</p>
+      <p class="elbysodic-section-kicker">{{ "Your lanes" if viewer else "Ways in" }}</p>
+      {% if viewer %}
       <h2>Memberships and face defaults that can shape discovery.</h2>
+      {% else %}
+      <h2>Public previews before you choose an account.</h2>
+      {% end %}
       <div class="elbysodic-network-casting-list">
         {% for program in network.programs %}
         <a href="{{ program.entry_href }}">
           <strong>{{ program.community.name }}</strong>
           <span>
+            {% if viewer %}
             {% if program.current_character %}
             playing as {{ program.current_character.name }}
             {% else %}
             no active face
+            {% end %}
+            {% else %}
+            log in to enter this realm
             {% end %}
           </span>
         </a>
@@ -322,11 +340,14 @@ A studio program ready for scenes, casting, and writer movement.
     </div>
     <div class="elbysodic-network-strip__metrics">
       {{ metric_item(network.programs | length, "programs") }}
+      {% if viewer %}
       {{ metric_item(viewer.identity_options | length, "memberships") }}
       {{ metric_item(viewer.unread_notification_count, "current unread") }}
+      {% end %}
     </div>
   </section>
 
+  {% if viewer %}
   <section class="elbysodic-network-rail" aria-labelledby="continue-writing-heading">
     <div class="elbysodic-network-rail__header">
       <div>
@@ -343,6 +364,7 @@ A studio program ready for scenes, casting, and writer movement.
       {% end %}
     </div>
   </section>
+  {% end %}
 
   <section class="elbysodic-network-rail" aria-labelledby="featured-worlds-heading">
     <div class="elbysodic-network-rail__header">

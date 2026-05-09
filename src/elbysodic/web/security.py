@@ -23,7 +23,7 @@ ELBYSODIC_HSTS = "ELBYSODIC_HSTS"
 MIN_SECRET_KEY_LENGTH = 32
 PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
-PUBLIC_PATHS = frozenset({"/health", "/login", "/logout"})
+PUBLIC_PATHS = frozenset({"/", "/health", "/login", "/logout", "/network"})
 PUBLIC_PREFIXES = ("/elbysodic-static/",)
 
 
@@ -95,7 +95,7 @@ class RequireLoginMiddleware:
         self._security = security
 
     async def __call__(self, request: Request, call_next: Next) -> AnyResponse:
-        if not self._security.production or _is_public_path(request.path):
+        if not self._security.production or _is_public_request(request):
             return await call_next(request)
 
         if _session_is_valid(request):
@@ -156,8 +156,14 @@ def _strict_transport_security() -> str | None:
     return normalized
 
 
-def _is_public_path(path: str) -> bool:
-    return path in PUBLIC_PATHS or any(path.startswith(prefix) for prefix in PUBLIC_PREFIXES)
+def _is_public_request(request: Request) -> bool:
+    from elbysodic.web.tenant import request_tenant_slug
+
+    if request_tenant_slug(request) is not None and request.path in {"/", "/network"}:
+        return False
+    return request.path in PUBLIC_PATHS or any(
+        request.path.startswith(prefix) for prefix in PUBLIC_PREFIXES
+    )
 
 
 def _session_is_valid(request: Request) -> bool:

@@ -2494,7 +2494,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
         async with TestClient(app) as client:
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
-            assert 'var cookieName = "elbysodic_sidebar_hidden";' in world.text
+            assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
             assert "elbysodic-theme.css?v=sidebar-cookie-1" in world.text
             assert "elbysodic-shell.js?v=sidebar-cookie-2" in world.text
             assert "elbysodic-composer.js?v=sidebar-cookie-1" in world.text
@@ -2504,7 +2504,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
 
             hidden_world = await client.get(
                 "/boards/xavier-institute",
-                headers={"Cookie": "elbysodic_sidebar_hidden=true"},
+                headers={"Cookie": "elbysodic_sidebar_hidden_v2=true"},
             )
             assert hidden_world.status == 200
             assert 'id="elbysodic-sidebar-cookie-state"' in hidden_world.text
@@ -2517,11 +2517,11 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
 
             script = await client.get("/elbysodic-static/elbysodic-shell.js")
             assert script.status == 200
-            assert 'const COOKIE_NAME = "elbysodic_sidebar_hidden";' in script.text
+            assert 'const COOKIE_NAME = "elbysodic_sidebar_hidden_v2";' in script.text
             assert 'document.getElementById("elbysodic-sidebar-cookie-state")' in script.text
             assert "serverStyle.disabled = !hidden" in script.text
             assert "document.documentElement.classList.toggle(HIDDEN_CLASS, hidden)" in script.text
-            assert "window.localStorage.removeItem(key)" in script.text
+            assert 'window.localStorage.removeItem("chirpui-sidebar-collapsed")' in script.text
 
             composer = await client.get("/elbysodic-static/elbysodic-composer.js")
             assert composer.status == 200

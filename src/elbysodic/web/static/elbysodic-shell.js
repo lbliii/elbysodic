@@ -1,6 +1,5 @@
 (function () {
-  const COOKIE_NAME = "elbysodic_sidebar_hidden";
-  const LEGACY_STORAGE_KEYS = ["chirpui-sidebar-collapsed", "elbysodic:sidebar-collapsed"];
+  const COOKIE_NAME = "elbysodic_sidebar_hidden_v2";
   const HIDDEN_CLASS = "elbysodic-app-shell--sidebar-hidden";
   const YEAR_SECONDS = 60 * 60 * 24 * 365;
 
@@ -12,25 +11,10 @@
     return decodeURIComponent(match[2]) === "true";
   }
 
-  function readLegacyPreference() {
-    try {
-      for (const key of LEGACY_STORAGE_KEYS) {
-        const value = window.localStorage.getItem(key);
-        if (value !== null) {
-          return value === "true";
-        }
-      }
-    } catch (_error) {
-      // Legacy migration is optional; cookie persistence is the source of truth.
-    }
-    return null;
-  }
-
   function clearLegacyPreference() {
     try {
-      for (const key of LEGACY_STORAGE_KEYS) {
-        window.localStorage.removeItem(key);
-      }
+      window.localStorage.removeItem("chirpui-sidebar-collapsed");
+      window.localStorage.removeItem("elbysodic:sidebar-collapsed");
     } catch (_error) {
       // Best-effort cleanup only.
     }
@@ -54,12 +38,7 @@
       return cookieValue;
     }
 
-    const legacyValue = readLegacyPreference();
-    if (legacyValue !== null) {
-      writeCookiePreference(legacyValue);
-      clearLegacyPreference();
-      return legacyValue;
-    }
+    clearLegacyPreference();
     return false;
   }
 

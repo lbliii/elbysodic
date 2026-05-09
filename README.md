@@ -211,8 +211,11 @@ Set these Railway variables before sharing the app:
 
 - `ELBYSODIC_ENV=production`
 - `ELBYSODIC_SECRET_KEY` to a random value of at least 32 characters
-- `ELBYSODIC_ALLOWED_HOSTS` to the Railway/custom host list, comma-separated
 - `ELBYSODIC_DEMO_MODE=1` only when seeded demo credentials should work
+
+`ELBYSODIC_ALLOWED_HOSTS` is optional for Railway because production defaults
+allow Railway domains. Set it only after confirming the exact public or custom
+host list; values are comma-separated hostnames without `https://`.
 
 When demo mode is enabled, seed users can log in with password `password`,
 including `writer@example.com`, `moira@example.com`, and `alex@example.com`.
@@ -221,6 +224,8 @@ Without `ELBYSODIC_DEMO_MODE=1`, production rejects those seed password hashes.
 Post-deploy smoke for the shared Railway host:
 
 - confirm `/health` returns `200`
+- confirm logged-out `/` and `/network?q=magic` render the public realm catalog
+- confirm logged-out `/studio` redirects to `/login?next=/studio`
 - log in with the intended demo account policy
 - open `/c/x-men-apocalypse/world/b-24-winter`
 - open `/c/jurassic-park-universe/boards/paddock-twelve`
@@ -229,6 +234,8 @@ Post-deploy smoke for the shared Railway host:
   confirm the shell never swaps to an empty main area
 - submit one low-risk write path, such as a membership or face switch, to prove
   session cookies and CSRF work together
+- log out, then confirm replaying the old `elbysodic_session` cannot open
+  `/studio`
 - confirm seed media under `/elbysodic-static/seed-media/...` returns `200`
 - keep the Railway service at one replica while SQLite is volume-backed
 

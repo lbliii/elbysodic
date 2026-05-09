@@ -167,6 +167,37 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"community not found for host: {host}")
         return _community_from_row(row)
 
+    def list_communities(self) -> list[Community]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                name,
+                slug,
+                host,
+                default_theme_id,
+                identity_accent_facet_group_id,
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
+                world_hero_treatment,
+                world_hero_focal_point,
+                world_hero_overlay,
+                world_hero_height,
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
+                created_at,
+                updated_at
+            FROM communities
+            ORDER BY name, id
+            """
+        ).fetchall()
+        return [_community_from_row(row) for row in rows]
+
     def update_community_identity_accent_group(
         self,
         community_id: int,

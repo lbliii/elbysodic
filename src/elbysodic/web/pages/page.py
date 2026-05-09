@@ -6,7 +6,8 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import is_community_board, is_desk_board, is_location_board
-from elbysodic.services.read_models import MaterialSummary, WorldHub
+from elbysodic.services.forum import AppServices
+from elbysodic.services.read_models import ForumView, MaterialSummary, WorldHub
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_tenant_slug
 
@@ -32,9 +33,11 @@ def _first_material(materials: list[MaterialSummary]) -> MaterialSummary | None:
 
 
 def get(request: Request) -> Page:
-    services = get_services(request)
     if request_tenant_slug(request) is None:
-        network = services.studio_network()
+        services, viewer = _network_services(request)
+        network = (
+            services.studio_network() if viewer is not None else services.public_studio_network()
+        )
         return Page(
             "network/page.html",
             "page_content",
@@ -44,11 +47,12 @@ def get(request: Request) -> Page:
             network_mode="home",
             network_search_query="",
             explore_programs=network.programs,
-            viewer=services.viewer(),
+            viewer=viewer,
             network=network,
             show_community_shell=False,
         )
 
+    services = get_services(request)
     viewer = services.viewer()
     boards = services.list_boards()
     hub = services.world_hub()
@@ -76,3 +80,11 @@ def get(request: Request) -> Page:
         attention=services.needs_attention(),
         activity=services.recent_activity(),
     )
+
+
+def _network_services(request: Request) -> tuple[AppServices, ForumView | None]:
+    try:
+        services = get_services(request)
+        return services, services.viewer()
+    except PermissionError:
+        return get_services(), None

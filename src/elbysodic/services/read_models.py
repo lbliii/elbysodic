@@ -1355,8 +1355,8 @@ class StudioNetworkThemePreview:
 @dataclass(frozen=True, slots=True)
 class StudioNetworkProgramView:
     community: Community
-    membership: CommunityMembership
-    role: Role
+    membership: CommunityMembership | None
+    role: Role | None
     current_character: Character | None
     premise: MaterialSummary | None
     current_event: MaterialSummary | None
@@ -1367,6 +1367,10 @@ class StudioNetworkProgramView:
     unread_notification_count: int
     theme_preview: StudioNetworkThemePreview
     is_current: bool
+
+    @property
+    def is_authenticated(self) -> bool:
+        return self.membership is not None and self.role is not None
 
     @property
     def entry_href(self) -> str:
