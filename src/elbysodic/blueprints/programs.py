@@ -14,6 +14,7 @@ from elbysodic.domain.boards import (
     BOARD_IMAGE_TREATMENTS,
     BOARD_KINDS,
 )
+from elbysodic.domain.vocabulary import MATERIAL_TYPES, WANTED_TYPES
 
 THEME_FONT_KEYS: frozenset[str] = frozenset({"system", "serif", "condensed", "mono"})
 THEME_RADIUS_KEYS: frozenset[str] = frozenset({"square", "sm", "md"})
@@ -24,9 +25,7 @@ APPEARANCE_POST_ACCENT_STYLES: frozenset[str] = frozenset({"soft", "line", "glow
 APPEARANCE_POST_BORDER_STYLES: frozenset[str] = frozenset({"none", "hairline", "bracket", "double"})
 APPEARANCE_POST_TITLE_STYLES: frozenset[str] = frozenset({"standard", "serif", "condensed", "mono"})
 APPEARANCE_POST_DENSITIES: frozenset[str] = frozenset({"calm", "compact", "dramatic"})
-APPEARANCE_MATERIAL_TYPES: frozenset[str] = frozenset(
-    {"premise", "guide", "factions", "application", "event"}
-)
+APPEARANCE_MATERIAL_TYPES: frozenset[str] = MATERIAL_TYPES
 APPEARANCE_MATERIAL_VARIANTS: frozenset[str] = frozenset(
     {"chapter", "dossier", "noticeboard", "archive"}
 )
@@ -263,7 +262,7 @@ def preview_program_blueprint_yaml(source: str) -> ProgramBlueprintPreview:
         name=_text(program_data.get("name")),
         role_slug=_field(role_data, "slug"),
         role_name=_field(role_data, "name"),
-        is_admin=bool(role_data.get("is_admin")),
+        is_admin=_optional_bool_field(role_data, "is_admin", "program.role.is_admin", errors),
         characters=_characters_from_yaml(root.get("characters"), errors),
         boards=_boards_from_yaml(root.get("boards"), errors),
         materials=_materials_from_yaml(root.get("materials"), errors),
@@ -411,6 +410,12 @@ def _validate_material_blueprints(
         _require_text(errors, f"{material_path}.title", material.title)
         _require_text(errors, f"{material_path}.material_type", material.material_type)
         _require_text(errors, f"{material_path}.summary", material.summary)
+        _validate_choice(
+            errors,
+            f"{material_path}.material_type",
+            material.material_type,
+            MATERIAL_TYPES,
+        )
         material_slugs.add(material.slug)
     return material_slugs
 
@@ -428,6 +433,12 @@ def _validate_wanted_blueprints(
         _require_text(errors, f"{hook_path}.title", hook.title)
         _require_text(errors, f"{hook_path}.wanted_type", hook.wanted_type)
         _require_text(errors, f"{hook_path}.summary", hook.summary)
+        _validate_choice(
+            errors,
+            f"{hook_path}.wanted_type",
+            hook.wanted_type,
+            WANTED_TYPES,
+        )
         if hook.related_material_slug and hook.related_material_slug not in material_slugs:
             errors.append(
                 f"{hook_path}.related_material_slug references unknown material: "
@@ -603,6 +614,21 @@ def _text(value: object) -> str:
 
 def _field(mapping: dict[str, Any], key: str) -> str:
     return _text(mapping.get(key))
+
+
+def _optional_bool_field(
+    mapping: dict[str, Any],
+    key: str,
+    path: str,
+    errors: list[str],
+) -> bool:
+    value = mapping.get(key)
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    errors.append(f"{path} must be true or false")
+    return False
 
 
 def _characters_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintCharacter, ...]:

@@ -9,6 +9,7 @@ from elbysodic.db.repositories.rows import (
 )
 from elbysodic.db.repositories.wanted import WantedRepositoryMixin
 from elbysodic.domain.models import CharacterPlotHook, CharacterPlotHookInterest
+from elbysodic.domain.vocabulary import PLOT_HOOK_TYPES
 
 
 class PlotHookRepositoryMixin(WantedRepositoryMixin):
@@ -27,6 +28,7 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
         status: str = "open",
     ) -> CharacterPlotHook:
         self.get_membership(community_id, author_membership_id)
+        _require_plot_hook_type(hook_type)
         character = self.get_character(community_id, character_id)
         if character.membership_id != author_membership_id:
             raise TenantBoundaryError("plot hook character must belong to author membership")
@@ -82,6 +84,7 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
         related_material_id: int | None = None,
     ) -> CharacterPlotHook:
         self.get_character_plot_hook(community_id, plot_hook_id)
+        _require_plot_hook_type(hook_type)
         if related_material_id is not None:
             self.get_material(community_id, related_material_id)
         self.connection.execute(
@@ -404,3 +407,9 @@ class PlotHookRepositoryMixin(WantedRepositoryMixin):
         )
         self._commit()
         return self.get_character_plot_hook_interest(community_id, interest_id)
+
+
+def _require_plot_hook_type(hook_type: str) -> None:
+    if hook_type not in PLOT_HOOK_TYPES:
+        allowed = ", ".join(sorted(PLOT_HOOK_TYPES))
+        raise ValueError(f"hook_type must be one of: {allowed}")

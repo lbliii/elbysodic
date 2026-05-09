@@ -71,6 +71,17 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.domain.vocabulary import (
+    MATERIAL_TYPE_LABELS,
+    MATERIAL_TYPES,
+    PLOT_HOOK_TYPE_LABELS,
+    PLOT_HOOK_TYPES,
+    WANTED_TYPE_LABELS,
+    WANTED_TYPES,
+    material_type_label,
+    plot_hook_type_label,
+    wanted_type_label,
+)
 
 __all__ = [
     "BOARD_IMAGE_FOCAL_POINTS",
@@ -81,6 +92,12 @@ __all__ = [
     "DEFAULT_COMMUNITY_ID",
     "DEFAULT_COMMUNITY_SLUG",
     "DEFAULT_SIDEBAR_SECTION_CONFIGS",
+    "MATERIAL_TYPES",
+    "MATERIAL_TYPE_LABELS",
+    "PLOT_HOOK_TYPES",
+    "PLOT_HOOK_TYPE_LABELS",
+    "WANTED_TYPES",
+    "WANTED_TYPE_LABELS",
     "ApplicationFieldValue",
     "ApplicationTemplateField",
     "Board",
@@ -133,9 +150,12 @@ __all__ = [
     "is_location_board",
     "is_location_sidebar_board",
     "is_studio_sidebar_board",
+    "material_type_label",
     "normalize_board_image_focal_point",
     "normalize_board_image_overlay",
     "normalize_board_image_treatment",
     "normalize_board_kind",
     "normalize_board_sidebar_section",
+    "plot_hook_type_label",
+    "wanted_type_label",
 ]

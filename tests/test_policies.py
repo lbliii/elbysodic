@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from elbysodic.domain.models import Board, CommunityMembership, Post, Role, Thread
+from elbysodic.domain.models import Board, Character, CommunityMembership, Post, Role, Thread
 from elbysodic.services import policies
 
 
@@ -164,3 +164,39 @@ def test_staff_can_edit_posts_through_thread_management_capability(
 
     assert policies.can_edit_post(membership, post, admin_role)
     assert not policies.can_edit_post(membership, post, member_role)
+
+
+def test_story_actions_require_accepted_character(membership: CommunityMembership) -> None:
+    accepted = Character(
+        id=40,
+        community_id=membership.community_id,
+        membership_id=membership.id,
+        name="Accepted Face",
+        slug="accepted-face",
+        avatar_url=None,
+        poster_url=None,
+        poster_alt="",
+        tagline="",
+        accent_color="",
+        summary="Ready for scenes.",
+        post_profile_variant="bio",
+        post_accent_style="soft",
+        post_border_style="hairline",
+        post_title_style="standard",
+        post_density="calm",
+        application_status="accepted",
+        created_at="2026-01-01T00:00:00+00:00",
+        updated_at="2026-01-01T00:00:00+00:00",
+    )
+    submitted = replace(accepted, id=41, slug="submitted-face", application_status="submitted")
+    revision_requested = replace(
+        accepted,
+        id=42,
+        slug="revision-face",
+        application_status="revision_requested",
+    )
+
+    assert policies.can_post_as(membership, submitted)
+    assert policies.can_story_act_as(membership, accepted)
+    assert not policies.can_story_act_as(membership, submitted)
+    assert not policies.can_story_act_as(membership, revision_requested)

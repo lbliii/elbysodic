@@ -728,6 +728,9 @@ def connect(path: str | Path = ":memory:", *, check_same_thread: bool = True) ->
     connection = sqlite3.connect(path, check_same_thread=check_same_thread)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA busy_timeout = 5000")
+    if str(path) != ":memory:":
+        connection.execute("PRAGMA journal_mode = WAL")
     return connection
 
 

@@ -311,7 +311,7 @@ def join_thread_as_current_character(
         raise PermissionError(f"thread {thread.id} is not open to join")
     if not policies.can_reply(viewer.membership, thread, viewer.role):
         raise PermissionError(f"membership {viewer.membership.id} cannot join thread {thread.id}")
-    if not policies.can_post_as(viewer.membership, viewer.current_character):
+    if not policies.can_story_act_as(viewer.membership, viewer.current_character):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot use character {viewer.current_character.id}"
         )
@@ -332,7 +332,7 @@ def reply_to_thread(
     body: str,
 ) -> Post:
     character = repo.get_character(viewer.community.id, character_id)
-    if not policies.can_post_as(viewer.membership, character):
+    if not policies.can_story_act_as(viewer.membership, character):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot use character {character_id}"
         )
@@ -367,7 +367,7 @@ def start_thread(
     participant_ids: list[int] | None = None,
 ) -> CreatedThread:
     character = repo.get_character(viewer.community.id, character_id)
-    if not policies.can_post_as(viewer.membership, character):
+    if not policies.can_story_act_as(viewer.membership, character):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot use character {character_id}"
         )

@@ -6,6 +6,7 @@ from elbysodic.db.repositories.base import _last_id, _utc_now
 from elbysodic.db.repositories.facets import FacetRepositoryMixin
 from elbysodic.db.repositories.rows import _community_from_row, _material_from_row
 from elbysodic.domain.models import Community, Material
+from elbysodic.domain.vocabulary import MATERIAL_TYPES
 
 
 class MaterialRepositoryMixin(FacetRepositoryMixin):
@@ -23,6 +24,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
         is_featured: bool = False,
     ) -> Material:
         self.get_community(community_id)
+        _require_material_type(material_type)
         now = _utc_now()
         cursor = self.connection.execute(
             """
@@ -156,6 +158,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
         is_featured: bool = False,
     ) -> Material:
         self.get_material(community_id, material_id)
+        _require_material_type(material_type)
         self.connection.execute(
             """
             UPDATE materials
@@ -219,3 +222,9 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
             params,
         ).fetchall()
         return [_material_from_row(row) for row in rows]
+
+
+def _require_material_type(material_type: str) -> None:
+    if material_type not in MATERIAL_TYPES:
+        allowed = ", ".join(sorted(MATERIAL_TYPES))
+        raise ValueError(f"material_type must be one of: {allowed}")

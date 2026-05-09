@@ -54,7 +54,7 @@ class RequestIdentityResolver:
     def __init__(
         self,
         repo: AccessRepository,
-        default: DefaultRequestIdentity,
+        default: DefaultRequestIdentity | None,
         *,
         allow_development_identity: bool = True,
         require_session: bool = False,
@@ -128,12 +128,19 @@ class RequestIdentityResolver:
                     membership_id=membership.id,
                 )
 
-        resolved_user_id = user_id if user_id is not None else self._default.user_id
+        if user_id is None:
+            if self._default is None:
+                raise PermissionError("login is required")
+            resolved_user_id = self._default.user_id
+        else:
+            resolved_user_id = user_id
         try:
             self._repo.get_user(resolved_user_id)
         except LookupError:
             if not user_from_cookie:
                 raise PermissionError(f"{DEV_USER_HEADER} must identify a known user") from None
+            if self._default is None:
+                raise PermissionError("login is required") from None
             resolved_user_id = self._default.user_id
             self._repo.get_user(resolved_user_id)
         membership = self._repo.get_membership_for_user(community.id, resolved_user_id)
@@ -186,6 +193,8 @@ class RequestIdentityResolver:
             except LookupError:
                 pass
 
+        if self._default is None:
+            raise PermissionError("login is required")
         default_community = self._repo.get_community(self._default.community_id)
         if external_host is not None and default_community.host:
             raise LookupError(f"community not found for host: {external_host}")

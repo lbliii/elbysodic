@@ -16,7 +16,7 @@ def main(argv: list[str] | None = None) -> None:
 
     command = args.command or "serve"
     if command == "init-db":
-        db_path = initialize_database(args.db_path, seed_demo=not args.no_seed)
+        db_path = initialize_database(args.db_path, seed_demo=args.seed)
         sys.stdout.write(f"initialized {db_path}\n")
         return
 
@@ -25,7 +25,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.stdout.write(f"seeded {db_path}\n")
         return
 
-    app = create_app(debug=args.debug, db_path=args.db_path)
+    app = create_app(debug=args.debug, db_path=args.db_path, seed_demo=args.seed_demo)
     app.run(host=args.host, port=args.port)
 
 
@@ -59,9 +59,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Create the SQLite schema.",
     )
     init_db.add_argument(
-        "--no-seed",
+        "--seed",
         action="store_true",
-        help="Create the schema without demo forum data.",
+        help="Also seed demo forum data after creating the schema.",
     )
 
     subparsers.add_parser(
@@ -92,4 +92,10 @@ def _add_serve_options(parser: argparse.ArgumentParser, *, include_defaults: boo
         action=argparse.BooleanOptionalAction,
         default=True if include_defaults else default,
         help="Enable or disable Chirp debug mode.",
+    )
+    parser.add_argument(
+        "--seed-demo",
+        action="store_true",
+        default=False if include_defaults else default,
+        help="Seed demo data during app startup.",
     )

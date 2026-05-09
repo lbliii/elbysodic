@@ -13,6 +13,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.domain.vocabulary import wanted_type_label
 from elbysodic.services import policies
 from elbysodic.services.facets import FacetReadRepository, facet_tags
 from elbysodic.services.markup import render_prose_body
@@ -301,6 +302,7 @@ def read_wanted_ad(
         can_express_interest=(
             wanted_ad.status == "open"
             and viewer.current_character is not None
+            and policies.can_story_act_as(viewer.membership, viewer.current_character)
             and viewer_interest is None
             and not is_created_by_viewer
         ),
@@ -348,6 +350,10 @@ def express_wanted_interest(
 ) -> WantedAdInterest:
     if viewer.current_character is None:
         raise ValueError("create a character before expressing interest")
+    if not policies.can_story_act_as(viewer.membership, viewer.current_character):
+        raise PermissionError(
+            f"membership {viewer.membership.id} cannot use character {viewer.current_character.id}"
+        )
     wanted_ad = repo.get_wanted_ad_by_slug(viewer.community.id, wanted_slug)
     if wanted_ad.status != "open":
         raise ValueError(f"wanted hook {wanted_ad.id} is not open")
@@ -524,17 +530,6 @@ def wanted_ad_summary(
         ),
         type_label=wanted_type_label(wanted_ad.wanted_type),
     )
-
-
-def wanted_type_label(wanted_type: str) -> str:
-    return {
-        "canon": "Canon",
-        "connection": "Connection",
-        "event_role": "Event Role",
-        "faction_need": "Faction Need",
-        "plot_role": "Plot Role",
-        "rival": "Rival",
-    }.get(wanted_type, wanted_type.replace("_", " ").title())
 
 
 def wanted_ad_interest_view(

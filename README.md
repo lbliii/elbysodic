@@ -176,6 +176,7 @@ with `ELBYSODIC_DB_PATH` or `elbysodic --db-path path/to/forum.sqlite3`.
 
 ```bash
 elbysodic init-db
+elbysodic seed-demo
 elbysodic serve --port 8001
 ```
 
@@ -200,8 +201,9 @@ the app with:
 elbysodic --host 0.0.0.0 --port $PORT --no-debug
 ```
 
-The app creates the SQLite schema and idempotently seeds the demo forum on
-startup. For a long-lived demo, attach a Railway Volume to the service. Railway
+The app creates the SQLite schema on startup. Seed the demo forum intentionally
+with `elbysodic seed-demo` before sharing demo credentials. For a long-lived
+demo, attach a Railway Volume to the service. Railway
 exposes the mount at `RAILWAY_VOLUME_MOUNT_PATH`, and Elbysodic stores SQLite at
 `$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3` unless `ELBYSODIC_DB_PATH` is set.
 The recommended mount path is `/app/var`, which also matches the local

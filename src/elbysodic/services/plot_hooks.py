@@ -13,6 +13,7 @@ from elbysodic.domain.models import (
     Facet,
     Material,
 )
+from elbysodic.domain.vocabulary import PLOT_HOOK_TYPE_LABELS, plot_hook_type_label
 from elbysodic.services import policies
 from elbysodic.services.facets import (
     FacetReadRepository,
@@ -31,7 +32,7 @@ from elbysodic.services.read_models import (
 from elbysodic.services.timestamps import timestamp_label
 
 PLOT_HOOK_STATUSES = ("open", "plotting", "paused", "closed", "archived")
-PLOT_HOOK_TYPES = ("scene", "relationship", "connection", "event", "other")
+PLOT_HOOK_TYPES = tuple(PLOT_HOOK_TYPE_LABELS)
 
 
 class PlotHookReadRepository(FacetReadRepository, PostViewRepository, Protocol):
@@ -241,6 +242,7 @@ def read_plot_hook(
         can_express_interest=(
             plot_hook.status == "open"
             and viewer.current_character is not None
+            and policies.can_story_act_as(viewer.membership, viewer.current_character)
             and viewer_interest is None
             and plot_hook.author_membership_id != viewer.membership.id
         ),
@@ -265,7 +267,7 @@ def create_plot_hook(
     facet_slugs: list[str],
 ) -> CharacterPlotHook:
     character = repo.get_character_by_slug(viewer.community.id, character_slug)
-    if not policies.can_post_as(viewer.membership, character):
+    if not policies.can_story_act_as(viewer.membership, character):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot create hooks for character {character.id}"
         )
@@ -348,6 +350,10 @@ def express_plot_hook_interest(
 ) -> CharacterPlotHookInterest:
     if viewer.current_character is None:
         raise ValueError("create a character before expressing interest")
+    if not policies.can_story_act_as(viewer.membership, viewer.current_character):
+        raise PermissionError(
+            f"membership {viewer.membership.id} cannot use character {viewer.current_character.id}"
+        )
     detail = read_plot_hook(repo, viewer, character_slug, hook_slug)
     if detail.plot_hook.status != "open":
         raise ValueError(f"plot hook {detail.plot_hook.id} is not open")
@@ -381,16 +387,6 @@ def plot_hook_interest_view(
         character=repo.get_character(community_id, interest.character_id),
         created_at_label=timestamp_label(interest.created_at),
     )
-
-
-def plot_hook_type_label(hook_type: str) -> str:
-    return {
-        "scene": "Scene",
-        "relationship": "Relationship",
-        "connection": "Connection",
-        "event": "Event",
-        "other": "Other",
-    }.get(hook_type, hook_type.replace("_", " ").title())
 
 
 def can_manage_plot_hook(viewer: ForumView, plot_hook: CharacterPlotHook) -> bool:

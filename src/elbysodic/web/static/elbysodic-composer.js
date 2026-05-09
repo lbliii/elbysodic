@@ -495,6 +495,10 @@
         this.draftState = "";
       },
 
+      submitDraft() {
+        this.saveDraft();
+      },
+
       closeBodyMention() {
         this.bodyMentionOpen = false;
         this.bodyMentionHighlightedIndex = 0;

@@ -105,6 +105,10 @@ def can_post_as(membership: CommunityMembership, character: Character) -> bool:
     )
 
 
+def can_story_act_as(membership: CommunityMembership, character: Character) -> bool:
+    return can_post_as(membership, character) and character.application_status == "accepted"
+
+
 def can_edit_post(
     membership: CommunityMembership,
     post: Post,

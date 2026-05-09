@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -1578,6 +1579,68 @@ def test_plotting_room_participants_are_unique_for_nullable_identity(
     ]
 
 
+def test_repository_rejects_unknown_story_vocabulary(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("vocabulary@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "writer", "Writer")
+    character = repo.create_character(community.id, membership.id, "rogue", "Rogue")
+    material = repo.create_material(
+        community.id,
+        "premise",
+        "Premise",
+        material_type="premise",
+        summary="A valid director material.",
+    )
+    hook = repo.create_character_plot_hook(
+        community.id,
+        membership.id,
+        character.id,
+        "open-scene",
+        "Open scene",
+        hook_type="scene",
+    )
+
+    with pytest.raises(ValueError, match="material_type must be one of:"):
+        repo.create_material(community.id, "cms-page", "CMS Page", material_type="cms_page")
+    with pytest.raises(ValueError, match="material_type must be one of:"):
+        repo.update_material(
+            community.id,
+            material.id,
+            title=material.title,
+            material_type="cms_page",
+            summary=material.summary,
+            body=material.body,
+        )
+    with pytest.raises(ValueError, match="wanted_type must be one of:"):
+        repo.create_wanted_ad(
+            community.id,
+            membership.id,
+            "generic-listing",
+            "Generic listing",
+            wanted_type="generic_listing",
+        )
+    with pytest.raises(ValueError, match="hook_type must be one of:"):
+        repo.create_character_plot_hook(
+            community.id,
+            membership.id,
+            character.id,
+            "generic-hook",
+            "Generic hook",
+            hook_type="generic_hook",
+        )
+    with pytest.raises(ValueError, match="hook_type must be one of:"):
+        repo.update_character_plot_hook(
+            community.id,
+            hook.id,
+            title=hook.title,
+            hook_type="generic_hook",
+            summary=hook.summary,
+            body=hook.body,
+            status=hook.status,
+        )
+
+
 def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
@@ -1653,6 +1716,50 @@ def test_threads_and_posts_cannot_cross_community_boundaries(repo: ForumReposito
 
     with pytest.raises(LookupError):
         repo.create_post(hosted.id, post.id, hosted_character.id, "Wrong community.")
+
+
+def test_concurrent_post_creation_assigns_unique_post_numbers(tmp_path) -> None:
+    connection = connect(tmp_path / "forum.sqlite3", check_same_thread=False)
+    try:
+        create_schema(connection)
+        repository = ForumRepository(connection)
+        community = repository.seed_default_community()
+        user = repository.create_user("writer@example.com", "hash")
+        role = repository.create_role(community.id, "member", "Member")
+        membership = repository.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "lark",
+            "Lark",
+        )
+        character = repository.create_character(community.id, membership.id, "rogue", "Rogue")
+        board = repository.create_board(community.id, "ic", "In Character")
+        thread = repository.create_thread(
+            community.id,
+            board.id,
+            character.id,
+            "opening-scene",
+            "Opening Scene",
+        )
+
+        def create_reply(index: int) -> int:
+            return repository.create_post(
+                community.id,
+                thread.id,
+                character.id,
+                f"Concurrent beat {index}.",
+            ).post_number
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            post_numbers = list(executor.map(create_reply, range(8)))
+
+        posts = repository.list_posts(community.id, thread.id)
+    finally:
+        connection.close()
+
+    assert sorted(post_numbers) == list(range(1, 9))
+    assert [post.post_number for post in posts] == list(range(1, 9))
 
 
 def test_thread_flags_sort_pinned_threads_first(repo: ForumRepository) -> None:

@@ -39,6 +39,7 @@ def create_app(
     services: AppServices | None = None,
     db_path: str | Path | None = None,
     dev_tools: bool | None = None,
+    seed_demo: bool = False,
 ) -> App:
     security = resolve_web_security_config(debug=debug)
     config = AppConfig(
@@ -51,9 +52,9 @@ def create_app(
     )
     app = App(config=config)
     register_error_handlers(app, include_internal=not debug)
-    configured_services = (services or create_services(db_path)).with_request_auth(
-        production=security.production
-    )
+    configured_services = (
+        services or create_services(db_path, seed_demo=seed_demo)
+    ).with_request_auth(production=security.production)
 
     configure_services(
         configured_services,

@@ -212,6 +212,15 @@ The goal is for Jurassic Park, HP, RL NYC, and RL Small Town to feel like
 different rooms in one studio network while sharing Elbysodic's operational
 grammar.
 
+## Shared PBP Vocabulary
+
+Blueprint validation uses the same material and wanted-hook vocabulary as the
+rendered app labels:
+
+- Material types: `premise`, `guide`, `factions`, `application`, and `event`.
+- Wanted hook types: `canon`, `connection`, `event_role`, `faction_need`,
+  `plot_role`, `relationship`, and `rival`.
+
 ## Validation Rules
 
 Blueprint validation should fail before hydration when:
@@ -222,6 +231,8 @@ Blueprint validation should fail before hydration when:
 - A blueprint has no director materials.
 - Program, character, board, material, or wanted slugs are duplicated.
 - A board uses an unknown `board_kind`.
+- A director material uses an unknown material type.
+- A wanted hook uses an unknown wanted-hook type.
 - A board media URL is present without alt text, or alt text is present without
   a URL.
 - A board media treatment, focal point, or overlay is outside the Studio

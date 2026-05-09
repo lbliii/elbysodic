@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 import pytest
 from chirp.app import App
+from chirp.http.response import Response
 from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
 
@@ -19,6 +20,7 @@ from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services, default_database_path
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import scope_response_urls
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
@@ -407,6 +409,43 @@ def test_tenant_prefixed_route_keeps_scoped_links_inside_prefix() -> None:
         assert 'href="/c/jurassic-park-universe/elbysodic-static' not in response.text
 
     asyncio.run(run())
+
+
+def test_tenant_scoping_preserves_authored_form_values() -> None:
+    response = Response(
+        """
+        <a href="/world">World</a>
+        <form action="/boards/danger-room/threads/new">
+          <input name="title" value="/not-a-route">
+          <input name="next" value="/boards/danger-room">
+        </form>
+        """,
+        content_type="text/html",
+    )
+
+    scoped = scope_response_urls(response, "x-men-apocalypse")
+
+    assert isinstance(scoped.body, str)
+    assert 'href="/c/x-men-apocalypse/world"' in scoped.body
+    assert 'action="/c/x-men-apocalypse/boards/danger-room/threads/new"' in scoped.body
+    assert 'name="title" value="/not-a-route"' in scoped.body
+    assert 'name="next" value="/c/x-men-apocalypse/boards/danger-room"' in scoped.body
+
+
+def test_composer_forms_save_drafts_on_submit_instead_of_clearing_early() -> None:
+    composer_paths = [
+        Path("src/elbysodic/web/pages/boards/{board_slug}/threads/new/page.html"),
+        Path("src/elbysodic/web/pages/boards/{board_slug}/threads/{thread_slug}/page.html"),
+        Path(
+            "src/elbysodic/web/pages/boards/{board_slug}/threads/{thread_slug}/posts/"
+            "{post_id}/edit/page.html"
+        ),
+    ]
+
+    for path in composer_paths:
+        template = path.read_text(encoding="utf-8")
+        assert '@submit="clearDraft()"' not in template
+        assert '@submit="submitDraft()"' in template
 
 
 def test_unknown_tenant_prefix_returns_not_found() -> None:
@@ -4286,6 +4325,76 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
             assert any(item.label == "Plotting room" for item in outsider_inbox.items)
 
     asyncio.run(run())
+
+
+def test_unaccepted_faces_cannot_take_story_actions() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    assert services.seed.default_character is not None
+    character = repo.update_character_application_status(
+        community.id,
+        services.seed.default_character.id,
+        "submitted",
+    )
+    thread = repo.get_thread_by_slug(
+        community.id,
+        repo.get_board_by_slug(community.id, "danger-room").id,
+        "sentinel-drill",
+    )
+    role = repo.get_role_by_slug(community.id, "member")
+    other_user = repo.create_user("story-counterparty@example.com", "hash")
+    other_membership = repo.create_membership(
+        community.id,
+        other_user.id,
+        role.id,
+        "storycounter",
+        "Story Counter",
+    )
+    other_character = repo.create_character(
+        community.id,
+        other_membership.id,
+        "story-counter-face",
+        "Story Counter Face",
+    )
+    repo.create_character_plot_hook(
+        community.id,
+        other_membership.id,
+        other_character.id,
+        "outside-hook",
+        "Outside hook",
+        summary="A hook for someone else.",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        other_membership.id,
+        "outside-wanted",
+        "Outside wanted",
+        summary="A wanted hook for someone else.",
+    )
+
+    with pytest.raises(PermissionError):
+        services.start_thread(
+            board_slug="danger-room",
+            character_id=character.id,
+            title="Submitted face scene",
+            body="This should wait for acceptance.",
+        )
+    with pytest.raises(PermissionError):
+        services.reply_to_thread("danger-room", thread.slug, character.id, "Not yet.")
+    with pytest.raises(PermissionError):
+        services.create_plot_hook(
+            character.slug,
+            title="Submitted face hook",
+            hook_type="scene",
+            summary="This should wait.",
+            body="This should wait for acceptance.",
+            facet_slugs=[],
+        )
+    with pytest.raises(PermissionError):
+        services.express_plot_hook_interest("story-counter-face", "outside-hook")
+    with pytest.raises(PermissionError):
+        services.express_wanted_interest("outside-wanted")
 
 
 def test_wanted_hooks_accept_prospective_character_interest() -> None:

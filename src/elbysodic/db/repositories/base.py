@@ -6,6 +6,7 @@ import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from threading import RLock
 
 
 class TenantBoundaryError(ValueError):
@@ -17,13 +18,19 @@ class RepositoryBase:
 
     def __init__(self, connection: sqlite3.Connection) -> None:
         self.connection = connection
+        self._transaction_lock = RLock()
         self._transaction_depth = 0
 
     @contextmanager
     def transaction(self) -> Iterator[None]:
+        self._transaction_lock.acquire()
         outermost = self._transaction_depth == 0
         if outermost:
-            self.connection.execute("BEGIN")
+            try:
+                self.connection.execute("BEGIN IMMEDIATE")
+            except Exception:
+                self._transaction_lock.release()
+                raise
         self._transaction_depth += 1
         try:
             yield
@@ -31,11 +38,13 @@ class RepositoryBase:
             self._transaction_depth -= 1
             if outermost:
                 self.connection.rollback()
+            self._transaction_lock.release()
             raise
         else:
             self._transaction_depth -= 1
             if outermost:
                 self._commit()
+            self._transaction_lock.release()
 
     def _commit(self) -> None:
         if self._transaction_depth == 0:

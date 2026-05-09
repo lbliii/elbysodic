@@ -474,3 +474,9 @@ move before manual scene outcomes and rendered privacy proof.
   prerequisites for next primitives. Canon, public registration, partial staff
   capabilities, catalog facets, and appearance variants remain behind the
   production trust gates unless they directly close one of those gates.
+- 2026-05-09: Paid down the first steward debt pass after pulling latest main:
+  strict Blueprint staff flags, explicit demo seeding, serialized post-number
+  allocation, accepted-face requirements for story actions, production
+  application-room CSRF/privacy proof, safer tenant URL scoping for authored
+  form values, draft-preserving composer submit behavior, shared PBP
+  vocabulary validation, and repository write guards for story vocabulary.
