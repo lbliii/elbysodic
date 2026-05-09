@@ -263,7 +263,7 @@ def preview_program_blueprint_yaml(source: str) -> ProgramBlueprintPreview:
         name=_text(program_data.get("name")),
         role_slug=_field(role_data, "slug"),
         role_name=_field(role_data, "name"),
-        is_admin=bool(role_data.get("is_admin")),
+        is_admin=_optional_bool_field(role_data, "is_admin", "program.role.is_admin", errors),
         characters=_characters_from_yaml(root.get("characters"), errors),
         boards=_boards_from_yaml(root.get("boards"), errors),
         materials=_materials_from_yaml(root.get("materials"), errors),
@@ -603,6 +603,21 @@ def _text(value: object) -> str:
 
 def _field(mapping: dict[str, Any], key: str) -> str:
     return _text(mapping.get(key))
+
+
+def _optional_bool_field(
+    mapping: dict[str, Any],
+    key: str,
+    path: str,
+    errors: list[str],
+) -> bool:
+    value = mapping.get(key)
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    errors.append(f"{path} must be true or false")
+    return False
 
 
 def _characters_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintCharacter, ...]:

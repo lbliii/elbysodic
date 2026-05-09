@@ -465,6 +465,89 @@ wanted:
     assert preview.wanted_count == 1
 
 
+@pytest.mark.parametrize(
+    ("role_yaml", "expected_is_admin"),
+    (
+        ("is_admin: true", True),
+        ("is_admin: false", False),
+        ("", False),
+    ),
+)
+def test_program_blueprint_yaml_preview_parses_admin_flag_strictly(
+    role_yaml: str,
+    expected_is_admin: bool,
+) -> None:
+    preview = preview_program_blueprint_yaml(
+        f"""
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town
+  name: RL Small Town
+  role:
+    slug: director
+    name: Director
+    {role_yaml}
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+"""
+    )
+
+    assert preview.is_valid
+    assert preview.blueprint is not None
+    assert preview.blueprint.is_admin is expected_is_admin
+
+
+@pytest.mark.parametrize("role_yaml", ("is_admin: 'false'", "is_admin: 'true'", "is_admin: 1"))
+def test_program_blueprint_yaml_preview_rejects_non_boolean_admin_flag(role_yaml: str) -> None:
+    preview = preview_program_blueprint_yaml(
+        f"""
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town
+  name: RL Small Town
+  role:
+    slug: director
+    name: Director
+    {role_yaml}
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+"""
+    )
+
+    assert not preview.is_valid
+    assert "program.role.is_admin must be true or false" in preview.errors
+    assert preview.blueprint is not None
+    assert preview.blueprint.is_admin is False
+
+
 def test_program_blueprint_yaml_preview_reports_parse_and_validation_errors() -> None:
     parse_preview = preview_program_blueprint_yaml("program: [")
     validation_preview = preview_program_blueprint_yaml(
