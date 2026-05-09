@@ -10,6 +10,7 @@ from elbysodic.domain.models import (
     CommunityMembership,
     Facet,
     Material,
+    PlottingRoom,
     WantedAd,
     WantedAdInterest,
 )
@@ -24,6 +25,7 @@ from elbysodic.services.read_models import (
     CharacterReserveView,
     ForumView,
     WantedAdDetail,
+    WantedAdInterestDetailItem,
     WantedAdInterestView,
     WantedAdSummary,
     WantedBoard,
@@ -74,6 +76,12 @@ class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
         community_id: int,
         interest_id: int,
     ) -> WantedAdInterest: ...
+
+    def get_plotting_room_for_wanted_interest(
+        self,
+        community_id: int,
+        interest_id: int,
+    ) -> PlottingRoom: ...
 
     def list_character_reserves_for_community(
         self,
@@ -237,7 +245,12 @@ def read_wanted_ad(
             continue
         related.append(wanted_ad_summary(repo, viewer.community.id, candidate))
     interests = [
-        wanted_ad_interest_view(repo, viewer.community.id, interest)
+        wanted_ad_interest_detail_item(
+            repo,
+            viewer,
+            interest,
+            can_manage=can_manage,
+        )
         for interest in repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id)
     ]
     reserves = [
@@ -547,6 +560,35 @@ def wanted_ad_interest_view(
         ),
         created_at_label=timestamp_label(interest.created_at),
     )
+
+
+def wanted_ad_interest_detail_item(
+    repo: CastingReadRepository,
+    viewer: ForumView,
+    interest: WantedAdInterest,
+    *,
+    can_manage: bool,
+) -> WantedAdInterestDetailItem:
+    room = wanted_interest_room(repo, viewer.community.id, interest.id)
+    is_interested_writer = interest.membership_id == viewer.membership.id
+    return WantedAdInterestDetailItem(
+        view=wanted_ad_interest_view(repo, viewer.community.id, interest),
+        room=room,
+        can_view_note=can_manage or is_interested_writer,
+        can_manage=can_manage,
+        can_open_room=room is not None and (can_manage or is_interested_writer),
+    )
+
+
+def wanted_interest_room(
+    repo: CastingReadRepository,
+    community_id: int,
+    interest_id: int,
+) -> PlottingRoom | None:
+    try:
+        return repo.get_plotting_room_for_wanted_interest(community_id, interest_id)
+    except LookupError:
+        return None
 
 
 def character_reserve_view(

@@ -1072,6 +1072,35 @@ class WantedAdInterestView:
 
 
 @dataclass(frozen=True, slots=True)
+class WantedAdInterestDetailItem:
+    view: WantedAdInterestView
+    room: PlottingRoom | None
+    can_view_note: bool
+    can_manage: bool
+    can_open_room: bool
+
+    @property
+    def interest(self) -> WantedAdInterest:
+        return self.view.interest
+
+    @property
+    def membership(self) -> CommunityMembership:
+        return self.view.membership
+
+    @property
+    def character(self) -> Character | None:
+        return self.view.character
+
+    @property
+    def created_at_label(self) -> str:
+        return self.view.created_at_label
+
+    @property
+    def display_name(self) -> str:
+        return self.view.display_name
+
+
+@dataclass(frozen=True, slots=True)
 class CharacterReserveView:
     reserve: CharacterReserve
     membership: CommunityMembership
@@ -1206,10 +1235,10 @@ class WantedAdDetail:
     related_material: Material | None
     related_characters: list[Character]
     facets: list[FacetTag]
-    interests: list[WantedAdInterestView]
+    interests: list[WantedAdInterestDetailItem]
     reserves: list[CharacterReserveView]
     reserve_interest_ids: set[int]
-    viewer_interest: WantedAdInterestView | None
+    viewer_interest: WantedAdInterestDetailItem | None
     can_express_interest: bool
     can_express_prospective_interest: bool
     is_created_by_viewer: bool

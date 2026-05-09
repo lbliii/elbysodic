@@ -4433,6 +4433,17 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
         assert prospective.character_id is None
         assert prospective.prospective_character_name == "Val Cooper"
 
+        outsider_services, _outsider_character_id = _outsider_services(
+            services,
+            prefix="wanted-note-outsider",
+        )
+        outsider_app = create_app(debug=False, services=outsider_services)
+        async with TestClient(outsider_app) as outsider_client:
+            outsider_view = await outsider_client.get("/wanted/human-un-liaison-for-b24")
+            assert outsider_view.status == 200
+            assert "Val Cooper" in outsider_view.text
+            assert "I would app her as a UN pressure point." not in outsider_view.text
+
         charlie_membership = repo.get_membership_by_username(community.id, "charlie")
         charlie_user = repo.get_user(charlie_membership.user_id)
         xavier = repo.get_character_by_slug(community.id, "charles-xavier")
