@@ -437,3 +437,7 @@ Do these after Gates 0-5 are materially closed:
   `idx_user_sessions_user` index, a fresh-vs-upgraded index parity regression,
   and a file-backed restart regression proving startup seed preserves
   director-edited boards and materials.
+- 2026-05-09: Started Gate 2 by exporting the current first-class domain
+  primitives, clarifying the legacy default-only community context helper, and
+  marking rendered privacy matrix coverage as covered, partial, or missing for
+  production route families.

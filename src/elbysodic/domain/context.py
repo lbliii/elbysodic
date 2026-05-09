@@ -1,7 +1,9 @@
-"""Community resolution primitives.
+"""Small domain identity context records.
 
-The MVP always resolves the seeded default community. Routes and services still
-receive this context explicitly so the code stays tenant-aware.
+Runtime request identity is resolved in the service/web boundary because it
+needs repository access for tenant prefixes, hosts, sessions, memberships, and
+inactive-membership checks. This module only owns typed context records and the
+development/default constants shared by tests and seed data.
 """
 
 from __future__ import annotations
@@ -31,10 +33,11 @@ class RequestIdentityContext:
 
 
 def resolve_current_community(request: object | None = None) -> CommunityContext:
-    """Resolve the current community for a request.
+    """Return the legacy default community context.
 
-    The argument is accepted now so route handlers can call the same function
-    after hosted multi-tenancy adds host, subdomain, or path-prefix routing.
+    Web routes should use `AppServices.for_request()` and
+    `RequestIdentityResolver` instead. This helper remains for old call sites
+    that need an explicit default context without request-aware resolution.
     """
 
     _ = request
