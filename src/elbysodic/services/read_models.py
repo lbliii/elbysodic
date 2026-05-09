@@ -1210,6 +1210,9 @@ class WantedInterestInboxItem:
     wanted_ad: WantedAdSummary
     interest: WantedAdInterestView
     room: PlottingRoomSummary | None
+    stage_group: str
+    stage_label: str
+    stage_variant: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -1217,6 +1220,22 @@ class PlottingDesk:
     rooms: list[PlottingRoomSummary]
     plot_hook_interests: list[PlotHookInterestInboxItem]
     wanted_interests: list[WantedInterestInboxItem]
+
+    @property
+    def wanted_raised_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "raised"]
+
+    @property
+    def wanted_plotting_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "plotting"]
+
+    @property
+    def wanted_ready_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "ready"]
+
+    @property
+    def wanted_threaded_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "threaded"]
 
 
 @dataclass(frozen=True, slots=True)
