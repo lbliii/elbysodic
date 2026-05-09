@@ -441,3 +441,7 @@ Do these after Gates 0-5 are materially closed:
   primitives, clarifying the legacy default-only community context helper, and
   marking rendered privacy matrix coverage as covered, partial, or missing for
   production route families.
+- 2026-05-09: Started Gate 3 with an executable production release smoke
+  regression that covers health, login, tenant-prefixed community entry,
+  network search, thread reading, CSRF-protected membership switching,
+  cross-realm navigation, and logout.

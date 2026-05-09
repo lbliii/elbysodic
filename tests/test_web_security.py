@@ -238,6 +238,85 @@ def test_production_login_rate_limit_blocks_repeated_posts(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
+
+        async with TestClient(app) as client:
+            health = await client.get("/health")
+            login, cookies = await _production_login(
+                client,
+                email="writer@example.com",
+                next_url="/c/x-men-apocalypse",
+            )
+            cookies.update(_cookie_values(login))
+            xmen_home = await client.get(
+                "/c/x-men-apocalypse",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            network = await client.get(
+                "/network?q=magic",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            thread = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            cookies.update(_cookie_values(thread))
+            switch = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "next": "/c/hp-universe",
+                        "_csrf_token": _csrf_token(thread.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(cookies)},
+            )
+            cookies.update(_cookie_values(switch))
+            hp_home = await client.get(
+                "/c/hp-universe",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            jurassic_board = await client.get(
+                "/c/jurassic-park-universe/boards/paddock-twelve",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            logout = await client.get("/logout", headers={"Cookie": _cookie_header(cookies)})
+            cookies.update(_cookie_values(logout))
+            studio_after_logout = await client.get(
+                "/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert health.status == 200
+        assert login.status == 302
+        assert dict(login.headers)["location"] == "/c/x-men-apocalypse"
+        assert xmen_home.status == 200
+        assert "X-Men Apocalypse" in xmen_home.text
+        assert network.status == 200
+        assert "HP Universe" in network.text
+        assert thread.status == 200
+        assert "Sentinel drill after midnight" in thread.text
+        assert switch.status == 302
+        assert dict(switch.headers)["location"] == "/c/hp-universe"
+        assert hp_home.status == 200
+        assert "Director in HP Universe" in hp_home.text
+        assert jurassic_board.status == 200
+        assert "Paddock Twelve" in jurassic_board.text
+        assert logout.status == 302
+        assert studio_after_logout.status == 302
+        assert dict(studio_after_logout.headers)["location"] == "/login?next=/studio"
+
+    asyncio.run(run())
+
+
 def test_production_ignores_forged_dev_identity(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
