@@ -2643,6 +2643,43 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
+.elbysodic-home-section-header {
+    align-items: baseline;
+    border-block-start: 1px solid color-mix(in srgb, var(--chirpui-border) 54%, transparent);
+    display: flex;
+    gap: 0.75rem 1rem;
+    justify-content: space-between;
+    padding-block-start: 1.1rem;
+}
+
+.elbysodic-home-section-header h2,
+.elbysodic-home-section-header p {
+    margin: 0;
+}
+
+.elbysodic-home-section-header h2 {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-lg);
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+.elbysodic-home-section-header p {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.38;
+    max-inline-size: 48rem;
+    text-align: end;
+}
+
+.elbysodic-quiet-empty {
+    background: color-mix(in srgb, var(--chirpui-surface) 52%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 58%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    padding: 1rem;
+}
+
 .elbysodic-community-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 }
@@ -2732,6 +2769,27 @@ body {
 
 .elbysodic-location-card {
     height: 100%;
+}
+
+.elbysodic-empty-cta {
+    align-items: center;
+    border-block-start: 1px solid color-mix(in srgb, var(--chirpui-border) 54%, transparent);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-block-start: auto;
+    padding-block-start: 0.75rem;
+}
+
+.elbysodic-empty-cta p {
+    color: var(--chirpui-text-muted);
+    margin: 0;
+}
+
+.elbysodic-empty-cta .chirpui-btn {
+    min-block-size: 2rem;
+    padding: 0.35rem 0.65rem;
+    white-space: nowrap;
 }
 
 .elbysodic-board-card__body {
@@ -3480,6 +3538,15 @@ body {
     margin-left: 0.55rem;
 }
 
+.elbysodic-filter-link.chirpui-chip {
+    border-bottom-width: 1px;
+    padding: var(--chirpui-spacing-xs) var(--chirpui-spacing-sm);
+}
+
+.elbysodic-filter-link.chirpui-chip + .elbysodic-filter-link.chirpui-chip {
+    margin-left: 0;
+}
+
 .elbysodic-filter-link:hover,
 .elbysodic-filter-link:focus-visible,
 .elbysodic-filter-link--active {
@@ -4194,6 +4261,19 @@ body {
     gap: 0.35rem;
     min-height: 2rem;
     padding: 0.35rem 0.55rem;
+    text-decoration: none;
+}
+
+a.elbysodic-metric {
+    position: relative;
+    z-index: 2;
+}
+
+a.elbysodic-metric:hover,
+a.elbysodic-metric:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 14%, var(--chirpui-bg-subtle));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 44%, var(--chirpui-border));
+    color: var(--chirpui-text);
 }
 
 .elbysodic-metric strong,
@@ -6583,7 +6663,7 @@ body {
 
 .elbysodic-facet-pill,
 .elbysodic-facet-filter {
-    --elbysodic-facet-accent: var(--chirpui-accent);
+    --elbysodic-facet-accent: var(--chirpui-facet-chip-color, var(--chirpui-accent));
     align-items: center;
     border: 1px solid color-mix(in srgb, var(--elbysodic-facet-accent) 42%, var(--chirpui-border));
     border-radius: 999px;
@@ -6628,7 +6708,8 @@ body {
 }
 
 .elbysodic-facet-filter:hover,
-.elbysodic-facet-filter--selected {
+.elbysodic-facet-filter--selected,
+.elbysodic-facet-filter.chirpui-facet-chip--selected {
     background: color-mix(in srgb, var(--elbysodic-facet-accent) 14%, var(--chirpui-bg-subtle));
     border-color: color-mix(in srgb, var(--elbysodic-facet-accent) 70%, var(--chirpui-border));
 }
@@ -7167,6 +7248,38 @@ body {
     gap: 0.45rem;
 }
 
+.elbysodic-network-card__metrics {
+    align-items: stretch;
+    align-self: end;
+    background: color-mix(in srgb, var(--elbysodic-network-accent) 8%, var(--chirpui-bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 18%, var(--chirpui-border-subtle));
+    border-radius: var(--chirpui-radius-sm);
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    inline-size: max-content;
+    max-inline-size: 100%;
+    overflow: hidden;
+}
+
+.elbysodic-network-card__metrics .elbysodic-metric {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    flex: 0 0 auto;
+    min-block-size: 2rem;
+    padding: 0.35rem 0.55rem;
+    white-space: nowrap;
+}
+
+.elbysodic-network-card__metrics .elbysodic-metric + .elbysodic-metric {
+    border-inline-start: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 18%, var(--chirpui-border-subtle));
+}
+
+.elbysodic-network-card__metrics .elbysodic-metric strong {
+    font-size: var(--chirpui-font-base);
+}
+
 .elbysodic-network-billboard__signals .elbysodic-metric {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.22);
@@ -7181,8 +7294,7 @@ body {
 }
 
 .elbysodic-network-billboard__actions form,
-.elbysodic-network-continue-card__actions form,
-.elbysodic-network-card__actions form {
+.elbysodic-network-continue-card__actions form {
     margin: 0;
 }
 
@@ -7227,12 +7339,12 @@ body {
 }
 
 .elbysodic-network-search {
-    background: var(--chirpui-bg);
+    background: color-mix(in srgb, var(--chirpui-bg) 86%, transparent);
     border: 1px solid var(--chirpui-border);
     border-radius: var(--chirpui-radius-sm);
     display: grid;
-    gap: 0.55rem;
-    padding: 0.75rem;
+    gap: 0.45rem;
+    padding: 0.65rem;
 }
 
 .elbysodic-network-search label {
@@ -7241,20 +7353,53 @@ body {
     font-weight: 700;
 }
 
-.elbysodic-network-search div {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.elbysodic-network-search input {
+.elbysodic-network-search__control {
+    align-items: stretch;
     background: var(--chirpui-surface);
     border: 1px solid var(--chirpui-border);
     border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+}
+
+.elbysodic-network-search__scope {
+    align-items: center;
+    border-inline-end: 1px solid var(--chirpui-border);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    padding: 0 0.75rem;
+    text-transform: uppercase;
+}
+
+.elbysodic-network-search input {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     color: var(--chirpui-text);
     flex: 1 1 auto;
     font: inherit;
+    min-block-size: 2.85rem;
     min-inline-size: 0;
-    padding: 0.7rem 0.75rem;
+    padding: 0.7rem 0.85rem;
+}
+
+.elbysodic-network-search__submit {
+    background: var(--chirpui-accent);
+    border: 0;
+    border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-accent) 68%, var(--chirpui-border));
+    color: var(--chirpui-on-accent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    padding: 0 1rem;
+}
+
+.elbysodic-network-search__submit:hover,
+.elbysodic-network-search__submit:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 88%, var(--chirpui-text));
 }
 
 .elbysodic-network-discovery-band {
@@ -7367,9 +7512,10 @@ body {
     border-radius: var(--chirpui-radius-sm);
     display: grid;
     gap: 1rem;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     min-block-size: 100%;
     overflow: hidden;
+    position: relative;
 }
 
 .elbysodic-network-card--current {
@@ -7384,6 +7530,19 @@ body {
     min-block-size: 12rem;
     overflow: hidden;
     position: relative;
+    z-index: 2;
+}
+
+.elbysodic-network-card__realm-link {
+    border-radius: inherit;
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+}
+
+.elbysodic-network-card__realm-link:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--elbysodic-network-accent) 72%, white);
+    outline-offset: -3px;
 }
 
 .elbysodic-network-card__poster > img {
@@ -7400,8 +7559,21 @@ body {
 }
 
 .elbysodic-network-card__poster > span {
-    display: block;
+    display: grid;
     min-block-size: 12rem;
+    place-items: end start;
+}
+
+.elbysodic-network-card__poster-fallback {
+    color: color-mix(in srgb, var(--elbysodic-network-accent) 58%, var(--chirpui-text));
+    font-family: var(--elbysodic-network-display-font);
+    font-size: clamp(3rem, 9vw, 5.5rem);
+    line-height: 0.85;
+    padding: 1rem;
+}
+
+.elbysodic-network-card--no-hero .elbysodic-network-card__poster {
+    min-block-size: 10rem;
 }
 
 .elbysodic-network-card__poster em {
@@ -7411,23 +7583,22 @@ body {
     bottom: 0.75rem;
     display: grid;
     font-style: normal;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
     inline-size: 2.75rem;
     left: 0.75rem;
+    line-height: 1;
+    min-block-size: 2.75rem;
     place-items: center;
     position: absolute;
 }
 
-.elbysodic-network-card__poster em img {
-    block-size: 2.25rem;
-    inline-size: 2.25rem;
-    object-fit: cover;
-}
-
 .elbysodic-network-card__main {
+    align-content: start;
     display: grid;
     gap: 0.65rem;
     min-inline-size: 0;
-    padding: 0 1rem;
+    padding: 0 1rem 1rem;
 }
 
 .elbysodic-network-card__header {
@@ -7454,12 +7625,50 @@ body {
 }
 
 .elbysodic-network-card__actions {
-    align-content: end;
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
-    padding: 0 1rem 1rem;
+    gap: 0.35rem;
+    justify-content: flex-end;
+    padding: 0;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    z-index: 3;
 }
+
+.elbysodic-network-card__icon-action {
+    align-items: center;
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--chirpui-surface) 76%, transparent);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 30%, var(--chirpui-border));
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font: inherit;
+    font-weight: 800;
+    inline-size: 2.35rem;
+    justify-content: center;
+    min-block-size: 2.25rem;
+    padding: 0;
+    text-decoration: none;
+}
+
+.elbysodic-network-card__tooltip {
+    z-index: 3;
+}
+
+.elbysodic-network-card__tooltip .chirpui-tooltip__bubble {
+    white-space: nowrap;
+}
+
+.elbysodic-network-card__icon-action:hover,
+.elbysodic-network-card__icon-action:focus-visible {
+    background: color-mix(in srgb, var(--elbysodic-network-accent) 14%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--elbysodic-network-accent) 56%, var(--chirpui-border));
+    color: var(--chirpui-text);
+}
+
 
 .elbysodic-network-editorial-panel {
     display: grid;
@@ -8704,8 +8913,12 @@ body {
         display: grid;
     }
 
-    .elbysodic-network-search div {
-        display: grid;
+    .elbysodic-network-search__control {
+        grid-template-columns: 1fr auto;
+    }
+
+    .elbysodic-network-search__scope {
+        display: none;
     }
 
     .elbysodic-network-card__poster {

@@ -50,7 +50,10 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
   {{ latest_line("Latest", summary.latest_href, summary.latest_thread.title) }}
   {% end %}
 {% else %}
-<p class="elbysodic-empty-state">No scenes have opened here yet.</p>
+<div class="elbysodic-empty-cta">
+  <p>No scenes have opened here yet.</p>
+  <a class="chirpui-btn chirpui-btn--secondary" href="{{ summary.href }}/threads/new">Start scene</a>
+</div>
 {% end %}
 {% end %}
 

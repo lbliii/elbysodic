@@ -1,4 +1,5 @@
 {% from "chirpui/sidebar.html" import sidebar_section %}
+{% from "chirpui/scope_switcher.html" import scope_switcher %}
 
 {% def sidebar_count(count) %}
   {% if count %}
@@ -74,7 +75,7 @@
 {% def sidebar_active_face(viewer) %}
 {% if viewer and viewer.current_character %}
 {% call sidebar_section("Active Face") %}
-  {{ sidebar_plain_link("/characters/" ~ viewer.current_character.slug, viewer.current_character.name) }}
+  {{ scope_switcher("Playing as " ~ viewer.current_character.name, [{"label": "Profile", "href": "/characters/" ~ viewer.current_character.slug, "icon": "⊙"}, {"label": "Face queue", "href": "/my/threads?character=" ~ viewer.current_character.slug, "icon": "✎"}, {"label": "Roster", "href": "/characters", "icon": "≡"}], id="elbysodic-active-face-scope", aria_label="Active face shortcuts", icon="user", cls="elbysodic-active-face-scope") }}
 {% end %}
 {% end %}
 {% end %}

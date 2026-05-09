@@ -1373,6 +1373,17 @@ class StudioNetworkProgramView:
         return _program_href(self, "/")
 
     @property
+    def monogram(self) -> str:
+        parts = [
+            part for part in self.community.name.replace("-", " ").replace("_", " ").split() if part
+        ]
+        if not parts:
+            return "EB"
+        if len(parts) == 1:
+            return parts[0][:2].upper()
+        return "".join(part[:1] for part in parts[:3]).upper()
+
+    @property
     def application_href(self) -> str:
         return _program_href(self, "/applications/new")
 

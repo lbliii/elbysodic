@@ -60,6 +60,33 @@ def _response_headers(response: Any, name: str) -> list[str]:
     return values
 
 
+def _style_block(html: str, style_id: str) -> str:
+    match = re.search(
+        rf'<style id="{re.escape(style_id)}">(?P<body>.*?)</style>',
+        html,
+        re.DOTALL,
+    )
+    assert match is not None
+    return match.group("body")
+
+
+def _oob_block(html: str, target_id: str) -> str:
+    match = re.search(
+        rf'<div id="{re.escape(target_id)}" hx-swap-oob="innerHTML">(?P<body>.*?)</div>',
+        html,
+        re.DOTALL,
+    )
+    assert match is not None
+    return match.group("body")
+
+
+def _page_content(html: str) -> str:
+    marker = '<div id="page-content">'
+    start = html.find(marker)
+    assert start >= 0
+    return html[start:]
+
+
 def _app():
     return create_app(debug=False, services=create_services(path=":memory:"))
 
@@ -435,7 +462,7 @@ def test_boosted_main_navigation_uses_chirp_shell_outlet() -> None:
     asyncio.run(run())
 
 
-def test_shell_brand_navigation_selects_page_content_for_boosted_swap() -> None:
+def test_shell_brand_navigation_uses_full_boundary_navigation() -> None:
     async def run() -> None:
         app = _app()
 
@@ -448,10 +475,7 @@ def test_shell_brand_navigation_selects_page_content_for_boosted_swap() -> None:
             response.text,
         )
         assert brand_link is not None
-        assert 'hx-boost="true"' in brand_link.group(0)
-        assert 'hx-target="#main"' in brand_link.group(0)
-        assert 'hx-swap="innerHTML"' in brand_link.group(0)
-        assert 'hx-select="#page-content"' in brand_link.group(0)
+        assert 'hx-boost="false"' in brand_link.group(0)
 
     asyncio.run(run())
 
@@ -602,7 +626,7 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
         assert after.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in after.text
         assert "Director in HP Universe" in after.text
-        assert "wearing Rowan Ash" in after.text
+        assert "playing as Rowan Ash" in after.text
         assert '<style id="elbysodic-program-theme">' in after.text
         assert "--chirpui-accent: #c8a6ff;" in after.text
         assert "--chirpui-ui-font-family: Georgia, serif;" in after.text
@@ -694,7 +718,7 @@ def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:
         assert "SameSite=lax" in set_cookie
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
-        assert "wearing Moira MacTaggert" in studio.text
+        assert "playing as Moira MacTaggert" in studio.text
         assert "Save theme tokens" in studio.text
         assert "Director Studio is visible as a preview" not in studio.text
 
@@ -863,6 +887,79 @@ def test_stale_dev_identity_cookie_falls_back_to_membership_for_program() -> Non
         )
         assert '<style id="elbysodic-program-theme">' in response.text
         assert "--chirpui-accent: #6bbf7a;" in response.text
+
+    asyncio.run(run())
+
+
+def test_product_shell_does_not_inherit_current_program_theme() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+
+        async with TestClient(app) as client:
+            network = await client.get("/network", headers={"Cookie": cookie})
+            community = await client.get("/notifications", headers={"Cookie": cookie})
+
+        assert network.status == 200
+        assert community.status == 200
+        assert "--chirpui-accent: #c8a6ff;" not in _style_block(
+            network.text, "elbysodic-program-theme"
+        )
+        assert "--chirpui-sidebar-width: 0rem;" in _style_block(
+            network.text, "elbysodic-product-shell"
+        )
+        assert "--chirpui-accent: #c8a6ff;" in _style_block(
+            community.text, "elbysodic-program-theme"
+        )
+        assert "--chirpui-sidebar-width: 0rem;" not in _style_block(
+            community.text, "elbysodic-product-shell"
+        )
+
+    asyncio.run(run())
+
+
+def test_boosted_shell_navigation_carries_theme_boundary_oob() -> None:
+    async def run() -> None:
+        app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+        hx_headers = {
+            "Cookie": cookie,
+            "HX-Request": "true",
+            "HX-Boosted": "true",
+            "HX-Target": "main",
+        }
+
+        async with TestClient(app) as client:
+            network = await client.get("/network", headers=hx_headers)
+            community = await client.get("/notifications", headers=hx_headers)
+
+        assert network.status == 200
+        assert community.status == 200
+        assert "--chirpui-accent: #c8a6ff;" not in _oob_block(
+            network.text, "elbysodic-program-theme"
+        )
+        assert "--chirpui-sidebar-width: 0rem;" in _oob_block(
+            network.text, "elbysodic-product-shell"
+        )
+        assert 'id="page-root" hx-boost="false"' in network.text
+        assert "--chirpui-accent: #c8a6ff;" in _oob_block(community.text, "elbysodic-program-theme")
+        assert "--chirpui-sidebar-width: 0rem;" not in _oob_block(
+            community.text, "elbysodic-product-shell"
+        )
 
     asyncio.run(run())
 
@@ -1053,11 +1150,27 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "RL NYC" in response.text
         assert "RL Small Town" in response.text
         assert "current realm" in response.text
-        assert "wearing Rogue" in response.text
+        assert "playing as Rogue" in response.text
         assert response.text.count('name="intent" value="switch_membership"') >= 4
         assert 'name="next" value="/c/hp-universe"' in response.text
-        assert 'name="next" value="/c/hp-universe/applications/new"' in response.text
+        assert "/applications/new" not in response.text
+        assert "Start application" not in response.text
         assert 'name="next" value="/c/jurassic-park-universe"' in response.text
+        assert 'class="elbysodic-network-card__realm-link"' in response.text
+        assert 'aria-label="Enter Jurassic Park Universe"' in response.text
+        assert 'class="elbysodic-network-card__icon-action' in response.text
+        assert 'aria-label="Current event"' in response.text
+        assert 'aria-label="Wanted hooks"' in response.text
+        assert "elbysodic-network-card__tooltip" in response.text
+        assert 'title="Wanted hooks"' not in response.text
+        assert "elbysodic-network-search__control" in response.text
+        assert "face you want to play next" in response.text
+        assert "face you want to wear next" not in response.text
+        assert "elbysodic-network-card__mark" in response.text
+        assert "XMA" in response.text
+        assert 'href="/c/jurassic-park-universe/characters" aria-label="3 faces"' in response.text
+        assert 'href="/c/jurassic-park-universe/wanted" aria-label="2 wanted"' in response.text
+        assert 'href="/c/jurassic-park-universe/plotting" aria-label="0 rooms"' in response.text
         assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' in response.text
 
     asyncio.run(run())
@@ -1142,7 +1255,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "elbysodic-identity-menu" in index.text
             assert "elbysodic-identity-menu__notification-link" in index.text
             assert "elbysodic-identity-menu__theme-row" in index.text
-            assert "wearing Rogue" in index.text
+            assert "playing as Rogue" in index.text
             assert "elbysodic-community-table" in index.text
             assert "elbysodic-community-row" in index.text
             assert "✉" in index.text
@@ -1169,6 +1282,9 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert 'id="board-thread-region"' in board.text
             assert 'hx-target="#board-thread-region"' in board.text
             assert 'hx-swap="outerHTML show:none"' in board.text
+            assert "chirpui-breadcrumbs" in board.text
+            assert "chirpui-saved-view-strip" in board.text
+            assert "chirpui-facet-chip" in board.text
             assert "First unread" in board.text
             assert "#post-" in board.text
             assert "new replies" in board.text
@@ -1180,6 +1296,8 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread.status == 200
             assert 'id="post-' in thread.text
+            assert "chirpui-thread-reader-layout" in thread.text
+            assert "chirpui-breadcrumbs" in thread.text
             assert "Runtime" in thread.text
             assert "Credits" in thread.text
             assert "min read" in thread.text
@@ -1328,6 +1446,27 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
     asyncio.run(run())
 
 
+def test_new_realm_homepage_uses_quiet_sections_and_actionable_empty_states() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/c/rl-nyc")
+
+        assert response.status == 200
+        content = _page_content(response.text)
+        assert "elbysodic-home-section-header" in content
+        assert "chirpui-section-header" not in content
+        assert "elbysodic-quiet-empty" in content
+        assert "Your roster is caught up for now." in content
+        assert "No scenes have opened here yet." in content
+        assert 'href="/c/rl-nyc/boards/brooklyn/threads/new"' in content
+        assert 'href="/c/rl-nyc/boards/queens-night-market/threads/new"' in content
+        assert "Community Table" not in content
+        assert "Recent activity" not in content
+
+    asyncio.run(run())
+
+
 def test_seeded_location_boards_have_media_throughlines() -> None:
     async def run() -> None:
         app = _app()
@@ -1463,7 +1602,7 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
             assert "Unread watched" in desk.text
             assert "Waiting on others" in desk.text
             assert "Plotting rooms" in desk.text
-            assert "wearing Rogue" in desk.text
+            assert "playing as Rogue" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
             assert "Roster" in desk.text
@@ -2641,6 +2780,7 @@ def test_discovery_defaults_to_active_face_lens_and_filters_facets() -> None:
             discover = await client.get("/discover")
             assert discover.status == 200
             assert "Plot discovery" in discover.text
+            assert "chirpui-facet-chip" in discover.text
             assert "For Rogue" in discover.text
             assert "Mutant" in discover.text
             assert "X-Men" in discover.text
@@ -2678,6 +2818,8 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             event = await client.get("/world/b-24-winter")
             assert event.status == 200
             assert "elbysodic-material-hero--event" in event.text
+            assert "chirpui-detail-header" in event.text
+            assert "chirpui-saved-view-strip" in event.text
             assert "elbysodic-material-detail-shell--event" in event.text
             assert "Iceman is infected with B-24" in event.text
             assert "Evil Lab" in event.text
@@ -3108,6 +3250,9 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
             detail = await client.get("/wanted/brotherhood-rival-for-rogue")
             assert detail.status == 200
+            assert "chirpui-detail-header" in detail.text
+            assert "chirpui-facet-chip" in detail.text
+            assert "chirpui-scope-switcher" in detail.text
             assert "Rogue needs someone who remembers" in detail.text
             assert 'href="/characters/rogue"' in detail.text
             assert 'href="/world/factions"' in detail.text
@@ -3667,7 +3812,7 @@ def test_application_start_form_preserves_validation_errors_and_unique_slugs() -
     asyncio.run(run())
 
 
-def test_network_start_application_switches_to_realm_form() -> None:
+def test_direct_application_path_switches_to_realm_form() -> None:
     async def run() -> None:
         app = _app()
         services = get_services()
@@ -3694,7 +3839,8 @@ def test_network_start_application_switches_to_realm_form() -> None:
             )
 
         assert network.status == 200
-        assert 'name="next" value="/c/hp-universe/applications/new"' in network.text
+        assert "/applications/new" not in network.text
+        assert "Start application" not in network.text
         assert response.status == 302
         assert _response_header(response, "location") == "/c/hp-universe/applications/new"
         assert form.status == 200
@@ -4768,6 +4914,7 @@ def test_thread_watch_toggle_controls_thread_notifications() -> None:
         async with TestClient(app) as client:
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread.status == 200
+            assert "chirpui-thread-reader-layout" in thread.text
             assert "Watch thread" in thread.text
 
             watched = await client.post(

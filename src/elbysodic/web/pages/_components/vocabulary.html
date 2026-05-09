@@ -26,11 +26,18 @@
 </a>
 {% end %}
 
-{% def metric_item(value, label, cls="") %}
+{% def metric_item(value, label, cls="", href="") %}
+{% if href %}
+<a class="elbysodic-metric{{ " " ~ cls if cls else "" }}" href="{{ href }}" aria-label="{{ value }} {{ label }}">
+  <strong>{{ value }}</strong>
+  <span>{{ label }}</span>
+</a>
+{% else %}
 <span class="elbysodic-metric{{ " " ~ cls if cls else "" }}">
   <strong>{{ value }}</strong>
   <span>{{ label }}</span>
 </span>
+{% end %}
 {% end %}
 
 {% def command_action(action, cls="") %}

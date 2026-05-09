@@ -1,4 +1,5 @@
 {% imports %}
+  {% from "chirpui/detail_header.html" import detail_header %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_signal %}
@@ -48,19 +49,16 @@
 {% call stack(gap="lg") %}
   <a class="chirpui-link" href="/world">← Guidebook</a>
 
-  <article class="elbysodic-material-hero elbysodic-material-hero--{{ material.material.material_type }}">
-    <div class="elbysodic-material-hero__copy">
-      <p class="elbysodic-material-card__type">{{ material.type_label }}</p>
-      <h1>{{ material.material.title }}</h1>
-      {% if material.material.summary %}
-      <p class="elbysodic-copy-lead">{{ material.material.summary }}</p>
-      {% end %}
+  {% call detail_header(title=material.material.title, summary=material.material.summary, eyebrow=material.type_label, cls="elbysodic-material-hero elbysodic-material-hero--" ~ material.material.material_type) %}
+    {% slot badges %}
       {{ facet_pills(material.facets) }}
-    </div>
-    <aside class="elbysodic-material-hero__pulse">
+    {% end %}
+    {% slot aside %}
+    <div class="elbysodic-material-hero__pulse">
       {{ studio_facts(material) }}
-    </aside>
-  </article>
+    </div>
+    {% end %}
+  {% end %}
 
   {% call inline_nav("Material sections", cls="elbysodic-section-jump") %}
     {% if material.event_actions %}

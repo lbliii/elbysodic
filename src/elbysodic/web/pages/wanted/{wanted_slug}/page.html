@@ -1,5 +1,6 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/detail_header.html" import detail_header %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
@@ -16,42 +17,28 @@
 
   {% call surface(variant="elevated") %}
   <article class="chirpui-stack chirpui-stack--md elbysodic-wanted-detail">
-    <div>
-      <p class="elbysodic-wanted-card__type">{{ wanted.type_label }}</p>
-      <div class="chirpui-cluster chirpui-cluster--between">
-        <h2>{{ wanted.wanted_ad.title }}</h2>
+    {% call detail_header(title=wanted.wanted_ad.title, summary=wanted.wanted_ad.summary, eyebrow=wanted.type_label, cls="elbysodic-wanted-detail__header") %}
+      {% slot badges %}
         {{ badge(wanted.wanted_ad.status, variant="success" if wanted.wanted_ad.status == "open" else "muted") }}
-      </div>
-      {% if wanted.wanted_ad.summary %}
-      <p class="elbysodic-copy-lead">{{ wanted.wanted_ad.summary }}</p>
+        {{ facet_pills(wanted.facets) }}
       {% end %}
-    </div>
-
-    <div class="elbysodic-wanted-card__meta">
-      {% if wanted.creator_character %}
-      <span>
-        wanted by
-        <a class="chirpui-link" href="/characters/{{ wanted.creator_character.slug }}">
-          {{ wanted.creator_character.name }}
-        </a>
-      </span>
-      {% else %}
-      <span>
-        wanted by
-        <a class="chirpui-link" href="/members/{{ wanted.creator_membership.username }}">
-          {{ wanted.creator_membership.username }}
-        </a>
-      </span>
+      {% slot meta %}
+        <span>
+          wanted by
+          {% if wanted.creator_character %}
+          <a class="chirpui-link" href="/characters/{{ wanted.creator_character.slug }}">{{ wanted.creator_character.name }}</a>
+          {% else %}
+          <a class="chirpui-link" href="/members/{{ wanted.creator_membership.username }}">{{ wanted.creator_membership.username }}</a>
+          {% end %}
+        </span>
+        {% if wanted.related_material %}
+        <span>
+          tied to
+          <a class="chirpui-link" href="/world/{{ wanted.related_material.slug }}">{{ wanted.related_material.title }}</a>
+        </span>
+        {% end %}
       {% end %}
-      {% if wanted.related_material %}
-      <span>
-        tied to
-        <a class="chirpui-link" href="/world/{{ wanted.related_material.slug }}">
-          {{ wanted.related_material.title }}
-        </a>
-      </span>
-      {% end %}
-    </div>
+    {% end %}
 
     {% if wanted.related_characters %}
     <div>
@@ -73,7 +60,6 @@
     </div>
     {% end %}
 
-    {{ facet_pills(wanted.facets) }}
     <div class="elbysodic-prose-body elbysodic-prose-body--hook elbysodic-hook-body">
       {{ wanted.rendered_body }}
     </div>

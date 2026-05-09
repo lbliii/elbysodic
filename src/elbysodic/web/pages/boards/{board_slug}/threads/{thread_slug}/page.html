@@ -1,7 +1,9 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/breadcrumbs.html" import breadcrumbs %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "chirpui/thread_reader_layout.html" import thread_reader_layout %}
   {% from "_components/composer.html" import composer_toolbar, composer_view_toggle %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/posts.html" import post_frame %}
@@ -40,17 +42,22 @@
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
   <div class="elbysodic-thread-toolbar">
-    <nav class="elbysodic-place-path" aria-label="Scene path">
-      <a href="/">World</a>
+    <div class="elbysodic-place-toolbar__breadcrumbs" role="group" aria-label="Scene path">
       {% if parent_board %}
-      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
-      <a href="/boards/{{ parent_board.slug }}">{{ parent_board.name }}</a>
+      {{ breadcrumbs([
+        {"label": "World", "href": "/"},
+        {"label": parent_board.name, "href": "/boards/" ~ parent_board.slug},
+        {"label": thread_view.board.name, "href": "/boards/" ~ thread_view.board.slug},
+        {"label": thread_view.thread.title},
+      ], cls="elbysodic-place-path", overflow="collapse", max_items=4) }}
+      {% else %}
+      {{ breadcrumbs([
+        {"label": "World", "href": "/"},
+        {"label": thread_view.board.name, "href": "/boards/" ~ thread_view.board.slug},
+        {"label": thread_view.thread.title},
+      ], cls="elbysodic-place-path", overflow="collapse", max_items=4) }}
       {% end %}
-      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
-      <a href="/boards/{{ thread_view.board.slug }}">{{ thread_view.board.name }}</a>
-      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
-      <span aria-current="page">{{ thread_view.thread.title }}</span>
-    </nav>
+    </div>
   </div>
 
   <section class="elbysodic-thread-stage elbysodic-board-media--{{ thread_view.board.slug }}" aria-labelledby="scene-title">
@@ -143,11 +150,13 @@
         <form method="post" hx-boost="false">
           <input type="hidden" name="intent" value="join_scene">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">
+            <span class="chirpui-btn__icon" aria-hidden="true">{{ "add" | icon }}</span>
             Join as {{ viewer.current_character.name }}
           </button>
         </form>
         {% elif thread_view.can_reply and selected_character %}
         <a class="chirpui-btn chirpui-btn--primary" href="#reply-composer">
+          <span class="chirpui-btn__icon" aria-hidden="true">{{ "reply" | icon }}</span>
           Reply as {{ selected_character.name }}
         </a>
         {% end %}
@@ -158,13 +167,14 @@
                     class="chirpui-btn chirpui-btn--secondary elbysodic-thread-watch-toggle"
                     title="{{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}"
                     aria-label="{{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}">
-              <span aria-hidden="true">{{ "◉" if thread_view.is_watched else "○" }}</span>
+              <span aria-hidden="true">{{ "watch" | icon }}</span>
               <span class="chirpui-visually-hidden">{{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}</span>
             </button>
           </form>
           {% if thread_view.latest_post %}
           <a class="chirpui-btn chirpui-btn--secondary"
              href="#{{ thread_view.latest_post.anchor }}">
+            <span class="chirpui-btn__icon" aria-hidden="true">{{ "arrow-down" | icon }}</span>
             Read latest
           </a>
           {% end %}
@@ -332,6 +342,8 @@
   {% end %}
   {% end %}
 
+  {% call thread_reader_layout(label="Scene transcript", cls="elbysodic-thread-reader-layout") %}
+  {% slot header %}
   <section class="elbysodic-scene-transcript" aria-labelledby="scene-transcript-title">
     <div class="elbysodic-scene-transcript__copy">
       <p class="elbysodic-kicker">Transcript</p>
@@ -348,13 +360,29 @@
       {{ thread_nav_link(thread_view.next_thread, "Next") }}
     </nav>
   </section>
+  {% end %}
 
+  {% slot local_nav %}
+    {% if thread_view.posts %}
+    <a class="chirpui-thread-reader-layout__nav-link" href="#{{ thread_view.posts[0].anchor }}">First post</a>
+    {% end %}
+    {% if thread_view.latest_post %}
+    <a class="chirpui-thread-reader-layout__nav-link" href="#{{ thread_view.latest_post.anchor }}">Latest beat</a>
+    {% end %}
+    {% if thread_view.can_reply %}
+    <a class="chirpui-thread-reader-layout__nav-link" href="#reply-composer">Reply composer</a>
+    {% end %}
+  {% end %}
+
+  {% slot posts %}
   <div class="elbysodic-post-list" aria-label="Scene posts">
     {% for item in thread_view.posts %}
     {{ post_frame(item, thread_view.board, thread_view.thread) }}
     {% end %}
   </div>
+  {% end %}
 
+  {% slot attention_nav %}
   {% if thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
   <nav class="elbysodic-thread-attention-nav" aria-label="Attention thread navigation">
     {% if not thread_view.previous_unreplied_thread and thread_view.next_unread_thread %}
@@ -364,7 +392,9 @@
     {{ thread_attention_link(thread_view.next_unread_thread, "Next unread", "next") }}
   </nav>
   {% end %}
+  {% end %}
 
+  {% slot composer %}
   {% if thread_view.can_reply %}
     {% call surface(variant="elevated") %}
     {% if not selected_character %}
@@ -488,6 +518,8 @@
       <p class="chirpui-field__error">{{ error }}</p>
       {% end %}
     </aside>
+  {% end %}
+  {% end %}
   {% end %}
 {% end %}
 {% end %}

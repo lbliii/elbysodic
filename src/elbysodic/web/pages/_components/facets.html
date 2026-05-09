@@ -1,13 +1,17 @@
+{% imports %}
+  {% from "chirpui/facet_chip.html" import facet_chip %}
+{% end %}
+
 {% def facet_pills(tags) %}
 {% if tags %}
 <div class="elbysodic-facet-pills">
   {% for tag in tags %}
-  <span class="elbysodic-facet-pill"
-        title="{{ tag.group_label }}"
-        {% if tag.facet.accent_color %}style="--elbysodic-facet-accent: {{ tag.facet.accent_color }}"{% end %}>
-    {{ tag.label }}
-  </span>
+  {{ facet_chip(tag.label, color=tag.facet.accent_color, cls="elbysodic-facet-pill") }}
   {% end %}
 </div>
 {% end %}
+{% end %}
+
+{% def facet_filter_link(label, href, selected=false, color=none) %}
+{{ facet_chip(label, href=href, selected=selected, color=color, cls="elbysodic-facet-filter") }}
 {% end %}

@@ -65,6 +65,20 @@ def create_app(
         web_security_config=security,
     )
     use_chirp_ui(app)
+    app.register_oob_region(
+        "program_theme_oob",
+        target_id="elbysodic-program-theme",
+        swap="innerHTML",
+        wrap=True,
+        optional=True,
+    )
+    app.register_oob_region(
+        "product_shell_oob",
+        target_id="elbysodic-product-shell",
+        swap="innerHTML",
+        wrap=True,
+        optional=True,
+    )
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
