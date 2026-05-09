@@ -432,6 +432,22 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
     assert 'name="next" value="/c/x-men-apocalypse/boards/danger-room"' in scoped.body
 
 
+def test_composer_forms_save_drafts_on_submit_instead_of_clearing_early() -> None:
+    composer_paths = [
+        Path("src/elbysodic/web/pages/boards/{board_slug}/threads/new/page.html"),
+        Path("src/elbysodic/web/pages/boards/{board_slug}/threads/{thread_slug}/page.html"),
+        Path(
+            "src/elbysodic/web/pages/boards/{board_slug}/threads/{thread_slug}/posts/"
+            "{post_id}/edit/page.html"
+        ),
+    ]
+
+    for path in composer_paths:
+        template = path.read_text(encoding="utf-8")
+        assert '@submit="clearDraft()"' not in template
+        assert '@submit="submitDraft()"' in template
+
+
 def test_unknown_tenant_prefix_returns_not_found() -> None:
     async def run() -> None:
         app = _app()
