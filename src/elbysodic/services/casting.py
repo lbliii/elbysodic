@@ -13,6 +13,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.domain.vocabulary import wanted_type_label
 from elbysodic.services import policies
 from elbysodic.services.facets import FacetReadRepository, facet_tags
 from elbysodic.services.markup import render_prose_body
@@ -529,17 +530,6 @@ def wanted_ad_summary(
         ),
         type_label=wanted_type_label(wanted_ad.wanted_type),
     )
-
-
-def wanted_type_label(wanted_type: str) -> str:
-    return {
-        "canon": "Canon",
-        "connection": "Connection",
-        "event_role": "Event Role",
-        "faction_need": "Faction Need",
-        "plot_role": "Plot Role",
-        "rival": "Rival",
-    }.get(wanted_type, wanted_type.replace("_", " ").title())
 
 
 def wanted_ad_interest_view(

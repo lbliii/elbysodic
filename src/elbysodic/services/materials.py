@@ -15,6 +15,7 @@ from elbysodic.domain.models import (
     Thread,
     WantedAd,
 )
+from elbysodic.domain.vocabulary import material_type_label
 from elbysodic.services import policies
 from elbysodic.services.facets import FacetReadRepository, facet_tags
 from elbysodic.services.markup import post_snippet, render_prose_body
@@ -218,16 +219,6 @@ def related_materials(
             continue
         related.append(material_summary(repo, community_id, candidate))
     return related
-
-
-def material_type_label(material_type: str) -> str:
-    return {
-        "premise": "Premise",
-        "guide": "Guide",
-        "factions": "Factions",
-        "application": "Application",
-        "event": "Event",
-    }.get(material_type, material_type.replace("_", " ").title())
 
 
 def material_related_locations(

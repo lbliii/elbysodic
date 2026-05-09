@@ -286,6 +286,34 @@ def test_program_blueprint_reports_unknown_board_kind() -> None:
     assert any(".board_kind must be one of:" in error for error in errors)
 
 
+def test_program_blueprint_reports_unknown_material_and_wanted_types() -> None:
+    blueprint = _blueprint(
+        materials=(
+            BlueprintMaterial(
+                "mood-board",
+                "Mood Board",
+                "cms_page",
+                "A generic page that should not hydrate.",
+                "This is not a director material type.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "anyone",
+                "Anyone",
+                "generic_listing",
+                "A generic listing that should not hydrate.",
+                "Wanted hooks should use the shared PBP vocabulary.",
+            ),
+        ),
+    )
+
+    errors = validate_program_blueprint(blueprint)
+
+    assert any(".materials.mood-board.material_type must be one of:" in error for error in errors)
+    assert any(".wanted.anyone.wanted_type must be one of:" in error for error in errors)
+
+
 def test_program_blueprint_accepts_safe_board_media_payload() -> None:
     preview = preview_program_blueprint_yaml(
         """
@@ -467,11 +495,11 @@ wanted:
 
 @pytest.mark.parametrize(
     ("role_yaml", "expected_is_admin"),
-    (
+    [
         ("is_admin: true", True),
         ("is_admin: false", False),
         ("", False),
-    ),
+    ],
 )
 def test_program_blueprint_yaml_preview_parses_admin_flag_strictly(
     role_yaml: str,
@@ -511,7 +539,7 @@ materials:
     assert preview.blueprint.is_admin is expected_is_admin
 
 
-@pytest.mark.parametrize("role_yaml", ("is_admin: 'false'", "is_admin: 'true'", "is_admin: 1"))
+@pytest.mark.parametrize("role_yaml", ["is_admin: 'false'", "is_admin: 'true'", "is_admin: 1"])
 def test_program_blueprint_yaml_preview_rejects_non_boolean_admin_flag(role_yaml: str) -> None:
     preview = preview_program_blueprint_yaml(
         f"""

@@ -13,6 +13,7 @@ from elbysodic.domain.models import (
     Facet,
     Material,
 )
+from elbysodic.domain.vocabulary import PLOT_HOOK_TYPE_LABELS, plot_hook_type_label
 from elbysodic.services import policies
 from elbysodic.services.facets import (
     FacetReadRepository,
@@ -31,7 +32,7 @@ from elbysodic.services.read_models import (
 from elbysodic.services.timestamps import timestamp_label
 
 PLOT_HOOK_STATUSES = ("open", "plotting", "paused", "closed", "archived")
-PLOT_HOOK_TYPES = ("scene", "relationship", "connection", "event", "other")
+PLOT_HOOK_TYPES = tuple(PLOT_HOOK_TYPE_LABELS)
 
 
 class PlotHookReadRepository(FacetReadRepository, PostViewRepository, Protocol):
@@ -386,16 +387,6 @@ def plot_hook_interest_view(
         character=repo.get_character(community_id, interest.character_id),
         created_at_label=timestamp_label(interest.created_at),
     )
-
-
-def plot_hook_type_label(hook_type: str) -> str:
-    return {
-        "scene": "Scene",
-        "relationship": "Relationship",
-        "connection": "Connection",
-        "event": "Event",
-        "other": "Other",
-    }.get(hook_type, hook_type.replace("_", " ").title())
 
 
 def can_manage_plot_hook(viewer: ForumView, plot_hook: CharacterPlotHook) -> bool:
