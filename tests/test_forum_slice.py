@@ -1683,7 +1683,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Production health" in operations.text
             assert "Draft materials" in operations.text
             assert "Dry-run intake" in operations.text
+            assert "Release smoke" in operations.text
+            assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
+            assert 'href="/network"' in operations.text
             assert "Application Triage" in operations.text
             assert 'href="/applications"' in operations.text
             assert 'href="/casting"' in operations.text

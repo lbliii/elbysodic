@@ -451,3 +451,6 @@ Do these after Gates 0-5 are materially closed:
 - 2026-05-09: Started Gate 5 by adding typed Program Blueprint hydration diff
   rows to the existing dry-run preview. Studio now names planned create/update
   work without enabling apply or database mutation.
+- 2026-05-09: Started Gate 6 by adding a release-smoke lane to Director
+  Operations so production-critical login, realm switching, writing,
+  notification, and logout proof is visible from Studio.
