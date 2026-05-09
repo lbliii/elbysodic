@@ -63,6 +63,56 @@
     <div class="elbysodic-prose-body elbysodic-prose-body--hook elbysodic-hook-body">
       {{ wanted.rendered_body }}
     </div>
+    {% if wanted.casting_packet.has_content %}
+    <section class="elbysodic-casting-packet" aria-labelledby="casting-packet-heading">
+      <div>
+        <p class="elbysodic-section-kicker">Casting packet</p>
+        <h2 id="casting-packet-heading">What this role brings into play</h2>
+      </div>
+      <div class="elbysodic-casting-packet__grid">
+        {% if wanted.casting_packet.why_it_matters %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>Why this matters</h3>
+          <ul>
+            {% for item in wanted.casting_packet.why_it_matters %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+        {% if wanted.casting_packet.first_scene_invitations %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>First scene invitations</h3>
+          <ul>
+            {% for item in wanted.casting_packet.first_scene_invitations %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+        {% if wanted.casting_packet.relationship_lanes %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>Relationship lanes</h3>
+          <ul>
+            {% for item in wanted.casting_packet.relationship_lanes %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+        {% if wanted.casting_packet.negotiables %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>Negotiables</h3>
+          <ul>
+            {% for item in wanted.casting_packet.negotiables %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+      </div>
+    </section>
+    {% end %}
     <div class="elbysodic-wanted-action">
       {% if wanted.viewer_interest %}
       <p class="elbysodic-wanted-action__note">
@@ -174,13 +224,20 @@
       </div>
       {% end %}
       <div class="elbysodic-interest-card__meta">
-        {{ badge(item.interest.status, variant="warning" if item.interest.status == "reserved" else "info") }}
+        {{ badge(item.stage_label, variant=item.stage_variant) }}
         <span>{{ item.created_at_label }}</span>
       </div>
-      {% if item.interest.note %}
+      {% if item.can_view_note and item.interest.note %}
       <p class="elbysodic-copy-summary">{{ item.interest.note }}</p>
       {% end %}
-      {% if wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
+      {% if item.primary_action_label %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--primary" href="{{ item.primary_action_href }}">{{ item.primary_action_label }}</a>
+        {% if item.secondary_action_label %}
+        <a class="chirpui-link" href="{{ item.secondary_action_href }}">{{ item.secondary_action_label }}</a>
+        {% end %}
+      </div>
+      {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
       <div class="chirpui-cluster chirpui-cluster--end">
         <form method="post" hx-boost="false">
           <input type="hidden" name="intent" value="start_plotting_room">

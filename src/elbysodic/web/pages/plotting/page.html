@@ -108,7 +108,7 @@
   </div>
   <div class="elbysodic-plotting-interest-card__action">
     <div class="elbysodic-interest-card__meta">
-      {{ badge(item.interest.interest.status, variant="info") }}
+      {{ badge(item.stage_label, variant=item.stage_variant) }}
       <span>{{ item.interest.created_at_label }}</span>
     </div>
     {% if item.room %}
@@ -224,8 +224,32 @@
       {{ plot_interest_card(item) }}
       {% end %}
 
-      {% for item in desk.wanted_interests %}
+      {% if desk.wanted_raised_interests %}
+      <h3 class="elbysodic-section-kicker">Raised hands</h3>
+      {% for item in desk.wanted_raised_interests %}
       {{ wanted_interest_card(item) }}
+      {% end %}
+      {% end %}
+
+      {% if desk.wanted_plotting_interests %}
+      <h3 class="elbysodic-section-kicker">In plotting</h3>
+      {% for item in desk.wanted_plotting_interests %}
+      {{ wanted_interest_card(item) }}
+      {% end %}
+      {% end %}
+
+      {% if desk.wanted_ready_interests %}
+      <h3 class="elbysodic-section-kicker">Ready for scene</h3>
+      {% for item in desk.wanted_ready_interests %}
+      {{ wanted_interest_card(item) }}
+      {% end %}
+      {% end %}
+
+      {% if desk.wanted_threaded_interests %}
+      <h3 class="elbysodic-section-kicker">Scene started</h3>
+      {% for item in desk.wanted_threaded_interests %}
+      {{ wanted_interest_card(item) }}
+      {% end %}
       {% end %}
     </div>
     {% else %}

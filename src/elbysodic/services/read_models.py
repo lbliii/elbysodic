@@ -1072,6 +1072,62 @@ class WantedAdInterestView:
 
 
 @dataclass(frozen=True, slots=True)
+class WantedAdInterestDetailItem:
+    view: WantedAdInterestView
+    room: PlottingRoom | None
+    room_id: int | None
+    room_status: str
+    can_view_note: bool
+    can_manage: bool
+    can_open_room: bool
+    show_room_link: bool
+    stage_label: str
+    stage_variant: str
+    thread_href: str | None
+    primary_action_label: str
+    primary_action_href: str
+    secondary_action_label: str
+    secondary_action_href: str
+
+    @property
+    def interest(self) -> WantedAdInterest:
+        return self.view.interest
+
+    @property
+    def membership(self) -> CommunityMembership:
+        return self.view.membership
+
+    @property
+    def character(self) -> Character | None:
+        return self.view.character
+
+    @property
+    def created_at_label(self) -> str:
+        return self.view.created_at_label
+
+    @property
+    def display_name(self) -> str:
+        return self.view.display_name
+
+
+@dataclass(frozen=True, slots=True)
+class WantedCastingPacket:
+    why_it_matters: list[str]
+    first_scene_invitations: list[str]
+    relationship_lanes: list[str]
+    negotiables: list[str]
+
+    @property
+    def has_content(self) -> bool:
+        return bool(
+            self.why_it_matters
+            or self.first_scene_invitations
+            or self.relationship_lanes
+            or self.negotiables
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class CharacterReserveView:
     reserve: CharacterReserve
     membership: CommunityMembership
@@ -1171,6 +1227,9 @@ class WantedInterestInboxItem:
     wanted_ad: WantedAdSummary
     interest: WantedAdInterestView
     room: PlottingRoomSummary | None
+    stage_group: str
+    stage_label: str
+    stage_variant: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -1178,6 +1237,22 @@ class PlottingDesk:
     rooms: list[PlottingRoomSummary]
     plot_hook_interests: list[PlotHookInterestInboxItem]
     wanted_interests: list[WantedInterestInboxItem]
+
+    @property
+    def wanted_raised_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "raised"]
+
+    @property
+    def wanted_plotting_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "plotting"]
+
+    @property
+    def wanted_ready_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "ready"]
+
+    @property
+    def wanted_threaded_interests(self) -> list[WantedInterestInboxItem]:
+        return [item for item in self.wanted_interests if item.stage_group == "threaded"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1206,15 +1281,16 @@ class WantedAdDetail:
     related_material: Material | None
     related_characters: list[Character]
     facets: list[FacetTag]
-    interests: list[WantedAdInterestView]
+    interests: list[WantedAdInterestDetailItem]
     reserves: list[CharacterReserveView]
     reserve_interest_ids: set[int]
-    viewer_interest: WantedAdInterestView | None
+    viewer_interest: WantedAdInterestDetailItem | None
     can_express_interest: bool
     can_express_prospective_interest: bool
     is_created_by_viewer: bool
     can_manage: bool
     rendered_body: object
+    casting_packet: WantedCastingPacket
     type_label: str
     related_ads: list[WantedAdSummary]
 

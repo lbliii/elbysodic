@@ -1320,6 +1320,8 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Latest" in board.text
             assert 'id="board-thread-region"' in board.text
             assert 'hx-target="#board-thread-region"' in board.text
+            assert 'hx-select="#board-thread-region"' in board.text
+            assert 'hx-disinherit="hx-select hx-target hx-swap"' in board.text
             assert 'hx-swap="outerHTML show:none"' in board.text
             assert "chirpui-breadcrumbs" in board.text
             assert "chirpui-saved-view-strip" in board.text
@@ -1718,6 +1720,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Claim conflicts" in operations.text
             assert "Active reserves" in operations.text
             assert "Hooks with movement" in operations.text
+            assert "Ready for scene" in operations.text
             assert "Staff notifications" in operations.text
             assert "Production health" in operations.text
             assert "Draft materials" in operations.text
@@ -3496,6 +3499,26 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
     asyncio.run(run())
 
 
+def test_structured_wanted_casting_packet_renders_for_rent_week_hook() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            detail = await client.get("/c/rl-nyc/wanted/ex-bandmate-with-the-old-lease")
+
+        assert detail.status == 200
+        assert "Casting packet" in detail.text
+        assert "What this role brings into play" in detail.text
+        assert "Why this matters" in detail.text
+        assert "First scene invitations" in detail.text
+        assert "Relationship lanes" in detail.text
+        assert "Negotiables" in detail.text
+        assert "Their name is still on a lease" in detail.text
+        assert "A hallway confrontation after the building meeting." in detail.text
+        assert "Romance is optional" in detail.text
+
+    asyncio.run(run())
+
+
 def test_application_start_form_creates_draft_face_and_review_room() -> None:
     async def run() -> None:
         app = _app()
@@ -4433,6 +4456,40 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
         assert prospective.character_id is None
         assert prospective.prospective_character_name == "Val Cooper"
 
+        outsider_services, _outsider_character_id = _outsider_services(
+            services,
+            prefix="wanted-note-outsider",
+        )
+        outsider_app = create_app(debug=False, services=outsider_services)
+        notification = repo.create_notification(
+            community.id,
+            outsider_services.seed.membership.id,
+            kind="wanted_interest",
+            wanted_ad_id=wanted_ad.id,
+            wanted_ad_interest_id=prospective.id,
+            actor_membership_id=newface_membership.id,
+            actor_character_id=None,
+        )
+        async with TestClient(outsider_app) as outsider_client:
+            outsider_view = await outsider_client.get("/wanted/human-un-liaison-for-b24")
+            outsider_inbox = await outsider_client.get("/notifications")
+            open_attempt = await outsider_client.post(
+                "/notifications",
+                body=urlencode(
+                    {
+                        "intent": "open",
+                        "notification_id": str(notification.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert outsider_view.status == 200
+            assert outsider_inbox.status == 200
+            assert "Val Cooper" in outsider_view.text
+            assert "I would app her as a UN pressure point." not in outsider_view.text
+            assert "I would app her as a UN pressure point." not in outsider_inbox.text
+            assert open_attempt.status == 404
+
         charlie_membership = repo.get_membership_by_username(community.id, "charlie")
         charlie_user = repo.get_user(charlie_membership.user_id)
         xavier = repo.get_character_by_slug(community.id, "charles-xavier")
@@ -4503,6 +4560,10 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
             assert room_response.status == 302
 
             room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            updated_detail = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert updated_detail.status == 200
+            assert "In plotting" in updated_detail.text
+            assert "Open plotting room" in updated_detail.text
             room_page = await charlie_client.get(f"/plotting/{room.id}")
             assert room_page.status == 200
             assert "Human UN liaison for B-24 talks: Rogue" in room_page.text
@@ -4667,6 +4728,9 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
 
         charlie_app = create_app(debug=False, services=charlie_services)
         async with TestClient(charlie_app) as charlie_client:
+            ready_detail = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert ready_detail.status == 200
+            assert "Ready for scene" in ready_detail.text
             refreshed = await charlie_client.get(f"/plotting/{room.id}")
             assert refreshed.status == 200
             assert "Rogue arrives with a guarded yes." in refreshed.text
@@ -4721,6 +4785,12 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
             assert "Open scene" in threaded_page.text
             assert f"/boards/plotting/threads/{created_thread.slug}" in threaded_page.text
             assert "Start scene" not in threaded_page.text
+
+            threaded_detail = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert threaded_detail.status == 200
+            assert "Scene started" in threaded_detail.text
+            assert "Open scene" in threaded_detail.text
+            assert f"/boards/plotting/threads/{created_thread.slug}" in threaded_detail.text
 
         lane_inbox = services.notifications()
         assert any(item.label == "Scene started" for item in lane_inbox.items)

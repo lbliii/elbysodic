@@ -26,6 +26,7 @@ from elbysodic.services.casting import (
     CastingReadRepository,
     wanted_ad_interest_view,
     wanted_ad_summary,
+    wanted_interest_stage,
 )
 from elbysodic.services.plot_hooks import (
     PlotHookReadRepository,
@@ -354,11 +355,19 @@ def plotting_desk(repo: PlottingRepository, viewer: ForumView) -> PlottingDesk:
         for interest in repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id):
             if interest.status not in {"interested", "plotting", "reserved"}:
                 continue
+            room = _room_for_wanted_interest(repo, viewer.community.id, interest.id)
+            stage_label, stage_variant = wanted_interest_stage(
+                interest,
+                room.room if room is not None else None,
+            )
             wanted_interests.append(
                 WantedInterestInboxItem(
                     wanted_ad=wanted_ad_summary(repo, viewer.community.id, wanted_ad),
                     interest=wanted_ad_interest_view(repo, viewer.community.id, interest),
-                    room=_room_for_wanted_interest(repo, viewer.community.id, interest.id),
+                    room=room,
+                    stage_group=_wanted_interest_stage_group(room),
+                    stage_label=stage_label,
+                    stage_variant=stage_variant,
                 )
             )
     return PlottingDesk(
@@ -874,6 +883,16 @@ def _room_for_wanted_interest(
         )
     except LookupError:
         return None
+
+
+def _wanted_interest_stage_group(room: PlottingRoomSummary | None) -> str:
+    if room is None:
+        return "raised"
+    if room.room.status == "threaded" or room.room.target_thread_id is not None:
+        return "threaded"
+    if room.room.status == "ready":
+        return "ready"
+    return "plotting"
 
 
 def _wanted_interest_display_name(

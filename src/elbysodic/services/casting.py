@@ -5,11 +5,14 @@ from __future__ import annotations
 from typing import Protocol
 
 from elbysodic.domain.models import (
+    Board,
     Character,
     CharacterReserve,
     CommunityMembership,
     Facet,
     Material,
+    PlottingRoom,
+    Thread,
     WantedAd,
     WantedAdInterest,
 )
@@ -24,13 +27,21 @@ from elbysodic.services.read_models import (
     CharacterReserveView,
     ForumView,
     WantedAdDetail,
+    WantedAdInterestDetailItem,
     WantedAdInterestView,
     WantedAdSummary,
     WantedBoard,
+    WantedCastingPacket,
 )
 from elbysodic.services.timestamps import timestamp_label
 
 WANTED_STATUSES: tuple[str, ...] = ("open", "reserved", "filled", "archived")
+_CASTING_PACKET_HEADINGS = {
+    "why this matters": "why_it_matters",
+    "first scene invitations": "first_scene_invitations",
+    "relationship lanes": "relationship_lanes",
+    "negotiables": "negotiables",
+}
 
 
 class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
@@ -45,6 +56,8 @@ class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
     ) -> CommunityMembership: ...
 
     def get_material(self, community_id: int, material_id: int) -> Material: ...
+
+    def get_board(self, community_id: int, board_id: int) -> Board: ...
 
     def list_wanted_ads(
         self,
@@ -74,6 +87,14 @@ class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
         community_id: int,
         interest_id: int,
     ) -> WantedAdInterest: ...
+
+    def get_plotting_room_for_wanted_interest(
+        self,
+        community_id: int,
+        interest_id: int,
+    ) -> PlottingRoom: ...
+
+    def get_thread(self, community_id: int, thread_id: int) -> Thread: ...
 
     def list_character_reserves_for_community(
         self,
@@ -237,7 +258,12 @@ def read_wanted_ad(
             continue
         related.append(wanted_ad_summary(repo, viewer.community.id, candidate))
     interests = [
-        wanted_ad_interest_view(repo, viewer.community.id, interest)
+        wanted_ad_interest_detail_item(
+            repo,
+            viewer,
+            interest,
+            can_manage=can_manage,
+        )
         for interest in repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id)
     ]
     reserves = [
@@ -270,6 +296,7 @@ def read_wanted_ad(
     if viewer_interest is None:
         viewer_interest = viewer_prospective_interest
     is_created_by_viewer = wanted_ad.creator_membership_id == viewer.membership.id
+    body, casting_packet = parse_wanted_casting_packet(wanted_ad.body)
     return WantedAdDetail(
         wanted_ad=wanted_ad,
         creator_membership=repo.get_membership(
@@ -314,9 +341,10 @@ def read_wanted_ad(
         is_created_by_viewer=is_created_by_viewer,
         can_manage=can_manage,
         rendered_body=render_prose_body(
-            wanted_ad.body,
+            body,
             mentions=post_mention_links(repo, viewer.community.id),
         ),
+        casting_packet=casting_packet,
         type_label=wanted_type_label(wanted_ad.wanted_type),
         related_ads=related[:4],
     )
@@ -547,6 +575,138 @@ def wanted_ad_interest_view(
         ),
         created_at_label=timestamp_label(interest.created_at),
     )
+
+
+def parse_wanted_casting_packet(body: str) -> tuple[str, WantedCastingPacket]:
+    intro_lines: list[str] = []
+    sections: dict[str, list[str]] = {key: [] for key in _CASTING_PACKET_HEADINGS.values()}
+    current_section: str | None = None
+    for raw_line in body.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = raw_line.strip()
+        heading = _casting_packet_heading(line)
+        if heading is not None:
+            current_section = heading
+            continue
+        if current_section is None:
+            intro_lines.append(raw_line)
+            continue
+        item = _casting_packet_item(line)
+        if item:
+            sections[current_section].append(item)
+    return (
+        "\n".join(intro_lines).strip(),
+        WantedCastingPacket(
+            why_it_matters=sections["why_it_matters"],
+            first_scene_invitations=sections["first_scene_invitations"],
+            relationship_lanes=sections["relationship_lanes"],
+            negotiables=sections["negotiables"],
+        ),
+    )
+
+
+def _casting_packet_heading(line: str) -> str | None:
+    normalized = line.rstrip(":").strip().lower()
+    return _CASTING_PACKET_HEADINGS.get(normalized)
+
+
+def _casting_packet_item(line: str) -> str:
+    if not line:
+        return ""
+    if line.startswith(("- ", "* ")):
+        return line[2:].strip()
+    return line
+
+
+def wanted_ad_interest_detail_item(
+    repo: CastingReadRepository,
+    viewer: ForumView,
+    interest: WantedAdInterest,
+    *,
+    can_manage: bool,
+) -> WantedAdInterestDetailItem:
+    room = wanted_interest_room(repo, viewer.community.id, interest.id)
+    is_interested_writer = interest.membership_id == viewer.membership.id
+    thread_href = wanted_interest_thread_href(repo, viewer.community.id, room)
+    stage_label, stage_variant = wanted_interest_stage(interest, room)
+    show_room_link = room is not None and (can_manage or is_interested_writer)
+    primary_label, primary_href, secondary_label, secondary_href = wanted_interest_action(
+        room,
+        thread_href=thread_href,
+        show_room_link=show_room_link,
+    )
+    return WantedAdInterestDetailItem(
+        view=wanted_ad_interest_view(repo, viewer.community.id, interest),
+        room=room,
+        room_id=room.id if room is not None else None,
+        room_status=room.status if room is not None else "",
+        can_view_note=can_manage or is_interested_writer,
+        can_manage=can_manage,
+        can_open_room=show_room_link,
+        show_room_link=show_room_link,
+        stage_label=stage_label,
+        stage_variant=stage_variant,
+        thread_href=thread_href,
+        primary_action_label=primary_label,
+        primary_action_href=primary_href,
+        secondary_action_label=secondary_label,
+        secondary_action_href=secondary_href,
+    )
+
+
+def wanted_interest_room(
+    repo: CastingReadRepository,
+    community_id: int,
+    interest_id: int,
+) -> PlottingRoom | None:
+    try:
+        return repo.get_plotting_room_for_wanted_interest(community_id, interest_id)
+    except LookupError:
+        return None
+
+
+def wanted_interest_thread_href(
+    repo: CastingReadRepository,
+    community_id: int,
+    room: PlottingRoom | None,
+) -> str | None:
+    if room is None or room.target_thread_id is None:
+        return None
+    thread = repo.get_thread(community_id, room.target_thread_id)
+    board = repo.get_board(community_id, thread.board_id)
+    return f"/boards/{board.slug}/threads/{thread.slug}"
+
+
+def wanted_interest_stage(
+    interest: WantedAdInterest,
+    room: PlottingRoom | None,
+) -> tuple[str, str]:
+    if interest.status == "reserved":
+        return ("Reserved", "warning")
+    if room is None:
+        return ("Raised hand", "info")
+    if room.status == "threaded" or room.target_thread_id is not None:
+        return ("Scene started", "success")
+    if room.status == "ready":
+        return ("Ready for scene", "success")
+    if room.status == "paused":
+        return ("Waiting", "muted")
+    return ("In plotting", "info")
+
+
+def wanted_interest_action(
+    room: PlottingRoom | None,
+    *,
+    thread_href: str | None,
+    show_room_link: bool,
+) -> tuple[str, str, str, str]:
+    if room is None or not show_room_link:
+        return ("", "", "", "")
+    room_href = f"/plotting/{room.id}"
+    if thread_href is not None:
+        return ("Open scene", thread_href, "Open plotting room", room_href)
+    if room.status == "ready":
+        return ("Ready for scene", room_href, "", "")
+    return ("Open plotting room", room_href, "", "")
 
 
 def character_reserve_view(
