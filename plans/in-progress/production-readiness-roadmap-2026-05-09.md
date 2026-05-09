@@ -385,6 +385,22 @@ Do these after Gates 0-5 are materially closed:
 - Catalog facets and full public search.
 - Appearance variants and Blueprint round trip.
 
+Acceptance prerequisites:
+
+- Railway smoke is recorded against the real URL.
+- Fresh/upgraded schema parity and startup seed persistence are green.
+- Rendered privacy matrix gaps are reduced to explicit, accepted follow-ups.
+- The release-smoke regression remains green.
+- Transaction boundaries exist for the workflow family the primitive will
+  extend.
+- Docs say whether the primitive is current, gated, or planned.
+
+Gate 7 is a sequencing gate, not a feature freeze. Future primitive work can
+start earlier only when it directly closes a production-readiness dependency.
+For example, a public catalog read model can move before broader catalog facets
+because search privacy is a Gate 3 requirement; Living Canon automation cannot
+move before manual scene outcomes and rendered privacy proof.
+
 ## Parity Matrix
 
 | Contract | API/CLI | Programmatic | Protocol | Schema/Types | Docs | Examples | Tests |
@@ -454,3 +470,7 @@ Do these after Gates 0-5 are materially closed:
 - 2026-05-09: Started Gate 6 by adding a release-smoke lane to Director
   Operations so production-critical login, realm switching, writing,
   notification, and logout proof is visible from Studio.
+- 2026-05-09: Closed the first Gate 7 sequencing pass by recording acceptance
+  prerequisites for next primitives. Canon, public registration, partial staff
+  capabilities, catalog facets, and appearance variants remain behind the
+  production trust gates unless they directly close one of those gates.
