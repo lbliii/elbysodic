@@ -45,4 +45,3 @@ def test_domain_exports_current_first_class_primitives() -> None:
         "WantedAd",
         "WantedAdInterest",
     }.issubset(exported)
-

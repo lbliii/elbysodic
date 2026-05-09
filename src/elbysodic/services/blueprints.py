@@ -163,7 +163,13 @@ def plan_program_blueprint_hydration(
 
 def _new_program_rows(blueprint: ProgramBlueprint) -> tuple[BlueprintDiffRow, ...]:
     rows = [
-        BlueprintDiffRow("role", blueprint.role_slug, blueprint.role_name, "create", "Director role would be created."),
+        BlueprintDiffRow(
+            "role",
+            blueprint.role_slug,
+            blueprint.role_name,
+            "create",
+            "Director role would be created.",
+        ),
         *(
             BlueprintDiffRow(
                 "face",
@@ -175,11 +181,15 @@ def _new_program_rows(blueprint: ProgramBlueprint) -> tuple[BlueprintDiffRow, ..
             for character in blueprint.characters
         ),
         *(
-            BlueprintDiffRow("scene hub", board.slug, board.name, "create", "Scene hub would be created.")
+            BlueprintDiffRow(
+                "scene hub", board.slug, board.name, "create", "Scene hub would be created."
+            )
             for board in blueprint.boards
         ),
         *(
-            BlueprintDiffRow("material", material.slug, material.title, "create", "Material would be created.")
+            BlueprintDiffRow(
+                "material", material.slug, material.title, "create", "Material would be created."
+            )
             for material in blueprint.materials
         ),
         *(
