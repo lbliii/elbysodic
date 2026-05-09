@@ -15,13 +15,13 @@
 {% end %}
 
 {% def inline_nav(label, cls="") %}
-<nav class="elbysodic-filter-bar{{ " " ~ cls if cls else "" }}" aria-label="{{ label }}">
+<nav class="chirpui-saved-view-strip elbysodic-filter-bar{{ " " ~ cls if cls else "" }}" aria-label="{{ label }}">
   {% slot %}
 </nav>
 {% end %}
 
 {% def inline_nav_link(label, href, active=false, hx_target=none, hx_select=none, hx_swap="innerHTML show:none", hx_push_url=false) %}
-<a class="elbysodic-filter-link{{ " elbysodic-filter-link--active" if active else "" }}"
+<a class="chirpui-chip{{ " chirpui-chip--selected" if active else "" }} elbysodic-filter-link{{ " elbysodic-filter-link--active" if active else "" }}"
    href="{{ href }}"
    {% if active %}aria-current="page"{% end %}
    {% if hx_target %}

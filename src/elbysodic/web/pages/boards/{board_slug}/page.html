@@ -1,4 +1,5 @@
 {% imports %}
+  {% from "chirpui/breadcrumbs.html" import breadcrumbs %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
@@ -21,19 +22,20 @@
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
   <div class="elbysodic-place-toolbar">
-    <nav class="elbysodic-place-path" aria-label="Place path">
-      {% if is_community_board %}
-      <a href="/community">Community</a>
-      {% else %}
-      <a href="/">World</a>
-      {% end %}
+    <div class="elbysodic-place-toolbar__breadcrumbs" role="group" aria-label="Place path">
       {% if parent_board %}
-      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
-      <a href="/boards/{{ parent_board.slug }}">{{ parent_board.name }}</a>
+      {{ breadcrumbs([
+        {"label": "Community", "href": "/community"} if is_community_board else {"label": "World", "href": "/"},
+        {"label": parent_board.name, "href": "/boards/" ~ parent_board.slug},
+        {"label": board.name},
+      ], cls="elbysodic-place-path", overflow="collapse", max_items=4) }}
+      {% else %}
+      {{ breadcrumbs([
+        {"label": "Community", "href": "/community"} if is_community_board else {"label": "World", "href": "/"},
+        {"label": board.name},
+      ], cls="elbysodic-place-path", overflow="collapse", max_items=4) }}
       {% end %}
-      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
-      <span aria-current="page">{{ board.name }}</span>
-    </nav>
+    </div>
     <div class="chirpui-cluster chirpui-cluster--sm">
       {% if next_unread_thread %}
       {{ next_unread_link(next_unread_thread) }}

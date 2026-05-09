@@ -11,6 +11,53 @@
 
 {% block title %}{{ page_title if page_title is defined else (viewer.community.name if shell_has_community and viewer else "Elbysodic") }}{% end %}
 
+{% def program_theme_css(has_community, current_viewer) %}
+{% if has_community and current_viewer and current_viewer.program_theme %}
+      :root {
+        {% for variable, value in current_viewer.program_theme.base_variables %}
+        {{ variable }}: {{ value }};
+        {% end %}
+        {% for variable, value in current_viewer.program_theme.dark_variables %}
+        {{ variable }}: {{ value }};
+        {% end %}
+      }
+
+      [data-theme="light"] {
+        {% for variable, value in current_viewer.program_theme.light_variables %}
+        {{ variable }}: {{ value }};
+        {% end %}
+      }
+
+      @media (prefers-color-scheme: light) {
+        [data-theme="system"] {
+          {% for variable, value in current_viewer.program_theme.light_variables %}
+          {{ variable }}: {{ value }};
+          {% end %}
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        [data-theme="system"] {
+          {% for variable, value in current_viewer.program_theme.dark_variables %}
+          {{ variable }}: {{ value }};
+          {% end %}
+        }
+      }
+{% end %}
+{% end %}
+
+{% def product_shell_css(has_community) %}
+{% if not has_community %}
+      .chirpui-app-shell {
+        --chirpui-sidebar-width: 0rem;
+      }
+
+      .chirpui-app-shell__sidebar {
+        display: none;
+      }
+{% end %}
+{% end %}
+
 {% block head_extra %}
     <script>
     (function () {
@@ -36,51 +83,12 @@
     })();
     </script>
     <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-cookie-1">
-    {% if viewer and viewer.program_theme %}
     <style id="elbysodic-program-theme">
-      :root {
-        {% for variable, value in viewer.program_theme.base_variables %}
-        {{ variable }}: {{ value }};
-        {% end %}
-        {% for variable, value in viewer.program_theme.dark_variables %}
-        {{ variable }}: {{ value }};
-        {% end %}
-      }
-
-      [data-theme="light"] {
-        {% for variable, value in viewer.program_theme.light_variables %}
-        {{ variable }}: {{ value }};
-        {% end %}
-      }
-
-      @media (prefers-color-scheme: light) {
-        [data-theme="system"] {
-          {% for variable, value in viewer.program_theme.light_variables %}
-          {{ variable }}: {{ value }};
-          {% end %}
-        }
-      }
-
-      @media (prefers-color-scheme: dark) {
-        [data-theme="system"] {
-          {% for variable, value in viewer.program_theme.dark_variables %}
-          {{ variable }}: {{ value }};
-          {% end %}
-        }
-      }
+{{ program_theme_css(shell_has_community, viewer) }}
     </style>
-    {% end %}
-    {% if not shell_has_community %}
     <style id="elbysodic-product-shell">
-      .chirpui-app-shell {
-        --chirpui-sidebar-width: 0rem;
-      }
-
-      .chirpui-app-shell__sidebar {
-        display: none;
-      }
+{{ product_shell_css(shell_has_community) }}
     </style>
-    {% end %}
     {% if shell_sidebar_hidden %}
     <style id="elbysodic-sidebar-cookie-state">
       @media (min-width: 48.001rem) {
@@ -115,10 +123,18 @@
 <title id="chirpui-document-title">{{ page_title if page_title is defined else (viewer.community.name if shell_has_community and viewer else "Elbysodic") }}</title>
 {% end %}
 
+{% block program_theme_oob %}
+{{ program_theme_css(show_community_shell | default(true), viewer) }}
+{% end %}
+
+{% block product_shell_oob %}
+{{ product_shell_css(show_community_shell | default(true)) }}
+{% end %}
+
 {% block brand_link %}
 <a href="/"
    class="chirpui-app-shell__brand elbysodic-community-brand"
-   {{ shell_outlet_attrs() }}>
+   hx-boost="false">
   {% if shell_has_community and viewer and viewer.community.community_mark_url %}
   <img class="elbysodic-community-brand__mark"
        src="{{ viewer.community.community_mark_url }}"
@@ -184,7 +200,7 @@
 <div class="elbysodic-shell-identity">
   <details class="elbysodic-identity-menu">
     <summary class="elbysodic-identity-menu__summary"
-             aria-label="Identity menu: {{ viewer.membership.username }}{% if viewer.current_character %} wearing {{ viewer.current_character.name }}{% end %}">
+             aria-label="Identity menu: {{ viewer.membership.username }}{% if viewer.current_character %} playing as {{ viewer.current_character.name }}{% end %}">
       <span class="elbysodic-identity-menu__avatar-stack" aria-hidden="true">
         <span class="elbysodic-identity-menu__writer-avatar">{{ (viewer.membership.display_name or viewer.membership.username)[:1] }}</span>
         {% if viewer.current_character %}
@@ -203,7 +219,7 @@
       <span class="elbysodic-identity-menu__copy">
         <span class="elbysodic-identity-menu__label">{{ viewer.membership.username }}</span>
         {% if viewer.current_character %}
-        <span class="elbysodic-identity-menu__face">wearing {{ viewer.current_character.name }}</span>
+        <span class="elbysodic-identity-menu__face">playing as {{ viewer.current_character.name }}</span>
         {% else %}
         <span class="elbysodic-identity-menu__face">no face selected</span>
         {% end %}
@@ -230,7 +246,7 @@
                     {{ "disabled" if option.is_current else "" }}>
               <span>
                 <strong>{{ option.community.name }}</strong>
-                <small>{{ option.membership.display_name or option.membership.username }} · {{ option.role.name }}{% if option.current_character %} · wearing {{ option.current_character.name }}{% endif %}</small>
+                <small>{{ option.membership.display_name or option.membership.username }} · {{ option.role.name }}{% if option.current_character %} · playing as {{ option.current_character.name }}{% endif %}</small>
               </span>
               {% if option.unread_notification_count %}
               <b>{{ option.unread_notification_count }}</b>
@@ -287,7 +303,7 @@
       <form action="/identity" method="post" hx-boost="false" class="elbysodic-identity-menu__face-form">
         <input type="hidden" name="intent" value="set_default_character">
         <input type="hidden" name="next" value="{{ current_path or "/" }}">
-        <label class="elbysodic-identity-menu__kicker" for="active-character">Wearing</label>
+        <label class="elbysodic-identity-menu__kicker" for="active-character">Playing as</label>
         <select id="active-character"
                 name="character_id"
                 class="chirpui-field__input"
