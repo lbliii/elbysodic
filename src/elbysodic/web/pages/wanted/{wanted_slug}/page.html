@@ -174,13 +174,20 @@
       </div>
       {% end %}
       <div class="elbysodic-interest-card__meta">
-        {{ badge(item.interest.status, variant="warning" if item.interest.status == "reserved" else "info") }}
+        {{ badge(item.stage_label, variant=item.stage_variant) }}
         <span>{{ item.created_at_label }}</span>
       </div>
       {% if item.can_view_note and item.interest.note %}
       <p class="elbysodic-copy-summary">{{ item.interest.note }}</p>
       {% end %}
-      {% if wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
+      {% if item.primary_action_label %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--primary" href="{{ item.primary_action_href }}">{{ item.primary_action_label }}</a>
+        {% if item.secondary_action_label %}
+        <a class="chirpui-link" href="{{ item.secondary_action_href }}">{{ item.secondary_action_label }}</a>
+        {% end %}
+      </div>
+      {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
       <div class="chirpui-cluster chirpui-cluster--end">
         <form method="post" hx-boost="false">
           <input type="hidden" name="intent" value="start_plotting_room">
@@ -196,12 +203,6 @@
             Reserve for {{ item.display_name }}
           </button>
         </form>
-      </div>
-      {% elif item.can_open_room and item.room %}
-      <div class="chirpui-cluster chirpui-cluster--end">
-        <a class="chirpui-btn chirpui-btn--secondary" href="/plotting/{{ item.room.id }}">
-          Open plotting room
-        </a>
       </div>
       {% elif wanted.can_manage and item.interest.status == "plotting" %}
       <p class="elbysodic-copy-status">Plotting room started.</p>

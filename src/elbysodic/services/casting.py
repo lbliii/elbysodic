@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Protocol
 
 from elbysodic.domain.models import (
+    Board,
     Character,
     CharacterReserve,
     CommunityMembership,
     Facet,
     Material,
     PlottingRoom,
+    Thread,
     WantedAd,
     WantedAdInterest,
 )
@@ -48,6 +50,8 @@ class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
 
     def get_material(self, community_id: int, material_id: int) -> Material: ...
 
+    def get_board(self, community_id: int, board_id: int) -> Board: ...
+
     def list_wanted_ads(
         self,
         community_id: int,
@@ -82,6 +86,8 @@ class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
         community_id: int,
         interest_id: int,
     ) -> PlottingRoom: ...
+
+    def get_thread(self, community_id: int, thread_id: int) -> Thread: ...
 
     def list_character_reserves_for_community(
         self,
@@ -571,12 +577,30 @@ def wanted_ad_interest_detail_item(
 ) -> WantedAdInterestDetailItem:
     room = wanted_interest_room(repo, viewer.community.id, interest.id)
     is_interested_writer = interest.membership_id == viewer.membership.id
+    thread_href = wanted_interest_thread_href(repo, viewer.community.id, room)
+    stage_label, stage_variant = wanted_interest_stage(interest, room)
+    show_room_link = room is not None and (can_manage or is_interested_writer)
+    primary_label, primary_href, secondary_label, secondary_href = wanted_interest_action(
+        room,
+        thread_href=thread_href,
+        show_room_link=show_room_link,
+    )
     return WantedAdInterestDetailItem(
         view=wanted_ad_interest_view(repo, viewer.community.id, interest),
         room=room,
+        room_id=room.id if room is not None else None,
+        room_status=room.status if room is not None else "",
         can_view_note=can_manage or is_interested_writer,
         can_manage=can_manage,
-        can_open_room=room is not None and (can_manage or is_interested_writer),
+        can_open_room=show_room_link,
+        show_room_link=show_room_link,
+        stage_label=stage_label,
+        stage_variant=stage_variant,
+        thread_href=thread_href,
+        primary_action_label=primary_label,
+        primary_action_href=primary_href,
+        secondary_action_label=secondary_label,
+        secondary_action_href=secondary_href,
     )
 
 
@@ -589,6 +613,51 @@ def wanted_interest_room(
         return repo.get_plotting_room_for_wanted_interest(community_id, interest_id)
     except LookupError:
         return None
+
+
+def wanted_interest_thread_href(
+    repo: CastingReadRepository,
+    community_id: int,
+    room: PlottingRoom | None,
+) -> str | None:
+    if room is None or room.target_thread_id is None:
+        return None
+    thread = repo.get_thread(community_id, room.target_thread_id)
+    board = repo.get_board(community_id, thread.board_id)
+    return f"/boards/{board.slug}/threads/{thread.slug}"
+
+
+def wanted_interest_stage(
+    interest: WantedAdInterest,
+    room: PlottingRoom | None,
+) -> tuple[str, str]:
+    if interest.status == "reserved":
+        return ("Reserved", "warning")
+    if room is None:
+        return ("Raised hand", "info")
+    if room.status == "threaded" or room.target_thread_id is not None:
+        return ("Scene started", "success")
+    if room.status == "ready":
+        return ("Ready for scene", "success")
+    if room.status == "paused":
+        return ("Waiting", "muted")
+    return ("In plotting", "info")
+
+
+def wanted_interest_action(
+    room: PlottingRoom | None,
+    *,
+    thread_href: str | None,
+    show_room_link: bool,
+) -> tuple[str, str, str, str]:
+    if room is None or not show_room_link:
+        return ("", "", "", "")
+    room_href = f"/plotting/{room.id}"
+    if thread_href is not None:
+        return ("Open scene", thread_href, "Open plotting room", room_href)
+    if room.status == "ready":
+        return ("Ready for scene", room_href, "", "")
+    return ("Open plotting room", room_href, "", "")
 
 
 def character_reserve_view(

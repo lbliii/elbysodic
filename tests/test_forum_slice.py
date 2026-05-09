@@ -4514,6 +4514,10 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
             assert room_response.status == 302
 
             room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            updated_detail = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert updated_detail.status == 200
+            assert "In plotting" in updated_detail.text
+            assert "Open plotting room" in updated_detail.text
             room_page = await charlie_client.get(f"/plotting/{room.id}")
             assert room_page.status == 200
             assert "Human UN liaison for B-24 talks: Rogue" in room_page.text
@@ -4678,6 +4682,9 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
 
         charlie_app = create_app(debug=False, services=charlie_services)
         async with TestClient(charlie_app) as charlie_client:
+            ready_detail = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert ready_detail.status == 200
+            assert "Ready for scene" in ready_detail.text
             refreshed = await charlie_client.get(f"/plotting/{room.id}")
             assert refreshed.status == 200
             assert "Rogue arrives with a guarded yes." in refreshed.text
@@ -4732,6 +4739,12 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
             assert "Open scene" in threaded_page.text
             assert f"/boards/plotting/threads/{created_thread.slug}" in threaded_page.text
             assert "Start scene" not in threaded_page.text
+
+            threaded_detail = await charlie_client.get("/wanted/human-un-liaison-for-b24")
+            assert threaded_detail.status == 200
+            assert "Scene started" in threaded_detail.text
+            assert "Open scene" in threaded_detail.text
+            assert f"/boards/plotting/threads/{created_thread.slug}" in threaded_detail.text
 
         lane_inbox = services.notifications()
         assert any(item.label == "Scene started" for item in lane_inbox.items)

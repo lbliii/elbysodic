@@ -1075,9 +1075,19 @@ class WantedAdInterestView:
 class WantedAdInterestDetailItem:
     view: WantedAdInterestView
     room: PlottingRoom | None
+    room_id: int | None
+    room_status: str
     can_view_note: bool
     can_manage: bool
     can_open_room: bool
+    show_room_link: bool
+    stage_label: str
+    stage_variant: str
+    thread_href: str | None
+    primary_action_label: str
+    primary_action_href: str
+    secondary_action_label: str
+    secondary_action_href: str
 
     @property
     def interest(self) -> WantedAdInterest:
