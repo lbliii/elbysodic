@@ -63,6 +63,56 @@
     <div class="elbysodic-prose-body elbysodic-prose-body--hook elbysodic-hook-body">
       {{ wanted.rendered_body }}
     </div>
+    {% if wanted.casting_packet.has_content %}
+    <section class="elbysodic-casting-packet" aria-labelledby="casting-packet-heading">
+      <div>
+        <p class="elbysodic-section-kicker">Casting packet</p>
+        <h2 id="casting-packet-heading">What this role brings into play</h2>
+      </div>
+      <div class="elbysodic-casting-packet__grid">
+        {% if wanted.casting_packet.why_it_matters %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>Why this matters</h3>
+          <ul>
+            {% for item in wanted.casting_packet.why_it_matters %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+        {% if wanted.casting_packet.first_scene_invitations %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>First scene invitations</h3>
+          <ul>
+            {% for item in wanted.casting_packet.first_scene_invitations %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+        {% if wanted.casting_packet.relationship_lanes %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>Relationship lanes</h3>
+          <ul>
+            {% for item in wanted.casting_packet.relationship_lanes %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+        {% if wanted.casting_packet.negotiables %}
+        <article class="elbysodic-casting-packet__panel">
+          <h3>Negotiables</h3>
+          <ul>
+            {% for item in wanted.casting_packet.negotiables %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+        </article>
+        {% end %}
+      </div>
+    </section>
+    {% end %}
     <div class="elbysodic-wanted-action">
       {% if wanted.viewer_interest %}
       <p class="elbysodic-wanted-action__note">

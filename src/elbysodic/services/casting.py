@@ -31,10 +31,17 @@ from elbysodic.services.read_models import (
     WantedAdInterestView,
     WantedAdSummary,
     WantedBoard,
+    WantedCastingPacket,
 )
 from elbysodic.services.timestamps import timestamp_label
 
 WANTED_STATUSES: tuple[str, ...] = ("open", "reserved", "filled", "archived")
+_CASTING_PACKET_HEADINGS = {
+    "why this matters": "why_it_matters",
+    "first scene invitations": "first_scene_invitations",
+    "relationship lanes": "relationship_lanes",
+    "negotiables": "negotiables",
+}
 
 
 class CastingReadRepository(FacetReadRepository, PostViewRepository, Protocol):
@@ -289,6 +296,7 @@ def read_wanted_ad(
     if viewer_interest is None:
         viewer_interest = viewer_prospective_interest
     is_created_by_viewer = wanted_ad.creator_membership_id == viewer.membership.id
+    body, casting_packet = parse_wanted_casting_packet(wanted_ad.body)
     return WantedAdDetail(
         wanted_ad=wanted_ad,
         creator_membership=repo.get_membership(
@@ -333,9 +341,10 @@ def read_wanted_ad(
         is_created_by_viewer=is_created_by_viewer,
         can_manage=can_manage,
         rendered_body=render_prose_body(
-            wanted_ad.body,
+            body,
             mentions=post_mention_links(repo, viewer.community.id),
         ),
+        casting_packet=casting_packet,
         type_label=wanted_type_label(wanted_ad.wanted_type),
         related_ads=related[:4],
     )
@@ -566,6 +575,46 @@ def wanted_ad_interest_view(
         ),
         created_at_label=timestamp_label(interest.created_at),
     )
+
+
+def parse_wanted_casting_packet(body: str) -> tuple[str, WantedCastingPacket]:
+    intro_lines: list[str] = []
+    sections: dict[str, list[str]] = {key: [] for key in _CASTING_PACKET_HEADINGS.values()}
+    current_section: str | None = None
+    for raw_line in body.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = raw_line.strip()
+        heading = _casting_packet_heading(line)
+        if heading is not None:
+            current_section = heading
+            continue
+        if current_section is None:
+            intro_lines.append(raw_line)
+            continue
+        item = _casting_packet_item(line)
+        if item:
+            sections[current_section].append(item)
+    return (
+        "\n".join(intro_lines).strip(),
+        WantedCastingPacket(
+            why_it_matters=sections["why_it_matters"],
+            first_scene_invitations=sections["first_scene_invitations"],
+            relationship_lanes=sections["relationship_lanes"],
+            negotiables=sections["negotiables"],
+        ),
+    )
+
+
+def _casting_packet_heading(line: str) -> str | None:
+    normalized = line.rstrip(":").strip().lower()
+    return _CASTING_PACKET_HEADINGS.get(normalized)
+
+
+def _casting_packet_item(line: str) -> str:
+    if not line:
+        return ""
+    if line.startswith(("- ", "* ")):
+        return line[2:].strip()
+    return line
 
 
 def wanted_ad_interest_detail_item(

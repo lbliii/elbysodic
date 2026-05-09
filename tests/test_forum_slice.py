@@ -3497,6 +3497,26 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
     asyncio.run(run())
 
 
+def test_structured_wanted_casting_packet_renders_for_rent_week_hook() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            detail = await client.get("/c/rl-nyc/wanted/ex-bandmate-with-the-old-lease")
+
+        assert detail.status == 200
+        assert "Casting packet" in detail.text
+        assert "What this role brings into play" in detail.text
+        assert "Why this matters" in detail.text
+        assert "First scene invitations" in detail.text
+        assert "Relationship lanes" in detail.text
+        assert "Negotiables" in detail.text
+        assert "Their name is still on a lease" in detail.text
+        assert "A hallway confrontation after the building meeting." in detail.text
+        assert "Romance is optional" in detail.text
+
+    asyncio.run(run())
+
+
 def test_application_start_form_creates_draft_face_and_review_room() -> None:
     async def run() -> None:
         app = _app()

@@ -241,9 +241,11 @@ casting staff.
 The visual priority is:
 
 1. Hook identity and world context.
-2. Public movement state.
-3. Private backstage action for eligible viewers.
-4. Reserve or lifecycle controls for hook owners and casting staff.
+2. Casting packet details: why the role matters, first-scene invitations,
+   relationship lanes, and negotiables.
+3. Public movement state.
+4. Private backstage action for eligible viewers.
+5. Reserve or lifecycle controls for hook owners and casting staff.
 
 ### PostProfileRail
 

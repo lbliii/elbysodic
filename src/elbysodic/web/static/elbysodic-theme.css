@@ -7924,6 +7924,45 @@ a.elbysodic-metric:focus-visible {
     padding: 0.75rem 0.9rem;
 }
 
+.elbysodic-casting-packet {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.85rem;
+    padding-top: 1rem;
+}
+
+.elbysodic-casting-packet__grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.elbysodic-casting-packet__panel {
+    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-md);
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.85rem;
+}
+
+.elbysodic-casting-packet__panel h3 {
+    font-size: var(--chirpui-font-md);
+    margin: 0;
+}
+
+.elbysodic-casting-packet__panel ul {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding-left: 1.15rem;
+}
+
+.elbysodic-casting-packet__panel li {
+    color: var(--chirpui-text);
+    line-height: 1.45;
+}
+
 .elbysodic-character-chip-row {
     display: flex;
     flex-wrap: wrap;

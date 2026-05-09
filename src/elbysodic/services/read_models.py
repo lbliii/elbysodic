@@ -1111,6 +1111,23 @@ class WantedAdInterestDetailItem:
 
 
 @dataclass(frozen=True, slots=True)
+class WantedCastingPacket:
+    why_it_matters: list[str]
+    first_scene_invitations: list[str]
+    relationship_lanes: list[str]
+    negotiables: list[str]
+
+    @property
+    def has_content(self) -> bool:
+        return bool(
+            self.why_it_matters
+            or self.first_scene_invitations
+            or self.relationship_lanes
+            or self.negotiables
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class CharacterReserveView:
     reserve: CharacterReserve
     membership: CommunityMembership
@@ -1273,6 +1290,7 @@ class WantedAdDetail:
     is_created_by_viewer: bool
     can_manage: bool
     rendered_body: object
+    casting_packet: WantedCastingPacket
     type_label: str
     related_ads: list[WantedAdSummary]
 

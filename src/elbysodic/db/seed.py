@@ -908,7 +908,25 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 (
                     "This character brings unfinished business: a band that almost made it, a "
                     "friendship that turned into avoidance, and one practical reason they cannot "
-                    "fully disappear from Lena's life."
+                    "fully disappear from Lena's life.\n\n"
+                    "Why this matters:\n"
+                    "- Their name is still on a lease, a demo, a booking contact, or all three.\n"
+                    "- Lena needs the person who still has keys, credits, and emotional leverage.\n"
+                    "- The rent hike can turn old creative history into an immediate practical problem.\n\n"
+                    "First scene invitations:\n"
+                    "- A hallway confrontation after the building meeting.\n"
+                    "- A late-night text about lease renewal paperwork neither of them can ignore.\n"
+                    "- An open mic where someone plays the old song without warning.\n"
+                    "- A subway platform after a gig, with the band group chat waking back up.\n\n"
+                    "Relationship lanes:\n"
+                    "- Exes who buried the breakup under band logistics.\n"
+                    "- Best friends who imploded before the first good review.\n"
+                    "- Former roommates still splitting an apartment, a couch, or a debt.\n"
+                    "- Creative partners arguing over who gets to keep the song.\n\n"
+                    "Negotiables:\n"
+                    "- Romance is optional; friction, history, and tenderness are the point.\n"
+                    "- The band genre, exact lease situation, and blame split are flexible.\n"
+                    "- Player can bring a new face or tie an existing face into Lena's past."
                 ),
                 related_material_slug="premise",
             ),
