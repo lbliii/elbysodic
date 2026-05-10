@@ -7,7 +7,7 @@
 
 {% def wanted_card(item) %}
 {% call surface(variant="elevated") %}
-<article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card">
+<article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card elbysodic-wanted-card--{{ item.wanted_ad.status }}">
   <div class="chirpui-cluster chirpui-cluster--between">
     <div>
       <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>

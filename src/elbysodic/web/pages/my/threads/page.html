@@ -13,7 +13,8 @@
 {{ compact_thread_card(item.board, item.thread, item.author, item.author_membership, item.participants, item?.facets ?? [], item.latest_post, item.jump_post, item.jump_label, item.last_own_post, item.reply_count, item.is_unread, item.badges, "h3", True, True, item.episode) }}
 {% end %}
 
-{% def thread_section(title, subtitle, items, empty_text) %}
+{% def thread_section(title, subtitle, items, empty_text, tone="neutral") %}
+<section class="elbysodic-queue-section elbysodic-queue-section--{{ tone }}" aria-label="{{ title }}">
 {% call section_header(title) %}
 {{ subtitle }}
 {% end %}
@@ -28,9 +29,11 @@
   {% end %}
   {% end %}
 </div>
+  </section>
 {% end %}
 
-{% def compact_thread_section(title, subtitle, items, empty_text) %}
+{% def compact_thread_section(title, subtitle, items, empty_text, tone="neutral") %}
+<section class="elbysodic-queue-section elbysodic-queue-section--{{ tone }}" aria-label="{{ title }}">
 {% call section_header(title) %}
 {{ subtitle }}
 {% end %}
@@ -43,6 +46,7 @@
   <p class="elbysodic-empty-state">{{ empty_text }}</p>
   {% end %}
 </div>
+</section>
 {% end %}
 
 {% block page_root %}
@@ -122,9 +126,9 @@
   {% end %}
 
   {% if dashboard.selected_character %}
-  {{ thread_section("Needs reply", "Threads where another face currently has the last word.", dashboard.needs_reply, "Nothing is waiting on this face right now.") }}
+  {{ thread_section("Needs reply", "Threads where another face currently has the last word.", dashboard.needs_reply, "Nothing is waiting on this face right now.", "needs-reply") }}
 
-  {{ thread_section("Waiting on others", "Threads where this character currently has the last word.", dashboard.waiting_on_others, "This face has the last word nowhere right now.") }}
+  {{ thread_section("Waiting on others", "Threads where this character currently has the last word.", dashboard.waiting_on_others, "This face has the last word nowhere right now.", "waiting") }}
 
   {% call surface(variant="elevated") %}
   <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-history">
@@ -133,16 +137,16 @@
       <small>Started scenes and every visible scene touched by this face.</small>
     </summary>
     <div class="elbysodic-queue-history__body">
-      {{ compact_thread_section("Started by character", "Threads opened by this character.", dashboard.started_by_me, "This face has not opened any visible scenes yet.") }}
+      {{ compact_thread_section("Started by character", "Threads opened by this character.", dashboard.started_by_me, "This face has not opened any visible scenes yet.", "history") }}
 
-      {{ compact_thread_section("All participated", "Every visible thread touched by this character.", dashboard.participated, "This face has not joined any visible scenes yet.") }}
+      {{ compact_thread_section("All participated", "Every visible thread touched by this character.", dashboard.participated, "This face has not joined any visible scenes yet.", "history") }}
     </div>
   </details>
   {% end %}
   {% else %}
-  {{ thread_section("Needs reply", "Participated threads where someone outside your roster posted last.", dashboard.needs_reply, "Your roster is caught up for now.") }}
+  {{ thread_section("Needs reply", "Participated threads where someone outside your roster posted last.", dashboard.needs_reply, "Your roster is caught up for now.", "needs-reply") }}
 
-  {{ thread_section("Waiting on others", "Threads where one of your characters currently has the last word.", dashboard.waiting_on_others, "No active scenes are waiting on other writers for you.") }}
+  {{ thread_section("Waiting on others", "Threads where one of your characters currently has the last word.", dashboard.waiting_on_others, "No active scenes are waiting on other writers for you.", "waiting") }}
 
   {% call surface(variant="elevated") %}
   <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-history">
@@ -151,9 +155,9 @@
       <small>Started scenes and every visible scene touched by your roster.</small>
     </summary>
     <div class="elbysodic-queue-history__body">
-      {{ compact_thread_section("Started by me", "Threads opened by one of your community characters.", dashboard.started_by_me, "Your roster has not opened any visible scenes yet.") }}
+      {{ compact_thread_section("Started by me", "Threads opened by one of your community characters.", dashboard.started_by_me, "Your roster has not opened any visible scenes yet.", "history") }}
 
-      {{ compact_thread_section("All participated", "Every visible thread touched by your roster.", dashboard.participated, "Your roster has not joined any visible scenes yet.") }}
+      {{ compact_thread_section("All participated", "Every visible thread touched by your roster.", dashboard.participated, "Your roster has not joined any visible scenes yet.", "history") }}
     </div>
   </details>
   {% end %}

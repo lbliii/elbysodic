@@ -4426,6 +4426,33 @@ body {
     margin-left: auto;
 }
 
+.elbysodic-queue-section {
+    --elbysodic-queue-section-accent: var(--elbysodic-atmosphere-dye);
+    display: grid;
+    gap: 0.8rem;
+}
+
+.elbysodic-queue-section > .chirpui-section-header {
+    border-left: 0.22rem solid color-mix(in srgb, var(--elbysodic-queue-section-accent) 72%, var(--chirpui-border));
+    padding-left: 0.75rem;
+}
+
+.elbysodic-queue-section--needs-reply {
+    --elbysodic-queue-section-accent: var(--elbysodic-state-needs-reply);
+}
+
+.elbysodic-queue-section--waiting {
+    --elbysodic-queue-section-accent: var(--elbysodic-state-waiting);
+}
+
+.elbysodic-queue-section--history {
+    --elbysodic-queue-section-accent: var(--elbysodic-state-archived);
+}
+
+.elbysodic-queue-section--needs-reply .elbysodic-empty-state {
+    color: color-mix(in srgb, var(--elbysodic-state-caught-up) 58%, var(--chirpui-text-muted));
+}
+
 .elbysodic-queue-focus {
     align-items: center;
     background:
@@ -8122,6 +8149,22 @@ a.elbysodic-metric:focus-visible {
     pointer-events: none;
     position: absolute;
     width: 0.18rem;
+}
+
+.elbysodic-wanted-card--filled,
+.elbysodic-wanted-card--closed,
+.elbysodic-wanted-card--archived {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-archived) 8%, transparent), transparent 42%),
+        var(--chirpui-surface);
+    border-color: color-mix(in srgb, var(--elbysodic-state-archived) 22%, var(--chirpui-border-subtle));
+}
+
+.elbysodic-wanted-card--filled::before,
+.elbysodic-wanted-card--closed::before,
+.elbysodic-wanted-card--archived::before {
+    background: linear-gradient(180deg, var(--elbysodic-state-archived), var(--elbysodic-state-private));
+    opacity: 0.52;
 }
 
 .elbysodic-plot-hook-card {
