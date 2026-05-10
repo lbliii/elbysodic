@@ -310,6 +310,26 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
                 "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill",
                 headers={"Cookie": _cookie_header(cookies)},
             )
+            wanted = await client.get(
+                "/c/x-men-apocalypse/wanted",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            applications = await client.get(
+                "/c/x-men-apocalypse/applications",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            plotting = await client.get(
+                "/c/x-men-apocalypse/plotting",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            notifications = await client.get(
+                "/c/x-men-apocalypse/notifications",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            studio = await client.get(
+                "/c/x-men-apocalypse/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
             cookies.update(_cookie_values(thread))
             switch = await client.post(
                 "/identity",
@@ -352,6 +372,16 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert "HP Universe" in network.text
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
+        assert wanted.status == 200
+        assert "Wanted" in wanted.text
+        assert applications.status == 200
+        assert "Applications" in applications.text
+        assert plotting.status == 200
+        assert "Plotting" in plotting.text
+        assert notifications.status == 200
+        assert "Notifications" in notifications.text
+        assert studio.status == 200
+        assert "Studio" in studio.text
         assert switch.status == 302
         assert dict(switch.headers)["location"] == "/c/hp-universe"
         assert hp_home.status == 200
