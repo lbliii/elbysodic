@@ -16,6 +16,12 @@ chooses a different persistence backend.
 - Seed demo data intentionally with `elbysodic seed-demo`; app startup creates
   the schema but should not be treated as a demo reset.
 
+`railway.json` keeps production on normal startup and constrains the service to
+one replica with the `/app/var` volume mount. Its `staging` override runs
+`elbysodic seed-demo --db-path "$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3"`
+before startup. That staging seed is idempotent and intended for demo QA; do
+not mirror that auto-seed behavior into production once real writer data exists.
+
 ## Persistence Checks
 
 Before sharing a URL, prove these survive restart or redeploy:

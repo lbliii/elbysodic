@@ -4,7 +4,16 @@
     "startCommand": "elbysodic --host 0.0.0.0 --port $PORT --no-debug",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
+    "numReplicas": 1,
+    "requiredMountPath": "/app/var",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
+  },
+  "environments": {
+    "staging": {
+      "deploy": {
+        "startCommand": "elbysodic seed-demo --db-path \"$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3\" && elbysodic --host 0.0.0.0 --port $PORT --no-debug"
+      }
+    }
   }
 }

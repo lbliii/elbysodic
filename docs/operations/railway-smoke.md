@@ -14,6 +14,12 @@ real host, volume, cookie, static media, and restart posture.
   `ELBYSODIC_DB_PATH` points at an attached volume path.
 - The service runs one replica while SQLite is the production-like store.
 
+The checked-in Railway config requires `/app/var` and one replica for all
+environments. The `staging` environment also runs the idempotent demo seed
+command before starting the app so seeded demo accounts and realms are present.
+Production does not auto-seed on startup; seed production intentionally only
+when the deployment is being used as a seeded demo.
+
 ## Smoke Script
 
 Record the date, Railway deployment ID, public URL, and tester account used.
