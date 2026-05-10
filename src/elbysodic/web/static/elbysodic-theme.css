@@ -4093,6 +4093,10 @@ body {
 .elbysodic-thread-card {
     --elbysodic-scene-slate-accent: var(--chirpui-accent);
     align-items: stretch;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 4%, transparent), transparent 38%),
+        var(--chirpui-surface);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 12%, var(--chirpui-border-subtle));
     display: grid;
     gap: 1.05rem;
     grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr);
@@ -4126,11 +4130,15 @@ body {
     padding: 0.75rem;
     position: relative;
     text-decoration: none;
+    transition:
+        border-color var(--elbysodic-motion-feedback),
+        transform var(--elbysodic-motion-feedback);
 }
 
 .elbysodic-thread-card__poster::before {
     background:
-        radial-gradient(circle at 72% 18%, color-mix(in srgb, var(--chirpui-accent) 32%, transparent), transparent 34%),
+        radial-gradient(circle at 72% 18%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 34%, transparent), transparent 34%),
+        radial-gradient(circle at 18% 80%, color-mix(in srgb, var(--elbysodic-identity-dye) 20%, transparent), transparent 28%),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 2.4rem);
     content: "";
     inset: 0;
@@ -4140,7 +4148,8 @@ body {
 }
 
 .elbysodic-thread-card__poster:hover {
-    border-color: var(--chirpui-card-hover-border);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 58%, var(--chirpui-border));
+    transform: translateY(-1px);
 }
 
 .elbysodic-thread-card__poster-label {
@@ -4187,7 +4196,11 @@ body {
 }
 
 .elbysodic-thread-card--unread {
-    border-color: color-mix(in srgb, var(--chirpui-accent) 42%, var(--chirpui-border));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-needs-reply) 8%, transparent), transparent 42%),
+        var(--chirpui-surface);
+    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 56%, var(--chirpui-border));
+    box-shadow: inset 0.22rem 0 0 color-mix(in srgb, var(--elbysodic-state-needs-reply) 82%, var(--chirpui-border));
 }
 
 .elbysodic-thread-card__meta,
@@ -4362,9 +4375,15 @@ body {
 
 .elbysodic-queue-focus {
     align-items: center;
+    background:
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 12%, transparent), transparent 34%),
+        radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--elbysodic-identity-dye) 10%, transparent), transparent 32%);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-atmosphere-dye) 18%, var(--chirpui-border-subtle));
+    border-radius: var(--chirpui-radius);
     display: grid;
     gap: 1rem;
     grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: clamp(0.9rem, 2vw, 1.1rem);
 }
 
 .elbysodic-queue-focus__copy {
@@ -4381,6 +4400,10 @@ body {
 .elbysodic-queue-focus__copy h2 {
     font-size: clamp(1.35rem, 2vw, 1.8rem);
     line-height: 1.1;
+}
+
+.elbysodic-queue-focus__metrics .elbysodic-metric:first-child {
+    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 38%, var(--chirpui-border));
 }
 
 .elbysodic-queue-focus__copy p:not(.elbysodic-section-kicker) {
