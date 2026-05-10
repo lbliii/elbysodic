@@ -418,6 +418,100 @@ def test_session_identity_integrity_issues_detect_cross_community_selection(
     assert issues[0].reason == "selected membership belongs to another community"
 
 
+def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-authorship", "Hosted Authorship")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_user = repo.create_user("authorship@example.com", "hash")
+    hosted_user = repo.create_user("hosted-authorship@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        default_user.id,
+        default_role.id,
+        "authorship",
+        "Authorship",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "hosted-authorship",
+        "Hosted Authorship",
+    )
+    default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "authorship",
+        "Authorship",
+    )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-authorship",
+        "Hosted Authorship",
+    )
+    board = repo.create_board(default.id, "authorship", "Authorship")
+    thread = repo.create_thread(
+        default.id,
+        board.id,
+        default_character.id,
+        "authorship",
+        "Authorship",
+    )
+    post = repo.create_post(default.id, thread.id, default_character.id, "First beat.")
+    notification = repo.create_notification(
+        default.id,
+        default_membership.id,
+        kind="character",
+        character_id=default_character.id,
+        actor_membership_id=default_membership.id,
+        actor_character_id=default_character.id,
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE threads
+        SET author_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, thread.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE posts
+        SET author_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, post.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE notifications
+        SET actor_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, notification.id),
+    )
+    repo.connection.commit()
+
+    issues = repo.list_tenant_pair_integrity_issues()
+
+    issue_map = {(issue.table_name, issue.row_id): issue.reason for issue in issues}
+
+    assert issue_map[("threads", thread.id)] == (
+        "thread author character does not match community and membership"
+    )
+    assert issue_map[("posts", post.id)] == (
+        "post author character does not match community and membership"
+    )
+    assert issue_map[("notifications", notification.id)] == (
+        "notification actor character does not match community and membership"
+    )
+
+
 def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     connection = connect()
     connection.executescript(

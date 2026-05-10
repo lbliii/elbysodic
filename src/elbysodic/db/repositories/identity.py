@@ -41,6 +41,14 @@ class SessionIdentityIntegrityIssue:
     reason: str
 
 
+@dataclass(frozen=True, slots=True)
+class TenantPairIntegrityIssue:
+    table_name: str
+    row_id: int
+    community_id: int
+    reason: str
+
+
 class IdentityRepositoryMixin(RepositoryBase):
     def seed_default_community(self, name: str = "Elbysodic") -> Community:
         now = _utc_now()
@@ -870,6 +878,118 @@ class IdentityRepositoryMixin(RepositoryBase):
                 selected_community_id=row["selected_community_id"],
                 selected_membership_id=row["selected_membership_id"],
                 reason=_session_identity_integrity_reason(row),
+            )
+            for row in rows
+        ]
+
+    def list_tenant_pair_integrity_issues(self) -> list[TenantPairIntegrityIssue]:
+        rows = self.connection.execute(
+            """
+            SELECT table_name, row_id, community_id, reason
+            FROM (
+                SELECT
+                    'threads' AS table_name,
+                    thread.id AS row_id,
+                    thread.community_id,
+                    CASE
+                        WHEN board.id IS NULL THEN 'thread board belongs to another community'
+                        WHEN membership.id IS NULL THEN 'thread author membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'thread author character does not match community and membership'
+                        ELSE 'thread tenant pair is invalid'
+                    END AS reason
+                FROM threads AS thread
+                LEFT JOIN boards AS board
+                    ON board.id = thread.board_id
+                    AND board.community_id = thread.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = thread.author_membership_id
+                    AND membership.community_id = thread.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = thread.author_character_id
+                    AND character.community_id = thread.community_id
+                    AND character.membership_id = thread.author_membership_id
+                WHERE board.id IS NULL
+                    OR membership.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'posts' AS table_name,
+                    post.id AS row_id,
+                    post.community_id,
+                    CASE
+                        WHEN thread.id IS NULL THEN 'post thread belongs to another community'
+                        WHEN membership.id IS NULL THEN 'post author membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'post author character does not match community and membership'
+                        ELSE 'post tenant pair is invalid'
+                    END AS reason
+                FROM posts AS post
+                LEFT JOIN threads AS thread
+                    ON thread.id = post.thread_id
+                    AND thread.community_id = post.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = post.author_membership_id
+                    AND membership.community_id = post.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = post.author_character_id
+                    AND character.community_id = post.community_id
+                    AND character.membership_id = post.author_membership_id
+                WHERE thread.id IS NULL
+                    OR membership.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'notifications' AS table_name,
+                    notification.id AS row_id,
+                    notification.community_id,
+                    CASE
+                        WHEN recipient.id IS NULL THEN 'notification recipient belongs to another community'
+                        WHEN actor.id IS NULL THEN 'notification actor belongs to another community'
+                        WHEN actor_character.id IS NULL
+                            AND notification.actor_character_id IS NOT NULL
+                            THEN 'notification actor character does not match community and membership'
+                        WHEN target_character.id IS NULL
+                            AND notification.character_id IS NOT NULL
+                            THEN 'notification character target belongs to another community'
+                        ELSE 'notification tenant pair is invalid'
+                    END AS reason
+                FROM notifications AS notification
+                LEFT JOIN community_memberships AS recipient
+                    ON recipient.id = notification.membership_id
+                    AND recipient.community_id = notification.community_id
+                LEFT JOIN community_memberships AS actor
+                    ON actor.id = notification.actor_membership_id
+                    AND actor.community_id = notification.community_id
+                LEFT JOIN characters AS actor_character
+                    ON actor_character.id = notification.actor_character_id
+                    AND actor_character.community_id = notification.community_id
+                    AND actor_character.membership_id = notification.actor_membership_id
+                LEFT JOIN characters AS target_character
+                    ON target_character.id = notification.character_id
+                    AND target_character.community_id = notification.community_id
+                WHERE recipient.id IS NULL
+                    OR actor.id IS NULL
+                    OR (
+                        notification.actor_character_id IS NOT NULL
+                        AND actor_character.id IS NULL
+                    )
+                    OR (
+                        notification.character_id IS NOT NULL
+                        AND target_character.id IS NULL
+                    )
+            )
+            ORDER BY table_name, community_id, row_id
+            """
+        ).fetchall()
+        return [
+            TenantPairIntegrityIssue(
+                table_name=row["table_name"],
+                row_id=row["row_id"],
+                community_id=row["community_id"],
+                reason=row["reason"],
             )
             for row in rows
         ]
