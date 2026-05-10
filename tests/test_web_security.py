@@ -300,7 +300,11 @@ def test_production_security_headers_are_set(monkeypatch) -> None:
         assert headers["x-content-type-options"] == "nosniff"
         assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
         assert headers["strict-transport-security"] == "max-age=31536000"
-        assert "frame-ancestors 'none'" in headers["content-security-policy"]
+        csp = headers["content-security-policy"]
+        assert "frame-ancestors 'none'" in csp
+        assert "style-src 'self' 'unsafe-inline'" in csp
+        assert "script-src 'self' 'unsafe-inline' 'unsafe-eval'" in csp
+        assert "connect-src 'self'" in csp
 
     asyncio.run(run())
 

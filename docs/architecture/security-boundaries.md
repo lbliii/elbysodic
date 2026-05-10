@@ -92,6 +92,12 @@ Production mutating requests are protected by Chirp session-backed CSRF. The
 app injects the active CSRF field into rendered POST forms and rejects unsafe
 methods when the token is missing or invalid.
 
+Production responses also set a Content Security Policy sized to the current
+server-rendered Chirp and Chirp-UI stack. The policy keeps framing, object,
+base URI, image, and connection boundaries narrow, while allowing inline styles
+and Alpine expression evaluation until those upstream-rendered shell, theme,
+and progressive-enhancement patterns are replaced with CSP-stricter assets.
+
 ## Nullable Identity Shapes
 
 Some PBP workflows support a character-backed path and a prospective-character

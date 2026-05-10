@@ -25,6 +25,16 @@ PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
 PUBLIC_PATHS = frozenset({"/", "/health", "/login", "/logout", "/network"})
 PUBLIC_PREFIXES = ("/elbysodic-static/",)
+PRODUCTION_CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data:; "
+    "connect-src 'self'; "
+    "base-uri 'self'; "
+    "frame-ancestors 'none'; "
+    "object-src 'none'"
+)
 
 
 @dataclass(frozen=True, slots=True)
