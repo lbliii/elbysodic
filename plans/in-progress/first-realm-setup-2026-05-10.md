@@ -1,6 +1,6 @@
 # First Realm Setup Plan
 
-Status: active implementation plan
+Status: implemented locally; guided builder follow-up remains
 Owner: Service/auth, storage, web, tests, docs, and planning stewardship
 Created: 2026-05-10
 Last updated: 2026-05-10
@@ -9,6 +9,31 @@ Closure criteria: the no-realm to empty-configured-realm transition is
 implemented or superseded by a narrower bootstrap plan; accepted steward
 findings have proof/collateral, and remaining onboarding work is linked back
 to the community creator onboarding plan.
+
+## Implementation Update
+
+Landed commits:
+
+- `837b4ee` added `bootstrap-first-realm`, the service-owned
+  `create_first_realm(...)` workflow, CLI tests for success/duplicate setup,
+  and rollback proof for setup defaults.
+- `819b1da` kept empty configured realms backstage by filtering public `/` and
+  `/network` catalog entries until a realm has a published premise and public
+  scene hub.
+- `ac4a7a5` made `/studio/launch` director-only and redirected directors from
+  an empty configured `/studio` to the launch room.
+- `1eb8bce` moved the empty-community guard inside the first-realm transaction
+  boundary.
+
+The implementation intentionally did not add a persisted `launch_status`
+column. Public readiness is derived from existing published premise and public
+scene-hub state until a schema change is approved. CLI setup does not update a
+web session because there is no web-triggered setup path yet.
+
+Remaining onboarding work moves back to the creator-onboarding roadmap:
+guided realm builder writes, invitation handoff, first-face setup, and a future
+explicit launch-state schema if public preview needs states beyond the derived
+backstage/public-ready gate.
 
 ## Purpose
 
@@ -103,9 +128,11 @@ Invariant: empty configured realms are backstage and must not appear as public
 catalog entries.
 
 Decision: public catalog visibility needs an explicit boundary before first
-realm setup ships. Preferred implementation is a persisted community launch
-status defaulting to `backstage`, but that data-model change requires human
-confirmation before implementation.
+realm setup ships. This implementation uses a derived gate: a realm is public
+catalog-ready only after it has a published premise material and at least one
+public scene hub board. A persisted community launch status remains deferred
+because that data-model change requires human confirmation before
+implementation.
 
 Required proof:
 
@@ -126,10 +153,11 @@ Collateral:
 Invariant: after setup, the active request/session must resolve to the newly
 created director membership.
 
-Decision: first-realm setup returns a `RequestIdentityContext` and updates
-`user_sessions.selected_community_id` and `selected_membership_id` when invoked
-from an authenticated session. CLI usage should report the created realm and
-director membership clearly.
+Decision: CLI usage reports the created realm and director membership clearly.
+Session selection is deferred until there is an authenticated web-triggered
+setup path. Any future web setup path must update
+`user_sessions.selected_community_id` and `selected_membership_id` before
+redirecting to Studio.
 
 Required proof:
 
@@ -181,6 +209,14 @@ Collateral:
 - rendered route privacy matrix
 
 ## Proposed Implementation Sequence
+
+Local status:
+
+- PR 1 landed as the CLI/service setup slice.
+- PR 2 landed as the derived backstage visibility gate.
+- PR 3 landed for Studio continuation and director-only launch access.
+- PR 4 remains out of scope and should be split from the creator-onboarding
+  roadmap.
 
 ### PR 1: Bootstrap-Owned Empty Realm
 

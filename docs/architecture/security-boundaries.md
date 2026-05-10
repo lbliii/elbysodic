@@ -74,6 +74,13 @@ media, roster counts, and wanted-hook counts. They must not render membership
 names, active faces, unread counts, staff signals, identity switch forms, or
 private writer queues.
 
+First-realm creation is not a public web permission. The current setup path is
+the operator-only `bootstrap-first-realm` CLI command, which creates a global
+login user plus a community-local director membership in the same transaction.
+An empty configured realm remains backstage in public catalog read models until
+it has public-ready content. Directors see setup continuation through their own
+membership; ordinary members cannot enter `/studio/launch`.
+
 Current community and membership selection is stored on `user_sessions` as
 `selected_community_id` and `selected_membership_id`. Switching membership
 validates that the target membership belongs to the session user and is active

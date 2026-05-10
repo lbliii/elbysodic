@@ -88,10 +88,18 @@ The first production realm has two distinct pre-launch states:
   intake rules, appearance, wanted hooks, and invitations.
 
 The transition from no realm to empty configured realm is a privileged setup
-operation. It may be started by a production bootstrap command, a future
-first-realm CLI, or a director-only Studio launch room, but the operation must
-create community-local membership and role state explicitly. It must not grant
-global staff power or infer a community from an unscoped user.
+operation. The current implementation is the `bootstrap-first-realm` CLI
+command. It creates the first community, first global login user,
+community-local director role and membership, sidebar defaults, and default
+theme inside one repository transaction. It must not grant global staff power,
+infer a community from an unscoped user, or create placeholder scene hubs,
+threads, director materials, claims, wanted hooks, or invitations.
+
+Empty configured realms stay backstage for public discovery. Until a realm has
+a published premise material and at least one public scene hub board, logged-out
+`/` and `/network` filter it out of the public catalog. Signed-in directors can
+still reach their realm through their community-local membership and continue
+from `/studio/launch`.
 
 Public hosted community creation is separate future work. Until invitation,
 first-face onboarding, abuse posture, email delivery, and support boundaries

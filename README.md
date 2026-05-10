@@ -83,6 +83,26 @@ configured realm, then Studio guides directors through realm identity, scene
 hubs, director materials, intake and claims, appearance, invitations, and a
 launch checklist before public preview.
 
+The current first-realm path is an operator bootstrap command. It creates the
+community, first director login account, community-local director membership,
+sidebar defaults, and default theme inside one transaction; it does not create
+placeholder boards, threads, director materials, claims, wanted hooks, or
+invites.
+
+```bash
+uv run elbysodic bootstrap-first-realm \
+  --realm-name "Example Realm" \
+  --realm-slug example-realm \
+  --director-email director@example.com \
+  --director-password "change-me-before-use" \
+  --director-username director \
+  --director-name "Realm Director"
+```
+
+Until the realm has a published premise and at least one public scene hub,
+logged-out `/` and `/network` treat it as backstage. Directors can continue
+setup from `/c/{realm_slug}/studio/launch`.
+
 ## Architecture
 
 The core product primitives are documented in
