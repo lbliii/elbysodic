@@ -953,8 +953,62 @@ class StudioBoardEditor:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmLaunchChecklistItem:
+    label: str
+    summary: str
+    href: str
+    cta: str
+    is_complete: bool
+    is_required: bool = True
+
+    @property
+    def status_label(self) -> str:
+        if self.is_complete:
+            return "Ready"
+        return "Needed" if self.is_required else "Optional"
+
+    @property
+    def status_variant(self) -> str:
+        if self.is_complete:
+            return "success"
+        return "warning" if self.is_required else "muted"
+
+
+@dataclass(frozen=True, slots=True)
+class RealmLaunchReadiness:
+    items: list[RealmLaunchChecklistItem]
+
+    @property
+    def completed_count(self) -> int:
+        return sum(1 for item in self.items if item.is_complete)
+
+    @property
+    def required_count(self) -> int:
+        return sum(1 for item in self.items if item.is_required)
+
+    @property
+    def completed_required_count(self) -> int:
+        return sum(1 for item in self.items if item.is_required and item.is_complete)
+
+    @property
+    def missing_required_count(self) -> int:
+        return self.required_count - self.completed_required_count
+
+    @property
+    def is_ready(self) -> bool:
+        return self.missing_required_count == 0
+
+    @property
+    def status_label(self) -> str:
+        if self.is_ready:
+            return "Ready for invite-only opening"
+        return f"{self.missing_required_count} required lanes still backstage"
+
+
+@dataclass(frozen=True, slots=True)
 class DirectorStudio:
     can_manage: bool
+    launch_readiness: RealmLaunchReadiness
     theme_editor: ThemeEditorView
     theme_warnings: tuple[ThemeHealthWarning, ...]
     facet_groups: list[FacetGroup]
@@ -1418,6 +1472,14 @@ class DevPersonaView:
     can_switch: bool
     is_current: bool
     can_manage_studio: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FirstRealmSetupResult:
+    community: Community
+    user: User
+    membership: CommunityMembership
+    role: Role
 
 
 @dataclass(frozen=True, slots=True)

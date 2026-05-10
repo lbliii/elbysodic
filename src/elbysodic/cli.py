@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from elbysodic.services import default_database_path, initialize_database
+from elbysodic.services import bootstrap_first_realm, default_database_path, initialize_database
 from elbysodic.web.app import create_app
 
 
@@ -23,6 +23,22 @@ def main(argv: list[str] | None = None) -> None:
     if command == "seed-demo":
         db_path = initialize_database(args.db_path, seed_demo=True)
         sys.stdout.write(f"seeded {db_path}\n")
+        return
+
+    if command == "bootstrap-first-realm":
+        result = bootstrap_first_realm(
+            args.db_path,
+            realm_name=args.realm_name,
+            realm_slug=args.realm_slug,
+            director_email=args.director_email,
+            director_password=args.director_password,
+            director_username=args.director_username,
+            director_display_name=args.director_name,
+        )
+        sys.stdout.write(
+            "created first realm "
+            f"{result.community.slug} with director membership {result.membership.username}\n"
+        )
         return
 
     app = create_app(debug=args.debug, db_path=args.db_path, seed_demo=args.seed_demo)
@@ -68,6 +84,33 @@ def _build_parser() -> argparse.ArgumentParser:
         "seed-demo",
         parents=[shared],
         help="Create schema and idempotently seed demo data.",
+    )
+    bootstrap = subparsers.add_parser(
+        "bootstrap-first-realm",
+        parents=[shared],
+        help="Create the first empty configured realm and director account.",
+    )
+    bootstrap.add_argument("--realm-name", required=True, help="Name of the first realm.")
+    bootstrap.add_argument("--realm-slug", required=True, help="URL slug for the first realm.")
+    bootstrap.add_argument(
+        "--director-email",
+        required=True,
+        help="Email address for the first director login account.",
+    )
+    bootstrap.add_argument(
+        "--director-password",
+        required=True,
+        help="Initial password for the first director login account.",
+    )
+    bootstrap.add_argument(
+        "--director-username",
+        required=True,
+        help="Community-local username for the first director membership.",
+    )
+    bootstrap.add_argument(
+        "--director-name",
+        required=True,
+        help="Community-local display name for the first director membership.",
     )
     serve = subparsers.add_parser("serve", parents=[shared], help="Run the web server.")
     _add_serve_options(serve, include_defaults=False)

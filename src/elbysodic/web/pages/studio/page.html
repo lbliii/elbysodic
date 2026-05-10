@@ -134,6 +134,7 @@
 
   {% call local_rail("Studio rooms", "elbysodic-local-rail--outlined") %}
     {{ local_rail_link("Operations", "/studio/operations") }}
+    {{ local_rail_link("Launch", "/studio/launch") }}
     {{ local_rail_link("World structure", "#world-structure") }}
     {{ local_rail_link("Navigation", "#navigation") }}
     {{ local_rail_link("Identity and appearance", "#identity-appearance") }}
@@ -149,6 +150,14 @@
       "/studio/operations",
       studio.review_queue_count ~ " in review",
       studio.claims.reserved_count ~ " reserves"
+    ) }}
+    {{ production_room_card(
+      "Launch",
+      "Realm opening checklist",
+      "Backstage setup for scene hubs, materials, intake, appearance, and invites.",
+      "/studio/launch",
+      studio.launch_readiness.completed_required_count ~ "/" ~ studio.launch_readiness.required_count ~ " required",
+      studio.launch_readiness.status_label
     ) }}
     {{ production_room_card(
       "World structure",

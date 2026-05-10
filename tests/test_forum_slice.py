@@ -1670,7 +1670,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Shape X-Men Apocalypse" in studio.text
             assert "Studio rooms" in studio.text
             assert 'href="/studio/operations"' in studio.text
+            assert 'href="/studio/launch"' in studio.text
             assert "Daily director console" in studio.text
+            assert "Realm opening checklist" in studio.text
             assert 'href="#world-structure"' in studio.text
             assert 'href="#navigation"' in studio.text
             assert 'href="#identity-appearance"' in studio.text
@@ -1727,18 +1729,120 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Dry-run intake" in operations.text
             assert "Release smoke" in operations.text
             assert "Community builder checklist" in operations.text
-            assert "Boards and world materials carry the community premise." in operations.text
-            assert "Applications, claims, and wanted hooks have review paths." in operations.text
-            assert (
-                "Plotting handoffs and notifications move writers into scenes." in operations.text
-            )
+            assert "Realm identity - Ready" in operations.text
+            assert "Scene hubs - Ready" in operations.text
+            assert "Director materials - Ready" in operations.text
+            assert "Intake and claims - Ready" in operations.text
             assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
             assert 'href="/network"' in operations.text
+            assert 'href="/studio/launch"' in operations.text
             assert "Application Triage" in operations.text
             assert 'href="/applications"' in operations.text
             assert 'href="/casting"' in operations.text
             assert 'href="/notifications"' in operations.text
+
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+        async with TestClient(staff_app) as staff_client:
+            launch = await staff_client.get("/studio/launch")
+
+        assert launch.status == 200
+        assert "Realm Launch" in launch.text
+        assert "Open the realm with the writing surface intact." in launch.text
+        assert "Launch checklist" in launch.text
+        assert "Realm identity" in launch.text
+        assert "Scene hubs" in launch.text
+        assert "Director materials" in launch.text
+        assert "Intake and claims" in launch.text
+        assert "Wanted hooks" in launch.text
+        assert "Appearance" in launch.text
+        assert "Invite-only before public self-serve." in launch.text
+        assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
+
+    asyncio.run(run())
+
+
+def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
+    async def run() -> None:
+        connection = connect(":memory:", check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.create_community("starter-realm", "Starter Realm")
+        role = repo.create_role(community.id, "director", "Director", is_admin=True)
+        user = repo.create_user("starter-director@example.com", "hash")
+        membership = repo.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "starter-director",
+            "Starter Director",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(repo, DemoSeed(community, user, membership, None)),
+        )
+
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+            launch = await client.get("/studio/launch")
+
+        assert studio.status == 302
+        assert _response_header(studio, "location") == "/studio/launch"
+        assert launch.status == 200
+        assert "Starter Realm" in launch.text
+        assert "required lanes still backstage" in launch.text
+        assert "Scene hubs" in launch.text
+        assert "Director materials" in launch.text
+        assert "Intake and claims" in launch.text
+        assert "Needed" in launch.text
+        assert "Open the realm with the writing surface intact." in launch.text
+
+    asyncio.run(run())
+
+
+def test_realm_launch_room_requires_director_membership() -> None:
+    async def run() -> None:
+        connection = connect(":memory:", check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.create_community("starter-realm", "Starter Realm")
+        director_role = repo.create_role(community.id, "director", "Director", is_admin=True)
+        member_role = repo.create_role(community.id, "member", "Member", is_admin=False)
+        director_user = repo.create_user("starter-director@example.com", "hash")
+        repo.create_membership(
+            community.id,
+            director_user.id,
+            director_role.id,
+            "starter-director",
+            "Starter Director",
+        )
+        member_user = repo.create_user("starter-member@example.com", "hash")
+        member_membership = repo.create_membership(
+            community.id,
+            member_user.id,
+            member_role.id,
+            "starter-member",
+            "Starter Member",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(repo, DemoSeed(community, member_user, member_membership, None)),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+
+        assert launch.status == 403
+        assert "Open the realm with the writing surface intact." not in launch.text
+        assert "Launch checklist" not in launch.text
 
     asyncio.run(run())
 

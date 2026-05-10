@@ -74,6 +74,37 @@ Elbysodic currently has three relevant modes:
 These modes share the same identity model. Users are global login accounts,
 memberships are community-local, and staff power belongs to membership roles.
 
+## First Realm Boundary
+
+The first production realm has two distinct pre-launch states:
+
+- No realm exists: the database has no configured community for the install.
+  Public `/` and `/network` render the platform launch state. Signed-out
+  visitors can log in or request access, but there is no community shell,
+  roster, scene hub, or director material to enter.
+- Empty configured realm: the install has a community, director role,
+  director membership, and minimum settings, but it has not passed the launch
+  checklist. Directors work from Studio to add scene hubs, director materials,
+  intake rules, appearance, wanted hooks, and invitations.
+
+The transition from no realm to empty configured realm is a privileged setup
+operation. The current implementation is the `bootstrap-first-realm` CLI
+command. It creates the first community, first global login user,
+community-local director role and membership, sidebar defaults, and default
+theme inside one repository transaction. It must not grant global staff power,
+infer a community from an unscoped user, or create placeholder scene hubs,
+threads, director materials, claims, wanted hooks, or invitations.
+
+Empty configured realms stay backstage for public discovery. Until a realm has
+a published premise material and at least one public scene hub board, logged-out
+`/` and `/network` filter it out of the public catalog. Signed-in directors can
+still reach their realm through their community-local membership and continue
+from `/studio/launch`.
+
+Public hosted community creation is separate future work. Until invitation,
+first-face onboarding, abuse posture, email delivery, and support boundaries
+are designed, the production path remains invite-style and director-led.
+
 ## Request Identity Boundary
 
 The web layer treats community and writer identity as request-scoped, even in

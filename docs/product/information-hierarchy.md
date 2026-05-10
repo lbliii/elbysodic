@@ -23,6 +23,10 @@ community media slots, or presentation variants for ritual surfaces.
 The current app has several information-heavy surfaces:
 
 - Home/world gateway: atmosphere first, then locations, queues, and activity.
+- Network launch state: when no realm exists, platform identity and next
+  access action come before community navigation.
+- Studio launch room: when a realm exists but is still backstage, director
+  setup progress comes before ordinary production queues.
 - Board page: place identity, sublocations, filters, and direct scenes.
 - Thread page: scene state, cast, metadata, posts, and writing actions.
 - Character page: face identity, facets, plotter/wanted hooks, queue, posts.
@@ -35,6 +39,32 @@ The current app has several information-heavy surfaces:
 These screens repeat the same concepts. When they are styled ad hoc, everything
 competes for attention. Elbysodic should instead decide which concepts are
 identity, which are action, which are metadata, and which are signals.
+
+## Creator Launch Hierarchy
+
+Creator onboarding is a director launch room, not a generic signup wizard. The
+surface should preserve the difference between platform access, realm identity,
+and writing readiness:
+
+1. Platform access: sign in, request access, or accept a director invitation.
+2. Realm identity: name, slug, director display name, premise, and launch
+   status.
+3. Play surface: scene hubs, public/private boundaries, and director materials.
+4. Roster intake: application questions, claims, reserves, first-face state,
+   and staff review visibility.
+5. Atmosphere: approved appearance tokens and media metadata.
+6. Opening: staff/writer invites, public preview readiness, and launch
+   checklist.
+
+The no-realm state should stay sparse and direct. It should not show a fake
+community shell or empty forum map. The empty configured realm state should
+show the community shell only to users who can resolve a community-local
+membership, and director setup controls should stay in Studio.
+
+Progress indicators in the launch room should name director work in PBP terms:
+"Scene hubs", "Director materials", "Intake and claims", "Wanted hooks",
+"Appearance", "Invites", and "Launch checklist". Avoid generic steps such as
+"Configure content" or "Set up workspace".
 
 ## Vocabulary
 

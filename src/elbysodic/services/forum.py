@@ -70,6 +70,7 @@ from elbysodic.services.applications import update_application_review as _update
 from elbysodic.services.auth import (
     LoginSession,
     create_login_session,
+    hash_password,
     session_for_session_token,
     session_token_hash,
 )
@@ -195,6 +196,7 @@ from elbysodic.services.read_models import (
     DirectorStudio,
     EditablePostView,
     FacetTag,
+    FirstRealmSetupResult,
     ForumView,
     LocationNavigationGroup,
     MaterialDetail,
@@ -214,6 +216,8 @@ from elbysodic.services.read_models import (
     PostStylePolicy,
     RealmInteractionDetail,
     RealmInteractionHub,
+    RealmLaunchChecklistItem,
+    RealmLaunchReadiness,
     StudioBoardEditor,
     StudioIdentityOption,
     StudioNetworkDirectory,
@@ -234,6 +238,8 @@ from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
 from elbysodic.services.themes import (
+    DEFAULT_THEME_TOKENS,
+    ThemeHealthWarning,
     build_theme_tokens,
     community_theme_editor,
     community_theme_view,
@@ -508,6 +514,62 @@ class AppServices:
         if session_token:
             self.repo.revoke_user_session_by_token_hash(session_token_hash(session_token))
 
+    def create_first_realm(
+        self,
+        *,
+        realm_name: str,
+        realm_slug: str,
+        director_email: str,
+        director_password: str,
+        director_username: str,
+        director_display_name: str,
+    ) -> FirstRealmSetupResult:
+        clean_realm_name = realm_name.strip()
+        if not clean_realm_name:
+            raise ValueError("realm name is required")
+        clean_realm_slug = _slugify_with_fallback(realm_slug or clean_realm_name, "realm")
+        clean_email = director_email.strip().lower()
+        if not clean_email:
+            raise ValueError("director email is required")
+        if not director_password:
+            raise ValueError("director password is required")
+        clean_display_name = director_display_name.strip() or "Director"
+        clean_username = _slugify_with_fallback(
+            director_username or clean_display_name or clean_email.split("@", 1)[0],
+            "director",
+        )
+        with self.repo.transaction():
+            if self.repo.list_communities():
+                raise ValueError("first realm setup requires an empty community table")
+            community = self.repo.create_community(clean_realm_slug, clean_realm_name)
+            role = self.repo.create_role(
+                community.id,
+                "director",
+                "Director",
+                is_admin=True,
+            )
+            user = self.repo.create_user(clean_email, hash_password(director_password))
+            self.repo.create_membership(
+                community.id,
+                user.id,
+                role.id,
+                clean_username,
+                clean_display_name,
+            )
+            self.repo.ensure_sidebar_section_defaults(community.id)
+            self.repo.upsert_default_theme(
+                community.id,
+                slug=str(DEFAULT_THEME_TOKENS["slug"]),
+                name=str(DEFAULT_THEME_TOKENS["name"]),
+                tokens_json=theme_tokens_json(DEFAULT_THEME_TOKENS),
+            )
+        return FirstRealmSetupResult(
+            community=self.repo.get_community_by_slug(clean_realm_slug),
+            user=self.repo.get_user_by_email(clean_email),
+            membership=self.repo.get_membership_for_user(community.id, user.id),
+            role=self.repo.get_role_by_slug(community.id, "director"),
+        )
+
     def _default_identity_for_user(
         self,
         user_id: int,
@@ -609,6 +671,8 @@ class AppServices:
         programs: list[StudioNetworkProgramView] = []
         for community in self.repo.list_communities():
             materials = self.repo.list_materials(community.id)
+            if not _is_public_network_ready(self.repo, community, materials):
+                continue
             wanted_ads = self.repo.list_wanted_ads(community.id)
             community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
@@ -1211,6 +1275,7 @@ class AppServices:
         facet_groups = self.repo.list_facet_groups(viewer.community.id)
         default_theme = self.repo.get_default_theme(viewer.community.id)
         theme_editor = community_theme_editor(default_theme)
+        theme_warnings = theme_health_warnings(theme_editor)
         identity_accent_group = next(
             (
                 group
@@ -1219,10 +1284,21 @@ class AppServices:
             ),
             None,
         )
+        applications = self.applications_desk()
+        claims = _claims_directory(self.repo, viewer)
         return DirectorStudio(
             can_manage=can_manage_studio,
+            launch_readiness=_realm_launch_readiness(
+                viewer=viewer,
+                board_taxonomy=board_taxonomy,
+                materials=materials,
+                applications=applications,
+                claims=claims,
+                open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
+                theme_warnings=theme_warnings,
+            ),
             theme_editor=theme_editor,
-            theme_warnings=theme_health_warnings(theme_editor),
+            theme_warnings=theme_warnings,
             facet_groups=facet_groups,
             identity_accent_group=identity_accent_group,
             post_style_policy=_post_style_policy(viewer.community),
@@ -1252,8 +1328,8 @@ class AppServices:
             sublocation_boards=sublocation_boards,
             wanted_ads=wanted_ads,
             open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
-            applications=self.applications_desk(),
-            claims=_claims_directory(self.repo, viewer),
+            applications=applications,
+            claims=claims,
         )
 
     def update_default_theme(
@@ -2440,6 +2516,37 @@ def initialize_database(path: str | Path | None = None, *, seed_demo: bool = Fal
     return resolved_path
 
 
+def bootstrap_first_realm(
+    path: str | Path | None = None,
+    *,
+    realm_name: str,
+    realm_slug: str,
+    director_email: str,
+    director_password: str,
+    director_username: str,
+    director_display_name: str,
+) -> FirstRealmSetupResult:
+    database_path = _resolve_database_path(path)
+    if database_path == ":memory:":
+        raise ValueError("first realm setup requires a filesystem database path")
+    resolved_path = Path(database_path)
+    resolved_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = connect(resolved_path)
+    try:
+        create_schema(connection)
+        services = AppServices(ForumRepository(connection), None)
+        return services.create_first_realm(
+            realm_name=realm_name,
+            realm_slug=realm_slug,
+            director_email=director_email,
+            director_password=director_password,
+            director_username=director_username,
+            director_display_name=director_display_name,
+        )
+    finally:
+        connection.close()
+
+
 def default_database_path() -> Path:
     configured = os.environ.get(DATABASE_PATH_ENV)
     if configured:
@@ -2614,6 +2721,109 @@ def _latest_thread(threads: list[Thread]) -> Thread | None:
     if not threads:
         return None
     return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
+
+
+def _realm_launch_readiness(
+    *,
+    viewer: ForumView,
+    board_taxonomy: list[BoardTaxonomyItem],
+    materials: list[MaterialSummary],
+    applications: ApplicationsDesk,
+    claims: ClaimsDirectory,
+    open_wanted_ads: list[WantedAdSummary],
+    theme_warnings: tuple[ThemeHealthWarning, ...],
+) -> RealmLaunchReadiness:
+    public_scene_hubs = [
+        item
+        for item in board_taxonomy
+        if item.board.board_kind in {"location", "community"} and not item.board.is_private
+    ]
+    premise_materials = [item for item in materials if item.material.material_type == "premise"]
+    application_materials = [
+        item for item in materials if item.material.material_type == "application"
+    ]
+    return RealmLaunchReadiness(
+        items=[
+            RealmLaunchChecklistItem(
+                label="Realm identity",
+                summary=(
+                    f"{viewer.community.name} has a community-local director "
+                    f"membership for {viewer.membership.display_name}."
+                ),
+                href="/studio#identity-appearance",
+                cta="Review identity",
+                is_complete=(
+                    bool(viewer.community.name.strip())
+                    and bool(viewer.community.slug.strip())
+                    and viewer.membership.community_id == viewer.community.id
+                    and viewer.role.community_id == viewer.community.id
+                ),
+            ),
+            RealmLaunchChecklistItem(
+                label="Scene hubs",
+                summary="At least one public place or community room exists for scenes.",
+                href="/studio#world-structure",
+                cta="Review scene hubs",
+                is_complete=bool(public_scene_hubs),
+            ),
+            RealmLaunchChecklistItem(
+                label="Director materials",
+                summary="Premise and guidebook material give writers the board frame.",
+                href="/studio#continuity-events",
+                cta="Review materials",
+                is_complete=bool(premise_materials),
+            ),
+            RealmLaunchChecklistItem(
+                label="Intake and claims",
+                summary="Application guidance and claim tables are visible to directors.",
+                href="/studio/intake",
+                cta="Review intake",
+                is_complete=bool(application_materials)
+                and (bool(claims.groups) or bool(applications.application_materials)),
+            ),
+            RealmLaunchChecklistItem(
+                label="Wanted hooks",
+                summary="Open hooks can give incoming writers a first plotting lane.",
+                href="/wanted",
+                cta="Review wanted",
+                is_complete=bool(open_wanted_ads),
+                is_required=False,
+            ),
+            RealmLaunchChecklistItem(
+                label="Appearance",
+                summary="Theme tokens are valid and ready for the realm shell.",
+                href="/studio#appearance-theme",
+                cta="Review appearance",
+                is_complete=not theme_warnings,
+            ),
+            RealmLaunchChecklistItem(
+                label="Launch checklist",
+                summary="Public preview can open after required setup lanes are complete.",
+                href="/studio/launch",
+                cta="Open checklist",
+                is_complete=bool(public_scene_hubs)
+                and bool(premise_materials)
+                and bool(application_materials)
+                and viewer.membership.community_id == viewer.community.id,
+            ),
+        ]
+    )
+
+
+def _is_public_network_ready(
+    repo: ForumRepository,
+    community: Community,
+    materials: list[Material],
+) -> bool:
+    has_public_premise = any(
+        material.material_type == "premise" and material.status == "published"
+        for material in materials
+    )
+    has_public_scene_hub = any(
+        board.board_kind in {"location", "community"} and not board.is_private
+        for board in repo.list_boards(community.id)
+    )
+    return has_public_premise and has_public_scene_hub
 
 
 def _post_style_policy(community: Community) -> PostStylePolicy:

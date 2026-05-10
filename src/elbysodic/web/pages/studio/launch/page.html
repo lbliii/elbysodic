@@ -1,0 +1,87 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Realm Launch") %}
+  Director setup for opening {{ viewer.community.name }}.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-director-hero" aria-labelledby="launch-heading">
+    <div>
+      <p class="elbysodic-section-kicker">Backstage setup</p>
+      <h1 id="launch-heading">Open the realm with the writing surface intact.</h1>
+      <p>
+        Scene hubs, director materials, intake, claims, appearance, and wanted hooks should be legible before writers arrive.
+      </p>
+    </div>
+    <aside class="elbysodic-director-hero__signals" aria-label="Launch readiness">
+      <div class="elbysodic-director-signal">
+        <span>Ready lanes</span>
+        <strong>{{ launch.completed_count }}</strong>
+      </div>
+      <div class="elbysodic-director-signal">
+        <span>Required left</span>
+        <strong>{{ launch.missing_required_count }}</strong>
+      </div>
+      <div class="elbysodic-director-signal">
+        <span>Status</span>
+        <strong>{{ "Ready" if launch.is_ready else "Backstage" }}</strong>
+      </div>
+    </aside>
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-panel" aria-labelledby="launch-checklist-heading">
+    <div class="elbysodic-director-lane__header">
+      <div>
+        <p class="elbysodic-section-kicker">Launch checklist</p>
+        <h2 id="launch-checklist-heading">{{ launch.status_label }}</h2>
+      </div>
+      {{ badge(launch.completed_required_count ~ "/" ~ launch.required_count ~ " required", variant="success" if launch.is_ready else "warning") }}
+    </div>
+    <ul class="elbysodic-operations-list">
+      {% for item in launch.items %}
+      <li>
+        <div>
+          <strong>{{ item.label }}</strong>
+          <span>{{ item.summary }}</span>
+        </div>
+        <div class="elbysodic-network-card__actions">
+          {{ badge(item.status_label, variant=item.status_variant) }}
+          <a class="chirpui-btn chirpui-btn--secondary" href="{{ item.href }}">{{ item.cta }}</a>
+        </div>
+      </li>
+      {% end %}
+    </ul>
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-panel" aria-labelledby="launch-boundary-heading">
+    <p class="elbysodic-section-kicker">Opening boundary</p>
+    <h2 id="launch-boundary-heading">Invite-only before public self-serve.</h2>
+    <p class="elbysodic-copy-section">
+      This room tracks whether a director has shaped the realm enough for invite-only opening. Public self-serve creator onboarding, billing, custom domains, and Blueprint Apply stay gated behind their own contracts.
+    </p>
+    <div class="elbysodic-network-card__actions">
+      <a class="chirpui-btn chirpui-btn--primary" href="/studio">Open Studio</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake#program-blueprint-preview">Preview Program Blueprint</a>
+    </div>
+  </section>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}
