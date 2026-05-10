@@ -524,8 +524,6 @@ class AppServices:
         director_username: str,
         director_display_name: str,
     ) -> FirstRealmSetupResult:
-        if self.repo.list_communities():
-            raise ValueError("first realm setup requires an empty community table")
         clean_realm_name = realm_name.strip()
         if not clean_realm_name:
             raise ValueError("realm name is required")
@@ -541,6 +539,8 @@ class AppServices:
             "director",
         )
         with self.repo.transaction():
+            if self.repo.list_communities():
+                raise ValueError("first realm setup requires an empty community table")
             community = self.repo.create_community(clean_realm_slug, clean_realm_name)
             role = self.repo.create_role(
                 community.id,
