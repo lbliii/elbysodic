@@ -194,14 +194,12 @@ def _director_operations(
             kicker="Launch",
             title="Community builder checklist",
             summary="Director-owned surfaces a real program needs before writers arrive.",
-            count=6,
-            href="/studio",
-            cta="Open Studio",
-            variant="attention",
-            items=(
-                "Boards and world materials carry the community premise.",
-                "Applications, claims, and wanted hooks have review paths.",
-                "Plotting handoffs and notifications move writers into scenes.",
+            count=studio.launch_readiness.missing_required_count,
+            href="/studio/launch",
+            cta="Open launch room",
+            variant="success" if studio.launch_readiness.is_ready else "attention",
+            items=tuple(
+                f"{item.label} - {item.status_label}" for item in studio.launch_readiness.items[:4]
             ),
         ),
     ]

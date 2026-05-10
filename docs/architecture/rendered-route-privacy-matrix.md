@@ -31,7 +31,7 @@ Use these viewer modes when a route can expose scoped data:
 | `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. | partial |
 | `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants, backstage stage grouping. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. | partial; notification leakage and wanted stage grouping covered |
 | `/notifications` | Membership-specific inbox and unread counts, wanted-interest notes, plotting-room targets. | Own visible notifications only; forged inaccessible wanted/room targets are hidden. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. | partial; forged wanted/room target regressions covered |
-| `/studio`, `/studio/*` | Draft materials, private boards, production health, edit forms. | Read-only preview or forbidden controls absent. | Same as capability. | Capability-scoped controls visible. | No staff power leakage across communities. | partial |
+| `/studio`, `/studio/*` | Draft materials, private boards, production health, launch checklist, edit forms. | Read-only preview or forbidden controls absent. | Same as capability. | Capability-scoped controls and setup signals visible. | No staff power leakage across communities. | partial; launch room route covered |
 | `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. | partial |
 | `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. | covered for inactive identity regressions |
 | `/network`, `/network?q=...` | Public catalog cards, signed-in continuation, staff/member counts. | Safe public or own membership data only. | Own continuation lanes only. | Staff signals only where policy allows. | No private/staff data from other realms. | missing production public-catalog proof |
@@ -69,6 +69,8 @@ control appears or does not appear than to snapshot large HTML sections.
   or casting-capable staff.
 - Studio operations renders as a read-only console for ordinary members without
   exposing submitted application names or review queue counts.
+- Studio launch room renders the realm opening checklist from existing
+  community-scoped setup state.
 - Wanted detail hides private interest notes from unrelated ordinary members
   while showing hook creators and casting staff the backstage controls needed
   to start or open plotting rooms.

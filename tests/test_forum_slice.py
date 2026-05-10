@@ -1664,13 +1664,16 @@ def test_director_studio_surfaces_community_production_work() -> None:
         async with TestClient(app) as client:
             studio = await client.get("/studio")
             operations = await client.get("/studio/operations")
+            launch = await client.get("/studio/launch")
 
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
             assert "Studio rooms" in studio.text
             assert 'href="/studio/operations"' in studio.text
+            assert 'href="/studio/launch"' in studio.text
             assert "Daily director console" in studio.text
+            assert "Realm opening checklist" in studio.text
             assert 'href="#world-structure"' in studio.text
             assert 'href="#navigation"' in studio.text
             assert 'href="#identity-appearance"' in studio.text
@@ -1727,18 +1730,30 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Dry-run intake" in operations.text
             assert "Release smoke" in operations.text
             assert "Community builder checklist" in operations.text
-            assert "Boards and world materials carry the community premise." in operations.text
-            assert "Applications, claims, and wanted hooks have review paths." in operations.text
-            assert (
-                "Plotting handoffs and notifications move writers into scenes." in operations.text
-            )
+            assert "Realm identity - Ready" in operations.text
+            assert "Scene hubs - Ready" in operations.text
+            assert "Director materials - Ready" in operations.text
+            assert "Intake and claims - Ready" in operations.text
             assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
             assert 'href="/network"' in operations.text
+            assert 'href="/studio/launch"' in operations.text
             assert "Application Triage" in operations.text
             assert 'href="/applications"' in operations.text
             assert 'href="/casting"' in operations.text
             assert 'href="/notifications"' in operations.text
+            assert launch.status == 200
+            assert "Realm Launch" in launch.text
+            assert "Open the realm with the writing surface intact." in launch.text
+            assert "Launch checklist" in launch.text
+            assert "Realm identity" in launch.text
+            assert "Scene hubs" in launch.text
+            assert "Director materials" in launch.text
+            assert "Intake and claims" in launch.text
+            assert "Wanted hooks" in launch.text
+            assert "Appearance" in launch.text
+            assert "Invite-only before public self-serve." in launch.text
+            assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
 
     asyncio.run(run())
 
