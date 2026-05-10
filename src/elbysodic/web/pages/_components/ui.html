@@ -74,13 +74,28 @@
 {% end %}
 
 {% def studio_facts(material) %}
-{% call description_list(variant="horizontal", compact=true, divided=true, term_width="7rem", cls="elbysodic-studio-facts") %}
-  {{ description_item("Status", material.material.status.title()) }}
-  {{ description_item("Featured", material.material.is_featured, type="bool") }}
-  {{ description_item("Scenes", material.related_scenes | length, type="number") }}
-  {{ description_item("Wanted", material.related_wanted_ads | length, type="number") }}
-  {{ description_item("Locations", material.related_locations | length, type="number") }}
-{% end %}
+<dl class="elbysodic-studio-facts">
+  <div class="elbysodic-studio-facts__row">
+    <dt>Status</dt>
+    <dd>{{ material.material.status.title() }}</dd>
+  </div>
+  <div class="elbysodic-studio-facts__row">
+    <dt>Featured</dt>
+    <dd><span class="elbysodic-studio-facts__pill">{{ "Yes" if material.material.is_featured else "No" }}</span></dd>
+  </div>
+  <div class="elbysodic-studio-facts__row">
+    <dt>Scenes</dt>
+    <dd>{{ material.related_scenes | length }}</dd>
+  </div>
+  <div class="elbysodic-studio-facts__row">
+    <dt>Wanted</dt>
+    <dd>{{ material.related_wanted_ads | length }}</dd>
+  </div>
+  <div class="elbysodic-studio-facts__row">
+    <dt>Locations</dt>
+    <dd>{{ material.related_locations | length }}</dd>
+  </div>
+</dl>
 {% end %}
 
 {% def continuity_timeline(beats) %}
