@@ -386,8 +386,10 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert "X-Men Apocalypse" in xmen_home.text
         assert network.status == 200
         assert "HP Universe" in network.text
+        assert "playing as Rogue" in network.text
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
+        assert "Reply as Rogue" in thread.text
         assert wanted.status == 200
         assert "Wanted" in wanted.text
         assert applications.status == 200
@@ -402,6 +404,7 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert dict(switch.headers)["location"] == "/c/hp-universe"
         assert hp_home.status == 200
         assert "Director in HP Universe" in hp_home.text
+        assert "playing as Rowan Ash" in hp_home.text
         assert jurassic_board.status == 200
         assert "Paddock Twelve" in jurassic_board.text
         assert logout.status == 302
