@@ -10,6 +10,28 @@ realm builder, invitation handoff, launch checklist, and docs/test collateral;
 archive when those PRs land or this plan is superseded by a more specific
 hosted onboarding roadmap.
 
+## 2026-05-10 Implementation Update
+
+Completed locally:
+
+- Added the first-realm boundary to multi-tenancy, information hierarchy, and
+  README guidance.
+- Added a read-only Studio launch room at `/studio/launch`.
+- Added `RealmLaunchReadiness` and checklist items to the Director Studio read
+  model.
+- Connected Studio Operations and the Studio room grid to the launch checklist.
+- Added rendered coverage for the seeded director Studio path and an empty
+  configured realm that still has required lanes backstage.
+
+Still open:
+
+- The transition from no realm to empty configured realm is not implemented.
+- Launch status is read-only derived state; there is no persisted
+  backstage/invite-only/public-preview field yet.
+- Guided Realm Builder writes, invitation lifecycle, and first-face handoff are
+  still future slices.
+- Program Blueprint Apply remains gated.
+
 ## Purpose
 
 Elbysodic needs a creator onboarding path for a potential community director:
