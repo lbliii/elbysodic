@@ -13,7 +13,7 @@
 {% call stack(gap="lg") %}
   <a class="chirpui-link" href="/boards/{{ board.slug }}">← {{ board.name }}</a>
 
-  {% call section_header("Start thread") %}
+  {% call section_header("Start scene") %}
   {{ badge(board.name, variant="muted") }}
   {% end %}
 
@@ -23,7 +23,7 @@
     <div>
       <h2>Create a character first</h2>
       <p class="elbysodic-copy-helper">
-        {{ viewer.community.name }} needs a roster face before you can start a thread.
+        {{ viewer.community.name }} needs a roster face before you can start a scene.
       </p>
     </div>
     <div class="chirpui-cluster chirpui-cluster--end">
@@ -236,7 +236,7 @@
     </section>
     <div class="chirpui-cluster chirpui-cluster--end">
       <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Start thread</button>
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Start scene</button>
     </div>
   </form>
   {% end %}
