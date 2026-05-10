@@ -721,6 +721,47 @@ CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_watches_membership ON thread_watches(community_id, membership_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_membership ON notifications(community_id, membership_id, read_at, created_at);
+
+CREATE TRIGGER IF NOT EXISTS trg_user_sessions_selected_identity_insert
+BEFORE INSERT ON user_sessions
+WHEN NEW.selected_membership_id IS NOT NULL
+BEGIN
+    SELECT
+        CASE
+            WHEN NEW.selected_community_id IS NULL THEN
+                RAISE(ABORT, 'selected session identity requires a community')
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM community_memberships AS membership
+                WHERE membership.id = NEW.selected_membership_id
+                    AND membership.community_id = NEW.selected_community_id
+                    AND membership.user_id = NEW.user_id
+                    AND membership.is_active = 1
+            ) THEN
+                RAISE(ABORT, 'selected session identity must match user and community')
+        END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_user_sessions_selected_identity_update
+BEFORE UPDATE OF user_id, selected_community_id, selected_membership_id
+ON user_sessions
+WHEN NEW.selected_membership_id IS NOT NULL
+BEGIN
+    SELECT
+        CASE
+            WHEN NEW.selected_community_id IS NULL THEN
+                RAISE(ABORT, 'selected session identity requires a community')
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM community_memberships AS membership
+                WHERE membership.id = NEW.selected_membership_id
+                    AND membership.community_id = NEW.selected_community_id
+                    AND membership.user_id = NEW.user_id
+                    AND membership.is_active = 1
+            ) THEN
+                RAISE(ABORT, 'selected session identity must match user and community')
+        END;
+END;
 """
 
 

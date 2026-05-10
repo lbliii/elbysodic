@@ -61,6 +61,73 @@ def test_schema_migration_versions_are_contiguous_after_baseline() -> None:
     assert len({migration.name for migration in MIGRATIONS}) == len(MIGRATIONS)
 
 
+def test_schema_enforces_selected_session_identity_pair(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-session-pair", "Hosted Session Pair")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("session-pair@example.com", "hash")
+    other_user = repo.create_user("other-session-pair@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "session-pair",
+        "Session Pair",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "session-pair",
+        "Session Pair",
+    )
+    other_membership = repo.create_membership(
+        hosted.id,
+        other_user.id,
+        hosted_role.id,
+        "other-session-pair",
+        "Other Session Pair",
+    )
+    session = repo.create_user_session(
+        user.id,
+        "session-pair-token",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE user_sessions
+        SET selected_community_id = ?,
+            selected_membership_id = ?
+        WHERE id = ?
+        """,
+        (hosted.id, hosted_membership.id, session.id),
+    )
+
+    with pytest.raises(sqlite3.IntegrityError, match="selected session identity"):
+        repo.connection.execute(
+            """
+            UPDATE user_sessions
+            SET selected_community_id = ?,
+                selected_membership_id = ?
+            WHERE id = ?
+            """,
+            (hosted.id, default_membership.id, session.id),
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="selected session identity"):
+        repo.connection.execute(
+            """
+            UPDATE user_sessions
+            SET selected_community_id = ?,
+                selected_membership_id = ?
+            WHERE id = ?
+            """,
+            (hosted.id, other_membership.id, session.id),
+        )
+
+
 def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     connection = connect()
     create_schema(connection)
@@ -328,6 +395,9 @@ def test_session_identity_integrity_issues_detect_cross_community_selection(
         expires_at="2026-06-01T00:00:00+00:00",
     )
 
+    # Diagnostics still need to identify legacy/corrupt rows that predate trigger enforcement.
+    repo.connection.execute("DROP TRIGGER trg_user_sessions_selected_identity_update")
+    repo.connection.execute("DROP TRIGGER trg_user_sessions_selected_identity_insert")
     repo.connection.execute(
         """
         UPDATE user_sessions

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 12
+CURRENT_SCHEMA_VERSION = 13
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -452,6 +452,73 @@ def _add_post_public_numbers(connection: sqlite3.Connection) -> None:
     )
 
 
+def _enforce_user_session_identity_selection(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        UPDATE user_sessions
+        SET selected_community_id = NULL,
+            selected_membership_id = NULL
+        WHERE selected_membership_id IS NOT NULL
+            AND NOT EXISTS (
+                SELECT 1
+                FROM community_memberships AS membership
+                WHERE membership.id = user_sessions.selected_membership_id
+                    AND membership.community_id = user_sessions.selected_community_id
+                    AND membership.user_id = user_sessions.user_id
+                    AND membership.is_active = 1
+            )
+        """
+    )
+    _create_user_session_identity_triggers(connection)
+
+
+def _create_user_session_identity_triggers(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        CREATE TRIGGER IF NOT EXISTS trg_user_sessions_selected_identity_insert
+        BEFORE INSERT ON user_sessions
+        WHEN NEW.selected_membership_id IS NOT NULL
+        BEGIN
+            SELECT
+                CASE
+                    WHEN NEW.selected_community_id IS NULL THEN
+                        RAISE(ABORT, 'selected session identity requires a community')
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM community_memberships AS membership
+                        WHERE membership.id = NEW.selected_membership_id
+                            AND membership.community_id = NEW.selected_community_id
+                            AND membership.user_id = NEW.user_id
+                            AND membership.is_active = 1
+                    ) THEN
+                        RAISE(ABORT, 'selected session identity must match user and community')
+                END;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS trg_user_sessions_selected_identity_update
+        BEFORE UPDATE OF user_id, selected_community_id, selected_membership_id
+        ON user_sessions
+        WHEN NEW.selected_membership_id IS NOT NULL
+        BEGIN
+            SELECT
+                CASE
+                    WHEN NEW.selected_community_id IS NULL THEN
+                        RAISE(ABORT, 'selected session identity requires a community')
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM community_memberships AS membership
+                        WHERE membership.id = NEW.selected_membership_id
+                            AND membership.community_id = NEW.selected_community_id
+                            AND membership.user_id = NEW.user_id
+                            AND membership.is_active = 1
+                    ) THEN
+                        RAISE(ABORT, 'selected session identity must match user and community')
+                END;
+        END;
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -464,6 +531,11 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(10, "board-media-presentation", _add_board_media_presentation),
     Migration(11, "user-session-identity-selection", _add_user_session_identity_selection),
     Migration(12, "post-public-numbers", _add_post_public_numbers),
+    Migration(
+        13,
+        "enforce-user-session-identity-selection",
+        _enforce_user_session_identity_selection,
+    ),
 )
 
 
