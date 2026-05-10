@@ -41,6 +41,58 @@ STATIC_ROUTES = (
     Route("jp-isla-nublar", "/c/jurassic-park-universe/boards/isla-nublar"),
 )
 
+DEEP_SEED_ROUTES = (
+    Route("home", "/"),
+    Route("network", "/network"),
+    Route("rl-world", "/c/rl-nyc/world"),
+    Route("rl-locations", "/c/rl-nyc/locations"),
+    Route("rl-my-threads", "/c/rl-nyc/my/threads"),
+    Route("rl-wanted", "/c/rl-nyc/wanted"),
+    Route("rl-applications", "/c/rl-nyc/applications"),
+    Route("rl-applications-new", "/c/rl-nyc/applications/new"),
+    Route("rl-claims", "/c/rl-nyc/claims"),
+    Route("rl-casting", "/c/rl-nyc/casting"),
+    Route("rl-characters", "/c/rl-nyc/characters"),
+    Route("rl-community", "/c/rl-nyc/community"),
+    Route("rl-desk", "/c/rl-nyc/desk"),
+    Route("rl-discover", "/c/rl-nyc/discover"),
+    Route("rl-plotting", "/c/rl-nyc/plotting"),
+    Route("rl-studio", "/c/rl-nyc/studio"),
+    Route("rl-studio-intake", "/c/rl-nyc/studio/intake"),
+    Route("rl-studio-operations", "/c/rl-nyc/studio/operations"),
+    Route("rl-shift-work", "/c/rl-nyc/boards/shift-work"),
+    Route("rl-shift-work-composer", "/c/rl-nyc/boards/shift-work/threads/new"),
+    Route("jp-world", "/c/jurassic-park-universe/world"),
+    Route("jp-world-premise", "/c/jurassic-park-universe/world/premise"),
+    Route("jp-world-park-status", "/c/jurassic-park-universe/world/park-status"),
+    Route("jp-locations", "/c/jurassic-park-universe/locations"),
+    Route("jp-isla-nublar", "/c/jurassic-park-universe/boards/isla-nublar"),
+    Route("jp-control-room", "/c/jurassic-park-universe/boards/control-room"),
+    Route("jp-control-room-composer", "/c/jurassic-park-universe/boards/control-room/threads/new"),
+    Route("jp-my-threads", "/c/jurassic-park-universe/my/threads"),
+    Route("jp-wanted", "/c/jurassic-park-universe/wanted"),
+    Route("jp-studio", "/c/jurassic-park-universe/studio"),
+)
+
+DEEP_LINK_PATTERNS = (
+    "/applications",
+    "/boards/",
+    "/casting",
+    "/characters/",
+    "/claims",
+    "/community",
+    "/desk",
+    "/discover",
+    "/locations",
+    "/members/",
+    "/my/threads",
+    "/plotting",
+    "/studio",
+    "/threads/",
+    "/wanted/",
+    "/world/",
+)
+
 
 def _slug(value: str) -> str:
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", value.strip("/").lower()).strip("-")
@@ -86,6 +138,39 @@ async def _discover_routes(page: Page, base_url: str) -> list[Route]:
     return routes
 
 
+async def _discover_deep_routes(page: Page, base_url: str) -> list[Route]:
+    discovered: list[Route] = []
+    seen: set[str] = set()
+
+    async def add(label: str, path: str) -> None:
+        if path in seen or path.startswith(("/logout", "/identity", "/mentionables")):
+            return
+        seen.add(path)
+        discovered.append(Route(label, path))
+
+    for route in DEEP_SEED_ROUTES:
+        await add(route.label, route.path)
+        response = await page.goto(urljoin(base_url, route.path), wait_until="domcontentloaded")
+        await page.wait_for_timeout(200)
+        if response and response.status >= 400:
+            continue
+
+        hrefs = await page.locator("a[href]").evaluate_all(
+            """links => links
+              .map(link => link.getAttribute('href'))
+              .filter(Boolean)
+            """
+        )
+        for href in hrefs:
+            path = urlparse(href).path
+            if not path:
+                continue
+            if any(pattern in path for pattern in DEEP_LINK_PATTERNS):
+                await add(f"deep-{len(discovered) + 1:02d}", path)
+
+    return discovered
+
+
 async def _check_page(page: Page) -> list[str]:
     return await page.evaluate(
         """() => {
@@ -95,7 +180,7 @@ async def _check_page(page: Page) -> list[str]:
             issues.push(`document horizontal overflow: ${document.documentElement.scrollWidth}px > ${width}px`);
           }
 
-          const controlSelector = 'a.chirpui-btn, button, .chirpui-chip, .elbysodic-filter-link';
+          const controlSelector = 'a.chirpui-btn, button, .chirpui-chip, .elbysodic-filter-link, .chirpui-sidebar__link';
           for (const el of Array.from(document.querySelectorAll(controlSelector))) {
             const rect = el.getBoundingClientRect();
             if (rect.width > 0 && el.scrollWidth > el.clientWidth + 2) {
@@ -107,7 +192,10 @@ async def _check_page(page: Page) -> list[str]:
           const mediaSelector = [
             '.elbysodic-board-stage',
             '.elbysodic-board-poster',
+            '.elbysodic-current-event-card',
+            '.elbysodic-material-hero',
             '.elbysodic-thread-card__poster',
+            '.elbysodic-wanted-card',
             '.elbysodic-network-card__poster',
             '.elbysodic-profile-hero__poster',
             '.elbysodic-post__poster-media'
@@ -143,6 +231,14 @@ async def _check_page(page: Page) -> list[str]:
             }
           }
 
+          for (const el of Array.from(document.querySelectorAll('h1, h2, h3, .elbysodic-copy-lead, .elbysodic-prose-body'))) {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 0 && el.scrollWidth > el.clientWidth + 2) {
+              issues.push(`text overflow: ${el.tagName.toLowerCase()}.${el.className}`);
+              break;
+            }
+          }
+
           return issues;
         }"""
     )
@@ -160,9 +256,10 @@ async def _hide_debug_overlays(page: Page) -> None:
     )
 
 
-async def _run(base_url: str, artifact_dir: Path) -> int:
+async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
     artifact_dir.mkdir(parents=True, exist_ok=True)
     failures: list[str] = []
+    skipped: list[str] = []
     console_errors: list[str] = []
 
     async with async_playwright() as playwright:
@@ -174,7 +271,10 @@ async def _run(base_url: str, artifact_dir: Path) -> int:
                 console_errors.append(message.text) if message.type == "error" else None
             ),
         )
-        routes = [*STATIC_ROUTES, *(await _discover_routes(page, base_url))]
+        if profile == "deep":
+            routes = await _discover_deep_routes(page, base_url)
+        else:
+            routes = [*STATIC_ROUTES, *(await _discover_routes(page, base_url))]
         await page.close()
 
         seen: set[str] = set()
@@ -201,6 +301,9 @@ async def _run(base_url: str, artifact_dir: Path) -> int:
                 response = await page.goto(url, wait_until="domcontentloaded")
                 await page.wait_for_timeout(250)
                 status = response.status if response else 0
+                if status in (401, 403):
+                    skipped.append(f"{viewport.name} {route.label}: HTTP {status} at {route.path}")
+                    continue
                 if status >= 400 or status == 0:
                     failures.append(f"{viewport.name} {route.label}: HTTP {status} at {route.path}")
                     continue
@@ -217,6 +320,10 @@ async def _run(base_url: str, artifact_dir: Path) -> int:
         await browser.close()
 
     print(f"Browser QA screenshots: {artifact_dir}")
+    if skipped:
+        print("Skipped protected routes:")
+        for message in skipped[:12]:
+            print(f"- {message}")
     if console_errors:
         print("Console errors:")
         for message in console_errors[:12]:
@@ -234,8 +341,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run Elbysodic browser visual smoke QA.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8003")
     parser.add_argument("--artifact-dir", default="tests/browser/artifacts")
+    parser.add_argument("--profile", choices=("smoke", "deep"), default="smoke")
     args = parser.parse_args()
-    return asyncio.run(_run(args.base_url, Path(args.artifact_dir)))
+    return asyncio.run(_run(args.base_url, Path(args.artifact_dir), args.profile))
 
 
 if __name__ == "__main__":

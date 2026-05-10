@@ -9159,8 +9159,15 @@ a.elbysodic-metric:focus-visible {
     .elbysodic-board-taxonomy-row,
     .elbysodic-board-editor-layout,
     .elbysodic-navigation-composer,
+    .elbysodic-sidebar-section-config,
+    .elbysodic-sidebar-section-configs,
     .elbysodic-navigation-preview__list li {
         grid-template-columns: 1fr;
+    }
+
+    .elbysodic-sidebar-section-config .chirpui-btn {
+        justify-self: start;
+        min-inline-size: 5rem;
     }
 
     .elbysodic-board-hero {

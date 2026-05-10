@@ -7,6 +7,7 @@ running local app on port 8003, rendered-template inspection, and browser
 evidence from the current review. Playwright browser smoke QA is now available
 through `uv run poe browser-qa` or
 `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8003`.
+The expanded route pass is available through `uv run poe browser-qa-deep`.
 
 ## Routes Reviewed
 
@@ -23,6 +24,9 @@ through `uv run poe browser-qa` or
 - mobile CSS breakpoints for board, thread, composer, wanted, character, and
   network media surfaces
 - Playwright desktop/mobile screenshots in `tests/browser/artifacts/`
+- Expanded desktop/mobile crawl across seeded community hubs, board pages,
+  thread pages, composers, wanted hooks, application pages, claims, Studio,
+  character/member pages, plotting, discovery, and world material routes.
 
 ## Accepted Issues
 
@@ -45,6 +49,8 @@ through `uv run poe browser-qa` or
 - Added `scripts/browser_qa.py` to capture representative desktop/mobile
   screenshots and fail on page errors, horizontal overflow, broken media, and
   unusual shell height.
+- Added a deep profile that crawls seeded route hubs and skips permission-only
+  protected routes.
 
 ## Deferred
 
