@@ -59,7 +59,7 @@
 
 {% def plot_interest_card(item) %}
 {% call surface(variant="elevated") %}
-<article class="elbysodic-plotting-interest-card">
+<article class="elbysodic-plotting-interest-card elbysodic-plotting-interest-card--{{ item.interest.interest.status }}">
   <div class="elbysodic-plotting-interest-card__body">
     <p class="elbysodic-wanted-card__type">Plot hook</p>
     <h3>

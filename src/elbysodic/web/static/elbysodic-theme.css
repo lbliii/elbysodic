@@ -8298,39 +8298,50 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-wanted-card {
+    --elbysodic-wanted-accent: var(--elbysodic-identity-dye);
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-identity-dye) 8%, transparent), transparent 42%),
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 8%, transparent), transparent 42%),
         var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-identity-dye) 22%, var(--chirpui-border-subtle));
+    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 22%, var(--chirpui-border-subtle));
+    gap: 0.7rem;
     height: 100%;
+    padding-block-start: 0.7rem;
     position: relative;
 }
 
 .elbysodic-wanted-card::before {
-    background: linear-gradient(180deg, var(--elbysodic-identity-dye), var(--elbysodic-atmosphere-dye));
+    background:
+        linear-gradient(
+            90deg,
+            var(--elbysodic-wanted-accent),
+            color-mix(in srgb, var(--elbysodic-wanted-accent) 38%, transparent) 58%,
+            transparent
+        );
     border-radius: 999px;
     content: "";
-    inset: 0 auto 0 0;
-    opacity: 0.62;
+    height: 0.18rem;
+    inset: 0 0 auto;
+    opacity: 0.78;
     pointer-events: none;
     position: absolute;
-    width: 0.18rem;
+}
+
+.elbysodic-wanted-card--reserved,
+.elbysodic-wanted-card-shell--reserved {
+    --elbysodic-wanted-accent: var(--elbysodic-state-waiting);
 }
 
 .elbysodic-wanted-card--filled,
 .elbysodic-wanted-card--closed,
-.elbysodic-wanted-card--archived {
+.elbysodic-wanted-card--archived,
+.elbysodic-wanted-card-shell--filled,
+.elbysodic-wanted-card-shell--closed,
+.elbysodic-wanted-card-shell--archived {
+    --elbysodic-wanted-accent: var(--elbysodic-state-archived);
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-archived) 8%, transparent), transparent 42%),
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 8%, transparent), transparent 42%),
         var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-state-archived) 22%, var(--chirpui-border-subtle));
-}
-
-.elbysodic-wanted-card--filled::before,
-.elbysodic-wanted-card--closed::before,
-.elbysodic-wanted-card--archived::before {
-    background: linear-gradient(180deg, var(--elbysodic-state-archived), var(--elbysodic-state-private));
-    opacity: 0.52;
+    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 22%, var(--chirpui-border-subtle));
 }
 
 .elbysodic-plot-hook-card {
@@ -8343,11 +8354,11 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-wanted-card__type {
-    color: var(--chirpui-text-muted);
+    color: color-mix(in srgb, var(--elbysodic-wanted-accent, var(--chirpui-accent)) 72%, var(--chirpui-text-muted));
     font-size: var(--chirpui-font-sm);
-    font-weight: 700;
+    font-weight: 820;
     letter-spacing: 0;
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.35rem;
     text-transform: uppercase;
 }
 
@@ -8372,8 +8383,8 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-wanted-action__note {
-    background: color-mix(in srgb, var(--chirpui-success) 12%, var(--chirpui-bg-subtle));
-    border: 1px solid color-mix(in srgb, var(--chirpui-success) 38%, var(--chirpui-border));
+    background: color-mix(in srgb, var(--elbysodic-state-caught-up) 10%, var(--chirpui-bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--elbysodic-state-caught-up) 34%, var(--chirpui-border));
     border-radius: var(--chirpui-radius-md);
     color: var(--chirpui-text);
     margin: 0;
@@ -8394,7 +8405,9 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-casting-packet__panel {
-    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-identity-dye) 5%, transparent), transparent 58%),
+        var(--chirpui-bg-subtle);
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-md);
     display: grid;
@@ -8456,10 +8469,30 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-interest-card {
+    --elbysodic-interest-accent: var(--chirpui-accent);
     align-items: center;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-interest-accent) 7%, transparent), transparent 42%),
+        var(--chirpui-surface-elevated);
+    border-color: color-mix(in srgb, var(--elbysodic-interest-accent) 18%, var(--chirpui-border-subtle));
     display: grid;
     gap: 0.75rem;
     grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.elbysodic-interest-card--reserved,
+.elbysodic-plotting-interest-card--reserved {
+    --elbysodic-interest-accent: var(--elbysodic-state-waiting);
+}
+
+.elbysodic-interest-card--plotting,
+.elbysodic-plotting-interest-card--plotting {
+    --elbysodic-interest-accent: var(--elbysodic-atmosphere-dye);
+}
+
+.elbysodic-interest-card--threaded,
+.elbysodic-plotting-interest-card--threaded {
+    --elbysodic-interest-accent: var(--elbysodic-state-caught-up);
 }
 
 .elbysodic-interest-card__meta {
@@ -8534,7 +8567,12 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-plotting-room-card,
 .elbysodic-plotting-interest-card {
+    --elbysodic-interest-accent: var(--chirpui-accent);
     align-items: center;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-interest-accent) 7%, transparent), transparent 42%),
+        var(--chirpui-surface-elevated);
+    border-color: color-mix(in srgb, var(--elbysodic-interest-accent) 18%, var(--chirpui-border-subtle));
     display: grid;
     gap: 1rem;
     grid-template-columns: minmax(0, 1fr) auto;
