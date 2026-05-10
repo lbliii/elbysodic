@@ -237,6 +237,8 @@ from elbysodic.services.read_models import (
 from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
+from elbysodic.services.recovery import RecoveryKind, RecoveryView
+from elbysodic.services.recovery import recovery_view as _recovery_view
 from elbysodic.services.themes import (
     DEFAULT_THEME_TOKENS,
     ThemeHealthWarning,
@@ -470,6 +472,9 @@ class AppServices:
             token=token,
             result_path=result_path,
         )
+
+    def recovery_view(self, *, kind: RecoveryKind, slug: str) -> RecoveryView:
+        return _recovery_view(self.repo, self.viewer(), kind=kind, slug=slug)
 
     def switch_session_identity(
         self,

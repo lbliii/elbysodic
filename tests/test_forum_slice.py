@@ -1168,6 +1168,34 @@ def test_cross_realm_character_recovery_ignores_inactive_faces() -> None:
     asyncio.run(run())
 
 
+def test_cross_realm_character_recovery_hides_non_switchable_program_names() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hosted, _user_id, membership_id, _character_id = _add_hosted_membership(
+            services,
+            slug="private-program",
+            username="private-realm",
+        )
+        services.repo.create_character(
+            hosted.id,
+            membership_id,
+            "private-cross-face",
+            "Private Cross Face",
+        )
+
+        async with TestClient(app) as client:
+            response = await client.get("/characters/private-cross-face")
+
+        assert response.status == 200
+        assert "That face is not in X-Men Apocalypse." in response.text
+        assert "That face lives in Hosted Program." not in response.text
+        assert "private-program" not in response.text
+        assert "Switch to Hosted Program" not in response.text
+
+    asyncio.run(run())
+
+
 def test_cross_realm_material_url_renders_switchable_recovery() -> None:
     async def run() -> None:
         app = _app()
