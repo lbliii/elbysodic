@@ -77,6 +77,12 @@ request-access placeholder are visible, while account and membership creation
 remain director-provisioned until a full registration contract is explicitly
 designed.
 
+Creator onboarding is tracked as a director-led realm opening flow, not public
+self-serve registration. A production install starts with no realm or one empty
+configured realm, then Studio guides directors through realm identity, scene
+hubs, director materials, intake and claims, appearance, invitations, and a
+launch checklist before public preview.
+
 ## Architecture
 
 The core product primitives are documented in

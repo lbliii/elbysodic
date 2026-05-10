@@ -74,6 +74,29 @@ Elbysodic currently has three relevant modes:
 These modes share the same identity model. Users are global login accounts,
 memberships are community-local, and staff power belongs to membership roles.
 
+## First Realm Boundary
+
+The first production realm has two distinct pre-launch states:
+
+- No realm exists: the database has no configured community for the install.
+  Public `/` and `/network` render the platform launch state. Signed-out
+  visitors can log in or request access, but there is no community shell,
+  roster, scene hub, or director material to enter.
+- Empty configured realm: the install has a community, director role,
+  director membership, and minimum settings, but it has not passed the launch
+  checklist. Directors work from Studio to add scene hubs, director materials,
+  intake rules, appearance, wanted hooks, and invitations.
+
+The transition from no realm to empty configured realm is a privileged setup
+operation. It may be started by a production bootstrap command, a future
+first-realm CLI, or a director-only Studio launch room, but the operation must
+create community-local membership and role state explicitly. It must not grant
+global staff power or infer a community from an unscoped user.
+
+Public hosted community creation is separate future work. Until invitation,
+first-face onboarding, abuse posture, email delivery, and support boundaries
+are designed, the production path remains invite-style and director-led.
+
 ## Request Identity Boundary
 
 The web layer treats community and writer identity as request-scoped, even in
