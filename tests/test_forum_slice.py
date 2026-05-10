@@ -673,6 +673,54 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
     asyncio.run(run())
 
 
+def test_tenant_prefixed_board_handles_invalid_membership_role_as_identity_failure() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        small_town = services.repo.get_community_by_slug("rl-small-town")
+        membership = services.repo.get_membership_for_user(
+            small_town.id,
+            services.seed.user.id,
+        )
+        xmen_role = services.repo.get_role_by_slug(services.seed.community.id, "member")
+        services.repo.connection.execute(
+            """
+            UPDATE community_memberships
+            SET role_id = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (xmen_role.id, small_town.id, membership.id),
+        )
+        services.repo.connection.commit()
+        cookie = f"elbysodic_dev_identity={small_town.id}:{services.seed.user.id}:{membership.id}"
+
+        async with TestClient(app) as client:
+            full = await client.get(
+                "/c/rl-small-town/boards/town-hall?filter=mine",
+                headers={"Cookie": cookie},
+            )
+            fragment = await client.get(
+                "/c/rl-small-town/boards/town-hall?filter=mine",
+                headers={
+                    "Cookie": cookie,
+                    "HX-Request": "true",
+                    "HX-Boosted": "true",
+                    "HX-Target": "main",
+                },
+            )
+
+        assert full.status == 403
+        assert "That realm membership needs staff attention." in full.text
+        assert "Your identity did not change." in full.text
+        assert "Internal Server Error" not in full.text
+        assert "playing as" not in full.text
+        assert fragment.status == 403
+        assert 'data-status="403"' in fragment.text
+        assert "That realm membership needs staff attention." in fragment.text
+
+    asyncio.run(run())
+
+
 def test_dev_personas_are_gated_by_development_tools() -> None:
     async def run() -> None:
         disabled_app = create_app(

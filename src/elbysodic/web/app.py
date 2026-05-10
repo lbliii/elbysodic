@@ -21,6 +21,7 @@ from elbysodic.web.navigation import location_nav_tree_items
 from elbysodic.web.security import (
     PRODUCTION_CONTENT_SECURITY_POLICY,
     AutoCSRFFormsMiddleware,
+    IdentityFailureMiddleware,
     RequireLoginMiddleware,
     resolve_web_security_config,
 )
@@ -118,6 +119,7 @@ def create_app(
             )
         )
     app.add_middleware(RequireLoginMiddleware(security))
+    app.add_middleware(IdentityFailureMiddleware())
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))
     _copy_page_contracts(app)

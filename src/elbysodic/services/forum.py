@@ -266,6 +266,19 @@ HERO_OVERLAYS = frozenset({"none", "light", "medium", "heavy"})
 HERO_HEIGHTS = frozenset({"compact", "standard", "immersive"})
 
 
+def _load_viewer_role(
+    repo: ForumRepository,
+    community: Community,
+    membership: CommunityMembership,
+) -> Role:
+    try:
+        return repo.get_role(community.id, membership.role_id)
+    except LookupError as exc:
+        raise PermissionError(
+            "realm membership role is not valid for this community"
+        ) from exc
+
+
 class AppServices:
     """Small application service facade for the dev forum."""
 
@@ -284,6 +297,7 @@ class AppServices:
             _default_request_identity(seed),
         )
         self._identity_context = identity_context
+        self._viewer: ForumView | None = None
 
     @property
     def seed(self) -> DemoSeed:
@@ -316,21 +330,26 @@ class AppServices:
         )
 
     def viewer(self) -> ForumView:
+        if self._identity_context is not None and self._viewer is not None:
+            return self._viewer
         identity = self._identity_context or self._identity_resolver.resolve()
         community = self.repo.get_community(identity.community_id)
-        membership = self.repo.get_membership(community.id, identity.membership_id)
+        try:
+            membership = self.repo.get_membership(community.id, identity.membership_id)
+        except LookupError as exc:
+            raise PermissionError("realm membership is no longer available") from exc
         if membership.user_id != identity.user_id:
             raise PermissionError(
                 f"membership {membership.id} does not belong to user {identity.user_id}"
             )
         if not membership.is_active:
             raise PermissionError(f"membership {membership.id} is not active")
-        role = self.repo.get_role(community.id, membership.role_id)
+        role = _load_viewer_role(self.repo, community, membership)
         roster = self.repo.list_characters(community.id, membership.id)
         current_character = _resolve_current_character(self.repo, membership, roster)
         navigation_boards = _board_navigation(self.repo, community.id, membership, role)
         sidebar_sections = _sidebar_sections_by_key(self.repo, community.id)
-        return ForumView(
+        viewer = ForumView(
             community=community,
             membership=membership,
             role=role,
@@ -369,6 +388,9 @@ class AppServices:
             identity_options=self._identity_options(identity),
             program_theme=community_theme_view(self.repo.get_default_theme(community.id)),
         )
+        if self._identity_context is not None:
+            self._viewer = viewer
+        return viewer
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
         options: list[StudioIdentityOption] = []
@@ -376,7 +398,10 @@ class AppServices:
             if not membership.is_active:
                 continue
             community = self.repo.get_community(membership.community_id)
-            role = self.repo.get_role(community.id, membership.role_id)
+            try:
+                role = self.repo.get_role(community.id, membership.role_id)
+            except LookupError:
+                continue
             roster = self.repo.list_characters(community.id, membership.id)
             options.append(
                 StudioIdentityOption(
@@ -437,6 +462,7 @@ class AppServices:
             if not membership.is_active:
                 raise PermissionError(f"membership {membership.id} is not active")
             community = self.repo.get_community(membership.community_id)
+            _load_viewer_role(self.repo, community, membership)
             return RequestIdentityContext(
                 community_id=community.id,
                 community_slug=community.slug,

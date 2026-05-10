@@ -27,6 +27,8 @@ class AccessRepository(Protocol):
 
     def get_membership_for_user(self, community_id: int, user_id: int) -> CommunityMembership: ...
 
+    def get_role(self, community_id: int, role_id: int) -> object: ...
+
     def get_user(self, user_id: int) -> User: ...
 
     def get_user_session_by_token_hash(self, token_hash: str) -> UserSession: ...
@@ -82,10 +84,12 @@ class RequestIdentityResolver:
         )
         session_user = None if session is None else self._repo.get_user(session.user_id)
         user_id = header_user_id if header_user_id is not None else _user_id(session_user)
+        selected_membership_id = _selected_membership_id(session, community.id)
         membership_id = (
-            header_membership_id
-            if header_membership_id is not None
-            else _selected_membership_id(session, community.id)
+            header_membership_id if header_membership_id is not None else selected_membership_id
+        )
+        membership_from_session = (
+            header_membership_id is None and selected_membership_id is not None
         )
         user_from_cookie = False
         membership_from_cookie = False
@@ -120,13 +124,23 @@ class RequestIdentityResolver:
                     )
 
             if membership is not None:
-                self._repo.get_user(membership.user_id)
-                return RequestIdentityContext(
-                    community_id=community.id,
-                    community_slug=community.slug,
-                    user_id=membership.user_id,
-                    membership_id=membership.id,
-                )
+                try:
+                    self._repo.get_role(community.id, membership.role_id)
+                except LookupError:
+                    if membership_from_cookie or membership_from_session:
+                        membership = None
+                    else:
+                        raise PermissionError(
+                            "realm membership role is not valid for this community"
+                        ) from None
+                if membership is not None:
+                    self._repo.get_user(membership.user_id)
+                    return RequestIdentityContext(
+                        community_id=community.id,
+                        community_slug=community.slug,
+                        user_id=membership.user_id,
+                        membership_id=membership.id,
+                    )
 
         if user_id is None:
             if self._default is None:
