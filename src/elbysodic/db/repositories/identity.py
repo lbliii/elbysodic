@@ -133,6 +133,40 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"community not found for slug: {slug}")
         return _community_from_row(row)
 
+    def get_community_by_name(self, name: str) -> Community:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                name,
+                slug,
+                host,
+                default_theme_id,
+                identity_accent_facet_group_id,
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
+                world_hero_treatment,
+                world_hero_focal_point,
+                world_hero_overlay,
+                world_hero_height,
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
+                created_at,
+                updated_at
+            FROM communities
+            WHERE lower(name) = lower(?)
+            """,
+            (name,),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"community not found for name: {name}")
+        return _community_from_row(row)
+
     def get_community_by_host(self, host: str) -> Community:
         row = self.connection.execute(
             """
@@ -457,6 +491,19 @@ class IdentityRepositoryMixin(RepositoryBase):
         self._commit()
         return self.get_user(_last_id(cursor))
 
+    def update_user_password(self, user_id: int, password_hash: str) -> User:
+        self.get_user(user_id)
+        self.connection.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            """,
+            (password_hash, user_id),
+        )
+        self._commit()
+        return self.get_user(user_id)
+
     def get_user(self, user_id: int) -> User:
         row = self.connection.execute(
             """
@@ -651,6 +698,20 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"role not found in community {community_id}: {slug}")
         return _role_from_row(row)
 
+    def update_role_admin(self, community_id: int, role_id: int, *, is_admin: bool) -> Role:
+        self.get_role(community_id, role_id)
+        self.connection.execute(
+            """
+            UPDATE roles
+            SET is_admin = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (int(is_admin), _utc_now(), community_id, role_id),
+        )
+        self._commit()
+        return self.get_role(community_id, role_id)
+
     def create_membership(
         self,
         community_id: int,
@@ -748,6 +809,25 @@ class IdentityRepositoryMixin(RepositoryBase):
                 f"membership not found in community {community_id} for username {username}"
             )
         return _membership_from_row(row)
+
+    def update_membership_role(
+        self,
+        community_id: int,
+        membership_id: int,
+        role_id: int,
+    ) -> CommunityMembership:
+        self.get_membership(community_id, membership_id)
+        self.get_role(community_id, role_id)
+        self.connection.execute(
+            """
+            UPDATE community_memberships
+            SET role_id = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (role_id, community_id, membership_id),
+        )
+        self._commit()
+        return self.get_membership(community_id, membership_id)
 
     def list_memberships(self, community_id: int) -> list[CommunityMembership]:
         rows = self.connection.execute(

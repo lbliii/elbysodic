@@ -20,6 +20,22 @@ command before starting the app so seeded demo accounts and realms are present.
 Production does not auto-seed on startup; seed production intentionally only
 when the deployment is being used as a seeded demo.
 
+For a real production community, create the first director account explicitly
+instead of using demo seed data:
+
+```bash
+railway ssh -e production -s <service-name>
+elbysodic bootstrap-admin \
+  --email you@example.com \
+  --username llane \
+  --display-name "Your Name" \
+  --community-name "Elbysodic"
+```
+
+The command prompts for the password inside the Railway shell, hashes it, and
+creates or promotes the community-local admin membership. Do not put the
+password in `railway.json` or Railway variables.
+
 ## Smoke Script
 
 Record the date, Railway deployment ID, public URL, and tester account used.

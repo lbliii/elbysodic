@@ -22,6 +22,23 @@ one replica with the `/app/var` volume mount. Its `staging` override runs
 before startup. That staging seed is idempotent and intended for demo QA; do
 not mirror that auto-seed behavior into production once real writer data exists.
 
+Use `elbysodic bootstrap-admin` for the first production director account. It
+creates or reuses the target community, creates or upgrades the admin role,
+creates or reuses the user, and creates or promotes the community membership.
+It does not create characters or demo content.
+
+```bash
+elbysodic bootstrap-admin \
+  --db-path "$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3" \
+  --email you@example.com \
+  --username llane \
+  --display-name "Your Name" \
+  --community-name "Elbysodic"
+```
+
+Rerunning the command is idempotent. Existing user passwords are preserved
+unless `--reset-password` is passed.
+
 ## Persistence Checks
 
 Before sharing a URL, prove these survive restart or redeploy:
