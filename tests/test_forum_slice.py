@@ -3412,11 +3412,13 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert "Brotherhood rival from Rogue" in wanted.text
             assert "Human UN liaison for B-24 talks" in wanted.text
             assert 'href="/wanted/brotherhood-rival-for-rogue"' in wanted.text
+            assert "elbysodic-thread-signal" in wanted.text
             assert "United Nations" in wanted.text
 
             detail = await client.get("/wanted/brotherhood-rival-for-rogue")
             assert detail.status == 200
             assert "chirpui-detail-header" in detail.text
+            assert "elbysodic-wanted-detail__signal" in detail.text
             assert "chirpui-facet-chip" in detail.text
             assert "chirpui-scope-switcher" in detail.text
             assert "Rogue needs someone who remembers" in detail.text
@@ -3528,6 +3530,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 casting = await profile_client.get("/casting")
                 assert casting.status == 200
                 assert "Casting Desk" in casting.text
+                assert "elbysodic-casting-desk-hero__identity" in casting.text
                 assert "Browsing as Rogue" in casting.text
                 assert "Wanted With Interest" in casting.text
                 assert "Active Reserves" in casting.text

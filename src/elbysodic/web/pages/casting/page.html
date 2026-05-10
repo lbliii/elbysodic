@@ -3,7 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/stat.html" import stat %}
   {% from "chirpui/surface.html" import surface %}
-  {% from "_components/wanted.html" import wanted_card %}
+  {% from "_components/wanted.html" import thread_signal, wanted_card %}
 {% end %}
 
 {% def reserve_card(item) %}
@@ -48,23 +48,26 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  <article class="chirpui-stack chirpui-stack--md">
+  <article class="chirpui-stack chirpui-stack--md elbysodic-casting-desk-hero">
     <div class="chirpui-cluster chirpui-cluster--between">
-      <div>
-        <h2>
-          {% if desk.active_face %}
-          Browsing as {{ desk.active_face.name }}
-          {% else %}
-          No face selected
-          {% end %}
-        </h2>
-        <p class="elbysodic-copy-section">
-          {% if desk.active_face %}
-          Casting views are weighted toward the face you are playing as.
-          {% else %}
-          Pick a character to make casting filters and claims feel more personal.
-          {% end %}
-        </p>
+      <div class="elbysodic-casting-desk-hero__identity">
+        {{ thread_signal() }}
+        <div>
+          <h2>
+            {% if desk.active_face %}
+            Browsing as {{ desk.active_face.name }}
+            {% else %}
+            No face selected
+            {% end %}
+          </h2>
+          <p class="elbysodic-copy-section">
+            {% if desk.active_face %}
+            Casting views are weighted toward the face you are playing as.
+            {% else %}
+            Pick a character to make casting filters and claims feel more personal.
+            {% end %}
+          </p>
+        </div>
       </div>
       {% call cluster(gap="sm") %}
         {% if desk.active_face %}
@@ -107,18 +110,21 @@
     <div class="elbysodic-interest-list">
       {% for item in desk.wanted_with_interest %}
       {% call surface(variant="elevated") %}
-      <article class="chirpui-stack chirpui-stack--md">
+      <article class="chirpui-stack chirpui-stack--md elbysodic-casting-thread-card">
         <div class="chirpui-cluster chirpui-cluster--between">
-          <div>
-            <p class="elbysodic-wanted-card__type">{{ item.wanted_ad.type_label }}</p>
-            <h2>
-              <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.wanted_ad.slug }}">
-                {{ item.wanted_ad.wanted_ad.title }}
-              </a>
-            </h2>
-            {% if item.wanted_ad.wanted_ad.summary %}
-            <p class="elbysodic-copy-summary">{{ item.wanted_ad.wanted_ad.summary }}</p>
-            {% end %}
+          <div class="elbysodic-wanted-card__heading">
+            {{ thread_signal() }}
+            <div>
+              <p class="elbysodic-wanted-card__type">{{ item.wanted_ad.type_label }}</p>
+              <h2>
+                <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.wanted_ad.slug }}">
+                  {{ item.wanted_ad.wanted_ad.title }}
+                </a>
+              </h2>
+              {% if item.wanted_ad.wanted_ad.summary %}
+              <p class="elbysodic-copy-summary">{{ item.wanted_ad.wanted_ad.summary }}</p>
+              {% end %}
+            </div>
           </div>
           <div class="elbysodic-interest-card__meta">
             {{ badge(item.wanted_ad.wanted_ad.status, variant="success" if item.wanted_ad.wanted_ad.status == "open" else "muted") }}

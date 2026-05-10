@@ -5,17 +5,28 @@
   {% from "_components/ui.html" import cast_faces %}
 {% end %}
 
+{% def thread_signal() %}
+<span class="elbysodic-thread-signal" aria-hidden="true">
+  <span></span>
+  <span></span>
+  <span></span>
+</span>
+{% end %}
+
 {% def wanted_card(item) %}
 {% call surface(variant="elevated", cls="elbysodic-wanted-card-shell elbysodic-wanted-card-shell--" ~ item.wanted_ad.status) %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card elbysodic-wanted-card--{{ item.wanted_ad.status }}">
-  <div class="chirpui-cluster chirpui-cluster--between">
-    <div>
-      <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>
-      <h2>
-        <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">
-          {{ item.wanted_ad.title }}
-        </a>
-      </h2>
+  <div class="chirpui-cluster chirpui-cluster--between elbysodic-wanted-card__header">
+    <div class="elbysodic-wanted-card__heading">
+      {{ thread_signal() }}
+      <div>
+        <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>
+        <h2>
+          <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">
+            {{ item.wanted_ad.title }}
+          </a>
+        </h2>
+      </div>
     </div>
     {{ badge(item.wanted_ad.status, variant="success" if item.wanted_ad.status == "open" else "muted") }}
   </div>

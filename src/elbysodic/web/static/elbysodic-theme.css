@@ -8359,15 +8359,68 @@ a.elbysodic-metric:focus-visible {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
+.elbysodic-thread-signal {
+    --elbysodic-thread-signal-circle: var(--elbysodic-identity-dye);
+    --elbysodic-thread-signal-line: var(--elbysodic-atmosphere-dye);
+    display: grid;
+    flex: 0 0 auto;
+    gap: 0.32rem;
+    inline-size: 3.45rem;
+    padding-block-start: 0.14rem;
+}
+
+.elbysodic-thread-signal > span {
+    align-items: center;
+    display: grid;
+    gap: 0.24rem;
+    grid-template-columns: 0.62rem minmax(0, 1fr);
+}
+
+.elbysodic-thread-signal > span::before,
+.elbysodic-thread-signal > span::after {
+    content: "";
+    display: block;
+}
+
+.elbysodic-thread-signal > span::before {
+    aspect-ratio: 1;
+    background: var(--elbysodic-thread-signal-circle);
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--elbysodic-thread-signal-circle) 36%, var(--chirpui-bg));
+}
+
+.elbysodic-thread-signal > span::after {
+    background: color-mix(in srgb, var(--elbysodic-thread-signal-line) 72%, var(--chirpui-text));
+    block-size: 0.16rem;
+    border-radius: 999px;
+}
+
+.elbysodic-thread-signal > span:nth-child(2)::before {
+    background: var(--elbysodic-atmosphere-dye);
+}
+
+.elbysodic-thread-signal > span:nth-child(2)::after {
+    inline-size: 42%;
+}
+
+.elbysodic-thread-signal > span:nth-child(3)::before {
+    background: var(--elbysodic-state-needs-reply);
+}
+
+.elbysodic-thread-signal > span:nth-child(3)::after {
+    background: color-mix(in srgb, var(--elbysodic-state-needs-reply) 74%, var(--chirpui-text));
+}
+
 .elbysodic-wanted-card {
     --elbysodic-wanted-accent: var(--elbysodic-identity-dye);
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 8%, transparent), transparent 42%),
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 9%, transparent), transparent 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 5%, transparent), transparent 34%),
         var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 22%, var(--chirpui-border-subtle));
+    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 30%, var(--chirpui-border-subtle));
     gap: 0.7rem;
     height: 100%;
-    padding-block-start: 0.7rem;
+    padding-block-start: 0.85rem;
     position: relative;
 }
 
@@ -8386,6 +8439,18 @@ a.elbysodic-metric:focus-visible {
     opacity: 0.78;
     pointer-events: none;
     position: absolute;
+}
+
+.elbysodic-wanted-card__header {
+    align-items: flex-start;
+}
+
+.elbysodic-wanted-card__heading,
+.elbysodic-casting-desk-hero__identity {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.75rem;
+    min-inline-size: 0;
 }
 
 .elbysodic-wanted-card--reserved,
@@ -8435,6 +8500,17 @@ a.elbysodic-metric:focus-visible {
 .elbysodic-wanted-detail {
     display: grid;
     gap: 1rem;
+    position: relative;
+}
+
+.elbysodic-wanted-detail__signal {
+    position: absolute;
+    right: clamp(1rem, 3vw, 1.5rem);
+    top: clamp(1rem, 3vw, 1.4rem);
+}
+
+.elbysodic-wanted-detail__header {
+    padding-inline-end: 4.25rem;
 }
 
 .elbysodic-wanted-action {
@@ -8468,13 +8544,28 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-casting-packet__panel {
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-identity-dye) 5%, transparent), transparent 58%),
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 6%, transparent), transparent 58%),
         var(--chirpui-bg-subtle);
-    border: 1px solid var(--chirpui-border-subtle);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-atmosphere-dye) 18%, var(--chirpui-border-subtle));
     border-radius: var(--chirpui-radius-md);
     display: grid;
     gap: 0.55rem;
     padding: 0.85rem;
+}
+
+.elbysodic-casting-desk-hero {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-identity-dye) 7%, transparent), transparent 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 6%, transparent), transparent 64%),
+        var(--chirpui-surface);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 24%, var(--chirpui-border-subtle));
+}
+
+.elbysodic-casting-thread-card {
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-identity-dye) 6%, transparent), transparent 42%),
+        var(--chirpui-surface);
+    border-color: color-mix(in srgb, var(--elbysodic-identity-dye) 22%, var(--chirpui-border-subtle));
 }
 
 .elbysodic-casting-packet__panel h3 {

@@ -4,7 +4,7 @@
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/wanted.html" import wanted_card %}
+  {% from "_components/wanted.html" import thread_signal, wanted_card %}
 {% end %}
 
 {% block page_root %}
@@ -17,6 +17,9 @@
 
   {% call surface(variant="elevated") %}
   <article class="chirpui-stack chirpui-stack--md elbysodic-wanted-detail">
+    <div class="elbysodic-wanted-detail__signal">
+      {{ thread_signal() }}
+    </div>
     {% call detail_header(title=wanted.wanted_ad.title, summary=wanted.wanted_ad.summary, eyebrow=wanted.type_label, cls="elbysodic-wanted-detail__header") %}
       {% slot badges %}
         {{ badge(wanted.wanted_ad.status, variant="success" if wanted.wanted_ad.status == "open" else "muted") }}
