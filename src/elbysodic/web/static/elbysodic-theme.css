@@ -62,6 +62,14 @@
     --elbysodic-motion-surface: 220ms ease-out;
     --elbysodic-motion-attention: 420ms ease-out;
     --chirpui-transition: var(--elbysodic-motion-feedback);
+    --elbysodic-ratio-billboard: 21 / 9;
+    --elbysodic-ratio-widescreen: 16 / 9;
+    --elbysodic-ratio-editorial: 7 / 4;
+    --elbysodic-ratio-card: 4 / 3;
+    --elbysodic-ratio-square: 1 / 1;
+    --elbysodic-ratio-portrait: 4 / 5;
+    --elbysodic-ratio-poster: 2 / 3;
+    --elbysodic-ratio-tall: 1 / 2;
 
     --chirpui-bg: var(--elbysodic-key-dark);
     --chirpui-bg-subtle: var(--elbysodic-key-dark-1);
@@ -2961,6 +2969,7 @@ body {
 
 .elbysodic-board-poster {
     align-items: end;
+    aspect-ratio: var(--elbysodic-ratio-editorial);
     color: var(--elbysodic-on-media-text);
     display: flex;
     flex-direction: column;
@@ -2999,6 +3008,7 @@ body {
 }
 
 .elbysodic-board-media-treatment--compact.elbysodic-board-poster {
+    aspect-ratio: var(--elbysodic-ratio-card);
     min-height: 8.5rem;
 }
 
@@ -3330,6 +3340,7 @@ body {
 
 .elbysodic-board-stage {
     align-items: end;
+    aspect-ratio: var(--elbysodic-ratio-billboard);
     border: 1px solid var(--chirpui-border-subtle);
     display: flex;
     min-height: min(58vh, 30rem);
@@ -3346,14 +3357,17 @@ body {
 }
 
 .elbysodic-board-media-treatment--compact.elbysodic-board-stage {
+    aspect-ratio: var(--elbysodic-ratio-widescreen);
     min-height: min(42vh, 22rem);
 }
 
 .elbysodic-board-media-treatment--background.elbysodic-board-stage {
+    aspect-ratio: var(--elbysodic-ratio-billboard);
     min-height: min(68vh, 34rem);
 }
 
 .elbysodic-board-media-treatment--text.elbysodic-board-stage {
+    aspect-ratio: auto;
     min-height: auto;
 }
 
@@ -4199,6 +4213,8 @@ body {
     color: var(--elbysodic-on-media-text);
     display: flex;
     flex-direction: column;
+    grid-row: 1 / span 2;
+    height: 100%;
     isolation: isolate;
     justify-content: end;
     min-height: 12rem;
@@ -9093,6 +9109,7 @@ a.elbysodic-metric:focus-visible {
     }
 
     .elbysodic-board-stage {
+        aspect-ratio: var(--elbysodic-ratio-widescreen);
         min-height: min(44vh, 24rem);
     }
 
@@ -9190,6 +9207,8 @@ a.elbysodic-metric:focus-visible {
 
     .elbysodic-thread-card__poster {
         aspect-ratio: 16 / 7;
+        grid-row: auto;
+        height: auto;
         min-height: 8rem;
     }
 

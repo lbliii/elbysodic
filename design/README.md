@@ -57,8 +57,12 @@ pretend a behavior exists until code, tests, or product docs support it.
   community's premise into a safe art-direction score.
 - `component-inventory.md`: current shared component map, surface-intensity
   budgets, token roles, and QA matrix for visual implementation.
+- `image-dimensions.md`: aspect-ratio map for Midjourney-style image
+  generation and product media surfaces.
 - `motion-design.md`: animation and transition guidance for technicolor
   futurism, PBP reading flow, and reduced-motion-safe interaction design.
+- `rendered-qa-pass.md`: latest rendered QA notes, accepted fixes, and
+  deferred visual risks.
 - `terminology-map.md`: UX writing conventions for PBP terms such as scene,
   thread, face, roster, guidebook, canon, wanted, claims, and reserves.
 - `technicolor-futurism.md`: the working design doctrine.
