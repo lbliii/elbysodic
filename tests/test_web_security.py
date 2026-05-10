@@ -8,6 +8,7 @@ import pytest
 from chirp.testing import TestClient
 
 from elbysodic.services import create_services
+from elbysodic.services.network import search_studio_network
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 
@@ -211,6 +212,21 @@ def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) 
         assert "Staff notes" not in network.text
 
     asyncio.run(run())
+
+
+def test_public_network_search_contract_stays_service_owned() -> None:
+    services = create_services(path=":memory:")
+
+    directory = services.public_studio_network()
+    magic_results = search_studio_network(directory, "magic")
+    wanted_results = search_studio_network(directory, "wanted")
+
+    assert [program.community.slug for program in magic_results] == ["hp-universe"]
+    assert {program.community.slug for program in wanted_results}
+    assert all(program.membership is None for program in wanted_results)
+    assert all(program.current_character is None for program in wanted_results)
+    assert all(program.unread_notification_count == 0 for program in wanted_results)
+    assert all(program.plotting_room_count == 0 for program in wanted_results)
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:
