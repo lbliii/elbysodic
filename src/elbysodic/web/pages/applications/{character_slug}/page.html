@@ -92,7 +92,10 @@
     {% end %}
     {% call surface(variant="elevated") %}
     {% if room.can_edit_application %}
-    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
+    <form class="chirpui-stack chirpui-stack--md"
+          method="post"
+          hx-boost="false"
+          data-elbysodic-submit-label="Saving application...">
       <input type="hidden" name="intent" value="save_application">
       <label>
         <span class="chirpui-field__label">Application summary</span>
@@ -224,7 +227,10 @@
       <a class="elbysodic-notice__action" href="/claims">Review claims</a>
     </aside>
     {% end %}
-    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
+    <form class="chirpui-stack chirpui-stack--md"
+          method="post"
+          hx-boost="false"
+          data-elbysodic-submit-label="Saving review...">
       <input type="hidden" name="intent" value="save_review">
       <label>
         <span class="chirpui-field__label">Revision note for applicant</span>
@@ -250,7 +256,7 @@
     </form>
     {% if room.character_view.character.application_status == "submitted" %}
     <div class="chirpui-cluster chirpui-cluster--end">
-      <form method="post" hx-boost="false">
+      <form method="post" hx-boost="false" data-elbysodic-submit-label="Accepting face...">
         <input type="hidden" name="intent" value="accept_application">
         <button type="submit"
                 class="chirpui-btn chirpui-btn--primary"
@@ -258,7 +264,7 @@
           Accept face
         </button>
       </form>
-      <form method="post" hx-boost="false">
+      <form method="post" hx-boost="false" data-elbysodic-submit-label="Requesting revisions...">
         <input type="hidden" name="intent" value="request_revision">
         <input type="hidden" name="revision_notes" value="{{ revision_note_value }}">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>

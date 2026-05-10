@@ -78,10 +78,58 @@
     });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupSidebarToggle);
-  } else {
-    setupSidebarToggle();
+  function submitControls(scope) {
+    return Array.from(
+      scope.querySelectorAll(
+        'button[type="submit"], input[type="submit"], button:not([type])',
+      ),
+    );
   }
-  document.body.addEventListener("htmx:afterSettle", setupSidebarToggle);
+
+  function setButtonLabel(button, label) {
+    if (!button || !label || button.dataset.elbysodicSubmitLabelApplied === "true") {
+      return;
+    }
+    button.dataset.elbysodicSubmitLabelApplied = "true";
+    button.dataset.elbysodicSubmitOriginalLabel = button.textContent || "";
+    button.textContent = label;
+  }
+
+  function setupSubmitGuards(root) {
+    const forms = root.querySelectorAll("form[data-elbysodic-submit-label]");
+    forms.forEach((form) => {
+      if (form.dataset.elbysodicSubmitReady === "true") {
+        return;
+      }
+      form.dataset.elbysodicSubmitReady = "true";
+      form.addEventListener("submit", (event) => {
+        if (form.dataset.elbysodicSubmitPending === "true") {
+          event.preventDefault();
+          return;
+        }
+
+        form.dataset.elbysodicSubmitPending = "true";
+        form.setAttribute("aria-busy", "true");
+        const group = form.closest("[data-elbysodic-submit-group]") || form;
+        const submitter = event.submitter || form.querySelector('button[type="submit"]');
+        setButtonLabel(submitter, form.dataset.elbysodicSubmitLabel);
+        submitControls(group).forEach((control) => {
+          control.disabled = true;
+          control.setAttribute("aria-disabled", "true");
+        });
+      });
+    });
+  }
+
+  function setupEnhancements() {
+    setupSidebarToggle();
+    setupSubmitGuards(document);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupEnhancements);
+  } else {
+    setupEnhancements();
+  }
+  document.body.addEventListener("htmx:afterSettle", () => setupEnhancements());
 })();

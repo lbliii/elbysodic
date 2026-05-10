@@ -568,6 +568,7 @@ def test_tenant_prefixed_identity_and_casting_routes_scope_rendered_links() -> N
         assert application.status == 200
         assert "Start Application" in application.text
         assert "Create draft face" in application.text
+        assert 'data-elbysodic-submit-label="Creating draft face..."' in application.text
         assert f'href="/c/{community_slug}/applications"' in application.text
         assert 'href="/elbysodic-static/elbysodic-theme.css' in application.text
         assert f'href="/c/{community_slug}/elbysodic-static' not in application.text
@@ -607,6 +608,7 @@ def test_tenant_prefixed_thread_routes_scope_composer_redirects() -> None:
 
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
+        assert 'data-elbysodic-submit-label="Posting..."' in thread.text
         assert f'href="/c/{community_slug}/boards/danger-room"' in thread.text
         assert (
             f'name="next" value="/c/{community_slug}/boards/danger-room/threads/sentinel-drill"'
@@ -615,6 +617,7 @@ def test_tenant_prefixed_thread_routes_scope_composer_redirects() -> None:
 
         assert composer.status == 200
         assert "Start scene" in composer.text
+        assert 'data-elbysodic-submit-label="Starting scene..."' in composer.text
         assert f'href="/c/{community_slug}/boards/danger-room"' in composer.text
         assert f"/c/{community_slug}/mentionables/search" in composer.text
 
@@ -662,6 +665,8 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
         assert "RL Small Town" in before.text
         assert switch.status == 302
         assert "elbysodic_dev_identity=" in set_cookie
+        assert "data-elbysodic-submit-group" in before.text
+        assert 'data-elbysodic-submit-label="Entering HP Universe..."' in before.text
         assert after.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in after.text
         assert "Director in HP Universe" in after.text
@@ -3480,6 +3485,10 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert "Tracker" in character.text
             assert "Brotherhood rival from Rogue" in character.text
             assert 'href="/wanted"' in character.text
+
+            open_hook = await client.get("/wanted/human-un-liaison-for-b24")
+            assert open_hook.status == 200
+            assert 'data-elbysodic-submit-label="Sending interest..."' in open_hook.text
 
             interest_response = await client.post(
                 "/wanted/human-un-liaison-for-b24",

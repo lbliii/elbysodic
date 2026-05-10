@@ -128,7 +128,10 @@
         {% end %}
       </p>
       {% elif wanted.can_express_interest and viewer.current_character %}
-      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+      <form method="post"
+            hx-boost="false"
+            data-elbysodic-submit-label="Sending interest..."
+            class="chirpui-cluster chirpui-cluster--end">
         <input type="hidden" name="intent" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
           I'm interested as {{ viewer.current_character.name }}
@@ -145,7 +148,11 @@
           <span id="prospective-interest">I'd create a new character for this</span>
           <small>Share a short concept, not a full application.</small>
         </summary>
-        <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm" aria-labelledby="prospective-interest">
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-submit-label="Sending concept..."
+              class="chirpui-stack chirpui-stack--sm"
+              aria-labelledby="prospective-interest">
           <input type="hidden" name="intent" value="express_prospective_interest">
           <div>
             <label class="chirpui-field__label" for="prospective-character-name">Character concept</label>
@@ -178,7 +185,11 @@
         <span id="wanted-lifecycle">Manage hook lifecycle</span>
         <small>Open, reserve, fill, or archive this wanted without changing its history.</small>
       </summary>
-      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm" aria-labelledby="wanted-lifecycle">
+      <form method="post"
+            hx-boost="false"
+            data-elbysodic-submit-label="Saving lifecycle..."
+            class="chirpui-stack chirpui-stack--sm"
+            aria-labelledby="wanted-lifecycle">
         <input type="hidden" name="intent" value="update_lifecycle_status">
         <label class="chirpui-field__label" for="wanted-status">Lifecycle status</label>
         <select id="wanted-status" class="chirpui-field__input" name="status">
@@ -242,14 +253,14 @@
       </div>
       {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
       <div class="chirpui-cluster chirpui-cluster--end">
-        <form method="post" hx-boost="false">
+        <form method="post" hx-boost="false" data-elbysodic-submit-label="Starting room...">
           <input type="hidden" name="intent" value="start_plotting_room">
           <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">
             Start plotting room
           </button>
         </form>
-        <form method="post" hx-boost="false">
+        <form method="post" hx-boost="false" data-elbysodic-submit-label="Reserving face...">
           <input type="hidden" name="intent" value="reserve_interest">
           <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">
@@ -260,7 +271,10 @@
       {% elif wanted.can_manage and item.interest.status == "plotting" %}
       <p class="elbysodic-copy-status">Plotting room started.</p>
       {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and item.interest.id not in wanted.reserve_interest_ids and item.character %}
-      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+      <form method="post"
+            hx-boost="false"
+            data-elbysodic-submit-label="Creating reserve..."
+            class="chirpui-cluster chirpui-cluster--end">
         <input type="hidden" name="intent" value="create_reserve">
         <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">

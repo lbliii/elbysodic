@@ -232,9 +232,12 @@
       {% if viewer.identity_options and viewer.identity_options | length > 1 %}
       <div class="elbysodic-identity-menu__section">
         <span class="elbysodic-identity-menu__kicker">Studio Network</span>
-        <div class="elbysodic-identity-switcher">
+        <div class="elbysodic-identity-switcher" data-elbysodic-submit-group>
           {% for option in viewer.identity_options %}
-          <form action="/identity" method="post" hx-boost="false">
+          <form action="/identity"
+                method="post"
+                hx-boost="false"
+                data-elbysodic-submit-label="Entering {{ option.community.name }}...">
             <input type="hidden" name="intent" value="switch_membership">
             <input type="hidden" name="membership_id" value="{{ option.membership.id }}">
             <input type="hidden" name="character_id" value="{{ option.current_character.id if option.current_character else 0 }}">
