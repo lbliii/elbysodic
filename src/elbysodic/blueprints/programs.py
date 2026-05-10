@@ -173,6 +173,7 @@ class ProgramBlueprintPreview:
     blueprint: ProgramBlueprint | None
     errors: tuple[str, ...]
     diff_rows: tuple[BlueprintDiffRow, ...] = ()
+    preview_fingerprint: str = ""
 
     @property
     def is_valid(self) -> bool:

@@ -510,22 +510,23 @@ def create_thread_from_plotting_room(
         for item in participants
         if item.participant.character_id is not None
     ]
-    created = _start_thread(
-        repo,
-        viewer,
-        board_slug=board.slug,
-        character_id=character_id,
-        title=title,
-        body=body,
-        status="active",
-        location=location,
-        timeline=timeline,
-        summary=summary,
-        posting_mode=posting_mode,
-        participant_ids=participant_ids,
-    )
-    repo.attach_plotting_room_thread(viewer.community.id, room.id, created.thread.id)
-    _notify_room_threaded(repo, viewer, room, participants, created.thread)
+    with repo.transaction():
+        created = _start_thread(
+            repo,
+            viewer,
+            board_slug=board.slug,
+            character_id=character_id,
+            title=title,
+            body=body,
+            status="active",
+            location=location,
+            timeline=timeline,
+            summary=summary,
+            posting_mode=posting_mode,
+            participant_ids=participant_ids,
+        )
+        repo.attach_plotting_room_thread(viewer.community.id, room.id, created.thread.id)
+        _notify_room_threaded(repo, viewer, room, participants, created.thread)
     return created
 
 

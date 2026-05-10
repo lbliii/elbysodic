@@ -815,7 +815,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
             studio = await client.get("/studio", headers={"Cookie": cookie_header})
 
         assert page.status == 200
-        assert "Seed accounts use password" in page.text
+        assert "Invite/demo accounts use password" in page.text
         assert login.status == 302
         assert _response_header(login, "location") == "/studio"
         assert any(cookie.startswith("elbysodic_session=") for cookie in set_cookies)
@@ -1726,6 +1726,12 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Draft materials" in operations.text
             assert "Dry-run intake" in operations.text
             assert "Release smoke" in operations.text
+            assert "Community builder checklist" in operations.text
+            assert "Boards and world materials carry the community premise." in operations.text
+            assert "Applications, claims, and wanted hooks have review paths." in operations.text
+            assert (
+                "Plotting handoffs and notifications move writers into scenes." in operations.text
+            )
             assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
             assert 'href="/network"' in operations.text
@@ -1890,6 +1896,7 @@ appearance:
         assert "1 appearance" in response.text
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration diff preview" in response.text
+        assert "Preview fingerprint:" in response.text
         assert "create</strong> program: RL Small Town Preview" in response.text
         assert "create</strong> scene hub: Main Street" in response.text
         assert "create</strong> wanted hook: Returning sibling" in response.text
@@ -4794,6 +4801,71 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
 
         lane_inbox = services.notifications()
         assert any(item.label == "Scene started" for item in lane_inbox.items)
+
+    asyncio.run(run())
+
+
+def test_plotting_room_scene_handoff_rolls_back_on_attach_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+        room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+        plotting_board = repo.get_board_by_slug(community.id, "plotting")
+
+        def fail_attach(*_args, **_kwargs):
+            raise RuntimeError("forced attach failure")
+
+        monkeypatch.setattr(repo, "attach_plotting_room_thread", fail_attach)
+        with pytest.raises(RuntimeError, match="forced attach failure"):
+            charlie_services.create_thread_from_plotting_room(
+                room.id,
+                board_id=plotting_board.id,
+                character_id=xavier.id,
+                title="Rollback Liaison Debrief",
+                summary="This scene should not persist.",
+                location="Xavier Institute",
+                timeline="After B-24",
+                body="Charles starts a scene that should roll back.",
+            )
+
+        rolled_back_room = repo.get_plotting_room(community.id, room.id)
+        assert rolled_back_room.target_thread_id is None
+        assert rolled_back_room.status == "brainstorming"
+        assert all(
+            thread.title != "Rollback Liaison Debrief"
+            for thread in repo.list_threads(community.id, plotting_board.id)
+        )
 
     asyncio.run(run())
 

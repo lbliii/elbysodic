@@ -8,6 +8,7 @@ import pytest
 from chirp.testing import TestClient
 
 from elbysodic.services import create_services
+from elbysodic.services.network import search_studio_network
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 
@@ -134,6 +135,9 @@ def test_production_seed_password_requires_demo_mode(monkeypatch) -> None:
             )
 
         assert response.status == 200
+        assert "Access is invite-only for this launch" in page.text
+        assert "public registration is not open" in page.text
+        assert "Invite/demo accounts use password" not in page.text
         assert "email or password is incorrect" in response.text
         assert "elbysodic_session=" not in "\n".join(_response_headers(response, "set-cookie"))
 
@@ -184,6 +188,45 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert personas.status == 302
 
     asyncio.run(run())
+
+
+def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            network = await client.get("/network?q=wanted")
+
+        assert network.status == 200
+        assert "Public preview" in network.text
+        assert "Open Wanted" in network.text or "wanted hooks" in network.text
+        assert "starlane" not in network.text
+        assert "moira" not in network.text
+        assert "Director in" not in network.text
+        assert "Member in" not in network.text
+        assert "playing as" not in network.text
+        assert "current realm" not in network.text
+        assert "unread" not in network.text
+        assert "Application Review Room" not in network.text
+        assert "Staff notes" not in network.text
+
+    asyncio.run(run())
+
+
+def test_public_network_search_contract_stays_service_owned() -> None:
+    services = create_services(path=":memory:")
+
+    directory = services.public_studio_network()
+    magic_results = search_studio_network(directory, "magic")
+    wanted_results = search_studio_network(directory, "wanted")
+
+    assert [program.community.slug for program in magic_results] == ["hp-universe"]
+    assert {program.community.slug for program in wanted_results}
+    assert all(program.membership is None for program in wanted_results)
+    assert all(program.current_character is None for program in wanted_results)
+    assert all(program.unread_notification_count == 0 for program in wanted_results)
+    assert all(program.plotting_room_count == 0 for program in wanted_results)
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:
@@ -283,6 +326,26 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
                 "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill",
                 headers={"Cookie": _cookie_header(cookies)},
             )
+            wanted = await client.get(
+                "/c/x-men-apocalypse/wanted",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            applications = await client.get(
+                "/c/x-men-apocalypse/applications",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            plotting = await client.get(
+                "/c/x-men-apocalypse/plotting",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            notifications = await client.get(
+                "/c/x-men-apocalypse/notifications",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            studio = await client.get(
+                "/c/x-men-apocalypse/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
             cookies.update(_cookie_values(thread))
             switch = await client.post(
                 "/identity",
@@ -323,12 +386,25 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert "X-Men Apocalypse" in xmen_home.text
         assert network.status == 200
         assert "HP Universe" in network.text
+        assert "playing as Rogue" in network.text
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
+        assert "Reply as Rogue" in thread.text
+        assert wanted.status == 200
+        assert "Wanted" in wanted.text
+        assert applications.status == 200
+        assert "Applications" in applications.text
+        assert plotting.status == 200
+        assert "Plotting" in plotting.text
+        assert notifications.status == 200
+        assert "Notifications" in notifications.text
+        assert studio.status == 200
+        assert "Studio" in studio.text
         assert switch.status == 302
         assert dict(switch.headers)["location"] == "/c/hp-universe"
         assert hp_home.status == 200
         assert "Director in HP Universe" in hp_home.text
+        assert "playing as Rowan Ash" in hp_home.text
         assert jurassic_board.status == 200
         assert "Paddock Twelve" in jurassic_board.text
         assert logout.status == 302

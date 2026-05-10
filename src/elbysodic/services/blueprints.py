@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from dataclasses import replace
 from typing import Literal, Protocol
@@ -45,7 +46,12 @@ def preview_program_blueprint(
     preview = preview_program_blueprint_yaml(source)
     if not preview.is_valid or preview.blueprint is None:
         return preview
-    return replace(preview, diff_rows=plan_program_blueprint_hydration(repo, preview.blueprint))
+    diff_rows = plan_program_blueprint_hydration(repo, preview.blueprint)
+    return replace(
+        preview,
+        diff_rows=diff_rows,
+        preview_fingerprint=_preview_fingerprint(source, diff_rows),
+    )
 
 
 def plan_program_blueprint_hydration(
@@ -241,3 +247,18 @@ def _row_for_existing(
     except LookupError:
         return BlueprintDiffRow(section, slug, label, "create", create_detail)
     return BlueprintDiffRow(section, slug, label, existing_action, update_detail)
+
+
+def _preview_fingerprint(source: str, rows: tuple[BlueprintDiffRow, ...]) -> str:
+    digest = hashlib.sha256()
+    digest.update(source.encode("utf-8"))
+    for row in rows:
+        digest.update(b"\0")
+        digest.update(row.section.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(row.slug.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(row.action.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(row.detail.encode("utf-8"))
+    return digest.hexdigest()[:16]

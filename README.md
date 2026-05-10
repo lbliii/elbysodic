@@ -241,6 +241,12 @@ Post-deploy smoke for the shared Railway host:
 - confirm seed media under `/elbysodic-static/seed-media/...` returns `200`
 - keep the Railway service at one replica while SQLite is volume-backed
 
+Use [docs/operations/railway-smoke.md](docs/operations/railway-smoke.md) as the
+recorded runbook before sharing the URL. The production gate is still open until
+that smoke includes restart persistence on the attached volume.
+The current SQLite operating contract is documented in
+[docs/operations/sqlite-production.md](docs/operations/sqlite-production.md).
+
 ## Product Voice
 
 Use language that fits roleplayers. Prefer face, roster, thread, scene,
