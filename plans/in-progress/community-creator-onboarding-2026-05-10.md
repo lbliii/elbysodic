@@ -26,6 +26,8 @@ Completed locally:
 Still open:
 
 - The transition from no realm to empty configured realm is not implemented.
+  It is now split into
+  [First Realm Setup 2026-05-10](first-realm-setup-2026-05-10.md).
 - Launch status is read-only derived state; there is no persisted
   backstage/invite-only/public-preview field yet.
 - Guided Realm Builder writes, invitation lifecycle, and first-face handoff are
@@ -313,6 +315,11 @@ progress collapsed into operations lanes:
 
 ### PR 1: First Realm Setup Decision And Empty States
 
+Status: split out to
+[First Realm Setup 2026-05-10](first-realm-setup-2026-05-10.md) after steward
+consultation. The accepted direction is CLI/bootstrap-owned first realm setup
+before any web-global setup authority.
+
 Scope:
 
 - define "no realm exists" vs "empty configured realm"
@@ -327,6 +334,10 @@ Collateral:
 - README deployment notes if command behavior changes
 
 ### PR 2: Studio Launch Room Skeleton
+
+Status: implemented locally as `/studio/launch` and `RealmLaunchReadiness`.
+Remaining follow-up is authorization hardening and launch-first routing for
+empty configured realms, tracked by the first realm setup plan.
 
 Scope:
 
