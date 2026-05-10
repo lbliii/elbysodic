@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Elbysodic Online Logo Test</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --key: #071018;
+        --surface: #101b27;
+        --surface-2: #f7fbff;
+        --text: #f7fbff;
+        --ink: #071018;
+        --muted: #b2c0cc;
+        --border: #294258;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--key);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1160px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 40px 0;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(2rem, 5vw, 4rem);
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 28px;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .candidate {
+        display: grid;
+        gap: 18px;
+        padding: 22px;
+        margin-bottom: 18px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #101b27;
+      }
+
+      .candidate h2 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .sizes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 14px;
+      }
+
+      .sample {
+        min-height: 132px;
+        padding: 14px;
+        border-radius: 8px;
+        background: #f7fbff;
+        color: var(--ink);
+      }
+
+      .sample.dark {
+        background: #071018;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .sample span {
+        display: block;
+        margin-bottom: 10px;
+        color: #617181;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .icons {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      img {
+        display: block;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .header strong {
+        font-size: 1.2rem;
+        letter-spacing: -0.02em;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Online logo stress test</h1>
+      <p>These are simplified candidates checked at favicon, app icon, mobile header, and wordmark-adjacent sizes. The goal is instant recognition, not detail.</p>
+      <section class="candidate">
+        <h2>Online Prism e</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-e-prism.svg" width="16" height="16" alt="">
+              <img src="online-e-prism.svg" width="24" height="24" alt="">
+              <img src="online-e-prism.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-e-prism.svg" width="64" height="64" alt="">
+              <img src="online-e-prism.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-e-prism.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Online Thread e</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-thread-e.svg" width="16" height="16" alt="">
+              <img src="online-thread-e.svg" width="24" height="24" alt="">
+              <img src="online-thread-e.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-thread-e.svg" width="64" height="64" alt="">
+              <img src="online-thread-e.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-thread-e.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Online Thread Cut</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-thread-cut.svg" width="16" height="16" alt="">
+              <img src="online-thread-cut.svg" width="24" height="24" alt="">
+              <img src="online-thread-cut.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-thread-cut.svg" width="64" height="64" alt="">
+              <img src="online-thread-cut.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-thread-cut.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Online Roster Cut</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-roster-cut.svg" width="16" height="16" alt="">
+              <img src="online-roster-cut.svg" width="24" height="24" alt="">
+              <img src="online-roster-cut.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-roster-cut.svg" width="64" height="64" alt="">
+              <img src="online-roster-cut.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-roster-cut.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Segmented e Four-Part</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="segmented-e-four-part.svg" width="16" height="16" alt="">
+              <img src="segmented-e-four-part.svg" width="24" height="24" alt="">
+              <img src="segmented-e-four-part.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="segmented-e-four-part.svg" width="64" height="64" alt="">
+              <img src="segmented-e-four-part.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="segmented-e-four-part.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Segmented e Tail</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="segmented-e-tail.svg" width="16" height="16" alt="">
+              <img src="segmented-e-tail.svg" width="24" height="24" alt="">
+              <img src="segmented-e-tail.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="segmented-e-tail.svg" width="64" height="64" alt="">
+              <img src="segmented-e-tail.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="segmented-e-tail.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Roster Cut Color Left</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-roster-cut-color-left.svg" width="16" height="16" alt="">
+              <img src="online-roster-cut-color-left.svg" width="24" height="24" alt="">
+              <img src="online-roster-cut-color-left.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-roster-cut-color-left.svg" width="64" height="64" alt="">
+              <img src="online-roster-cut-color-left.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-roster-cut-color-left.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Roster Cut Color Left + Green Tail</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-roster-cut-color-left-green.svg" width="16" height="16" alt="">
+              <img src="online-roster-cut-color-left-green.svg" width="24" height="24" alt="">
+              <img src="online-roster-cut-color-left-green.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-roster-cut-color-left-green.svg" width="64" height="64" alt="">
+              <img src="online-roster-cut-color-left-green.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-roster-cut-color-left-green.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Roster Cut Color Circles</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="online-roster-cut-color-circles.svg" width="16" height="16" alt="">
+              <img src="online-roster-cut-color-circles.svg" width="24" height="24" alt="">
+              <img src="online-roster-cut-color-circles.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="online-roster-cut-color-circles.svg" width="64" height="64" alt="">
+              <img src="online-roster-cut-color-circles.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="online-roster-cut-color-circles.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Color Left Clean</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="roster-cut-color-left-clean.svg" width="16" height="16" alt="">
+              <img src="roster-cut-color-left-clean.svg" width="24" height="24" alt="">
+              <img src="roster-cut-color-left-clean.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="roster-cut-color-left-clean.svg" width="64" height="64" alt="">
+              <img src="roster-cut-color-left-clean.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="roster-cut-color-left-clean.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Color Left Arrow</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="roster-cut-color-left-arrow.svg" width="16" height="16" alt="">
+              <img src="roster-cut-color-left-arrow.svg" width="24" height="24" alt="">
+              <img src="roster-cut-color-left-arrow.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="roster-cut-color-left-arrow.svg" width="64" height="64" alt="">
+              <img src="roster-cut-color-left-arrow.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="roster-cut-color-left-arrow.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Color Left Chevron</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="roster-cut-color-left-chevron.svg" width="16" height="16" alt="">
+              <img src="roster-cut-color-left-chevron.svg" width="24" height="24" alt="">
+              <img src="roster-cut-color-left-chevron.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="roster-cut-color-left-chevron.svg" width="64" height="64" alt="">
+              <img src="roster-cut-color-left-chevron.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="roster-cut-color-left-chevron.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="roster-cut-circle-terminals.svg" width="16" height="16" alt="">
+              <img src="roster-cut-circle-terminals.svg" width="24" height="24" alt="">
+              <img src="roster-cut-circle-terminals.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="roster-cut-circle-terminals.svg" width="64" height="64" alt="">
+              <img src="roster-cut-circle-terminals.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="roster-cut-circle-terminals.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Arrow</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="roster-cut-circle-terminals-arrow.svg" width="16" height="16" alt="">
+              <img src="roster-cut-circle-terminals-arrow.svg" width="24" height="24" alt="">
+              <img src="roster-cut-circle-terminals-arrow.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="roster-cut-circle-terminals-arrow.svg" width="64" height="64" alt="">
+              <img src="roster-cut-circle-terminals-arrow.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="roster-cut-circle-terminals-arrow.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Overlap Soft</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="circle-terminals-overlap-soft.svg" width="16" height="16" alt="">
+              <img src="circle-terminals-overlap-soft.svg" width="24" height="24" alt="">
+              <img src="circle-terminals-overlap-soft.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="circle-terminals-overlap-soft.svg" width="64" height="64" alt="">
+              <img src="circle-terminals-overlap-soft.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="circle-terminals-overlap-soft.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Overlap Bleed</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="circle-terminals-overlap-bleed.svg" width="16" height="16" alt="">
+              <img src="circle-terminals-overlap-bleed.svg" width="24" height="24" alt="">
+              <img src="circle-terminals-overlap-bleed.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="circle-terminals-overlap-bleed.svg" width="64" height="64" alt="">
+              <img src="circle-terminals-overlap-bleed.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="circle-terminals-overlap-bleed.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Overlap Tight</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="circle-terminals-overlap-tight.svg" width="16" height="16" alt="">
+              <img src="circle-terminals-overlap-tight.svg" width="24" height="24" alt="">
+              <img src="circle-terminals-overlap-tight.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="circle-terminals-overlap-tight.svg" width="64" height="64" alt="">
+              <img src="circle-terminals-overlap-tight.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="circle-terminals-overlap-tight.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Vertical Overlap</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="circle-terminals-vertical-overlap.svg" width="16" height="16" alt="">
+              <img src="circle-terminals-vertical-overlap.svg" width="24" height="24" alt="">
+              <img src="circle-terminals-vertical-overlap.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="circle-terminals-vertical-overlap.svg" width="64" height="64" alt="">
+              <img src="circle-terminals-vertical-overlap.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="circle-terminals-vertical-overlap.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Vertical Merge</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="circle-terminals-vertical-merge.svg" width="16" height="16" alt="">
+              <img src="circle-terminals-vertical-merge.svg" width="24" height="24" alt="">
+              <img src="circle-terminals-vertical-merge.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="circle-terminals-vertical-merge.svg" width="64" height="64" alt="">
+              <img src="circle-terminals-vertical-merge.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="circle-terminals-vertical-merge.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="candidate">
+        <h2>Circle Terminals Vertical Intercut</h2>
+        <div class="sizes">
+          <div class="sample">
+            <span>16 / 24 / 32</span>
+            <div class="icons">
+              <img src="circle-terminals-vertical-intercut.svg" width="16" height="16" alt="">
+              <img src="circle-terminals-vertical-intercut.svg" width="24" height="24" alt="">
+              <img src="circle-terminals-vertical-intercut.svg" width="32" height="32" alt="">
+            </div>
+          </div>
+          <div class="sample">
+            <span>64 / 96</span>
+            <div class="icons">
+              <img src="circle-terminals-vertical-intercut.svg" width="64" height="64" alt="">
+              <img src="circle-terminals-vertical-intercut.svg" width="96" height="96" alt="">
+            </div>
+          </div>
+          <div class="sample dark">
+            <span>Header</span>
+            <div class="header">
+              <img src="circle-terminals-vertical-intercut.svg" width="38" height="38" alt="">
+              <strong>elbysodic</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic lowercase e beam splitter</title>
+  <desc id="desc">A lowercase e shaped around a beam-splitting prism, with three color sections branching from the center.</desc>
+  <rect x="74" y="74" width="364" height="364" rx="44" fill="#071018"/>
+  <path d="M256 132c-76 0-138 56-138 124s62 124 138 124c54 0 98-24 122-64h-78c-11 10-26 16-44 16-34 0-62-20-72-50h206c2-9 4-18 4-28 0-68-62-122-138-122z" fill="#f7fbff"/>
+  <path d="M188 234c10-30 36-50 68-50s58 20 68 50z" fill="#071018"/>
+  <path d="M180 256h172" stroke="#071018" stroke-width="34" stroke-linecap="square"/>
+  <path d="M246 188l56 68-56 68-56-68z" fill="#071018"/>
+  <path d="M302 256h82" stroke="#36d6ff" stroke-width="18" stroke-linecap="square"/>
+  <path d="M246 188l72-54" stroke="#ff5ccf" stroke-width="18" stroke-linecap="square"/>
+  <path d="M246 324l72 54" stroke="#f7c948" stroke-width="18" stroke-linecap="square"/>
+</svg>

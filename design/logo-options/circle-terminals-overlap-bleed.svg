@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic circle terminals color bleed</title>
+  <desc id="desc">Circle-terminal logo variant with color bleeding farther into each thread bar.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M196 150h172v56H196z" fill="#f7fbff"/>
+  <path d="M196 228h122v56H196z" fill="#f7fbff"/>
+  <path d="M196 306h172v56H196z" fill="#f7fbff"/>
+  <circle cx="178" cy="178" r="34" fill="#36d6ff"/>
+  <circle cx="178" cy="256" r="34" fill="#ff5ccf"/>
+  <circle cx="178" cy="334" r="34" fill="#f7c948"/>
+  <path d="M190 150h48v56h-48z" fill="#36d6ff"/>
+  <path d="M190 228h48v56h-48z" fill="#ff5ccf"/>
+  <path d="M190 306h48v56h-48z" fill="#f7c948"/>
+  <path d="M222 120v274" stroke="#071018" stroke-width="34" stroke-linecap="square"/>
+</svg>

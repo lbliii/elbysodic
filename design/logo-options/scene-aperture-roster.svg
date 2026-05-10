@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic scene aperture roster mark</title>
+  <desc id="desc">A circular aperture mark framing thread lines and roster dots, with technicolor dye accents.</desc>
+  <circle cx="256" cy="256" r="190" fill="#071018"/>
+  <circle cx="256" cy="256" r="138" fill="#f7fbff"/>
+  <path d="M256 66a190 190 0 0 1 166 98l-86 50a91 91 0 0 0-80-47z" fill="#36d6ff"/>
+  <path d="M446 256a190 190 0 0 1-98 166l-50-86a91 91 0 0 0 47-80z" fill="#ff5ccf"/>
+  <path d="M256 446A190 190 0 0 1 90 348l86-50a91 91 0 0 0 80 47z" fill="#f7c948"/>
+  <path d="M66 256a190 190 0 0 1 98-166l50 86a91 91 0 0 0-47 80z" fill="#43d19e"/>
+  <circle cx="256" cy="256" r="118" fill="#071018"/>
+  <path d="M196 214h120M180 256h152M206 298h100" stroke="#f7fbff" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="178" cy="214" r="13" fill="#ff5ccf"/>
+  <circle cx="160" cy="256" r="13" fill="#36d6ff"/>
+  <circle cx="188" cy="298" r="13" fill="#f7c948"/>
+</svg>

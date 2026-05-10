@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic one-color thread cut</title>
+  <desc id="desc">A strict one-color negative-space mark where a dark E-shaped mass is cut by a thread path and scene arrow.</desc>
+  <path d="M88 88h336v336H88z" fill="#071018"/>
+  <path d="M148 144h220v56H148zM148 228h166v56H148zM148 312h220v56H148z" fill="#f7fbff"/>
+  <path d="M206 118v276M264 118v276" stroke="#071018" stroke-width="28" stroke-linecap="square"/>
+  <path d="M312 200l72 56-72 56z" fill="#071018"/>
+</svg>

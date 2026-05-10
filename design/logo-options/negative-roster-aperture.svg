@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic negative roster aperture</title>
+  <desc id="desc">A bold aperture ring where negative space creates an E-shaped roster path.</desc>
+  <circle cx="256" cy="256" r="188" fill="#071018"/>
+  <circle cx="256" cy="256" r="124" fill="#f7fbff"/>
+  <path d="M196 172h146v44H196z" fill="#071018"/>
+  <path d="M196 234h112v44H196z" fill="#071018"/>
+  <path d="M196 296h146v44H196z" fill="#071018"/>
+  <path d="M196 172v168" stroke="#071018" stroke-width="44" stroke-linecap="square"/>
+  <circle cx="164" cy="194" r="18" fill="#36d6ff"/>
+  <circle cx="164" cy="256" r="18" fill="#ff5ccf"/>
+  <circle cx="164" cy="318" r="18" fill="#f7c948"/>
+  <path d="M256 48v78M256 386v78M48 256h78M386 256h78" stroke="#071018" stroke-width="22" stroke-linecap="square"/>
+</svg>

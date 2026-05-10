@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic online roster cut</title>
+  <desc id="desc">A simplified thread-cut mark with three face nodes, tuned for small online sizes.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M154 150h214v56H154zM154 228h164v56H154zM154 306h214v56H154z" fill="#f7fbff"/>
+  <path d="M216 120v274" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+  <path d="M314 198l70 58-70 58z" fill="#071018"/>
+  <circle cx="146" cy="178" r="15" fill="#36d6ff"/>
+  <circle cx="146" cy="256" r="15" fill="#ff5ccf"/>
+  <circle cx="146" cy="334" r="15" fill="#f7c948"/>
+</svg>

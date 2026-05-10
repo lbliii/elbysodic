@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut roster</title>
+  <desc id="desc">A negative-space thread cut with three roster nodes anchored to scene strips.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="40" fill="#071018"/>
+  <path d="M154 150h214v52H154zM154 230h164v52H154zM154 310h214v52H154z" fill="#f7fbff"/>
+  <path d="M220 120v274" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+  <path d="M274 120v274" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M314 202l68 54-68 54z" fill="#071018"/>
+  <circle cx="136" cy="176" r="18" fill="#36d6ff"/>
+  <circle cx="136" cy="256" r="18" fill="#ff5ccf"/>
+  <circle cx="136" cy="336" r="18" fill="#f7c948"/>
+  <path d="M136 176h62M136 256h62M136 336h62" stroke="#071018" stroke-width="10" stroke-linecap="square"/>
+</svg>

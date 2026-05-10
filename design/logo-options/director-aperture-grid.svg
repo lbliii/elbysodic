@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic director aperture grid</title>
+  <desc id="desc">A precise director grid with an aperture, central scene mark, and three registered dye rails.</desc>
+  <rect x="86" y="86" width="340" height="340" rx="20" fill="#071018"/>
+  <path d="M142 142h228M142 256h228M142 370h228M142 142v228M256 142v228M370 142v228" stroke="#f7fbff" stroke-opacity="0.72" stroke-width="10"/>
+  <rect x="132" y="132" width="248" height="248" rx="14" fill="none" stroke="#f7fbff" stroke-width="24"/>
+  <circle cx="256" cy="256" r="74" fill="#071018" stroke="#f7fbff" stroke-width="22"/>
+  <circle cx="256" cy="256" r="22" fill="#ff5ccf"/>
+  <path d="M116 118h118" stroke="#36d6ff" stroke-width="16" stroke-linecap="square"/>
+  <path d="M278 118h118" stroke="#ff5ccf" stroke-width="16" stroke-linecap="square"/>
+  <path d="M198 394h118" stroke="#f7c948" stroke-width="16" stroke-linecap="square"/>
+</svg>

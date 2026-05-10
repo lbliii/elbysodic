@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic four-part segmented e</title>
+  <desc id="desc">A lowercase e sliced into cyan, magenta, yellow, and green tail sections.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M260 120c-82 0-148 61-148 136 0 28 9 54 26 76l58-44c-7-10-11-21-11-34 0-38 32-70 75-70 34 0 62 18 74 46H214v54h190c3-11 4-22 4-34 0-72-66-130-148-130z" fill="#36d6ff"/>
+  <path d="M404 284H214c13 32 42 51 78 51 22 0 40-7 54-21h68c-24 42-68 72-122 78-42 5-82-7-112-31l54-45c15 12 34 18 58 18 22 0 40-7 54-20h58z" fill="#ff5ccf"/>
+  <path d="M214 230c12-28 29-46 56-46 31 0 54 18 64 46z" fill="#f7c948"/>
+  <path d="M178 360c-26-22-44-52-51-86l64-10c6 22 20 40 42 52z" fill="#43d19e"/>
+  <path d="M212 258h162" stroke="#071018" stroke-width="34" stroke-linecap="round"/>
+</svg>

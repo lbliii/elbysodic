@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Technicolor E gate</title>
+  <desc id="desc">A bold E as a studio gate with registered cyan, magenta, and amber dye layers.</desc>
+  <rect x="72" y="76" width="368" height="360" rx="34" fill="#071018"/>
+  <path d="M136 132h238v58H136zM136 228h180v58H136zM136 324h238v58H136z" fill="#f7fbff"/>
+  <path d="M190 104v304" stroke="#071018" stroke-width="48" stroke-linecap="square"/>
+  <path d="M260 104v304" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M136 132h92" stroke="#36d6ff" stroke-width="14"/>
+  <path d="M136 228h92" stroke="#ff5ccf" stroke-width="14"/>
+  <path d="M136 324h92" stroke="#f7c948" stroke-width="14"/>
+  <path d="M324 198l70 58-70 58z" fill="#071018"/>
+  <path d="M104 104h68M340 408h68" stroke="#43d19e" stroke-width="16" stroke-linecap="square"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic negative casting slot</title>
+  <desc id="desc">A casting star whose negative center becomes a posting slot and roster path.</desc>
+  <circle cx="256" cy="256" r="184" fill="#071018"/>
+  <path d="M256 96l42 108 116-14-86 78 50 105-122-58-122 58 50-105-86-78 116 14z" fill="#f7fbff"/>
+  <path d="M176 236h160v40H176z" fill="#071018"/>
+  <path d="M212 294h88v34h-88z" fill="#071018"/>
+  <circle cx="154" cy="190" r="20" fill="#36d6ff"/>
+  <circle cx="358" cy="190" r="20" fill="#ff5ccf"/>
+  <circle cx="378" cy="364" r="20" fill="#f7c948"/>
+  <circle cx="134" cy="364" r="20" fill="#43d19e"/>
+</svg>

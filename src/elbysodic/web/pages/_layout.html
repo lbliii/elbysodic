@@ -75,6 +75,7 @@
       }
     })();
     </script>
+    <link rel="icon" href="/elbysodic-static/brand/elbysodic-favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-cookie-1">
     <style id="elbysodic-program-theme">
 {{ program_theme_css(shell_has_community, viewer) }}
@@ -132,6 +133,10 @@
   <img class="elbysodic-community-brand__mark"
        src="{{ viewer.community.community_mark_url }}"
        alt="{{ viewer.community.community_mark_alt }}">
+  {% elif not shell_has_community %}
+  <img class="elbysodic-community-brand__mark elbysodic-product-mark elbysodic-product-mark--brand"
+       src="/elbysodic-static/brand/elbysodic-mark-small.svg"
+       alt="">
   {% end %}
   <span class="elbysodic-community-brand__name">{{ viewer.community.name if shell_has_community and viewer else "Elbysodic" }}</span>
 </a>

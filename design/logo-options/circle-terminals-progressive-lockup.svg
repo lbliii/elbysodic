@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals progressive lockup</title>
+  <desc id="desc">Lockup for the progressive Circle Terminals mark: medium, short, long.</desc>
+  <rect x="28" y="34" width="212" height="212" rx="28" fill="#071018"/>
+  <circle cx="94" cy="104" r="17" fill="#36d6ff"/>
+  <circle cx="94" cy="144" r="17" fill="#ff5ccf"/>
+  <circle cx="94" cy="184" r="17" fill="#f7c948"/>
+  <path d="M110 88h78v32h-78z" fill="#f7fbff"/>
+  <path d="M110 128h62v32h-62z" fill="#f7fbff"/>
+  <path d="M110 168h92v32h-92z" fill="#f7fbff"/>
+  <path d="M110 72v144" stroke="#071018" stroke-width="22" stroke-linecap="square"/>
+  <text x="292" y="150" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="82" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="296" y="194" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">ROLEPLAY STUDIO</text>
+  <path d="M296 218h124" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M432 218h124" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M568 218h124" stroke="#f7c948" stroke-width="9"/>
+</svg>

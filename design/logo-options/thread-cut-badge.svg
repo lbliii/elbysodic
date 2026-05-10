@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut badge</title>
+  <desc id="desc">A compact badge version of the negative thread cut, framed for app icon and favicon testing.</desc>
+  <path d="M256 52l176 86v196c0 66-62 104-176 142C142 438 80 400 80 334V138z" fill="#071018"/>
+  <path d="M144 156h224v54H144zM144 230h170v54H144zM144 304h224v54H144z" fill="#f7fbff"/>
+  <path d="M202 128v256" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+  <path d="M260 128v256" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M312 202l68 54-68 54z" fill="#071018"/>
+  <path d="M256 52l176 86" stroke="#36d6ff" stroke-width="14" stroke-linecap="square"/>
+  <path d="M80 138l176-86" stroke="#ff5ccf" stroke-width="14" stroke-linecap="square"/>
+  <path d="M150 414c60 27 152 27 212 0" stroke="#f7c948" stroke-width="14" stroke-linecap="square"/>
+</svg>

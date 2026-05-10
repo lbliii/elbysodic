@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals compact lockup</title>
+  <desc id="desc">Compact Elbysodic lockup for headers and narrow product chrome.</desc>
+  <rect x="24" y="24" width="132" height="132" rx="24" fill="#071018"/>
+  <circle cx="64" cy="56" r="11" fill="#36d6ff"/>
+  <circle cx="64" cy="90" r="11" fill="#ff5ccf"/>
+  <circle cx="64" cy="124" r="11" fill="#f7c948"/>
+  <path d="M84 46h48v20H84z" fill="#f7fbff"/>
+  <path d="M84 80h38v20H84z" fill="#f7fbff"/>
+  <path d="M84 114h58v20H84z" fill="#f7fbff"/>
+  <path d="M80 34v112" stroke="#071018" stroke-width="12" stroke-linecap="square"/>
+  <text x="190" y="111" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="72" font-weight="850" letter-spacing="-1">elbysodic</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic lowercase e three-strip mark</title>
+  <desc id="desc">A lowercase e divided into three Technicolor-inspired color records: cyan, magenta, and amber.</desc>
+  <rect x="74" y="74" width="364" height="364" rx="44" fill="#071018"/>
+  <path d="M256 132c-76 0-138 56-138 124 0 26 9 50 25 70l52-50c-5-7-7-14-7-22 0-40 30-70 68-70 32 0 58 20 68 50H188v48h204c2-9 4-18 4-28 0-68-62-122-140-122z" fill="#36d6ff"/>
+  <path d="M392 282H188c10 30 38 50 72 50 19 0 34-6 46-16h80c-24 40-70 64-126 64-50 0-94-24-118-58l54-46c13 20 36 32 64 32h132z" fill="#ff5ccf"/>
+  <path d="M188 234c10-30 36-50 68-50s58 20 68 50z" fill="#f7c948"/>
+  <path d="M180 256h172" stroke="#071018" stroke-width="34" stroke-linecap="square"/>
+  <path d="M252 116v280" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M330 214l54 42-54 42z" fill="#071018"/>
+</svg>

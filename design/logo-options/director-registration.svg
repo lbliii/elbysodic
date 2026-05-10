@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic director registration mark</title>
+  <desc id="desc">A crop and registration symbol around a central scene dot, with controlled cyan, magenta, and amber dye offsets.</desc>
+  <g fill="none" stroke="#071018" stroke-width="34" stroke-linecap="square">
+    <path d="M92 190V92h98"/>
+    <path d="M322 92h98v98"/>
+    <path d="M420 322v98h-98"/>
+    <path d="M190 420H92v-98"/>
+  </g>
+  <g fill="none" stroke-width="12" stroke-linecap="square">
+    <path d="M112 204v-92h92" stroke="#36d6ff"/>
+    <path d="M308 112h92v92" stroke="#ff5ccf"/>
+    <path d="M400 308v92h-92" stroke="#f7c948"/>
+    <path d="M204 400h-92v-92" stroke="#43d19e"/>
+  </g>
+  <circle cx="256" cy="256" r="78" fill="#071018"/>
+  <circle cx="256" cy="256" r="34" fill="#f7fbff"/>
+  <path d="M256 154v56M256 302v56M154 256h56M302 256h56" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <circle cx="256" cy="256" r="12" fill="#ff5ccf"/>
+</svg>

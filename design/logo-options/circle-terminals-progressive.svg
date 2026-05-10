@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals progressive mark</title>
+  <desc id="desc">A progressive Circle Terminals variant: circle medium, circle short, circle long.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <circle cx="180" cy="178" r="30" fill="#36d6ff"/>
+  <circle cx="180" cy="256" r="30" fill="#ff5ccf"/>
+  <circle cx="180" cy="334" r="30" fill="#f7c948"/>
+  <path d="M210 150h136v56H210z" fill="#f7fbff"/>
+  <path d="M210 228h110v56H210z" fill="#f7fbff"/>
+  <path d="M210 306h160v56H210z" fill="#f7fbff"/>
+  <path d="M214 120v274" stroke="#071018" stroke-width="38" stroke-linecap="square"/>
+</svg>

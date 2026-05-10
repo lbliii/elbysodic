@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic online prism e</title>
+  <desc id="desc">A simplified lowercase e formed from three color-record arcs for online use at multiple sizes.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M260 126c-75 0-136 58-136 130 0 27 8 52 23 73l52-39c-7-10-10-21-10-34 0-36 31-66 71-66 31 0 57 17 68 43H210v52h186c2-10 3-20 3-31 0-71-62-128-139-128z" fill="#36d6ff"/>
+  <path d="M396 285H210c12 29 39 47 73 47 22 0 40-7 53-22h70c-25 45-70 76-123 76-37 0-70-14-95-36l45-42c13 12 31 20 52 20 21 0 39-7 52-20h59z" fill="#ff5ccf"/>
+  <path d="M210 233c12-26 31-43 54-43 29 0 53 17 64 43z" fill="#f7c948"/>
+  <path d="M210 258h160" stroke="#071018" stroke-width="34" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic title card E</title>
+  <desc id="desc">A Golden Age title-card frame reduced into an E-shaped identity mark.</desc>
+  <rect x="64" y="92" width="384" height="328" rx="14" fill="#071018"/>
+  <rect x="96" y="124" width="320" height="264" rx="8" fill="#f7fbff"/>
+  <path d="M142 162h228v50H142zM142 232h168v50H142zM142 302h228v50H142z" fill="#071018"/>
+  <path d="M198 144v226" stroke="#f7fbff" stroke-width="34" stroke-linecap="square"/>
+  <path d="M256 144v226" stroke="#f7fbff" stroke-width="14" stroke-linecap="square"/>
+  <path d="M312 212l54 44-54 44z" fill="#f7fbff"/>
+  <path d="M96 124h80M336 388h80" stroke="#f7c948" stroke-width="12" stroke-linecap="square"/>
+  <path d="M336 124h80M96 388h80" stroke="#36d6ff" stroke-width="12" stroke-linecap="square"/>
+  <path d="M112 256h52M348 256h52" stroke="#ff5ccf" stroke-width="12" stroke-linecap="square"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic page signal escutcheon</title>
+  <desc id="desc">A shield-like page mark with a folded corner, signal line, and mid-century geometric color records.</desc>
+  <path d="M112 78h214l74 74v170c0 63-52 111-144 145-92-34-144-82-144-145z" fill="#071018"/>
+  <path d="M326 78v74h74z" fill="#36d6ff"/>
+  <path d="M158 156h154" stroke="#f7fbff" stroke-width="22" stroke-linecap="square"/>
+  <path d="M158 224h196" stroke="#ff5ccf" stroke-width="22" stroke-linecap="square"/>
+  <path d="M158 292h132" stroke="#f7c948" stroke-width="22" stroke-linecap="square"/>
+  <path d="M174 358c54 34 110 34 164 0" fill="none" stroke="#43d19e" stroke-width="24" stroke-linecap="square"/>
+  <circle cx="112" cy="78" r="24" fill="#ff5ccf"/>
+  <circle cx="400" cy="322" r="24" fill="#36d6ff"/>
+</svg>

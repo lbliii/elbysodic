@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic dual face aperture</title>
+  <desc id="desc">Two opposing abstract profiles in a shared aperture, representing writer and character identities.</desc>
+  <circle cx="256" cy="256" r="184" fill="#071018"/>
+  <circle cx="256" cy="256" r="132" fill="#f7fbff"/>
+  <path d="M250 132c-60 0-108 56-108 124s48 124 108 124h36c-34-28-52-72-52-124s18-96 52-124z" fill="#071018"/>
+  <path d="M262 132c60 0 108 56 108 124s-48 124-108 124h-36c34-28 52-72 52-124s-18-96-52-124z" fill="#071018"/>
+  <circle cx="216" cy="226" r="12" fill="#36d6ff"/>
+  <circle cx="296" cy="226" r="12" fill="#ff5ccf"/>
+  <path d="M210 286h92" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M108 256h58" stroke="#f7c948" stroke-width="18" stroke-linecap="square"/>
+  <path d="M346 256h58" stroke="#43d19e" stroke-width="18" stroke-linecap="square"/>
+  <path d="M256 72v56M256 384v56" stroke="#071018" stroke-width="28" stroke-linecap="square"/>
+</svg>

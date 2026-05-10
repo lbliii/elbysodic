@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic circle terminals soft overlap</title>
+  <desc id="desc">Circle-terminal logo variant where the colored circles softly overlap the white thread bars.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M198 150h170v56H198z" fill="#f7fbff"/>
+  <path d="M198 228h120v56H198z" fill="#f7fbff"/>
+  <path d="M198 306h170v56H198z" fill="#f7fbff"/>
+  <circle cx="178" cy="178" r="31" fill="#36d6ff"/>
+  <circle cx="178" cy="256" r="31" fill="#ff5ccf"/>
+  <circle cx="178" cy="334" r="31" fill="#f7c948"/>
+  <path d="M216 120v274" stroke="#071018" stroke-width="36" stroke-linecap="square"/>
+</svg>

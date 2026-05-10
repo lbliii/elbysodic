@@ -816,6 +816,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
 
         assert page.status == 200
         assert "Invite/demo accounts use password" in page.text
+        assert "/elbysodic-static/brand/elbysodic-mark.svg" in page.text
         assert login.status == 302
         assert _response_header(login, "location") == "/studio"
         assert any(cookie.startswith("elbysodic_session=") for cookie in set_cookies)
@@ -1132,6 +1133,7 @@ def test_prefixed_cross_realm_recovery_switches_to_target_tenant() -> None:
             )
 
         assert recovery.status == 200
+        assert "/elbysodic-static/brand/elbysodic-mark.svg" in recovery.text
         assert "That world material lives in Jurassic Park Universe." in recovery.text
         assert (
             'name="next" value="/c/jurassic-park-universe/world/paddock-twelve-incident"'
@@ -1385,6 +1387,8 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
             root = await client.get("/")
 
         assert root.status == 200
+        assert "/elbysodic-static/brand/elbysodic-favicon.svg" in root.text
+        assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in root.text
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
         assert "Studio Network" in root.text
         assert "Choose the realm you are writing in." in root.text
@@ -1404,6 +1408,8 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             index = await client.get("/c/x-men-apocalypse")
 
             assert index.status == 200
+            assert "/elbysodic-static/brand/elbysodic-favicon.svg" in index.text
+            assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in index.text
             assert "/elbysodic-static/seed-media/xmen-mark.svg" in index.text
             assert 'alt="X-Men Apocalypse academy signal mark"' in index.text
             assert (

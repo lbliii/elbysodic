@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut roster C</title>
+  <desc id="desc">A roster-ring variant that keeps the thread cut pure while placing face nodes around the mark.</desc>
+  <circle cx="256" cy="256" r="194" fill="#071018"/>
+  <rect x="114" y="114" width="284" height="284" rx="32" fill="#f7fbff"/>
+  <path d="M158 166h196v48H158zM158 232h148v48H158zM158 298h196v48H158z" fill="#071018"/>
+  <path d="M210 138v236" stroke="#f7fbff" stroke-width="34" stroke-linecap="square"/>
+  <path d="M264 138v236" stroke="#f7fbff" stroke-width="16" stroke-linecap="square"/>
+  <path d="M306 210l58 46-58 46z" fill="#f7fbff"/>
+  <circle cx="256" cy="70" r="20" fill="#36d6ff"/>
+  <circle cx="430" cy="256" r="20" fill="#ff5ccf"/>
+  <circle cx="256" cy="442" r="20" fill="#f7c948"/>
+  <circle cx="82" cy="256" r="20" fill="#43d19e"/>
+</svg>

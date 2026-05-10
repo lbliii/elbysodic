@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic circle terminals vertical merge</title>
+  <desc id="desc">Circle-terminal mark with vertically merged color discs and visible intercut transition zones.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M216 150h152v56H216z" fill="#f7fbff"/>
+  <path d="M216 228h102v56H216z" fill="#f7fbff"/>
+  <path d="M216 306h152v56H216z" fill="#f7fbff"/>
+  <circle cx="178" cy="188" r="42" fill="#36d6ff"/>
+  <path d="M136 216a42 42 0 0 1 84 0v40h-84z" fill="#8e7bff"/>
+  <circle cx="178" cy="256" r="42" fill="#ff5ccf"/>
+  <path d="M136 284a42 42 0 0 1 84 0v40h-84z" fill="#f28c6b"/>
+  <circle cx="178" cy="324" r="42" fill="#f7c948"/>
+  <path d="M216 120v274" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut roster B</title>
+  <desc id="desc">A quieter roster variant where face nodes are cut out as dark counters rather than colored dots.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="40" fill="#071018"/>
+  <path d="M142 148h228v54H142zM142 229h174v54H142zM142 310h228v54H142z" fill="#f7fbff"/>
+  <path d="M202 118v276" stroke="#071018" stroke-width="42" stroke-linecap="square"/>
+  <path d="M260 118v276" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M314 202l72 54-72 54z" fill="#071018"/>
+  <circle cx="166" cy="175" r="16" fill="#071018"/>
+  <circle cx="166" cy="256" r="16" fill="#071018"/>
+  <circle cx="166" cy="337" r="16" fill="#071018"/>
+  <path d="M142 148h64" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M142 229h64" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M142 310h64" stroke="#f7c948" stroke-width="9"/>
+</svg>

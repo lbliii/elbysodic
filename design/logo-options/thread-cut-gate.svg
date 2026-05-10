@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut scene gate</title>
+  <desc id="desc">A negative-space scene gate built from thread bars and a decisive forward cut.</desc>
+  <rect x="72" y="92" width="368" height="328" rx="24" fill="#071018"/>
+  <path d="M134 148h244v58H134zM134 227h184v58H134zM134 306h244v58H134z" fill="#f7fbff"/>
+  <path d="M200 124v264" stroke="#071018" stroke-width="48" stroke-linecap="square"/>
+  <path d="M276 124v264" stroke="#071018" stroke-width="20" stroke-linecap="square"/>
+  <path d="M314 190h34l60 66-60 66h-34l62-66z" fill="#071018"/>
+  <path d="M92 126h82M338 386h82" stroke="#36d6ff" stroke-width="16" stroke-linecap="square"/>
+  <path d="M92 386h82M338 126h82" stroke="#ff5ccf" stroke-width="16" stroke-linecap="square"/>
+</svg>

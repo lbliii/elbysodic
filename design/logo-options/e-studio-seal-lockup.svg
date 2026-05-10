@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 300" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic studio seal E lockup</title>
+  <desc id="desc">A Hollywood studio-style lockup with a Technicolor futurist E seal and restrained editorial wordmark.</desc>
+  <circle cx="142" cy="150" r="104" fill="#071018"/>
+  <path d="M92 88h112v30H92zM92 132h84v30H92zM92 176h112v30H92z" fill="#f7fbff"/>
+  <path d="M122 72v150" stroke="#071018" stroke-width="24" stroke-linecap="square"/>
+  <path d="M158 72v150" stroke="#071018" stroke-width="10" stroke-linecap="square"/>
+  <path d="M176 120l40 30-40 30z" fill="#071018"/>
+  <path d="M142 28v42M142 230v42M20 150h42M222 150h42" stroke="#071018" stroke-width="16" stroke-linecap="square"/>
+  <text x="300" y="150" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="82" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="304" y="194" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">PBP STUDIO LAYER</text>
+  <path d="M304 220h122" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M438 220h122" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M572 220h122" stroke="#f7c948" stroke-width="9"/>
+</svg>

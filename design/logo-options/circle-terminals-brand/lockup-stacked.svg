@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals stacked lockup</title>
+  <desc id="desc">Stacked Elbysodic lockup for presentation, social, and launch surfaces.</desc>
+  <rect x="272" y="64" width="176" height="176" rx="28" fill="#071018"/>
+  <circle cx="320" cy="108" r="14" fill="#36d6ff"/>
+  <circle cx="320" cy="152" r="14" fill="#ff5ccf"/>
+  <circle cx="320" cy="196" r="14" fill="#f7c948"/>
+  <path d="M346 94h64v28h-64z" fill="#f7fbff"/>
+  <path d="M346 138h50v28h-50z" fill="#f7fbff"/>
+  <path d="M346 182h76v28h-76z" fill="#f7fbff"/>
+  <path d="M340 80v144" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <text x="152" y="352" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="86" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="218" y="402" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">ROLEPLAY STUDIO</text>
+  <path d="M248 430h76" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M336 430h76" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M424 430h76" stroke="#f7c948" stroke-width="9"/>
+</svg>

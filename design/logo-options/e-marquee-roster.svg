@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic marquee roster E</title>
+  <desc id="desc">A Hollywood marquee-inspired E with roster lights treated as face signals rather than decoration.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="40" fill="#071018"/>
+  <path d="M154 148h216v54H154zM154 229h166v54H154zM154 310h216v54H154z" fill="#f7fbff"/>
+  <path d="M216 118v276" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+  <path d="M270 118v276" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M316 202l66 54-66 54z" fill="#071018"/>
+  <circle cx="136" cy="175" r="13" fill="#36d6ff"/>
+  <circle cx="136" cy="256" r="13" fill="#ff5ccf"/>
+  <circle cx="136" cy="337" r="13" fill="#f7c948"/>
+  <circle cx="390" cy="175" r="13" fill="#36d6ff"/>
+  <circle cx="340" cy="256" r="13" fill="#ff5ccf"/>
+  <circle cx="390" cy="337" r="13" fill="#f7c948"/>
+  <path d="M136 175h58M136 256h58M136 337h58" stroke="#071018" stroke-width="8" stroke-linecap="square"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals bare symbol</title>
+  <desc id="desc">Bare transparent version of the selected Circle Terminals symbol without the rounded app container.</desc>
+  <circle cx="164" cy="178" r="34" fill="#36d6ff"/>
+  <circle cx="164" cy="256" r="34" fill="#ff5ccf"/>
+  <circle cx="164" cy="334" r="34" fill="#f7c948"/>
+  <path d="M200 146h178v64H200z" fill="#071018"/>
+  <path d="M200 224h124v64H200z" fill="#071018"/>
+  <path d="M200 302h178v64H200z" fill="#071018"/>
+  <path d="M202 112v288" stroke="#ffffff" stroke-width="42" stroke-linecap="square"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut lockup</title>
+  <desc id="desc">A wordmark lockup pairing Elbysodic with the refined negative thread cut mark.</desc>
+  <rect x="24" y="24" width="232" height="232" rx="30" fill="#071018"/>
+  <path d="M70 82h132v32H70zM70 126h98v32H70zM70 170h132v32H70z" fill="#f7fbff"/>
+  <path d="M104 66v152" stroke="#071018" stroke-width="24" stroke-linecap="square"/>
+  <path d="M140 66v152" stroke="#071018" stroke-width="10" stroke-linecap="square"/>
+  <path d="M166 114l42 28-42 28z" fill="#071018"/>
+  <text x="304" y="151" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="78" font-weight="850" letter-spacing="0">elbysodic</text>
+  <text x="308" y="198" fill="#1b2e40" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="26" font-weight="800" letter-spacing="4">SCENES. FACES. CONTINUITY.</text>
+  <path d="M306 224h130" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M444 224h130" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M582 224h130" stroke="#f7c948" stroke-width="10"/>
+</svg>
