@@ -1,6 +1,6 @@
 # Circle Terminals Design Alignment Plan
 
-Status: implementation in progress
+Status: completed and archived
 Owner: design + web stewardship
 Created: 2026-05-10
 Updated: 2026-05-10
@@ -208,8 +208,8 @@ Work:
 
 - Decide whether to keep all `design/logo-options/` exploration files, move
   non-selected options into an archive subfolder, or remove them.
-- Keep `design/logo-options/circle-terminals-brand/` as the canonical design
-  artifact until/unless moved into `design/brand/`.
+- Move the selected Circle Terminals brand kit into `design/brand/` and keep
+  non-selected options archived under `design/logo-options/archive/`.
 - Update `design/README.md` if brand assets become a durable design area.
 - Add a changelog fragment for installed product brand if this ships.
 
@@ -259,3 +259,9 @@ Start with Phase 1 and Phase 2 together in one small PR:
 4. update changelog if the appearance change is accepted
 
 Do not touch wanted/casting composition until the base palette is stable.
+
+## Final Note
+
+Archived on 2026-05-10 after completing the token map, default theme pass,
+surface intensity corrections, wanted/casting identity upgrade, brand source
+organization, release collateral, focused rendered proof, and app check.

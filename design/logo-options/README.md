@@ -2,6 +2,10 @@
 
 Date: 2026-05-10
 
+Status: archived exploration. The selected Circle Terminals brand kit now lives
+in `design/brand/circle-terminals/`; production app assets live in
+`src/elbysodic/web/static/brand/`.
+
 This is a research-backed starting set for Elbysodic logo direction. It is not
 a final brand decision or production asset set. The goal is to test symbolic
 territory before choosing one direction to refine.
@@ -93,8 +97,8 @@ sizes, app icons, favicons, social avatars, and director-customized themes.
    - Best for evaluating name rhythm and spacing beside a compact mark.
    - The text should be custom drawn before production use.
 
-Open `index.html` in this directory to compare the options on a dark contact
-sheet.
+Open `archive/2026-05-circle-terminals-exploration/index.html` to compare the
+initial options on a dark contact sheet.
 
 ## Second-Pass Variants
 

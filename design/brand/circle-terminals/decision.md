@@ -36,12 +36,12 @@ sizes and gives the product a consistent favicon/app-icon silhouette.
 
 ## Current Assets
 
-- Focused brand kit: `circle-terminals-brand/`
-- Brand treatment page: `circle-terminals-brand/brand-treatment.html`
-- Primary mark: `circle-terminals-brand/mark-primary.svg`
-- Small-size mark: `circle-terminals-brand/mark-small.svg`
-- Favicon source: `circle-terminals-brand/favicon.svg`
-- Primary lockup: `circle-terminals-brand/lockup-horizontal.svg`
+- Focused brand kit: `design/brand/circle-terminals/`
+- Brand treatment page: `design/brand/circle-terminals/brand-treatment.html`
+- Primary mark: `design/brand/circle-terminals/mark-primary.svg`
+- Small-size mark: `design/brand/circle-terminals/mark-small.svg`
+- Favicon source: `design/brand/circle-terminals/favicon.svg`
+- Primary lockup: `design/brand/circle-terminals/lockup-horizontal.svg`
 
 ## Recommended Next Refinement
 
