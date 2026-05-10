@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 13
+CURRENT_SCHEMA_VERSION = 14
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -519,6 +519,30 @@ def _create_user_session_identity_triggers(connection: sqlite3.Connection) -> No
     )
 
 
+def _add_command_submissions(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS command_submissions (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            command_key TEXT NOT NULL,
+            token_hash TEXT NOT NULL,
+            result_path TEXT,
+            created_at TEXT NOT NULL,
+            completed_at TEXT,
+            UNIQUE (community_id, membership_id, command_key, token_hash)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_command_submissions_membership
+        ON command_submissions(community_id, membership_id, created_at)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -536,6 +560,7 @@ MIGRATIONS: tuple[Migration, ...] = (
         "enforce-user-session-identity-selection",
         _enforce_user_session_identity_selection,
     ),
+    Migration(14, "command-submissions", _add_command_submissions),
 )
 
 

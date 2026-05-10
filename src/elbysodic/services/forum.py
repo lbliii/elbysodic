@@ -436,6 +436,41 @@ class AppServices:
         identity = self._identity_context or self._identity_resolver.resolve()
         return self._identity_for_membership(identity.user_id, membership_id)
 
+    def command_result(self, command_key: str, token: str) -> str | None:
+        if not token:
+            return None
+        viewer = self.viewer()
+        submission = self.repo.get_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+        )
+        return None if submission is None else submission.result_path
+
+    def reserve_command(self, command_key: str, token: str) -> bool:
+        if not token:
+            return True
+        viewer = self.viewer()
+        return self.repo.reserve_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+        )
+
+    def complete_command(self, command_key: str, token: str, result_path: str) -> None:
+        if not token:
+            return
+        viewer = self.viewer()
+        self.repo.complete_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+            result_path=result_path,
+        )
+
     def switch_session_identity(
         self,
         session_token: str,

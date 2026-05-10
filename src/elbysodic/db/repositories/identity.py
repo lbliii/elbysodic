@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
@@ -47,6 +49,15 @@ class TenantPairIntegrityIssue:
     row_id: int
     community_id: int
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class CommandSubmission:
+    id: int
+    community_id: int
+    membership_id: int
+    command_key: str
+    result_path: str | None
 
 
 class IdentityRepositoryMixin(RepositoryBase):
@@ -994,6 +1005,99 @@ class IdentityRepositoryMixin(RepositoryBase):
             for row in rows
         ]
 
+    def get_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> CommandSubmission | None:
+        row = self.connection.execute(
+            """
+            SELECT id, community_id, membership_id, command_key, result_path
+            FROM command_submissions
+            WHERE community_id = ?
+                AND membership_id = ?
+                AND command_key = ?
+                AND token_hash = ?
+            """,
+            (community_id, membership_id, command_key, _command_token_hash(token)),
+        ).fetchone()
+        if row is None:
+            return None
+        return CommandSubmission(
+            id=row["id"],
+            community_id=row["community_id"],
+            membership_id=row["membership_id"],
+            command_key=row["command_key"],
+            result_path=row["result_path"],
+        )
+
+    def reserve_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> bool:
+        self.get_membership(community_id, membership_id)
+        try:
+            self.connection.execute(
+                """
+                INSERT INTO command_submissions (
+                    community_id,
+                    membership_id,
+                    command_key,
+                    token_hash,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    community_id,
+                    membership_id,
+                    command_key,
+                    _command_token_hash(token),
+                    _utc_now(),
+                ),
+            )
+        except sqlite3.IntegrityError:
+            return False
+        self._commit()
+        return True
+
+    def complete_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+        result_path: str,
+    ) -> None:
+        self.connection.execute(
+            """
+            UPDATE command_submissions
+            SET result_path = ?,
+                completed_at = ?
+            WHERE community_id = ?
+                AND membership_id = ?
+                AND command_key = ?
+                AND token_hash = ?
+            """,
+            (
+                result_path,
+                _utc_now(),
+                community_id,
+                membership_id,
+                command_key,
+                _command_token_hash(token),
+            ),
+        )
+        self._commit()
+
     def search_memberships(
         self,
         community_id: int,
@@ -1054,3 +1158,7 @@ def _session_identity_integrity_reason(row: Any) -> str:
     if row["membership_is_active"] == 0:
         return "selected membership is inactive"
     return "selected identity is invalid"
+
+
+def _command_token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

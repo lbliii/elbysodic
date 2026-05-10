@@ -82,6 +82,15 @@ def _oob_block(html: str, target_id: str) -> str:
     return match.group("body")
 
 
+def _input_value(html: str, name: str) -> str:
+    match = re.search(
+        rf'<input[^>]+name="{re.escape(name)}"[^>]+value="(?P<value>[^"]*)"',
+        html,
+    )
+    assert match is not None
+    return match.group("value")
+
+
 def _page_content(html: str) -> str:
     marker = '<div id="page-content">'
     start = html.find(marker)
@@ -6910,6 +6919,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert 'aria-label="Quote"' in form.text
             assert 'aria-label="Link"' in form.text
             assert "Power-stealing brawler with a careful heart." in form.text
+            token = _input_value(form.text, "command_token")
 
             response = await client.post(
                 "/boards/danger-room/threads/new",
@@ -6924,6 +6934,20 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "summary": "Magneto tags Xavier into an unreasonable simulation.",
                         "posting_mode": "posting_order",
                         "body": "Magneto sets the simulation to unfair.",
+                        "command_token": token,
+                    },
+                    doseq=True,
+                ).encode(),
+                headers=_FORM,
+            )
+            duplicate = await client.post(
+                "/boards/danger-room/threads/new",
+                body=urlencode(
+                    {
+                        "character_id": magneto.id,
+                        "title": "Metal and Memory Duplicate",
+                        "body": "This duplicate should not be posted.",
+                        "command_token": token,
                     },
                     doseq=True,
                 ).encode(),
@@ -6933,6 +6957,8 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert dict(response.headers)["location"].startswith(
                 "/boards/danger-room/threads/metal-and-memory#post-"
             )
+            assert duplicate.status == 302
+            assert dict(duplicate.headers)["location"] == dict(response.headers)["location"]
 
             thread = await client.get("/boards/danger-room/threads/metal-and-memory")
             assert thread.status == 200
@@ -6948,11 +6974,61 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
 
             board = await client.get("/boards/danger-room")
             assert "Metal and Memory" in board.text
+            assert "Metal and Memory Duplicate" not in board.text
             assert "Started by" in board.text
             assert "open to join" in board.text
             assert "Sublevel 3" in board.text
             assert "Latest" in board.text
             assert "/members/starlane" in board.text
+
+    asyncio.run(run())
+
+
+def test_reply_command_token_prevents_duplicate_posts() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "danger-room")
+        thread = repo.get_thread_by_slug(community.id, board.id, "sentinel-drill")
+        character = services.viewer().current_character
+        assert character is not None
+        before_count = len(repo.list_posts(community.id, thread.id))
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+            assert page.status == 200
+            token = _input_value(page.text, "command_token")
+            first = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "body": "Rogue checks the duplicate-submit guard.",
+                        "command_token": token,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            duplicate = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "body": "This duplicate should not create another post.",
+                        "command_token": token,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert first.status == 302
+        assert duplicate.status == 302
+        assert dict(duplicate.headers)["location"] == dict(first.headers)["location"]
+        posts = repo.list_posts(community.id, thread.id)
+        assert len(posts) == before_count + 1
+        assert posts[-1].body == "Rogue checks the duplicate-submit guard."
 
     asyncio.run(run())
 

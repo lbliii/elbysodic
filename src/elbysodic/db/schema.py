@@ -54,6 +54,18 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     revoked_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS command_submissions (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    command_key TEXT NOT NULL,
+    token_hash TEXT NOT NULL,
+    result_path TEXT,
+    created_at TEXT NOT NULL,
+    completed_at TEXT,
+    UNIQUE (community_id, membership_id, command_key, token_hash)
+);
+
 CREATE TABLE IF NOT EXISTS roles (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -721,6 +733,8 @@ CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_watches_membership ON thread_watches(community_id, membership_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_membership ON notifications(community_id, membership_id, read_at, created_at);
+CREATE INDEX IF NOT EXISTS idx_command_submissions_membership
+ON command_submissions(community_id, membership_id, created_at);
 
 CREATE TRIGGER IF NOT EXISTS trg_user_sessions_selected_identity_insert
 BEFORE INSERT ON user_sessions

@@ -38,6 +38,7 @@
         class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--opening"
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="submitDraft()">
+    <input type="hidden" name="command_token" value="{{ command_token }}">
     <div class="elbysodic-composer-heading">
       <div>
         <p class="elbysodic-kicker">Scene draft</p>
