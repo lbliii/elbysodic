@@ -172,6 +172,7 @@ test-fast = { cmd = "pytest tests/ -x -q --timeout=10", help = "Fast feedback lo
 test-cov = { cmd = "pytest tests/ --cov=elbysodic --cov-report=term-missing", help = "Run tests with coverage" }
 browser-qa = { cmd = "python scripts/browser_qa.py", help = "Run Playwright visual smoke QA against the local app" }
 browser-qa-deep = { cmd = "python scripts/browser_qa.py --profile deep", help = "Run expanded Playwright visual QA against seeded routes" }
+rapid-click-qa = { cmd = "python scripts/rapid_click_qa.py --iterations 1", help = "Run rapid identity/navigation protocol smoke QA" }
 
 ty = { cmd = "ty check src/elbysodic/ tests/", help = "Run ty type checker" }
 ty-strict = { cmd = "ty check src/elbysodic/ tests/ --error-on-warning", help = "Strict type checking" }

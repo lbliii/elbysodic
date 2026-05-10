@@ -24,7 +24,14 @@ class CheckResult:
     status: int
     wall_ms: float
     route_ms: str
+    expected_status: int
     cookie_changed: bool = False
+    expected_text: str | None = None
+    expected_text_found: bool = True
+
+    @property
+    def passed(self) -> bool:
+        return self.status == self.expected_status and self.expected_text_found
 
 
 def _header(response: object, name: str) -> str | None:
@@ -46,11 +53,19 @@ def _cookie_pair(response: object, name: str) -> str | None:
     return pair if pair.startswith(f"{name}=") else None
 
 
-async def _timed_get(client: TestClient, label: str, path: str, cookie: str | None) -> CheckResult:
+async def _timed_get(
+    client: TestClient,
+    label: str,
+    path: str,
+    cookie: str | None,
+    *,
+    expected_text: str | None = None,
+) -> CheckResult:
     headers = {"Cookie": cookie} if cookie else None
     started = perf_counter()
     response = await client.get(path, headers=headers)
     wall_ms = (perf_counter() - started) * 1000
+    text = getattr(response, "text", "")
     return CheckResult(
         label=label,
         method="GET",
@@ -58,6 +73,9 @@ async def _timed_get(client: TestClient, label: str, path: str, cookie: str | No
         status=response.status,
         wall_ms=wall_ms,
         route_ms=_header(response, ROUTE_TIME_HEADER) or "",
+        expected_status=200,
+        expected_text=expected_text,
+        expected_text_found=expected_text is None or expected_text in text,
     )
 
 
@@ -94,6 +112,7 @@ async def _timed_switch(
             status=response.status,
             wall_ms=wall_ms,
             route_ms=_header(response, ROUTE_TIME_HEADER) or "",
+            expected_status=302,
             cookie_changed=next_cookie != cookie,
         ),
         next_cookie,
@@ -105,31 +124,41 @@ async def run(iterations: int) -> list[CheckResult]:
     services = get_services()
     user_id = services.seed.user.id
     switch_targets = (
-        ("enter-nyc", "rl-nyc", "/c/rl-nyc/my/threads"),
-        ("enter-small-town", "rl-small-town", "/c/rl-small-town/boards/town-hall?filter=mine"),
-        ("enter-jurassic", "jurassic-park-universe", "/c/jurassic-park-universe/world"),
-        ("enter-xmen", "x-men-apocalypse", "/boards/danger-room"),
+        ("enter-nyc", "rl-nyc", "/c/rl-nyc/my/threads", "RL NYC"),
+        (
+            "enter-small-town",
+            "rl-small-town",
+            "/c/rl-small-town/boards/town-hall?filter=mine",
+            "RL Small Town",
+        ),
+        (
+            "enter-jurassic",
+            "jurassic-park-universe",
+            "/c/jurassic-park-universe/world",
+            "Jurassic Park Universe",
+        ),
+        ("enter-xmen", "x-men-apocalypse", "/boards/danger-room", "X-Men Apocalypse"),
     )
     route_targets = (
-        ("network", "/network"),
-        ("nyc-claims", "/c/rl-nyc/claims"),
-        ("nyc-my-threads", "/c/rl-nyc/my/threads"),
-        ("small-town-mine", "/c/rl-small-town/boards/town-hall?filter=mine"),
-        ("jurassic-world", "/c/jurassic-park-universe/world"),
+        ("network", "/network", "Studio Network"),
+        ("nyc-claims", "/c/rl-nyc/claims", "RL NYC"),
+        ("nyc-my-threads", "/c/rl-nyc/my/threads", "RL NYC"),
+        ("small-town-mine", "/c/rl-small-town/boards/town-hall?filter=mine", "RL Small Town"),
+        ("jurassic-world", "/c/jurassic-park-universe/world", "Jurassic Park Universe"),
     )
     memberships = {
         slug: services.repo.get_membership_for_user(
             services.repo.get_community_by_slug(slug).id,
             user_id,
         ).id
-        for _, slug, _ in switch_targets
+        for _, slug, _path, _expected in switch_targets
     }
 
     results: list[CheckResult] = []
     cookie: str | None = None
     async with TestClient(app) as client:
         for index in range(iterations):
-            for label, slug, next_url in switch_targets:
+            for label, slug, next_url, expected_text in switch_targets:
                 result, cookie = await _timed_switch(
                     client,
                     f"{label}-{index + 1}",
@@ -144,26 +173,46 @@ async def run(iterations: int) -> list[CheckResult]:
                         f"{label}-landing-{index + 1}",
                         next_url,
                         cookie,
+                        expected_text=expected_text,
                     )
                 )
-            for label, path in route_targets:
-                results.append(await _timed_get(client, f"{label}-{index + 1}", path, cookie))
+            for label, path, expected_text in route_targets:
+                results.append(
+                    await _timed_get(
+                        client,
+                        f"{label}-{index + 1}",
+                        path,
+                        cookie,
+                        expected_text=expected_text,
+                    )
+                )
     return results
 
 
 def _print_results(results: list[CheckResult]) -> None:
-    failures = [item for item in results if item.status >= 400]
+    failures = [item for item in results if not item.passed]
     slow = sorted(results, key=lambda item: item.wall_ms, reverse=True)[:8]
-    print("label\tmethod\tstatus\troute_ms\twall_ms\tpath")
+    print("label\tmethod\tstatus\tcheck\troute_ms\twall_ms\tpath")
     for item in results:
         print(
             f"{item.label}\t{item.method}\t{item.status}\t"
+            f"{'ok' if item.passed else 'FAIL'}\t"
             f"{item.route_ms or '-'}\t{item.wall_ms:.1f}\t{item.path}"
         )
     if failures:
-        print("\nFailures:")
+        print("\nProtocol failures:")
         for item in failures:
-            print(f"{item.status} {item.method} {item.path} ({item.label})")
+            status = (
+                ""
+                if item.status == item.expected_status
+                else f" expected status {item.expected_status}"
+            )
+            expected = (
+                ""
+                if item.expected_text is None or item.expected_text_found
+                else f" missing expected text {item.expected_text!r}"
+            )
+            print(f"{item.status} {item.method} {item.path} ({item.label}){status}{expected}")
     print("\nSlowest:")
     for item in slow:
         print(f"{item.wall_ms:.1f}ms wall / {item.route_ms or '-'}ms route {item.path}")
@@ -177,7 +226,7 @@ def main() -> None:
     args = parser.parse_args()
     results = asyncio.run(run(max(args.iterations, 1)))
     _print_results(results)
-    if any(item.status >= 500 for item in results):
+    if any(not item.passed for item in results):
         raise SystemExit(1)
 
 
