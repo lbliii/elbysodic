@@ -190,6 +190,20 @@ def _director_operations(
                 "Complete one CSRF-protected write, then log out.",
             ),
         ),
+        OperationsCard(
+            kicker="Launch",
+            title="Community builder checklist",
+            summary="Director-owned surfaces a real program needs before writers arrive.",
+            count=6,
+            href="/studio",
+            cta="Open Studio",
+            variant="attention",
+            items=(
+                "Boards and world materials carry the community premise.",
+                "Applications, claims, and wanted hooks have review paths.",
+                "Plotting handoffs and notifications move writers into scenes.",
+            ),
+        ),
     ]
     return DirectorOperations(
         cards=cards,

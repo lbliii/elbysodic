@@ -815,7 +815,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
             studio = await client.get("/studio", headers={"Cookie": cookie_header})
 
         assert page.status == 200
-        assert "Seed accounts use password" in page.text
+        assert "Invite/demo accounts use password" in page.text
         assert login.status == 302
         assert _response_header(login, "location") == "/studio"
         assert any(cookie.startswith("elbysodic_session=") for cookie in set_cookies)
@@ -1726,6 +1726,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Draft materials" in operations.text
             assert "Dry-run intake" in operations.text
             assert "Release smoke" in operations.text
+            assert "Community builder checklist" in operations.text
+            assert "Boards and world materials carry the community premise." in operations.text
+            assert "Applications, claims, and wanted hooks have review paths." in operations.text
+            assert "Plotting handoffs and notifications move writers into scenes." in operations.text
             assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
             assert 'href="/network"' in operations.text
