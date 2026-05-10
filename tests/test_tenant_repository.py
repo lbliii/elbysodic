@@ -191,6 +191,62 @@ def test_schema_migrates_existing_posts_for_thread_local_public_numbers() -> Non
     ]
 
 
+def test_thread_counts_are_scoped_to_board_and_community() -> None:
+    connection = connect()
+    create_schema(connection)
+    repository = ForumRepository(connection)
+    repository.seed_default_community()
+    default = repository.get_community(1)
+    hosted = repository.create_community("hosted-thread-count", "Hosted Thread Count")
+    default_role = repository.create_role(default.id, "member", "Member")
+    hosted_role = repository.create_role(hosted.id, "member", "Member")
+    user = repository.create_user("thread-count@example.com", "hash")
+    default_membership = repository.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "thread-count",
+        "Thread Count",
+    )
+    hosted_membership = repository.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "thread-count",
+        "Thread Count",
+    )
+    default_character = repository.create_character(
+        default.id,
+        default_membership.id,
+        "thread-count",
+        "Thread Count",
+    )
+    hosted_character = repository.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "thread-count",
+        "Thread Count",
+    )
+    default_board = repository.create_board(default.id, "scenes", "Scenes")
+    other_default_board = repository.create_board(default.id, "archives", "Archives")
+    hosted_board = repository.create_board(hosted.id, "scenes", "Scenes")
+
+    repository.create_thread(default.id, default_board.id, default_character.id, "one", "One")
+    repository.create_thread(default.id, default_board.id, default_character.id, "two", "Two")
+    repository.create_thread(
+        default.id,
+        other_default_board.id,
+        default_character.id,
+        "archived",
+        "Archived",
+    )
+    repository.create_thread(hosted.id, hosted_board.id, hosted_character.id, "hosted", "Hosted")
+
+    assert repository.count_threads(default.id, default_board.id) == 2
+    assert repository.count_threads(default.id) == 3
+    assert repository.count_threads(hosted.id, hosted_board.id) == 1
+
+
 def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository) -> None:
     user = repo.create_user("session@example.com", "hash")
     session = repo.create_user_session(

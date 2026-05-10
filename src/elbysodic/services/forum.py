@@ -274,9 +274,7 @@ def _load_viewer_role(
     try:
         return repo.get_role(community.id, membership.role_id)
     except LookupError as exc:
-        raise PermissionError(
-            "realm membership role is not valid for this community"
-        ) from exc
+        raise PermissionError("realm membership role is not valid for this community") from exc
 
 
 class AppServices:
@@ -391,6 +389,9 @@ class AppServices:
         if self._identity_context is not None:
             self._viewer = viewer
         return viewer
+
+    def _invalidate_viewer(self) -> None:
+        self._viewer = None
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
         options: list[StudioIdentityOption] = []
@@ -1172,6 +1173,14 @@ class AppServices:
             filter_by=filter_by,
         )
 
+    def board_direct_thread_count(self, board: Board) -> int:
+        viewer = self.viewer()
+        if board.community_id != viewer.community.id:
+            raise PermissionError(f"board {board.id} does not belong to current community")
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        return self.repo.count_threads(viewer.community.id, board.id)
+
     def next_unread_thread(self, board_slug: str) -> ThreadNavigationItem | None:
         viewer = self.viewer()
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
@@ -1202,6 +1211,7 @@ class AppServices:
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
         thread_view = _read_thread_view(self.repo, viewer, board, thread)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+        self._invalidate_viewer()
         return thread_view
 
     def watch_thread(self, board_slug: str, thread_slug: str) -> None:
