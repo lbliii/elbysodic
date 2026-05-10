@@ -14,6 +14,33 @@ Use this guide before adding theme controls, visual variants, community media,
 skin-like settings, guidebook layouts, postbit options, or program blueprint
 appearance fields.
 
+## Modern Design Bar
+
+Elbysodic must not look like preserved 2014 forum software with a nicer coat of
+paint. The product should preserve forum-PBP power while feeling contemporary,
+calm, and roleplay-native on first contact.
+
+Competitive signal from RPHub matters here. RPHub demonstrates that a modern
+roleplay platform can look clean, current, image-rich, mobile-conscious, and
+visibly built for roleplayers without abandoning character identity,
+communities, events, galleries, forum feedback, or moderation policy. Elbysodic
+should treat that as the minimum public-facing design bar, not as a style to
+copy.
+
+The visual standard:
+
+- First viewport says "purpose-built roleplay product," not generic SaaS,
+  generic forum, or nostalgic skin archive.
+- Character, community, scene, and wanted surfaces use strong media and clear
+  identity hierarchy without burying the next action.
+- Dense operational screens still feel current through spacing, typography,
+  contrast, motion restraint, and clear state, not decoration.
+- Mobile layouts feel designed, not collapsed from desktop.
+- Default themes are good enough that a director can launch without custom
+  skin labor.
+- Customization improves atmosphere within Elbysodic's control spectrum; it
+  must not be required to make the product feel alive.
+
 ## Product Boundary
 
 Appearance Studio changes atmosphere. It does not change safety contracts.
