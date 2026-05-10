@@ -21,7 +21,8 @@ from elbysodic.blueprints import (
 )
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db import seed as seed_module
-from elbysodic.db.seed import seed_demo_forum
+from elbysodic.db.seed import DemoSeed, seed_demo_forum
+from elbysodic.services import AppServices
 
 
 def _blueprint(
@@ -637,6 +638,59 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         ("rl-nyc", "rent-week"),
         ("rl-small-town", "founders-week"),
     ]
+
+
+def test_program_blueprint_preview_fingerprint_changes_with_source() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    admin_services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    source = """
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town-preview
+  name: RL Small Town Preview
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+"""
+
+    preview = admin_services.preview_program_blueprint(source)
+    changed = admin_services.preview_program_blueprint(
+        source.replace("RL Small Town Preview", "RL Small Town Preview 2")
+    )
+
+    assert preview.is_valid
+    assert preview.preview_fingerprint
+    assert len(preview.preview_fingerprint) == 16
+    assert changed.preview_fingerprint != preview.preview_fingerprint
 
 
 def test_seed_hydrates_blueprint_board_media_fields(monkeypatch: pytest.MonkeyPatch) -> None:

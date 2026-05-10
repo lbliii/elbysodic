@@ -1729,7 +1729,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Community builder checklist" in operations.text
             assert "Boards and world materials carry the community premise." in operations.text
             assert "Applications, claims, and wanted hooks have review paths." in operations.text
-            assert "Plotting handoffs and notifications move writers into scenes." in operations.text
+            assert (
+                "Plotting handoffs and notifications move writers into scenes." in operations.text
+            )
             assert "Log in, enter a realm, and switch memberships." in operations.text
             assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
             assert 'href="/network"' in operations.text
@@ -1894,6 +1896,7 @@ appearance:
         assert "1 appearance" in response.text
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration diff preview" in response.text
+        assert "Preview fingerprint:" in response.text
         assert "create</strong> program: RL Small Town Preview" in response.text
         assert "create</strong> scene hub: Main Street" in response.text
         assert "create</strong> wanted hook: Returning sibling" in response.text
