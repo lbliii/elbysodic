@@ -4,8 +4,9 @@ Date: 2026-05-10
 
 Scope: visual QA for the technicolor futurism rollout. This pass uses the
 running local app on port 8003, rendered-template inspection, and browser
-evidence from the current review. Browser automation is not available in this
-workspace, so pixel screenshots are deferred.
+evidence from the current review. Playwright browser smoke QA is now available
+through `uv run poe browser-qa` or
+`uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8003`.
 
 ## Routes Reviewed
 
@@ -21,6 +22,7 @@ workspace, so pixel screenshots are deferred.
 - Studio surfaces
 - mobile CSS breakpoints for board, thread, composer, wanted, character, and
   network media surfaces
+- Playwright desktop/mobile screenshots in `tests/browser/artifacts/`
 
 ## Accepted Issues
 
@@ -40,9 +42,11 @@ workspace, so pixel screenshots are deferred.
 - Made thread card poster rails span the full desktop card height and remain
   `16:7` on mobile.
 - Added `design/image-dimensions.md` for future design-agent decisions.
+- Added `scripts/browser_qa.py` to capture representative desktop/mobile
+  screenshots and fail on page errors, horizontal overflow, broken media, and
+  unusual shell height.
 
 ## Deferred
 
-- Browser pixel screenshots across all routes.
 - Any public Appearance Studio image-ratio controls.
 - Schema, Blueprint, import/export, or runtime dependency changes.
