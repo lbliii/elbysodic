@@ -4107,6 +4107,23 @@ body {
     gap: 0.65rem;
 }
 
+.elbysodic-access-panel {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.elbysodic-access-panel h1,
+.elbysodic-access-panel p {
+    margin: 0;
+}
+
+.elbysodic-access-panel__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
 .elbysodic-thread-card__meta {
     align-items: center;
     display: flex;

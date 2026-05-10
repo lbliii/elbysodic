@@ -63,7 +63,7 @@ Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
 Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
-- `/health`, `/login`, `/logout`, `/`, `/network`, and static assets are public
+- `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`, and static assets are public
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set

@@ -324,6 +324,9 @@
 </div>
 {% else %}
 <div class="elbysodic-anonymous-actions">
+  <a class="chirpui-btn chirpui-btn--secondary chirpui-btn--sm"
+     href="/request-access"
+     hx-boost="false">Request access</a>
   <a class="chirpui-btn chirpui-btn--primary chirpui-btn--sm"
      href="/login?next={{ current_path or "/" }}"
      hx-boost="false">Log in</a>

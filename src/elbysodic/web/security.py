@@ -23,7 +23,7 @@ ELBYSODIC_HSTS = "ELBYSODIC_HSTS"
 MIN_SECRET_KEY_LENGTH = 32
 PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
-PUBLIC_PATHS = frozenset({"/", "/health", "/login", "/logout", "/network"})
+PUBLIC_PATHS = frozenset({"/", "/health", "/login", "/logout", "/network", "/request-access"})
 PUBLIC_PREFIXES = ("/elbysodic-static/",)
 PRODUCTION_CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "

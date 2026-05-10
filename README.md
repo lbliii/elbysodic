@@ -72,8 +72,10 @@ The development app currently includes:
 
 Gated production-readiness work is tracked in
 [plans/in-progress/production-readiness-roadmap-2026-05-09.md](plans/in-progress/production-readiness-roadmap-2026-05-09.md).
-The current launch posture is login-only demo/invite-style access until a
-registration or request-access contract is explicitly designed.
+The current launch posture is invite-style access: public discovery and a
+request-access placeholder are visible, while account and membership creation
+remain director-provisioned until a full registration contract is explicitly
+designed.
 
 ## Architecture
 

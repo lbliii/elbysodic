@@ -154,6 +154,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
             root = await client.get("/")
             network = await client.get("/network?q=magic")
             login = await client.get("/login")
+            request_access = await client.get("/request-access")
             studio = await client.get("/studio")
             tenant = await client.get("/c/x-men-apocalypse")
             post = await client.post(
@@ -170,6 +171,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "playing as Rogue" not in root.text
         assert "elbysodic-identity-menu" not in root.text
         assert "elbysodic-anonymous-actions" in root.text
+        assert 'href="/request-access"' in root.text
         assert 'href="/login?next=/"' in root.text
         assert "chirpui-theme-toggle" in root.text
         assert network.status == 200
@@ -179,8 +181,14 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Public preview" in network.text
         assert login.status == 200
         assert "_csrf_token" in login.text
+        assert 'href="/request-access"' in login.text
         assert "chirpui-sidebar__section-title" not in login.text
         assert "Staff in X-Men Apocalypse" not in login.text
+        assert request_access.status == 200
+        assert "Access opens through a director invitation." in request_access.text
+        assert "Public registration is not open yet." in request_access.text
+        assert "_csrf_token" not in request_access.text
+        assert "chirpui-sidebar__section-title" not in request_access.text
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
         assert tenant.status == 302
@@ -208,6 +216,7 @@ def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
             assert "Launch state" in response.text
             assert "The first realm is still backstage." in response.text
             assert "wanted hooks, faces, scenes, and current events" in response.text
+            assert 'href="/request-access"' in response.text
             assert 'href="/login?next=/"' in response.text
             assert "No programs are available yet." not in response.text
             assert "elbysodic-identity-menu" not in response.text
