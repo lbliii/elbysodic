@@ -671,6 +671,8 @@ class AppServices:
         programs: list[StudioNetworkProgramView] = []
         for community in self.repo.list_communities():
             materials = self.repo.list_materials(community.id)
+            if not _is_public_network_ready(self.repo, community, materials):
+                continue
             wanted_ads = self.repo.list_wanted_ads(community.id)
             community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
@@ -2806,6 +2808,22 @@ def _realm_launch_readiness(
             ),
         ]
     )
+
+
+def _is_public_network_ready(
+    repo: ForumRepository,
+    community: Community,
+    materials: list[Material],
+) -> bool:
+    has_public_premise = any(
+        material.material_type == "premise" and material.status == "published"
+        for material in materials
+    )
+    has_public_scene_hub = any(
+        board.board_kind in {"location", "community"} and not board.is_private
+        for board in repo.list_boards(community.id)
+    )
+    return has_public_premise and has_public_scene_hub
 
 
 def _post_style_policy(community: Community) -> PostStylePolicy:

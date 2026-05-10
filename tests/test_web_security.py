@@ -54,7 +54,14 @@ def _set_production_env(monkeypatch, *, demo_mode: bool = True) -> None:
         monkeypatch.delenv("ELBYSODIC_DEMO_MODE", raising=False)
 
 
-async def _production_login(client: TestClient, *, email: str, next_url: str = "/studio"):
+async def _production_login(
+    client: TestClient,
+    *,
+    email: str,
+    password: str | None = None,
+    next_url: str = "/studio",
+):
+    login_phrase = "password" if password is None else password
     page = await client.get(f"/login?next={next_url}")
     cookies = _cookie_values(page)
     login = await client.post(
@@ -62,7 +69,7 @@ async def _production_login(client: TestClient, *, email: str, next_url: str = "
         body=urlencode(
             {
                 "email": email,
-                "password": "password",
+                "password": login_phrase,
                 "next": next_url,
                 "_csrf_token": _csrf_token(page.text),
             }
@@ -220,6 +227,50 @@ def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
             assert 'href="/login?next=/"' in response.text
             assert "No programs are available yet." not in response.text
             assert "elbysodic-identity-menu" not in response.text
+
+    asyncio.run(run())
+
+
+def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:", seed_demo=False)
+        director_phrase = "director-password"
+        services.create_first_realm(
+            realm_name="Starter Realm",
+            realm_slug="starter-realm",
+            director_email="director@example.com",
+            director_password=director_phrase,
+            director_username="starlane",
+            director_display_name="Starter Director",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            root = await client.get("/")
+            network = await client.get("/network")
+            login, cookies = await _production_login(
+                client,
+                email="director@example.com",
+                password=director_phrase,
+                next_url="/network",
+            )
+            director_network = await client.get(
+                "/network",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert root.status == 200
+        assert network.status == 200
+        for response in (root, network):
+            assert "Launch state" in response.text
+            assert "The first realm is still backstage." in response.text
+            assert "Starter Realm" not in response.text
+            assert "starter-realm" not in response.text
+        assert login.status == 302
+        assert director_network.status == 200
+        assert "Starter Realm" in director_network.text
+        assert "/c/starter-realm" in director_network.text
 
     asyncio.run(run())
 
