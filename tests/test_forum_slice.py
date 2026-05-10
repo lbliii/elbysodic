@@ -18,6 +18,7 @@ from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services, default_database_path
+from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import scope_response_urls
@@ -685,6 +686,28 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
         assert "--chirpui-ui-font-family: Georgia, serif;" in after.text
 
     asyncio.run(run())
+
+
+def test_identity_resolution_reports_sources_for_tenant_and_cookie_recovery() -> None:
+    services = create_services(path=":memory:")
+    resolver = services._identity_resolver
+    hp = services.repo.get_community_by_slug("hp-universe")
+    hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
+    tenant_request = SimpleNamespace(
+        headers={},
+        cookies={"elbysodic_dev_identity": f"{hp.id}:{services.seed.user.id}:999999"},
+        _cache={TENANT_SLUG_CACHE_KEY: hp.slug},
+    )
+
+    resolution = resolver.resolve_with_details(tenant_request)
+
+    assert resolution.context.community_id == hp.id
+    assert resolution.context.membership_id == hp_membership.id
+    assert resolution.community_source == "tenant_prefix"
+    assert resolution.user_source == "dev_cookie"
+    assert resolution.membership_source == "user_membership"
+    assert resolution.recovery_reason == "stale dev membership"
+    assert resolution.is_session_backed is False
 
 
 def test_tenant_prefixed_board_handles_invalid_membership_role_as_identity_failure() -> None:

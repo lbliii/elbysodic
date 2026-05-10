@@ -43,6 +43,16 @@ class DefaultRequestIdentity:
     membership_id: int
 
 
+@dataclass(frozen=True, slots=True)
+class IdentityResolution:
+    context: RequestIdentityContext
+    community_source: str
+    user_source: str
+    membership_source: str
+    recovery_reason: str | None
+    is_session_backed: bool
+
+
 class RequestIdentityResolver:
     """Resolve community, user, and membership identity for a request.
 
@@ -67,11 +77,15 @@ class RequestIdentityResolver:
         self._require_session = require_session
 
     def resolve(self, request: object | None = None) -> RequestIdentityContext:
+        return self.resolve_with_details(request).context
+
+    def resolve_with_details(self, request: object | None = None) -> IdentityResolution:
         cookie_identity = (
             _dev_identity_cookie(request) if self._allow_development_identity else None
         )
         session = _session_for_request(self._repo, request)
         community = self._resolve_community(request, session)
+        community_source = _community_source(request, session, cookie_identity, community)
         header_user_id = (
             _optional_int_header(request, DEV_USER_HEADER)
             if self._allow_development_identity
@@ -84,15 +98,22 @@ class RequestIdentityResolver:
         )
         session_user = None if session is None else self._repo.get_user(session.user_id)
         user_id = header_user_id if header_user_id is not None else _user_id(session_user)
+        user_source = "dev_header" if header_user_id is not None else "session"
         selected_membership_id = _selected_membership_id(session, community.id)
         membership_id = (
             header_membership_id if header_membership_id is not None else selected_membership_id
+        )
+        membership_source = (
+            "dev_header"
+            if header_membership_id is not None
+            else ("session" if selected_membership_id is not None else "fallback")
         )
         membership_from_session = (
             header_membership_id is None and selected_membership_id is not None
         )
         user_from_cookie = False
         membership_from_cookie = False
+        recovery_reason: str | None = None
 
         if self._require_session and session_user is None:
             raise PermissionError("login is required")
@@ -101,10 +122,13 @@ class RequestIdentityResolver:
             if user_id is None:
                 user_id = cookie_identity.user_id
                 user_from_cookie = True
+                user_source = "dev_cookie"
             membership_id = (
                 membership_id if membership_id is not None else cookie_identity.membership_id
             )
             membership_from_cookie = header_membership_id is None
+            if membership_source == "fallback":
+                membership_source = "dev_cookie"
 
         if membership_id is not None:
             try:
@@ -112,12 +136,15 @@ class RequestIdentityResolver:
             except LookupError:
                 if not membership_from_cookie:
                     raise
+                recovery_reason = "stale dev membership"
                 membership = None
             if membership is not None and user_id is not None and membership.user_id != user_id:
                 if user_from_cookie or membership_from_cookie:
                     membership = None
+                    recovery_reason = "dev identity user mismatch"
                     if user_from_cookie and header_user_id is None:
                         user_id = None
+                        user_source = "fallback"
                 else:
                     raise PermissionError(
                         f"membership {membership.id} does not belong to user {user_id}"
@@ -129,23 +156,33 @@ class RequestIdentityResolver:
                 except LookupError:
                     if membership_from_cookie or membership_from_session:
                         membership = None
+                        recovery_reason = "stale membership role"
                     else:
                         raise PermissionError(
                             "realm membership role is not valid for this community"
                         ) from None
                 if membership is not None:
                     self._repo.get_user(membership.user_id)
-                    return RequestIdentityContext(
+                    context = RequestIdentityContext(
                         community_id=community.id,
                         community_slug=community.slug,
                         user_id=membership.user_id,
                         membership_id=membership.id,
+                    )
+                    return IdentityResolution(
+                        context=context,
+                        community_source=community_source,
+                        user_source=user_source,
+                        membership_source=membership_source,
+                        recovery_reason=recovery_reason,
+                        is_session_backed=session_user is not None,
                     )
 
         if user_id is None:
             if self._default is None:
                 raise PermissionError("login is required")
             resolved_user_id = self._default.user_id
+            user_source = "default"
         else:
             resolved_user_id = user_id
         try:
@@ -156,13 +193,23 @@ class RequestIdentityResolver:
             if self._default is None:
                 raise PermissionError("login is required") from None
             resolved_user_id = self._default.user_id
+            user_source = "default"
+            recovery_reason = "stale dev user"
             self._repo.get_user(resolved_user_id)
         membership = self._repo.get_membership_for_user(community.id, resolved_user_id)
-        return RequestIdentityContext(
+        context = RequestIdentityContext(
             community_id=community.id,
             community_slug=community.slug,
             user_id=resolved_user_id,
             membership_id=membership.id,
+        )
+        return IdentityResolution(
+            context=context,
+            community_source=community_source,
+            user_source=user_source,
+            membership_source="user_membership",
+            recovery_reason=recovery_reason,
+            is_session_backed=session_user is not None,
         )
 
     def _resolve_community(
@@ -231,6 +278,26 @@ def request_tenant_slug(request: object | None) -> str | None:
         return None
     value = cache.get(TENANT_SLUG_CACHE_KEY)
     return value if isinstance(value, str) and value else None
+
+
+def _community_source(
+    request: object | None,
+    session: UserSession | None,
+    cookie_identity: RequestIdentityContext | None,
+    community: Community,
+) -> str:
+    if request_tenant_slug(request) is not None:
+        return "tenant_prefix"
+    if _optional_header(request, DEV_COMMUNITY_HEADER):
+        return "dev_header"
+    host = _request_host(request)
+    if host is not None and not _is_local_dev_host(host) and community.host == host:
+        return "host"
+    if session is not None and session.selected_community_id == community.id:
+        return "session"
+    if cookie_identity is not None and cookie_identity.community_id == community.id:
+        return "dev_cookie"
+    return "default"
 
 
 def _optional_header(request: object | None, name: str) -> str | None:
