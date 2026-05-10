@@ -59,6 +59,8 @@ pretend a behavior exists until code, tests, or product docs support it.
   budgets, token roles, and QA matrix for visual implementation.
 - `motion-design.md`: animation and transition guidance for technicolor
   futurism, PBP reading flow, and reduced-motion-safe interaction design.
+- `terminology-map.md`: UX writing conventions for PBP terms such as scene,
+  thread, face, roster, guidebook, canon, wanted, claims, and reserves.
 - `technicolor-futurism.md`: the working design doctrine.
 - `technicolor-futurism-roadmap.md`: a phased roadmap for moving the current
   theme, components, QA, and Appearance Studio direction toward the doctrine.

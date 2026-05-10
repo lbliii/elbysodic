@@ -7038,24 +7038,28 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-material-hero--premise,
+.elbysodic-material-card-shell--premise,
 .elbysodic-material-card--premise,
 .elbysodic-material-detail-shell--premise {
     --elbysodic-material-variant-accent: var(--chirpui-accent-secondary);
 }
 
 .elbysodic-material-hero--guide,
+.elbysodic-material-card-shell--guide,
 .elbysodic-material-card--guide,
 .elbysodic-material-detail-shell--guide {
     --elbysodic-material-variant-accent: var(--chirpui-accent);
 }
 
 .elbysodic-material-hero--factions,
+.elbysodic-material-card-shell--factions,
 .elbysodic-material-card--factions,
 .elbysodic-material-detail-shell--factions {
     --elbysodic-material-variant-accent: var(--chirpui-warning);
 }
 
 .elbysodic-material-hero--application,
+.elbysodic-material-card-shell--application,
 .elbysodic-material-card--application,
 .elbysodic-material-detail-shell--application {
     --elbysodic-material-variant-accent: var(--chirpui-success);
@@ -7063,6 +7067,7 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-material-hero--event,
 .elbysodic-current-event-card--event,
+.elbysodic-material-card-shell--event,
 .elbysodic-material-card--event,
 .elbysodic-material-detail-shell--event {
     --elbysodic-material-variant-accent: var(--chirpui-error);
@@ -7075,7 +7080,24 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-material-card[class*="elbysodic-material-card--"] {
-    border-block-start: 0.28rem solid var(--elbysodic-material-variant-accent, var(--chirpui-accent));
+    border-block-start: 0;
+    padding-block-start: 0.7rem;
+    position: relative;
+}
+
+.elbysodic-material-card[class*="elbysodic-material-card--"]::before {
+    background:
+        linear-gradient(
+            90deg,
+            var(--elbysodic-material-variant-accent, var(--chirpui-accent)),
+            color-mix(in srgb, var(--elbysodic-material-variant-accent, var(--chirpui-accent)) 36%, transparent) 58%,
+            transparent
+        );
+    border-radius: 999px;
+    content: "";
+    height: 0.18rem;
+    inset: 0 0 auto;
+    position: absolute;
 }
 
 .elbysodic-material-card--premise h2,
@@ -8138,8 +8160,8 @@ a.elbysodic-metric:focus-visible {
 .elbysodic-current-event-card {
     color: var(--chirpui-text);
     display: grid;
-    gap: 0.4rem;
-    padding: 1rem;
+    gap: 0.5rem;
+    padding: clamp(1rem, 2vw, 1.35rem);
     text-decoration: none;
 }
 
@@ -8158,7 +8180,23 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-material-card {
+    gap: 0.65rem;
     height: 100%;
+}
+
+.elbysodic-material-card-shell {
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--elbysodic-material-variant-accent, var(--chirpui-accent)) 7%, transparent),
+            transparent 48%
+        ),
+        var(--chirpui-surface-elevated);
+}
+
+.elbysodic-material-card .chirpui-cluster--between {
+    align-items: flex-start;
+    gap: 0.75rem;
 }
 
 .elbysodic-material-card h2,
@@ -8167,11 +8205,11 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-material-card__type {
-    color: var(--chirpui-text-muted);
+    color: color-mix(in srgb, var(--elbysodic-material-variant-accent, var(--chirpui-accent)) 72%, var(--chirpui-text-muted));
     font-size: var(--chirpui-font-sm);
-    font-weight: 700;
+    font-weight: 820;
     letter-spacing: 0;
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.35rem;
     text-transform: uppercase;
 }
 
