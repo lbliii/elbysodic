@@ -39,6 +39,78 @@ elbysodic bootstrap-admin \
 Rerunning the command is idempotent. Existing user passwords are preserved
 unless `--reset-password` is passed.
 
+## Railway Database Inspection
+
+SQLite does not include a hosted admin UI. Use the Elbysodic Studio screens for
+normal product administration, and use direct SQLite inspection only for
+operations, support, triage, and carefully planned repair work.
+
+For staging:
+
+```bash
+railway ssh -e staging -s <service-name>
+sqlite3 "$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3"
+```
+
+For production:
+
+```bash
+railway ssh -e production -s <service-name>
+sqlite3 "$RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3"
+```
+
+Start with read-only triage:
+
+```sql
+.tables
+.schema users
+.schema communities
+SELECT id, name, slug, host FROM communities ORDER BY id;
+SELECT id, email, created_at FROM users ORDER BY id;
+SELECT id, community_id, slug, name, is_admin FROM roles ORDER BY community_id, id;
+SELECT id, community_id, user_id, username, display_name, role_id, is_active
+FROM community_memberships
+ORDER BY community_id, id;
+SELECT id, community_id, name, slug, application_status FROM characters ORDER BY community_id, id;
+```
+
+Useful support checks:
+
+```sql
+SELECT u.email, c.name AS community, m.username, m.display_name, r.name AS role, r.is_admin
+FROM community_memberships AS m
+JOIN users AS u ON u.id = m.user_id
+JOIN communities AS c ON c.id = m.community_id
+JOIN roles AS r ON r.id = m.role_id AND r.community_id = m.community_id
+ORDER BY c.name, m.username;
+
+SELECT community_id, COUNT(*) AS boards
+FROM boards
+GROUP BY community_id;
+
+SELECT community_id, COUNT(*) AS threads
+FROM threads
+GROUP BY community_id;
+
+SELECT community_id, COUNT(*) AS posts
+FROM posts
+GROUP BY community_id;
+```
+
+Avoid manual writes during live use. If a direct write is unavoidable:
+
+- prefer an Elbysodic CLI command, repository script, or migration over ad hoc
+  SQL
+- take a database or Railway volume snapshot first
+- keep the service stopped or quiescent when copying the SQLite file
+- write down the exact SQL or script used and the reason
+- re-run the relevant smoke path before sharing the URL again
+
+For local GUI inspection, copy a backup of the SQLite file out of Railway first
+and open the copy in a SQLite client such as DB Browser for SQLite, TablePlus,
+Beekeeper Studio, or Datasette. Do not connect GUI tools directly to the live
+volume.
+
 ## Persistence Checks
 
 Before sharing a URL, prove these survive restart or redeploy:
