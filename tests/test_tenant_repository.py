@@ -210,6 +210,88 @@ def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository)
     assert revoked.revoked_at is not None
 
 
+def test_membership_role_integrity_issues_detect_cross_community_roles(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-role-integrity", "Hosted Role Integrity")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("role-integrity@example.com", "hash")
+    membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "role-integrity",
+        "Role Integrity",
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET role_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (default_role.id, hosted.id, membership.id),
+    )
+    repo.connection.commit()
+
+    issues = repo.list_membership_role_integrity_issues()
+
+    assert len(issues) == 1
+    assert issues[0].community_id == hosted.id
+    assert issues[0].membership_id == membership.id
+    assert issues[0].role_id == default_role.id
+
+
+def test_session_identity_integrity_issues_detect_cross_community_selection(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-session-integrity", "Hosted Session Integrity")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("session-integrity@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "session-integrity",
+        "Session Integrity",
+    )
+    repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "session-integrity",
+        "Session Integrity",
+    )
+    session = repo.create_user_session(
+        user.id,
+        "session-integrity-token",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE user_sessions
+        SET selected_community_id = ?,
+            selected_membership_id = ?
+        WHERE id = ?
+        """,
+        (hosted.id, default_membership.id, session.id),
+    )
+    repo.connection.commit()
+
+    issues = repo.list_session_identity_integrity_issues()
+
+    assert len(issues) == 1
+    assert issues[0].session_id == session.id
+    assert issues[0].selected_community_id == hosted.id
+    assert issues[0].selected_membership_id == default_membership.id
+    assert issues[0].reason == "selected membership belongs to another community"
+
+
 def test_schema_migrates_existing_boards_for_place_navigation() -> None:
     connection = connect()
     connection.executescript(

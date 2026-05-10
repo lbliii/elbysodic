@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any
+
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
     _community_from_row,
@@ -20,6 +23,22 @@ from elbysodic.domain.models import (
     User,
     UserSession,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class MembershipRoleIntegrityIssue:
+    community_id: int
+    membership_id: int
+    role_id: int
+
+
+@dataclass(frozen=True, slots=True)
+class SessionIdentityIntegrityIssue:
+    session_id: int
+    user_id: int
+    selected_community_id: int | None
+    selected_membership_id: int | None
+    reason: str
 
 
 class IdentityRepositoryMixin(RepositoryBase):
@@ -795,6 +814,66 @@ class IdentityRepositoryMixin(RepositoryBase):
         ).fetchall()
         return [_membership_from_row(row) for row in rows]
 
+    def list_membership_role_integrity_issues(self) -> list[MembershipRoleIntegrityIssue]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                membership.community_id,
+                membership.id AS membership_id,
+                membership.role_id
+            FROM community_memberships AS membership
+            LEFT JOIN roles AS role
+                ON role.id = membership.role_id
+                AND role.community_id = membership.community_id
+            WHERE role.id IS NULL
+            ORDER BY membership.community_id, membership.id
+            """
+        ).fetchall()
+        return [
+            MembershipRoleIntegrityIssue(
+                community_id=row["community_id"],
+                membership_id=row["membership_id"],
+                role_id=row["role_id"],
+            )
+            for row in rows
+        ]
+
+    def list_session_identity_integrity_issues(self) -> list[SessionIdentityIntegrityIssue]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                session.id AS session_id,
+                session.user_id,
+                session.selected_community_id,
+                session.selected_membership_id,
+                membership.id AS membership_id,
+                membership.community_id AS membership_community_id,
+                membership.user_id AS membership_user_id,
+                membership.is_active AS membership_is_active
+            FROM user_sessions AS session
+            LEFT JOIN community_memberships AS membership
+                ON membership.id = session.selected_membership_id
+            WHERE session.selected_membership_id IS NOT NULL
+                AND (
+                    membership.id IS NULL
+                    OR membership.community_id != session.selected_community_id
+                    OR membership.user_id != session.user_id
+                    OR membership.is_active = 0
+                )
+            ORDER BY session.id
+            """
+        ).fetchall()
+        return [
+            SessionIdentityIntegrityIssue(
+                session_id=row["session_id"],
+                user_id=row["user_id"],
+                selected_community_id=row["selected_community_id"],
+                selected_membership_id=row["selected_membership_id"],
+                reason=_session_identity_integrity_reason(row),
+            )
+            for row in rows
+        ]
+
     def search_memberships(
         self,
         community_id: int,
@@ -843,3 +922,15 @@ class IdentityRepositoryMixin(RepositoryBase):
             (community_id, like, like, normalized, prefix, prefix, limit),
         ).fetchall()
         return [_membership_from_row(row) for row in rows]
+
+
+def _session_identity_integrity_reason(row: Any) -> str:
+    if row["membership_id"] is None:
+        return "selected membership is missing"
+    if row["membership_community_id"] != row["selected_community_id"]:
+        return "selected membership belongs to another community"
+    if row["membership_user_id"] != row["user_id"]:
+        return "selected membership belongs to another user"
+    if row["membership_is_active"] == 0:
+        return "selected membership is inactive"
+    return "selected identity is invalid"
