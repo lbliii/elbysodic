@@ -1758,6 +1758,41 @@ def test_director_studio_surfaces_community_production_work() -> None:
     asyncio.run(run())
 
 
+def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
+    async def run() -> None:
+        connection = connect(":memory:", check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.create_community("starter-realm", "Starter Realm")
+        role = repo.create_role(community.id, "director", "Director", is_admin=True)
+        user = repo.create_user("starter-director@example.com", "hash")
+        membership = repo.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "starter-director",
+            "Starter Director",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(repo, DemoSeed(community, user, membership, None)),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+
+        assert launch.status == 200
+        assert "Starter Realm" in launch.text
+        assert "required lanes still backstage" in launch.text
+        assert "Scene hubs" in launch.text
+        assert "Director materials" in launch.text
+        assert "Intake and claims" in launch.text
+        assert "Needed" in launch.text
+        assert "Open the realm with the writing surface intact." in launch.text
+
+    asyncio.run(run())
+
+
 def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
