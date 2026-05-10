@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 from chirp.contracts import FormContract, contract
 from chirp.http.request import Request
@@ -87,5 +88,8 @@ def _render_login(
 
 def _safe_next(next_url: str) -> str:
     if not next_url.startswith("/") or next_url.startswith("//"):
+        return "/"
+    path = urlsplit(next_url).path
+    if path in {"/login", "/logout", "/request-access"}:
         return "/"
     return next_url

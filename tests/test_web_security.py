@@ -154,6 +154,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
             root = await client.get("/")
             network = await client.get("/network?q=magic")
             login = await client.get("/login")
+            nested_login = await client.get("/login?next=/login%3Fnext%3D/")
             request_access = await client.get("/request-access")
             studio = await client.get("/studio")
             tenant = await client.get("/c/x-men-apocalypse")
@@ -182,6 +183,9 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert login.status == 200
         assert "_csrf_token" in login.text
         assert 'href="/request-access"' in login.text
+        assert 'href="/login?next=/"' in login.text
+        assert 'name="next" value="/"' in nested_login.text
+        assert 'href="/login?next=/login' not in nested_login.text
         assert "chirpui-sidebar__section-title" not in login.text
         assert "Staff in X-Men Apocalypse" not in login.text
         assert request_access.status == 200
