@@ -25,6 +25,9 @@
     --elbysodic-state-watching: #36d6ff;
     --elbysodic-state-private: #70889d;
     --elbysodic-state-staff: #aebecd;
+    --elbysodic-state-locked: #bac7d4;
+    --elbysodic-state-archived: #8493a3;
+    --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
     --elbysodic-state-error: #ff6b7a;
     --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 34%, var(--chirpui-border));
     --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-dark-1) 72%, transparent);
@@ -80,6 +83,10 @@
     --chirpui-success: var(--elbysodic-state-caught-up);
     --chirpui-warning: var(--elbysodic-state-needs-reply);
     --chirpui-error: var(--elbysodic-state-error);
+    --chirpui-info: var(--elbysodic-state-watching);
+    --chirpui-alert-info-bg: color-mix(in srgb, var(--elbysodic-state-watching) 12%, var(--chirpui-surface));
+    --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 46%, var(--chirpui-border));
+    --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 16%, var(--chirpui-surface));
     --chirpui-muted: var(--chirpui-text-muted);
     --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, transparent);
     --chirpui-card-header-color: var(--chirpui-text);
@@ -104,6 +111,9 @@
     --elbysodic-state-watching: #007b98;
     --elbysodic-state-private: #6a7d90;
     --elbysodic-state-staff: #415264;
+    --elbysodic-state-locked: #526577;
+    --elbysodic-state-archived: #778492;
+    --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
     --elbysodic-state-error: #b3263a;
     --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, var(--chirpui-border));
     --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 78%, transparent);
@@ -133,6 +143,10 @@
     --chirpui-success: var(--elbysodic-state-caught-up);
     --chirpui-warning: var(--elbysodic-state-needs-reply);
     --chirpui-error: var(--elbysodic-state-error);
+    --chirpui-info: var(--elbysodic-state-watching);
+    --chirpui-alert-info-bg: color-mix(in srgb, var(--elbysodic-state-watching) 10%, var(--chirpui-surface));
+    --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 34%, var(--chirpui-border));
+    --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
     --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
     --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
     --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
@@ -155,6 +169,9 @@
         --elbysodic-state-watching: #007b98;
         --elbysodic-state-private: #6a7d90;
         --elbysodic-state-staff: #415264;
+        --elbysodic-state-locked: #526577;
+        --elbysodic-state-archived: #778492;
+        --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
         --elbysodic-state-error: #b3263a;
         --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, var(--chirpui-border));
         --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 78%, transparent);
@@ -184,6 +201,10 @@
         --chirpui-success: var(--elbysodic-state-caught-up);
         --chirpui-warning: var(--elbysodic-state-needs-reply);
         --chirpui-error: var(--elbysodic-state-error);
+        --chirpui-info: var(--elbysodic-state-watching);
+        --chirpui-alert-info-bg: color-mix(in srgb, var(--elbysodic-state-watching) 10%, var(--chirpui-surface));
+        --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 34%, var(--chirpui-border));
+        --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
         --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
         --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
         --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
@@ -3067,11 +3088,43 @@ body {
     padding: 0.18rem 0.45rem;
 }
 
+.elbysodic-board-stat-row .chirpui-badge,
 .elbysodic-state-row .chirpui-badge {
     border-radius: 999px;
     font-size: var(--chirpui-font-xs);
     min-height: 1.55rem;
     padding: 0.2rem 0.52rem;
+    transition:
+        background var(--elbysodic-motion-feedback),
+        border-color var(--elbysodic-motion-feedback),
+        color var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-state-row .chirpui-badge--muted {
+    background: color-mix(in srgb, var(--elbysodic-state-archived) 12%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--elbysodic-state-archived) 38%, var(--chirpui-border));
+    color: color-mix(in srgb, var(--elbysodic-state-archived) 78%, var(--chirpui-text));
+}
+
+.elbysodic-state-row .chirpui-badge--info,
+.elbysodic-thread-card__signals .chirpui-badge--info {
+    background: color-mix(in srgb, var(--elbysodic-state-watching) 12%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--elbysodic-state-watching) 48%, var(--chirpui-border));
+    color: color-mix(in srgb, var(--elbysodic-state-watching) 82%, var(--chirpui-text));
+}
+
+.elbysodic-state-row .chirpui-badge--warning,
+.elbysodic-thread-card__signals .chirpui-badge--warning {
+    background: color-mix(in srgb, var(--elbysodic-state-needs-reply) 12%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 52%, var(--chirpui-border));
+    color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 84%, var(--chirpui-text));
+}
+
+.elbysodic-state-row .chirpui-badge--success,
+.elbysodic-thread-card__signals .chirpui-badge--success {
+    background: color-mix(in srgb, var(--elbysodic-state-caught-up) 11%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--elbysodic-state-caught-up) 46%, var(--chirpui-border));
+    color: color-mix(in srgb, var(--elbysodic-state-caught-up) 82%, var(--chirpui-text));
 }
 
 .elbysodic-counter {
@@ -4197,10 +4250,10 @@ body {
 
 .elbysodic-thread-card--unread {
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-needs-reply) 8%, transparent), transparent 42%),
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-unread) 8%, transparent), transparent 42%),
         var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 56%, var(--chirpui-border));
-    box-shadow: inset 0.22rem 0 0 color-mix(in srgb, var(--elbysodic-state-needs-reply) 82%, var(--chirpui-border));
+    border-color: color-mix(in srgb, var(--elbysodic-state-unread) 56%, var(--chirpui-border));
+    box-shadow: inset 0.22rem 0 0 color-mix(in srgb, var(--elbysodic-state-unread) 82%, var(--chirpui-border));
 }
 
 .elbysodic-thread-card__meta,
