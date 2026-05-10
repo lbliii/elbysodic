@@ -231,8 +231,8 @@ body {
 
 .chirpui-app-shell__topbar,
 .chirpui-app-shell__sidebar {
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 88%, transparent);
-    border-color: var(--chirpui-border);
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 90%, transparent);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 16%, var(--chirpui-border));
     color: var(--chirpui-text);
 }
 
@@ -241,7 +241,7 @@ body {
     .chirpui-app-shell__sidebar {
         backdrop-filter: blur(18px) saturate(135%);
         -webkit-backdrop-filter: blur(18px) saturate(135%);
-        background: color-mix(in srgb, var(--chirpui-bg-subtle) 72%, transparent);
+        background: var(--elbysodic-glass-bg);
     }
 }
 
@@ -827,8 +827,8 @@ body {
 }
 
 .elbysodic-identity-menu__panel {
-    background: var(--chirpui-surface);
-    border: 1px solid var(--chirpui-border);
+    background: var(--elbysodic-glass-bg);
+    border: 1px solid var(--elbysodic-glass-border);
     border-radius: var(--chirpui-radius-sm);
     box-shadow: var(--chirpui-shadow-lg);
     display: grid;
@@ -841,7 +841,27 @@ body {
     position: absolute;
     right: 0;
     top: calc(100% + 0.45rem);
+    transform-origin: top right;
     z-index: 30;
+}
+
+@supports (backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px)) {
+    .elbysodic-identity-menu__panel,
+    .elbysodic-mention-picker__list {
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .chirpui-app-shell__topbar,
+    .chirpui-app-shell__sidebar,
+    .elbysodic-identity-menu__panel,
+    .elbysodic-mention-picker__list {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: var(--chirpui-surface);
+    }
 }
 
 .elbysodic-identity-switcher,
@@ -862,11 +882,16 @@ body {
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 0.55rem 0.65rem;
     text-align: left;
+    transition:
+        background var(--elbysodic-motion-feedback),
+        border-color var(--elbysodic-motion-feedback),
+        color var(--elbysodic-motion-feedback);
     width: 100%;
 }
 
 .elbysodic-identity-switcher__option:hover,
 .elbysodic-identity-switcher__option:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-surface));
     border-color: var(--chirpui-border-strong);
 }
 
@@ -2884,7 +2909,8 @@ body {
 .elbysodic-thread-stage,
 .elbysodic-board-hero__media {
     background:
-        radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--chirpui-accent) 32%, transparent), transparent 30%),
+        radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 30%, transparent), transparent 30%),
+        radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--elbysodic-identity-dye) 18%, transparent), transparent 26%),
         linear-gradient(135deg, var(--chirpui-surface), var(--chirpui-bg-subtle));
     background-position: center;
     background-size: cover;
@@ -2919,11 +2945,22 @@ body {
     min-height: 10.5rem;
     padding: 1rem;
     text-decoration: none;
+    transition:
+        border-color var(--elbysodic-motion-feedback),
+        box-shadow var(--elbysodic-motion-feedback),
+        transform var(--elbysodic-motion-feedback);
 }
 
 .elbysodic-board-poster:hover,
 .elbysodic-board-poster:visited {
     color: var(--elbysodic-on-media-text);
+}
+
+.elbysodic-board-poster:hover,
+.elbysodic-board-poster:focus-visible {
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 56%, var(--chirpui-border));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--elbysodic-atmosphere-dye) 16%, transparent);
+    transform: translateY(-1px);
 }
 
 .elbysodic-board-poster--tile {
@@ -6597,8 +6634,8 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-mention-picker__list {
-    background: var(--chirpui-surface);
-    border: 1px solid var(--chirpui-border);
+    background: var(--elbysodic-glass-bg);
+    border: 1px solid var(--elbysodic-glass-border);
     border-radius: var(--chirpui-radius);
     box-shadow: var(--chirpui-shadow-md);
     display: grid;
@@ -7112,6 +7149,10 @@ a.elbysodic-metric:focus-visible {
     gap: 0.45rem 0.8rem;
     grid-template-columns: auto minmax(0, 1fr) auto;
     padding: 0.8rem 0.95rem 0.8rem 1.05rem;
+    transition:
+        background var(--elbysodic-motion-feedback),
+        border-color var(--elbysodic-motion-feedback),
+        box-shadow var(--elbysodic-motion-feedback);
 }
 
 .elbysodic-notice--event {
@@ -7121,7 +7162,7 @@ a.elbysodic-metric:focus-visible {
 .elbysodic-notice--staff,
 .elbysodic-notice--note,
 .elbysodic-notice--status {
-    --elbysodic-notice-accent: var(--chirpui-accent);
+    --elbysodic-notice-accent: var(--elbysodic-state-staff);
 }
 
 .elbysodic-notice--warning {
@@ -7135,6 +7176,10 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-notice--success {
     --elbysodic-notice-accent: var(--chirpui-success);
+}
+
+.elbysodic-notice--private {
+    --elbysodic-notice-accent: var(--elbysodic-state-private);
 }
 
 .elbysodic-notice__mark {
@@ -7984,7 +8029,23 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-wanted-card {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-identity-dye) 8%, transparent), transparent 42%),
+        var(--chirpui-surface);
+    border-color: color-mix(in srgb, var(--elbysodic-identity-dye) 22%, var(--chirpui-border-subtle));
     height: 100%;
+    position: relative;
+}
+
+.elbysodic-wanted-card::before {
+    background: linear-gradient(180deg, var(--elbysodic-identity-dye), var(--elbysodic-atmosphere-dye));
+    border-radius: 999px;
+    content: "";
+    inset: 0 auto 0 0;
+    opacity: 0.62;
+    pointer-events: none;
+    position: absolute;
+    width: 0.18rem;
 }
 
 .elbysodic-plot-hook-card {
