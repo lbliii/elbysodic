@@ -27,6 +27,12 @@ are faces, wanted hooks are casting calls, scenes are live productions, and the
 home page should make a writer feel there is a rich menu of worlds and roles
 waiting for them.
 
+This plan primarily strengthens the Writer Network pillar from
+`docs/product/strategy-spine.md`: public discovery, signed-in continuation,
+active-face lanes, wanted pressure, and privacy-safe cross-realm entry. It must
+not outrun the production trust gates that keep public catalog cards from
+leaking membership, staff, application, or private scene data.
+
 The current `/` behavior already routes shared-host visitors to
 `network/page.html` when no tenant prefix is present. This plan promotes that
 surface from "Studio Network directory" into the platform homepage.

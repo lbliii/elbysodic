@@ -17,6 +17,12 @@ where login, logout, community navigation, active face context, search, writing
 flows, staff workflows, and core data boundaries feel mature enough that more
 visual polish can sit on top of stable primitives.
 
+This roadmap is the trust foundation for the product strategy spine in
+`docs/product/strategy-spine.md`. Realm Studio, Writer Network, and Continuity
+Graph all depend on boringly correct tenant routing, sessions, persistence,
+rendered privacy, transaction boundaries, and recovery before their product
+surfaces expand.
+
 The theme for this roadmap is production trust:
 
 - writers never post as the wrong face

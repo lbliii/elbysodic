@@ -29,6 +29,12 @@ from scenes, events, wanted hooks, applications, claims, reserves, and director
 materials. Automation can assist later, but canon should become public only
 through reviewable, attributable updates.
 
+This plan is the deferred Continuity Graph pillar from
+`docs/product/strategy-spine.md`. It should stay behind production trust,
+rendered privacy, transaction boundaries, and manual provenance until the
+ordinary writing and Studio workflows are stable enough to supply reliable
+source objects.
+
 ## Product Decision
 
 Use a staged model:

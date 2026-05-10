@@ -14,6 +14,12 @@ The boundary is equally important: AI must support writers, directors, and
 staff without erasing consent, authorship, privacy, character agency, or canon
 trust.
 
+AI is not the current strategy lead. The product spine in
+`docs/product/strategy-spine.md` puts production trust, Realm Studio, Writer
+Network, and manual Continuity Graph provenance ahead of AI-assisted expansion.
+Use this document only after the relevant non-AI workflow, privacy, and review
+contracts exist.
+
 ## Product Thesis
 
 PBP plus AI is strongest when Elbysodic owns the durable source of truth:

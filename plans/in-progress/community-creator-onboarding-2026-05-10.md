@@ -44,6 +44,11 @@ This is not generic workspace setup. The creator is a director opening a
 play-by-post realm with premise, scene hubs, roster policy, face claims,
 director materials, wanted hooks, intake, and appearance.
 
+This plan is the first Realm Studio opening path in the strategy spine at
+`docs/product/strategy-spine.md`. It should create enough foundation for Writer
+Network onboarding later, but it should not become public self-serve creator
+signup or hosted billing scope.
+
 ## Current Boundary
 
 - Public registration is intentionally deferred.
