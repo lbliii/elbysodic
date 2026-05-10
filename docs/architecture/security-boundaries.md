@@ -63,7 +63,7 @@ Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
 Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
-- `/health`, `/login`, `/logout`, `/`, `/network`, and static assets are public
+- `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`, and static assets are public
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
@@ -91,6 +91,12 @@ Seed `dev-password-hash` accounts are accepted in production only when
 Production mutating requests are protected by Chirp session-backed CSRF. The
 app injects the active CSRF field into rendered POST forms and rejects unsafe
 methods when the token is missing or invalid.
+
+Production responses also set a Content Security Policy sized to the current
+server-rendered Chirp and Chirp-UI stack. The policy keeps framing, object,
+base URI, image, and connection boundaries narrow, while allowing inline styles
+and Alpine expression evaluation until those upstream-rendered shell, theme,
+and progressive-enhancement patterns are replaced with CSP-stricter assets.
 
 ## Nullable Identity Shapes
 

@@ -418,10 +418,20 @@ A studio program ready for scenes, casting, and writer movement.
   {% end %}
   {% else %}
   {% call section_header("Studio Network") %}
-  Elbysodic is ready for its first play-by-post program.
+  This Elbysodic studio has not opened its first play-by-post realm yet.
   {% end %}
   {% call surface(variant="elevated") %}
-  <p class="elbysodic-empty-state">No programs are available yet.</p>
+  <div class="elbysodic-network-empty">
+    <p class="elbysodic-section-kicker">Launch state</p>
+    <h2>The first realm is still backstage.</h2>
+    <p class="elbysodic-empty-state">
+      Once a director opens a realm, this studio network will show public worlds,
+      wanted hooks, faces, scenes, and current events here.
+    </p>
+    <div class="elbysodic-network-empty__actions">
+      <a class="chirpui-btn chirpui-btn--primary" href="/login?next=/">Log in</a>
+    </div>
+  </div>
   {% end %}
   {% end %}
 {% end %}

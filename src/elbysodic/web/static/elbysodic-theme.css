@@ -620,6 +620,12 @@ body {
     gap: 0.45rem;
 }
 
+.elbysodic-anonymous-actions {
+    align-items: center;
+    display: flex;
+    gap: 0.45rem;
+}
+
 .elbysodic-identity-menu {
     position: relative;
 }
@@ -4081,6 +4087,41 @@ body {
 .elbysodic-thread-card__meta,
 .elbysodic-empty-state {
     color: var(--chirpui-text-muted);
+}
+
+.elbysodic-network-empty {
+    display: grid;
+    gap: 0.8rem;
+    max-width: 44rem;
+}
+
+.elbysodic-network-empty h2,
+.elbysodic-network-empty p {
+    margin: 0;
+}
+
+.elbysodic-network-empty__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.elbysodic-access-panel {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.elbysodic-access-panel h1,
+.elbysodic-access-panel p {
+    margin: 0;
+}
+
+.elbysodic-access-panel__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
 }
 
 .elbysodic-thread-card__meta {
@@ -8531,6 +8572,10 @@ a.elbysodic-metric:focus-visible {
 
     .elbysodic-shell-identity {
         gap: 0;
+    }
+
+    .elbysodic-anonymous-actions {
+        gap: 0.35rem;
     }
 
     .elbysodic-sidebar-resize {

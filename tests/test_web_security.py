@@ -154,6 +154,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
             root = await client.get("/")
             network = await client.get("/network?q=magic")
             login = await client.get("/login")
+            request_access = await client.get("/request-access")
             studio = await client.get("/studio")
             tenant = await client.get("/c/x-men-apocalypse")
             post = await client.post(
@@ -169,6 +170,9 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "starlane" not in root.text
         assert "playing as Rogue" not in root.text
         assert "elbysodic-identity-menu" not in root.text
+        assert "elbysodic-anonymous-actions" in root.text
+        assert 'href="/request-access"' in root.text
+        assert 'href="/login?next=/"' in root.text
         assert "chirpui-theme-toggle" in root.text
         assert network.status == 200
         assert "HP Universe" in network.text
@@ -177,7 +181,14 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Public preview" in network.text
         assert login.status == 200
         assert "_csrf_token" in login.text
+        assert 'href="/request-access"' in login.text
+        assert "chirpui-sidebar__section-title" not in login.text
         assert "Staff in X-Men Apocalypse" not in login.text
+        assert request_access.status == 200
+        assert "Access opens through a director invitation." in request_access.text
+        assert "Public registration is not open yet." in request_access.text
+        assert "_csrf_token" not in request_access.text
+        assert "chirpui-sidebar__section-title" not in request_access.text
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
         assert tenant.status == 302
@@ -186,6 +197,29 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Log in to keep writing." in post.text
         assert "/login?next=/identity" in post.text
         assert personas.status == 302
+
+    asyncio.run(run())
+
+
+def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, db_path=":memory:", seed_demo=False)
+
+        async with TestClient(app) as client:
+            root = await client.get("/")
+            network = await client.get("/network")
+
+        assert root.status == 200
+        assert network.status == 200
+        for response in (root, network):
+            assert "Launch state" in response.text
+            assert "The first realm is still backstage." in response.text
+            assert "wanted hooks, faces, scenes, and current events" in response.text
+            assert 'href="/request-access"' in response.text
+            assert 'href="/login?next=/"' in response.text
+            assert "No programs are available yet." not in response.text
+            assert "elbysodic-identity-menu" not in response.text
 
     asyncio.run(run())
 
@@ -275,7 +309,11 @@ def test_production_security_headers_are_set(monkeypatch) -> None:
         assert headers["x-content-type-options"] == "nosniff"
         assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
         assert headers["strict-transport-security"] == "max-age=31536000"
-        assert "frame-ancestors 'none'" in headers["content-security-policy"]
+        csp = headers["content-security-policy"]
+        assert "frame-ancestors 'none'" in csp
+        assert "style-src 'self' 'unsafe-inline'" in csp
+        assert "script-src 'self' 'unsafe-inline' 'unsafe-eval'" in csp
+        assert "connect-src 'self'" in csp
 
     asyncio.run(run())
 

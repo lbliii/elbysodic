@@ -81,6 +81,7 @@ def _render_login(
         next_url=next_url or _safe_next(str(getattr(request, "query", {}).get("next", "/"))),
         error=error,
         seed_passwords_enabled=seed_passwords_enabled(),
+        show_community_shell=False,
     )
 
 

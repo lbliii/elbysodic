@@ -19,6 +19,7 @@ from elbysodic.services import AppServices, create_services
 from elbysodic.web.errors import register_error_handlers
 from elbysodic.web.navigation import location_nav_tree_items
 from elbysodic.web.security import (
+    PRODUCTION_CONTENT_SECURITY_POLICY,
     AutoCSRFFormsMiddleware,
     RequireLoginMiddleware,
     resolve_web_security_config,
@@ -111,6 +112,7 @@ def create_app(
         app.add_middleware(
             SecurityHeadersMiddleware(
                 SecurityHeadersConfig(
+                    content_security_policy=PRODUCTION_CONTENT_SECURITY_POLICY,
                     strict_transport_security=security.strict_transport_security,
                 )
             )
