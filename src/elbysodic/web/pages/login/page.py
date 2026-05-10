@@ -10,7 +10,7 @@ from chirp.http.response import Response
 from chirp.templating.returns import Page
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
-from elbysodic.services.auth import SESSION_COOKIE
+from elbysodic.services.auth import SESSION_COOKIE, seed_passwords_enabled
 from elbysodic.web.security import session_cookie
 from elbysodic.web.state import get_services, get_web_security_config
 
@@ -80,6 +80,7 @@ def _render_login(
         email=email,
         next_url=next_url or _safe_next(str(getattr(request, "query", {}).get("next", "/"))),
         error=error,
+        seed_passwords_enabled=seed_passwords_enabled(),
     )
 
 

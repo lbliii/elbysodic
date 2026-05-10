@@ -134,6 +134,9 @@ def test_production_seed_password_requires_demo_mode(monkeypatch) -> None:
             )
 
         assert response.status == 200
+        assert "Access is invite-only for this launch" in page.text
+        assert "public registration is not open" in page.text
+        assert "Invite/demo accounts use password" not in page.text
         assert "email or password is incorrect" in response.text
         assert "elbysodic_session=" not in "\n".join(_response_headers(response, "set-cookie"))
 
