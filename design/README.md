@@ -55,6 +55,8 @@ pretend a behavior exists until code, tests, or product docs support it.
 
 - `art-direction-program.md`: a programmatic model for translating a
   community's premise into a safe art-direction score.
+- `component-inventory.md`: current shared component map, surface-intensity
+  budgets, token roles, and QA matrix for visual implementation.
 - `motion-design.md`: animation and transition guidance for technicolor
   futurism, PBP reading flow, and reduced-motion-safe interaction design.
 - `technicolor-futurism.md`: the working design doctrine.
