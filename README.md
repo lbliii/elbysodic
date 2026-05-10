@@ -244,6 +244,8 @@ Post-deploy smoke for the shared Railway host:
 Use [docs/operations/railway-smoke.md](docs/operations/railway-smoke.md) as the
 recorded runbook before sharing the URL. The production gate is still open until
 that smoke includes restart persistence on the attached volume.
+The current SQLite operating contract is documented in
+[docs/operations/sqlite-production.md](docs/operations/sqlite-production.md).
 
 ## Product Voice
 
