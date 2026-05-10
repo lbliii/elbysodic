@@ -260,8 +260,10 @@ body {
 
 .chirpui-app-shell__topbar,
 .chirpui-app-shell__sidebar {
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 90%, transparent);
-    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 16%, var(--chirpui-border));
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 10%, transparent), transparent 28rem),
+        color-mix(in srgb, var(--chirpui-bg-subtle) 92%, transparent);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 22%, var(--chirpui-border));
     color: var(--chirpui-text);
 }
 
@@ -270,7 +272,9 @@ body {
     .chirpui-app-shell__sidebar {
         backdrop-filter: blur(18px) saturate(135%);
         -webkit-backdrop-filter: blur(18px) saturate(135%);
-        background: var(--elbysodic-glass-bg);
+        background:
+            linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 10%, transparent), transparent 28rem),
+            var(--elbysodic-glass-bg);
     }
 }
 
@@ -447,9 +451,13 @@ body {
 }
 
 .chirpui-sidebar__link[aria-current="page"] {
-    background: color-mix(in srgb, var(--chirpui-accent) 12%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--chirpui-accent) 28%, transparent);
-    box-shadow: inset 2px 0 0 var(--chirpui-accent);
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--chirpui-accent) 13%, transparent), transparent 72%),
+        color-mix(in srgb, var(--elbysodic-atmosphere-dye) 5%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 32%, transparent);
+    box-shadow:
+        inset 2px 0 0 var(--chirpui-accent),
+        inset 5px 0 0 color-mix(in srgb, var(--elbysodic-atmosphere-dye) 64%, transparent);
 }
 
 .chirpui-sidebar__link:hover {
@@ -477,6 +485,7 @@ body {
 
 .elbysodic-product-mark {
     background: var(--elbysodic-key-dark);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 45%, var(--chirpui-border));
     object-fit: contain;
 }
 
@@ -503,7 +512,7 @@ body {
 }
 
 .elbysodic-sidebar-destination .chirpui-sidebar__icon {
-    color: color-mix(in srgb, var(--chirpui-accent) 82%, var(--chirpui-text));
+    color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 72%, var(--chirpui-text));
     margin-inline-end: 0.55rem;
 }
 
@@ -524,8 +533,8 @@ body {
 }
 
 .elbysodic-sidebar-link--attention .elbysodic-sidebar-count {
-    background: color-mix(in srgb, var(--chirpui-accent) 24%, var(--chirpui-bg-subtle));
-    border-color: color-mix(in srgb, var(--chirpui-accent) 44%, var(--chirpui-border));
+    background: color-mix(in srgb, var(--elbysodic-state-needs-reply) 24%, var(--chirpui-bg-subtle));
+    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 48%, var(--chirpui-border));
 }
 
 .elbysodic-sidebar-tree {
@@ -562,8 +571,8 @@ body {
 }
 
 .elbysodic-sidebar-tree__link--active {
-    background: color-mix(in srgb, var(--chirpui-accent) 16%, var(--chirpui-bg-subtle));
-    border-left-color: var(--chirpui-accent);
+    background: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 10%, var(--chirpui-bg-subtle));
+    border-left-color: var(--elbysodic-atmosphere-dye);
     color: var(--chirpui-text);
 }
 
@@ -654,7 +663,9 @@ body {
 
 .elbysodic-topnav__link--active,
 .elbysodic-topnav__link--active:hover {
-    background: color-mix(in srgb, var(--chirpui-accent) 14%, transparent);
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--chirpui-accent) 12%, transparent), transparent 68%),
+        color-mix(in srgb, var(--elbysodic-atmosphere-dye) 8%, transparent);
     color: var(--chirpui-text);
 }
 
@@ -668,8 +679,8 @@ body {
 
 .elbysodic-topnav__count {
     align-items: center;
-    background: color-mix(in srgb, var(--chirpui-accent) 22%, var(--chirpui-bg-subtle));
-    border: 1px solid var(--chirpui-border-subtle);
+    background: color-mix(in srgb, var(--elbysodic-state-needs-reply) 20%, var(--chirpui-bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--elbysodic-state-needs-reply) 34%, var(--chirpui-border-subtle));
     border-radius: 999px;
     color: var(--chirpui-text);
     display: inline-flex;
@@ -681,7 +692,7 @@ body {
 
 .elbysodic-platform-mark {
     align-items: center;
-    border-top: 1px solid var(--chirpui-border-subtle);
+    border-top: 1px solid color-mix(in srgb, var(--elbysodic-atmosphere-dye) 22%, var(--chirpui-border-subtle));
     color: color-mix(in srgb, var(--chirpui-text-muted) 76%, transparent);
     display: flex;
     flex-direction: row;
@@ -1786,7 +1797,9 @@ body {
 
 .elbysodic-production-room-card,
 .elbysodic-studio-room-card {
-    background: color-mix(in srgb, var(--chirpui-surface) 74%, transparent);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-state-staff) 5%, transparent), transparent 56%),
+        color-mix(in srgb, var(--chirpui-surface) 78%, transparent);
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text);
@@ -1802,7 +1815,7 @@ body {
 .elbysodic-production-room-card:focus-visible,
 .elbysodic-studio-room-card:hover,
 .elbysodic-studio-room-card:focus-visible {
-    border-color: var(--chirpui-accent);
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 54%, var(--chirpui-border));
 }
 
 .elbysodic-production-room-card strong,
@@ -1824,7 +1837,7 @@ body {
 .elbysodic-production-room-card span:not(.elbysodic-kicker),
 .elbysodic-studio-room-card span:not(.elbysodic-kicker) {
     align-self: end;
-    color: var(--chirpui-accent);
+    color: color-mix(in srgb, var(--elbysodic-state-staff) 70%, var(--chirpui-text));
     font-weight: 900;
     overflow-wrap: break-word;
 }
@@ -5808,8 +5821,8 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-claims-hero__metrics span {
-    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-bg-subtle));
-    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 26%, var(--chirpui-border));
+    background: color-mix(in srgb, var(--elbysodic-state-private) 10%, var(--chirpui-bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--elbysodic-state-private) 28%, var(--chirpui-border));
     border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text-muted);
     display: grid;
@@ -5833,7 +5846,7 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-claim-lens {
-    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    background: color-mix(in srgb, var(--elbysodic-state-private) 5%, var(--chirpui-bg-subtle));
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text-muted);
@@ -5849,14 +5862,14 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-claim-lens.is-active {
-    background: color-mix(in srgb, var(--chirpui-accent) 14%, var(--chirpui-bg-subtle));
-    border-color: color-mix(in srgb, var(--chirpui-accent) 45%, var(--chirpui-border));
+    background: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 10%, var(--chirpui-bg-subtle));
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 36%, var(--chirpui-border));
     color: var(--chirpui-text);
 }
 
 .elbysodic-claim-search {
     align-items: end;
-    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    background: color-mix(in srgb, var(--elbysodic-state-private) 5%, var(--chirpui-bg-subtle));
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
     display: grid;
@@ -5896,7 +5909,7 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-claim-row {
     align-items: center;
-    background: color-mix(in srgb, var(--chirpui-accent) 4%, var(--chirpui-bg-subtle));
+    background: color-mix(in srgb, var(--elbysodic-state-private) 4%, var(--chirpui-bg-subtle));
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
     display: grid;
@@ -5923,8 +5936,8 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-claim-create-form {
-    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
-    border: 1px dashed color-mix(in srgb, var(--chirpui-accent) 38%, var(--chirpui-border));
+    background: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 5%, var(--chirpui-bg-subtle));
+    border: 1px dashed color-mix(in srgb, var(--elbysodic-atmosphere-dye) 34%, var(--chirpui-border));
     border-radius: var(--chirpui-radius-md);
     display: grid;
     gap: 1rem;
@@ -7114,7 +7127,7 @@ a.elbysodic-metric:focus-visible {
 .elbysodic-material-hero,
 .elbysodic-current-event-card {
     background:
-        radial-gradient(circle at 74% 18%, color-mix(in srgb, var(--chirpui-accent) 26%, transparent), transparent 32%),
+        radial-gradient(circle at 74% 18%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 18%, transparent), transparent 32%),
         linear-gradient(145deg, var(--chirpui-surface-alt), var(--chirpui-bg-subtle));
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius);
@@ -7303,10 +7316,10 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-studio-facts__pill {
-    background: color-mix(in srgb, var(--chirpui-accent) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 48%, var(--chirpui-border));
+    background: color-mix(in srgb, var(--elbysodic-state-private) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-state-private) 44%, var(--chirpui-border));
     border-radius: var(--chirpui-radius-xs);
-    color: var(--chirpui-accent);
+    color: color-mix(in srgb, var(--elbysodic-state-staff) 72%, var(--chirpui-text));
     display: inline-flex;
     line-height: 1;
     padding: 0.2rem 0.45rem;
@@ -7599,7 +7612,7 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-network-billboard {
-    --elbysodic-network-accent: var(--chirpui-accent);
+    --elbysodic-network-accent: var(--elbysodic-atmosphere-dye);
     --elbysodic-network-surface: var(--chirpui-surface);
     --elbysodic-network-text: var(--chirpui-text);
     --elbysodic-network-display-font: var(--elbysodic-display-font-family);
@@ -7767,7 +7780,7 @@ a.elbysodic-metric:focus-visible {
 .elbysodic-network-explore-hero {
     align-items: end;
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--chirpui-accent) 14%, transparent), transparent 54%),
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 13%, transparent), transparent 54%),
         var(--chirpui-surface);
     border: 1px solid var(--chirpui-border);
     border-radius: var(--chirpui-radius);
@@ -7844,9 +7857,9 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-network-search__submit {
-    background: var(--chirpui-accent);
+    background: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 84%, var(--chirpui-accent));
     border: 0;
-    border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-accent) 68%, var(--chirpui-border));
+    border-inline-start: 1px solid color-mix(in srgb, var(--elbysodic-atmosphere-dye) 68%, var(--chirpui-border));
     color: var(--chirpui-on-accent);
     cursor: pointer;
     font: inherit;
@@ -7856,7 +7869,7 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-network-search__submit:hover,
 .elbysodic-network-search__submit:focus-visible {
-    background: color-mix(in srgb, var(--chirpui-accent) 88%, var(--chirpui-text));
+    background: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 82%, var(--chirpui-text));
 }
 
 .elbysodic-network-discovery-band {
@@ -7960,7 +7973,7 @@ a.elbysodic-metric:focus-visible {
 }
 
 .elbysodic-network-card {
-    --elbysodic-network-accent: var(--chirpui-accent);
+    --elbysodic-network-accent: var(--elbysodic-atmosphere-dye);
     --elbysodic-network-surface: var(--chirpui-surface);
     --elbysodic-network-text: var(--chirpui-text);
     --elbysodic-network-display-font: var(--elbysodic-display-font-family);
@@ -8729,7 +8742,7 @@ a.elbysodic-metric:focus-visible {
     background:
         radial-gradient(
             circle at 35% 25%,
-            color-mix(in srgb, var(--chirpui-accent) 22%, transparent),
+            color-mix(in srgb, var(--elbysodic-state-staff) 18%, transparent),
             transparent 58%
         ),
         var(--chirpui-bg-subtle);
