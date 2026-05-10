@@ -614,7 +614,7 @@ def test_tenant_prefixed_thread_routes_scope_composer_redirects() -> None:
         )
 
         assert composer.status == 200
-        assert "Start thread" in composer.text
+        assert "Start scene" in composer.text
         assert f'href="/c/{community_slug}/boards/danger-room"' in composer.text
         assert f"/c/{community_slug}/mentionables/search" in composer.text
 
@@ -2744,7 +2744,7 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert 'id="sublocations"' in academy.text
             assert 'id="nearby"' in academy.text
             assert "Choose a door inside Xavier Institute" in academy.text
-            assert "Xavier Institute threads" in academy.text
+            assert "Xavier Institute scenes" in academy.text
             assert "No scenes have opened directly here yet." in academy.text
             assert "Sublocations" in academy.text
             assert "elbysodic-board-poster--tile" in academy.text
@@ -6821,7 +6821,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
         async with TestClient(app) as client:
             form = await client.get("/boards/danger-room/threads/new")
             assert form.status == 200
-            assert "Start thread" in form.text
+            assert "Start scene" in form.text
             assert "elbysodicComposer" in form.text
             assert "thread-composer-config" in form.text
             assert "Post as" in form.text

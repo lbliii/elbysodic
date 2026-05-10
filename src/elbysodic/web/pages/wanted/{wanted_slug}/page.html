@@ -203,7 +203,7 @@
   <div class="elbysodic-interest-list">
     {% for item in wanted.interests %}
     {% call surface(variant="elevated") %}
-    <article class="elbysodic-interest-card">
+    <article class="elbysodic-interest-card elbysodic-interest-card--{{ item.interest.status }}">
       {% if item.character %}
       <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
         <span class="elbysodic-character-avatar" aria-hidden="true">
@@ -282,7 +282,7 @@
   <div class="elbysodic-interest-list">
     {% for item in wanted.reserves %}
     {% call surface(variant="elevated") %}
-    <article class="elbysodic-interest-card">
+    <article class="elbysodic-interest-card elbysodic-interest-card--reserved">
       <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
         <span class="elbysodic-character-avatar" aria-hidden="true">
           {% if item.character.avatar_url %}

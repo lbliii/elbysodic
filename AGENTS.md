@@ -45,6 +45,9 @@ claims, reserves, and continuity native to the product.
 - `src/elbysodic/blueprints/` owns the director-authored Program Blueprint
   import/validation contract.
 - `docs/` owns product and architecture decision guides.
+- `research/` owns market, user, ecosystem, interview, competitive, outreach,
+  and synthesis input. Research is signal, not product doctrine, until
+  distilled into `docs/`, `plans/`, or steward guidance.
 - `tests/` owns regression proof for repository boundaries, services, policies,
   rendered pages, markup, CLI behavior, and security.
 - `plans/` owns durable roadmap and steward rollup snapshots, not scratch notes.
@@ -177,11 +180,30 @@ minority reports, ranked backlog, and not-now items.
 - Proactively consult stewards for cross-boundary, public-facing,
   hard-to-reverse, performance-sensitive, concurrency-sensitive,
   security-sensitive, or contract-affecting work.
+- For UX, onboarding, navigation, writing-flow, Studio, Appearance Studio,
+  wanted/backstage, application, claim, reserve, or public discovery changes,
+  consult the user panel in `docs/product/user-personas-panel.md` in addition
+  to affected technical stewards.
 - Use the nearest steward for local work.
 - Use multiple stewards when ownership lines cross.
 - Parallelize steward consultation only when questions are independent.
 - Keep final synthesis and implementation accountability with the implementing
   agent.
+
+## User Panel
+
+The user panel is a product-research complement to stewards. It represents
+active writers, new face applicants, hook hunters, directors, staff moderators,
+safety-boundary writers, and returning regulars. Use it to evaluate user jobs,
+expectations, anxieties, flow clarity, and PBP vocabulary. It does not override
+tenant, membership, character, staff, security, privacy, or architecture
+contracts.
+
+When the user asks for a user-panel review and delegation is available, spawn
+independent panel agents from `docs/product/user-personas-panel.md`. Each
+panelist should return findings in the User Panel Signal Format, and the
+implementing agent owns synthesis, accepted/deferred decisions, proof, and
+collateral.
 
 ## Ask Stewards
 

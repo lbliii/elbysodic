@@ -120,10 +120,12 @@
 
   {% if material.can_manage %}
   {% call surface(variant="elevated") %}
-  <details class="elbysodic-management-disclosure">
+  <details class="elbysodic-management-disclosure elbysodic-material-studio-disclosure">
     <summary>
-      <span>Material studio</span>
-      <small>Edit this canon document in place</small>
+      <span>
+        <strong>Material studio</strong>
+        <small>Edit this canon document in place</small>
+      </span>
     </summary>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-material-editor">
       {% if error %}
@@ -231,8 +233,8 @@
   {% end %}
   <div class="elbysodic-material-grid">
     {% for item in material.related_materials %}
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card">
+    {% call surface(variant="elevated", cls="elbysodic-material-card-shell elbysodic-material-card-shell--" ~ item.material.material_type) %}
+    <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
       <p class="elbysodic-material-card__type">{{ item.type_label }}</p>
       <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
       <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>

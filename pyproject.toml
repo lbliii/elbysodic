@@ -158,6 +158,8 @@ dev = [
     "towncrier>=24.8.0",
     "prek>=0.3.2",
     "poethepoet>=0.32.0",
+    "playwright>=1.59.0",
+    "pytest-playwright>=0.7.2",
 ]
 
 # =============================================================================
@@ -168,6 +170,8 @@ dev = [
 test = { cmd = "pytest", help = "Run the test suite" }
 test-fast = { cmd = "pytest tests/ -x -q --timeout=10", help = "Fast feedback loop" }
 test-cov = { cmd = "pytest tests/ --cov=elbysodic --cov-report=term-missing", help = "Run tests with coverage" }
+browser-qa = { cmd = "python scripts/browser_qa.py", help = "Run Playwright visual smoke QA against the local app" }
+browser-qa-deep = { cmd = "python scripts/browser_qa.py --profile deep", help = "Run expanded Playwright visual QA against seeded routes" }
 
 ty = { cmd = "ty check src/elbysodic/ tests/", help = "Run ty type checker" }
 ty-strict = { cmd = "ty check src/elbysodic/ tests/ --error-on-warning", help = "Strict type checking" }

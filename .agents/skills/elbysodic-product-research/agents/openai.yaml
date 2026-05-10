@@ -1,0 +1,6 @@
+interface:
+  display_name: "Elbysodic Product Research"
+  short_description: "Run PBP-native research, UXR, and UAT"
+  default_prompt: "Use $elbysodic-product-research to run a simulated UAT pass on this Elbysodic flow."
+policy:
+  allow_implicit_invocation: true

@@ -41,7 +41,7 @@
       {{ next_unread_link(next_unread_thread) }}
       {% end %}
     {% if can_start_thread %}
-    <a class="chirpui-btn chirpui-btn--primary elbysodic-place-action" href="/boards/{{ board.slug }}/threads/new">Start thread</a>
+    <a class="chirpui-btn chirpui-btn--primary elbysodic-place-action" href="/boards/{{ board.slug }}/threads/new">Start scene</a>
     {% end %}
     </div>
   </div>
@@ -182,9 +182,9 @@
       {% else %}
       <p class="elbysodic-kicker">Threads here</p>
       {% end %}
-      <h2>{{ board.name }} threads</h2>
+      <h2>{{ board.name }} {{ "scenes" if is_location_board else "threads" }}</h2>
       {% if is_location_board %}
-      <p class="elbysodic-copy-section">Direct threads in this location. Parent location totals include sublocations above.</p>
+      <p class="elbysodic-copy-section">Direct scenes in this location. Parent location totals include sublocations above.</p>
       {% else %}
       <p class="elbysodic-copy-section">Direct threads in this board.</p>
       {% end %}
@@ -213,7 +213,7 @@
       {% elif active_filter == "attention" %}
       <p class="elbysodic-empty-state">Nothing here needs your roster right now.</p>
       {% else %}
-      <p class="elbysodic-empty-state">No {{ active_filter }} threads are in this board yet.</p>
+      <p class="elbysodic-empty-state">No {{ active_filter }} {{ "scenes" if is_location_board else "threads" }} are in this board yet.</p>
       {% end %}
       {% end %}
       {% end %}

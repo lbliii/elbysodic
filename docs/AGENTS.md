@@ -9,6 +9,8 @@ Related docs:
 - `README.md`
 - `docs/architecture/*.md`
 - `docs/product/*.md`
+- `docs/product/ai-studio.md`
+- `docs/product/user-personas-panel.md`
 - `plans/README.md`
 
 ## Point Of View
@@ -26,6 +28,9 @@ and tests.
   privacy, and security assumptions.
 - Product docs remain decision guides for implementation, not speculative
   manifesto or backlog landfill.
+- User persona and panel docs remain explicit research assumptions until they
+  are validated by interviews, usability testing, analytics, or community
+  feedback.
 - UI vocabulary docs stay consistent with promoted components and current
   route surfaces.
 - Docs distinguish current behavior, planned work, and deliberately deferred
@@ -36,10 +41,19 @@ and tests.
 - Architecture: primitives, multi-tenancy, migrations, security, rendered
   privacy, and seed personas agree with code and tests.
 - Product: mission, information hierarchy, controls, navigation, paragraph
-  rhythm, notices, appearance, and blueprints agree with UI/service behavior.
+  rhythm, notices, appearance, user personas, and blueprints agree with
+  UI/service behavior.
+- UX and flow reviews: consult `docs/product/user-personas-panel.md` when
+  evaluating onboarding, writing, wanted/backstage, applications, Studio,
+  appearance, public discovery, or navigation changes.
+- AI product reviews: consult `docs/product/ai-studio.md` before adding
+  moderation, NPC, stale-thread, generated-media, recap, continuity, or
+  assistant behavior.
 - README: setup, development, deployment, current slice, and public commands
   remain accurate.
 - Plans: durable roadmaps link to active contracts without becoming docs.
+- Research: market, user, and ecosystem signal stays in `research/` and must be
+  synthesized through Elbysodic's product standards before it becomes doctrine.
 - Tests/checks: run relevant tests when docs make behavioral claims; run Ruff
   if Python snippets change.
 - Changelog: product-guide or architecture-guide changes that affect users get
@@ -56,6 +70,10 @@ and tests.
 
 - Give domain, service, storage, web, blueprint, tests, and plans stewards
   canonical language for contracts.
+- Give product and web work a reusable user panel for evaluating user jobs,
+  expectations, anxieties, and flow risks.
+- Give AI-assisted work clear boundaries around consent, authorship, privacy,
+  moderation authority, generated media, and canon acceptance.
 - Ask code stewards to update docs when behavior changes first.
 - Ask tests steward for proof when docs claim a behavior is enforced.
 
