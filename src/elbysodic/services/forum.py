@@ -70,6 +70,7 @@ from elbysodic.services.applications import update_application_review as _update
 from elbysodic.services.auth import (
     LoginSession,
     create_login_session,
+    hash_password,
     session_for_session_token,
     session_token_hash,
 )
@@ -195,6 +196,7 @@ from elbysodic.services.read_models import (
     DirectorStudio,
     EditablePostView,
     FacetTag,
+    FirstRealmSetupResult,
     ForumView,
     LocationNavigationGroup,
     MaterialDetail,
@@ -236,6 +238,7 @@ from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
 from elbysodic.services.themes import (
+    DEFAULT_THEME_TOKENS,
     ThemeHealthWarning,
     build_theme_tokens,
     community_theme_editor,
@@ -510,6 +513,62 @@ class AppServices:
     def logout(self, session_token: str) -> None:
         if session_token:
             self.repo.revoke_user_session_by_token_hash(session_token_hash(session_token))
+
+    def create_first_realm(
+        self,
+        *,
+        realm_name: str,
+        realm_slug: str,
+        director_email: str,
+        director_password: str,
+        director_username: str,
+        director_display_name: str,
+    ) -> FirstRealmSetupResult:
+        if self.repo.list_communities():
+            raise ValueError("first realm setup requires an empty community table")
+        clean_realm_name = realm_name.strip()
+        if not clean_realm_name:
+            raise ValueError("realm name is required")
+        clean_realm_slug = _slugify_with_fallback(realm_slug or clean_realm_name, "realm")
+        clean_email = director_email.strip().lower()
+        if not clean_email:
+            raise ValueError("director email is required")
+        if not director_password:
+            raise ValueError("director password is required")
+        clean_display_name = director_display_name.strip() or "Director"
+        clean_username = _slugify_with_fallback(
+            director_username or clean_display_name or clean_email.split("@", 1)[0],
+            "director",
+        )
+        with self.repo.transaction():
+            community = self.repo.create_community(clean_realm_slug, clean_realm_name)
+            role = self.repo.create_role(
+                community.id,
+                "director",
+                "Director",
+                is_admin=True,
+            )
+            user = self.repo.create_user(clean_email, hash_password(director_password))
+            self.repo.create_membership(
+                community.id,
+                user.id,
+                role.id,
+                clean_username,
+                clean_display_name,
+            )
+            self.repo.ensure_sidebar_section_defaults(community.id)
+            self.repo.upsert_default_theme(
+                community.id,
+                slug=str(DEFAULT_THEME_TOKENS["slug"]),
+                name=str(DEFAULT_THEME_TOKENS["name"]),
+                tokens_json=theme_tokens_json(DEFAULT_THEME_TOKENS),
+            )
+        return FirstRealmSetupResult(
+            community=self.repo.get_community_by_slug(clean_realm_slug),
+            user=self.repo.get_user_by_email(clean_email),
+            membership=self.repo.get_membership_for_user(community.id, user.id),
+            role=self.repo.get_role_by_slug(community.id, "director"),
+        )
 
     def _default_identity_for_user(
         self,
@@ -2453,6 +2512,37 @@ def initialize_database(path: str | Path | None = None, *, seed_demo: bool = Fal
     finally:
         connection.close()
     return resolved_path
+
+
+def bootstrap_first_realm(
+    path: str | Path | None = None,
+    *,
+    realm_name: str,
+    realm_slug: str,
+    director_email: str,
+    director_password: str,
+    director_username: str,
+    director_display_name: str,
+) -> FirstRealmSetupResult:
+    database_path = _resolve_database_path(path)
+    if database_path == ":memory:":
+        raise ValueError("first realm setup requires a filesystem database path")
+    resolved_path = Path(database_path)
+    resolved_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = connect(resolved_path)
+    try:
+        create_schema(connection)
+        services = AppServices(ForumRepository(connection), None)
+        return services.create_first_realm(
+            realm_name=realm_name,
+            realm_slug=realm_slug,
+            director_email=director_email,
+            director_password=director_password,
+            director_username=director_username,
+            director_display_name=director_display_name,
+        )
+    finally:
+        connection.close()
 
 
 def default_database_path() -> Path:

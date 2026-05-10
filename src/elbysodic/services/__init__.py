@@ -2,6 +2,7 @@
 
 from elbysodic.services.forum import (
     AppServices,
+    bootstrap_first_realm,
     create_services,
     default_database_path,
     initialize_database,
@@ -41,6 +42,7 @@ from elbysodic.services.read_models import (
     FacetFilterGroup,
     FacetFilterOption,
     FacetTag,
+    FirstRealmSetupResult,
     ForumView,
     LocationNavigationGroup,
     MaterialDetail,

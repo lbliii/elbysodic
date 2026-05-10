@@ -1475,6 +1475,14 @@ class DevPersonaView:
 
 
 @dataclass(frozen=True, slots=True)
+class FirstRealmSetupResult:
+    community: Community
+    user: User
+    membership: CommunityMembership
+    role: Role
+
+
+@dataclass(frozen=True, slots=True)
 class StudioNetworkThemePreview:
     accent: str
     surface: str
