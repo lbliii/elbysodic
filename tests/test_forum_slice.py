@@ -4802,6 +4802,71 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
     asyncio.run(run())
 
 
+def test_plotting_room_scene_handoff_rolls_back_on_attach_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_services = AppServices(
+            repo,
+            DemoSeed(community, charlie_user, charlie_membership, xavier),
+        )
+        charlie_app = create_app(debug=False, services=charlie_services)
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+        room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+        plotting_board = repo.get_board_by_slug(community.id, "plotting")
+
+        def fail_attach(*_args, **_kwargs):
+            raise RuntimeError("forced attach failure")
+
+        monkeypatch.setattr(repo, "attach_plotting_room_thread", fail_attach)
+        with pytest.raises(RuntimeError, match="forced attach failure"):
+            charlie_services.create_thread_from_plotting_room(
+                room.id,
+                board_id=plotting_board.id,
+                character_id=xavier.id,
+                title="Rollback Liaison Debrief",
+                summary="This scene should not persist.",
+                location="Xavier Institute",
+                timeline="After B-24",
+                body="Charles starts a scene that should roll back.",
+            )
+
+        rolled_back_room = repo.get_plotting_room(community.id, room.id)
+        assert rolled_back_room.target_thread_id is None
+        assert rolled_back_room.status == "brainstorming"
+        assert all(
+            thread.title != "Rollback Liaison Debrief"
+            for thread in repo.list_threads(community.id, plotting_board.id)
+        )
+
+    asyncio.run(run())
+
+
 def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
     async def run() -> None:
         app = _app()
