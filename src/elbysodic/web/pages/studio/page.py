@@ -14,6 +14,7 @@ from elbysodic.services.read_models import (
     POST_DENSITY_LABELS,
     POST_PROFILE_VARIANT_LABELS,
     POST_TITLE_STYLE_LABELS,
+    DirectorStudio,
 )
 from elbysodic.services.themes import (
     DENSITY_LABELS,
@@ -25,7 +26,7 @@ from elbysodic.services.themes import (
 from elbysodic.web.state import get_services
 
 
-def get(request: Request) -> Page:
+def get(request: Request) -> Page | Redirect:
     return _render_studio(request)
 
 
@@ -141,9 +142,11 @@ async def post(request: Request) -> Page | Redirect:
     return Redirect(redirect_to)
 
 
-def _render_studio(request: Request, *, error: str | None = None) -> Page:
+def _render_studio(request: Request, *, error: str | None = None) -> Page | Redirect:
     services = get_services(request)
     studio = services.director_studio()
+    if error is None and studio.can_manage and _is_empty_configured_realm(studio):
+        return Redirect("/studio/launch")
     return Page(
         "studio/page.html",
         "page_content",
@@ -165,6 +168,10 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page:
         theme_density_labels=DENSITY_LABELS,
         theme_texture_labels=TEXTURE_LABELS,
     )
+
+
+def _is_empty_configured_realm(studio: DirectorStudio) -> bool:
+    return not studio.board_taxonomy and not studio.materials
 
 
 def _form_values(form: object, name: str) -> list[str]:
