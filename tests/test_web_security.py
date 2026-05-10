@@ -189,6 +189,30 @@ def test_production_routes_require_session(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            network = await client.get("/network?q=wanted")
+
+        assert network.status == 200
+        assert "Public preview" in network.text
+        assert "Open Wanted" in network.text or "wanted hooks" in network.text
+        assert "starlane" not in network.text
+        assert "moira" not in network.text
+        assert "Director in" not in network.text
+        assert "Member in" not in network.text
+        assert "playing as" not in network.text
+        assert "current realm" not in network.text
+        assert "unread" not in network.text
+        assert "Application Review Room" not in network.text
+        assert "Staff notes" not in network.text
+
+    asyncio.run(run())
+
+
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
