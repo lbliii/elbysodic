@@ -145,12 +145,14 @@
 {% def topnav_link(href, label, is_active=False) %}
 <a class="elbysodic-topnav__link{{ " elbysodic-topnav__link--active" if is_active else "" }}"
    href="{{ href }}"
+   hx-sync="#main:replace"
    {% if is_active %}aria-current="page"{% end %}>{{ label }}</a>
 {% end %}
 
 {% def topnav_count_link(href, label, count, is_active=False) %}
 <a class="elbysodic-topnav__link{{ " elbysodic-topnav__link--active" if is_active else "" }}"
    href="{{ href }}"
+   hx-sync="#main:replace"
    {% if is_active %}aria-current="page"{% end %}>
   {{ label }}
   {% if count %}
@@ -160,7 +162,7 @@
 {% end %}
 
 {% block topbar_center %}
-{% set topbar_path = current_path or "/" %}
+{% set topbar_path = active_route_path(current_path or "/") %}
 {% set topbar_board_section = "" %}
 {% if board is defined %}
 {% set topbar_board_section = board?.sidebar_section ?? "" %}
@@ -362,7 +364,7 @@
 {% end %}
 
 {% def world_context_sidebar() %}
-  {% set sidebar_path = current_path or "/" %}
+  {% set sidebar_path = active_route_path(current_path or "/") %}
   {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
   {% set locations_label = viewer.location_sidebar_section.label if viewer else "Locations" %}
   {% set community_label = viewer.community_sidebar_section.label if viewer else "Community Table" %}
@@ -377,7 +379,7 @@
 {% end %}
 
 {% def world_sidebar() %}
-  {% set sidebar_path = current_path or "/" %}
+  {% set sidebar_path = active_route_path(current_path or "/") %}
   {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
   {% set locations_active = sidebar_path == "/locations" or sidebar_path.startswith("/locations/") or current_board_section == "locations" %}
   {% set community_active = sidebar_path == "/community" or sidebar_path.startswith("/community/") or sidebar_path == "/members" or sidebar_path.startswith("/members/") or current_board_section == "community" %}
@@ -403,7 +405,7 @@
 {% end %}
 
 {% def guidebook_sidebar() %}
-  {% set sidebar_path = current_path or "/" %}
+  {% set sidebar_path = active_route_path(current_path or "/") %}
   {{ world_context_sidebar() }}
 
   {% if guidebook is defined %}
@@ -454,7 +456,7 @@
 {% end %}
 
 {% def desk_sidebar() %}
-  {% set sidebar_path = current_path or "/" %}
+  {% set sidebar_path = active_route_path(current_path or "/") %}
   {% call sidebar_section("On Your Desk") %}
     {% if sidebar_path != "/desk" %}
     {{ sidebar_destination("/desk", "Desk home", "home") }}
@@ -475,7 +477,7 @@
 {% end %}
 
 {% def studio_sidebar() %}
-  {% set sidebar_path = current_path or "/" %}
+  {% set sidebar_path = active_route_path(current_path or "/") %}
   {% call sidebar_section("In Studio") %}
     {% if sidebar_path != "/studio" %}
     {{ sidebar_destination("/studio", "Studio home", "diamond") }}
@@ -507,7 +509,7 @@
 {% end %}
 
 {% def casting_sidebar() %}
-  {% set sidebar_path = current_path or "/" %}
+  {% set sidebar_path = active_route_path(current_path or "/") %}
   {% call sidebar_section("In Play") %}
     {% if sidebar_path != "/wanted" %}
     {{ sidebar_destination("/wanted", "Wanted board", "star", sidebar_path.startswith("/wanted/")) }}
@@ -537,7 +539,7 @@
 {% end %}
 
 {% def elbysodic_sidebar(include_community_map=False) %}
-{% set sidebar_path = current_path or "/" %}
+{% set sidebar_path = active_route_path(current_path or "/") %}
 {% set is_guidebook = sidebar_path == "/world" or sidebar_path.startswith("/world/") %}
 {% set is_casting = sidebar_path == "/wanted" or sidebar_path.startswith("/wanted/") or sidebar_path == "/claims" or sidebar_path.startswith("/claims/") or sidebar_path == "/casting" or sidebar_path.startswith("/casting/") or sidebar_path == "/plotting" or sidebar_path.startswith("/plotting/") or sidebar_path == "/discover" or sidebar_path.startswith("/discover") %}
 {% set is_studio = sidebar_path == "/studio" or sidebar_path.startswith("/studio/") %}

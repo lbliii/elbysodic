@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from chirp.app import App
 from chirp.config import AppConfig
@@ -84,6 +85,7 @@ def create_app(
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
+    app.template_global()(active_route_path)
     if not security.production:
         app.template_global("csrf_field")(_empty_csrf_field)
         app.template_global("csrf_token")(_empty_csrf_token)
@@ -144,3 +146,11 @@ def _empty_csrf_field() -> str:
 
 def _empty_csrf_token() -> str:
     return ""
+
+
+def active_route_path(current_path: object) -> str:
+    """Return the queryless route path used for shell active-state checks."""
+
+    raw = str(current_path or "/")
+    path = urlsplit(raw).path if "://" in raw else raw.split("?", 1)[0].split("#", 1)[0]
+    return path or "/"

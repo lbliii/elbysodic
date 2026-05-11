@@ -547,6 +547,16 @@ def test_shell_brand_navigation_uses_full_boundary_navigation() -> None:
         )
         assert brand_link is not None
         assert 'hx-boost="false"' in brand_link.group(0)
+        assert re.search(
+            r'<a class="[^"]*elbysodic-topnav__link[^"]*"\s+href="/locations"'
+            r'[^>]*hx-sync="#main:replace"',
+            response.text,
+        )
+        assert re.search(
+            r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"\s+href="/locations"'
+            r'[^>]*hx-sync="#main:replace"',
+            response.text,
+        )
 
     asyncio.run(run())
 
@@ -3000,6 +3010,19 @@ def test_topbar_marks_active_community_mode() -> None:
                 r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
                 r'\s+href="/wanted"[^>]*>Play</a>',
                 wanted.text,
+            )
+
+            claims = await client.get("/claims?status=reserved&q=magneto")
+            assert claims.status == 200
+            assert re.search(
+                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
+                r'\s+href="/wanted"[^>]*>Play</a>',
+                claims.text,
+            )
+            assert re.search(
+                r'<a class="[^"]*chirpui-sidebar__link[^"]*"'
+                r'\s+href="/claims"[^>]*aria-current="page"',
+                claims.text,
             )
 
             studio = await client.get("/studio")
