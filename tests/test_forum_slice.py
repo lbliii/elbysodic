@@ -6000,7 +6000,8 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
 
             cleared = await client.get("/boards/plotting?filter=attention")
             assert cleared.status == 200
-            assert "Nothing here needs your roster right now." in cleared.text
+            assert "Nothing here needs your roster." in cleared.text
+            assert "elbysodic-board-empty" in cleared.text
 
             index_after_read = await client.get("/c/x-men-apocalypse")
             assert "Your roster is caught up for now." in index_after_read.text

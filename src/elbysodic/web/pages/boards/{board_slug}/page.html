@@ -1,11 +1,10 @@
 {% imports %}
   {% from "chirpui/breadcrumbs.html" import breadcrumbs %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
-  {% from "_components/ui.html" import event_bridge, inline_nav, inline_nav_link %}
+  {% from "_components/ui.html" import empty_policy_block, event_bridge, inline_nav, inline_nav_link %}
 {% end %}
 
 {% def next_unread_link(item) %}
@@ -189,7 +188,7 @@
       <p class="elbysodic-copy-section">Direct threads in this board.</p>
       {% end %}
     </header>
-    {% call inline_nav("Thread filters") %}
+    {% call inline_nav("Thread filters", "elbysodic-scene-filter-bar") %}
       {% for option in filter_options %}
       {{ inline_nav_link(option.label, option.href, option.is_active, "#board-thread-region", "#board-thread-region", "outerHTML show:none", true) }}
       {% end %}
@@ -201,19 +200,21 @@
       {{ thread_card(board, item.thread, item.author, item.author_membership, item.participants, item.facets, item.latest_post, item.jump_post, item.jump_label, None, item.reply_count, item.is_unread, item.badges, "h2", False, False, item.episode) }}
       {% end %}
       {% else %}
-      {% call surface(variant="elevated") %}
       {% if active_filter == "all" %}
       {% if is_location_board %}
-      <p class="elbysodic-empty-state">No scenes have opened directly here yet.</p>
+      {{ empty_policy_block("No scenes have opened directly here yet.", "This place is ready for a first direct scene when someone wants to set the pressure here.", "Scene list", cls="elbysodic-board-empty") }}
       {% else %}
-      <p class="elbysodic-empty-state">No threads have opened here yet.</p>
+      {{ empty_policy_block("No threads have opened here yet.", "New threads will appear here once this board has activity.", "Thread list", cls="elbysodic-board-empty") }}
       {% end %}
       {% elif active_filter == "unread" %}
-      <p class="elbysodic-empty-state">No new replies are waiting here.</p>
+      {{ empty_policy_block("No new replies here.", "This filter only shows scenes with unread posts in this board.", "Caught up", cls="elbysodic-board-empty") }}
       {% elif active_filter == "attention" %}
-      <p class="elbysodic-empty-state">Nothing here needs your roster right now.</p>
+      {{ empty_policy_block("Nothing here needs your roster.", "Scenes where another writer posted last will appear here.", "Caught up", cls="elbysodic-board-empty") }}
       {% else %}
-      <p class="elbysodic-empty-state">No {{ active_filter }} {{ "scenes" if is_location_board else "threads" }} are in this board yet.</p>
+      {% if is_location_board %}
+      {{ empty_policy_block("No " ~ active_filter ~ " scenes here.", "Try another local filter when you need a different slice of this place.", "Filtered", cls="elbysodic-board-empty") }}
+      {% else %}
+      {{ empty_policy_block("No " ~ active_filter ~ " threads here.", "Try another local filter when you need a different slice of this board.", "Filtered", cls="elbysodic-board-empty") }}
       {% end %}
       {% end %}
       {% end %}

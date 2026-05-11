@@ -3991,6 +3991,21 @@ body {
     color: var(--chirpui-text);
 }
 
+.elbysodic-scene-filter-bar {
+    border-block: 1px solid var(--chirpui-border-subtle);
+    margin-top: 0;
+    padding-block: 0.45rem;
+}
+
+.elbysodic-board-empty {
+    margin-top: 0.25rem;
+    padding-block: 0.85rem;
+}
+
+.elbysodic-board-empty h2 {
+    font-size: var(--chirpui-font-lg);
+}
+
 .elbysodic-staff-panel {
     background: color-mix(in srgb, var(--chirpui-warning) 7%, var(--chirpui-surface));
 }
