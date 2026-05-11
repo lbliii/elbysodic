@@ -1,6 +1,6 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/surface.html" import surface %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -13,9 +13,6 @@
   {% call section_header("Wanted") %}
   Character connections, event roles, faction needs, and plot hooks.
   {% end %}
-  {% call cluster(gap="sm") %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Open casting desk</a>
-  {% end %}
 
   {% if board.open_ads %}
   <div class="elbysodic-wanted-grid">
@@ -24,9 +21,7 @@
     {% end %}
   </div>
   {% else %}
-  {% call surface(variant="elevated") %}
-  <p class="elbysodic-empty-state">No open wanted hooks yet.</p>
-  {% end %}
+  {{ empty_policy_block("No open wanted hooks yet.", "When directors or writers publish wanted hooks, they will appear here for browsing.", "Caught up") }}
   {% end %}
 {% end %}
 {% end %}

@@ -3621,6 +3621,8 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert "Brotherhood rival from Rogue" in wanted.text
             assert "Human UN liaison for B-24 talks" in wanted.text
             assert 'href="/wanted/brotherhood-rival-for-rogue"' in wanted.text
+            assert "Open casting desk" not in _page_content(wanted.text)
+            assert 'href="/casting"' not in _page_content(wanted.text)
             assert "elbysodic-thread-signal" in wanted.text
             assert "United Nations" in wanted.text
 
