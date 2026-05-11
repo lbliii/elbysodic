@@ -5284,8 +5284,8 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
         assert outsider_services.notifications().unread_count == 0
         assert inbox.status == 200
         assert "No notifications are waiting on you." in inbox.text
-        assert "Find hooks" in inbox.text
-        assert 'href="/characters/room-notify-face#plotter"' in inbox.text
+        assert "Find hooks" not in inbox.text
+        assert 'href="/characters/room-notify-face#plotter"' not in inbox.text
         assert room.title not in inbox.text
         assert "Human UN liaison for B-24 talks: Rogue" not in inbox.text
         assert open_attempt.status == 404
