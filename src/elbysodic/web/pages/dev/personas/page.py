@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services import AppServices
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
 from elbysodic.web.security import session_cookie
 from elbysodic.web.state import dev_tools_enabled, get_services, get_web_security_config
@@ -34,15 +35,12 @@ def get(request: Request) -> Page:
 
 
 @contract(form=FormContract(DevPersonaForm, "dev/personas/page.html"))
-async def post(request: Request) -> Redirect:
+async def post(form: DevPersonaForm, services: AppServices) -> Redirect:
     if not dev_tools_enabled():
         raise HTTPError(status=404, detail="dev personas are disabled")
-    services = get_services(request)
-    form = await request.form()
-    persona_key = str(form.get("persona_key") or "")
-    next_url = _safe_next(str(form.get("next") or "/dev/personas"))
+    next_url = _safe_next(form.next)
     try:
-        identity = services.switch_dev_persona(persona_key)
+        identity = services.switch_dev_persona(form.persona_key)
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except LookupError as exc:

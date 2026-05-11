@@ -27,16 +27,13 @@ def get(request: Request) -> Page:
 
 
 @contract(form=FormContract(LoginForm, "login/page.html"))
-async def post(request: Request) -> Page | Response:
-    form = await request.form()
-    next_url = _safe_next(str(form.get("next") or "/"))
-    email = str(form.get("email") or "")
-    password = str(form.get("password") or "")
+async def post(request: Request, form: LoginForm) -> Page | Response:
+    next_url = _safe_next(form.next)
     services = get_services()
     try:
-        session, identity = services.login(email, password)
+        session, identity = services.login(form.email, form.password)
     except PermissionError as exc:
-        return _render_login(request, email=email, next_url=next_url, error=str(exc))
+        return _render_login(request, email=form.email, next_url=next_url, error=str(exc))
     security = get_web_security_config()
     cookies = [
         session_cookie(

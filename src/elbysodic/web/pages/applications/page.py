@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services import AppServices
 from elbysodic.web.state import get_services
 
 
@@ -24,11 +25,11 @@ def get(request: Request) -> Page:
 
 
 @contract(form=FormContract(ApplicationActionForm, "applications/page.html"))
-async def post(request: Request) -> Page | Redirect:
-    form = await request.form()
-    services = get_services(request)
-    intent = str(form.get("intent") or "")
-    character_slug = str(form.get("character_slug") or "")
+async def post(
+    request: Request, form: ApplicationActionForm, services: AppServices
+) -> Page | Redirect:
+    intent = form.intent
+    character_slug = form.character_slug
     if intent not in {
         "submit_application",
         "accept_application",
@@ -41,9 +42,10 @@ async def post(request: Request) -> Page | Redirect:
         elif intent == "accept_application":
             services.accept_character_application(character_slug)
         else:
+            raw_form = await request.form()
             services.request_character_application_revision(
                 character_slug,
-                note=str(form.get("revision_note") or ""),
+                note=str(raw_form.get("revision_note") or ""),
             )
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
