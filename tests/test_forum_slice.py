@@ -2774,6 +2774,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Major locations" in locations.text
             assert "/boards/xavier-institute" in locations.text
             assert "Community table" not in locations.text
+            assert "Your location scenes are caught up for now." not in locations.text
 
             community = await client.get("/community")
             assert community.status == 200
@@ -6002,6 +6003,8 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
             assert cleared.status == 200
             assert "Nothing here needs your roster." in cleared.text
             assert "elbysodic-board-empty" in cleared.text
+            locations = await client.get("/locations")
+            assert "Open thread roster" not in locations.text
 
             index_after_read = await client.get("/c/x-men-apocalypse")
             assert "Your roster is caught up for now." in index_after_read.text

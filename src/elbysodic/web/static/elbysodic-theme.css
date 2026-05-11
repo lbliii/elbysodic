@@ -4947,6 +4947,13 @@ a.elbysodic-metric:focus-visible {
     max-width: 42rem;
 }
 
+.elbysodic-location-attention-pulse {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.85rem;
+    padding-top: 1rem;
+}
+
 .elbysodic-activity-list {
     margin-top: -0.25rem;
 }
