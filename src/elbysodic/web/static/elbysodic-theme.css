@@ -4110,10 +4110,6 @@ body {
     width: 100%;
 }
 
-.elbysodic-thread-nav__disabled {
-    opacity: 0.58;
-}
-
 .elbysodic-thread-skim-nav {
     align-items: center;
     display: grid;
@@ -4238,7 +4234,7 @@ body {
     line-height: 1.1;
 }
 
-.elbysodic-thread-stage__summary {
+.elbysodic-thread-stage__continuity {
     background: color-mix(in srgb, var(--elbysodic-on-media-chip-bg) 84%, transparent);
     border: 1px solid var(--elbysodic-on-media-chip-border);
     border-radius: var(--chirpui-radius);
@@ -4248,23 +4244,16 @@ body {
     padding: 0.85rem;
 }
 
-.elbysodic-thread-stage__summary h2,
-.elbysodic-thread-stage__summary p {
+.elbysodic-thread-stage__continuity p {
     margin: 0;
 }
 
-.elbysodic-thread-stage__summary h2 {
-    color: var(--elbysodic-on-media-text);
-    font-size: var(--chirpui-font-base);
-    line-height: 1.15;
-}
-
-.elbysodic-thread-stage__summary p {
+.elbysodic-thread-stage__continuity p {
     font-size: var(--chirpui-font-sm);
     line-height: 1.45;
 }
 
-.elbysodic-thread-stage__summary a {
+.elbysodic-thread-stage__continuity a {
     color: var(--elbysodic-on-media-text);
     font-weight: 800;
     text-decoration: none;
@@ -4741,6 +4730,36 @@ body {
 .elbysodic-thread-attention-nav__link--next {
     justify-self: end;
     margin-left: auto;
+}
+
+.elbysodic-thread-continuation {
+    align-items: stretch;
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.elbysodic-thread-continuation__group {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.elbysodic-thread-continuation__group .chirpui-btn {
+    align-items: flex-start;
+    display: inline-flex;
+    flex-direction: column;
+    max-width: min(100%, 18rem);
+    min-height: 2.45rem;
+    padding-block: 0.45rem;
+    text-align: left;
+}
+
+.elbysodic-thread-continuation__group--attention {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    padding-top: 0.75rem;
 }
 
 .elbysodic-queue-section {
@@ -9644,6 +9663,15 @@ a.elbysodic-metric:focus-visible {
         grid-column: 1;
         justify-self: stretch;
         margin-inline: 0;
+    }
+
+    .elbysodic-thread-continuation__group {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-thread-continuation__group .chirpui-btn {
+        max-width: 100%;
     }
 
     .elbysodic-board-card__header {

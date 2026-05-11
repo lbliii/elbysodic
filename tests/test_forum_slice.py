@@ -5829,12 +5829,12 @@ def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/navigation/threads/middle")
             assert page.status == 200
-            assert "Thread navigation" in page.text
-            assert "Previous" in page.text
+            assert "Scene continuation" in page.text
+            assert "Previous scene" in page.text
             assert "Previous unreplied" in page.text
             assert "Newer thread" in page.text
             assert "/boards/navigation/threads/newer" in page.text
-            assert "Next" in page.text
+            assert "Next scene" in page.text
             assert "Older thread" in page.text
             assert "Next unread" in page.text
             assert f"/boards/navigation/threads/older#post-{older_post.post_number}" in page.text
@@ -7150,7 +7150,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "Metal and Memory" in thread.text
             assert "Magneto sets the simulation to unfair." in thread.text
             assert "Magneto" in thread.text
-            assert "Scene details" in thread.text
+            assert "Last beat" in thread.text
             assert "open to join" in thread.text
             assert "Sublevel 3" in thread.text
             assert "Before breakfast" in thread.text
@@ -7384,7 +7384,7 @@ def test_thread_view_hides_unspecified_scene_metadata() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/danger-room/threads/quiet-default-scene")
             assert page.status == 200
-            assert "Scene details" in page.text
+            assert "Scene details" not in _page_content(page.text)
             assert "Scene management" not in page.text
             assert "Unspecified" not in page.text
             assert "Freeform" not in page.text

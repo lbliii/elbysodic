@@ -17,11 +17,6 @@
   <span class="elbysodic-thread-nav__label">{{ label }}</span>
   <span class="elbysodic-thread-nav__title">{{ item.thread.title }}</span>
 </a>
-{% else %}
-<span class="chirpui-btn chirpui-btn--secondary elbysodic-thread-nav__disabled" aria-disabled="true">
-  <span class="elbysodic-thread-nav__label">{{ label }}</span>
-  <span class="elbysodic-thread-nav__title">None</span>
-</span>
 {% end %}
 {% end %}
 
@@ -127,8 +122,8 @@
           <strong>{{ "Order" if thread_view.thread.posting_mode == "posting_order" else "Free" }}</strong>
         </div>
       </div>
-      <div class="elbysodic-thread-stage__summary">
-        <h2>Scene details</h2>
+      {% if thread_view.latest_post or thread_view.episode.writer_memberships %}
+      <div class="elbysodic-thread-stage__continuity">
         {% if thread_view.latest_post %}
         <p class="elbysodic-thread-stage__last-beat">
           <span>Last beat</span>
@@ -145,6 +140,7 @@
         </p>
         {% end %}
       </div>
+      {% end %}
       <div class="elbysodic-thread-stage__actions">
         {% if thread_view.can_join_scene and viewer.current_character %}
         <form method="post"
@@ -400,10 +396,6 @@
         {% end %}
       </p>
     </div>
-    <nav class="elbysodic-thread-nav__links elbysodic-thread-skim-nav" aria-label="Thread navigation">
-      {{ thread_nav_link(thread_view.previous_thread, "Previous") }}
-      {{ thread_nav_link(thread_view.next_thread, "Next") }}
-    </nav>
   </section>
   {% end %}
 
@@ -428,13 +420,20 @@
   {% end %}
 
   {% slot attention_nav %}
-  {% if thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
-  <nav class="elbysodic-thread-attention-nav" aria-label="Attention thread navigation">
-    {% if not thread_view.previous_unreplied_thread and thread_view.next_unread_thread %}
-    <span class="elbysodic-thread-attention-nav__spacer" aria-hidden="true"></span>
+  {% if thread_view.previous_thread or thread_view.next_thread or thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
+  <nav class="elbysodic-thread-continuation" aria-label="Scene continuation">
+    {% if thread_view.previous_thread or thread_view.next_thread %}
+    <div class="elbysodic-thread-continuation__group" aria-label="Adjacent scenes">
+      {{ thread_nav_link(thread_view.previous_thread, "Previous scene") }}
+      {{ thread_nav_link(thread_view.next_thread, "Next scene") }}
+    </div>
     {% end %}
-    {{ thread_attention_link(thread_view.previous_unreplied_thread, "Previous unreplied", "previous") }}
-    {{ thread_attention_link(thread_view.next_unread_thread, "Next unread", "next") }}
+    {% if thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
+    <div class="elbysodic-thread-continuation__group elbysodic-thread-continuation__group--attention" aria-label="Attention scenes">
+      {{ thread_attention_link(thread_view.previous_unreplied_thread, "Previous unreplied", "previous") }}
+      {{ thread_attention_link(thread_view.next_unread_thread, "Next unread", "next") }}
+    </div>
+    {% end %}
   </nav>
   {% end %}
   {% end %}
@@ -475,7 +474,7 @@
         <div>
           <p class="elbysodic-kicker">Next beat</p>
           <h2>Reply as <span x-text="character().name">{{ selected_character.name }}</span></h2>
-          <p class="elbysodic-copy-helper">Use your topbar face by default, or choose a one-off face for this post.</p>
+          <p class="elbysodic-copy-helper">Choose a one-off face only for this post.</p>
         </div>
       </div>
       <div class="elbysodic-composer-character elbysodic-composer-character--selectable" aria-label="Active face for this reply">
