@@ -5,11 +5,10 @@ from __future__ import annotations
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
-from elbysodic.web.state import get_services
+from elbysodic.services import AppServices
 
 
-def get(request: Request) -> Page:
-    services = get_services(request)
+def get(request: Request, services: AppServices) -> Page:
     viewer = services.viewer()
     raw_facets = str(request.query.get("facets") or "")
     discovery = services.discover_plots(facet_slugs=[raw_facets])

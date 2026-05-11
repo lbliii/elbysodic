@@ -25,7 +25,7 @@ from elbysodic.web.security import (
     resolve_web_security_config,
 )
 from elbysodic.web.shell import sidebar_is_hidden
-from elbysodic.web.state import configure_services, dev_tools_enabled
+from elbysodic.web.state import configure_services, dev_tools_enabled, get_services
 from elbysodic.web.tenant import TenantPrefixMiddleware
 from elbysodic.web.timing import RequestTimingMiddleware
 
@@ -67,6 +67,7 @@ def create_app(
         web_security_config=security,
     )
     use_chirp_ui(app)
+    app.provide(AppServices, get_services)
     app.register_oob_region(
         "program_theme_oob",
         target_id="elbysodic-program-theme",

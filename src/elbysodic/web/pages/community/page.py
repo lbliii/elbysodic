@@ -6,11 +6,10 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import is_community_board
-from elbysodic.web.state import get_services
+from elbysodic.services import AppServices
 
 
-def get(request: Request) -> Page:
-    services = get_services(request)
+def get(request: Request, services: AppServices) -> Page:
     viewer = services.viewer()
     boards = services.list_boards()
     return Page.mounted(
