@@ -5943,7 +5943,8 @@ def test_board_thread_filters_use_roster_participation() -> None:
 
             pinned = await client.get("/boards/plotting?filter=pinned")
             assert pinned.status == 200
-            assert "No pinned threads are in this board yet." in pinned.text
+            assert "No pinned threads here." in pinned.text
+            assert "elbysodic-board-empty" in pinned.text
 
             locked = await client.get("/boards/announcements?filter=locked")
             assert locked.status == 200
