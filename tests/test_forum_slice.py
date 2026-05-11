@@ -425,9 +425,11 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
     response = Response(
         """
         <a href="/world">World</a>
+        <a href="/claims?status=claimed&amp;q=magneto">Filtered claims</a>
         <form action="/boards/danger-room/threads/new">
           <input name="title" value="/not-a-route">
           <input name="next" value="/boards/danger-room">
+          <input name="return_to" value="/claims?status=claimed&amp;q=magneto">
         </form>
         """,
         content_type="text/html",
@@ -437,9 +439,17 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
 
     assert isinstance(scoped.body, str)
     assert 'href="/c/x-men-apocalypse/world"' in scoped.body
+    assert (
+        'href="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"'
+        in scoped.body
+    )
     assert 'action="/c/x-men-apocalypse/boards/danger-room/threads/new"' in scoped.body
     assert 'name="title" value="/not-a-route"' in scoped.body
     assert 'name="next" value="/c/x-men-apocalypse/boards/danger-room"' in scoped.body
+    assert (
+        'name="return_to" value="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"'
+        in scoped.body
+    )
 
 
 def test_composer_forms_save_drafts_on_submit_instead_of_clearing_early() -> None:
@@ -479,10 +489,22 @@ def test_tenant_prefix_does_not_wrap_app_global_routes() -> None:
 
         async with TestClient(app) as client:
             login = await client.get("/c/x-men-apocalypse/login")
+            malformed_login = await client.get("/c/x-men-apocalypse//login")
+            malformed_network = await client.get("/c/x-men-apocalypse//network")
+            malformed_health = await client.get("/c/x-men-apocalypse//health")
+            malformed_request_access = await client.get(
+                "/c/x-men-apocalypse//request-access"
+            )
+            malformed_world = await client.get("/c/x-men-apocalypse//world")
             health = await client.get("/c/x-men-apocalypse/health")
             static = await client.get("/c/x-men-apocalypse/elbysodic-static/elbysodic-theme.css")
 
         assert login.status == 404
+        assert malformed_login.status == 404
+        assert malformed_network.status == 404
+        assert malformed_health.status == 404
+        assert malformed_request_access.status == 404
+        assert malformed_world.status == 404
         assert health.status == 404
         assert static.status == 404
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
+from html import escape, unescape
 from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
@@ -68,6 +69,12 @@ class TenantPrefixMiddleware:
             return await call_next(request)
 
         community_slug, local_path = split
+        if local_path.startswith("//"):
+            return error_response(
+                request,
+                status=404,
+                detail=f"Malformed tenant path: {request.path}",
+            )
         if not _is_scoped_path(local_path):
             return await call_next(request)
 
@@ -168,8 +175,9 @@ def _scoped_html_body(body: str | bytes, community_slug: str, content_type: str)
 
 def _scope_html_links(html: str, community_slug: str) -> str:
     def replace_match(match: re.Match[str]) -> str:
-        url = match.group("url")
-        return f"{match.group('attr')}{scoped_path(community_slug, url)}"
+        url = unescape(match.group("url"))
+        scoped = escape(scoped_path(community_slug, url), quote=True)
+        return f"{match.group('attr')}{scoped}"
 
     return _FORM_URL_VALUE_RE.sub(replace_match, _URL_ATTR_RE.sub(replace_match, html))
 
