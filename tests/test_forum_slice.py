@@ -3383,6 +3383,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
             assert roster.status == 200
             assert "Accepted" in roster.text
             assert "Start a draft application" in roster.text
+            assert 'href="/applications"' not in _page_content(roster.text)
 
             response = await client.post(
                 "/characters",
