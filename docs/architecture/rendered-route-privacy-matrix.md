@@ -5,6 +5,10 @@ when adding a rendered page, route action, sidebar count, notification surface,
 or Studio room that can expose community-, membership-, role-, or
 character-scoped data.
 
+Canonical shared-host route and link scoping rules live in
+`docs/architecture/multi-tenancy.md#route-and-link-contract`; this matrix tracks
+rendered privacy expectations and proof for route families.
+
 Rendered privacy tests should prove what the user can see, not only what a
 repository method returns. Prefer one focused test per route family unless a
 workflow has several identity shapes.

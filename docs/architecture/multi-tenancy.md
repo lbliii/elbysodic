@@ -13,14 +13,8 @@ architecture and explicit shared-host routing for seeded/demo networks.
 - Local development and the Railway demo can seed several communities so
   cross-realm identity, routing, and privacy are tested before hosted
   multi-community creation exists.
-- Shared-host community URLs use `/c/{community_slug}` so links resolve the
-  intended realm before local slugs are looked up.
-- Tenant-scoped transports include rendered HTML links and forms, redirects,
-  htmx attributes, SSE fragments, and JSON payloads that carry local `href`
-  values. Query strings and hidden return paths must remain intact after
-  scoping.
-- Malformed tenant-local paths such as `/c/{community_slug}//login` fail closed
-  instead of wrapping platform/global routes inside a community prefix.
+- Shared-host routing uses explicit community prefixes; see
+  [Route And Link Contract](#route-and-link-contract).
 - Core forum tables include `community_id`.
 - Core services accept and propagate `community_id`; it must not be assumed to
   be `1`.
@@ -59,6 +53,24 @@ This applies to non-thread primitives too. A wanted hook, facet, material,
 claim, reserve, or application in one community must not be addressable through
 another community's resolver or service layer.
 
+## Route And Link Contract
+
+On shared hosts, `/` and `/network` are platform/network surfaces. A
+single-community production install may present the configured community at
+`/`, but shared-host community identity is always explicit.
+
+Shared-host community URLs use `/c/{community_slug}`. The tenant prefix resolves
+the intended realm before local slugs are looked up, and canonical community
+links use `/c/{community_slug}` unless a community has its own host.
+
+Tenant-scoped transports include rendered HTML links and forms, redirects, htmx
+attributes, SSE fragments, and JSON payloads that carry local `href` values.
+Query strings and hidden `next`, `redirect`, or `return_to` paths must remain
+intact after scoping.
+
+Malformed tenant-local paths such as `/c/{community_slug}//login` fail closed
+instead of wrapping platform/global routes inside a community prefix.
+
 ## Deferred Hosted Features
 
 The MVP does not include hosted forum creation, billing, custom domains,
@@ -73,9 +85,8 @@ Elbysodic currently has three relevant modes:
   realm, while all product rows and service calls remain community-scoped.
 - Local seeded network: several communities exist for QA personas, staff/member
   role differences, active-face behavior, and cross-tenant route tests.
-- Shared Railway host: `/` and `/network` are platform/network surfaces, and
-  canonical community links use `/c/{community_slug}` unless a community has
-  its own host.
+- Shared Railway host: route and link behavior follows the
+  [Route And Link Contract](#route-and-link-contract).
 
 These modes share the same identity model. Users are global login accounts,
 memberships are community-local, and staff power belongs to membership roles.

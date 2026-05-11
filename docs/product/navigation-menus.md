@@ -31,8 +31,8 @@ It should stay quiet, but it may own the handful of major community modes so
 writers do not have to hunt in the sidebar for the primary shape of the
 community.
 
-On shared hosts, `/` is the Elbysodic/LBSodic home for exploring reachable
-communities. A community home lives at `/c/{community_slug}`. Inside a
+Shared-host platform and community-home route semantics follow
+`docs/architecture/multi-tenancy.md#route-and-link-contract`. Inside a
 community, the brand/title links to that community home and replaces any
 separate `Home` or `Now` topbar item.
 
@@ -374,12 +374,12 @@ navigation grammar.
 ## Route Pathing
 
 Paths should reflect product meaning, not implementation convenience.
+The canonical shared-host route and link rules for `/`, `/network`,
+`/c/{community_slug}`, tenant-scoped transports, and return paths live in
+`docs/architecture/multi-tenancy.md#route-and-link-contract`.
 
 Use nouns for stable places:
 
-- `/` for the platform/network home on shared hosts, or the configured
-  community home on a single-community install.
-- `/c/{community_slug}` for the explicit shared-host community home.
 - `/locations` for the playable world map.
 - `/community` for community boards and writer-side public rooms.
 - `/boards/{board_slug}` for forum boards, with `board_kind` deciding how they
@@ -393,8 +393,7 @@ Use nouns for stable places:
 Route-active state uses the path without query strings or fragments. Filtered
 lanes such as `/claims?status=reserved`, `/network?q=...`, or
 `/my/threads?character=...` should keep the same topbar/sidebar room as their
-base route while preserving the full URL for login, identity-switch, and
-return-to form values.
+base route.
 
 Nested routes should mean ownership or object containment:
 
