@@ -93,17 +93,20 @@ class ShellRouteState:
 
     @property
     def is_desk(self) -> bool:
-        return any(
-            _path_in(self.path, prefix)
-            for prefix in (
-                "/desk",
-                "/my/threads",
-                "/notifications",
-                "/characters",
-                "/applications",
-                "/interactions",
+        return (
+            any(
+                _path_in(self.path, prefix)
+                for prefix in (
+                    "/desk",
+                    "/my/threads",
+                    "/notifications",
+                    "/characters",
+                    "/applications",
+                    "/interactions",
+                )
             )
-        ) or self.board_section == "desk"
+            or self.board_section == "desk"
+        )
 
     @property
     def is_guidebook(self) -> bool:
