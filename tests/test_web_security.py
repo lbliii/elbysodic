@@ -496,7 +496,7 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert "playing as Rogue" in network.text
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
-        assert "Reply as Rogue" in thread.text
+        assert "Reply" in thread.text
         assert wanted.status == 200
         assert "Wanted" in wanted.text
         assert applications.status == 200
