@@ -11,6 +11,7 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.services import AppServices
+from elbysodic.services.read_models import ApplicationCharacterView
 from elbysodic.web.state import get_services
 
 
@@ -58,9 +59,21 @@ async def post(
 
 def _render_applications(request: Request) -> Page:
     services = get_services(request)
+    desk = services.applications_desk()
     return Page.mounted(
         "applications/page.html",
         current_path=request.url,
         viewer=services.viewer(),
-        desk=services.applications_desk(),
+        desk=desk,
+        active_my_applications=_active_application_items(desk.my_applications),
     )
+
+
+def _active_application_items(
+    items: list[ApplicationCharacterView],
+) -> list[ApplicationCharacterView]:
+    return [
+        item
+        for item in items
+        if item.character.application_status in {"draft", "submitted", "revision_requested"}
+    ]

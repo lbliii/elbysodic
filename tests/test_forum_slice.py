@@ -3372,9 +3372,10 @@ def test_applications_desk_tracks_character_statuses() -> None:
             applications = await client.get("/applications")
             assert applications.status == 200
             assert "Applications" in applications.text
-            assert "Application pipeline" in applications.text
-            assert "Rogue" in applications.text
-            assert "Accepted" in applications.text
+            assert "Active application work" in applications.text
+            assert "No application drafts need work." in applications.text
+            assert 'href="/applications/rogue"' not in applications.text
+            assert '<span class="chirpui-badge__text">Accepted</span>' not in applications.text
             assert "Application Guide" in applications.text
             assert 'href="/world/application-guide"' in applications.text
 
