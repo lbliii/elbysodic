@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elbysodic Layered Shell Mock</title>
+  <link rel="stylesheet" href="../src/elbysodic/web/static/elbysodic-theme.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --mock-rail-width: 4.75rem;
+      --mock-inner-width: 18rem;
+      --mock-topbar-height: 4rem;
+      --mock-border: color-mix(in srgb, var(--chirpui-border, #4e5b6b) 72%, transparent);
+      --mock-panel: color-mix(in srgb, var(--chirpui-surface, #132030) 92%, transparent);
+      --mock-panel-strong: color-mix(in srgb, var(--chirpui-surface-elevated, #182a3d) 94%, transparent);
+      --mock-ink: var(--chirpui-text, #f6fbff);
+      --mock-muted: var(--chirpui-muted, #9fb0c3);
+      --mock-accent: var(--chirpui-accent, #74f6ff);
+      --mock-dye: var(--elbysodic-atmosphere-dye, #ff6bd5);
+      --mock-warm: #f8cf72;
+      --mock-danger: #ff7b8d;
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--mock-dye) 18%, transparent), transparent 28rem),
+        radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--mock-accent) 16%, transparent), transparent 30rem),
+        linear-gradient(135deg, #0d1220 0%, #101b2b 46%, #1b1730 100%);
+      color: var(--mock-ink);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .mock-controls {
+      position: fixed;
+      z-index: 40;
+      left: 50%;
+      bottom: 1rem;
+      display: flex;
+      max-width: calc(100vw - 2rem);
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0.55rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 999px;
+      background: color-mix(in srgb, #07101d 88%, transparent);
+      box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 0.32);
+      transform: translateX(-50%);
+      backdrop-filter: blur(18px);
+    }
+
+    .mock-control-group {
+      display: flex;
+      gap: 0.35rem;
+      padding-inline: 0.2rem;
+    }
+
+    .mock-control-group + .mock-control-group {
+      border-left: 1px solid var(--mock-border);
+      padding-left: 0.65rem;
+    }
+
+    .mock-controls button {
+      min-height: 2rem;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      background: transparent;
+      color: var(--mock-muted);
+      cursor: pointer;
+    }
+
+    .mock-controls button[aria-pressed="true"] {
+      border-color: color-mix(in srgb, var(--mock-accent) 45%, transparent);
+      background: color-mix(in srgb, var(--mock-accent) 15%, transparent);
+      color: var(--mock-ink);
+    }
+
+    .mock-app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: var(--mock-topbar-height) 1fr;
+      grid-template-columns: var(--mock-rail-width) var(--mock-inner-width) minmax(0, 1fr);
+      transition: grid-template-columns 160ms ease;
+    }
+
+    .mock-topbar {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.1rem;
+      border-bottom: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #08111e 86%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .mock-brand {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 0.75rem;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .mock-brand__mark {
+      display: grid;
+      place-items: center;
+      width: 2.15rem;
+      aspect-ratio: 1;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 38%, transparent);
+      border-radius: 0.7rem;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mock-accent) 28%, transparent), color-mix(in srgb, var(--mock-dye) 26%, transparent)),
+        color-mix(in srgb, var(--mock-panel) 90%, transparent);
+      box-shadow: 0 0 1.25rem color-mix(in srgb, var(--mock-accent) 18%, transparent);
+    }
+
+    .mock-brand__name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mock-topbar__global {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+      padding: 0.35rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mock-panel) 76%, transparent);
+    }
+
+    .mock-global-icon {
+      display: grid;
+      place-items: center;
+      width: 2.35rem;
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--mock-muted);
+      cursor: pointer;
+    }
+
+    .mock-global-icon:hover,
+    .mock-global-icon:focus-visible,
+    .mock-global-icon[aria-current="page"] {
+      color: var(--mock-ink);
+      background: color-mix(in srgb, var(--mock-accent) 14%, transparent);
+      outline: none;
+    }
+
+    .mock-global-icon svg,
+    .mock-rail__icon,
+    .mock-row__icon {
+      width: 1.22rem;
+      height: 1.22rem;
+      stroke-width: 1.75;
+    }
+
+    .mock-identity {
+      display: flex;
+      justify-self: end;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+      padding: 0.35rem 0.45rem 0.35rem 0.35rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mock-panel) 82%, transparent);
+    }
+
+    .mock-identity__avatar {
+      display: grid;
+      place-items: center;
+      width: 2.1rem;
+      aspect-ratio: 1;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mock-dye) 22%, var(--mock-panel));
+      color: var(--mock-ink);
+      font-weight: 800;
+    }
+
+    .mock-identity__copy {
+      display: grid;
+      gap: 0.05rem;
+      min-width: 0;
+    }
+
+    .mock-identity__copy strong {
+      font-size: 0.86rem;
+      line-height: 1.1;
+    }
+
+    .mock-identity__copy span {
+      color: var(--mock-muted);
+      font-size: 0.74rem;
+      line-height: 1.1;
+    }
+
+    .mock-rail {
+      grid-row: 2;
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.9rem 0.65rem;
+      border-right: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #07101d 80%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .mock-rail__link {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 3.1rem;
+      aspect-ratio: 1;
+      border: 1px solid transparent;
+      border-radius: 1rem;
+      color: var(--mock-muted);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .mock-rail__link:hover,
+    .mock-rail__link:focus-visible {
+      color: var(--mock-ink);
+      border-color: color-mix(in srgb, var(--mock-accent) 34%, transparent);
+      background: color-mix(in srgb, var(--mock-accent) 11%, transparent);
+      outline: none;
+    }
+
+    .mock-rail__link[aria-current="page"] {
+      color: var(--mock-ink);
+      border-color: color-mix(in srgb, var(--mock-accent) 46%, transparent);
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mock-accent) 20%, transparent), color-mix(in srgb, var(--mock-dye) 14%, transparent)),
+        color-mix(in srgb, var(--mock-panel-strong) 82%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 10%, transparent);
+    }
+
+    .mock-badge {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 999px;
+      padding-inline: 0.35rem;
+      background: color-mix(in srgb, var(--mock-warm) 86%, #21180a);
+      color: #18120a;
+      font-size: 0.72rem;
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .mock-rail__badge {
+      position: absolute;
+      top: 0.12rem;
+      right: 0.08rem;
+    }
+
+    .mock-tooltip {
+      position: absolute;
+      z-index: 3;
+      left: calc(100% + 0.65rem);
+      top: 50%;
+      width: max-content;
+      max-width: 13rem;
+      padding: 0.35rem 0.55rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 0.55rem;
+      background: #07101d;
+      color: var(--mock-ink);
+      font-size: 0.78rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) translateX(-0.25rem);
+      transition: opacity 120ms ease, transform 120ms ease;
+      box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.24);
+    }
+
+    .mock-rail__link:hover .mock-tooltip,
+    .mock-rail__link:focus-visible .mock-tooltip {
+      opacity: 1;
+      transform: translateY(-50%);
+    }
+
+    .mock-inner {
+      grid-row: 2;
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      border-right: 1px solid var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 84%, transparent);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .mock-inner__header {
+      padding: 1.15rem 1.15rem 0.85rem;
+      border-bottom: 1px solid var(--mock-border);
+    }
+
+    .mock-kicker {
+      margin: 0 0 0.35rem;
+      color: color-mix(in srgb, var(--mock-accent) 80%, var(--mock-muted));
+      font-size: 0.72rem;
+      font-weight: 820;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mock-inner h2,
+    .mock-main h1,
+    .mock-panel h2,
+    .mock-panel h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .mock-inner h2 {
+      font-size: 1rem;
+    }
+
+    .mock-inner__summary {
+      margin: 0.4rem 0 0;
+      color: var(--mock-muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .mock-inner__section {
+      padding: 0.9rem 0.7rem 0;
+    }
+
+    .mock-inner__label {
+      margin: 0 0 0.4rem;
+      padding-inline: 0.5rem;
+      color: var(--mock-muted);
+      font-size: 0.72rem;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mock-row {
+      display: grid;
+      grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      min-height: 2.55rem;
+      border: 1px solid transparent;
+      border-radius: 0.7rem;
+      padding: 0.45rem 0.6rem;
+      color: var(--mock-muted);
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .mock-row:hover,
+    .mock-row:focus-visible,
+    .mock-row[aria-current="page"] {
+      color: var(--mock-ink);
+      background: color-mix(in srgb, var(--mock-accent) 10%, transparent);
+      border-color: color-mix(in srgb, var(--mock-accent) 24%, transparent);
+      outline: none;
+    }
+
+    .mock-row__copy {
+      min-width: 0;
+      display: grid;
+      gap: 0.05rem;
+    }
+
+    .mock-row__copy strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.88rem;
+      line-height: 1.2;
+    }
+
+    .mock-row__copy span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: color-mix(in srgb, var(--mock-muted) 86%, transparent);
+      font-size: 0.74rem;
+      line-height: 1.2;
+    }
+
+    .mock-row__count {
+      color: var(--mock-ink);
+      font-size: 0.72rem;
+      font-weight: 800;
+      min-width: 1.45rem;
+      text-align: right;
+    }
+
+    .mock-main {
+      grid-row: 2;
+      grid-column: 3;
+      min-width: 0;
+      overflow: auto;
+      padding: clamp(1.15rem, 2.6vw, 2rem);
+    }
+
+    .mock-main__inner {
+      width: min(100%, 74rem);
+      display: grid;
+      gap: 1.15rem;
+    }
+
+    .mock-page-head {
+      display: grid;
+      gap: 0.85rem;
+      padding: 0.35rem 0 0.4rem;
+    }
+
+    .mock-page-head h1 {
+      font-size: clamp(1.7rem, 3vw, 2.6rem);
+      line-height: 0.95;
+    }
+
+    .mock-page-head p {
+      max-width: 42rem;
+      margin: 0;
+      color: var(--mock-muted);
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+
+    .mock-page-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .mock-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.45rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 28%, transparent);
+      border-radius: 0.65rem;
+      padding: 0.5rem 0.8rem;
+      background: color-mix(in srgb, var(--mock-accent) 12%, var(--mock-panel));
+      color: var(--mock-ink);
+      font-weight: 720;
+      cursor: pointer;
+    }
+
+    .mock-btn--quiet {
+      border-color: var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 80%, transparent);
+      color: var(--mock-muted);
+    }
+
+    .mock-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.75fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .mock-panel {
+      border: 1px solid var(--mock-border);
+      border-radius: 0.8rem;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, #fff 5%, transparent), transparent 8rem),
+        color-mix(in srgb, var(--mock-panel-strong) 88%, transparent);
+      box-shadow: 0 1.25rem 3.5rem rgb(0 0 0 / 0.24);
+    }
+
+    .mock-panel__body {
+      display: grid;
+      gap: 0.9rem;
+      padding: 1rem;
+    }
+
+    .mock-panel__body > p {
+      margin: 0;
+      color: var(--mock-muted);
+      line-height: 1.5;
+    }
+
+    .mock-list {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .mock-list-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.7rem;
+      min-height: 3.1rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid color-mix(in srgb, var(--mock-border) 74%, transparent);
+      border-radius: 0.7rem;
+      background: color-mix(in srgb, var(--mock-panel) 68%, transparent);
+    }
+
+    .mock-list-row strong,
+    .mock-list-row span {
+      display: block;
+    }
+
+    .mock-list-row strong {
+      font-size: 0.9rem;
+    }
+
+    .mock-list-row span {
+      margin-top: 0.15rem;
+      color: var(--mock-muted);
+      font-size: 0.78rem;
+    }
+
+    .mock-chip-row {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .mock-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.8rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 999px;
+      padding: 0.32rem 0.55rem;
+      color: var(--mock-muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: color-mix(in srgb, var(--mock-panel) 72%, transparent);
+    }
+
+    .mock-chip--hot {
+      border-color: color-mix(in srgb, var(--mock-warm) 52%, transparent);
+      color: color-mix(in srgb, var(--mock-warm) 90%, white);
+      background: color-mix(in srgb, var(--mock-warm) 12%, transparent);
+    }
+
+    .mock-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .mock-mini-card {
+      min-height: 8.5rem;
+      display: grid;
+      align-content: end;
+      gap: 0.45rem;
+      padding: 0.85rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 0.8rem;
+      background:
+        linear-gradient(140deg, color-mix(in srgb, var(--mock-accent) 14%, transparent), color-mix(in srgb, var(--mock-dye) 12%, transparent)),
+        color-mix(in srgb, var(--mock-panel) 80%, transparent);
+    }
+
+    .mock-mini-card strong {
+      font-size: 0.95rem;
+    }
+
+    .mock-mini-card span {
+      color: var(--mock-muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .mock-public-note {
+      display: none;
+      border-left: 3px solid color-mix(in srgb, var(--mock-accent) 70%, transparent);
+      padding: 0.2rem 0 0.2rem 0.85rem;
+      color: var(--mock-muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    [data-audience="public"] .mock-public-note {
+      display: block;
+    }
+
+    [data-audience="public"] [data-audience-only]:not([data-audience-only~="public"]),
+    [data-audience="writer"] [data-audience-only]:not([data-audience-only~="writer"]),
+    [data-audience="applicant"] [data-audience-only]:not([data-audience-only~="applicant"]),
+    [data-audience="staff"] [data-audience-only]:not([data-audience-only~="staff"]) {
+      display: none;
+    }
+
+    [data-shell-mode="compact"] .mock-app {
+      grid-template-columns: var(--mock-rail-width) 0 minmax(0, 1fr);
+    }
+
+    [data-shell-mode="compact"] .mock-inner {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-0.8rem);
+    }
+
+    [data-shell-mode="focus"] .mock-app {
+      grid-template-columns: 0 0 minmax(0, 1fr);
+    }
+
+    [data-shell-mode="focus"] .mock-rail,
+    [data-shell-mode="focus"] .mock-inner {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-0.8rem);
+    }
+
+    [data-shell-mode="focus"] .mock-topbar {
+      grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr) auto;
+    }
+
+    [data-shell-mode="mobile"] .mock-app {
+      grid-template-columns: 0 0 minmax(0, 1fr);
+    }
+
+    [data-shell-mode="mobile"] .mock-rail,
+    [data-shell-mode="mobile"] .mock-inner {
+      position: fixed;
+      z-index: 20;
+      top: var(--mock-topbar-height);
+      bottom: 0;
+      transform: none;
+    }
+
+    [data-shell-mode="mobile"] .mock-rail {
+      left: 0;
+      opacity: 1;
+      pointer-events: auto;
+      width: var(--mock-rail-width);
+    }
+
+    [data-shell-mode="mobile"] .mock-inner {
+      left: var(--mock-rail-width);
+      width: min(var(--mock-inner-width), calc(100vw - var(--mock-rail-width)));
+      opacity: 1;
+      pointer-events: auto;
+      box-shadow: 1.25rem 0 3rem rgb(0 0 0 / 0.32);
+    }
+
+    [data-shell-mode="mobile"] .mock-main {
+      grid-column: 3;
+      padding-left: calc(var(--mock-rail-width) + 1rem);
+    }
+
+    @media (max-width: 900px) {
+      .mock-app {
+        grid-template-columns: 0 0 minmax(0, 1fr);
+      }
+
+      .mock-topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .mock-topbar__global {
+        display: none;
+      }
+
+      .mock-rail {
+        position: fixed;
+        z-index: 20;
+        top: var(--mock-topbar-height);
+        bottom: 0;
+        left: 0;
+        width: var(--mock-rail-width);
+      }
+
+      .mock-inner {
+        position: fixed;
+        z-index: 20;
+        top: var(--mock-topbar-height);
+        bottom: 0;
+        left: var(--mock-rail-width);
+        width: min(var(--mock-inner-width), calc(100vw - var(--mock-rail-width)));
+        box-shadow: 1.25rem 0 3rem rgb(0 0 0 / 0.32);
+      }
+
+      .mock-main {
+        grid-column: 3;
+        padding-left: calc(var(--mock-rail-width) + 1rem);
+      }
+
+      .mock-grid,
+      .mock-card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mock-identity__copy {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body data-shell-mode="expanded" data-audience="writer">
+  <div class="mock-controls" aria-label="Mock controls">
+    <div class="mock-control-group" aria-label="Shell mode">
+      <button type="button" data-mode="expanded" aria-pressed="true">Expanded</button>
+      <button type="button" data-mode="compact" aria-pressed="false">Compact</button>
+      <button type="button" data-mode="focus" aria-pressed="false">Focus</button>
+      <button type="button" data-mode="mobile" aria-pressed="false">Mobile</button>
+    </div>
+    <div class="mock-control-group" aria-label="Audience">
+      <button type="button" data-audience="public" aria-pressed="false">Public</button>
+      <button type="button" data-audience="applicant" aria-pressed="false">Applicant</button>
+      <button type="button" data-audience="writer" aria-pressed="true">Writer</button>
+      <button type="button" data-audience="staff" aria-pressed="false">Staff</button>
+    </div>
+  </div>
+
+  <div class="mock-app">
+    <header class="mock-topbar">
+      <a class="mock-brand" href="#" data-room-trigger="home" aria-label="HP Universe home">
+        <span class="mock-brand__mark" aria-hidden="true">
+          <svg class="mock-rail__icon"><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-home"></use></svg>
+        </span>
+        <span class="mock-brand__name">HP Universe</span>
+      </a>
+      <nav class="mock-topbar__global" aria-label="Global utilities">
+        <button class="mock-global-icon" type="button" aria-label="Search">
+          <svg><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-discovery"></use></svg>
+        </button>
+        <button class="mock-global-icon" type="button" aria-label="Notifications" data-audience-only="writer applicant staff">
+          <svg><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-notifications"></use></svg>
+        </button>
+        <button class="mock-global-icon" type="button" aria-label="Network">
+          <svg><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-network"></use></svg>
+        </button>
+      </nav>
+      <div class="mock-identity" data-audience-only="writer applicant staff">
+        <span class="mock-identity__avatar" data-identity-avatar>R</span>
+        <span class="mock-identity__copy">
+          <strong data-identity-name>Rowan Ash</strong>
+          <span data-identity-meta>active face</span>
+        </span>
+      </div>
+    </header>
+
+    <nav class="mock-rail" aria-label="Primary rooms">
+      <button class="mock-rail__link" type="button" data-room-trigger="home" aria-label="World Home" aria-current="page">
+        <svg class="mock-rail__icon" aria-hidden="true"><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-home"></use></svg>
+        <span class="mock-tooltip">World Home</span>
+      </button>
+      <button class="mock-rail__link" type="button" data-room-trigger="locations" aria-label="Locations">
+        <svg class="mock-rail__icon" aria-hidden="true"><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-locations"></use></svg>
+        <span class="mock-tooltip">Locations</span>
+      </button>
+      <button class="mock-rail__link" type="button" data-room-trigger="wanted" aria-label="Wanted">
+        <svg class="mock-rail__icon" aria-hidden="true"><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-wanted"></use></svg>
+        <span class="mock-tooltip">Wanted</span>
+      </button>
+      <button class="mock-rail__link" type="button" data-room-trigger="desk" aria-label="Desk" data-audience-only="writer applicant staff">
+        <svg class="mock-rail__icon" aria-hidden="true"><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-desk"></use></svg>
+        <span class="mock-badge mock-rail__badge" data-desk-badge>3</span>
+        <span class="mock-tooltip">Desk</span>
+      </button>
+      <button class="mock-rail__link" type="button" data-room-trigger="studio" aria-label="Studio" data-audience-only="staff">
+        <svg class="mock-rail__icon" aria-hidden="true"><use href="../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-studio"></use></svg>
+        <span class="mock-badge mock-rail__badge">6</span>
+        <span class="mock-tooltip">Studio</span>
+      </button>
+    </nav>
+
+    <aside class="mock-inner" aria-label="Current room">
+      <div class="mock-inner__header">
+        <p class="mock-kicker" data-inner-kicker>World Home</p>
+        <h2 data-inner-title>HP Universe</h2>
+        <p class="mock-inner__summary" data-inner-summary>Premise, current pulse, and first steps into play.</p>
+      </div>
+      <div class="mock-inner__section">
+        <p class="mock-inner__label" data-inner-label>On World Home</p>
+        <div class="mock-list" data-inner-rows></div>
+      </div>
+    </aside>
+
+    <main class="mock-main" id="main">
+      <div class="mock-main__inner">
+        <section class="mock-page-head">
+          <p class="mock-kicker" data-page-kicker>World Home</p>
+          <h1 data-page-title>HP Universe</h1>
+          <p data-page-lead>A realm landing surface for tone, current pulse, public posture, and practical entry into writing.</p>
+          <p class="mock-public-note">Public preview hides private Desk counts, active-face state, Studio routes, and staff-only work.</p>
+          <div class="mock-page-actions" data-page-actions></div>
+        </section>
+        <section class="mock-grid">
+          <div class="mock-panel">
+            <div class="mock-panel__body">
+              <h2 data-primary-panel-title>Current pulse</h2>
+              <p data-primary-panel-copy>The castle is open after curfew, two watched scenes moved overnight, and the winter event is still shaping new threads.</p>
+              <div class="mock-list" data-primary-list></div>
+            </div>
+          </div>
+          <aside class="mock-panel">
+            <div class="mock-panel__body">
+              <h3 data-side-panel-title>Context</h3>
+              <div class="mock-chip-row" data-side-chips></div>
+              <div class="mock-card-grid" data-mini-cards></div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const sprite = "../src/elbysodic/web/static/icons/sidebar.svg#elbysodic-icon-";
+
+    const rooms = {
+      home: {
+        kicker: "World Home",
+        title: "HP Universe",
+        summary: "Premise, current pulse, and first steps into play.",
+        label: "On World Home",
+        pageTitle: "HP Universe",
+        pageLead: "A realm landing surface for tone, current pulse, public posture, and practical entry into writing.",
+        actions: [
+          ["Start Here", "primary", "public applicant writer staff"],
+          ["Read guidebook", "quiet", "public applicant writer staff"],
+          ["Start application", "primary", "applicant"],
+          ["Open queue", "quiet", "writer staff"]
+        ],
+        rows: [
+          ["guidebook", "Start Here", "Premise, rules, application path", "", "public applicant writer staff"],
+          ["events", "Current Event", "B-24 winter pressure", "live", "public applicant writer staff"],
+          ["community", "Community Table", "Members and announcements", "", "public applicant writer staff"],
+          ["applications", "Application Guide", "First face requirements", "", "public applicant"],
+          ["wanted", "Open Wants", "Hooks ready for interest", "8", "public applicant writer staff"]
+        ],
+        list: [
+          ["B-24 Winter", "Current event has three open scene starts", "live"],
+          ["First face path", "Guidebook, claims, reserves, and application guidance", ""],
+          ["Community table", "Announcements and member context", ""]
+        ],
+        chips: ["public posture", "current pulse", "first face", "guidebook"],
+        cards: [
+          ["Start Here", "Rules, tone, and first face path"],
+          ["Current Event", "The winter arc is active"],
+          ["Open Wants", "Hooks with room to move"]
+        ]
+      },
+      locations: {
+        kicker: "Locations",
+        title: "In Locations",
+        summary: "In-character geography, active scenes, and place context.",
+        label: "In Locations",
+        pageTitle: "Locations",
+        pageLead: "A place-first map for moving through the playable world without turning every scene into global navigation.",
+        actions: [
+          ["Start scene here", "primary", "writer staff"],
+          ["Filter active", "quiet", "public applicant writer staff"],
+          ["Watch place", "quiet", "writer staff"],
+          ["Manage place", "quiet", "staff"]
+        ],
+        rows: [
+          ["locations", "Hogwarts", "7 active scenes", "7", "public applicant writer staff"],
+          ["locations", "Hogsmeade", "2 active scenes", "2", "public applicant writer staff"],
+          ["locations", "Ministry", "1 active scene", "1", "public applicant writer staff"],
+          ["scene", "Active scenes here", "Fresh posts and open starts", "4", "public applicant writer staff"],
+          ["wanted", "Related wants", "Hooks tied to this place", "3", "public applicant writer staff"]
+        ],
+        list: [
+          ["Library restricted stacks", "Celeste owes a reply after the last beat", "needs reply"],
+          ["Greenhouses", "Open scene start, first reply welcome", ""],
+          ["Astronomy Tower", "Watched thread has a new post", "unread"]
+        ],
+        chips: ["in character", "place tree", "active scenes", "related wants"],
+        cards: [
+          ["Hogwarts", "Main school grounds and hidden rooms"],
+          ["Hogsmeade", "Village scenes and public hooks"],
+          ["Ministry", "Staff-led political pressure"]
+        ]
+      },
+      wanted: {
+        kicker: "Wanted",
+        title: "In Wanted",
+        summary: "Hooks, casting, claims, reserves, and handoffs into plotting.",
+        label: "In Wanted",
+        pageTitle: "Wanted",
+        pageLead: "The discovery-to-commitment room: find a reason to write, understand availability, then move interest into play.",
+        actions: [
+          ["Raise interest", "primary", "writer applicant"],
+          ["Reserve wanted", "quiet", "applicant writer"],
+          ["Review claims", "quiet", "public applicant writer staff"],
+          ["Casting operations", "quiet", "staff"]
+        ],
+        rows: [
+          ["wanted", "Wanted board", "Open hooks and asks", "8", "public applicant writer staff"],
+          ["casting", "Casting", "Open faces and concepts", "5", "public applicant writer staff"],
+          ["claims", "Claims", "Taken and requested", "", "public applicant writer staff"],
+          ["reserves", "Reserves", "Held faces and openings", "2", "public applicant writer staff"],
+          ["plotting", "Hook handoffs", "Raised hands in motion", "3", "writer staff"]
+        ],
+        list: [
+          ["The missing prefect", "Open - owner welcomes prospective faces", "open"],
+          ["A curse-breaker contact", "In plotting - one raised hand", "plotting"],
+          ["The family rival", "Reserved until May 18", "reserved"]
+        ],
+        chips: ["open hooks", "claims", "reserves", "plotting"],
+        cards: [
+          ["Open", "Ready for interest"],
+          ["Plotting", "Conversation in motion"],
+          ["Reserved", "Held but not filled"]
+        ]
+      },
+      desk: {
+        kicker: "Desk",
+        title: "On Your Desk",
+        summary: "Personal attention, owned faces, applications, and writing work.",
+        label: "On Your Desk",
+        pageTitle: "Writer Desk",
+        pageLead: "A cockpit for what personally needs you. It should not be a route drawer when your roster is caught up.",
+        actions: [
+          ["Open next reply", "primary", "writer staff"],
+          ["Mark caught up", "quiet", "writer staff"],
+          ["Continue application", "primary", "applicant"],
+          ["View inbox", "quiet", "writer applicant staff"]
+        ],
+        rows: [
+          ["queue", "Queue", "Needs reply and waiting", "2", "writer staff"],
+          ["inbox", "Inbox", "Mentions and pings", "1", "writer applicant staff"],
+          ["roster", "Roster", "Owned faces", "3", "writer staff"],
+          ["applications", "Applications", "Drafts and review", "1", "applicant writer staff"],
+          ["plotting", "Plotting", "Rooms tied to your work", "2", "writer staff"],
+          ["discovery", "Discovery", "Find compatible play", "", "writer staff"]
+        ],
+        list: [
+          ["Library restricted stacks", "Celeste Binns needs reply", "needs reply"],
+          ["Message from staff", "Revision request on application", "new"],
+          ["Greenhouse plotter", "Waiting on another writer", "waiting"]
+        ],
+        chips: ["needs reply", "unread", "waiting", "applications"],
+        cards: [
+          ["Queue", "2 scenes need attention"],
+          ["Inbox", "1 message waiting"],
+          ["Applications", "1 draft or review state"]
+        ]
+      },
+      studio: {
+        kicker: "Studio",
+        title: "In Studio",
+        summary: "Director production rooms, staff review, and realm operations.",
+        label: "In Studio",
+        pageTitle: "Studio",
+        pageLead: "Production work for running the realm. Studio home should answer what needs a director now, then hand off to scoped rooms.",
+        actions: [
+          ["Review intake", "primary", "staff"],
+          ["Publish changes", "quiet", "staff"],
+          ["Open appearance", "quiet", "staff"]
+        ],
+        rows: [
+          ["operations", "Operations", "Production health", "3", "staff"],
+          ["launch", "Launch", "Readiness and setup", "2", "staff"],
+          ["intake", "Intake", "Applications and reviews", "4", "staff"],
+          ["boards", "Boards", "Structure and routes", "", "staff"],
+          ["navigation", "Navigation", "Menus and sidebar grammar", "", "staff"],
+          ["appearance", "Appearance", "Theme and surface polish", "", "staff"],
+          ["continuity", "Continuity", "Reviewed canon memory", "1", "staff"]
+        ],
+        list: [
+          ["Application review", "Two submissions need staff decision", "4"],
+          ["Navigation health", "World/Locations labels pending implementation", ""],
+          ["Continuity queue", "One scene ready for canon review", "1"]
+        ],
+        chips: ["operations", "intake", "appearance", "continuity"],
+        cards: [
+          ["Operations", "Active staff work"],
+          ["Intake", "Applications and casting"],
+          ["Appearance", "Theme-safe polish"]
+        ]
+      }
+    };
+
+    const audienceIdentity = {
+      public: ["?", "Public preview", "no private state"],
+      applicant: ["A", "Mara Vale", "application draft"],
+      writer: ["R", "Rowan Ash", "active face"],
+      staff: ["I", "Imogen Vale", "director staff"]
+    };
+
+    const deskBadge = {
+      public: "",
+      applicant: "1",
+      writer: "3",
+      staff: "6"
+    };
+
+    const state = {
+      room: "home",
+      audience: "writer",
+      mode: "expanded"
+    };
+
+    const body = document.body;
+    const railButtons = Array.from(document.querySelectorAll("[data-room-trigger]"));
+    const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
+    const audienceButtons = Array.from(document.querySelectorAll("[data-audience]"));
+
+    function iconUse(icon) {
+      return `<svg class="mock-row__icon" aria-hidden="true"><use href="${sprite}${icon}"></use></svg>`;
+    }
+
+    function allowed(audienceList) {
+      return audienceList.split(" ").includes(state.audience);
+    }
+
+    function chooseVisibleRoom(room) {
+      if (room === "studio" && state.audience !== "staff") return "home";
+      if (room === "desk" && state.audience === "public") return "home";
+      return room;
+    }
+
+    function renderRows(room) {
+      const rows = rooms[room].rows.filter((row) => allowed(row[4]));
+      document.querySelector("[data-inner-rows]").innerHTML = rows.map((row, index) => `
+        <button class="mock-row" type="button" ${index === 0 ? 'aria-current="page"' : ""}>
+          ${iconUse(row[0])}
+          <span class="mock-row__copy">
+            <strong>${row[1]}</strong>
+            <span>${row[2]}</span>
+          </span>
+          <span class="mock-row__count">${row[3]}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderActions(room) {
+      const actions = rooms[room].actions.filter((action) => allowed(action[2]));
+      document.querySelector("[data-page-actions]").innerHTML = actions.map((action) => `
+        <button class="mock-btn ${action[1] === "quiet" ? "mock-btn--quiet" : ""}" type="button">${action[0]}</button>
+      `).join("");
+    }
+
+    function renderList(room) {
+      document.querySelector("[data-primary-list]").innerHTML = rooms[room].list.map((item) => `
+        <div class="mock-list-row">
+          <span>
+            <strong>${item[0]}</strong>
+            <span>${item[1]}</span>
+          </span>
+          ${item[2] ? `<span class="mock-chip mock-chip--hot">${item[2]}</span>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function renderSide(room) {
+      document.querySelector("[data-side-chips]").innerHTML = rooms[room].chips.map((chip) => `
+        <span class="mock-chip">${chip}</span>
+      `).join("");
+      document.querySelector("[data-mini-cards]").innerHTML = rooms[room].cards.map((card) => `
+        <div class="mock-mini-card">
+          <strong>${card[0]}</strong>
+          <span>${card[1]}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderIdentity() {
+      const identity = audienceIdentity[state.audience];
+      document.querySelector("[data-identity-avatar]").textContent = identity[0];
+      document.querySelector("[data-identity-name]").textContent = identity[1];
+      document.querySelector("[data-identity-meta]").textContent = identity[2];
+      const badge = document.querySelector("[data-desk-badge]");
+      badge.textContent = deskBadge[state.audience];
+      badge.hidden = !deskBadge[state.audience];
+    }
+
+    function render() {
+      state.room = chooseVisibleRoom(state.room);
+      body.dataset.shellMode = state.mode;
+      body.dataset.audience = state.audience;
+      const room = rooms[state.room];
+
+      railButtons.forEach((button) => {
+        button.setAttribute("aria-current", button.dataset.roomTrigger === state.room ? "page" : "false");
+      });
+      modeButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.mode === state.mode ? "true" : "false");
+      });
+      audienceButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.audience === state.audience ? "true" : "false");
+      });
+
+      document.querySelector("[data-inner-kicker]").textContent = room.kicker;
+      document.querySelector("[data-inner-title]").textContent = room.title;
+      document.querySelector("[data-inner-summary]").textContent = room.summary;
+      document.querySelector("[data-inner-label]").textContent = room.label;
+      document.querySelector("[data-page-kicker]").textContent = room.kicker;
+      document.querySelector("[data-page-title]").textContent = room.pageTitle;
+      document.querySelector("[data-page-lead]").textContent = room.pageLead;
+      document.querySelector("[data-primary-panel-title]").textContent = room.pageTitle === "Studio" ? "Needs a director" : "Current pulse";
+      document.querySelector("[data-primary-panel-copy]").textContent = room.pageLead;
+      document.querySelector("[data-side-panel-title]").textContent = room.pageTitle === "Locations" ? "Place texture" : "Context";
+
+      renderRows(state.room);
+      renderActions(state.room);
+      renderList(state.room);
+      renderSide(state.room);
+      renderIdentity();
+    }
+
+    railButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.room = button.dataset.roomTrigger;
+        render();
+      });
+    });
+
+    modeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
+        render();
+      });
+    });
+
+    audienceButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.audience = button.dataset.audience;
+        render();
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -128,6 +128,7 @@
       </span>
     </summary>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-material-editor">
+        {{ csrf_field() }}
       {% if error %}
       <p class="chirpui-field__error">{{ error }}</p>
       {% end %}

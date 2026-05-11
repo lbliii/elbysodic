@@ -30,10 +30,8 @@ def _render_interaction(
     error: str | None = None,
 ) -> Page:
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "interactions/{interaction_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         detail=services.read_realm_interaction(interaction_slug),

@@ -99,10 +99,8 @@ def _render_new_application(
     selected_facet_slugs: list[str] | None = None,
 ) -> Page:
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "applications/new/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         onboarding=services.application_onboarding(),

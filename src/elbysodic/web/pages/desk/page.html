@@ -1,7 +1,7 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "chirpui/surface.html" import surface %}
-  {% from "_components/vocabulary.html" import command_action, lane_preview, local_rail, local_rail_link, metric_item %}
+  {% from "chirpui/layout.html" import container, stack %}
+  {% from "_components/ui.html" import empty_policy_block, page_section %}
+  {% from "_components/vocabulary.html" import command_action, lane_preview, metric_item, page_pulse %}
 {% end %}
 
 {% block page_root %}
@@ -13,65 +13,45 @@
   <section class="elbysodic-desk-hero elbysodic-desk-hero--v2">
     <div class="chirpui-stack chirpui-stack--sm">
       <p class="elbysodic-kicker">Writer Desk</p>
-      {% if viewer.current_character %}
-      <h1>Writing as {{ viewer.current_character.name }}</h1>
-      <p class="elbysodic-copy-lead">
-        {{ viewer.membership.display_name or viewer.membership.username }}'s operating room for replies, reading, plotting, inbox, and character work.
-      </p>
-      {% else %}
-      <h1>{{ viewer.membership.display_name or viewer.membership.username }}'s operating room</h1>
-      <p class="elbysodic-copy-helper">
-        Your roster-level command surface for replies, reading, plotting, inbox, and character work.
-      </p>
-      {% end %}
-    </div>
-    <div class="elbysodic-desk-hero__lens">
-      <span>{{ viewer.membership.username }}</span>
-      {% if viewer.current_character %}
-      <strong>playing as {{ viewer.current_character.name }}</strong>
-      {% else %}
-      <strong>whole roster</strong>
-      {% end %}
+      <h1>Writer Desk</h1>
+      <p class="elbysodic-copy-lead">Replies, reading, plotting, inbox, and character work.</p>
     </div>
   </section>
 
-  {% call local_rail("Writer Desk sections") %}
-    {{ local_rail_link("Needs reply", "#attention") }}
-    {{ local_rail_link("Unread", "#scenes") }}
-    {{ local_rail_link("Waiting", "#waiting") }}
-    {{ local_rail_link("Plotting", "#plotting") }}
-    {{ local_rail_link("Applications", "#casting") }}
-    {{ local_rail_link("Inbox", "#notifications") }}
-  {% end %}
-
-  {% call surface(variant="elevated") %}
-  <section class="elbysodic-desk-queue" aria-labelledby="desk-queue-heading">
-    <div class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-section-kicker">Today</p>
-      <h2 id="desk-queue-heading">What needs you</h2>
-      <p class="elbysodic-copy-helper">{{ desk.current_focus_label }}</p>
-    </div>
+  {% call page_pulse("Today", "What needs you", desk.current_focus_label, "desk-queue-heading", "elbysodic-page-pulse--desk") %}
+    {% if desk.has_attention_counts %}
     <div class="elbysodic-desk-queue__metrics" aria-label="Desk queue totals">
+      {% if desk.needs_reply_count %}
       {{ metric_item(desk.needs_reply_count, "Needs reply") }}
+      {% end %}
+      {% if desk.unread_watched_count %}
       {{ metric_item(desk.unread_watched_count, "Unread") }}
+      {% end %}
+      {% if desk.waiting_count %}
       {{ metric_item(desk.waiting_count, "Waiting") }}
+      {% end %}
+      {% if desk.unread_notifications %}
       {{ metric_item(desk.unread_notifications, "Inbox") }}
+      {% end %}
     </div>
+    {% end %}
+    {% if desk.actions %}
     <div class="elbysodic-desk-queue__actions elbysodic-desk-action-grid">
       {% for action in desk.actions %}
       {{ command_action(action) }}
       {% end %}
     </div>
-  </section>
+    {% end %}
   {% end %}
 
-  {% if desk.queue.roster_activity %}
-  <section class="chirpui-stack chirpui-stack--sm">
-    {% call section_header("Face lanes") %}
-    Switch from the whole roster to the face that needs the cleanest writing lane.
-    {% end %}
+  {% if not desk.lanes %}
+  {{ empty_policy_block("No desk lanes need you right now.", "When replies, watched scenes, plotting movement, applications, or notifications need attention, they will appear here.", "Caught up") }}
+  {% end %}
+
+  {% if desk.actionable_roster_activity %}
+  {% call page_section("Face lanes", "Narrow the queue to the cleanest writing lane.") %}
     <div class="elbysodic-desk-face-lanes">
-      {% for activity in desk.queue.roster_activity %}
+      {% for activity in desk.actionable_roster_activity %}
       <a class="elbysodic-desk-face-lane" href="/my/threads?character={{ activity.character.slug }}">
         <span class="elbysodic-desk-face-lane__avatar">{{ activity.character.name[:1] }}</span>
         <span class="elbysodic-desk-face-lane__copy">
@@ -81,33 +61,17 @@
       </a>
       {% end %}
     </div>
-  </section>
+  {% end %}
   {% end %}
 
-  {% call section_header("Work lanes") %}
-  Move through writing, reading, plotting, applications, and inbox work without leaving the Desk first.
+  {% if desk.lanes %}
+  {% call page_section("Work lanes", "Active writing, reading, plotting, applications, and inbox work.") %}
+    <div class="elbysodic-desk-grid elbysodic-desk-grid--lanes">
+      {% for lane in desk.lanes %}
+      {{ lane_preview(lane) }}
+      {% end %}
+    </div>
   {% end %}
-
-  <div class="elbysodic-desk-grid elbysodic-desk-grid--lanes">
-    {% for lane in desk.lanes %}
-    {{ lane_preview(lane) }}
-    {% end %}
-  </div>
-
-  {% call surface(variant="elevated") %}
-  <section class="elbysodic-desk-shortcuts" aria-labelledby="desk-shortcuts-heading">
-    <div>
-      <p class="elbysodic-section-kicker">Desk shortcuts</p>
-      <h2 id="desk-shortcuts-heading">Deeper rooms</h2>
-    </div>
-    <div class="elbysodic-desk-shortcuts__links">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads">Queue</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/notifications">Inbox</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/characters">Roster</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Discovery</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Casting</a>
-    </div>
-  </section>
   {% end %}
 {% end %}
 {% end %}

@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/ui.html" import empty_policy_block, page_section %}
   {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
@@ -46,6 +47,7 @@
       <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">Open review room</a>
       {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Submitting...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="submit_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
@@ -56,6 +58,7 @@
       </form>
       {% elif item.is_owned_by_viewer and item.character.application_status == "revision_requested" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Resubmitting...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="submit_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
@@ -67,6 +70,7 @@
       {% end %}
       {% if desk.can_review and item.character.application_status == "submitted" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Accepting...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="accept_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
@@ -96,45 +100,33 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  {% call command_panel("Applications", "Application pipeline", "Characters can exist before approval, but their status now travels with the face.", "application-pipeline-heading") %}
+  {% call command_panel("Applications", "Active application work", "Drafts, submissions, and requested revisions stay here. Accepted faces move to the roster and profile pages.", "application-pipeline-heading") %}
     <div class="elbysodic-command-panel__actions">
       <a class="chirpui-btn chirpui-btn--secondary" href="/world/application-guide">Open guide</a>
-      <a class="chirpui-btn chirpui-btn--primary" href="/characters">Open roster</a>
       <a class="chirpui-btn chirpui-btn--primary" href="/applications/new">Start application</a>
     </div>
     <div class="elbysodic-command-panel__metrics" aria-label="Application pipeline totals">
-      {{ metric_item(desk.my_applications | length, "My applications") }}
+      {{ metric_item(active_my_applications | length, "Active drafts") }}
       {{ metric_item(desk.review_queue | length, "Review queue") }}
-      {{ metric_item(desk.accepted_characters | length, "Accepted cast") }}
+      {{ metric_item(desk.application_materials | length, "Guide materials") }}
     </div>
   {% end %}
   {% end %}
 
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("My Applications") %}
-    Your roster, including drafts and submitted faces.
-    {% end %}
-    {% if desk.my_applications %}
+  {% call page_section("My Applications", "Drafts, submitted faces, and revision requests that still need movement.") %}
+    {% if active_my_applications %}
     <div class="elbysodic-interest-list">
-      {% for item in desk.my_applications %}
+      {% for item in active_my_applications %}
       {{ application_card(item) }}
       {% end %}
     </div>
     {% else %}
-    {% call surface(variant="elevated") %}
-    <div class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-empty-state">No character drafts are in your application lane yet.</p>
-      <a class="chirpui-btn chirpui-btn--primary" href="/applications/new">Start application</a>
-    </div>
+    {{ empty_policy_block("No application drafts need work.", "Start an application when you are ready to bring in a new face. Accepted faces live in the roster.", "No active drafts", "Start application", "/applications/new") }}
     {% end %}
-    {% end %}
-  </section>
+  {% end %}
 
   {% if desk.can_review %}
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Review Queue") %}
-    Submitted or revision-requested characters that need director attention.
-    {% end %}
+  {% call page_section("Review Queue", "Submitted characters that need director attention.") %}
     {% if desk.review_queue %}
     <div class="elbysodic-interest-list">
       {% for item in desk.review_queue %}
@@ -142,17 +134,12 @@
       {% end %}
     </div>
     {% else %}
-    {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No submitted faces are waiting on review.</p>
+    {{ empty_policy_block("No submitted faces are waiting on review.", "When a writer submits a draft, it will appear here with claim and reserve warnings.", "Review clear") }}
     {% end %}
-    {% end %}
-  </section>
+  {% end %}
   {% end %}
 
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Application Materials") %}
-    Board-defined guidance for what a character submission should cover.
-    {% end %}
+  {% call page_section("Application Materials", "Board-defined guidance for what a character submission should cover.") %}
     {% if desk.application_materials %}
     <div class="elbysodic-wanted-grid">
       {% for item in desk.application_materials %}
@@ -168,11 +155,9 @@
       {% end %}
     </div>
     {% else %}
-    {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No application guidance has been published yet.</p>
+    {{ empty_policy_block("No application guidance has been published yet.", "Directors can publish application materials from Studio when the realm is ready for structured intake.", "Guide missing") }}
     {% end %}
-    {% end %}
-  </section>
+  {% end %}
 {% end %}
 {% end %}
 {% end %}

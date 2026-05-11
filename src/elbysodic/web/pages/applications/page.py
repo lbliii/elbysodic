@@ -10,6 +10,8 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.services import AppServices
+from elbysodic.services.read_models import ApplicationCharacterView
 from elbysodic.web.state import get_services
 
 
@@ -24,11 +26,11 @@ def get(request: Request) -> Page:
 
 
 @contract(form=FormContract(ApplicationActionForm, "applications/page.html"))
-async def post(request: Request) -> Page | Redirect:
-    form = await request.form()
-    services = get_services(request)
-    intent = str(form.get("intent") or "")
-    character_slug = str(form.get("character_slug") or "")
+async def post(
+    request: Request, form: ApplicationActionForm, services: AppServices
+) -> Page | Redirect:
+    intent = form.intent
+    character_slug = form.character_slug
     if intent not in {
         "submit_application",
         "accept_application",
@@ -41,9 +43,10 @@ async def post(request: Request) -> Page | Redirect:
         elif intent == "accept_application":
             services.accept_character_application(character_slug)
         else:
+            raw_form = await request.form()
             services.request_character_application_revision(
                 character_slug,
-                note=str(form.get("revision_note") or ""),
+                note=str(raw_form.get("revision_note") or ""),
             )
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
@@ -56,11 +59,21 @@ async def post(request: Request) -> Page | Redirect:
 
 def _render_applications(request: Request) -> Page:
     services = get_services(request)
-    return Page(
+    desk = services.applications_desk()
+    return Page.mounted(
         "applications/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
-        desk=services.applications_desk(),
+        desk=desk,
+        active_my_applications=_active_application_items(desk.my_applications),
     )
+
+
+def _active_application_items(
+    items: list[ApplicationCharacterView],
+) -> list[ApplicationCharacterView]:
+    return [
+        item
+        for item in items
+        if item.character.application_status in {"draft", "submitted", "revision_requested"}
+    ]

@@ -40,11 +40,13 @@
   <div class="chirpui-cluster chirpui-cluster--end">
     {% if persona.can_switch %}
     <form action="/dev/personas" method="post" hx-boost="false">
+        {{ csrf_field() }}
       <input type="hidden" name="persona_key" value="{{ persona.key }}">
       <input type="hidden" name="next" value="{{ persona.default_path }}">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Use persona</button>
     </form>
     <form action="/dev/personas" method="post" hx-boost="false">
+        {{ csrf_field() }}
       <input type="hidden" name="persona_key" value="{{ persona.key }}">
       <input type="hidden" name="next" value="/dev/personas">
       <button class="chirpui-btn chirpui-btn--secondary" type="submit">Switch and stay</button>
@@ -74,7 +76,7 @@
     <p class="elbysodic-copy-section">
       {{ viewer.role.name }}
       {% if viewer.current_character %}
-      · playing as {{ viewer.current_character.name }}
+      · active face selected
       {% else %}
       · no active face
       {% end %}

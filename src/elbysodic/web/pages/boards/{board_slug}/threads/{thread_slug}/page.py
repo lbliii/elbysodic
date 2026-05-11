@@ -150,10 +150,8 @@ def _render_thread(
         selected=selected_cast,
     )
     if viewer.current_character is None:
-        return Page(
+        return Page.mounted(
             "boards/{board_slug}/threads/{thread_slug}/page.html",
-            "page_content",
-            page_block_name="page_root",
             current_path=request.url,
             viewer=viewer,
             selected_character=None,
@@ -178,10 +176,8 @@ def _render_thread(
         selected_character_id or viewer.current_character.id,
     )
     config_id = "reply-composer-config"
-    return Page(
+    return Page.mounted(
         "boards/{board_slug}/threads/{thread_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         selected_character=selected_character,

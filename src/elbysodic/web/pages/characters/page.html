@@ -17,17 +17,16 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  {% call command_panel("Roster", "Face lanes", "Your playable cast, application state, and writing queue in one calm scan.", "roster-lanes-heading") %}
+  {% call command_panel("Roster", "Face lanes", "Your playable cast, current state, and writing queue in one calm scan.", "roster-lanes-heading") %}
     <div class="elbysodic-command-panel__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/applications">Applications</a>
       <a class="chirpui-btn chirpui-btn--primary" href="#new-character">Add face</a>
     </div>
     <div class="elbysodic-command-panel__metrics" aria-label="Roster totals">
       {{ metric_item(viewer.roster | length, "Characters") }}
       {% if viewer.current_character %}
-      {{ metric_item(viewer.current_character.name, "Current face") }}
+      {{ metric_item("Selected", "Active face") }}
       {% else %}
-      {{ metric_item("Needed", "Current face") }}
+      {{ metric_item("Needed", "Active face") }}
       {% end %}
       {{ metric_item(viewer.membership.post_count, "Posts") }}
     </div>
@@ -127,6 +126,7 @@
         hx-boost="false"
         class="chirpui-stack chirpui-stack--md"
         x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
+        {{ csrf_field() }}
     <div>
       <h2>Add character</h2>
       <p class="elbysodic-copy-helper">Start a draft application for {{ viewer.community.name }}</p>

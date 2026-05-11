@@ -3,19 +3,44 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
+from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
 from elbysodic.web.state import get_services
+
+
+@dataclass(frozen=True, slots=True)
+class IntakeEditorForm:
+    intent: str
+    blueprint_yaml: str = ""
+    name: str = ""
+    claim_kind: str = ""
+    sort_order: str = ""
+    description: str = ""
+    is_required: bool = False
+    is_exclusive: bool = False
+    visibility: str = "public"
+    claim_type_id: str = ""
+    label: str = ""
+    field_type: str = ""
+    maps_to_claim_type_id: str = ""
+    help_text: str = ""
+    placeholder: str = ""
+    options: str = ""
+    field_id: str = ""
 
 
 def get(request: Request) -> Page:
     return _render_intake_editor(request)
 
 
+@contract(form=FormContract(IntakeEditorForm, "studio/intake/page.html"))
 async def post(request: Request) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
@@ -91,10 +116,8 @@ def _render_intake_editor(
     blueprint_preview: object | None = None,
 ) -> Page:
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "studio/intake/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         studio=services.director_studio(),
@@ -103,6 +126,7 @@ def _render_intake_editor(
         blueprint_yaml=blueprint_yaml,
         blueprint_preview=blueprint_preview,
         error=error,
+        shell_actions=_intake_shell_actions(),
     )
 
 
@@ -116,3 +140,26 @@ def _required_int(raw: object, message: str) -> int:
 def _options_json(raw: str) -> str:
     options = [line.strip() for line in raw.splitlines() if line.strip()]
     return json.dumps(options, separators=(",", ":"))
+
+
+def _intake_shell_actions() -> ShellActions:
+    return ShellActions(
+        controls=ShellActionZone(
+            items=(
+                ShellAction(
+                    id="intake-studio",
+                    label="Studio",
+                    href="/studio",
+                    icon="grid",
+                    variant="secondary",
+                ),
+                ShellAction(
+                    id="intake-operations",
+                    label="Operations",
+                    href="/studio/operations",
+                    icon="logs",
+                    variant="secondary",
+                ),
+            )
+        )
+    )

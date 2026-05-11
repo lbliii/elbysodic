@@ -66,7 +66,7 @@
           </p>
           <p class="elbysodic-copy-status">
             {% if profile.is_default %}
-            Current face: {{ profile.character.name }}
+            Active in the identity menu
             {% else %}
             Community face: {{ viewer.community.name }}
             {% end %}
@@ -91,17 +91,20 @@
       <div class="elbysodic-face-hub__actions elbysodic-face-hub__actions--primary">
         {% if profile.character.application_status == "draft" %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="submit_application">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
         </form>
         {% elif profile.character.application_status == "revision_requested" %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="submit_application">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
         </form>
         {% end %}
         {% if not profile.is_default %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="set_default">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">Set current face</button>
         </form>
@@ -181,16 +184,10 @@
          href="/boards/{{ next_reply.board.slug }}/threads/{{ next_reply.thread.slug }}{{ "#" ~ next_reply.jump_post.anchor if next_reply.jump_post else "" }}">
         Reply as {{ profile.character.name }}
       </a>
-      {% else %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">
-        Open {{ profile.character.name }}'s queue
-      </a>
       {% end %}
-      {% if profile.is_default %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find play for {{ profile.character.name }}</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Casting as {{ profile.character.name }}</a>
-      {% else %}
+      {% if not profile.is_default %}
       <form method="post" hx-boost="false">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="set_default">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">
           Make {{ profile.character.name }} current
@@ -226,14 +223,7 @@
       {{ wanted_card(item) }}
       {% end %}
     </div>
-    {% else %}
-    {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No open wanted hooks are tied to {{ profile.character.name }} yet.</p>
     {% end %}
-    {% end %}
-    <div class="chirpui-cluster chirpui-cluster--end">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
-    </div>
   </section>
 
   {% if profile.plotting_rooms %}
@@ -272,6 +262,7 @@
       <small>A lightweight invitation for scenes, connections, or relationship plotting.</small>
     </summary>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md" aria-labelledby="new-plot-hook">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="create_plot_hook">
       <div class="elbysodic-form-grid">
         <div>
@@ -370,13 +361,6 @@
     {% call section_header("Tracker") %}
     {{ profile.character.name }}'s scene tracker and thread history.
     {% end %}
-    <div class="elbysodic-profile-section-actions">
-      {% if profile.can_manage %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">Open filtered queue</a>
-      {% else %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/members/{{ profile.owner_membership.username }}">View writer</a>
-      {% end %}
-    </div>
     {% if profile.activity.participated %}
     {% for item in profile.activity.participated %}
       {{ character_thread_item(item) }}
@@ -400,6 +384,7 @@
           class="chirpui-stack chirpui-stack--md"
           aria-labelledby="character-studio"
           x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
+        {{ csrf_field() }}
       {% if error %}
       <p class="chirpui-field__error">{{ error }}</p>
       {% end %}

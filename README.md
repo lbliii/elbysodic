@@ -159,7 +159,7 @@ The package declares normal published dependencies:
 
 ```toml
 bengal-chirp[config,forms,sessions,ui]>=0.6.0
-chirp-ui>=0.6.0
+chirp-ui>=0.8.0
 ```
 
 For local development, you can keep editable sibling checkout overrides in an
@@ -201,6 +201,8 @@ Useful commands:
 - `make ty` runs Astral's `ty` checker.
 - `make changelog-draft` previews Towncrier fragments.
 - `make build` builds distribution packages.
+- `uv run pounce check --app elbysodic.web:create_app --format plain` validates
+  the Pounce import/config path used by the Chirp production server.
 
 The full handoff gate used by agents is:
 
@@ -234,6 +236,11 @@ Keep local dependency source overrides out of committed project metadata.
 registry so Railway can build the app. Local-only uv config belongs in ignored
 `uv.toml`, and committed lockfile updates should be regenerated without local
 editable path sources.
+
+The checked-in lockfile tracks the current stack intake: Chirp 0.6, Chirp-UI
+0.8, Kida 0.9, and Pounce 0.7. When moving templates inside a folder, prefer
+Kida's `./` relative imports for sibling `_components` references so local
+component groups stay refactor-safe.
 
 ## Deploying To Railway
 

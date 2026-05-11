@@ -5,6 +5,10 @@ when adding a rendered page, route action, sidebar count, notification surface,
 or Studio room that can expose community-, membership-, role-, or
 character-scoped data.
 
+Canonical shared-host route and link scoping rules live in
+`docs/architecture/multi-tenancy.md#route-and-link-contract`; this matrix tracks
+rendered privacy expectations and proof for route families.
+
 Rendered privacy tests should prove what the user can see, not only what a
 repository method returns. Prefer one focused test per route family unless a
 workflow has several identity shapes.
@@ -28,6 +32,8 @@ Use these viewer modes when a route can expose scoped data:
 | --- | --- | --- | --- | --- | --- | --- |
 | `/world`, `/world/{material}` | Draft materials, Material Studio controls, current event links. | Published materials only. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page; no draft body. | covered for draft material regressions |
 | `/wanted`, `/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls, private interest notes, plotting-room links, and scene-handoff links. | Open/non-archived hooks only; unrelated members do not see another writer's note or room link. | Own hook controls and interest notes visible. | Casting controls and interest notes visible. | Recovery page; no archived body, private note, or room link. | covered for prospective-note privacy and wanted backstage handoff |
+| `/claims`, `/claims?...` | Claim and reserve state, filtered counts, character links, director notes, staff maintenance controls. | Public claim/reserve directory state only; staff controls and director notes absent. | Same as member unless staff. | Claims maintenance forms and director notes visible only with casting/staff capability. | No claim, reserve, character, or count data from another community. | covered for rendered directory state and tenant-scoped query/link regressions; staff/member contrast still partial |
+| `/casting` | Casting desk lanes, active-face prompts, wanted handoffs, reserves, private notes surfaced through casting workflows. | Own visible casting opportunities and face-specific prompts. | Own hook/interest handoffs where applicable. | Casting controls, review lanes, and private notes visible only with capability. | No wanted, reserve, claim, or face data from another community. | partial |
 | `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. | partial |
 | `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants, backstage stage grouping. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. | partial; notification leakage and wanted stage grouping covered |
 | `/notifications` | Membership-specific inbox and unread counts, wanted-interest notes, plotting-room targets. | Own visible notifications only; forged inaccessible wanted/room targets are hidden. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. | partial; forged wanted/room target regressions covered |
@@ -79,8 +85,8 @@ control appears or does not appear than to snapshot large HTML sections.
 
 - Production public catalog/search proof for signed-out and signed-in users.
 - Application review room owner/staff/outsider route-family coverage.
-- Claims conflict and reserve visibility coverage beyond happy-path directory
-  rendering.
+- Claims conflict and reserve visibility coverage beyond directory and
+  tenant-scoped query/link rendering.
 - Plotting room rendered page coverage across participant, owner, outsider,
   staff, and cross-tenant identities.
 - Notification inbox and shell/sidebar count coverage across membership,

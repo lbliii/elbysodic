@@ -231,6 +231,7 @@
   <section id="appearance-theme" class="chirpui-stack chirpui-stack--md" aria-label="Theme tokens">
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--md" method="post">
+        {{ csrf_field() }}
     <input type="hidden" name="intent" value="default_theme">
     <div>
       <p class="elbysodic-kicker">Appearance Studio</p>
@@ -306,6 +307,7 @@
   <section id="appearance-media" class="chirpui-stack chirpui-stack--md" aria-label="Community media slots">
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--md" method="post">
+        {{ csrf_field() }}
     <input type="hidden" name="intent" value="community_media">
     <div>
       <p class="elbysodic-kicker">Appearance Studio</p>
@@ -376,6 +378,7 @@
   </section>
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--sm" method="post">
+        {{ csrf_field() }}
     <input type="hidden" name="intent" value="identity_accent">
     <div class="chirpui-cluster chirpui-cluster--between">
       <div>
@@ -428,6 +431,7 @@
     <div class="elbysodic-board-taxonomy">
       {% for item in studio.board_taxonomy %}
       <form class="elbysodic-board-taxonomy-row" method="post">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="board_taxonomy">
         <input type="hidden" name="board_id" value="{{ item.board.id }}">
         <div class="elbysodic-board-taxonomy-row__identity">
@@ -522,6 +526,7 @@
     <div class="elbysodic-sidebar-section-configs" aria-label="Sidebar section controls">
       {% for section in studio.sidebar_sections %}
       <form class="elbysodic-sidebar-section-config" method="post">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="sidebar_section">
         <input type="hidden" name="section_key" value="{{ section.section_key }}">
         <div class="elbysodic-sidebar-section-config__identity">
@@ -596,6 +601,7 @@
   <section id="identity-appearance-style" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-label="Post style vocabulary">
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--md" method="post">
+        {{ csrf_field() }}
     <input type="hidden" name="intent" value="post_style_policy">
     <div>
       <p class="elbysodic-kicker">Community Direction</p>
@@ -852,6 +858,7 @@
             <div class="chirpui-cluster chirpui-cluster--start">
               {{ badge(item.type_label, variant="muted") }}
               <form method="post">
+        {{ csrf_field() }}
                 <input type="hidden" name="intent" value="material_status">
                 <input type="hidden" name="material_slug" value="{{ item.material.slug }}">
                 <input type="hidden" name="status" value="published">
@@ -859,6 +866,7 @@
               </form>
               {% if item.material.material_type == "event" %}
               <form method="post">
+        {{ csrf_field() }}
                 <input type="hidden" name="intent" value="material_status">
                 <input type="hidden" name="material_slug" value="{{ item.material.slug }}">
                 <input type="hidden" name="status" value="published">

@@ -6,17 +6,17 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import is_location_board
-from elbysodic.web.state import get_services
+from elbysodic.services import AppServices
 
 
-def get(request: Request) -> Page:
-    services = get_services(request)
+def get(request: Request, services: AppServices) -> Page:
     viewer = services.viewer()
     boards = services.list_boards()
-    return Page(
+    location_attention = [
+        item for item in services.needs_attention(limit=20) if is_location_board(item.board)
+    ][:3]
+    return Page.mounted(
         "locations/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         boards=boards,
@@ -25,5 +25,5 @@ def get(request: Request) -> Page:
             for summary in boards
             if summary.board.parent_board_id is None and is_location_board(summary.board)
         ],
-        attention=services.needs_attention(limit=3),
+        attention=location_attention,
     )

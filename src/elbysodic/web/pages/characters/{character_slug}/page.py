@@ -209,10 +209,8 @@ def _render_profile(
         else profile.accent_source_label
     )
     post_style_preview_config_id = f"character-post-style-preview-config-{profile.character.id}"
-    return Page(
+    return Page.mounted(
         "characters/{character_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         profile=profile,

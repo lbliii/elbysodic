@@ -19,10 +19,8 @@ def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Pa
         raise HTTPError(status=404, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
-    return Page(
+    return Page.mounted(
         "boards/{board_slug}/threads/{thread_slug}/posts/{post_id}/revisions/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         history=history,

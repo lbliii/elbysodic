@@ -96,6 +96,7 @@
           method="post"
           hx-boost="false"
           data-elbysodic-submit-label="Saving application...">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="save_application">
       <label>
         <span class="chirpui-field__label">Application summary</span>
@@ -231,6 +232,7 @@
           method="post"
           hx-boost="false"
           data-elbysodic-submit-label="Saving review...">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="save_review">
       <label>
         <span class="chirpui-field__label">Revision note for applicant</span>
@@ -257,6 +259,7 @@
     {% if room.character_view.character.application_status == "submitted" %}
     <div class="chirpui-cluster chirpui-cluster--end">
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Accepting face...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="accept_application">
         <button type="submit"
                 class="chirpui-btn chirpui-btn--primary"
@@ -265,6 +268,7 @@
         </button>
       </form>
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Requesting revisions...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="request_revision">
         <input type="hidden" name="revision_notes" value="{{ revision_note_value }}">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>

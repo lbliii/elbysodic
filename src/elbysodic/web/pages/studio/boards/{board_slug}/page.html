@@ -62,6 +62,7 @@
   <section class="elbysodic-board-editor-layout">
     {% call surface(variant="elevated") %}
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-board-editor-form">
+        {{ csrf_field() }}
       {% if error %}
       <p class="chirpui-field__error">{{ error }}</p>
       {% end %}

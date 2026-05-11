@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elbysodic Layered Shell Mock V2</title>
+  <link rel="stylesheet" href="../src/elbysodic/web/static/elbysodic-theme.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --rail-width: 4.5rem;
+      --inner-width: 18rem;
+      --topbar-height: 4rem;
+      --shell-bg: #091321;
+      --shell-panel: color-mix(in srgb, var(--chirpui-surface, #132030) 88%, transparent);
+      --shell-panel-strong: color-mix(in srgb, var(--chirpui-surface-elevated, #182a3d) 92%, transparent);
+      --shell-border: color-mix(in srgb, var(--chirpui-border, #506174) 72%, transparent);
+      --shell-text: var(--chirpui-text, #f8fbff);
+      --shell-muted: var(--chirpui-muted, #9fb0c3);
+      --shell-accent: var(--chirpui-accent, #74f6ff);
+      --shell-dye: var(--elbysodic-atmosphere-dye, #ff69cf);
+      --shell-warm: #f6d16f;
+      --shell-good: #7cf2c4;
+      --shell-danger: #ff7f92;
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 14% 8%, color-mix(in srgb, var(--shell-dye) 18%, transparent), transparent 26rem),
+        radial-gradient(circle at 84% 0%, color-mix(in srgb, var(--shell-accent) 16%, transparent), transparent 28rem),
+        linear-gradient(135deg, #0c1120 0%, #101d2e 48%, #1d1730 100%);
+      color: var(--shell-text);
+    }
+
+    a,
+    button {
+      color: inherit;
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .chirpui-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 2.35rem;
+      border: 1px solid color-mix(in srgb, var(--shell-accent) 30%, transparent);
+      border-radius: 0.55rem;
+      padding: 0.48rem 0.75rem;
+      background: color-mix(in srgb, var(--shell-accent) 12%, var(--shell-panel));
+      color: var(--shell-text);
+      font-weight: 720;
+      text-decoration: none;
+    }
+
+    .chirpui-btn--secondary {
+      border-color: var(--shell-border);
+      background: color-mix(in srgb, var(--shell-panel) 76%, transparent);
+      color: var(--shell-muted);
+    }
+
+    .chirpui-surface {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--shell-border);
+      border-radius: 0.8rem;
+      background:
+        radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--shell-accent) 18%, transparent), transparent 12rem),
+        radial-gradient(circle at 94% 8%, color-mix(in srgb, var(--shell-dye) 16%, transparent), transparent 13rem),
+        linear-gradient(180deg, color-mix(in srgb, #fff 7%, transparent), transparent 7rem),
+        color-mix(in srgb, var(--shell-panel-strong) 88%, transparent);
+      box-shadow:
+        0 1.2rem 3rem rgb(0 0 0 / 0.22),
+        inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
+    }
+
+    .chirpui-surface::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, transparent 0 36%, color-mix(in srgb, #fff 5%, transparent) 44%, transparent 52%),
+        repeating-linear-gradient(90deg, color-mix(in srgb, #fff 4%, transparent) 0 1px, transparent 1px 5.5rem);
+      opacity: 0.34;
+      mix-blend-mode: screen;
+    }
+
+    .chirpui-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.55rem;
+      border: 1px solid color-mix(in srgb, var(--shell-accent) 28%, transparent);
+      border-radius: 999px;
+      padding: 0.22rem 0.5rem;
+      background: color-mix(in srgb, var(--shell-accent) 11%, transparent);
+      color: color-mix(in srgb, var(--shell-accent) 82%, white);
+      font-size: 0.72rem;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .chirpui-container {
+      width: min(100%, 72rem);
+    }
+
+    .chirpui-stack {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .chirpui-stack--sm {
+      gap: 0.65rem;
+    }
+
+    .mock-switcher {
+      position: fixed;
+      z-index: 50;
+      left: 50%;
+      bottom: 1rem;
+      display: flex;
+      max-width: calc(100vw - 2rem);
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0.5rem;
+      border: 1px solid var(--shell-border);
+      border-radius: 999px;
+      background: color-mix(in srgb, #06101d 90%, transparent);
+      box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.34);
+      transform: translateX(-50%);
+      backdrop-filter: blur(16px);
+    }
+
+    .mock-switcher__group {
+      display: flex;
+      gap: 0.32rem;
+      padding-inline: 0.12rem;
+    }
+
+    .mock-switcher__group + .mock-switcher__group {
+      border-left: 1px solid var(--shell-border);
+      padding-left: 0.6rem;
+    }
+
+    .mock-switcher button {
+      min-height: 2rem;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      background: transparent;
+      color: var(--shell-muted);
+    }
+
+    .mock-switcher button[aria-pressed="true"] {
+      border-color: color-mix(in srgb, var(--shell-accent) 46%, transparent);
+      background: color-mix(in srgb, var(--shell-accent) 14%, transparent);
+      color: var(--shell-text);
+    }
+
+    .chirpui-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+      grid-template-columns: var(--rail-width) var(--inner-width) minmax(0, 1fr);
+      transition: grid-template-columns 160ms ease;
+    }
+
+    .chirpui-app-shell__topbar {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-width: 0;
+      padding: 0 1rem;
+      border-bottom: 1px solid var(--shell-border);
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--shell-accent) 9%, transparent), transparent 35%),
+        color-mix(in srgb, #07101d 86%, transparent);
+      box-shadow: inset 0 -1px 0 color-mix(in srgb, #fff 7%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .chirpui-app-shell__sidebar {
+      grid-row: 2;
+      grid-column: 2;
+      min-width: 0;
+      border-right: 1px solid var(--shell-border);
+      background: color-mix(in srgb, var(--shell-panel) 84%, transparent);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .chirpui-app-shell__main {
+      grid-row: 2;
+      grid-column: 3;
+      min-width: 0;
+      overflow: auto;
+      padding: clamp(1rem, 2.4vw, 2rem);
+    }
+
+    .elbysodic-community-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.72rem;
+      min-width: 0;
+      color: var(--shell-text);
+      text-decoration: none;
+    }
+
+    .elbysodic-community-brand__mark {
+      display: grid;
+      place-items: center;
+      width: 2.15rem;
+      aspect-ratio: 1;
+      border: 1px solid color-mix(in srgb, var(--shell-accent) 38%, transparent);
+      border-radius: 0.68rem;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--shell-accent) 24%, transparent), color-mix(in srgb, var(--shell-dye) 26%, transparent)),
+        var(--shell-panel);
+      box-shadow: 0 0 1.3rem color-mix(in srgb, var(--shell-accent) 20%, transparent);
+    }
+
+    .elbysodic-community-brand__name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 800;
+    }
+
+    .elbysodic-topbar-icons {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem;
+      border: 1px solid var(--shell-border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--shell-panel) 72%, transparent);
+    }
+
+    .elbysodic-icon-button {
+      display: grid;
+      place-items: center;
+      width: 2.35rem;
+      aspect-ratio: 1;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--shell-muted);
+    }
+
+    .elbysodic-icon-button:hover,
+    .elbysodic-icon-button:focus-visible,
+    .elbysodic-icon-button[aria-current="page"] {
+      color: var(--shell-text);
+      border-color: color-mix(in srgb, var(--shell-accent) 30%, transparent);
+      background: color-mix(in srgb, var(--shell-accent) 12%, transparent);
+      outline: none;
+    }
+
+    .elbysodic-shell-identity {
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+      border: 1px solid var(--shell-border);
+      border-radius: 999px;
+      padding: 0.34rem 0.55rem 0.34rem 0.34rem;
+      background: color-mix(in srgb, var(--shell-panel) 78%, transparent);
+    }
+
+    .elbysodic-shell-identity__avatar {
+      display: grid;
+      place-items: center;
+      width: 2.08rem;
+      aspect-ratio: 1;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--shell-dye) 22%, var(--shell-panel));
+      font-weight: 850;
+    }
+
+    .elbysodic-shell-identity__copy {
+      display: grid;
+      gap: 0.05rem;
+      min-width: 0;
+    }
+
+    .elbysodic-shell-identity__copy strong {
+      font-size: 0.86rem;
+      line-height: 1.1;
+    }
+
+    .elbysodic-shell-identity__copy span {
+      color: var(--shell-muted);
+      font-size: 0.74rem;
+      line-height: 1.1;
+    }
+
+    .elbysodic-primary-rail {
+      grid-row: 2;
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.46rem;
+      padding: 0.85rem 0.56rem;
+      border-right: 1px solid var(--shell-border);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--shell-accent) 10%, transparent), transparent 18rem),
+        color-mix(in srgb, #07101d 78%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .elbysodic-primary-rail__link {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 3.06rem;
+      aspect-ratio: 1;
+      border: 1px solid transparent;
+      border-radius: 0.95rem;
+      background: transparent;
+      color: var(--shell-muted);
+    }
+
+    .elbysodic-primary-rail__link:hover,
+    .elbysodic-primary-rail__link:focus-visible {
+      color: var(--shell-text);
+      border-color: color-mix(in srgb, var(--shell-accent) 34%, transparent);
+      background: color-mix(in srgb, var(--shell-accent) 11%, transparent);
+      outline: none;
+    }
+
+    .elbysodic-primary-rail__link[aria-current="page"] {
+      color: var(--shell-text);
+      border-color: color-mix(in srgb, var(--shell-accent) 48%, transparent);
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--shell-accent) 18%, transparent), color-mix(in srgb, var(--shell-dye) 15%, transparent)),
+        color-mix(in srgb, var(--shell-panel-strong) 82%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 10%, transparent);
+    }
+
+    .elbysodic-primary-rail__link[aria-current="page"]::after {
+      content: "";
+      position: absolute;
+      left: -0.58rem;
+      width: 0.16rem;
+      height: 1.55rem;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--shell-accent), var(--shell-dye));
+      box-shadow: 0 0 1rem color-mix(in srgb, var(--shell-accent) 58%, transparent);
+    }
+
+    .elbysodic-nav-icon {
+      width: 1.28rem;
+      height: 1.28rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .elbysodic-primary-rail__badge {
+      position: absolute;
+      top: 0.1rem;
+      right: 0.05rem;
+      display: grid;
+      place-items: center;
+      min-width: 1.22rem;
+      height: 1.22rem;
+      border-radius: 999px;
+      padding-inline: 0.32rem;
+      background: color-mix(in srgb, var(--shell-warm) 88%, #231807);
+      color: #171105;
+      font-size: 0.7rem;
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .elbysodic-primary-rail__tooltip {
+      position: absolute;
+      z-index: 5;
+      left: calc(100% + 0.65rem);
+      top: 50%;
+      width: max-content;
+      max-width: 14rem;
+      padding: 0.38rem 0.55rem;
+      border: 1px solid var(--shell-border);
+      border-radius: 0.55rem;
+      background: #06101d;
+      color: var(--shell-text);
+      font-size: 0.78rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) translateX(-0.22rem);
+      transition: opacity 120ms ease, transform 120ms ease;
+      box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.24);
+    }
+
+    .elbysodic-primary-rail__link:hover .elbysodic-primary-rail__tooltip,
+    .elbysodic-primary-rail__link:focus-visible .elbysodic-primary-rail__tooltip {
+      opacity: 1;
+      transform: translateY(-50%);
+    }
+
+    .elbysodic-inner-shell {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .elbysodic-inner-shell__header {
+      padding: 1.1rem 1.1rem 0.82rem;
+      border-bottom: 1px solid var(--shell-border);
+      background:
+        radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--shell-dye) 14%, transparent), transparent 11rem),
+        linear-gradient(180deg, color-mix(in srgb, #fff 5%, transparent), transparent);
+    }
+
+    .elbysodic-kicker {
+      margin: 0 0 0.34rem;
+      color: color-mix(in srgb, var(--shell-accent) 82%, var(--shell-muted));
+      font-size: 0.72rem;
+      font-weight: 820;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .elbysodic-inner-shell h2,
+    .elbysodic-page h1,
+    .chirpui-surface h2,
+    .chirpui-surface h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .elbysodic-inner-shell h2 {
+      font-size: 1rem;
+    }
+
+    .elbysodic-inner-shell__summary {
+      margin: 0.38rem 0 0;
+      color: var(--shell-muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .elbysodic-inner-shell__body {
+      display: grid;
+      gap: 0.9rem;
+      padding: 0.85rem 0.7rem 1rem;
+      overflow: auto;
+    }
+
+    .chirpui-sidebar__section-title {
+      margin: 0 0 0.42rem;
+      padding-inline: 0.5rem;
+      color: var(--shell-muted);
+      font-size: 0.72rem;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .chirpui-sidebar__section-links {
+      display: grid;
+      gap: 0.28rem;
+    }
+
+    .chirpui-sidebar__link {
+      display: grid;
+      grid-template-columns: 1.55rem minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.58rem;
+      width: 100%;
+      min-height: 2.55rem;
+      border: 1px solid transparent;
+      border-radius: 0.68rem;
+      padding: 0.46rem 0.58rem;
+      color: var(--shell-muted);
+      background: transparent;
+      text-align: left;
+      text-decoration: none;
+    }
+
+    .chirpui-sidebar__link:hover,
+    .chirpui-sidebar__link:focus-visible,
+    .chirpui-sidebar__link[aria-current="page"] {
+      color: var(--shell-text);
+      border-color: color-mix(in srgb, var(--shell-accent) 24%, transparent);
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--shell-accent) 13%, transparent), color-mix(in srgb, var(--shell-dye) 8%, transparent)),
+        color-mix(in srgb, var(--shell-panel) 60%, transparent);
+      outline: none;
+    }
+
+    .elbysodic-sidebar-row__copy {
+      min-width: 0;
+      display: grid;
+      gap: 0.05rem;
+    }
+
+    .elbysodic-sidebar-row__copy strong,
+    .elbysodic-sidebar-row__copy span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .elbysodic-sidebar-row__copy strong {
+      font-size: 0.88rem;
+      line-height: 1.2;
+    }
+
+    .elbysodic-sidebar-row__copy span {
+      color: color-mix(in srgb, var(--shell-muted) 88%, transparent);
+      font-size: 0.74rem;
+      line-height: 1.2;
+    }
+
+    .elbysodic-sidebar-row__count {
+      min-width: 1.35rem;
+      color: var(--shell-text);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .elbysodic-page {
+      width: min(100%, 74rem);
+      display: grid;
+      gap: 1rem;
+    }
+
+    .elbysodic-page__header {
+      display: grid;
+      gap: 0.78rem;
+      padding-top: 0.25rem;
+    }
+
+    .elbysodic-page h1 {
+      font-size: clamp(1.75rem, 3vw, 2.65rem);
+      line-height: 0.96;
+    }
+
+    .elbysodic-page__lead {
+      max-width: 42rem;
+      margin: 0;
+      color: var(--shell-muted);
+      line-height: 1.55;
+    }
+
+    .elbysodic-page__actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .elbysodic-panel-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.75fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .elbysodic-panel-body {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.9rem;
+      padding: 1rem;
+    }
+
+    .elbysodic-panel-body > p {
+      margin: 0;
+      color: var(--shell-muted);
+      line-height: 1.5;
+    }
+
+    .elbysodic-preview-list {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .elbysodic-preview-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.72rem;
+      min-height: 3.12rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid color-mix(in srgb, var(--shell-border) 76%, transparent);
+      border-radius: 0.68rem;
+      background:
+        linear-gradient(100deg, color-mix(in srgb, var(--shell-accent) 7%, transparent), transparent 45%),
+        color-mix(in srgb, var(--shell-panel) 66%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+    }
+
+    .elbysodic-preview-row::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.58rem;
+      bottom: 0.58rem;
+      width: 0.14rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--shell-accent) 55%, transparent);
+    }
+
+    .elbysodic-preview-row strong,
+    .elbysodic-preview-row span {
+      display: block;
+    }
+
+    .elbysodic-preview-row strong {
+      font-size: 0.9rem;
+    }
+
+    .elbysodic-preview-row span {
+      margin-top: 0.15rem;
+      color: var(--shell-muted);
+      font-size: 0.78rem;
+    }
+
+    .elbysodic-chip-row {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .elbysodic-public-note {
+      display: none;
+      border-left: 3px solid color-mix(in srgb, var(--shell-accent) 70%, transparent);
+      padding: 0.2rem 0 0.2rem 0.85rem;
+      color: var(--shell-muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    [data-audience="public"] .elbysodic-public-note {
+      display: block;
+    }
+
+    [data-audience="public"] [data-audience-only]:not([data-audience-only~="public"]),
+    [data-audience="writer"] [data-audience-only]:not([data-audience-only~="writer"]),
+    [data-audience="applicant"] [data-audience-only]:not([data-audience-only~="applicant"]),
+    [data-audience="staff"] [data-audience-only]:not([data-audience-only~="staff"]) {
+      display: none;
+    }
+
+    [data-shell-mode="compact"] .chirpui-app-shell {
+      grid-template-columns: var(--rail-width) 0 minmax(0, 1fr);
+    }
+
+    [data-shell-mode="compact"] .chirpui-app-shell__sidebar {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-0.75rem);
+    }
+
+    [data-shell-mode="focus"] .chirpui-app-shell {
+      grid-template-columns: 0 0 minmax(0, 1fr);
+    }
+
+    [data-shell-mode="focus"] .elbysodic-primary-rail,
+    [data-shell-mode="focus"] .chirpui-app-shell__sidebar {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-0.75rem);
+    }
+
+    [data-shell-mode="mobile"] .chirpui-app-shell {
+      grid-template-columns: 0 0 minmax(0, 1fr);
+    }
+
+    [data-shell-mode="mobile"] .elbysodic-primary-rail,
+    [data-shell-mode="mobile"] .chirpui-app-shell__sidebar {
+      position: fixed;
+      z-index: 20;
+      top: var(--topbar-height);
+      bottom: 0;
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    [data-shell-mode="mobile"] .elbysodic-primary-rail {
+      left: 0;
+      width: var(--rail-width);
+    }
+
+    [data-shell-mode="mobile"] .chirpui-app-shell__sidebar {
+      left: var(--rail-width);
+      width: min(var(--inner-width), calc(100vw - var(--rail-width)));
+      box-shadow: 1.25rem 0 3rem rgb(0 0 0 / 0.32);
+    }
+
+    [data-shell-mode="mobile"] .chirpui-app-shell__main {
+      padding-left: calc(var(--rail-width) + 1rem);
+    }
+
+    @media (max-width: 900px) {
+      .chirpui-app-shell {
+        grid-template-columns: 0 0 minmax(0, 1fr);
+      }
+
+      .chirpui-app-shell__topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .elbysodic-topbar-icons {
+        display: none;
+      }
+
+      .elbysodic-primary-rail,
+      .chirpui-app-shell__sidebar {
+        position: fixed;
+        z-index: 20;
+        top: var(--topbar-height);
+        bottom: 0;
+      }
+
+      .elbysodic-primary-rail {
+        left: 0;
+        width: var(--rail-width);
+      }
+
+      .chirpui-app-shell__sidebar {
+        left: var(--rail-width);
+        width: min(var(--inner-width), calc(100vw - var(--rail-width)));
+        box-shadow: 1.25rem 0 3rem rgb(0 0 0 / 0.32);
+      }
+
+      .chirpui-app-shell__main {
+        grid-column: 3;
+        padding-left: calc(var(--rail-width) + 1rem);
+      }
+
+      .elbysodic-panel-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .elbysodic-shell-identity__copy {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body data-shell-mode="expanded" data-audience="writer">
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/><path d="M10 19v-5h4v5"/></symbol>
+    <symbol id="icon-locations" viewBox="0 0 24 24"><path d="M5 6.5 10 4l4 2 5-2.5v14l-5 2.5-4-2-5 2.5z"/><path d="M10 4v14"/><path d="M14 6.5v13.5"/></symbol>
+    <symbol id="icon-wanted" viewBox="0 0 24 24"><path d="M12 4 14.4 8.8 19.7 9.6 15.8 13.4 16.8 18.7 12 16.2 7.2 18.7 8.2 13.4 4.3 9.6 9.6 8.8 12 4z"/><path d="M16.5 16.5c1.6.4 2.5 1.2 2.5 2.3 0 1.4-1.6 2.2-4.1 2.2"/></symbol>
+    <symbol id="icon-desk" viewBox="0 0 24 24"><path d="M5 5.5h14v13H5z"/><path d="M8 15.5 15.5 8"/><path d="M14 7.5 16.5 10"/><path d="M8 15.5 7.3 18 9.8 17.3"/></symbol>
+    <symbol id="icon-studio" viewBox="0 0 24 24"><path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/><path d="M8.5 10h7"/><path d="M8.5 14h7"/><circle cx="10.5" cy="10" r="1"/><circle cx="14" cy="14" r="1"/></symbol>
+    <symbol id="icon-network" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2"/><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="17" cy="18" r="2"/><path d="M7.6 8.3 10.4 10.6"/><path d="M16.4 8.4 13.6 10.6"/><path d="M13.3 13.7 15.8 16.5"/></symbol>
+    <symbol id="icon-guidebook" viewBox="0 0 24 24"><path d="M5 5.5h6c1.2 0 2 .8 2 2v11c0-1.2-.8-2-2-2H5z"/><path d="M19 5.5h-6c-1.2 0-2 .8-2 2v11c0-1.2.8-2 2-2h6z"/><path d="M8 9h3"/><path d="M15 9h2"/></symbol>
+    <symbol id="icon-community" viewBox="0 0 24 24"><circle cx="9" cy="9" r="2.5"/><circle cx="16.5" cy="10.5" r="2"/><path d="M4.5 19c.8-2.8 2.3-4.2 4.5-4.2s3.7 1.4 4.5 4.2"/><path d="M13.5 18.5c.6-1.8 1.6-2.7 3-2.7 1.5 0 2.6.9 3.1 2.7"/></symbol>
+    <symbol id="icon-events" viewBox="0 0 24 24"><rect x="5" y="6.5" width="14" height="12.5" rx="2"/><path d="M8 4.5v4"/><path d="M16 4.5v4"/><path d="M5 10.5h14"/><path d="M12 13l-1.4 2.2h2.8L12 18"/></symbol>
+    <symbol id="icon-queue" viewBox="0 0 24 24"><path d="M5 6h11"/><path d="M5 11h9"/><path d="M5 16h7"/><path d="M16 15h3.5v-3.5"/><path d="M19.5 15c-1.3 2.2-3.1 3.3-5.5 3.3"/></symbol>
+    <symbol id="icon-inbox" viewBox="0 0 24 24"><path d="M5 6h14v12H5z"/><path d="M5 8l7 5 7-5"/><path d="M8 18v-3h2.2c.6 1.1 1.2 1.6 1.8 1.6s1.2-.5 1.8-1.6H16v3"/></symbol>
+    <symbol id="icon-roster" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="15" rx="2"/><circle cx="12" cy="10" r="2.4"/><path d="M8.5 16.5c.7-2 1.9-3 3.5-3s2.8 1 3.5 3"/></symbol>
+    <symbol id="icon-plotting" viewBox="0 0 24 24"><circle cx="7" cy="8" r="2"/><circle cx="17" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8.7 8.9 10.9 15.1"/><path d="M15.6 8.6 13.2 15.2"/><path d="M9 8h6"/></symbol>
+    <symbol id="icon-applications" viewBox="0 0 24 24"><path d="M7 4.5h7l3 3v12H7z"/><path d="M14 4.5v3h3"/><path d="M9.5 13.5 12 16l4-5"/><path d="M9.5 9.5h4"/></symbol>
+    <symbol id="icon-discovery" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5 20 20"/><path d="M9 13.5 13.5 9l1.5-3-3 1.5L7.5 12z"/></symbol>
+    <symbol id="icon-casting" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M6.5 19c.9-3.2 2.7-4.8 5.5-4.8s4.6 1.6 5.5 4.8"/><path d="M17.5 5.5 19 8.4l3.2.4-2.3 2.2.5 3.1-2.9-1.5"/></symbol>
+    <symbol id="icon-claims" viewBox="0 0 24 24"><path d="M7 5h10v5c0 4.5-1.7 7.5-5 9-3.3-1.5-5-4.5-5-9z"/><path d="M9.5 12l2 2 4-5"/></symbol>
+    <symbol id="icon-reserves" viewBox="0 0 24 24"><path d="M7 5.5h10v14l-5-3-5 3z"/><path d="M9.5 9.5h5"/><path d="M9.5 12.5h3.5"/></symbol>
+    <symbol id="icon-operations" viewBox="0 0 24 24"><rect x="4.5" y="5" width="15" height="14" rx="2"/><path d="M7.5 15h2.5l1.5-5 2 7 1.5-4h2"/><path d="M7.5 8.5h2"/></symbol>
+    <symbol id="icon-launch" viewBox="0 0 24 24"><path d="M12 4c3 1.8 4.5 4.5 4.5 8l-4.5 4.5L7.5 12C7.5 8.5 9 5.8 12 4z"/><path d="M9 15.5 7 18"/><path d="M15 15.5l2 2.5"/><path d="M12 18v3"/><circle cx="12" cy="9.5" r="1.5"/></symbol>
+    <symbol id="icon-boards" viewBox="0 0 24 24"><rect x="4.5" y="5" width="6" height="6" rx="1"/><rect x="13.5" y="5" width="6" height="6" rx="1"/><rect x="4.5" y="14" width="6" height="5" rx="1"/><rect x="13.5" y="14" width="6" height="5" rx="1"/></symbol>
+    <symbol id="icon-navigation" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M7 6.5h8l2 2-2 2H7z"/><path d="M17 13.5H9l-2 2 2 2h8z"/></symbol>
+    <symbol id="icon-appearance" viewBox="0 0 24 24"><path d="M12 4.5c-4.1 0-7.5 3-7.5 6.8 0 3.3 2.6 6.2 6.1 6.2h1.4c1 0 1.7.7 1.7 1.5 0 .7.5 1.2 1.2 1.2 3 0 5.6-3.3 5.6-7.4 0-4.6-3.8-8.3-8.5-8.3z"/><circle cx="8.5" cy="11" r=".8"/><circle cx="11.5" cy="8.5" r=".8"/><circle cx="15" cy="10" r=".8"/><circle cx="10.5" cy="14" r=".8"/></symbol>
+    <symbol id="icon-intake" viewBox="0 0 24 24"><path d="M7 4.5h10v15H7z"/><path d="M9.5 8h5"/><path d="M9.5 11.5h5"/><path d="M9.5 15h3"/><path d="M18.5 13.5 21 16l-2.5 2.5"/></symbol>
+    <symbol id="icon-continuity" viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="17" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M9 7h6"/><path d="M8.2 8.7 11 15"/><path d="M15.8 8.7 13 15"/><path d="M5 17h4"/><path d="M15 17h4"/></symbol>
+    <symbol id="icon-notifications" viewBox="0 0 24 24"><path d="M7 10c0-3.1 2-5 5-5s5 1.9 5 5v4l2 2H5l2-2z"/><path d="M10 18c.4 1 1.1 1.5 2 1.5s1.6-.5 2-1.5"/></symbol>
+  </svg>
+
+  <div class="mock-switcher" aria-label="Mock controls">
+    <div class="mock-switcher__group" aria-label="Shell mode">
+      <button type="button" data-mode="expanded" aria-pressed="true">Expanded</button>
+      <button type="button" data-mode="compact" aria-pressed="false">Compact</button>
+      <button type="button" data-mode="focus" aria-pressed="false">Focus</button>
+      <button type="button" data-mode="mobile" aria-pressed="false">Mobile</button>
+    </div>
+    <div class="mock-switcher__group" aria-label="Audience">
+      <button type="button" data-audience="public" aria-pressed="false">Public</button>
+      <button type="button" data-audience="applicant" aria-pressed="false">Applicant</button>
+      <button type="button" data-audience="writer" aria-pressed="true">Writer</button>
+      <button type="button" data-audience="staff" aria-pressed="false">Staff</button>
+    </div>
+  </div>
+
+  <div class="chirpui-app-shell elbysodic-shell-v2">
+    <header class="chirpui-app-shell__topbar">
+      <a class="elbysodic-community-brand" href="#" data-room-trigger="home" aria-label="HP Universe home">
+        <span class="elbysodic-community-brand__mark">
+          <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+        </span>
+        <span class="elbysodic-community-brand__name">HP Universe</span>
+      </a>
+      <nav class="elbysodic-topbar-icons" aria-label="Global utilities">
+        <button class="elbysodic-icon-button" type="button" aria-label="Search">
+          <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-discovery"></use></svg>
+        </button>
+        <button class="elbysodic-icon-button" type="button" aria-label="Notifications" data-audience-only="writer applicant staff">
+          <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-notifications"></use></svg>
+        </button>
+        <button class="elbysodic-icon-button" type="button" aria-label="Network">
+          <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-network"></use></svg>
+        </button>
+      </nav>
+      <div class="elbysodic-shell-identity" data-audience-only="writer applicant staff">
+        <span class="elbysodic-shell-identity__avatar" data-identity-avatar>R</span>
+        <span class="elbysodic-shell-identity__copy">
+          <strong data-identity-name>Rowan Ash</strong>
+          <span data-identity-meta>active face</span>
+        </span>
+      </div>
+    </header>
+
+    <nav class="elbysodic-primary-rail" aria-label="Primary rooms" data-component="primary_icon_rail">
+      <button class="elbysodic-primary-rail__link" type="button" data-room-trigger="home" aria-label="World Home" aria-current="page">
+        <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+        <span class="elbysodic-primary-rail__tooltip">World Home</span>
+      </button>
+      <button class="elbysodic-primary-rail__link" type="button" data-room-trigger="locations" aria-label="Locations">
+        <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-locations"></use></svg>
+        <span class="elbysodic-primary-rail__tooltip">Locations</span>
+      </button>
+      <button class="elbysodic-primary-rail__link" type="button" data-room-trigger="wanted" aria-label="Wanted">
+        <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-wanted"></use></svg>
+        <span class="elbysodic-primary-rail__tooltip">Wanted</span>
+      </button>
+      <button class="elbysodic-primary-rail__link" type="button" data-room-trigger="desk" aria-label="Desk" data-audience-only="writer applicant staff">
+        <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-desk"></use></svg>
+        <span class="elbysodic-primary-rail__badge" data-desk-badge>3</span>
+        <span class="elbysodic-primary-rail__tooltip">Desk</span>
+      </button>
+      <button class="elbysodic-primary-rail__link" type="button" data-room-trigger="studio" aria-label="Studio" data-audience-only="staff">
+        <svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-studio"></use></svg>
+        <span class="elbysodic-primary-rail__badge">6</span>
+        <span class="elbysodic-primary-rail__tooltip">Studio</span>
+      </button>
+    </nav>
+
+    <aside class="chirpui-app-shell__sidebar" aria-label="Current room" data-component="inner_sidebar_shell">
+      <div class="elbysodic-inner-shell">
+        <div class="elbysodic-inner-shell__header">
+          <p class="elbysodic-kicker" data-inner-kicker>World Home</p>
+          <h2 data-inner-title>HP Universe</h2>
+          <p class="elbysodic-inner-shell__summary" data-inner-summary>Premise, current pulse, and first steps into play.</p>
+        </div>
+        <div class="elbysodic-inner-shell__body">
+          <section class="chirpui-sidebar__section">
+            <h3 class="chirpui-sidebar__section-title" data-inner-label>On World Home</h3>
+            <div class="chirpui-sidebar__section-links" data-inner-rows></div>
+          </section>
+        </div>
+      </div>
+    </aside>
+
+    <main class="chirpui-app-shell__main" id="main">
+      <div class="chirpui-container elbysodic-page">
+        <header class="elbysodic-page__header">
+          <p class="elbysodic-kicker" data-page-kicker>World Home</p>
+          <h1 data-page-title>HP Universe</h1>
+          <p class="elbysodic-page__lead" data-page-lead>A realm landing surface for tone, current pulse, public posture, and practical entry into writing.</p>
+          <p class="elbysodic-public-note">Public preview hides private Desk counts, active-face state, Studio routes, and staff-only work.</p>
+          <div class="elbysodic-page__actions" data-page-actions></div>
+        </header>
+        <section class="elbysodic-panel-grid">
+          <div class="chirpui-surface">
+            <div class="elbysodic-panel-body">
+              <h2 data-primary-panel-title>Current pulse</h2>
+              <p data-primary-panel-copy>The castle is open after curfew, two watched scenes moved overnight, and the winter event is still shaping new threads.</p>
+              <div class="elbysodic-preview-list" data-primary-list></div>
+            </div>
+          </div>
+          <aside class="chirpui-surface">
+            <div class="elbysodic-panel-body">
+              <h3 data-side-panel-title>Context</h3>
+              <div class="elbysodic-chip-row" data-side-chips></div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const rooms = {
+      home: {
+        kicker: "World Home",
+        title: "HP Universe",
+        summary: "Premise, current pulse, and first steps into play.",
+        label: "On World Home",
+        pageTitle: "HP Universe",
+        pageLead: "A realm landing surface for tone, current pulse, public posture, and practical entry into writing.",
+        actions: [["Start Here", "primary", "public applicant writer staff"], ["Read guidebook", "quiet", "public applicant writer staff"], ["Start application", "primary", "applicant"], ["Open queue", "quiet", "writer staff"]],
+        rows: [["guidebook", "Start Here", "Premise, rules, application path", "", "public applicant writer staff"], ["events", "Current Event", "B-24 winter pressure", "live", "public applicant writer staff"], ["community", "Community", "Members and announcements", "", "public applicant writer staff"], ["applications", "Application Guide", "First face requirements", "", "public applicant"], ["wanted", "Open Wants", "Hooks ready for interest", "8", "public applicant writer staff"]],
+        list: [["B-24 Winter", "Current event has three open scene starts", "live"], ["First face path", "Guidebook, claims, reserves, and application guidance", ""], ["Community table", "Announcements and member context", ""]],
+        chips: ["public posture", "current pulse", "first face", "guidebook"]
+      },
+      locations: {
+        kicker: "Locations",
+        title: "In Locations",
+        summary: "In-character geography, active scenes, and place context.",
+        label: "In Locations",
+        pageTitle: "Locations",
+        pageLead: "A place-first map for moving through the playable world without turning every scene into global navigation.",
+        actions: [["Start scene here", "primary", "writer staff"], ["Filter active", "quiet", "public applicant writer staff"], ["Watch place", "quiet", "writer staff"], ["Manage place", "quiet", "staff"]],
+        rows: [["locations", "Hogwarts", "7 active scenes", "7", "public applicant writer staff"], ["locations", "Hogsmeade", "2 active scenes", "2", "public applicant writer staff"], ["locations", "Ministry", "1 active scene", "1", "public applicant writer staff"], ["scene", "Active scenes here", "Fresh posts and open starts", "4", "public applicant writer staff"], ["wanted", "Related wants", "Hooks tied to this place", "3", "public applicant writer staff"]],
+        list: [["Library restricted stacks", "Celeste owes a reply after the last beat", "needs reply"], ["Greenhouses", "Open scene start, first reply welcome", ""], ["Astronomy Tower", "Watched thread has a new post", "unread"]],
+        chips: ["in character", "place tree", "active scenes", "related wants"]
+      },
+      wanted: {
+        kicker: "Wanted",
+        title: "In Wanted",
+        summary: "Hooks, casting, claims, reserves, and handoffs into plotting.",
+        label: "In Wanted",
+        pageTitle: "Wanted",
+        pageLead: "The discovery-to-commitment room: find a reason to write, understand availability, then move interest into play.",
+        actions: [["Raise interest", "primary", "writer applicant"], ["Reserve wanted", "quiet", "applicant writer"], ["Review claims", "quiet", "public applicant writer staff"], ["Casting operations", "quiet", "staff"]],
+        rows: [["wanted", "Wanted board", "Open hooks and asks", "8", "public applicant writer staff"], ["casting", "Casting", "Open faces and concepts", "5", "public applicant writer staff"], ["claims", "Claims", "Taken and requested", "", "public applicant writer staff"], ["reserves", "Reserves", "Held faces and openings", "2", "public applicant writer staff"], ["plotting", "Hook handoffs", "Raised hands in motion", "3", "writer staff"]],
+        list: [["The missing prefect", "Open - owner welcomes prospective faces", "open"], ["A curse-breaker contact", "In plotting - one raised hand", "plotting"], ["The family rival", "Reserved until May 18", "reserved"]],
+        chips: ["open hooks", "claims", "reserves", "plotting"]
+      },
+      desk: {
+        kicker: "Desk",
+        title: "On Your Desk",
+        summary: "Personal attention, owned faces, applications, and writing work.",
+        label: "On Your Desk",
+        pageTitle: "Writer Desk",
+        pageLead: "A cockpit for what personally needs you. It should not be a route drawer when your roster is caught up.",
+        actions: [["Open next reply", "primary", "writer staff"], ["Mark caught up", "quiet", "writer staff"], ["Continue application", "primary", "applicant"], ["View inbox", "quiet", "writer applicant staff"]],
+        rows: [["queue", "Queue", "Needs reply and waiting", "2", "writer staff"], ["inbox", "Inbox", "Mentions and pings", "1", "writer applicant staff"], ["roster", "Roster", "Owned faces", "3", "writer staff"], ["applications", "Applications", "Drafts and review", "1", "applicant writer staff"], ["plotting", "Plotting", "Rooms tied to your work", "2", "writer staff"], ["discovery", "Discovery", "Find compatible play", "", "writer staff"]],
+        list: [["Library restricted stacks", "Celeste Binns needs reply", "needs reply"], ["Message from staff", "Revision request on application", "new"], ["Greenhouse plotter", "Waiting on another writer", "waiting"]],
+        chips: ["needs reply", "unread", "waiting", "applications"]
+      },
+      studio: {
+        kicker: "Studio",
+        title: "In Studio",
+        summary: "Director production rooms, staff review, and realm operations.",
+        label: "In Studio",
+        pageTitle: "Studio",
+        pageLead: "Production work for running the realm. Studio home should answer what needs a director now, then hand off to scoped rooms.",
+        actions: [["Review intake", "primary", "staff"], ["Publish changes", "quiet", "staff"], ["Open appearance", "quiet", "staff"]],
+        rows: [["operations", "Operations", "Production health", "3", "staff"], ["launch", "Launch", "Readiness and setup", "2", "staff"], ["intake", "Intake", "Applications and reviews", "4", "staff"], ["boards", "Boards", "Structure and routes", "", "staff"], ["navigation", "Navigation", "Menus and sidebar grammar", "", "staff"], ["appearance", "Appearance", "Theme and surface polish", "", "staff"], ["continuity", "Continuity", "Reviewed canon memory", "1", "staff"]],
+        list: [["Application review", "Two submissions need staff decision", "4"], ["Navigation health", "World/Locations labels pending implementation", ""], ["Continuity queue", "One scene ready for canon review", "1"]],
+        chips: ["operations", "intake", "appearance", "continuity"]
+      }
+    };
+
+    const identity = {
+      public: ["?", "Public preview", "no private state"],
+      applicant: ["A", "Mara Vale", "application draft"],
+      writer: ["R", "Rowan Ash", "active face"],
+      staff: ["I", "Imogen Vale", "director staff"]
+    };
+    const deskBadges = {public: "", applicant: "1", writer: "3", staff: "6"};
+    const state = {room: "home", audience: "writer", mode: "expanded"};
+    const body = document.body;
+
+    function allowed(scope) {
+      return scope.split(" ").includes(state.audience);
+    }
+
+    function icon(iconId) {
+      return `<svg class="elbysodic-nav-icon" aria-hidden="true"><use href="#icon-${iconId}"></use></svg>`;
+    }
+
+    function visibleRoom(room) {
+      if (room === "studio" && state.audience !== "staff") return "home";
+      if (room === "desk" && state.audience === "public") return "home";
+      return room;
+    }
+
+    function renderRows(room) {
+      const rows = rooms[room].rows.filter((row) => allowed(row[4]));
+      document.querySelector("[data-inner-rows]").innerHTML = rows.map((row, index) => `
+        <button class="chirpui-sidebar__link" type="button" ${index === 0 ? 'aria-current="page"' : ""}>
+          ${icon(row[0])}
+          <span class="elbysodic-sidebar-row__copy">
+            <strong>${row[1]}</strong>
+            <span>${row[2]}</span>
+          </span>
+          <span class="elbysodic-sidebar-row__count">${row[3]}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderActions(room) {
+      const actions = rooms[room].actions.filter((action) => allowed(action[2]));
+      document.querySelector("[data-page-actions]").innerHTML = actions.map((action) => `
+        <button class="chirpui-btn ${action[1] === "quiet" ? "chirpui-btn--secondary" : ""}" type="button">${action[0]}</button>
+      `).join("");
+    }
+
+    function renderList(room) {
+      document.querySelector("[data-primary-list]").innerHTML = rooms[room].list.map((item) => `
+        <div class="elbysodic-preview-row">
+          <span>
+            <strong>${item[0]}</strong>
+            <span>${item[1]}</span>
+          </span>
+          ${item[2] ? `<span class="chirpui-badge">${item[2]}</span>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function renderChips(room) {
+      document.querySelector("[data-side-chips]").innerHTML = rooms[room].chips.map((chip) => `<span class="chirpui-badge">${chip}</span>`).join("");
+    }
+
+    function renderIdentity() {
+      const current = identity[state.audience];
+      document.querySelector("[data-identity-avatar]").textContent = current[0];
+      document.querySelector("[data-identity-name]").textContent = current[1];
+      document.querySelector("[data-identity-meta]").textContent = current[2];
+      const badge = document.querySelector("[data-desk-badge]");
+      badge.textContent = deskBadges[state.audience];
+      badge.hidden = !deskBadges[state.audience];
+    }
+
+    function render() {
+      state.room = visibleRoom(state.room);
+      body.dataset.shellMode = state.mode;
+      body.dataset.audience = state.audience;
+      const room = rooms[state.room];
+
+      document.querySelectorAll("[data-room-trigger]").forEach((button) => {
+        button.setAttribute("aria-current", button.dataset.roomTrigger === state.room ? "page" : "false");
+      });
+      document.querySelectorAll("[data-mode]").forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.mode === state.mode ? "true" : "false");
+      });
+      document.querySelectorAll("[data-audience]").forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.audience === state.audience ? "true" : "false");
+      });
+
+      document.querySelector("[data-inner-kicker]").textContent = room.kicker;
+      document.querySelector("[data-inner-title]").textContent = room.title;
+      document.querySelector("[data-inner-summary]").textContent = room.summary;
+      document.querySelector("[data-inner-label]").textContent = room.label;
+      document.querySelector("[data-page-kicker]").textContent = room.kicker;
+      document.querySelector("[data-page-title]").textContent = room.pageTitle;
+      document.querySelector("[data-page-lead]").textContent = room.pageLead;
+      document.querySelector("[data-primary-panel-title]").textContent = room.pageTitle === "Studio" ? "Needs a director" : "Current pulse";
+      document.querySelector("[data-primary-panel-copy]").textContent = room.pageLead;
+      document.querySelector("[data-side-panel-title]").textContent = room.pageTitle === "Locations" ? "Place texture" : "Context";
+
+      renderRows(state.room);
+      renderActions(state.room);
+      renderList(state.room);
+      renderChips(state.room);
+      renderIdentity();
+    }
+
+    document.querySelectorAll("[data-room-trigger]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.room = button.dataset.roomTrigger;
+        render();
+      });
+    });
+    document.querySelectorAll("[data-mode]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
+        render();
+      });
+    });
+    document.querySelectorAll("[data-audience]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.audience = button.dataset.audience;
+        render();
+      });
+    });
+    render();
+  </script>
+</body>
+</html>

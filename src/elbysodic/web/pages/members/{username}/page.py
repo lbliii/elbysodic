@@ -15,10 +15,8 @@ def get(request: Request, username: str) -> Page:
         profile = services.read_member(username)
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
-    return Page(
+    return Page.mounted(
         "members/{username}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         profile=profile,

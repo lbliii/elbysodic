@@ -14,8 +14,9 @@ Every navigation surface should have one clear job.
 
 | Surface | Job | Question It Answers |
 | --- | --- | --- |
-| Topbar | Community mode switcher plus global utilities | "Which major part of this community am I in?" |
-| Sidebar | Current mode/object contents | "What is inside this place?" |
+| Outermost topbar | Icon-first community/app switcher plus global utilities | "Which major part of this community am I in?" |
+| Outermost sidebar rail | Icon-first persistent movement across stable rooms | "Where can I always go?" |
+| Inner sidebar shell | Current mode/object contents | "What is inside this place?" |
 | Breadcrumbs | Object lineage | "How did I get to this object?" |
 | Inline nav/filter rail | Local page movement or list narrowing | "What part of this object/list am I viewing?" |
 | Action bar/buttons | Doing work | "What can I do now?" |
@@ -24,15 +25,65 @@ Every navigation surface should have one clear job.
 Do not make two surfaces answer the same question at the same weight. Duplicate
 links are sometimes useful, but duplicated hierarchy is usually confusing.
 
+When a page already has shell navigation, local navigation, and object links,
+be skeptical of additional shortcut panels. A repeated link should earn its
+place by serving a different journey moment: orientation, local movement,
+acting, or continuation. Otherwise, keep the route in the shell/sidebar or put
+it in a future command/search surface instead of repeating it as another CTA.
+
+## Chrome Layers
+
+Use a layered chrome model:
+
+1. Outermost chrome is icon-first. This includes the primary topbar affordances
+   and any always-present collapsed sidebar rail. Labels arrive through
+   accessible names, tooltips, active state, and optional wide-screen text only
+   when it does not create a second local menu.
+2. Inner shell navigation is explanatory. If a mode needs children, filters, or
+   local hierarchy, use text or icon-plus-text rows in the inner sidebar,
+   drawer, tabs, or scoped rail.
+3. Page chrome is task-local. A page action bar should only control the content
+   currently displayed: compose, reply, filter, sort, watch, save, review, or
+   publish. It should not become another route directory.
+
+This keeps icons useful at the persistent edge while preserving PBP language
+where writers need to read and choose.
+
+## Accepted Shell Mapping
+
+The accepted primary shell model is:
+
+| Outer Rail | Icon | Audience | Inner Shell | Page Chrome |
+|---|---|---|---|---|
+| World Home | `home` | Public-safe | `Start Here`, `Guidebook`, `Community`, current event/material, applicant entry points | Realm pulse, premise, orientation, public/request-access posture |
+| Locations | `locations` | Public-safe when locations are public | Location tree, active scenes here, related wants, current place context | Start scene here, local filters, watch/read, place management when authorized |
+| Wanted | `wanted` | Public/member-safe with capability-gated actions | Wanted board, Casting, Claims, Reserves, related wants, hook handoffs | Raise interest, reserve, watch, start plotting, ready for scene |
+| Desk | `desk` | Signed-in community members only | Queue, Inbox, Roster, Plotting, Applications, Discovery; applicant-state rows when relevant | Reply, mark caught up, watch, continue to next attention item |
+| Studio | `studio` | Staff/director only | Operations, Launch, Intake, Boards, Navigation, Appearance, Continuity, Materials | Save, publish, review, request revision, staff-only object actions |
+
+`Network` stays out of the default rail until cross-realm network behavior is a
+real workflow.
+
+Shell rendering is a privacy boundary. Rail items, badges, tooltips, active
+state, inner rows, mobile drawer content, and counts must resolve from the
+current community, membership, role, and capability. Public pages must not leak
+active face, private queue counts, staff/intake routes, private object names, or
+application state.
+
+Active face is not navigation. It belongs in the identity cluster and at
+commitment points such as `Reply as <face>`, `Join as <face>`, or
+`Raise interest as <face>`.
+
 ## Topbar
 
 The topbar is the stable community switcher plus the LBSodic/platform shell.
-It should stay quiet, but it may own the handful of major community modes so
-writers do not have to hunt in the sidebar for the primary shape of the
-community.
+It should stay quiet at the outer edge. On desktop, primary community movement
+belongs in the persistent icon rail, not a duplicate text menu in the topbar.
+On mobile, the topbar owns the navigation drawer trigger because the rail is
+not persistently visible.
 
-On shared hosts, `/` is the Elbysodic/LBSodic home for exploring reachable
-communities. A community home lives at `/c/{community_slug}`. Inside a
+Shared-host platform and community-home route semantics follow
+`docs/architecture/multi-tenancy.md#route-and-link-contract`. Inside a
 community, the brand/title links to that community home and replaces any
 separate `Home` or `Now` topbar item.
 
@@ -40,18 +91,18 @@ Topbar owns:
 
 - Current community identity and future community switching.
 - The community brand/title as the community home affordance.
-- Primary community modes after home: `World`, `Play`, `Desk`, and `Studio`.
+- Mobile navigation trigger for `World Home`, `Locations`, `Wanted`, `Desk`,
+  and `Studio`.
 - Future global/community search entry.
 - Future explore/browse communities entry from the LBSodic home.
 - Notifications indicator.
 - Writer account, membership, and active-face identity menu.
 - Theme, accessibility, and account utilities.
-- Mobile navigation trigger.
 - At most one cross-cutting create/action control when it is truly global.
 
-Topbar does not own local contents. Boards, locations, threads, materials,
-applications, claims, roster, plotting rooms, wanted hooks, and discovery
-filters belong in the sidebar or object-local controls.
+Topbar does not own local contents. Individual boards, location branches,
+threads, materials, applications, claims, roster, plotting rooms, wanted hooks,
+and discovery filters belong in the sidebar or object-local controls.
 
 Avoid adding topbar items for:
 
@@ -61,9 +112,8 @@ Avoid adding topbar items for:
 - Staff-only tasks that belong inside `Studio`.
 - Future features that are not yet part of the daily loop.
 
-If a topbar item starts to need children, keep the parent in the topbar and put
-the children in the sidebar. Topbar dropdowns are reserved for global/account
-utilities because they hide structure and add hover/tap fragility on mobile.
+Topbar dropdowns are reserved for global/account utilities because they hide
+structure and add hover/tap fragility on mobile.
 
 ### Topbar Exceptions
 
@@ -87,6 +137,16 @@ work lanes: Queue, Inbox, Roster, Plotting, Applications, Discovery, and
 Casting/Wanted. Desk should feel like a writing cockpit, not a generic tool
 directory.
 
+That means Desk links into other routes only when there is active work there.
+It should not permanently duplicate the sidebar as a shortcut panel, and it
+should hide resolved or zero-count work unless the absence itself is useful
+confirmation.
+
+Studio follows the same rule for directors. Studio home should answer "what
+needs a director now?" and hand off to scoped Studio routes. It should not be
+both the launchpad and every editor at once; dense editors belong in scoped
+production rooms.
+
 Plotting is also the current backstage pulse for wanted-hook handoffs. Keep the
 route as `/plotting` until a broader backstage primitive is proven. The page can
 group raised hands, in-plotting rooms, ready-for-scene rooms, and threaded
@@ -95,12 +155,13 @@ rather than a new global realm.
 
 ## Sidebar
 
-The sidebar is the contextual map for the current community mode or local
-object. It is not a second topbar, a marketing menu, or a dumping ground for
-every tool. Inside a community, the topbar chooses the major mode and the
-sidebar shows what is inside that mode.
+The sidebar has two possible layers: an outer compact icon rail for persistent
+movement, and an inner text or icon-plus-text shell for the current community
+mode or local object. It is not a second topbar, a marketing menu, or a dumping
+ground for every tool. Inside a community, the outer chrome chooses the major
+mode and the inner sidebar shows what is inside that mode.
 
-The sidebar has two jobs:
+The inner sidebar has two jobs:
 
 - Show the current mode's contents using distinct local language.
 - Hydrate with context for the current location, material, wanted hook, desk
@@ -112,7 +173,7 @@ Sidebar rules:
 - Keep route parents clickable, active, and count-bearing when counts matter.
 - Prefer route rows over section labels when the row itself names the group.
 - Use labels only as optional dividers between unlike contextual lists.
-- Use local labels such as `In World`, `In Play`, `On Your Desk`, and
+- Use local labels such as `In Locations`, `In Wanted`, `On Your Desk`, and
   `In Studio` so the sidebar reads as contents, not another main menu.
 - Keep visible items biased toward writer movement; staff/director controls can
   live in `Studio` or in object-local management areas.
@@ -121,8 +182,8 @@ Topbar community modes:
 
 ```text
 Community brand/title
-World
-Play
+Locations
+Wanted
 Desk
 Studio
 ```
@@ -130,11 +191,17 @@ Studio
 Sidebar context examples:
 
 ```text
-In World
+In Locations
   Locations
     Xavier Institute
       Med Bay
       Cerebro
+  Active scenes here
+  Related wants
+```
+
+```text
+On World Home
   Guidebook
   Community Table
     Members
@@ -153,12 +220,11 @@ On Your Desk
 ```
 
 ```text
-In Play
+In Wanted
   Wanted board (only away from /wanted)
   Casting desk
   Claims
-  Active Face
-    Cass Mercer
+  Reserves
   Related Wants
 ```
 
@@ -174,6 +240,7 @@ space; it does not change navigation meaning.
 Allowed states:
 
 - Expanded: normal community navigation.
+- Compact: persistent icon rail for stable app-owned destinations.
 - Hidden or focus: page gets more room for reading or writing.
 - Mobile: same sidebar content in a drawer.
 
@@ -181,21 +248,49 @@ Do not use the sidebar toggle for IC/OOC, in-world/out-of-world, director/writer
 mode, or active-face mode switching. Those distinctions are represented through
 grouping, object context, permissions, and the active-face lens.
 
+Do not make the fully hidden state the ordinary collapsed state. When the
+sidebar is truly invisible, pages have to duplicate routing options or the user
+is stranded. That pressure turns hubs into shortcut drawers. The default
+space-saving state should be a compact rail with stable icons; full hiding is a
+temporary focus mode for reading, composing, or inspecting dense material.
+
 On desktop, the sidebar edge is the visibility affordance. Do not add a
 separate visible `<` or `>` pill when the hit edge already changes cursor and
 can receive focus.
 
-An icon rail is deferred. If added later, it must be a secondary compact state
-for stable universal destinations, not the main navigation experience. PBP
-terms such as `Wanted`, `Roster`, `Queue`, `Plotting`, `Claims`, `Reserves`,
-and `Studio` need visible words.
+An icon rail is accepted as the correct compact state, but it must be a
+secondary density mode for stable universal destinations, not a dumping ground
+for contextual lists. PBP terms such as `Wanted`, `Roster`, `Queue`,
+`Plotting`, `Claims`, `Reserves`, and `Studio` still need visible words in
+expanded navigation and accessible labels or tooltips in compact navigation.
+Use the canonical SVG vocabulary in `design/sidebar-icon-vocabulary.md` for
+rail-eligible destinations instead of adding page-local icon metaphors.
+
+Recommended route-active mapping:
+
+- `/` and `/c/{slug}`: outer `World Home`; inner world home/community context.
+- `/locations` and location/sublocation boards: outer `Locations`; inner
+  `Locations`.
+- `/world` and `/world/*`: outer `World Home`; inner `Guidebook`.
+- `/members` and community boards: outer `World Home`; inner `Community`.
+- `/wanted`, `/wanted/*`, `/casting`, and `/claims`: outer `Wanted`; inner
+  `Wanted`.
+- `/desk`, `/my/threads`, `/notifications`, `/characters`, `/applications`,
+  `/interactions`, `/plotting`, and `/discover`: outer `Desk` by default.
+- `/studio` and `/studio/*`: outer `Studio`; inner Studio route.
+- `/network`: future global `Network`, outside the default community rail.
+
+If `/plotting` or `/discover` are reached from a wanted hook, the page may show
+hook-context links or continuation actions, but the route remains writer work
+unless a future scoped handoff route changes that contract.
 
 ### In-World And Writer Work
 
 Do not split the sidebar with an IC/OOC or in-world/out-of-world mode switch.
 The product objects do not divide cleanly:
 
-- `World` is story-facing but contains board structure.
+- `World` is the realm home and orientation surface.
+- `Locations` is the in-character place surface.
 - `Guidebook` is about canon/world materials but is director-authored.
 - `Wanted` is story-facing but operational and casting-oriented.
 - `Writer Desk` is out-of-character work tied to active character obligations.
@@ -203,7 +298,7 @@ The product objects do not divide cleanly:
 
 Use language and grouping instead:
 
-- World-facing: `World`, `Guidebook`, `Wanted`.
+- Story-facing: `World Home`, `Locations`, `Guidebook`, `Wanted`.
 - Writer work: `Queue`, `Roster`, `Plotting`, `Applications`, `Discovery`.
 - Director work: `Studio`, `Navigation`, `Board taxonomy`, `Production`.
 
@@ -230,7 +325,6 @@ parent:
 - `Current Event`
 - `Current Material`
 - `Related`
-- `Active Face`
 - `Open Wants`
 - `Related Wants`
 - Future director-configured collections, such as `Event Threads`, `House
@@ -238,6 +332,11 @@ parent:
 
 If a label and the first link say the same thing, remove the label. If a label
 is the only way to understand the list, keep it.
+
+Do not add a sidebar section that repeats who the writer is currently wearing.
+The identity menu already owns that state. Sidebar context can show object-local
+lists such as related wants, current material, or location branches; active-face
+shortcuts belong in the identity menu or at the point of action.
 
 ### Sidebar Exceptions
 
@@ -263,6 +362,19 @@ structure, Navigation, Identity, Casting, and Continuity. They are not sidebar
 groups and should not redefine the topbar realm. Use them when the page has
 several production surfaces that benefit from quick in-page movement.
 
+If Studio uses a local room rail, avoid following it with a large grid of room
+cards that repeats the same destinations at the same weight. Prefer one of
+these patterns:
+
+- local rail plus open room sections
+- compact room index with counts and state
+- separate Studio route chooser when the page is truly a launchpad
+
+Studio should surface the first director job quickly: review applications,
+fix navigation health, update a board, adjust appearance, publish material, or
+prepare launch. Room browsing is useful only when it shortens the path to that
+job.
+
 ### Grouping
 
 Prefer shallow groups. A sidebar group should usually have one parent route and
@@ -286,13 +398,16 @@ Desk home
 My threads
 Notifications
 Characters
-Applications
 Plotting
 Discover
 ```
 
 Avoid shapes where every two links get a label. Labels create visual stops; too
 many stops make the sidebar feel heavier than the page.
+
+Do not mirror these route links again as page-bottom shortcut panels. The Desk
+can link into a route when there is active work there, but the sidebar owns
+routine movement.
 
 ### Admin Configuration
 
@@ -374,10 +489,12 @@ navigation grammar.
 ## Route Pathing
 
 Paths should reflect product meaning, not implementation convenience.
+The canonical shared-host route and link rules for `/`, `/network`,
+`/c/{community_slug}`, tenant-scoped transports, and return paths live in
+`docs/architecture/multi-tenancy.md#route-and-link-contract`.
 
 Use nouns for stable places:
 
-- `/` for the world gateway.
 - `/locations` for the playable world map.
 - `/community` for community boards and writer-side public rooms.
 - `/boards/{board_slug}` for forum boards, with `board_kind` deciding how they
@@ -387,6 +504,11 @@ Use nouns for stable places:
 - `/desk`, `/my/threads`, `/characters`, `/applications`, `/plotting`,
   `/discover`, `/notifications` for writer work.
 - `/studio` for director/admin production.
+
+Route-active state uses the path without query strings or fragments. Filtered
+lanes such as `/claims?status=reserved`, `/network?q=...`, or
+`/my/threads?character=...` should keep the same topbar/sidebar room as their
+base route.
 
 Nested routes should mean ownership or object containment:
 
@@ -408,13 +530,13 @@ Active state follows meaning, not URL prefix alone.
 
 Examples:
 
-- `/boards/announcements` activates `World` in the topbar because community
-  boards live in the world/community surface, but activates `Community` in the
-  sidebar because `announcements` is a `community` board.
-- `/boards/frozen-midtown` activates `World` in the topbar and `Locations` in
-  the sidebar because it is a `sublocation`.
-- `/world/b-24-winter` activates `Guidebook`, not `World`, even when the
-  material affects locations.
+- `/boards/announcements` activates `World Home` in the outer rail because
+  community boards live in the realm/community surface, but activates
+  `Community` in the sidebar because `announcements` is a `community` board.
+- `/boards/frozen-midtown` activates `Locations` in the outer rail and
+  `Locations` in the sidebar because it is a `sublocation`.
+- `/world/b-24-winter` activates `World Home` in the outer rail and
+  `Guidebook` in the inner shell, even when the material affects locations.
 - `/applications` currently belongs to `Writer Desk` when the writer is acting
   on their own work, but may appear as a linked production destination inside
   `Studio`.
@@ -560,7 +682,7 @@ These are the navigation pressure points to revisit as Elbysodic grows:
 - `/applications` is a current edge case: writers submit or track their own
   applications, while directors review production flow. Treat it as Writer Desk
   by default until a distinct Studio application-review route exists.
-- Mobile drawer labels must match topbar realm names. Use `World`, not `Map`,
-  unless the whole realm is renamed.
+- Mobile drawer labels must match outer rail names. Use `Locations`, not
+  `Map`, for in-character place navigation unless the whole realm is renamed.
 - Board routes depend on `board_kind` for presentation and sidebar active
   state. Do not assume every `/boards/{slug}` route is a location.

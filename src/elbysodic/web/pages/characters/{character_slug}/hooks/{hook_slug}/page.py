@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -11,10 +14,28 @@ from elbysodic.services.plot_hooks import PLOT_HOOK_STATUSES, PLOT_HOOK_TYPES
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class PlotHookActionForm:
+    intent: str
+    interest_id: str = ""
+    title: str = ""
+    hook_type: str = ""
+    status: str = ""
+    summary: str = ""
+    body: str = ""
+    facets: str = ""
+
+
 def get(request: Request, character_slug: str, hook_slug: str) -> Page:
     return _render_hook(request, character_slug, hook_slug)
 
 
+@contract(
+    form=FormContract(
+        PlotHookActionForm,
+        "characters/{character_slug}/hooks/{hook_slug}/page.html",
+    )
+)
 async def post(request: Request, character_slug: str, hook_slug: str) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
@@ -90,10 +111,8 @@ def _render_hook(request: Request, character_slug: str, hook_slug: str) -> Page:
         hook = services.read_plot_hook(character_slug, hook_slug)
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
-    return Page(
+    return Page.mounted(
         "characters/{character_slug}/hooks/{hook_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         hook=hook,

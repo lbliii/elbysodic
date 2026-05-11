@@ -20,6 +20,35 @@ Prefer compactness when the action remains discoverable, labeled, reversible,
 and attached to the object it changes. Prefer visibility when hiding the
 control would make the user ask, "What can I do next?"
 
+Visible does not have to mean large. Many controls can stay discoverable as
+plain links, row actions, icon-plus-text buttons, compact pills, or overflow
+menu items. Reserve big buttons and action tiles for moments where the user is
+ready to commit: reply, join, reserve, submit, start plotting, save, publish,
+or review.
+
+## Chrome Scope
+
+Controls inherit meaning from the layer they live in:
+
+- Outermost chrome is icon-first and navigational: major rooms, global
+  utilities, notifications, identity, search, and future command entry.
+- Inner shell chrome is explanatory: text or icon-plus-text navigation for the
+  current room, object family, or production surface.
+- Page action bars are content-local: they act on what is currently displayed.
+  They may filter, sort, compose, save, publish, watch, or review, but they
+  should not repeat the app's route map.
+
+If a page action bar needs to contain `Queue`, `Inbox`, `Roster`, `Studio`,
+`World Home`, and `Wanted`, the shell navigation is failing or the page is
+trying to be a hub. Move those links back to the sidebar/rail or into
+command/search.
+
+Attention continuation is the allowed exception to the simple "same page only"
+reading of page-local controls. `Previous unreplied`, `Next unread`, `Mark
+caught up`, `Watch`, and `Unwatch` can appear on a thread/detail page because
+they are triggered by finishing or managing the displayed object, even when the
+next target comes from the Desk queue.
+
 ## Placement Rhythm
 
 Controls should appear where the user naturally becomes ready to use them, not
@@ -60,6 +89,18 @@ secondary **and** not needed at the current step in the journey. Likewise, do
 not surface a control just because it is common. Surface it when the visible
 page state makes the action feel timely.
 
+Avoid duplicating an action in several nearby places just to reassure the user.
+Duplication is valid when each placement answers a different journey moment:
+for example, a `Reply as <face>` action near scene setup and composer
+continuation can both be useful. Duplication is usually noise when a button,
+card title, poster image, metric, and sidebar row all go to the same target
+from the same scanning area.
+
+Use command/search shortcuts for cross-cutting movement once available. A
+future command menu can carry recently used rooms, Queue, Inbox, Roster,
+Discovery, Casting, Studio rooms, and context-aware actions without requiring
+each page to repeat a shortcut strip.
+
 Recent thread-page decision: breadcrumbs should have breathing room at the top.
 Previous/next scene navigation is useful for skimming and should stay visible,
 but it belongs with the transcript header rather than the breadcrumb row:
@@ -74,7 +115,9 @@ Thread detail pages have three different kinds of movement, and they should not
 compete for the same slot:
 
 - **Orientation** belongs at the top: breadcrumbs, scene title, current board,
-  current event, state badges, and active face. Give this area breathing room.
+  current event, state badges, and the active-face lens when it changes the
+  page's defaults. Give this area breathing room without repeating the face
+  name already shown in the global identity cluster.
 - **Local skim navigation** belongs with the transcript header: previous/next
   thread controls help a writer compare neighboring scenes after reading the
   scene setup, but before committing to the first post.
@@ -222,6 +265,20 @@ Keep details visible when they answer "what can I do next?":
 - Continuation actions at the end of a finished reading flow.
 - Empty states that teach the next useful action.
 - Validation errors and required form instructions.
+
+Do not preserve a control just because the destination exists elsewhere.
+Navigation already lives in the shell, sidebar, identity menu, and object-local
+links. On dashboards and desks, render the CTA only when there is current work
+behind it or when the empty state teaches a useful next step.
+
+For hub pages, controls should launch or resume work; for scoped pages, controls
+should complete the local workflow. If a hub control is always visible and only
+duplicates the sidebar, it is navigation, not a command.
+
+This rule assumes navigation is reachable. If the shell allows a fully hidden
+sidebar as the normal collapsed state, page authors will add duplicate route
+buttons so users are not stuck. Use compact rail as the ordinary collapsed
+state; reserve full hiding for deliberate focus.
 
 If a disclosure contains only one action and that action is the point of the
 page, the disclosure is probably wrong.

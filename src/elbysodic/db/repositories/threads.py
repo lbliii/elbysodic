@@ -6,11 +6,12 @@ from elbysodic.db.repositories.base import _last_id, _utc_now
 from elbysodic.db.repositories.reserves import ReserveRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _character_from_row,
+    _community_from_row,
     _thread_from_row,
     _thread_participant_from_row,
     _thread_watch_from_row,
 )
-from elbysodic.domain.models import Character, Thread, ThreadParticipant, ThreadWatch
+from elbysodic.domain.models import Character, Community, Thread, ThreadParticipant, ThreadWatch
 
 
 class ThreadRepositoryMixin(ReserveRepositoryMixin):
@@ -213,6 +214,50 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         if row is None:
             raise LookupError(f"thread not found in community {community_id}: {slug}")
         return _thread_from_row(row)
+
+    def list_thread_communities_by_slug(
+        self,
+        board_slug: str,
+        thread_slug: str,
+    ) -> list[Community]:
+        rows = self.connection.execute(
+            """
+            SELECT DISTINCT
+                communities.id,
+                communities.name,
+                communities.slug,
+                communities.host,
+                communities.default_theme_id,
+                communities.identity_accent_facet_group_id,
+                communities.community_mark_url,
+                communities.community_mark_alt,
+                communities.world_hero_image_url,
+                communities.world_hero_image_alt,
+                communities.world_hero_treatment,
+                communities.world_hero_focal_point,
+                communities.world_hero_overlay,
+                communities.world_hero_height,
+                communities.enabled_post_profile_variants,
+                communities.enabled_post_accent_styles,
+                communities.enabled_post_border_styles,
+                communities.enabled_post_title_styles,
+                communities.enabled_post_densities,
+                communities.created_at,
+                communities.updated_at
+            FROM communities
+            JOIN boards ON boards.community_id = communities.id
+            JOIN threads
+              ON threads.community_id = boards.community_id
+             AND threads.board_id = boards.id
+            WHERE boards.slug = ?
+              AND threads.slug = ?
+              AND boards.is_private = 0
+              AND threads.status != 'private'
+            ORDER BY communities.name, communities.id
+            """,
+            (board_slug, thread_slug),
+        ).fetchall()
+        return [_community_from_row(row) for row in rows]
 
     def list_threads(self, community_id: int, board_id: int | None = None) -> list[Thread]:
         if board_id is None:

@@ -1,0 +1,1 @@
+Simplify the Writer Desk so resolved applications, zero-count lanes, duplicate shortcuts, and empty optional sections no longer crowd the page, and document when hub pages should hand work to scoped routes.

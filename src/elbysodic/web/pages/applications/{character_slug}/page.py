@@ -78,10 +78,8 @@ def _render_application_room(request: Request, character_slug: str) -> Page:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except LookupError:
         return recover_missing_route(request, kind="application", slug=character_slug)
-    return Page(
+    return Page.mounted(
         "applications/{character_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         room=room,

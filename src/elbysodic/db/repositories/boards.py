@@ -9,14 +9,18 @@ from elbysodic.db.repositories.base import (
     _utc_now,
 )
 from elbysodic.db.repositories.notifications import NotificationRepositoryMixin
-from elbysodic.db.repositories.rows import _board_from_row, _sidebar_section_config_from_row
+from elbysodic.db.repositories.rows import (
+    _board_from_row,
+    _community_from_row,
+    _sidebar_section_config_from_row,
+)
 from elbysodic.domain.boards import (
     BOARD_SIDEBAR_SECTION_REALMS,
     DEFAULT_SIDEBAR_SECTION_CONFIGS,
     normalize_board_kind,
     normalize_board_sidebar_section,
 )
-from elbysodic.domain.models import Board, SidebarSectionConfig
+from elbysodic.domain.models import Board, Community, SidebarSectionConfig
 
 
 class BoardRepositoryMixin(NotificationRepositoryMixin):
@@ -383,6 +387,40 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         if row is None:
             raise LookupError(f"board not found in community {community_id}: {slug}")
         return _board_from_row(row)
+
+    def list_board_communities_by_slug(self, slug: str) -> list[Community]:
+        rows = self.connection.execute(
+            """
+            SELECT DISTINCT
+                communities.id,
+                communities.name,
+                communities.slug,
+                communities.host,
+                communities.default_theme_id,
+                communities.identity_accent_facet_group_id,
+                communities.community_mark_url,
+                communities.community_mark_alt,
+                communities.world_hero_image_url,
+                communities.world_hero_image_alt,
+                communities.world_hero_treatment,
+                communities.world_hero_focal_point,
+                communities.world_hero_overlay,
+                communities.world_hero_height,
+                communities.enabled_post_profile_variants,
+                communities.enabled_post_accent_styles,
+                communities.enabled_post_border_styles,
+                communities.enabled_post_title_styles,
+                communities.enabled_post_densities,
+                communities.created_at,
+                communities.updated_at
+            FROM communities
+            JOIN boards ON boards.community_id = communities.id
+            WHERE boards.slug = ? AND boards.is_private = 0
+            ORDER BY communities.name, communities.id
+            """,
+            (slug,),
+        ).fetchall()
+        return [_community_from_row(row) for row in rows]
 
     def list_boards(self, community_id: int) -> list[Board]:
         rows = self.connection.execute(

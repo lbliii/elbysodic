@@ -38,6 +38,7 @@
         class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--opening"
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="submitDraft()">
+        {{ csrf_field() }}
     <input type="hidden" name="command_token" value="{{ command_token }}">
     <div class="elbysodic-composer-heading">
       <div>
@@ -46,7 +47,7 @@
         <p class="elbysodic-copy-helper">Set the hook, tag the cast, and write the first beat.</p>
       </div>
     </div>
-    <div class="elbysodic-composer-character elbysodic-composer-character--selectable" aria-label="Active face for this post">
+    <div class="elbysodic-composer-character elbysodic-composer-character--selectable elbysodic-composer-character--quiet" aria-label="Active face for this post">
       <div class="elbysodic-character-avatar" aria-hidden="true">
         <img x-show="character().avatar_url" :src="character().avatar_url" alt="" x-cloak>
         <span x-show="!character().avatar_url" x-text="character().initial">{{ selected_character.name[:1] }}</span>
@@ -72,12 +73,7 @@
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>
     {% end %}
-    <section class="elbysodic-composer-panel" aria-labelledby="thread-scene-setup">
-      <div class="elbysodic-composer-panel__header">
-        <h3 id="thread-scene-setup">Scene setup</h3>
-        <p class="elbysodic-copy-helper">Short signals that help other writers understand the invitation.</p>
-      </div>
-      <div>
+    <div class="elbysodic-composer-title-line">
         <label class="chirpui-field__label" for="thread-title">Title</label>
         <input id="thread-title"
                class="chirpui-field__input"
@@ -86,7 +82,64 @@
                autocomplete="off"
                x-model="title"
                required>
+    </div>
+
+    <section class="elbysodic-composer-panel elbysodic-composer-panel--writing" aria-labelledby="thread-writing">
+      <div class="elbysodic-composer-panel__bar">
+        <div>
+          <h3 id="thread-writing">Opening post</h3>
+          <p class="elbysodic-copy-helper">Drafts stay in this browser.</p>
+        </div>
+        {{ composer_view_toggle("thread-composer-view") }}
       </div>
+      <div class="elbysodic-composer-body" x-show="!previewMode">
+        <label class="chirpui-visually-hidden" for="thread-body">Opening post</label>
+        {{ composer_toolbar("thread-body") }}
+      <textarea id="thread-body"
+                class="chirpui-field__input"
+                name="body"
+                rows="10"
+                placeholder="Set the scene..."
+                x-model="body"
+                @input.debounce.150ms="searchBodyMention('thread-body')"
+                @click="searchBodyMention('thread-body')"
+                @keyup="searchBodyMention('thread-body')"
+                @keydown="bodyMentionKeydown($event, 'thread-body')">{{ body }}</textarea>
+      <div class="elbysodic-body-mention-list"
+           role="listbox"
+           x-show="bodyMentionOpen && bodyMentionFieldId === 'thread-body'"
+           x-cloak>
+        <template x-for="(item, index) in bodyMentionResults" :key="item.kind + ':' + item.id">
+          <button type="button"
+                  class="elbysodic-mention-picker__result"
+                  :class="{ 'is-active': index === bodyMentionHighlightedIndex }"
+                  role="option"
+                  @click="insertBodyMention(item, 'thread-body')">
+            <span class="elbysodic-character-avatar" aria-hidden="true">
+              <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+              <span x-show="!item.avatar_url" x-text="item.initial"></span>
+            </span>
+            <span>
+              <strong x-text="item.tag"></strong>
+              <small x-text="item.detail"></small>
+            </span>
+          </button>
+        </template>
+      </div>
+      </div>
+      <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
+        <h2 x-show="title.trim()" x-text="title"></h2>
+        <div class="elbysodic-prose-body elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
+        <p class="elbysodic-copy-status" x-show="!hasPreview()">Preview will appear once you write a beat.</p>
+      </div>
+    </section>
+
+    <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-scene-setup-disclosure">
+      <summary>
+        <span id="thread-scene-setup">Scene setup</span>
+        <small>Status, place, timeline, summary, and cast.</small>
+      </summary>
+      <div class="chirpui-stack chirpui-stack--md" aria-labelledby="thread-scene-setup">
       <div class="elbysodic-scene-form-grid">
       <div>
         <label class="chirpui-field__label" for="thread-status">Status</label>
@@ -185,57 +238,8 @@
           <p class="elbysodic-copy-status" x-show="!loading && query.trim() && results.length === 0">No faces match that search.</p>
         </div>
       </div>
-    </section>
-
-    <section class="elbysodic-composer-panel elbysodic-composer-panel--writing" aria-labelledby="thread-writing">
-      <div class="elbysodic-composer-panel__bar">
-        <div>
-          <h3 id="thread-writing">Writing</h3>
-          <p class="elbysodic-copy-helper">Drafts stay in this browser.</p>
-        </div>
-        {{ composer_view_toggle("thread-composer-view") }}
       </div>
-      <div class="elbysodic-composer-body" x-show="!previewMode">
-        <label class="chirpui-field__label" for="thread-body">Opening post</label>
-        {{ composer_toolbar("thread-body") }}
-      <textarea id="thread-body"
-                class="chirpui-field__input"
-                name="body"
-                rows="9"
-                placeholder="Set the scene..."
-                x-model="body"
-                @input.debounce.150ms="searchBodyMention('thread-body')"
-                @click="searchBodyMention('thread-body')"
-                @keyup="searchBodyMention('thread-body')"
-                @keydown="bodyMentionKeydown($event, 'thread-body')">{{ body }}</textarea>
-      <div class="elbysodic-body-mention-list"
-           role="listbox"
-           x-show="bodyMentionOpen && bodyMentionFieldId === 'thread-body'"
-           x-cloak>
-        <template x-for="(item, index) in bodyMentionResults" :key="item.kind + ':' + item.id">
-          <button type="button"
-                  class="elbysodic-mention-picker__result"
-                  :class="{ 'is-active': index === bodyMentionHighlightedIndex }"
-                  role="option"
-                  @click="insertBodyMention(item, 'thread-body')">
-            <span class="elbysodic-character-avatar" aria-hidden="true">
-              <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
-              <span x-show="!item.avatar_url" x-text="item.initial"></span>
-            </span>
-            <span>
-              <strong x-text="item.tag"></strong>
-              <small x-text="item.detail"></small>
-            </span>
-          </button>
-        </template>
-      </div>
-      </div>
-      <div class="elbysodic-composer-preview" x-show="previewMode" x-cloak>
-        <h2 x-show="title.trim()" x-text="title"></h2>
-        <div class="elbysodic-prose-body elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
-        <p class="elbysodic-copy-status" x-show="!hasPreview()">Preview will appear once you write a beat.</p>
-      </div>
-    </section>
+    </details>
     <div class="chirpui-cluster chirpui-cluster--end">
       <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
       <button type="submit" class="chirpui-btn chirpui-btn--primary">Start scene</button>

@@ -1,5 +1,10 @@
 {% from "chirpui/sidebar.html" import sidebar_section %}
-{% from "chirpui/scope_switcher.html" import scope_switcher %}
+
+{% def sidebar_svg_icon(icon_id) %}
+<svg class="elbysodic-sidebar-svg-icon" aria-hidden="true" focusable="false">
+  <use href="/elbysodic-static/icons/sidebar.svg#elbysodic-icon-{{ icon_id }}"></use>
+</svg>
+{% end %}
 
 {% def sidebar_count(count) %}
   {% if count %}
@@ -11,6 +16,7 @@
 <a class="chirpui-sidebar__link elbysodic-sidebar-link{{ " " ~ cls if cls else "" }}"
    href="{{ href }}"
    title="{{ label }}"
+   hx-sync="#main:replace"
    {% if is_active %}aria-current="page"{% end %}>
   <span>{{ label }}</span>
   {{ sidebar_count(count) }}
@@ -21,6 +27,7 @@
 <a class="chirpui-sidebar__link elbysodic-sidebar-destination"
    href="{{ href }}"
    title="{{ label }}"
+   hx-sync="#main:replace"
    {% if is_active %}aria-current="page"{% end %}>
   <span class="chirpui-sidebar__icon">{{ icon | icon }}</span>
   <span class="chirpui-sidebar__label">{{ label }}</span>
@@ -28,6 +35,29 @@
   {{ sidebar_count(count) }}
   {% end %}
 </a>
+{% end %}
+
+{% def rail_icon_link(href, label, icon_id, is_active=False, count=none) %}
+<a class="elbysodic-primary-rail__link"
+   href="{{ href }}"
+   title="{{ label }}"
+   aria-label="{{ label }}"
+   hx-sync="#main:replace"
+   {% if is_active %}aria-current="page"{% end %}>
+  <span class="elbysodic-primary-rail__icon">{{ sidebar_svg_icon(icon_id) }}</span>
+  <span class="elbysodic-primary-rail__tooltip" aria-hidden="true">{{ label }}</span>
+  {% if count %}
+  <span class="elbysodic-primary-rail__count">{{ count }}</span>
+  {% end %}
+</a>
+{% end %}
+
+{% def primary_icon_rail(items) %}
+<nav class="elbysodic-primary-rail" aria-label="Primary community rooms">
+  {% for item in items %}
+  {{ rail_icon_link(item.href, item.label, item.icon_id, item.active, item.count) }}
+  {% end %}
+</nav>
 {% end %}
 
 {% def sidebar_attention_link(href, label, count=0, is_active=False) %}
@@ -38,6 +68,7 @@
 <a class="chirpui-sidebar__link"
    href="{{ href }}"
    title="{{ label }}"
+   hx-sync="#main:replace"
    {% if is_active %}aria-current="page"{% end %}>{{ label }}</a>
 {% end %}
 
@@ -47,6 +78,7 @@
   <a class="chirpui-sidebar__link elbysodic-sidebar-link elbysodic-sidebar-tree__link{{ " elbysodic-sidebar-tree__link--branch" if item.get("open") else "" }}{{ " elbysodic-sidebar-tree__link--active" if item.get("active") else "" }}"
      href="{{ item.href }}"
      title="{{ item.title }}"
+     hx-sync="#main:replace"
      {% if item.get("active") %}aria-current="page"{% end %}>
     <span>{{ item.title }}</span>
     {% if item.get("badge") %}
@@ -59,6 +91,7 @@
     <a class="chirpui-sidebar__link elbysodic-sidebar-link elbysodic-sidebar-tree__link elbysodic-sidebar-tree__link--child{{ " elbysodic-sidebar-tree__link--active" if child.get("active") else "" }}"
        href="{{ child.href }}"
        title="{{ child.title }}"
+       hx-sync="#main:replace"
        {% if child.get("active") %}aria-current="page"{% end %}>
       <span>{{ child.title }}</span>
       {% if child.get("badge") %}
@@ -70,14 +103,6 @@
   {% end %}
   {% end %}
 </nav>
-{% end %}
-
-{% def sidebar_active_face(viewer) %}
-{% if viewer and viewer.current_character %}
-{% call sidebar_section("Active Face") %}
-  {{ scope_switcher("Playing as " ~ viewer.current_character.name, [{"label": "Profile", "href": "/characters/" ~ viewer.current_character.slug, "icon": "⊙"}, {"label": "Face queue", "href": "/my/threads?character=" ~ viewer.current_character.slug, "icon": "✎"}, {"label": "Roster", "href": "/characters", "icon": "≡"}], id="elbysodic-active-face-scope", aria_label="Active face shortcuts", icon="user", cls="elbysodic-active-face-scope") }}
-{% end %}
-{% end %}
 {% end %}
 
 {% def sidebar_footer() %}

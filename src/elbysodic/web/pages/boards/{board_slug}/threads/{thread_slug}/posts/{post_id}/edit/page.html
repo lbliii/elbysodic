@@ -28,6 +28,7 @@
         class="chirpui-stack chirpui-stack--md"
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="submitDraft()">
+        {{ csrf_field() }}
     <div class="elbysodic-composer-heading">
       <div>
         <h2>{{ edit_view.thread.title }}</h2>

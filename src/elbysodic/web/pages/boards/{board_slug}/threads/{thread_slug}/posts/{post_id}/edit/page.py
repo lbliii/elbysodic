@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -12,10 +15,21 @@ from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path
 
 
+@dataclass(frozen=True, slots=True)
+class PostEditForm:
+    body: str
+
+
 def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Page:
     return _render_form(request, board_slug, thread_slug, post_id)
 
 
+@contract(
+    form=FormContract(
+        PostEditForm,
+        "boards/{board_slug}/threads/{thread_slug}/posts/{post_id}/edit/page.html",
+    )
+)
 async def post(
     request: Request,
     board_slug: str,
@@ -71,10 +85,8 @@ def _render_form(
 
     config_id = "edit-post-composer-config"
     initial_body = edit_view.post.post.body if body is None else body
-    return Page(
+    return Page.mounted(
         "boards/{board_slug}/threads/{thread_slug}/posts/{post_id}/edit/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         edit_view=edit_view,

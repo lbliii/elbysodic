@@ -14,6 +14,37 @@
 </span>
 {% end %}
 
+{% def page_section(title, summary="", heading_id=none, cls="") %}
+<section class="elbysodic-page-section{{ " " ~ cls if cls else "" }}" {% if heading_id %}aria-labelledby="{{ heading_id }}"{% end %}>
+  <div class="elbysodic-page-section__header">
+    {% if heading_id %}
+    <h2 id="{{ heading_id }}">{{ title }}</h2>
+    {% else %}
+    <h2>{{ title }}</h2>
+    {% end %}
+    {% if summary %}
+    <p>{{ summary }}</p>
+    {% end %}
+  </div>
+  <div class="elbysodic-page-section__body">
+    {% slot %}
+  </div>
+</section>
+{% end %}
+
+{% def empty_policy_block(title, summary, kicker="Caught up", action_label="", action_href="", cls="") %}
+<div class="elbysodic-empty-policy{{ " " ~ cls if cls else "" }}">
+  <div>
+    <p class="elbysodic-section-kicker">{{ kicker }}</p>
+    <h2>{{ title }}</h2>
+    <p>{{ summary }}</p>
+  </div>
+  {% if action_label and action_href %}
+  <a class="chirpui-btn chirpui-btn--secondary" href="{{ action_href }}">{{ action_label }}</a>
+  {% end %}
+</div>
+{% end %}
+
 {% def inline_nav(label, cls="") %}
 <nav class="chirpui-saved-view-strip elbysodic-filter-bar{{ " " ~ cls if cls else "" }}" aria-label="{{ label }}">
   {% slot %}
@@ -29,6 +60,7 @@
    hx-get="{{ href }}"
    hx-target="{{ hx_target }}"
    hx-swap="{{ hx_swap }}"
+   hx-sync="closest nav:replace"
    hx-disinherit="hx-select hx-target hx-swap"
    {% if hx_select %} hx-select="{{ hx_select }}"{% end %}
    {% if hx_push_url %} hx-push-url="true"{% end %}

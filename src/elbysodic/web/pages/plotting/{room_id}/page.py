@@ -92,10 +92,8 @@ def _render_room(request: Request, room_id: str) -> Page:
         return recover_missing_route(request, kind="plotting", slug=room_id)
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
-    return Page(
+    return Page.mounted(
         "plotting/{room_id}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         room=room,

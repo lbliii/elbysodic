@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from urllib.parse import quote_plus
 
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -14,6 +16,18 @@ from elbysodic.services import policies
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class ClaimsActionForm:
+    intent: str = ""
+    claim_id: str = ""
+    claim_type_id: str = ""
+    label: str = ""
+    status: str = ""
+    character_id: str = ""
+    notes: str = ""
+    q: str = ""
+
+
 def get(request: Request) -> Page:
     return _render_claims(
         request,
@@ -22,6 +36,7 @@ def get(request: Request) -> Page:
     )
 
 
+@contract(form=FormContract(ClaimsActionForm, "claims/page.html"))
 async def post(request: Request) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
@@ -67,10 +82,8 @@ def _render_claims(
         status_filter=status_filter,
         search_query=search_query,
     )
-    return Page(
+    return Page.mounted(
         "claims/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         directory=directory,

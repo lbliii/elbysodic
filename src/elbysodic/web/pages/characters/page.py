@@ -129,10 +129,8 @@ def _render_roster(
     viewer = services.viewer()
     style_policy = services.post_style_policy()
     post_style_preview_config_id = "character-post-style-preview-config"
-    return Page(
+    return Page.mounted(
         "characters/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         roster_dashboard=services.character_roster(),

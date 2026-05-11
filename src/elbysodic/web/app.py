@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, cast
 
 from chirp.app import App
 from chirp.config import AppConfig
@@ -18,15 +17,20 @@ from chirp.middleware.static import StaticFiles
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.errors import register_error_handlers
 from elbysodic.web.navigation import location_nav_tree_items
+from elbysodic.web.routes import (
+    active_route_path,
+    board_section_for_path,
+    primary_nav_items,
+    shell_route_state,
+)
 from elbysodic.web.security import (
     PRODUCTION_CONTENT_SECURITY_POLICY,
-    AutoCSRFFormsMiddleware,
     IdentityFailureMiddleware,
     RequireLoginMiddleware,
     resolve_web_security_config,
 )
 from elbysodic.web.shell import sidebar_is_hidden
-from elbysodic.web.state import configure_services, dev_tools_enabled
+from elbysodic.web.state import configure_services, dev_tools_enabled, get_services
 from elbysodic.web.tenant import TenantPrefixMiddleware
 from elbysodic.web.timing import RequestTimingMiddleware
 
@@ -68,6 +72,7 @@ def create_app(
         web_security_config=security,
     )
     use_chirp_ui(app)
+    app.provide(AppServices, get_services)
     app.register_oob_region(
         "program_theme_oob",
         target_id="elbysodic-program-theme",
@@ -85,6 +90,13 @@ def create_app(
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
+    app.template_global()(active_route_path)
+    app.template_global()(board_section_for_path)
+    app.template_global()(primary_nav_items)
+    app.template_global()(shell_route_state)
+    if not security.production:
+        app.template_global("csrf_field")(_empty_csrf_field)
+        app.template_global("csrf_token")(_empty_csrf_token)
     app.add_middleware(RequestTimingMiddleware())
     app.add_middleware(TenantPrefixMiddleware())
     if security.production:
@@ -109,7 +121,6 @@ def create_app(
             )
         )
         app.add_middleware(CSRFMiddleware(CSRFConfig()))
-        app.add_middleware(AutoCSRFFormsMiddleware())
         app.add_middleware(
             SecurityHeadersMiddleware(
                 SecurityHeadersConfig(
@@ -122,7 +133,6 @@ def create_app(
     app.add_middleware(IdentityFailureMiddleware())
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
     app.mount_pages(str(PAGES_DIR))
-    _copy_page_contracts(app)
 
     return app
 
@@ -138,11 +148,9 @@ def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool)
     return debug
 
 
-def _copy_page_contracts(app: App) -> None:
-    """Expose filesystem-page handler contracts to Chirp's route wrapper."""
+def _empty_csrf_field() -> str:
+    return ""
 
-    for route in app._mutable_state.pending_routes:
-        source_handler = getattr(route, "page_source_handler", None)
-        route_contract = getattr(source_handler, "_chirp_contract", None)
-        if route_contract is not None:
-            cast(Any, route.handler)._chirp_contract = route_contract
+
+def _empty_csrf_token() -> str:
+    return ""
