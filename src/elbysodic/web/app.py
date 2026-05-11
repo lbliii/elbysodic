@@ -84,6 +84,9 @@ def create_app(
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
+    if not security.production:
+        app.template_global("csrf_field")(_empty_csrf_field)
+        app.template_global("csrf_token")(_empty_csrf_token)
     app.add_middleware(RequestTimingMiddleware())
     app.add_middleware(TenantPrefixMiddleware())
     if security.production:
@@ -133,3 +136,11 @@ def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool)
     if configured is not None:
         return configured.strip().lower() not in {"0", "false", "no", "off"}
     return debug
+
+
+def _empty_csrf_field() -> str:
+    return ""
+
+
+def _empty_csrf_token() -> str:
+    return ""

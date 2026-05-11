@@ -5,6 +5,7 @@ from __future__ import annotations
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
+from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import BOARD_KIND_LABELS, BOARD_SIDEBAR_SECTION_LABELS
@@ -165,6 +166,7 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page | Redi
         theme_radius_labels=RADIUS_LABELS,
         theme_density_labels=DENSITY_LABELS,
         theme_texture_labels=TEXTURE_LABELS,
+        shell_actions=_studio_shell_actions(),
     )
 
 
@@ -195,3 +197,33 @@ def _theme_mode_values(form: object, mode: str) -> dict[str, str]:
         key: str(getattr(form, "get", lambda _name: "")(f"theme_{mode}_{key}") or "")
         for key, _label in THEME_MODE_FIELDS
     }
+
+
+def _studio_shell_actions() -> ShellActions:
+    return ShellActions(
+        controls=ShellActionZone(
+            items=(
+                ShellAction(
+                    id="studio-operations",
+                    label="Operations",
+                    href="/studio/operations",
+                    icon="grid",
+                    variant="secondary",
+                ),
+                ShellAction(
+                    id="studio-intake",
+                    label="Intake",
+                    href="/studio/intake",
+                    icon="logs",
+                    variant="secondary",
+                ),
+                ShellAction(
+                    id="studio-wanted",
+                    label="Wanted",
+                    href="/wanted",
+                    icon="search",
+                    variant="secondary",
+                ),
+            )
+        )
+    )

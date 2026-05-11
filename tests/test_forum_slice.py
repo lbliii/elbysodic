@@ -1788,6 +1788,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
             assert "Studio rooms" in studio.text
+            assert 'id="chirp-shell-actions"' in studio.text
+            assert 'href="/studio/operations"' in studio.text
+            assert 'href="/studio/intake"' in studio.text
+            assert 'href="/wanted"' in studio.text
             assert 'href="/studio/operations"' in studio.text
             assert 'href="/studio/launch"' in studio.text
             assert "Daily director console" in studio.text
