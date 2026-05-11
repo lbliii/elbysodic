@@ -95,9 +95,9 @@ Production also requires `ELBYSODIC_SECRET_KEY` with at least 32 characters.
 Seed `dev-password-hash` accounts are accepted in production only when
 `ELBYSODIC_DEMO_MODE=1` is set; otherwise those hashes are rejected.
 
-Production mutating requests are protected by Chirp session-backed CSRF. The
-app injects the active CSRF field into rendered POST forms and rejects unsafe
-methods when the token is missing or invalid.
+Production mutating requests are protected by Chirp session-backed CSRF.
+Rendered POST form templates include the active CSRF field explicitly, and
+unsafe methods are rejected when the token is missing or invalid.
 
 Production responses also set a Content Security Policy sized to the current
 server-rendered Chirp and Chirp-UI stack. The policy keeps framing, object,
