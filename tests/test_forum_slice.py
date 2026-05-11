@@ -4657,6 +4657,8 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                     "/characters/rogue/hooks/coffee-before-the-crisis"
                 )
                 assert creator_detail.status == 200
+                assert "Hook lifecycle" in creator_detail.text
+                assert "elbysodic-lifecycle-section" in creator_detail.text
                 assert "Start plotting room" in creator_detail.text
 
                 room_response = await owner_client.post(
