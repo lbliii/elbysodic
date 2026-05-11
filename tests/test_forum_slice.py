@@ -3753,6 +3753,8 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "Active Reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
                 assert "Active-face reserves" in casting.text
+                assert "Browse wanted" not in _page_content(casting.text)
+                assert "Open face" not in _page_content(casting.text)
 
             charlie_app = create_app(debug=False, services=charlie_services)
             async with TestClient(charlie_app) as charlie_client:
