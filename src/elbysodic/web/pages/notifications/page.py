@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -10,10 +13,17 @@ from chirp.templating.returns import Page
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class NotificationActionForm:
+    intent: str
+    notification_id: str = ""
+
+
 def get(request: Request) -> Page:
     return _render_notifications(request)
 
 
+@contract(form=FormContract(NotificationActionForm, "notifications/page.html"))
 async def post(request: Request) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -18,10 +21,30 @@ from elbysodic.domain.models import Board
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class StudioBoardForm:
+    name: str
+    board_kind: str
+    parent_board_id: str = ""
+    tagline: str = ""
+    description: str = ""
+    image_url: str = ""
+    image_alt: str = ""
+    image_treatment: str = ""
+    image_focal_point: str = ""
+    image_overlay: str = ""
+    sort_order: str = ""
+    navigation_order: str = ""
+    sidebar_section: str = ""
+    show_in_navigation: bool = False
+    is_private: bool = False
+
+
 def get(request: Request, board_slug: str) -> Page:
     return _render_board_editor(request, board_slug)
 
 
+@contract(form=FormContract(StudioBoardForm, "studio/boards/{board_slug}/page.html"))
 async def post(request: Request, board_slug: str) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
