@@ -5633,9 +5633,26 @@ a.elbysodic-metric:focus-visible {
     grid-template-columns: auto minmax(0, 1fr) minmax(11rem, 16rem);
 }
 
+.elbysodic-composer-character--quiet {
+    background: transparent;
+    border-color: var(--chirpui-border-subtle);
+    box-shadow: none;
+    padding: 0.55rem 0;
+}
+
 .elbysodic-composer-character__control {
     display: grid;
     gap: 0.3rem;
+}
+
+.elbysodic-composer-title-line {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.elbysodic-scene-setup-disclosure {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    padding-top: 0.65rem;
 }
 
 .elbysodic-composer-panel {
