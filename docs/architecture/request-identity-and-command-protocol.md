@@ -58,6 +58,11 @@ Commands that create posts, scenes, rooms, reserves, claims, applications,
 notifications, or identity transitions need either idempotency or a deliberate
 duplicate policy.
 
+Chirp `_actions.py` dispatch may be used as transport plumbing for command
+routing only after the action path preserves request-scoped services. Elbysodic
+commands must still resolve tenant, membership, active face, and staff power
+from the current request rather than a process-global provider.
+
 ## Stale Commands
 
 A stale command is a POST submitted after the rendered assumptions changed. A
