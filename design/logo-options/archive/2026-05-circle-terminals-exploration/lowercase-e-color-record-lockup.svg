@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic lowercase e color-record lockup</title>
+  <desc id="desc">A lockup using a lowercase e mark segmented into Technicolor-inspired cyan, magenta, and amber records.</desc>
+  <rect x="28" y="34" width="212" height="212" rx="28" fill="#071018"/>
+  <path d="M134 78c-46 0-84 33-84 74 0 15 5 29 14 41l31-29c-3-4-5-9-5-14 0-24 18-42 42-42 19 0 35 12 41 30H91v30h122c1-5 2-10 2-16 0-41-36-74-81-74z" fill="#36d6ff"/>
+  <path d="M213 168H91c6 18 23 30 43 30 12 0 22-4 29-10h48c-14 24-42 38-76 38-30 0-56-14-71-35l32-27c8 12 22 19 39 19h78z" fill="#ff5ccf"/>
+  <path d="M90 138c6-18 22-30 42-30 19 0 35 12 41 30z" fill="#f7c948"/>
+  <path d="M88 152h104" stroke="#071018" stroke-width="22" stroke-linecap="square"/>
+  <path d="M134 68v168" stroke="#071018" stroke-width="10" stroke-linecap="square"/>
+  <path d="M292 218h124" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M428 218h124" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M564 218h124" stroke="#f7c948" stroke-width="9"/>
+  <text x="292" y="150" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="82" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="296" y="194" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">THREE-STRIP STUDIO</text>
+</svg>

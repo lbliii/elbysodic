@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic refined negative thread cut</title>
+  <desc id="desc">A refined negative-space thread cut mark with three scene bars, a dark studio spine, and a forward scene path.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="40" fill="#071018"/>
+  <path d="M142 148h228v54H142z" fill="#f7fbff"/>
+  <path d="M142 229h174v54H142z" fill="#f7fbff"/>
+  <path d="M142 310h228v54H142z" fill="#f7fbff"/>
+  <path d="M198 118v276" stroke="#071018" stroke-width="42" stroke-linecap="square"/>
+  <path d="M260 118v276" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M314 202l72 54-72 54z" fill="#071018"/>
+  <path d="M142 148h92" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M142 229h92" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M142 310h92" stroke="#f7c948" stroke-width="10"/>
+</svg>

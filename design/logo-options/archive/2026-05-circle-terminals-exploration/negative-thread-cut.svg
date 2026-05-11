@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic negative thread cut</title>
+  <desc id="desc">A dark square mark where negative-space thread cuts form an E and a forward scene path.</desc>
+  <rect x="74" y="74" width="364" height="364" rx="42" fill="#071018"/>
+  <path d="M144 150h230v54H144z" fill="#f7fbff"/>
+  <path d="M144 230h174v54H144z" fill="#f7fbff"/>
+  <path d="M144 310h230v54H144z" fill="#f7fbff"/>
+  <path d="M202 124v264" stroke="#071018" stroke-width="38" stroke-linecap="square"/>
+  <path d="M256 124v264" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M318 204l56 52-56 52z" fill="#071018"/>
+  <circle cx="202" cy="150" r="13" fill="#36d6ff"/>
+  <circle cx="202" cy="230" r="13" fill="#ff5ccf"/>
+  <circle cx="202" cy="310" r="13" fill="#f7c948"/>
+</svg>

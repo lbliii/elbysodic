@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut lockup B</title>
+  <desc id="desc">A compact lockup with the thread cut mark integrated as the opening E beside the Elbysodic wordmark.</desc>
+  <rect x="38" y="58" width="154" height="154" rx="20" fill="#071018"/>
+  <path d="M70 92h88v22H70zM70 126h66v22H70zM70 160h88v22H70z" fill="#f7fbff"/>
+  <path d="M92 80v114" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M118 80v114" stroke="#071018" stroke-width="8" stroke-linecap="square"/>
+  <path d="M136 118l32 22-32 22z" fill="#071018"/>
+  <text x="222" y="158" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="86" font-weight="850" letter-spacing="-1">lbysodic</text>
+  <path d="M222 190h560" stroke="#071018" stroke-width="10"/>
+  <path d="M222 190h150" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M384 190h150" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M546 190h150" stroke="#f7c948" stroke-width="10"/>
+</svg>

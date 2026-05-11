@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import sqlite3
+from dataclasses import dataclass
+from typing import Any
+
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
     _community_from_row,
@@ -20,6 +25,39 @@ from elbysodic.domain.models import (
     User,
     UserSession,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class MembershipRoleIntegrityIssue:
+    community_id: int
+    membership_id: int
+    role_id: int
+
+
+@dataclass(frozen=True, slots=True)
+class SessionIdentityIntegrityIssue:
+    session_id: int
+    user_id: int
+    selected_community_id: int | None
+    selected_membership_id: int | None
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class TenantPairIntegrityIssue:
+    table_name: str
+    row_id: int
+    community_id: int
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class CommandSubmission:
+    id: int
+    community_id: int
+    membership_id: int
+    command_key: str
+    result_path: str | None
 
 
 class IdentityRepositoryMixin(RepositoryBase):
@@ -795,6 +833,271 @@ class IdentityRepositoryMixin(RepositoryBase):
         ).fetchall()
         return [_membership_from_row(row) for row in rows]
 
+    def list_membership_role_integrity_issues(self) -> list[MembershipRoleIntegrityIssue]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                membership.community_id,
+                membership.id AS membership_id,
+                membership.role_id
+            FROM community_memberships AS membership
+            LEFT JOIN roles AS role
+                ON role.id = membership.role_id
+                AND role.community_id = membership.community_id
+            WHERE role.id IS NULL
+            ORDER BY membership.community_id, membership.id
+            """
+        ).fetchall()
+        return [
+            MembershipRoleIntegrityIssue(
+                community_id=row["community_id"],
+                membership_id=row["membership_id"],
+                role_id=row["role_id"],
+            )
+            for row in rows
+        ]
+
+    def list_session_identity_integrity_issues(self) -> list[SessionIdentityIntegrityIssue]:
+        rows = self.connection.execute(
+            """
+            SELECT
+                session.id AS session_id,
+                session.user_id,
+                session.selected_community_id,
+                session.selected_membership_id,
+                membership.id AS membership_id,
+                membership.community_id AS membership_community_id,
+                membership.user_id AS membership_user_id,
+                membership.is_active AS membership_is_active
+            FROM user_sessions AS session
+            LEFT JOIN community_memberships AS membership
+                ON membership.id = session.selected_membership_id
+            WHERE session.selected_membership_id IS NOT NULL
+                AND (
+                    membership.id IS NULL
+                    OR membership.community_id != session.selected_community_id
+                    OR membership.user_id != session.user_id
+                    OR membership.is_active = 0
+                )
+            ORDER BY session.id
+            """
+        ).fetchall()
+        return [
+            SessionIdentityIntegrityIssue(
+                session_id=row["session_id"],
+                user_id=row["user_id"],
+                selected_community_id=row["selected_community_id"],
+                selected_membership_id=row["selected_membership_id"],
+                reason=_session_identity_integrity_reason(row),
+            )
+            for row in rows
+        ]
+
+    def list_tenant_pair_integrity_issues(self) -> list[TenantPairIntegrityIssue]:
+        rows = self.connection.execute(
+            """
+            SELECT table_name, row_id, community_id, reason
+            FROM (
+                SELECT
+                    'threads' AS table_name,
+                    thread.id AS row_id,
+                    thread.community_id,
+                    CASE
+                        WHEN board.id IS NULL THEN 'thread board belongs to another community'
+                        WHEN membership.id IS NULL THEN 'thread author membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'thread author character does not match community and membership'
+                        ELSE 'thread tenant pair is invalid'
+                    END AS reason
+                FROM threads AS thread
+                LEFT JOIN boards AS board
+                    ON board.id = thread.board_id
+                    AND board.community_id = thread.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = thread.author_membership_id
+                    AND membership.community_id = thread.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = thread.author_character_id
+                    AND character.community_id = thread.community_id
+                    AND character.membership_id = thread.author_membership_id
+                WHERE board.id IS NULL
+                    OR membership.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'posts' AS table_name,
+                    post.id AS row_id,
+                    post.community_id,
+                    CASE
+                        WHEN thread.id IS NULL THEN 'post thread belongs to another community'
+                        WHEN membership.id IS NULL THEN 'post author membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'post author character does not match community and membership'
+                        ELSE 'post tenant pair is invalid'
+                    END AS reason
+                FROM posts AS post
+                LEFT JOIN threads AS thread
+                    ON thread.id = post.thread_id
+                    AND thread.community_id = post.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = post.author_membership_id
+                    AND membership.community_id = post.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = post.author_character_id
+                    AND character.community_id = post.community_id
+                    AND character.membership_id = post.author_membership_id
+                WHERE thread.id IS NULL
+                    OR membership.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'notifications' AS table_name,
+                    notification.id AS row_id,
+                    notification.community_id,
+                    CASE
+                        WHEN recipient.id IS NULL THEN 'notification recipient belongs to another community'
+                        WHEN actor.id IS NULL THEN 'notification actor belongs to another community'
+                        WHEN actor_character.id IS NULL
+                            AND notification.actor_character_id IS NOT NULL
+                            THEN 'notification actor character does not match community and membership'
+                        WHEN target_character.id IS NULL
+                            AND notification.character_id IS NOT NULL
+                            THEN 'notification character target belongs to another community'
+                        ELSE 'notification tenant pair is invalid'
+                    END AS reason
+                FROM notifications AS notification
+                LEFT JOIN community_memberships AS recipient
+                    ON recipient.id = notification.membership_id
+                    AND recipient.community_id = notification.community_id
+                LEFT JOIN community_memberships AS actor
+                    ON actor.id = notification.actor_membership_id
+                    AND actor.community_id = notification.community_id
+                LEFT JOIN characters AS actor_character
+                    ON actor_character.id = notification.actor_character_id
+                    AND actor_character.community_id = notification.community_id
+                    AND actor_character.membership_id = notification.actor_membership_id
+                LEFT JOIN characters AS target_character
+                    ON target_character.id = notification.character_id
+                    AND target_character.community_id = notification.community_id
+                WHERE recipient.id IS NULL
+                    OR actor.id IS NULL
+                    OR (
+                        notification.actor_character_id IS NOT NULL
+                        AND actor_character.id IS NULL
+                    )
+                    OR (
+                        notification.character_id IS NOT NULL
+                        AND target_character.id IS NULL
+                    )
+            )
+            ORDER BY table_name, community_id, row_id
+            """
+        ).fetchall()
+        return [
+            TenantPairIntegrityIssue(
+                table_name=row["table_name"],
+                row_id=row["row_id"],
+                community_id=row["community_id"],
+                reason=row["reason"],
+            )
+            for row in rows
+        ]
+
+    def get_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> CommandSubmission | None:
+        row = self.connection.execute(
+            """
+            SELECT id, community_id, membership_id, command_key, result_path
+            FROM command_submissions
+            WHERE community_id = ?
+                AND membership_id = ?
+                AND command_key = ?
+                AND token_hash = ?
+            """,
+            (community_id, membership_id, command_key, _command_token_hash(token)),
+        ).fetchone()
+        if row is None:
+            return None
+        return CommandSubmission(
+            id=row["id"],
+            community_id=row["community_id"],
+            membership_id=row["membership_id"],
+            command_key=row["command_key"],
+            result_path=row["result_path"],
+        )
+
+    def reserve_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> bool:
+        self.get_membership(community_id, membership_id)
+        try:
+            self.connection.execute(
+                """
+                INSERT INTO command_submissions (
+                    community_id,
+                    membership_id,
+                    command_key,
+                    token_hash,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    community_id,
+                    membership_id,
+                    command_key,
+                    _command_token_hash(token),
+                    _utc_now(),
+                ),
+            )
+        except sqlite3.IntegrityError:
+            return False
+        self._commit()
+        return True
+
+    def complete_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+        result_path: str,
+    ) -> None:
+        self.connection.execute(
+            """
+            UPDATE command_submissions
+            SET result_path = ?,
+                completed_at = ?
+            WHERE community_id = ?
+                AND membership_id = ?
+                AND command_key = ?
+                AND token_hash = ?
+            """,
+            (
+                result_path,
+                _utc_now(),
+                community_id,
+                membership_id,
+                command_key,
+                _command_token_hash(token),
+            ),
+        )
+        self._commit()
+
     def search_memberships(
         self,
         community_id: int,
@@ -843,3 +1146,19 @@ class IdentityRepositoryMixin(RepositoryBase):
             (community_id, like, like, normalized, prefix, prefix, limit),
         ).fetchall()
         return [_membership_from_row(row) for row in rows]
+
+
+def _session_identity_integrity_reason(row: Any) -> str:
+    if row["membership_id"] is None:
+        return "selected membership is missing"
+    if row["membership_community_id"] != row["selected_community_id"]:
+        return "selected membership belongs to another community"
+    if row["membership_user_id"] != row["user_id"]:
+        return "selected membership belongs to another user"
+    if row["membership_is_active"] == 0:
+        return "selected membership is inactive"
+    return "selected identity is invalid"
+
+
+def _command_token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

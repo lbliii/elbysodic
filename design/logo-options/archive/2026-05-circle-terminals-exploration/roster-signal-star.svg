@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic roster signal star</title>
+  <desc id="desc">A mid-century roster star built from four face nodes and a central thread signal.</desc>
+  <rect x="82" y="82" width="348" height="348" rx="44" fill="#071018"/>
+  <path d="M256 112l38 106 106 38-106 38-38 106-38-106-106-38 106-38z" fill="#f7fbff"/>
+  <path d="M256 150l24 82 82 24-82 24-24 82-24-82-82-24 82-24z" fill="#071018"/>
+  <path d="M202 236h108M202 276h78" stroke="#f7fbff" stroke-width="18" stroke-linecap="square"/>
+  <circle cx="158" cy="158" r="26" fill="#36d6ff"/>
+  <circle cx="354" cy="158" r="26" fill="#ff5ccf"/>
+  <circle cx="354" cy="354" r="26" fill="#f7c948"/>
+  <circle cx="158" cy="354" r="26" fill="#43d19e"/>
+  <path d="M158 158l80 80M354 158l-80 80M354 354l-80-80M158 354l80-80" stroke="#071018" stroke-width="12" stroke-linecap="square"/>
+</svg>

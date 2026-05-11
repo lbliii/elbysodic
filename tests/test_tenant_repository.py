@@ -61,6 +61,73 @@ def test_schema_migration_versions_are_contiguous_after_baseline() -> None:
     assert len({migration.name for migration in MIGRATIONS}) == len(MIGRATIONS)
 
 
+def test_schema_enforces_selected_session_identity_pair(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-session-pair", "Hosted Session Pair")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("session-pair@example.com", "hash")
+    other_user = repo.create_user("other-session-pair@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "session-pair",
+        "Session Pair",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "session-pair",
+        "Session Pair",
+    )
+    other_membership = repo.create_membership(
+        hosted.id,
+        other_user.id,
+        hosted_role.id,
+        "other-session-pair",
+        "Other Session Pair",
+    )
+    session = repo.create_user_session(
+        user.id,
+        "session-pair-token",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE user_sessions
+        SET selected_community_id = ?,
+            selected_membership_id = ?
+        WHERE id = ?
+        """,
+        (hosted.id, hosted_membership.id, session.id),
+    )
+
+    with pytest.raises(sqlite3.IntegrityError, match="selected session identity"):
+        repo.connection.execute(
+            """
+            UPDATE user_sessions
+            SET selected_community_id = ?,
+                selected_membership_id = ?
+            WHERE id = ?
+            """,
+            (hosted.id, default_membership.id, session.id),
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="selected session identity"):
+        repo.connection.execute(
+            """
+            UPDATE user_sessions
+            SET selected_community_id = ?,
+                selected_membership_id = ?
+            WHERE id = ?
+            """,
+            (hosted.id, other_membership.id, session.id),
+        )
+
+
 def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     connection = connect()
     create_schema(connection)
@@ -191,6 +258,62 @@ def test_schema_migrates_existing_posts_for_thread_local_public_numbers() -> Non
     ]
 
 
+def test_thread_counts_are_scoped_to_board_and_community() -> None:
+    connection = connect()
+    create_schema(connection)
+    repository = ForumRepository(connection)
+    repository.seed_default_community()
+    default = repository.get_community(1)
+    hosted = repository.create_community("hosted-thread-count", "Hosted Thread Count")
+    default_role = repository.create_role(default.id, "member", "Member")
+    hosted_role = repository.create_role(hosted.id, "member", "Member")
+    user = repository.create_user("thread-count@example.com", "hash")
+    default_membership = repository.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "thread-count",
+        "Thread Count",
+    )
+    hosted_membership = repository.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "thread-count",
+        "Thread Count",
+    )
+    default_character = repository.create_character(
+        default.id,
+        default_membership.id,
+        "thread-count",
+        "Thread Count",
+    )
+    hosted_character = repository.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "thread-count",
+        "Thread Count",
+    )
+    default_board = repository.create_board(default.id, "scenes", "Scenes")
+    other_default_board = repository.create_board(default.id, "archives", "Archives")
+    hosted_board = repository.create_board(hosted.id, "scenes", "Scenes")
+
+    repository.create_thread(default.id, default_board.id, default_character.id, "one", "One")
+    repository.create_thread(default.id, default_board.id, default_character.id, "two", "Two")
+    repository.create_thread(
+        default.id,
+        other_default_board.id,
+        default_character.id,
+        "archived",
+        "Archived",
+    )
+    repository.create_thread(hosted.id, hosted_board.id, hosted_character.id, "hosted", "Hosted")
+
+    assert repository.count_threads(default.id, default_board.id) == 2
+    assert repository.count_threads(default.id) == 3
+    assert repository.count_threads(hosted.id, hosted_board.id) == 1
+
+
 def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository) -> None:
     user = repo.create_user("session@example.com", "hash")
     session = repo.create_user_session(
@@ -208,6 +331,185 @@ def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository)
     assert stored.expires_at == "2026-06-01T00:00:00+00:00"
     assert touched.last_seen_at >= session.last_seen_at
     assert revoked.revoked_at is not None
+
+
+def test_membership_role_integrity_issues_detect_cross_community_roles(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-role-integrity", "Hosted Role Integrity")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("role-integrity@example.com", "hash")
+    membership = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "role-integrity",
+        "Role Integrity",
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET role_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (default_role.id, hosted.id, membership.id),
+    )
+    repo.connection.commit()
+
+    issues = repo.list_membership_role_integrity_issues()
+
+    assert len(issues) == 1
+    assert issues[0].community_id == hosted.id
+    assert issues[0].membership_id == membership.id
+    assert issues[0].role_id == default_role.id
+
+
+def test_session_identity_integrity_issues_detect_cross_community_selection(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-session-integrity", "Hosted Session Integrity")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    user = repo.create_user("session-integrity@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "session-integrity",
+        "Session Integrity",
+    )
+    repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "session-integrity",
+        "Session Integrity",
+    )
+    session = repo.create_user_session(
+        user.id,
+        "session-integrity-token",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+
+    # Diagnostics still need to identify legacy/corrupt rows that predate trigger enforcement.
+    repo.connection.execute("DROP TRIGGER trg_user_sessions_selected_identity_update")
+    repo.connection.execute("DROP TRIGGER trg_user_sessions_selected_identity_insert")
+    repo.connection.execute(
+        """
+        UPDATE user_sessions
+        SET selected_community_id = ?,
+            selected_membership_id = ?
+        WHERE id = ?
+        """,
+        (hosted.id, default_membership.id, session.id),
+    )
+    repo.connection.commit()
+
+    issues = repo.list_session_identity_integrity_issues()
+
+    assert len(issues) == 1
+    assert issues[0].session_id == session.id
+    assert issues[0].selected_community_id == hosted.id
+    assert issues[0].selected_membership_id == default_membership.id
+    assert issues[0].reason == "selected membership belongs to another community"
+
+
+def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-authorship", "Hosted Authorship")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_user = repo.create_user("authorship@example.com", "hash")
+    hosted_user = repo.create_user("hosted-authorship@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        default_user.id,
+        default_role.id,
+        "authorship",
+        "Authorship",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "hosted-authorship",
+        "Hosted Authorship",
+    )
+    default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "authorship",
+        "Authorship",
+    )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-authorship",
+        "Hosted Authorship",
+    )
+    board = repo.create_board(default.id, "authorship", "Authorship")
+    thread = repo.create_thread(
+        default.id,
+        board.id,
+        default_character.id,
+        "authorship",
+        "Authorship",
+    )
+    post = repo.create_post(default.id, thread.id, default_character.id, "First beat.")
+    notification = repo.create_notification(
+        default.id,
+        default_membership.id,
+        kind="character",
+        character_id=default_character.id,
+        actor_membership_id=default_membership.id,
+        actor_character_id=default_character.id,
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE threads
+        SET author_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, thread.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE posts
+        SET author_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, post.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE notifications
+        SET actor_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, notification.id),
+    )
+    repo.connection.commit()
+
+    issues = repo.list_tenant_pair_integrity_issues()
+
+    issue_map = {(issue.table_name, issue.row_id): issue.reason for issue in issues}
+
+    assert issue_map[("threads", thread.id)] == (
+        "thread author character does not match community and membership"
+    )
+    assert issue_map[("posts", post.id)] == (
+        "post author character does not match community and membership"
+    )
+    assert issue_map[("notifications", notification.id)] == (
+        "notification actor character does not match community and membership"
+    )
 
 
 def test_schema_migrates_existing_boards_for_place_navigation() -> None:

@@ -75,6 +75,7 @@
       }
     })();
     </script>
+    <link rel="icon" href="/elbysodic-static/brand/elbysodic-favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-cookie-1">
     <style id="elbysodic-program-theme">
 {{ program_theme_css(shell_has_community, viewer) }}
@@ -132,6 +133,10 @@
   <img class="elbysodic-community-brand__mark"
        src="{{ viewer.community.community_mark_url }}"
        alt="{{ viewer.community.community_mark_alt }}">
+  {% elif not shell_has_community %}
+  <img class="elbysodic-community-brand__mark elbysodic-product-mark elbysodic-product-mark--brand"
+       src="/elbysodic-static/brand/elbysodic-mark-small.svg"
+       alt="">
   {% end %}
   <span class="elbysodic-community-brand__name">{{ viewer.community.name if shell_has_community and viewer else "Elbysodic" }}</span>
 </a>
@@ -227,9 +232,12 @@
       {% if viewer.identity_options and viewer.identity_options | length > 1 %}
       <div class="elbysodic-identity-menu__section">
         <span class="elbysodic-identity-menu__kicker">Studio Network</span>
-        <div class="elbysodic-identity-switcher">
+        <div class="elbysodic-identity-switcher" data-elbysodic-submit-group>
           {% for option in viewer.identity_options %}
-          <form action="/identity" method="post" hx-boost="false">
+          <form action="/identity"
+                method="post"
+                hx-boost="false"
+                data-elbysodic-submit-label="Entering {{ option.community.name }}...">
             <input type="hidden" name="intent" value="switch_membership">
             <input type="hidden" name="membership_id" value="{{ option.membership.id }}">
             <input type="hidden" name="character_id" value="{{ option.current_character.id if option.current_character else 0 }}">

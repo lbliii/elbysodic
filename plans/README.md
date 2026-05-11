@@ -7,6 +7,22 @@ Use a plan when a decision needs continuity across agent sessions: steward
 rollups, multi-step implementation plans, migration strategies, or roadmap
 sequencing. Keep ordinary notes in the PR, issue, or final response instead.
 
+## Strategy Anchor
+
+All product-facing plans should align with
+[`docs/product/strategy-spine.md`](../docs/product/strategy-spine.md). That
+spine names the three top-level pillars:
+
+- Realm Studio: director and staff workflows for running PBP realms.
+- Writer Network: writer identity, active face, obligations, discovery, and
+  continuation.
+- Continuity Graph: reviewed, source-linked story memory after trust,
+  privacy, transaction, and provenance gates are solid.
+
+Plans may focus on one pillar or a foundation that enables several pillars,
+but they should not introduce generic forum, SaaS dashboard, marketplace, chat,
+or AI-first directions that bypass the spine.
+
 ## Lifecycle
 
 Active plans live in `plans/in-progress/` and must appear in the Active Plans
@@ -44,7 +60,7 @@ Prefer stable topic names over vague labels. Good names:
 | [Product research system 2026-05-10](in-progress/product-research-system-2026-05-10.md) | active methodology plan | Product, research, UX, planning, and test stewardship | 2026-06-07 | The research folder has reusable templates for source notes, competitive audits, synthetic panel runs, real interview notes, UAT sessions, and synthesis promotion; at least three product flows have been evaluated through the system; accepted findings are reflected in product docs, plans, or test proof without confusing simulated signal for real evidence. |
 | [Non-AI PBP Studio roadmap 2026-05-10](in-progress/non-ai-pbp-studio-roadmap-2026-05-10.md) | active research-backed sequencing snapshot | Product, research, web, service, storage, design, and test stewardship | 2026-05-31 | Split the top roadmap phases into PR-sized implementation plans or mark them superseded by existing active plans; archive when Elbysodic has a verified non-AI alpha path from first realm setup through daily writing, director operations, and invite-first onboarding. |
 | [Post-PR31 priority roadmap 2026-05-10](in-progress/post-pr31-priority-roadmap-2026-05-10.md) | active sequencing snapshot | Product, operations, web, service, storage, and test stewardship | 2026-05-24 | The first five priorities are merged or superseded by more specific implementation plans, and remaining items are linked into the production-readiness roadmap, Studio roadmap, or archived as not-now. |
-| [First realm setup 2026-05-10](in-progress/first-realm-setup-2026-05-10.md) | active implementation plan | Service/auth, storage, web, tests, docs, and planning stewardship | 2026-05-24 | The no-realm to empty-configured-realm transition is implemented or superseded by a narrower bootstrap plan; accepted steward findings have proof/collateral, and remaining onboarding work is linked back to the community creator onboarding plan. |
+| [First realm setup 2026-05-10](in-progress/first-realm-setup-2026-05-10.md) | implemented locally; guided builder follow-up remains | Service/auth, storage, web, tests, docs, and planning stewardship | 2026-05-24 | Archive after final local gate verification or preserve as a foundation note once remaining onboarding work is confirmed in the community creator onboarding plan. |
 | [Community creator onboarding 2026-05-10](in-progress/community-creator-onboarding-2026-05-10.md) | active product and implementation plan | Product, web, service, storage, auth, Blueprint, docs, and test stewardship | 2026-05-30 | Split into implementation PRs for first realm setup, guided realm builder, invitation handoff, launch checklist, and docs/test collateral; archive when those PRs land or this plan is superseded by a more specific hosted onboarding roadmap. |
 | [Wanted backstage handoff 2026-05-09](in-progress/wanted-backstage-handoff-2026-05-09.md) | implemented locally; archive after full gate verification | Product, service, web, storage, and test stewardship | 2026-05-30 | Archive after the full local gate passes or any remaining same-user-different-community proof gap is moved into the production-readiness roadmap. |
 | [Wattpad competitive research 2026-05-09](in-progress/wattpad-competitive-research-2026-05-09.md) | active research input; not an implementation plan | Product and planning stewardship | 2026-06-06 | Translate accepted lessons into focused roadmap slices for backstage collaboration, scene-safe social reading, writer progression, discovery, safety, and export guarantees; archive when those slices are either captured elsewhere or explicitly deferred. |

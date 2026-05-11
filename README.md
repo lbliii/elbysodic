@@ -26,6 +26,19 @@ director-defined world lenses, not just tags. Wanted hooks are structured plot
 and casting invitations. World materials carry premise, rules, factions,
 application guidance, events, and future claims or reserves.
 
+The top-level strategy is organized around three pillars:
+
+- **Realm Studio**: director and staff workflows for opening, running, shaping,
+  reviewing, exporting, and preserving PBP realms.
+- **Writer Network**: writer-facing identity, active face, obligations,
+  discovery, continuation, wanted hooks, plotting, and cross-realm entry paths.
+- **Continuity Graph**: reviewed, source-linked memory from completed scenes
+  into canon, characters, locations, events, claims, reserves, wanted hooks,
+  and world materials.
+
+See [docs/product/strategy-spine.md](docs/product/strategy-spine.md) for the
+canonical product spine that guides roadmap and steward decisions.
+
 The interface should feel like a calm writing room: dense enough for regular
 players, gentle enough for long sessions, and expressive enough for a community
 to feel like itself.
@@ -107,6 +120,8 @@ setup from `/c/{realm_slug}/studio/launch`.
 
 The core product primitives are documented in
 [docs/architecture/primitives.md](docs/architecture/primitives.md). The
+product strategy spine lives in
+[docs/product/strategy-spine.md](docs/product/strategy-spine.md). The
 multi-tenancy strategy lives in
 [docs/architecture/multi-tenancy.md](docs/architecture/multi-tenancy.md).
 Schema migration rules live in

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 320" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic stacked thread cut lockup</title>
+  <desc id="desc">A stacked editorial lockup with the thread cut mark above the Elbysodic name for splash and studio use.</desc>
+  <rect x="420" y="32" width="140" height="140" rx="20" fill="#071018"/>
+  <path d="M450 72h82v20h-82zM450 98h62v20h-62zM450 124h82v20h-82z" fill="#f7fbff"/>
+  <path d="M470 62v94" stroke="#071018" stroke-width="16" stroke-linecap="square"/>
+  <path d="M496 62v94" stroke="#071018" stroke-width="8" stroke-linecap="square"/>
+  <path d="M512 92l30 16-30 16z" fill="#071018"/>
+  <text x="230" y="244" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="92" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <path d="M312 268h112" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M434 268h112" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M556 268h112" stroke="#f7c948" stroke-width="10"/>
+</svg>

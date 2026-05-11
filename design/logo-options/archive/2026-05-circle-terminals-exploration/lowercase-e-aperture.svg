@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic lowercase e aperture</title>
+  <desc id="desc">A lowercase e as a cinematic aperture, with the center bar acting as the scene thread.</desc>
+  <circle cx="256" cy="256" r="188" fill="#071018"/>
+  <path d="M256 122c-82 0-148 60-148 134s66 134 148 134c62 0 114-34 136-84h-72c-14 19-36 30-64 30-38 0-70-22-82-54h232c2-9 4-18 4-28 0-72-68-132-154-132z" fill="#f7fbff"/>
+  <path d="M176 232c14-34 44-56 82-56 36 0 66 22 80 56z" fill="#071018"/>
+  <path d="M172 256h210" stroke="#071018" stroke-width="34" stroke-linecap="square"/>
+  <path d="M256 48v68M256 396v68M48 256h68M396 256h68" stroke="#071018" stroke-width="20" stroke-linecap="square"/>
+  <path d="M144 172a150 150 0 0 1 82-42" stroke="#36d6ff" stroke-width="14" stroke-linecap="square"/>
+  <path d="M340 174a150 150 0 0 1 48 62" stroke="#ff5ccf" stroke-width="14" stroke-linecap="square"/>
+  <path d="M198 368a150 150 0 0 0 116 0" stroke="#f7c948" stroke-width="14" stroke-linecap="square"/>
+</svg>

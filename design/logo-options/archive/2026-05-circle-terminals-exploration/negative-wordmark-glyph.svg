@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic negative-space wordmark glyph</title>
+  <desc id="desc">A wordmark spacing study where the o becomes a negative-space scene aperture and face signal.</desc>
+  <rect x="24" y="24" width="932" height="232" rx="30" fill="#f7fbff"/>
+  <text x="70" y="166" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="88" font-weight="850" letter-spacing="0">elbys</text>
+  <circle cx="463" cy="135" r="48" fill="#071018"/>
+  <path d="M452 104c-24 0-44 14-44 31s20 31 44 31h24c-18-8-28-20-28-31s10-23 28-31z" fill="#f7fbff"/>
+  <circle cx="474" cy="126" r="6" fill="#ff5ccf"/>
+  <text x="522" y="166" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="88" font-weight="850" letter-spacing="0">dic</text>
+  <path d="M68 204h230" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M308 204h230" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M548 204h230" stroke="#f7c948" stroke-width="10"/>
+</svg>

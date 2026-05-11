@@ -7,6 +7,7 @@ Related docs:
 
 - root `AGENTS.md`
 - `plans/README.md`
+- `docs/product/strategy-spine.md`
 - `docs/product/mission.md`
 - `docs/architecture/primitives.md`
 
@@ -26,6 +27,9 @@ bounded, reviewable, and connected to product/code/test contracts.
   `plans/archive/YYYY/` as completed, superseded, or abandoned.
 - Steward rollups preserve dependencies, risks, minority reports, and not-now
   items without turning them into immediate scope creep.
+- Active sequencing should reinforce the strategy spine: production trust,
+  realm opening, daily writing, board-running backbone, public discovery,
+  appearance/portability, and only then source-linked continuity expansion.
 
 ## Contract Checklist
 
@@ -34,6 +38,8 @@ bounded, reviewable, and connected to product/code/test contracts.
 - File placement: active plans stay in `plans/in-progress/`; inactive plans move
   to archive paths.
 - Cross-links: plan claims point to relevant docs, code domains, or tests.
+- Strategy: plan priorities name which pillar they strengthen when the work is
+  product-facing: Realm Studio, Writer Network, or Continuity Graph.
 - Steward synthesis: accepted/deferred findings, proof, collateral, and
   dependencies are visible.
 - Docs/changelog: update docs or changelog only when a plan changes a public

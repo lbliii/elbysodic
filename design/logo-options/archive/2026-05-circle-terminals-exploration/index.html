@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Elbysodic Logo Options</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --key: #071018;
+        --surface: #101b27;
+        --surface-2: #162536;
+        --text: #f7fbff;
+        --muted: #b2c0cc;
+        --cyan: #36d6ff;
+        --magenta: #ff5ccf;
+        --amber: #f7c948;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--key);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 48px 0;
+      }
+
+      header {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 4.8rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      h2 {
+        margin: 34px 0 14px;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+
+      figure {
+        margin: 0;
+        padding: 20px;
+        border: 1px solid #294258;
+        border-radius: 8px;
+        background: linear-gradient(180deg, var(--surface), var(--surface-2));
+      }
+
+      .logo-frame {
+        display: grid;
+        place-items: center;
+        min-height: 220px;
+        border-radius: 6px;
+        background: #f7fbff;
+      }
+
+      figure.dark .logo-frame {
+        background: #071018;
+      }
+
+      img {
+        display: block;
+        width: min(180px, 72%);
+        max-height: 180px;
+      }
+
+      figure.lockup {
+        grid-column: 1 / -1;
+      }
+
+      figure.lockup img {
+        width: min(820px, 92%);
+        max-height: none;
+      }
+
+      figcaption {
+        display: grid;
+        gap: 6px;
+        margin-top: 14px;
+      }
+
+      strong {
+        font-size: 0.95rem;
+      }
+
+      span {
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1.45;
+      }
+
+      .swatches {
+        display: flex;
+        gap: 8px;
+        margin-top: 22px;
+      }
+
+      .swatches i {
+        width: 40px;
+        height: 8px;
+        border-radius: 999px;
+      }
+
+      .link-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .link-row a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid #294258;
+        border-radius: 6px;
+        color: var(--text);
+        text-decoration: none;
+        font-weight: 800;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Elbysodic logo options</h1>
+        <p>Exploratory SVG marks combining mid-century reduction, technicolor registration, and PBP-native ideas: thread, face, scene, roster, wanted, and studio control.</p>
+        <div class="swatches" aria-label="Palette">
+          <i style="background:#36d6ff"></i>
+          <i style="background:#ff5ccf"></i>
+          <i style="background:#f7c948"></i>
+          <i style="background:#43d19e"></i>
+        </div>
+        <div class="link-row">
+          <a href="online-logo-test.html">Open online size stress test</a>
+        </div>
+      </header>
+      <h2>First pass</h2>
+      <section class="grid" aria-label="Logo concepts">
+        <figure>
+          <div class="logo-frame">
+            <img src="registered-thread-monogram.svg" alt="Registered thread monogram">
+          </div>
+          <figcaption>
+            <strong>Registered Thread</strong>
+            <span>Precise E mark built from thread bars, dye records, and an active-face dot.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="scene-aperture-roster.svg" alt="Scene aperture roster mark">
+          </div>
+          <figcaption>
+            <strong>Scene Aperture</strong>
+            <span>A cinematic frame around thread lines and roster dots.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="face-aperture.svg" alt="Face aperture mark">
+          </div>
+          <figcaption>
+            <strong>Face Aperture</strong>
+            <span>Active character identity without falling into avatar-app language.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="director-registration.svg" alt="Director registration mark">
+          </div>
+          <figcaption>
+            <strong>Director Registration</strong>
+            <span>Crop marks and dye offsets for controlled studio governance.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="page-signal-escutcheon.svg" alt="Page signal escutcheon">
+          </div>
+          <figcaption>
+            <strong>Page Signal</strong>
+            <span>Badge, page, and director signature in one compact device.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="casting-constellation.svg" alt="Casting constellation mark">
+          </div>
+          <figcaption>
+            <strong>Casting Constellation</strong>
+            <span>Wanted hooks and roster energy expressed as a mid-century signal.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="wordmark-lockup.svg" alt="Exploratory Elbysodic wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Wordmark Lockup</strong>
+            <span>Spacing study for the name beside a compact mark; text should be custom drawn before production.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Second pass: face, director, casting</h2>
+      <section class="grid" aria-label="Second-pass logo concepts">
+        <figure>
+          <div class="logo-frame">
+            <img src="face-thread-aperture.svg" alt="Face thread aperture mark">
+          </div>
+          <figcaption>
+            <strong>Face Thread Aperture</strong>
+            <span>Public authorship plus scene continuity, tighter to PBP than a pure face mark.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="dual-face-aperture.svg" alt="Dual face aperture mark">
+          </div>
+          <figcaption>
+            <strong>Dual Face Aperture</strong>
+            <span>Writer, membership, and character identity held inside one shared frame.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="director-aperture-grid.svg" alt="Director aperture grid mark">
+          </div>
+          <figcaption>
+            <strong>Director Aperture Grid</strong>
+            <span>Studio control, layout registration, and a central scene target.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="color-score-registration.svg" alt="Color score registration mark">
+          </div>
+          <figcaption>
+            <strong>Color Score Registration</strong>
+            <span>Director-authored art direction as controlled technicolor records.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="casting-orbit.svg" alt="Casting orbit mark">
+          </div>
+          <figcaption>
+            <strong>Casting Orbit</strong>
+            <span>Wanted signal and roster nodes with more motion than the first constellation.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="roster-signal-star.svg" alt="Roster signal star mark">
+          </div>
+          <figcaption>
+            <strong>Roster Signal Star</strong>
+            <span>A compact casting device with face nodes and a central thread signal.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Third pass: negative space</h2>
+      <section class="grid" aria-label="Negative-space logo concepts">
+        <figure>
+          <div class="logo-frame">
+            <img src="negative-face-e.svg" alt="Negative-space face E mark">
+          </div>
+          <figcaption>
+            <strong>Negative Face E</strong>
+            <span>Monogram and active face profile carried by counterform.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="negative-thread-cut.svg" alt="Negative-space thread cut mark">
+          </div>
+          <figcaption>
+            <strong>Negative Thread Cut</strong>
+            <span>Scene strips cut by a studio spine and forward path.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="negative-director-mask.svg" alt="Negative-space director mask mark">
+          </div>
+          <figcaption>
+            <strong>Negative Director Mask</strong>
+            <span>Registration frame plus a face mask hidden in the center.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="negative-casting-slot.svg" alt="Negative-space casting slot mark">
+          </div>
+          <figcaption>
+            <strong>Negative Casting Slot</strong>
+            <span>Wanted star with the writing slot cut through the center.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="negative-roster-aperture.svg" alt="Negative-space roster aperture mark">
+          </div>
+          <figcaption>
+            <strong>Negative Roster Aperture</strong>
+            <span>Aperture ring with an E-shaped roster path in counterform.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="negative-wordmark-glyph.svg" alt="Negative-space wordmark glyph lockup">
+          </div>
+          <figcaption>
+            <strong>Negative Wordmark Glyph</strong>
+            <span>The o becomes a scene aperture; useful only as a custom-type prompt for now.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Fourth pass: thread cut refinements</h2>
+      <section class="grid" aria-label="Thread-cut logo refinements">
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-refined.svg" alt="Refined negative thread cut mark">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Refined</strong>
+            <span>Same core idea with cleaner proportions and quieter dye rails.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-solid.svg" alt="One-color negative thread cut mark">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Solid</strong>
+            <span>Strict one-color stress test for favicon, print, and small marks.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-face.svg" alt="Thread cut with face signal">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Face</strong>
+            <span>The studio spine starts to imply active face identity.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-gate.svg" alt="Thread cut scene gate mark">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Gate</strong>
+            <span>A stronger scene-entry gesture with more forward motion.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-roster.svg" alt="Thread cut roster mark">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Roster</strong>
+            <span>Roster nodes attach the scene strips to public identities.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-badge.svg" alt="Thread cut badge mark">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Badge</strong>
+            <span>App-icon and studio-badge container around the same cut.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="thread-cut-lockup.svg" alt="Thread cut wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Lockup</strong>
+            <span>Name rhythm beside the refined mark; typography is still placeholder.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Fifth pass: lockup and roster refinements</h2>
+      <section class="grid" aria-label="Thread-cut lockup and roster refinements">
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="thread-cut-lockup-a.svg" alt="Thread cut lockup A">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Lockup A</strong>
+            <span>Cleaner horizontal product lockup with a tighter subtitle and rails.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="thread-cut-lockup-b.svg" alt="Thread cut lockup B">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Lockup B</strong>
+            <span>The mark acts as the opening E; distinct, but needs familiarity.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="thread-cut-lockup-c.svg" alt="Stacked thread cut lockup">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Lockup C</strong>
+            <span>Stacked splash composition for presentation and social surfaces.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-roster-a.svg" alt="Thread cut roster A">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Roster A</strong>
+            <span>Cleaner colored face nodes attached to the scene strips.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-roster-b.svg" alt="Thread cut roster B">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Roster B</strong>
+            <span>Face nodes become negative counters, reducing decoration.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="thread-cut-roster-c.svg" alt="Thread cut roster C">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Roster C</strong>
+            <span>Roster ring around the cut for more community signal.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="thread-cut-roster-lockup.svg" alt="Thread cut roster wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Thread Cut Roster Lockup</strong>
+            <span>Compares the face-node version directly against the cleaner lockup.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Sixth pass: E, Technicolor, Hollywood</h2>
+      <section class="grid" aria-label="E mark Technicolor Hollywood refinements">
+        <figure>
+          <div class="logo-frame">
+            <img src="e-technicolor-gate.svg" alt="Technicolor E gate mark">
+          </div>
+          <figcaption>
+            <strong>E Technicolor Gate</strong>
+            <span>The thread-cut family pushed toward a cinematic studio gate.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="e-platinum-monogram.svg" alt="Platinum E monogram mark">
+          </div>
+          <figcaption>
+            <strong>E Platinum Monogram</strong>
+            <span>A formal studio-seal read with crisp negative cuts.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="e-title-card.svg" alt="Title card E mark">
+          </div>
+          <figcaption>
+            <strong>E Title Card</strong>
+            <span>Old-Hollywood frame language reduced into a sharp mark.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="e-spotlight-aperture.svg" alt="Spotlight aperture E mark">
+          </div>
+          <figcaption>
+            <strong>E Spotlight Aperture</strong>
+            <span>Spotlight beam plus thread structure, more cinematic and expressive.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="e-cinema-prism.svg" alt="Cinema prism E mark">
+          </div>
+          <figcaption>
+            <strong>E Cinema Prism</strong>
+            <span>Technicolor dye records split out of the thread-cut E.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="e-marquee-roster.svg" alt="Marquee roster E mark">
+          </div>
+          <figcaption>
+            <strong>E Marquee Roster</strong>
+            <span>Marquee rhythm translated into face and roster signals.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="e-studio-seal-lockup.svg" alt="Studio seal E lockup">
+          </div>
+          <figcaption>
+            <strong>E Studio Seal Lockup</strong>
+            <span>Hollywood studio-seal energy with a restrained product wordmark.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Seventh pass: lowercase e</h2>
+      <section class="grid" aria-label="Lowercase e logo explorations">
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-thread-cut.svg" alt="Lowercase e thread cut mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Thread Cut</strong>
+            <span>Softer version of the core thread-cut idea.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-aperture.svg" alt="Lowercase e aperture mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Aperture</strong>
+            <span>The e becomes a scene lens and cinema aperture.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-face.svg" alt="Lowercase e face mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Face</strong>
+            <span>Counterform carries active-face identity inside the letter.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-prism.svg" alt="Lowercase e prism mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Prism</strong>
+            <span>Technicolor records split from the softer letterform.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-roster.svg" alt="Lowercase e roster mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Roster</strong>
+            <span>Face nodes attach to the lowercase scene bar.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="lowercase-e-lockup.svg" alt="Lowercase e wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>lowercase e Lockup</strong>
+            <span>Compares the softer mark directly against the uppercase-thread lockups.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Eighth pass: lowercase e color records</h2>
+      <section class="grid" aria-label="Lowercase e Technicolor color-record explorations">
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-three-strip.svg" alt="Lowercase e three-strip color mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Three-Strip</strong>
+            <span>The e divided into cyan, magenta, and amber color-record sections.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-prism-records.svg" alt="Lowercase e prism records mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Prism Records</strong>
+            <span>Color records pass through a single white e form.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-separated-records.svg" alt="Lowercase e separated records mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Separated Records</strong>
+            <span>Three registered bands build the e like film records.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="lowercase-e-beamsplitter.svg" alt="Lowercase e beam splitter mark">
+          </div>
+          <figcaption>
+            <strong>lowercase e Beam Splitter</strong>
+            <span>A central prism branches the e into three color paths.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="lowercase-e-color-record-lockup.svg" alt="Lowercase e color-record wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>lowercase e Color-Record Lockup</strong>
+            <span>Tests the segmented e beside the product name.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Online size candidates</h2>
+      <section class="grid" aria-label="Online-size logo candidates">
+        <figure>
+          <div class="logo-frame">
+            <img src="online-e-prism.svg" alt="Online prism lowercase e mark">
+          </div>
+          <figcaption>
+            <strong>Online Prism e</strong>
+            <span>Three color-record regions, simplified for app and header use.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="online-thread-e.svg" alt="Online thread lowercase e mark">
+          </div>
+          <figcaption>
+            <strong>Online Thread e</strong>
+            <span>Single readable e with small Technicolor accents.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="online-thread-cut.svg" alt="Online thread cut mark">
+          </div>
+          <figcaption>
+            <strong>Online Thread Cut</strong>
+            <span>The strongest thread-cut silhouette simplified for small sizes.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="online-roster-cut.svg" alt="Online roster cut mark">
+          </div>
+          <figcaption>
+            <strong>Online Roster Cut</strong>
+            <span>Thread-cut plus face nodes; more identity, more small-size risk.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Ninth pass: four-part segmented e</h2>
+      <section class="grid" aria-label="Four-part segmented lowercase e explorations">
+        <figure>
+          <div class="logo-frame">
+            <img src="segmented-e-four-part.svg" alt="Four-part segmented lowercase e mark">
+          </div>
+          <figcaption>
+            <strong>Segmented e Four-Part</strong>
+            <span>Cyan, magenta, yellow, and green sections form the e.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="segmented-e-tail.svg" alt="Segmented lowercase e with green tail">
+          </div>
+          <figcaption>
+            <strong>Segmented e Tail</strong>
+            <span>The green section becomes the tail and forward scene path.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="segmented-e-aperture.svg" alt="Segmented lowercase e aperture mark">
+          </div>
+          <figcaption>
+            <strong>Segmented e Aperture</strong>
+            <span>The four-part e inside a cinematic aperture frame.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="segmented-e-lockup.svg" alt="Segmented lowercase e wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Segmented e Lockup</strong>
+            <span>Tests the four-part mark beside the Elbysodic name.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Tenth pass: roster cut without dots</h2>
+      <section class="grid" aria-label="Roster cut without dots refinements">
+        <figure>
+          <div class="logo-frame">
+            <img src="online-roster-cut-color-left.svg" alt="Online roster cut with colored left blocks">
+          </div>
+          <figcaption>
+            <strong>Roster Cut Color Left</strong>
+            <span>No dots; the leftmost blocks become cyan, magenta, and yellow records.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="online-roster-cut-color-left-green.svg" alt="Online roster cut with colored left blocks and green tail">
+          </div>
+          <figcaption>
+            <strong>Roster Cut Color Left + Tail</strong>
+            <span>Adds a green forward block to test the four-color transition idea.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="online-roster-cut-color-circles.svg" alt="Online roster cut with colored left circles">
+          </div>
+          <figcaption>
+            <strong>Roster Cut Color Circles</strong>
+            <span>The left records become integrated face-like circles inside the bars.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="online-roster-cut-color-left-lockup.svg" alt="Roster cut color-left wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Roster Cut Color-Left Lockup</strong>
+            <span>Tests the simplified color-block mark beside the product name.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="online-roster-cut-color-circles-lockup.svg" alt="Roster cut color-circle wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Roster Cut Circle Lockup</strong>
+            <span>Compares the integrated-circle mark directly against the block version.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Eleventh pass: color-left arrow decision</h2>
+      <section class="grid" aria-label="Color-left roster cut arrow decision">
+        <figure>
+          <div class="logo-frame">
+            <img src="roster-cut-color-left-clean.svg" alt="Clean color-left roster cut mark with no arrow">
+          </div>
+          <figcaption>
+            <strong>Color Left Clean</strong>
+            <span>Removes the arrow cut completely for the purest small-size mark.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="roster-cut-color-left-arrow.svg" alt="Color-left roster cut with intentional arrow">
+          </div>
+          <figcaption>
+            <strong>Color Left Arrow</strong>
+            <span>Makes the cut deliberate as a forward scene path.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="roster-cut-color-left-chevron.svg" alt="Color-left roster cut with scene-gate chevron">
+          </div>
+          <figcaption>
+            <strong>Color Left Chevron</strong>
+            <span>Leans into the cut as a broader scene-gate gesture.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="roster-cut-color-left-clean-lockup.svg" alt="Clean color-left roster cut lockup">
+          </div>
+          <figcaption>
+            <strong>Color Left Clean Lockup</strong>
+            <span>Header comparison for the no-arrow version.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="roster-cut-color-left-arrow-lockup.svg" alt="Arrow color-left roster cut lockup">
+          </div>
+          <figcaption>
+            <strong>Color Left Arrow Lockup</strong>
+            <span>Header comparison for the intentional-arrow version.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Twelfth pass: circle terminals</h2>
+      <section class="grid" aria-label="Circle-terminal roster cut refinements">
+        <figure>
+          <div class="logo-frame">
+            <img src="roster-cut-circle-terminals.svg" alt="Roster cut with circle terminals">
+          </div>
+          <figcaption>
+            <strong>Circle Terminals</strong>
+            <span>Circles are the row terminals: o long, o short, o long.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="roster-cut-circle-terminals-arrow.svg" alt="Roster cut with circle terminals and arrow">
+          </div>
+          <figcaption>
+            <strong>Circle Terminals Arrow</strong>
+            <span>Same terminal structure with an intentional scene-forward cut.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="roster-cut-circle-terminals-lockup.svg" alt="Circle-terminal roster cut lockup">
+          </div>
+          <figcaption>
+            <strong>Circle Terminal Lockup</strong>
+            <span>Tests the circle-terminal mark beside the product name.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Thirteenth pass: circle terminal overlap</h2>
+      <section class="grid" aria-label="Circle-terminal overlap refinements">
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-overlap-soft.svg" alt="Soft overlap circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Overlap Soft</strong>
+            <span>Circles gently interlock with the bars without adding density.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-overlap-bleed.svg" alt="Color bleed circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Overlap Bleed</strong>
+            <span>Color records bleed farther into the bars for a stronger Technicolor read.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-overlap-tight.svg" alt="Tight overlap circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Overlap Tight</strong>
+            <span>Stress test for tighter vertical spacing; likely where it starts to clog.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-overlap-registered.svg" alt="Registered overlap circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Overlap Registered</strong>
+            <span>Slight offset where circles and bars meet, echoing color registration.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-overlap-cut.svg" alt="Cut-back overlap circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Overlap Cut</strong>
+            <span>The overlap is cut by the black spine for a sharper edge.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="circle-terminals-overlap-lockup.svg" alt="Circle terminal overlap wordmark lockup">
+          </div>
+          <figcaption>
+            <strong>Overlap Lockup</strong>
+            <span>Header comparison using the soft-overlap mark.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <h2>Fourteenth pass: vertical circle overlap</h2>
+      <section class="grid" aria-label="Vertical circle overlap refinements">
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-vertical-overlap.svg" alt="Vertical overlap circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Vertical Overlap</strong>
+            <span>Colored terminals overlap vertically while preserving the row structure.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-vertical-merge.svg" alt="Vertical merge circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Vertical Merge</strong>
+            <span>Adds transition zones where the colored terminals meet.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-vertical-intercut.svg" alt="Vertical intercut circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Vertical Intercut</strong>
+            <span>Black-key slivers keep overlapped discs readable at smaller sizes.</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="logo-frame">
+            <img src="circle-terminals-vertical-column.svg" alt="Vertical column circle terminal mark">
+          </div>
+          <figcaption>
+            <strong>Vertical Column</strong>
+            <span>Turns the overlap into one continuous signal column.</span>
+          </figcaption>
+        </figure>
+        <figure class="lockup">
+          <div class="logo-frame">
+            <img src="circle-terminals-vertical-lockup.svg" alt="Vertical overlap circle terminal lockup">
+          </div>
+          <figcaption>
+            <strong>Vertical Overlap Lockup</strong>
+            <span>Header comparison for the vertical-overlap direction.</span>
+          </figcaption>
+        </figure>
+      </section>
+    </main>
+  </body>
+</html>

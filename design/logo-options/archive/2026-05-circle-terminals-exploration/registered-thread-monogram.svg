@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic registered thread monogram</title>
+  <desc id="desc">A geometric E mark made from registered thread bars in cyan, magenta, and amber over a dark key stem.</desc>
+  <g fill="none" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M164 104v304" stroke="#071018" stroke-width="64"/>
+    <path d="M164 128h196" stroke="#071018" stroke-width="64"/>
+    <path d="M164 256h158" stroke="#071018" stroke-width="64"/>
+    <path d="M164 384h196" stroke="#071018" stroke-width="64"/>
+    <path d="M172 120h196" stroke="#36d6ff" stroke-width="20"/>
+    <path d="M172 252h158" stroke="#ff5ccf" stroke-width="20"/>
+    <path d="M172 388h196" stroke="#f7c948" stroke-width="20"/>
+  </g>
+  <circle cx="126" cy="256" r="34" fill="#ff5ccf"/>
+  <circle cx="126" cy="256" r="15" fill="#071018"/>
+  <path d="M378 95l32 33-32 32-33-32z" fill="#43d19e"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic spotlight aperture E</title>
+  <desc id="desc">An E mark formed in a spotlight aperture, combining Hollywood stage light with thread continuity.</desc>
+  <rect x="74" y="74" width="364" height="364" rx="44" fill="#071018"/>
+  <path d="M128 386 248 110h136L264 386z" fill="#f7fbff"/>
+  <path d="M148 150h216v52H148zM148 230h162v52H148zM148 310h216v52H148z" fill="#071018"/>
+  <path d="M204 124v264" stroke="#f7fbff" stroke-width="34" stroke-linecap="square"/>
+  <path d="M262 124v264" stroke="#f7fbff" stroke-width="14" stroke-linecap="square"/>
+  <path d="M310 204l64 52-64 52z" fill="#f7fbff"/>
+  <path d="M124 386h88" stroke="#36d6ff" stroke-width="14" stroke-linecap="square"/>
+  <path d="M218 386h88" stroke="#ff5ccf" stroke-width="14" stroke-linecap="square"/>
+  <path d="M312 386h88" stroke="#f7c948" stroke-width="14" stroke-linecap="square"/>
+</svg>

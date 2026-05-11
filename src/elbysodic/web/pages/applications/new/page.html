@@ -45,7 +45,10 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  <form class="chirpui-stack chirpui-stack--md elbysodic-application-form" method="post" hx-boost="false">
+  <form class="chirpui-stack chirpui-stack--md elbysodic-application-form"
+        method="post"
+        hx-boost="false"
+        data-elbysodic-submit-label="Creating draft face...">
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>
     {% end %}

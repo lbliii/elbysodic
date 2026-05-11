@@ -45,6 +45,10 @@ The next implementation must create a real community-local director identity
 without inventing global staff power, exposing backstage realms publicly, or
 leaving partial setup rows behind.
 
+This is a Realm Studio foundation slice for the strategy spine in
+`docs/product/strategy-spine.md`. It creates the authority boundary that later
+creator onboarding, invitation, Blueprint, and Writer Network entry flows need.
+
 ## Steward Synthesis
 
 Consulted stewards:

@@ -22,6 +22,11 @@ claims, reserves, wanted hooks, plotters, guidebooks, archives, Studio, and
 community atmosphere. Rapid-touch and AI features can only work after this
 backbone is stable, trusted, and visually current.
 
+This plan sequences the strategy spine in `docs/product/strategy-spine.md`:
+first harden the shared trust foundation, then prove Realm Studio and Writer
+Network through a non-AI alpha loop, then defer Continuity Graph expansion until
+manual provenance, rendered privacy, and transaction proof are solid.
+
 ## Research Basis
 
 Use these as input signal:
@@ -40,6 +45,10 @@ Modern roleplay is fragmented, not dead. Elbysodic should not position itself
 as the only roleplay tool. It should position itself as the PBP-native
 source-of-truth studio for running a durable writing community, with a modern
 design bar and controlled escape hatches later.
+
+Strategy doctrine:
+
+- `docs/product/strategy-spine.md`
 
 ## Current State
 
@@ -103,10 +112,17 @@ run one realm, and invited writers can join, bring faces, find story, and write
 without needing Discord, spreadsheets, or manual forum templates for core
 workflow.
 
-The alpha promise:
+The alpha promise by pillar:
+
+Realm Studio:
 
 - A director can bootstrap or create the first realm, shape the minimum launch
   packet, invite staff/writers, and see what blocks opening.
+- Staff can review applications, claims, reserves, reports/manual issues, and
+  private production material without leaking staff context.
+
+Writer Network:
+
 - A writer can accept access, understand the realm, create or apply with a
   first face, set a default face, and reach a first scene or wanted hook.
 - An active writer can enter the realm, see active face, find `needs reply`,
@@ -114,12 +130,18 @@ The alpha promise:
   reply with draft/preview confidence.
 - A hook hunter can move from wanted or plotter interest to a plotting room and
   scene without private note leakage.
-- Staff can review applications, claims, reserves, reports/manual issues, and
-  private production material without leaking staff context.
+
+Shared trust and presentation:
+
 - The public front door looks modern and roleplay-native, not like a dated
   forum index.
 - Every sensitive rendered surface has explicit privacy proof or a documented
   not-now boundary.
+
+Continuity Graph:
+
+- Source-linked canon remains deliberately not-now for alpha except where
+  existing scene/thread/material primitives need to preserve future compatibility.
 
 ## Roadmap
 

@@ -3,6 +3,13 @@
 These are the architectural primitives for the play-by-post studio core. They
 name the product rules that should stay stable as the implementation grows.
 
+The product strategy spine in `docs/product/strategy-spine.md` organizes these
+primitives into three pillars: Realm Studio, Writer Network, and Continuity
+Graph. Architecture should preserve the shared foundation for all three:
+tenant-aware data, global users, community-local memberships, local faces,
+membership-scoped permissions, character-authored story context, service-owned
+workflow policy, and rendered privacy proof.
+
 ## Identity
 
 `User` is the private global login account.

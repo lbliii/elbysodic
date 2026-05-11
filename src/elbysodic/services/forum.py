@@ -237,6 +237,8 @@ from elbysodic.services.read_models import (
 from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
+from elbysodic.services.recovery import RecoveryKind, RecoveryView
+from elbysodic.services.recovery import recovery_view as _recovery_view
 from elbysodic.services.themes import (
     DEFAULT_THEME_TOKENS,
     ThemeHealthWarning,
@@ -266,6 +268,17 @@ HERO_OVERLAYS = frozenset({"none", "light", "medium", "heavy"})
 HERO_HEIGHTS = frozenset({"compact", "standard", "immersive"})
 
 
+def _load_viewer_role(
+    repo: ForumRepository,
+    community: Community,
+    membership: CommunityMembership,
+) -> Role:
+    try:
+        return repo.get_role(community.id, membership.role_id)
+    except LookupError as exc:
+        raise PermissionError("realm membership role is not valid for this community") from exc
+
+
 class AppServices:
     """Small application service facade for the dev forum."""
 
@@ -284,6 +297,7 @@ class AppServices:
             _default_request_identity(seed),
         )
         self._identity_context = identity_context
+        self._viewer: ForumView | None = None
 
     @property
     def seed(self) -> DemoSeed:
@@ -316,21 +330,26 @@ class AppServices:
         )
 
     def viewer(self) -> ForumView:
+        if self._identity_context is not None and self._viewer is not None:
+            return self._viewer
         identity = self._identity_context or self._identity_resolver.resolve()
         community = self.repo.get_community(identity.community_id)
-        membership = self.repo.get_membership(community.id, identity.membership_id)
+        try:
+            membership = self.repo.get_membership(community.id, identity.membership_id)
+        except LookupError as exc:
+            raise PermissionError("realm membership is no longer available") from exc
         if membership.user_id != identity.user_id:
             raise PermissionError(
                 f"membership {membership.id} does not belong to user {identity.user_id}"
             )
         if not membership.is_active:
             raise PermissionError(f"membership {membership.id} is not active")
-        role = self.repo.get_role(community.id, membership.role_id)
+        role = _load_viewer_role(self.repo, community, membership)
         roster = self.repo.list_characters(community.id, membership.id)
         current_character = _resolve_current_character(self.repo, membership, roster)
         navigation_boards = _board_navigation(self.repo, community.id, membership, role)
         sidebar_sections = _sidebar_sections_by_key(self.repo, community.id)
-        return ForumView(
+        viewer = ForumView(
             community=community,
             membership=membership,
             role=role,
@@ -369,6 +388,12 @@ class AppServices:
             identity_options=self._identity_options(identity),
             program_theme=community_theme_view(self.repo.get_default_theme(community.id)),
         )
+        if self._identity_context is not None:
+            self._viewer = viewer
+        return viewer
+
+    def _invalidate_viewer(self) -> None:
+        self._viewer = None
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
         options: list[StudioIdentityOption] = []
@@ -376,7 +401,10 @@ class AppServices:
             if not membership.is_active:
                 continue
             community = self.repo.get_community(membership.community_id)
-            role = self.repo.get_role(community.id, membership.role_id)
+            try:
+                role = self.repo.get_role(community.id, membership.role_id)
+            except LookupError:
+                continue
             roster = self.repo.list_characters(community.id, membership.id)
             options.append(
                 StudioIdentityOption(
@@ -410,6 +438,44 @@ class AppServices:
         identity = self._identity_context or self._identity_resolver.resolve()
         return self._identity_for_membership(identity.user_id, membership_id)
 
+    def command_result(self, command_key: str, token: str) -> str | None:
+        if not token:
+            return None
+        viewer = self.viewer()
+        submission = self.repo.get_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+        )
+        return None if submission is None else submission.result_path
+
+    def reserve_command(self, command_key: str, token: str) -> bool:
+        if not token:
+            return True
+        viewer = self.viewer()
+        return self.repo.reserve_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+        )
+
+    def complete_command(self, command_key: str, token: str, result_path: str) -> None:
+        if not token:
+            return
+        viewer = self.viewer()
+        self.repo.complete_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+            result_path=result_path,
+        )
+
+    def recovery_view(self, *, kind: RecoveryKind, slug: str) -> RecoveryView:
+        return _recovery_view(self.repo, self.viewer(), kind=kind, slug=slug)
+
     def switch_session_identity(
         self,
         session_token: str,
@@ -437,6 +503,7 @@ class AppServices:
             if not membership.is_active:
                 raise PermissionError(f"membership {membership.id} is not active")
             community = self.repo.get_community(membership.community_id)
+            _load_viewer_role(self.repo, community, membership)
             return RequestIdentityContext(
                 community_id=community.id,
                 community_slug=community.slug,
@@ -1146,6 +1213,14 @@ class AppServices:
             filter_by=filter_by,
         )
 
+    def board_direct_thread_count(self, board: Board) -> int:
+        viewer = self.viewer()
+        if board.community_id != viewer.community.id:
+            raise PermissionError(f"board {board.id} does not belong to current community")
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        return self.repo.count_threads(viewer.community.id, board.id)
+
     def next_unread_thread(self, board_slug: str) -> ThreadNavigationItem | None:
         viewer = self.viewer()
         board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
@@ -1176,6 +1251,7 @@ class AppServices:
         thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
         thread_view = _read_thread_view(self.repo, viewer, board, thread)
         self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+        self._invalidate_viewer()
         return thread_view
 
     def watch_thread(self, board_slug: str, thread_slug: str) -> None:

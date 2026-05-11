@@ -34,9 +34,11 @@
   {{ alpine_json_config(composer_config_id, composer_config) }}
   <form method="post"
         hx-boost="false"
+        data-elbysodic-submit-label="Starting scene..."
         class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--opening"
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="submitDraft()">
+    <input type="hidden" name="command_token" value="{{ command_token }}">
     <div class="elbysodic-composer-heading">
       <div>
         <p class="elbysodic-kicker">Scene draft</p>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic segmented e with tail</title>
+  <desc id="desc">A lowercase e split into three color records and a green tail that becomes a forward scene path.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M258 120c-80 0-146 61-146 136 0 29 9 55 27 78l56-45c-7-10-10-22-10-35 0-38 31-70 73-70 35 0 63 18 74 46H214v54h188c2-10 4-21 4-32 0-73-66-132-148-132z" fill="#36d6ff"/>
+  <path d="M402 284H214c13 31 42 50 76 50 22 0 41-7 55-20h68c-24 45-70 76-124 76-38 0-72-13-98-35l52-44c13 12 29 18 48 18 21 0 39-6 52-18h59z" fill="#ff5ccf"/>
+  <path d="M214 230c11-27 29-46 56-46 30 0 52 18 62 46z" fill="#f7c948"/>
+  <path d="M246 350h108l-58 70H180z" fill="#43d19e"/>
+  <path d="M212 258h160" stroke="#071018" stroke-width="34" stroke-linecap="round"/>
+  <path d="M354 350l54 35-54 35z" fill="#071018"/>
+</svg>

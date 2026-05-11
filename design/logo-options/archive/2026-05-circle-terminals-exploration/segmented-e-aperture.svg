@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic segmented e aperture</title>
+  <desc id="desc">A four-part lowercase e built as an aperture, with cyan, magenta, yellow, and green segments.</desc>
+  <circle cx="256" cy="256" r="192" fill="#071018"/>
+  <path d="M256 116c-82 0-148 63-148 140 0 30 9 57 27 80l58-44c-7-11-11-24-11-38 0-40 32-72 74-72 34 0 62 18 74 48H212v54h194c2-10 4-21 4-32 0-76-68-136-154-136z" fill="#36d6ff"/>
+  <path d="M406 284H212c13 32 42 52 78 52 23 0 42-7 56-22h72c-24 44-72 78-128 78-41 0-78-14-106-38l54-43c14 12 31 18 52 18 21 0 39-6 52-18h64z" fill="#ff5ccf"/>
+  <path d="M212 230c13-30 31-48 58-48 30 0 52 18 60 48z" fill="#f7c948"/>
+  <path d="M184 354c-31-24-52-58-60-98h62c7 24 23 44 48 57z" fill="#43d19e"/>
+  <path d="M212 258h166" stroke="#071018" stroke-width="34" stroke-linecap="round"/>
+  <path d="M256 46v74M256 392v74M46 256h74M392 256h74" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+</svg>

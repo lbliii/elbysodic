@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic thread cut face signal</title>
+  <desc id="desc">A negative-space thread mark where the studio spine also reads as an abstract active-face profile.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="40" fill="#071018"/>
+  <path d="M142 148h230v54H142zM142 229h172v54H142zM142 310h230v54H142z" fill="#f7fbff"/>
+  <path d="M202 120c-30 34-46 78-46 136s16 102 46 136V120z" fill="#071018"/>
+  <path d="M250 118v276" stroke="#071018" stroke-width="22" stroke-linecap="square"/>
+  <path d="M312 202l70 54-70 54z" fill="#071018"/>
+  <circle cx="222" cy="225" r="11" fill="#ff5ccf"/>
+  <path d="M228 279h46" stroke="#071018" stroke-width="14" stroke-linecap="square"/>
+  <path d="M142 148h84" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M142 310h84" stroke="#f7c948" stroke-width="10"/>
+</svg>

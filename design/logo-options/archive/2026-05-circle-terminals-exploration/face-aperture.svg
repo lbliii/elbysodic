@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic face aperture mark</title>
+  <desc id="desc">A rounded studio aperture with an abstract face profile and postbit frame, suggesting active character identity.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="72" fill="#071018"/>
+  <path d="M162 160h188v44H162z" fill="#36d6ff"/>
+  <path d="M162 308h188v44H162z" fill="#ff5ccf"/>
+  <path d="M180 256c0-62 50-112 112-112h54v224h-54c-62 0-112-50-112-112z" fill="#f7fbff"/>
+  <path d="M284 180c-38 0-68 34-68 76s30 76 68 76h20c-18-16-28-42-28-76s10-60 28-76z" fill="#071018"/>
+  <circle cx="306" cy="235" r="13" fill="#ff5ccf"/>
+  <path d="M318 278h52" stroke="#071018" stroke-width="22" stroke-linecap="square"/>
+  <path d="M350 160h48v192h-48" fill="none" stroke="#f7c948" stroke-width="18" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

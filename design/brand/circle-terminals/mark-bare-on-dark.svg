@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals bare mark for dark surfaces</title>
+  <desc id="desc">Bare Circle Terminals symbol without the app container, intended for dark surfaces.</desc>
+  <circle cx="150" cy="174" r="31" fill="#36d6ff"/>
+  <circle cx="150" cy="256" r="31" fill="#ff5ccf"/>
+  <circle cx="150" cy="338" r="31" fill="#f7c948"/>
+  <path d="M206 142h144v64H206z" fill="#f7fbff"/>
+  <path d="M206 224h112v64H206z" fill="#f7fbff"/>
+  <path d="M206 306h174v64H206z" fill="#f7fbff"/>
+  <path d="M198 108v296" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+</svg>

@@ -36,9 +36,7 @@ def get(request: Request, board_slug: str) -> Page:
     active_filter = _parse_filter(request.query.get("filter", "all"))
     board, threads = services.board_threads(board_slug, filter_by=active_filter)
     direct_thread_count = (
-        len(threads)
-        if active_filter == "all"
-        else len(services.board_threads(board_slug, filter_by="all")[1])
+        len(threads) if active_filter == "all" else services.board_direct_thread_count(board)
     )
     board_summary = services.board_summary(board)
     parent_board = services.parent_board(board)

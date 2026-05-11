@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic online thread cut</title>
+  <desc id="desc">A simplified uppercase thread-cut mark optimized for online favicon, app icon, and header use.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M142 148h228v58H142zM142 228h174v58H142zM142 308h228v58H142z" fill="#f7fbff"/>
+  <path d="M198 118v276" stroke="#071018" stroke-width="42" stroke-linecap="square"/>
+  <path d="M310 198l74 58-74 58z" fill="#071018"/>
+  <path d="M142 148h86" stroke="#36d6ff" stroke-width="12"/>
+  <path d="M142 228h86" stroke="#ff5ccf" stroke-width="12"/>
+  <path d="M142 308h86" stroke="#f7c948" stroke-width="12"/>
+</svg>

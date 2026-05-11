@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic negative face E</title>
+  <desc id="desc">A block E whose white counterform creates an abstract face profile and scene aperture.</desc>
+  <rect x="86" y="86" width="340" height="340" rx="52" fill="#071018"/>
+  <path d="M154 144h222v64H234v56h116v60H234v44h142v64H154z" fill="#f7fbff"/>
+  <path d="M222 172c-42 0-76 37-76 84s34 84 76 84h30c-22-18-34-48-34-84s12-66 34-84z" fill="#071018"/>
+  <circle cx="252" cy="232" r="12" fill="#071018"/>
+  <path d="M258 280h74" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M154 144h108" stroke="#36d6ff" stroke-width="12"/>
+  <path d="M234 264h92" stroke="#ff5ccf" stroke-width="12"/>
+  <path d="M234 368h112" stroke="#f7c948" stroke-width="12"/>
+</svg>

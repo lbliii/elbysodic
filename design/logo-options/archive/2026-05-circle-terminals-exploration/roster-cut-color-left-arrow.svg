@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic roster cut color-left arrow</title>
+  <desc id="desc">A thread-cut mark with colored left record blocks and an intentional forward scene arrow cut.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <path d="M154 150h214v56H154zM154 228h164v56H154zM154 306h214v56H154z" fill="#f7fbff"/>
+  <path d="M154 150h62v56h-62z" fill="#36d6ff"/>
+  <path d="M154 228h62v56h-62z" fill="#ff5ccf"/>
+  <path d="M154 306h62v56h-62z" fill="#f7c948"/>
+  <path d="M216 120v274" stroke="#071018" stroke-width="40" stroke-linecap="square"/>
+  <path d="M298 190h46l58 66-58 66h-46l62-66z" fill="#071018"/>
+</svg>

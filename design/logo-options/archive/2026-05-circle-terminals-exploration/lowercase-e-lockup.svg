@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic lowercase e lockup</title>
+  <desc id="desc">A wordmark lockup using the lowercase e thread-cut mark as a softer product identity direction.</desc>
+  <rect x="28" y="34" width="212" height="212" rx="28" fill="#071018"/>
+  <path d="M134 78c-46 0-84 33-84 74s38 74 84 74c34 0 62-15 76-38h-46c-7 6-17 9-30 9-20 0-37-12-44-30h124c1-5 2-10 2-16 0-40-37-73-82-73z" fill="#f7fbff"/>
+  <path d="M94 139c7-18 22-30 40-30s34 12 41 30z" fill="#071018"/>
+  <path d="M88 152h104" stroke="#071018" stroke-width="22" stroke-linecap="square"/>
+  <path d="M134 68v168" stroke="#071018" stroke-width="10" stroke-linecap="square"/>
+  <path d="M296 218h124" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M432 218h124" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M568 218h124" stroke="#f7c948" stroke-width="9"/>
+  <text x="292" y="150" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="82" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="296" y="194" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">ROLEPLAY STUDIO</text>
+</svg>

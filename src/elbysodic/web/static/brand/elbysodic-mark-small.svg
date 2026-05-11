@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals small-size mark</title>
+  <desc id="desc">A small-size optimized Elbysodic logo mark with slightly larger terminals and bars for favicon and app icon contexts.</desc>
+  <rect x="56" y="56" width="400" height="400" rx="80" fill="#071018"/>
+  <circle cx="176" cy="176" r="31" fill="#36d6ff"/>
+  <circle cx="176" cy="256" r="31" fill="#ff5ccf"/>
+  <circle cx="176" cy="336" r="31" fill="#f7c948"/>
+  <path d="M226 148h134v56H226z" fill="#f7fbff"/>
+  <path d="M226 228h108v56H226z" fill="#f7fbff"/>
+  <path d="M226 308h162v56H226z" fill="#f7fbff"/>
+  <path d="M220 116v280" stroke="#071018" stroke-width="36" stroke-linecap="square"/>
+</svg>

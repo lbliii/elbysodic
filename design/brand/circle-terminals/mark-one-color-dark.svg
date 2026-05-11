@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic Circle Terminals one-color dark mark</title>
+  <desc id="desc">One-color dark Circle Terminals logo mark for masks, print, and low-color applications.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <circle cx="174" cy="174" r="27" fill="#f7fbff"/>
+  <circle cx="174" cy="256" r="27" fill="#f7fbff"/>
+  <circle cx="174" cy="338" r="27" fill="#f7fbff"/>
+  <path d="M226 148h122v52H226z" fill="#f7fbff"/>
+  <path d="M226 230h96v52H226z" fill="#f7fbff"/>
+  <path d="M226 312h150v52H226z" fill="#f7fbff"/>
+  <path d="M218 118v276" stroke="#071018" stroke-width="34" stroke-linecap="square"/>
+</svg>

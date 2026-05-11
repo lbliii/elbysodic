@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic exploratory wordmark lockup</title>
+  <desc id="desc">A horizontal lockup pairing the registered-thread mark with an exploratory geometric wordmark.</desc>
+  <rect x="24" y="24" width="232" height="232" rx="32" fill="#071018"/>
+  <g fill="none" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M104 80v120" stroke="#f7fbff" stroke-width="28"/>
+    <path d="M104 86h88" stroke="#36d6ff" stroke-width="16"/>
+    <path d="M104 140h70" stroke="#ff5ccf" stroke-width="16"/>
+    <path d="M104 194h88" stroke="#f7c948" stroke-width="16"/>
+  </g>
+  <circle cx="78" cy="140" r="17" fill="#ff5ccf"/>
+  <text x="304" y="145" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="74" font-weight="800" letter-spacing="0">elbysodic</text>
+  <text x="308" y="198" fill="#1b2e40" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">ROLEPLAY STUDIO</text>
+  <path d="M306 224h116" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M430 224h116" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M554 224h116" stroke="#f7c948" stroke-width="10"/>
+</svg>

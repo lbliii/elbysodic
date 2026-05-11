@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Elbysodic Circle Terminals Review</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --key: #071018;
+        --surface: #101b27;
+        --panel: #f7fbff;
+        --text: #f7fbff;
+        --muted: #b2c0cc;
+        --ink: #071018;
+        --border: #294258;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--key);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1120px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 44px 0;
+      }
+
+      header {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 4.6rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin: 34px 0 14px;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      p {
+        margin: 0;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(180px, 320px) minmax(0, 1fr);
+        gap: 24px;
+        align-items: center;
+        padding: 24px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .hero img {
+        width: 100%;
+        max-width: 320px;
+      }
+
+      .logic {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .logic div,
+      .sample {
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .logic strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 14px;
+      }
+
+      .sample.light {
+        background: var(--panel);
+        color: var(--ink);
+      }
+
+      .sample span {
+        display: block;
+        margin-bottom: 12px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .sample.light span {
+        color: #617181;
+      }
+
+      .sizes {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .lockup img {
+        width: min(760px, 100%);
+      }
+
+      code {
+        font-family: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
+      }
+
+      @media (max-width: 760px) {
+        .hero,
+        .logic {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Circle Terminals</h1>
+        <p>The selected direction compresses Elbysodic into a simple symbol: three face/roster terminals plus thread bars arranged as a compact E. It is distinctive, PBP-native, and strong at online sizes.</p>
+      </header>
+
+      <section class="hero" aria-label="Primary logo">
+        <img src="circle-terminals-primary.svg" alt="Circle Terminals primary mark">
+        <div>
+          <h2>Why It Works</h2>
+          <p>The mark has a one-glance construction: <code>o --- / o - / o ---</code>. The circles carry face, roster, and public authorship. The bars carry thread, scene, and continuity. The cyan, magenta, and yellow terminals give a Technicolor record system without making the logo decorative.</p>
+        </div>
+      </section>
+
+      <h2>Brand Logic</h2>
+      <section class="logic" aria-label="Brand logic">
+        <div>
+          <strong>Face</strong>
+          <p>Three colored terminals feel like identities in a roster, not generic app dots.</p>
+        </div>
+        <div>
+          <strong>Thread</strong>
+          <p>The long-short-long bars preserve the post/thread structure and imply an E.</p>
+        </div>
+        <div>
+          <strong>Studio</strong>
+          <p>The black-key container and cut spine make the mark precise and usable in product chrome.</p>
+        </div>
+      </section>
+
+      <h2>Size Proof</h2>
+      <section class="grid" aria-label="Size proof">
+        <div class="sample light">
+          <span>16 / 24 / 32</span>
+          <div class="sizes">
+            <img src="circle-terminals-primary.svg" width="16" height="16" alt="">
+            <img src="circle-terminals-primary.svg" width="24" height="24" alt="">
+            <img src="circle-terminals-primary.svg" width="32" height="32" alt="">
+          </div>
+        </div>
+        <div class="sample light">
+          <span>64 / 96</span>
+          <div class="sizes">
+            <img src="circle-terminals-primary.svg" width="64" height="64" alt="">
+            <img src="circle-terminals-primary.svg" width="96" height="96" alt="">
+          </div>
+        </div>
+        <div class="sample">
+          <span>Dark header</span>
+          <div class="sizes">
+            <img src="circle-terminals-primary.svg" width="38" height="38" alt="">
+            <strong>elbysodic</strong>
+          </div>
+        </div>
+      </section>
+
+      <h2>Variants</h2>
+      <section class="grid" aria-label="Logo variants">
+        <div class="sample light">
+          <span>Primary</span>
+          <img src="circle-terminals-primary.svg" width="128" height="128" alt="">
+        </div>
+        <div class="sample light">
+          <span>One color</span>
+          <img src="circle-terminals-primary-one-color.svg" width="128" height="128" alt="">
+        </div>
+        <div class="sample light">
+          <span>Light context</span>
+          <img src="circle-terminals-primary-light.svg" width="128" height="128" alt="">
+        </div>
+        <div class="sample">
+          <span>Bare symbol</span>
+          <img src="circle-terminals-primary-bare.svg" width="128" height="128" alt="">
+        </div>
+        <div class="sample light">
+          <span>Progressive</span>
+          <img src="circle-terminals-progressive.svg" width="128" height="128" alt="">
+        </div>
+      </section>
+
+      <h2>Primary vs Progressive</h2>
+      <section class="grid" aria-label="Primary versus progressive comparison">
+        <div class="sample light">
+          <span>Primary: o --- / o - / o ---</span>
+          <div class="sizes">
+            <img src="circle-terminals-primary.svg" width="16" height="16" alt="">
+            <img src="circle-terminals-primary.svg" width="24" height="24" alt="">
+            <img src="circle-terminals-primary.svg" width="32" height="32" alt="">
+            <img src="circle-terminals-primary.svg" width="64" height="64" alt="">
+          </div>
+        </div>
+        <div class="sample light">
+          <span>Progressive: o -- / o - / o ---</span>
+          <div class="sizes">
+            <img src="circle-terminals-progressive.svg" width="16" height="16" alt="">
+            <img src="circle-terminals-progressive.svg" width="24" height="24" alt="">
+            <img src="circle-terminals-progressive.svg" width="32" height="32" alt="">
+            <img src="circle-terminals-progressive.svg" width="64" height="64" alt="">
+          </div>
+        </div>
+      </section>
+
+      <h2>Lockup</h2>
+      <section class="sample light lockup" aria-label="Primary lockup">
+        <span>Exploratory wordmark lockup</span>
+        <img src="circle-terminals-primary-lockup.svg" alt="Circle Terminals primary lockup">
+      </section>
+      <section class="sample light lockup" aria-label="Progressive lockup">
+        <span>Progressive lockup</span>
+        <img src="circle-terminals-progressive-lockup.svg" alt="Circle Terminals progressive lockup">
+      </section>
+    </main>
+  </body>
+</html>

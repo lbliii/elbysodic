@@ -8,6 +8,19 @@ emotional safety of pseudonymous writing spaces while making the board-running
 work of directors, writers, faces, scenes, locations, events, canon, casting,
 claims, reserves, and continuity native to the product.
 
+Directionally, Elbysodic aligns around three product pillars:
+
+- Realm Studio: director and staff workflows for opening, running, shaping,
+  reviewing, exporting, and preserving one living PBP realm.
+- Writer Network: writer-facing identity, active face, obligations, discovery,
+  continuation, wanted hooks, plotting, and cross-realm entry paths.
+- Continuity Graph: reviewed, source-linked memory from scenes into canon,
+  characters, locations, events, claims, reserves, wanted hooks, and world
+  materials after privacy and provenance gates are solid.
+
+The canonical product strategy spine lives in
+`docs/product/strategy-spine.md`.
+
 ## Non-Negotiables
 
 - This is not a generic forum skin. Use PBP language: face, roster, thread,

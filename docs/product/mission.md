@@ -26,6 +26,18 @@ present, and community canon can move naturally into play. Older forum products
 made communities build that studio by hand out of boards, templates, lists, and
 staff posts. Elbysodic should make those production materials native.
 
+The current strategy spine turns that promise into three pillars:
+
+- **Realm Studio** for directors and staff running the board.
+- **Writer Network** for writers carrying faces, obligations, discovery, and
+  continuation across realms.
+- **Continuity Graph** for reviewed, source-linked story memory once production
+  trust, rendered privacy, and provenance are proven.
+
+The full strategy doctrine lives in
+`docs/product/strategy-spine.md`. This mission explains why Elbysodic exists;
+the strategy spine explains how the major product surfaces compound.
+
 ## What PBP Needs
 
 Characters are not profile decorations. They are public identities, writing
@@ -90,7 +102,8 @@ the trust model, not afterthoughts.
 
 ## Near-Term Product Spine
 
-The MVP should prove the loop that makes PBP feel alive:
+The MVP should prove the Writer Network loop that makes PBP feel alive inside
+one tenant-aware realm:
 
 1. A user enters a community.
 2. Their community-specific membership and character roster activate.
@@ -104,6 +117,10 @@ The MVP should prove the loop that makes PBP feel alive:
 Everything else should grow from that loop: thread states, archives, drafts,
 plotting tools, wanted ads, claims, reserves, applications, ship/relationship
 trackers, notifications, member directories, moderation, theming, and export.
+
+Realm Studio grows around that loop by making board-running work native instead
+of manual. Continuity Graph grows after that loop is safe by turning completed
+play into reviewed, source-linked memory.
 
 ## Current Product Understanding
 

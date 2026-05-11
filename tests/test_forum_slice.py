@@ -18,6 +18,7 @@ from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services, default_database_path
+from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import scope_response_urls
@@ -80,6 +81,15 @@ def _oob_block(html: str, target_id: str) -> str:
     )
     assert match is not None
     return match.group("body")
+
+
+def _input_value(html: str, name: str) -> str:
+    match = re.search(
+        rf'<input[^>]+name="{re.escape(name)}"[^>]+value="(?P<value>[^"]*)"',
+        html,
+    )
+    assert match is not None
+    return match.group("value")
 
 
 def _page_content(html: str) -> str:
@@ -568,6 +578,7 @@ def test_tenant_prefixed_identity_and_casting_routes_scope_rendered_links() -> N
         assert application.status == 200
         assert "Start Application" in application.text
         assert "Create draft face" in application.text
+        assert 'data-elbysodic-submit-label="Creating draft face..."' in application.text
         assert f'href="/c/{community_slug}/applications"' in application.text
         assert 'href="/elbysodic-static/elbysodic-theme.css' in application.text
         assert f'href="/c/{community_slug}/elbysodic-static' not in application.text
@@ -607,6 +618,7 @@ def test_tenant_prefixed_thread_routes_scope_composer_redirects() -> None:
 
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
+        assert 'data-elbysodic-submit-label="Posting..."' in thread.text
         assert f'href="/c/{community_slug}/boards/danger-room"' in thread.text
         assert (
             f'name="next" value="/c/{community_slug}/boards/danger-room/threads/sentinel-drill"'
@@ -615,6 +627,7 @@ def test_tenant_prefixed_thread_routes_scope_composer_redirects() -> None:
 
         assert composer.status == 200
         assert "Start scene" in composer.text
+        assert 'data-elbysodic-submit-label="Starting scene..."' in composer.text
         assert f'href="/c/{community_slug}/boards/danger-room"' in composer.text
         assert f"/c/{community_slug}/mentionables/search" in composer.text
 
@@ -662,6 +675,8 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
         assert "RL Small Town" in before.text
         assert switch.status == 302
         assert "elbysodic_dev_identity=" in set_cookie
+        assert "data-elbysodic-submit-group" in before.text
+        assert 'data-elbysodic-submit-label="Entering HP Universe..."' in before.text
         assert after.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in after.text
         assert "Director in HP Universe" in after.text
@@ -669,6 +684,76 @@ def test_identity_switcher_persists_dev_membership_cookie() -> None:
         assert '<style id="elbysodic-program-theme">' in after.text
         assert "--chirpui-accent: #c8a6ff;" in after.text
         assert "--chirpui-ui-font-family: Georgia, serif;" in after.text
+
+    asyncio.run(run())
+
+
+def test_identity_resolution_reports_sources_for_tenant_and_cookie_recovery() -> None:
+    services = create_services(path=":memory:")
+    resolver = services._identity_resolver
+    hp = services.repo.get_community_by_slug("hp-universe")
+    hp_membership = services.repo.get_membership_for_user(hp.id, services.seed.user.id)
+    tenant_request = SimpleNamespace(
+        headers={},
+        cookies={"elbysodic_dev_identity": f"{hp.id}:{services.seed.user.id}:999999"},
+        _cache={TENANT_SLUG_CACHE_KEY: hp.slug},
+    )
+
+    resolution = resolver.resolve_with_details(tenant_request)
+
+    assert resolution.context.community_id == hp.id
+    assert resolution.context.membership_id == hp_membership.id
+    assert resolution.community_source == "tenant_prefix"
+    assert resolution.user_source == "dev_cookie"
+    assert resolution.membership_source == "user_membership"
+    assert resolution.recovery_reason == "stale dev membership"
+    assert resolution.is_session_backed is False
+
+
+def test_tenant_prefixed_board_handles_invalid_membership_role_as_identity_failure() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        small_town = services.repo.get_community_by_slug("rl-small-town")
+        membership = services.repo.get_membership_for_user(
+            small_town.id,
+            services.seed.user.id,
+        )
+        xmen_role = services.repo.get_role_by_slug(services.seed.community.id, "member")
+        services.repo.connection.execute(
+            """
+            UPDATE community_memberships
+            SET role_id = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (xmen_role.id, small_town.id, membership.id),
+        )
+        services.repo.connection.commit()
+        cookie = f"elbysodic_dev_identity={small_town.id}:{services.seed.user.id}:{membership.id}"
+
+        async with TestClient(app) as client:
+            full = await client.get(
+                "/c/rl-small-town/boards/town-hall?filter=mine",
+                headers={"Cookie": cookie},
+            )
+            fragment = await client.get(
+                "/c/rl-small-town/boards/town-hall?filter=mine",
+                headers={
+                    "Cookie": cookie,
+                    "HX-Request": "true",
+                    "HX-Boosted": "true",
+                    "HX-Target": "main",
+                },
+            )
+
+        assert full.status == 403
+        assert "That realm membership needs staff attention." in full.text
+        assert "Your identity did not change." in full.text
+        assert "Internal Server Error" not in full.text
+        assert "playing as" not in full.text
+        assert fragment.status == 403
+        assert 'data-status="403"' in fragment.text
+        assert "That realm membership needs staff attention." in fragment.text
 
     asyncio.run(run())
 
@@ -816,6 +901,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
 
         assert page.status == 200
         assert "Invite/demo accounts use password" in page.text
+        assert "/elbysodic-static/brand/elbysodic-mark.svg" in page.text
         assert login.status == 302
         assert _response_header(login, "location") == "/studio"
         assert any(cookie.startswith("elbysodic_session=") for cookie in set_cookies)
@@ -1082,6 +1168,34 @@ def test_cross_realm_character_recovery_ignores_inactive_faces() -> None:
     asyncio.run(run())
 
 
+def test_cross_realm_character_recovery_hides_non_switchable_program_names() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hosted, _user_id, membership_id, _character_id = _add_hosted_membership(
+            services,
+            slug="private-program",
+            username="private-realm",
+        )
+        services.repo.create_character(
+            hosted.id,
+            membership_id,
+            "private-cross-face",
+            "Private Cross Face",
+        )
+
+        async with TestClient(app) as client:
+            response = await client.get("/characters/private-cross-face")
+
+        assert response.status == 200
+        assert "That face is not in X-Men Apocalypse." in response.text
+        assert "That face lives in Hosted Program." not in response.text
+        assert "private-program" not in response.text
+        assert "Switch to Hosted Program" not in response.text
+
+    asyncio.run(run())
+
+
 def test_cross_realm_material_url_renders_switchable_recovery() -> None:
     async def run() -> None:
         app = _app()
@@ -1132,6 +1246,7 @@ def test_prefixed_cross_realm_recovery_switches_to_target_tenant() -> None:
             )
 
         assert recovery.status == 200
+        assert "/elbysodic-static/brand/elbysodic-mark.svg" in recovery.text
         assert "That world material lives in Jurassic Park Universe." in recovery.text
         assert (
             'name="next" value="/c/jurassic-park-universe/world/paddock-twelve-incident"'
@@ -1385,6 +1500,8 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
             root = await client.get("/")
 
         assert root.status == 200
+        assert "/elbysodic-static/brand/elbysodic-favicon.svg" in root.text
+        assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in root.text
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
         assert "Studio Network" in root.text
         assert "Choose the realm you are writing in." in root.text
@@ -1404,6 +1521,8 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             index = await client.get("/c/x-men-apocalypse")
 
             assert index.status == 200
+            assert "/elbysodic-static/brand/elbysodic-favicon.svg" in index.text
+            assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in index.text
             assert "/elbysodic-static/seed-media/xmen-mark.svg" in index.text
             assert 'alt="X-Men Apocalypse academy signal mark"' in index.text
             assert (
@@ -3406,11 +3525,13 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert "Brotherhood rival from Rogue" in wanted.text
             assert "Human UN liaison for B-24 talks" in wanted.text
             assert 'href="/wanted/brotherhood-rival-for-rogue"' in wanted.text
+            assert "elbysodic-thread-signal" in wanted.text
             assert "United Nations" in wanted.text
 
             detail = await client.get("/wanted/brotherhood-rival-for-rogue")
             assert detail.status == 200
             assert "chirpui-detail-header" in detail.text
+            assert "elbysodic-wanted-detail__signal" in detail.text
             assert "chirpui-facet-chip" in detail.text
             assert "chirpui-scope-switcher" in detail.text
             assert "Rogue needs someone who remembers" in detail.text
@@ -3424,6 +3545,10 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert "Tracker" in character.text
             assert "Brotherhood rival from Rogue" in character.text
             assert 'href="/wanted"' in character.text
+
+            open_hook = await client.get("/wanted/human-un-liaison-for-b24")
+            assert open_hook.status == 200
+            assert 'data-elbysodic-submit-label="Sending interest..."' in open_hook.text
 
             interest_response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
@@ -3522,6 +3647,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 casting = await profile_client.get("/casting")
                 assert casting.status == 200
                 assert "Casting Desk" in casting.text
+                assert "elbysodic-casting-desk-hero__identity" in casting.text
                 assert "Browsing as Rogue" in casting.text
                 assert "Wanted With Interest" in casting.text
                 assert "Active Reserves" in casting.text
@@ -6844,6 +6970,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert 'aria-label="Quote"' in form.text
             assert 'aria-label="Link"' in form.text
             assert "Power-stealing brawler with a careful heart." in form.text
+            token = _input_value(form.text, "command_token")
 
             response = await client.post(
                 "/boards/danger-room/threads/new",
@@ -6858,6 +6985,20 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "summary": "Magneto tags Xavier into an unreasonable simulation.",
                         "posting_mode": "posting_order",
                         "body": "Magneto sets the simulation to unfair.",
+                        "command_token": token,
+                    },
+                    doseq=True,
+                ).encode(),
+                headers=_FORM,
+            )
+            duplicate = await client.post(
+                "/boards/danger-room/threads/new",
+                body=urlencode(
+                    {
+                        "character_id": magneto.id,
+                        "title": "Metal and Memory Duplicate",
+                        "body": "This duplicate should not be posted.",
+                        "command_token": token,
                     },
                     doseq=True,
                 ).encode(),
@@ -6867,6 +7008,8 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert dict(response.headers)["location"].startswith(
                 "/boards/danger-room/threads/metal-and-memory#post-"
             )
+            assert duplicate.status == 302
+            assert dict(duplicate.headers)["location"] == dict(response.headers)["location"]
 
             thread = await client.get("/boards/danger-room/threads/metal-and-memory")
             assert thread.status == 200
@@ -6882,11 +7025,61 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
 
             board = await client.get("/boards/danger-room")
             assert "Metal and Memory" in board.text
+            assert "Metal and Memory Duplicate" not in board.text
             assert "Started by" in board.text
             assert "open to join" in board.text
             assert "Sublevel 3" in board.text
             assert "Latest" in board.text
             assert "/members/starlane" in board.text
+
+    asyncio.run(run())
+
+
+def test_reply_command_token_prevents_duplicate_posts() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "danger-room")
+        thread = repo.get_thread_by_slug(community.id, board.id, "sentinel-drill")
+        character = services.viewer().current_character
+        assert character is not None
+        before_count = len(repo.list_posts(community.id, thread.id))
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+            assert page.status == 200
+            token = _input_value(page.text, "command_token")
+            first = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "body": "Rogue checks the duplicate-submit guard.",
+                        "command_token": token,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            duplicate = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "body": "This duplicate should not create another post.",
+                        "command_token": token,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert first.status == 302
+        assert duplicate.status == 302
+        assert dict(duplicate.headers)["location"] == dict(first.headers)["location"]
+        posts = repo.list_posts(community.id, thread.id)
+        assert len(posts) == before_count + 1
+        assert posts[-1].body == "Rogue checks the duplicate-submit guard."
 
     asyncio.run(run())
 

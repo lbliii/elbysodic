@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic circle terminals overlap cut</title>
+  <desc id="desc">Circle-terminal logo variant where the overlap is cut back into the black-key spine for a sharper registered edge.</desc>
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#071018"/>
+  <circle cx="180" cy="178" r="34" fill="#36d6ff"/>
+  <circle cx="180" cy="256" r="34" fill="#ff5ccf"/>
+  <circle cx="180" cy="334" r="34" fill="#f7c948"/>
+  <path d="M202 150h166v56H202z" fill="#f7fbff"/>
+  <path d="M202 228h116v56H202z" fill="#f7fbff"/>
+  <path d="M202 306h166v56H202z" fill="#f7fbff"/>
+  <path d="M202 150h36v56h-36z" fill="#36d6ff"/>
+  <path d="M202 228h36v56h-36z" fill="#ff5ccf"/>
+  <path d="M202 306h36v56h-36z" fill="#f7c948"/>
+  <path d="M224 120v274" stroke="#071018" stroke-width="42" stroke-linecap="square"/>
+</svg>

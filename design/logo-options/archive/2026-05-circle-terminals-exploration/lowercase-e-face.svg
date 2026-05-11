@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic lowercase e face</title>
+  <desc id="desc">A lowercase e whose counterform carries an active-face profile and scene line.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="42" fill="#071018"/>
+  <path d="M256 132c-78 0-140 56-140 124s62 124 140 124c54 0 100-24 124-62h-76c-12 10-28 16-48 16-34 0-62-20-74-50h208c2-9 4-18 4-28 0-68-62-124-138-124z" fill="#f7fbff"/>
+  <path d="M248 174c-36 0-66 26-78 60h96c-22 18-34 46-34 80 0 8 1 16 3 24-32-8-56-28-66-58h220c2-8 3-16 3-24 0-46-30-82-72-82z" fill="#071018"/>
+  <circle cx="276" cy="216" r="11" fill="#ff5ccf"/>
+  <path d="M284 268h64" stroke="#071018" stroke-width="16" stroke-linecap="square"/>
+  <path d="M154 176h84" stroke="#36d6ff" stroke-width="12"/>
+  <path d="M188 342h90" stroke="#f7c948" stroke-width="12"/>
+</svg>

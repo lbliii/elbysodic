@@ -73,6 +73,22 @@ def _scenario(request: Request, status: int, detail: str) -> ErrorScenario:
     normalized = detail.lower()
     if status == 403:
         if (
+            "realm membership role" in normalized
+            or "realm membership is no longer available" in normalized
+        ):
+            return ErrorScenario(
+                title="That realm membership needs staff attention.",
+                summary=(
+                    "Elbysodic stopped before changing your face or realm because that "
+                    "membership is missing a valid local role."
+                ),
+                detail="Your identity did not change. Return to the network and choose another realm.",
+                actions=(
+                    ErrorAction("Open Studio Network", "/network", "primary"),
+                    ErrorAction("Log in again", _login_href(request)),
+                ),
+            )
+        if (
             "login required" in normalized
             or "login is required" in normalized
             or request.cookies.get("elbysodic_session") is None

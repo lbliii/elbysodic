@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic segmented e lockup</title>
+  <desc id="desc">A lockup using a lowercase e sliced into cyan, magenta, yellow, and green tail sections.</desc>
+  <rect x="28" y="34" width="212" height="212" rx="28" fill="#071018"/>
+  <path d="M136 74c-47 0-86 35-86 78 0 16 5 31 15 44l33-26c-4-6-6-12-6-19 0-22 19-41 44-41 20 0 36 11 43 27h-70v32h112c2-6 2-12 2-18 0-43-39-77-87-77z" fill="#36d6ff"/>
+  <path d="M221 169H109c8 19 25 31 46 31 13 0 24-4 32-13h42c-14 25-40 43-73 46-25 3-49-4-67-18l32-27c9 7 20 11 34 11 13 0 24-4 32-12h34z" fill="#ff5ccf"/>
+  <path d="M109 137c7-17 18-27 34-27 18 0 32 10 38 27z" fill="#f7c948"/>
+  <path d="M90 214c-15-13-26-31-30-51l38-6c4 13 12 24 25 31z" fill="#43d19e"/>
+  <path d="M108 153h96" stroke="#071018" stroke-width="20" stroke-linecap="round"/>
+  <text x="292" y="150" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="82" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="296" y="194" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">ROLEPLAY STUDIO</text>
+  <path d="M296 218h96" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M404 218h96" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M512 218h96" stroke="#f7c948" stroke-width="9"/>
+  <path d="M620 218h96" stroke="#43d19e" stroke-width="9"/>
+</svg>

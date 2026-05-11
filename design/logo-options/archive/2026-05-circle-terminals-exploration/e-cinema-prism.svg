@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic cinema prism E</title>
+  <desc id="desc">A futurist cinema prism splitting an E into registered Technicolor light records.</desc>
+  <rect x="78" y="78" width="356" height="356" rx="40" fill="#071018"/>
+  <path d="M136 150h214v52H136zM136 230h164v52H136zM136 310h214v52H136z" fill="#f7fbff"/>
+  <path d="M194 120v274" stroke="#071018" stroke-width="42" stroke-linecap="square"/>
+  <path d="M254 120v274" stroke="#071018" stroke-width="18" stroke-linecap="square"/>
+  <path d="M314 202l66 54-66 54z" fill="#071018"/>
+  <path d="M350 150h46l-46 52z" fill="#36d6ff"/>
+  <path d="M300 230h96l-96 52z" fill="#ff5ccf"/>
+  <path d="M350 310h46l-46 52z" fill="#f7c948"/>
+  <path d="M108 108h76M328 404h76" stroke="#d8e7f2" stroke-width="12" stroke-linecap="square"/>
+</svg>

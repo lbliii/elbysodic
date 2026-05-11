@@ -414,10 +414,12 @@
     <form id="reply-composer"
           method="post"
           hx-boost="false"
+          data-elbysodic-submit-label="Posting..."
           class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--reply"
           x-data="elbysodicComposer('{{ composer_config_id }}')"
           @submit="submitDraft()">
       <input type="hidden" name="intent" value="reply">
+      <input type="hidden" name="command_token" value="{{ command_token }}">
       <div class="elbysodic-composer-heading">
         <div>
           <p class="elbysodic-kicker">Next beat</p>

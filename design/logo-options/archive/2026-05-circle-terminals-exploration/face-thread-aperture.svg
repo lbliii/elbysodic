@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic face thread aperture</title>
+  <desc id="desc">An abstract profile inside a studio aperture, crossed by thread lines that suggest scene continuity.</desc>
+  <rect x="74" y="74" width="364" height="364" rx="58" fill="#071018"/>
+  <path d="M140 170h232M140 256h232M140 342h232" stroke="#f7fbff" stroke-width="18" stroke-linecap="square"/>
+  <path d="M160 256c0-70 56-126 126-126h66v252h-66c-70 0-126-56-126-126z" fill="#f7fbff"/>
+  <path d="M270 158c-42 0-76 44-76 98s34 98 76 98h28c-22-23-34-56-34-98s12-75 34-98z" fill="#071018"/>
+  <circle cx="304" cy="226" r="12" fill="#ff5ccf"/>
+  <path d="M302 280h54" stroke="#071018" stroke-width="20" stroke-linecap="square"/>
+  <path d="M140 170h96" stroke="#36d6ff" stroke-width="18" stroke-linecap="square"/>
+  <path d="M140 256h62" stroke="#ff5ccf" stroke-width="18" stroke-linecap="square"/>
+  <path d="M140 342h106" stroke="#f7c948" stroke-width="18" stroke-linecap="square"/>
+</svg>

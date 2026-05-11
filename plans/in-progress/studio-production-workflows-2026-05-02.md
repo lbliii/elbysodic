@@ -25,6 +25,11 @@ world materials, applications, claims, wanted hooks, reserves, navigation,
 appearance, and dry-run Blueprint intake. The next work should harden the
 highest-value production workflows in small, testable slices.
 
+This plan primarily strengthens the Realm Studio pillar from
+`docs/product/strategy-spine.md`. It also protects Writer Network by keeping
+staff work from leaking into writer-facing scenes, wanted hooks, applications,
+and plotting rooms.
+
 ## Product Shape
 
 Studio work should stay close to the fiction:

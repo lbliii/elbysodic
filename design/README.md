@@ -55,8 +55,12 @@ pretend a behavior exists until code, tests, or product docs support it.
 
 - `art-direction-program.md`: a programmatic model for translating a
   community's premise into a safe art-direction score.
+- `brand/`: durable selected brand assets and usage notes after logo
+  exploration settles into a production direction.
 - `component-inventory.md`: current shared component map, surface-intensity
   budgets, token roles, and QA matrix for visual implementation.
+- `circle-terminals-token-map.md`: accepted token roles for translating the
+  Circle Terminals mark into default theme color and state language.
 - `image-dimensions.md`: aspect-ratio map for Midjourney-style image
   generation and product media surfaces.
 - `motion-design.md`: animation and transition guidance for technicolor

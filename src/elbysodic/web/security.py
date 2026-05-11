@@ -121,6 +121,18 @@ class RequireLoginMiddleware:
         return error_response(request, status=403, detail="Login required")
 
 
+class IdentityFailureMiddleware:
+    """Render controlled auth/identity failures raised during page work."""
+
+    __slots__ = ()
+
+    async def __call__(self, request: Request, call_next: Next) -> AnyResponse:
+        try:
+            return await call_next(request)
+        except PermissionError as exc:
+            return error_response(request, status=403, detail=str(exc))
+
+
 class AutoCSRFFormsMiddleware:
     """Attach the active CSRF field to rendered POST forms."""
 

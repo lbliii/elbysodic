@@ -269,6 +269,27 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             ).fetchall()
         return [_thread_from_row(row) for row in rows]
 
+    def count_threads(self, community_id: int, board_id: int | None = None) -> int:
+        if board_id is None:
+            row = self.connection.execute(
+                """
+                SELECT COUNT(*) AS thread_count
+                FROM threads
+                WHERE community_id = ?
+                """,
+                (community_id,),
+            ).fetchone()
+        else:
+            row = self.connection.execute(
+                """
+                SELECT COUNT(*) AS thread_count
+                FROM threads
+                WHERE community_id = ? AND board_id = ?
+                """,
+                (community_id, board_id),
+            ).fetchone()
+        return int(row["thread_count"]) if row is not None else 0
+
     def list_threads_by_character(self, community_id: int, character_id: int) -> list[Thread]:
         self.get_character(community_id, character_id)
         rows = self.connection.execute(

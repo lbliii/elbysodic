@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic casting orbit</title>
+  <desc id="desc">A roster orbit with a central wanted signal, balancing casting energy with scene continuity.</desc>
+  <circle cx="256" cy="256" r="184" fill="#071018"/>
+  <ellipse cx="256" cy="256" rx="154" ry="72" fill="none" stroke="#f7fbff" stroke-width="18"/>
+  <ellipse cx="256" cy="256" rx="72" ry="154" fill="none" stroke="#f7fbff" stroke-width="18"/>
+  <path d="M256 150l28 66 72 6-54 46 16 70-62-36-62 36 16-70-54-46 72-6z" fill="#f7c948"/>
+  <circle cx="256" cy="256" r="44" fill="#071018"/>
+  <path d="M230 250h52M230 282h40" stroke="#f7fbff" stroke-width="14" stroke-linecap="square"/>
+  <circle cx="120" cy="256" r="22" fill="#36d6ff"/>
+  <circle cx="392" cy="256" r="22" fill="#ff5ccf"/>
+  <circle cx="256" cy="120" r="22" fill="#43d19e"/>
+  <circle cx="256" cy="392" r="22" fill="#f7c948"/>
+</svg>

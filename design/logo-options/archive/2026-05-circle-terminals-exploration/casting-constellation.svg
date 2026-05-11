@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic casting constellation mark</title>
+  <desc id="desc">A geometric starburst with connected roster nodes, suggesting casting, wanted hooks, and community signal.</desc>
+  <circle cx="256" cy="256" r="42" fill="#071018"/>
+  <path d="M256 58l32 142h-64z" fill="#36d6ff"/>
+  <path d="M256 454l-32-142h64z" fill="#ff5ccf"/>
+  <path d="M58 256l142-32v64z" fill="#f7c948"/>
+  <path d="M454 256l-142 32v-64z" fill="#43d19e"/>
+  <path d="M116 116l123 78-45 45z" fill="#071018"/>
+  <path d="M396 116l-78 123-45-45z" fill="#071018"/>
+  <path d="M396 396l-123-78 45-45z" fill="#071018"/>
+  <path d="M116 396l78-123 45 45z" fill="#071018"/>
+  <path d="M148 148l216 216M364 148 148 364" stroke="#071018" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="148" cy="148" r="22" fill="#ff5ccf"/>
+  <circle cx="364" cy="148" r="22" fill="#36d6ff"/>
+  <circle cx="364" cy="364" r="22" fill="#f7c948"/>
+  <circle cx="148" cy="364" r="22" fill="#43d19e"/>
+</svg>

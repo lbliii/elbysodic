@@ -7,6 +7,7 @@ Related docs:
 
 - root `AGENTS.md`
 - `README.md`
+- `docs/product/strategy-spine.md`
 - `docs/architecture/*.md`
 - `docs/product/*.md`
 - `docs/product/ai-studio.md`
@@ -23,6 +24,9 @@ and tests.
 
 - The PBP-native mission: faces, rosters, scenes, plotters, wanted hooks,
   claims, reserves, director materials, and writing flow stay first-class.
+- The product strategy spine stays coherent: Realm Studio, Writer Network, and
+  Continuity Graph remain the top-level product pillars, with trust gates
+  sequenced before network or canon expansion.
 - Architecture docs preserve tenant boundaries, membership-vs-character
   identity, repository/service layering, migration discipline, rendered
   privacy, and security assumptions.
@@ -41,8 +45,8 @@ and tests.
 - Architecture: primitives, multi-tenancy, migrations, security, rendered
   privacy, and seed personas agree with code and tests.
 - Product: mission, information hierarchy, controls, navigation, paragraph
-  rhythm, notices, appearance, user personas, and blueprints agree with
-  UI/service behavior.
+  rhythm, notices, appearance, user personas, blueprints, and the strategy
+  spine agree with UI/service behavior.
 - UX and flow reviews: consult `docs/product/user-personas-panel.md` when
   evaluating onboarding, writing, wanted/backstage, applications, Studio,
   appearance, public discovery, or navigation changes.
@@ -91,5 +95,6 @@ and tests.
 - `docs/product/`
 - product and architecture portions of `README.md`
 - root `AGENTS.md` product doctrine in coordination with scoped stewards
+- `docs/product/strategy-spine.md` as the canonical product alignment spine
 - terminology checks with `rg` before broad vocabulary changes
 - docs collateral for contract-affecting PRs

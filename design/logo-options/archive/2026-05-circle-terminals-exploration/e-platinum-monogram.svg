@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic platinum E monogram</title>
+  <desc id="desc">A platinum-era studio monogram E with crisp negative cuts and restrained luminous accents.</desc>
+  <circle cx="256" cy="256" r="190" fill="#071018"/>
+  <path d="M162 120h206v62H226v45h116v58H226v45h142v62H162z" fill="#f7fbff"/>
+  <path d="M216 96v320" stroke="#071018" stroke-width="38" stroke-linecap="square"/>
+  <path d="M280 96v320" stroke="#071018" stroke-width="16" stroke-linecap="square"/>
+  <path d="M162 120h92" stroke="#d8e7f2" stroke-width="10"/>
+  <path d="M226 227h82" stroke="#36d6ff" stroke-width="10"/>
+  <path d="M226 330h108" stroke="#ff5ccf" stroke-width="10"/>
+  <path d="M256 44v64M256 404v64M44 256h64M404 256h64" stroke="#071018" stroke-width="20" stroke-linecap="square"/>
+  <path d="M372 120l26 26-26 26-26-26z" fill="#f7c948"/>
+</svg>

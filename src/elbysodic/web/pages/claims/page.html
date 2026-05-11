@@ -115,7 +115,10 @@
           {% if can_manage %}
           <details class="elbysodic-claim-maintenance">
             <summary>Edit claim</summary>
-            <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--sm">
+            <form method="post"
+                  hx-boost="false"
+                  data-elbysodic-submit-label="Saving claim..."
+                  class="chirpui-stack chirpui-stack--sm">
               <input type="hidden" name="intent" value="update_claim">
               <input type="hidden" name="claim_id" value="{{ item.claim.id }}">
               <div class="elbysodic-form-grid">
@@ -166,7 +169,10 @@
       </p>
       {% end %}
       {% if can_manage %}
-      <form method="post" hx-boost="false" class="elbysodic-claim-create-form">
+      <form method="post"
+            hx-boost="false"
+            data-elbysodic-submit-label="Adding claim..."
+            class="elbysodic-claim-create-form">
         <input type="hidden" name="intent" value="create_claim">
         <input type="hidden" name="claim_type_id" value="{{ group.claim_type.id }}">
         <header>

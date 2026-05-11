@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" role="img" aria-labelledby="title desc">
+  <title id="title">Elbysodic roster thread cut lockup</title>
+  <desc id="desc">A horizontal wordmark lockup using the roster thread cut variant with face nodes.</desc>
+  <rect x="28" y="34" width="212" height="212" rx="28" fill="#071018"/>
+  <path d="M74 88h126v32H74zM74 128h96v32H74zM74 168h126v32H74z" fill="#f7fbff"/>
+  <path d="M108 72v144" stroke="#071018" stroke-width="24" stroke-linecap="square"/>
+  <path d="M142 72v144" stroke="#071018" stroke-width="10" stroke-linecap="square"/>
+  <path d="M166 118l42 30-42 30z" fill="#071018"/>
+  <circle cx="72" cy="104" r="10" fill="#36d6ff"/>
+  <circle cx="72" cy="144" r="10" fill="#ff5ccf"/>
+  <circle cx="72" cy="184" r="10" fill="#f7c948"/>
+  <text x="292" y="150" fill="#071018" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="82" font-weight="850" letter-spacing="-1">elbysodic</text>
+  <text x="296" y="194" fill="#294258" font-family="Inter, Avenir Next, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">THREADS. FACES. CLAIMS.</text>
+  <path d="M296 218h124" stroke="#36d6ff" stroke-width="9"/>
+  <path d="M432 218h124" stroke="#ff5ccf" stroke-width="9"/>
+  <path d="M568 218h124" stroke="#f7c948" stroke-width="9"/>
+</svg>
