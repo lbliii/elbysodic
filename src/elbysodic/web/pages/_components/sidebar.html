@@ -52,13 +52,11 @@
 </a>
 {% end %}
 
-{% def primary_icon_rail(active_room) %}
+{% def primary_icon_rail(items) %}
 <nav class="elbysodic-primary-rail" aria-label="Primary community rooms">
-  {{ rail_icon_link("/", "World Home", "home", active_room == "home") }}
-  {{ rail_icon_link("/locations", "Locations", "locations", active_room == "locations") }}
-  {{ rail_icon_link("/wanted", "Wanted", "wanted", active_room == "wanted") }}
-  {{ rail_icon_link("/desk", "Desk", "desk", active_room == "desk") }}
-  {{ rail_icon_link("/studio", "Studio", "studio", active_room == "studio") }}
+  {% for item in items %}
+  {{ rail_icon_link(item.href, item.label, item.icon_id, item.active, item.count) }}
+  {% end %}
 </nav>
 {% end %}
 

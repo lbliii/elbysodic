@@ -572,8 +572,7 @@
 {% if current_board_section is defined %}
 {% set rail_board_section = current_board_section %}
 {% end %}
-{% set rail_route = shell_route_state(current_path or "/", rail_board_section) %}
-{{ primary_icon_rail(rail_route.active_room) }}
+{{ primary_icon_rail(primary_nav_items(current_path or "/", rail_board_section)) }}
 {{ elbysodic_sidebar() }}
 <div class="chirpui-app-shell__sidebar-resize elbysodic-sidebar-resize"
      data-elbysodic-sidebar-toggle
@@ -591,8 +590,7 @@
 {% if current_board_section is defined %}
 {% set rail_board_section = current_board_section %}
 {% end %}
-{% set rail_route = shell_route_state(current_path or "/", rail_board_section) %}
-{{ primary_icon_rail(rail_route.active_room) }}
+{{ primary_icon_rail(primary_nav_items(current_path or "/", rail_board_section)) }}
 {{ elbysodic_sidebar() }}
 {% end %}
 {% end %}

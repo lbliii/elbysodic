@@ -1,4 +1,4 @@
-from elbysodic.web.navigation import active_route_path, shell_route_state
+from elbysodic.web.navigation import active_route_path, primary_nav_items, shell_route_state
 
 
 def test_active_route_path_strips_query_fragment_and_absolute_url() -> None:
@@ -41,3 +41,23 @@ def test_shell_route_state_keeps_legacy_aliases_for_templates() -> None:
     assert shell_route_state("/wanted").is_play is True
     assert shell_route_state("/").world_active is True
     assert shell_route_state("/locations").locations_room_active is True
+
+
+def test_primary_nav_items_share_shell_route_active_state() -> None:
+    items = primary_nav_items("/claims?status=reserved")
+
+    assert [item.key for item in items] == [
+        "home",
+        "locations",
+        "wanted",
+        "desk",
+        "studio",
+    ]
+    assert [item.label for item in items] == [
+        "World Home",
+        "Locations",
+        "Wanted",
+        "Desk",
+        "Studio",
+    ]
+    assert [item.key for item in items if item.active] == ["wanted"]

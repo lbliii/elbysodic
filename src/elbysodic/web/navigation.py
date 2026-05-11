@@ -39,6 +39,57 @@ def board_section_for_path(viewer: ForumView | None, current_path: object) -> st
 
 
 @dataclass(frozen=True, slots=True)
+class PrimaryNavItem:
+    key: str
+    label: str
+    href: str
+    icon_id: str
+    active: bool
+    count: int | None = None
+
+
+def primary_nav_items(current_path: object, board_section: str = "") -> tuple[PrimaryNavItem, ...]:
+    state = shell_route_state(current_path, board_section)
+    return (
+        PrimaryNavItem(
+            key="home",
+            label="World Home",
+            href="/",
+            icon_id="home",
+            active=state.active_room == "home",
+        ),
+        PrimaryNavItem(
+            key="locations",
+            label="Locations",
+            href="/locations",
+            icon_id="locations",
+            active=state.active_room == "locations",
+        ),
+        PrimaryNavItem(
+            key="wanted",
+            label="Wanted",
+            href="/wanted",
+            icon_id="wanted",
+            active=state.active_room == "wanted",
+        ),
+        PrimaryNavItem(
+            key="desk",
+            label="Desk",
+            href="/desk",
+            icon_id="desk",
+            active=state.active_room == "desk",
+        ),
+        PrimaryNavItem(
+            key="studio",
+            label="Studio",
+            href="/studio",
+            icon_id="studio",
+            active=state.active_room == "studio",
+        ),
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class ShellRouteState:
     path: str
     board_section: str = ""
