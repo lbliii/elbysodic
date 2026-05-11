@@ -1,5 +1,11 @@
 {% from "chirpui/sidebar.html" import sidebar_section %}
 
+{% def sidebar_svg_icon(icon_id) %}
+<svg class="elbysodic-sidebar-svg-icon" aria-hidden="true" focusable="false">
+  <use href="/elbysodic-static/icons/sidebar.svg#elbysodic-icon-{{ icon_id }}"></use>
+</svg>
+{% end %}
+
 {% def sidebar_count(count) %}
   {% if count %}
   <span class="elbysodic-sidebar-count">{{ count }}</span>
@@ -29,6 +35,31 @@
   {{ sidebar_count(count) }}
   {% end %}
 </a>
+{% end %}
+
+{% def rail_icon_link(href, label, icon_id, is_active=False, count=none) %}
+<a class="elbysodic-primary-rail__link"
+   href="{{ href }}"
+   title="{{ label }}"
+   aria-label="{{ label }}"
+   hx-sync="#main:replace"
+   {% if is_active %}aria-current="page"{% end %}>
+  <span class="elbysodic-primary-rail__icon">{{ sidebar_svg_icon(icon_id) }}</span>
+  <span class="elbysodic-primary-rail__tooltip" aria-hidden="true">{{ label }}</span>
+  {% if count %}
+  <span class="elbysodic-primary-rail__count">{{ count }}</span>
+  {% end %}
+</a>
+{% end %}
+
+{% def primary_icon_rail(active_room) %}
+<nav class="elbysodic-primary-rail" aria-label="Primary community rooms">
+  {{ rail_icon_link("/", "World Home", "home", active_room == "home") }}
+  {{ rail_icon_link("/locations", "Locations", "locations", active_room == "locations") }}
+  {{ rail_icon_link("/wanted", "Wanted", "wanted", active_room == "wanted") }}
+  {{ rail_icon_link("/desk", "Desk", "desk", active_room == "desk") }}
+  {{ rail_icon_link("/studio", "Studio", "studio", active_room == "studio") }}
+</nav>
 {% end %}
 
 {% def sidebar_attention_link(href, label, count=0, is_active=False) %}

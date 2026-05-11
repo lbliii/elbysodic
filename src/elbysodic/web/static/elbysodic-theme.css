@@ -279,7 +279,8 @@ body {
 }
 
 .chirpui-app-shell {
-    --elbysodic-sidebar-expanded-width: clamp(17rem, 22vw, 19rem);
+    --elbysodic-primary-rail-width: 4.25rem;
+    --elbysodic-sidebar-expanded-width: clamp(20rem, 24vw, 22rem);
     --chirpui-sidebar-width: var(--elbysodic-sidebar-expanded-width);
 }
 
@@ -328,6 +329,7 @@ body {
         align-self: stretch;
         border-right-color: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
         box-shadow: inset -1px 0 0 color-mix(in srgb, var(--chirpui-surface) 42%, transparent);
+        display: flex;
         height: calc(100dvh - var(--chirpui-shell-offset-top));
         max-height: calc(100dvh - var(--chirpui-shell-offset-top));
         overflow: hidden;
@@ -343,8 +345,10 @@ body {
     .elbysodic-sidebar {
         display: flex;
         flex-direction: column;
+        flex: 1 1 auto;
         height: 100%;
         min-height: 100%;
+        min-width: 0;
         padding: 0;
         transition:
             opacity var(--chirpui-transition),
@@ -367,13 +371,15 @@ body {
 
     .elbysodic-app-shell--sidebar-hidden,
     .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell {
-        --chirpui-sidebar-width: 0.875rem;
+        --chirpui-sidebar-width: var(--elbysodic-primary-rail-width);
     }
 
     .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell__sidebar {
-        background: transparent;
-        border-right-color: transparent;
-        box-shadow: none;
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 12%, transparent), transparent 24rem),
+            color-mix(in srgb, var(--chirpui-bg-subtle) 86%, transparent);
+        border-right-color: color-mix(in srgb, var(--chirpui-border) 58%, transparent);
+        box-shadow: inset -1px 0 0 color-mix(in srgb, var(--chirpui-surface) 30%, transparent);
         overflow: visible;
     }
 
@@ -383,6 +389,120 @@ body {
         transform: translateX(-0.5rem);
     }
 
+}
+
+.elbysodic-primary-rail {
+    align-items: center;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 16%, transparent), transparent 18rem),
+        color-mix(in srgb, var(--chirpui-bg-subtle) 76%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--chirpui-border) 58%, transparent);
+    display: flex;
+    flex: 0 0 var(--elbysodic-primary-rail-width);
+    flex-direction: column;
+    gap: 0.42rem;
+    height: 100%;
+    padding: 0.75rem 0.55rem;
+    position: relative;
+    width: var(--elbysodic-primary-rail-width);
+    z-index: 2;
+}
+
+.elbysodic-primary-rail__link {
+    align-items: center;
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    border-radius: var(--chirpui-radius-sm);
+    color: color-mix(in srgb, var(--chirpui-text-muted) 86%, transparent);
+    display: inline-flex;
+    justify-content: center;
+    min-width: 2.85rem;
+    position: relative;
+    text-decoration: none;
+    transition:
+        background var(--chirpui-transition),
+        border-color var(--chirpui-transition),
+        box-shadow var(--chirpui-transition),
+        color var(--chirpui-transition);
+}
+
+.elbysodic-primary-rail__link:hover,
+.elbysodic-primary-rail__link:focus-visible,
+.elbysodic-primary-rail__link[aria-current="page"] {
+    color: var(--chirpui-text);
+}
+
+.elbysodic-primary-rail__link[aria-current="page"] {
+    background:
+        radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 35%, transparent), transparent 48%),
+        color-mix(in srgb, var(--chirpui-accent) 11%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 32%, transparent);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--elbysodic-atmosphere-dye) 18%, transparent),
+        0 10px 28px color-mix(in srgb, var(--chirpui-accent) 18%, transparent);
+}
+
+.elbysodic-primary-rail__link:hover {
+    background: color-mix(in srgb, var(--chirpui-accent) 8%, transparent);
+    border-color: color-mix(in srgb, var(--chirpui-border) 74%, transparent);
+}
+
+.elbysodic-primary-rail__link:focus-visible {
+    outline: 2px solid var(--chirpui-focus-ring);
+    outline-offset: 2px;
+}
+
+.elbysodic-sidebar-svg-icon {
+    display: block;
+    height: 1.35rem;
+    overflow: visible;
+    width: 1.35rem;
+}
+
+.elbysodic-primary-rail__tooltip {
+    background: color-mix(in srgb, var(--chirpui-bg) 92%, var(--elbysodic-atmosphere-dye) 8%);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    box-shadow: var(--chirpui-shadow-md);
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 760;
+    inset-inline-start: calc(100% + 0.65rem);
+    line-height: 1;
+    opacity: 0;
+    padding: 0.45rem 0.55rem;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-0.25rem);
+    transition:
+        opacity var(--chirpui-transition),
+        transform var(--chirpui-transition);
+    white-space: nowrap;
+    z-index: 20;
+}
+
+.elbysodic-primary-rail__link:hover .elbysodic-primary-rail__tooltip,
+.elbysodic-primary-rail__link:focus-visible .elbysodic-primary-rail__tooltip {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.elbysodic-primary-rail__count {
+    align-items: center;
+    background: var(--chirpui-accent);
+    border: 2px solid var(--chirpui-bg);
+    border-radius: 999px;
+    color: var(--chirpui-accent-fg);
+    display: inline-flex;
+    font-size: 0.62rem;
+    font-weight: 850;
+    inset-block-start: 0.18rem;
+    inset-inline-end: 0.12rem;
+    justify-content: center;
+    min-height: 1rem;
+    min-width: 1rem;
+    padding: 0 0.25rem;
+    position: absolute;
 }
 
 .elbysodic-sidebar-resize {

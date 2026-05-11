@@ -564,8 +564,8 @@ def test_shell_brand_navigation_uses_full_boundary_navigation() -> None:
         assert brand_link is not None
         assert 'hx-boost="false"' in brand_link.group(0)
         assert re.search(
-            r'<a class="[^"]*elbysodic-topnav__link[^"]*"\s+href="/locations"'
-            r'[^>]*hx-sync="#main:replace"',
+            r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"\s+href="/locations"'
+            r'[^>]*aria-label="Locations"[^>]*hx-sync="#main:replace"',
             response.text,
         )
         assert re.search(
@@ -1593,21 +1593,16 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             assert "<strong>Elbysodic</strong>" in index.text
             assert 'href="/c/x-men-apocalypse"' in index.text
             assert 'href="/c/x-men-apocalypse/desk"' in index.text
-            assert 'aria-label="Community"' in index.text
+            assert 'aria-label="Primary community rooms"' in index.text
             assert 'aria-label="Global"' in index.text
-            assert re.search(
-                r'<nav class="elbysodic-topnav elbysodic-topnav--community"'
-                r"[^>]*>(?P<body>.*?)</nav>",
-                index.text,
-                re.S,
-            )
+            assert 'class="elbysodic-primary-rail"' in index.text
             assert ">Home</a>" not in index.text
             assert re.search(
-                r'<a class="elbysodic-topnav__link"\s+href="/c/x-men-apocalypse/locations"[^>]*>Locations</a>',
+                r'<a class="elbysodic-primary-rail__link"\s+href="/c/x-men-apocalypse/locations"[^>]*aria-label="Locations"',
                 index.text,
             )
             assert ">Play</a>" not in index.text
-            assert ">Wanted</a>" in index.text
+            assert 'aria-label="Wanted"' in index.text
             assert re.search(
                 r'<a class="elbysodic-topnav__link"\s+href="/network"[^>]*>Explore</a>',
                 index.text,
@@ -2842,6 +2837,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             assert "elbysodic-shell.js?v=sidebar-cookie-2" in world.text
             assert "elbysodic-composer.js?v=sidebar-cookie-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
+            assert 'aria-label="Primary community rooms"' in world.text
             assert 'aria-label="Hide navigation"' in world.text
             assert 'aria-expanded="true"' in world.text
 
@@ -2851,11 +2847,17 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             )
             assert hidden_world.status == 200
             assert 'id="elbysodic-sidebar-cookie-state"' in hidden_world.text
+            assert (
+                "--chirpui-sidebar-width: var(--elbysodic-primary-rail-width)" in hidden_world.text
+            )
+            assert 'aria-label="Primary community rooms"' in hidden_world.text
             assert 'aria-label="Show navigation"' in hidden_world.text
             assert 'aria-expanded="false"' in hidden_world.text
 
             stylesheet = await client.get("/elbysodic-static/elbysodic-theme.css")
             assert stylesheet.status == 200
+            assert "--elbysodic-primary-rail-width" in stylesheet.text
+            assert '.elbysodic-primary-rail__link[aria-current="page"]' in stylesheet.text
             assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet.text
 
             script = await client.get("/elbysodic-static/elbysodic-shell.js")
@@ -3014,40 +3016,45 @@ def test_topbar_marks_active_community_mode() -> None:
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/locations"[^>]*>Locations</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/locations"[^>]*aria-label="Locations"[^>]*aria-current="page"',
                 world.text,
             )
 
             guidebook = await client.get("/world")
             assert guidebook.status == 200
             assert not re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/locations"[^>]*>Locations</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/locations"[^>]*aria-label="Locations"[^>]*aria-current="page"',
+                guidebook.text,
+            )
+            assert re.search(
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/"[^>]*aria-label="World Home"[^>]*aria-current="page"',
                 guidebook.text,
             )
 
             desk = await client.get("/desk")
             assert desk.status == 200
             assert re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/desk"[^>]*>Desk</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/desk"[^>]*aria-label="Desk"[^>]*aria-current="page"',
                 desk.text,
             )
 
             wanted = await client.get("/wanted")
             assert wanted.status == 200
             assert re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/wanted"[^>]*>Wanted</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/wanted"[^>]*aria-label="Wanted"[^>]*aria-current="page"',
                 wanted.text,
             )
 
             claims = await client.get("/claims?status=reserved&q=magneto")
             assert claims.status == 200
             assert re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/wanted"[^>]*>Wanted</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/wanted"[^>]*aria-label="Wanted"[^>]*aria-current="page"',
                 claims.text,
             )
             assert re.search(
@@ -3059,16 +3066,16 @@ def test_topbar_marks_active_community_mode() -> None:
             studio = await client.get("/studio")
             assert studio.status == 200
             assert re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/studio"[^>]*>Studio</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/studio"[^>]*aria-label="Studio"[^>]*aria-current="page"',
                 studio.text,
             )
 
             notifications = await client.get("/notifications")
             assert notifications.status == 200
             assert re.search(
-                r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/desk"[^>]*>Desk</a>',
+                r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+                r'\s+href="/desk"[^>]*aria-label="Desk"[^>]*aria-current="page"',
                 notifications.text,
             )
             assert re.search(
