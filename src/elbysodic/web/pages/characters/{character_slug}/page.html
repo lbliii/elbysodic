@@ -184,15 +184,8 @@
          href="/boards/{{ next_reply.board.slug }}/threads/{{ next_reply.thread.slug }}{{ "#" ~ next_reply.jump_post.anchor if next_reply.jump_post else "" }}">
         Reply as {{ profile.character.name }}
       </a>
-      {% else %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">
-        Open {{ profile.character.name }}'s queue
-      </a>
       {% end %}
-      {% if profile.is_default %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find play for {{ profile.character.name }}</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Casting as {{ profile.character.name }}</a>
-      {% else %}
+      {% if not profile.is_default %}
       <form method="post" hx-boost="false">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="set_default">
@@ -230,14 +223,7 @@
       {{ wanted_card(item) }}
       {% end %}
     </div>
-    {% else %}
-    {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No open wanted hooks are tied to {{ profile.character.name }} yet.</p>
     {% end %}
-    {% end %}
-    <div class="chirpui-cluster chirpui-cluster--end">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
-    </div>
   </section>
 
   {% if profile.plotting_rooms %}
@@ -375,13 +361,6 @@
     {% call section_header("Tracker") %}
     {{ profile.character.name }}'s scene tracker and thread history.
     {% end %}
-    <div class="elbysodic-profile-section-actions">
-      {% if profile.can_manage %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads?character={{ profile.character.slug }}">Open filtered queue</a>
-      {% else %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/members/{{ profile.owner_membership.username }}">View writer</a>
-      {% end %}
-    </div>
     {% if profile.activity.participated %}
     {% for item in profile.activity.participated %}
       {{ character_thread_item(item) }}

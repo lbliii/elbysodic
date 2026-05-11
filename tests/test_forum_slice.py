@@ -6185,8 +6185,9 @@ def test_character_activity_center_tracks_identity_specific_threads() -> None:
             assert "Next actions" in profile.text
             assert "active-face defaults on" in profile.text
             assert "Reply as Rogue" in profile.text
-            assert "Find play for Rogue" in profile.text
-            assert "Casting as Rogue" in profile.text
+            assert "Find play for Rogue" not in _page_content(profile.text)
+            assert "Casting as Rogue" not in _page_content(profile.text)
+            assert "Browse wanted" not in _page_content(profile.text)
             assert "Tracker" in profile.text
             assert "Open filtered queue" in profile.text
             assert "Open thread roster" in profile.text
@@ -6248,7 +6249,7 @@ def test_character_profile_can_set_current_face() -> None:
             profile = await client.get("/characters/storm")
             assert "current" in profile.text
             assert "active-face defaults on" in profile.text
-            assert "Find play for Storm" in profile.text
+            assert "Find play for Storm" not in _page_content(profile.text)
 
             index = await client.get("/c/x-men-apocalypse")
             assert "playing as Storm" in index.text
