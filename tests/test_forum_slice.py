@@ -439,10 +439,7 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
 
     assert isinstance(scoped.body, str)
     assert 'href="/c/x-men-apocalypse/world"' in scoped.body
-    assert (
-        'href="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"'
-        in scoped.body
-    )
+    assert 'href="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"' in scoped.body
     assert 'action="/c/x-men-apocalypse/boards/danger-room/threads/new"' in scoped.body
     assert 'name="title" value="/not-a-route"' in scoped.body
     assert 'name="next" value="/c/x-men-apocalypse/boards/danger-room"' in scoped.body
@@ -492,9 +489,7 @@ def test_tenant_prefix_does_not_wrap_app_global_routes() -> None:
             malformed_login = await client.get("/c/x-men-apocalypse//login")
             malformed_network = await client.get("/c/x-men-apocalypse//network")
             malformed_health = await client.get("/c/x-men-apocalypse//health")
-            malformed_request_access = await client.get(
-                "/c/x-men-apocalypse//request-access"
-            )
+            malformed_request_access = await client.get("/c/x-men-apocalypse//request-access")
             malformed_world = await client.get("/c/x-men-apocalypse//world")
             health = await client.get("/c/x-men-apocalypse/health")
             static = await client.get("/c/x-men-apocalypse/elbysodic-static/elbysodic-theme.css")
@@ -7275,10 +7270,7 @@ def test_mentionable_search_supports_character_and_writer_scopes() -> None:
             )
             assert tenant_ooc.status == 200
             tenant_ooc_payload = json.loads(tenant_ooc.body)
-            assert (
-                tenant_ooc_payload["items"][0]["href"]
-                == "/c/x-men-apocalypse/members/starlane"
-            )
+            assert tenant_ooc_payload["items"][0]["href"] == "/c/x-men-apocalypse/members/starlane"
 
     asyncio.run(run())
 
