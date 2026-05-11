@@ -17,7 +17,7 @@ from chirp.middleware.static import StaticFiles
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.errors import register_error_handlers
 from elbysodic.web.navigation import location_nav_tree_items
-from elbysodic.web.routes import active_route_path, shell_route_state
+from elbysodic.web.routes import active_route_path, board_section_for_path, shell_route_state
 from elbysodic.web.security import (
     PRODUCTION_CONTENT_SECURITY_POLICY,
     IdentityFailureMiddleware,
@@ -86,6 +86,7 @@ def create_app(
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
     app.template_global()(active_route_path)
+    app.template_global()(board_section_for_path)
     app.template_global()(shell_route_state)
     if not security.production:
         app.template_global("csrf_field")(_empty_csrf_field)

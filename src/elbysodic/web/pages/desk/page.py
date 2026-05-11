@@ -8,7 +8,9 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.services.read_models import (
+    ApplicationCharacterView,
     ApplicationsDesk,
+    CharacterThreadActivity,
     MyThreadsDashboard,
     NotificationInbox,
     PlottingDesk,
@@ -55,6 +57,8 @@ class DeskOverview:
     application_count: int
     lanes: list[DeskLane]
     actions: list[DeskAction]
+    actionable_roster_activity: list[CharacterThreadActivity]
+    has_attention_counts: bool
 
     @property
     def needs_reply_count(self) -> int:
@@ -110,18 +114,19 @@ def get(request: Request) -> Page:
     applications = services.applications_desk()
     notifications = services.notifications(limit=5)
     unread_watched = _unread_watched_threads(queue)
+    open_applications = _open_application_items(applications)
     actions = _build_actions(
         queue=queue,
         unread_watched=unread_watched,
         plotting=plotting,
-        applications=applications,
+        open_applications=open_applications,
         unread_notifications=viewer.unread_notification_count,
     )
     lanes = _build_lanes(
         queue=queue,
         unread_watched=unread_watched,
         plotting=plotting,
-        applications=applications,
+        open_applications=open_applications,
         notifications=notifications,
     )
     overview = DeskOverview(
@@ -129,9 +134,18 @@ def get(request: Request) -> Page:
         unread_notifications=viewer.unread_notification_count,
         unread_watched_count=len(unread_watched),
         plotting_room_count=len(plotting.rooms),
-        application_count=len(applications.my_applications),
+        application_count=len(open_applications),
         lanes=lanes,
         actions=actions,
+        actionable_roster_activity=_actionable_roster_activity(queue),
+        has_attention_counts=any(
+            (
+                len(queue.needs_reply),
+                len(unread_watched),
+                len(queue.waiting_on_others),
+                viewer.unread_notification_count,
+            )
+        ),
     )
     return Page.mounted(
         "desk/page.html",
@@ -146,42 +160,56 @@ def _build_actions(
     queue: MyThreadsDashboard,
     unread_watched: list[ThreadObligationItem],
     plotting: PlottingDesk,
-    applications: ApplicationsDesk,
+    open_applications: list[ApplicationCharacterView],
     unread_notifications: int,
 ) -> list[DeskAction]:
-    read_href = _thread_href(unread_watched[0]) if unread_watched else "/my/threads"
-    return [
-        DeskAction(
-            _next_queue_href(queue),
-            "Reply where owed",
-            "Jump straight into the scene most likely to need your words.",
-            len(queue.needs_reply),
-        ),
-        DeskAction(
-            read_href,
-            "Read latest",
-            "Catch up on watched scenes before deciding what to write.",
-            len(unread_watched),
-        ),
-        DeskAction(
-            "/plotting",
-            "Open plotting",
-            "Continue planning rooms and turn interest into play.",
-            len(plotting.rooms),
-        ),
-        DeskAction(
-            "/applications",
-            "Check applications",
-            "Track drafts, reviews, and accepted faces.",
-            len(applications.my_applications),
-        ),
-        DeskAction(
-            "/notifications",
-            "Open inbox",
-            "Mentions, replies, and collaboration pings.",
-            unread_notifications,
-        ),
-    ]
+    actions: list[DeskAction] = []
+    if queue.needs_reply:
+        actions.append(
+            DeskAction(
+                _next_queue_href(queue),
+                "Reply where owed",
+                "Jump straight into the next scene that needs your words.",
+                len(queue.needs_reply),
+            )
+        )
+    if unread_watched:
+        actions.append(
+            DeskAction(
+                _thread_href(unread_watched[0]),
+                "Read latest",
+                "Catch up on watched scenes with fresh posts.",
+                len(unread_watched),
+            )
+        )
+    if plotting.rooms:
+        actions.append(
+            DeskAction(
+                "/plotting",
+                "Open plotting",
+                "Continue planning rooms that are becoming scenes.",
+                len(plotting.rooms),
+            )
+        )
+    if open_applications:
+        actions.append(
+            DeskAction(
+                "/applications",
+                "Check applications",
+                "Review drafts, submissions, or requested revisions.",
+                len(open_applications),
+            )
+        )
+    if unread_notifications:
+        actions.append(
+            DeskAction(
+                "/notifications",
+                "Open inbox",
+                "Mentions, replies, and collaboration pings.",
+                unread_notifications,
+            )
+        )
+    return actions
 
 
 def _build_lanes(
@@ -189,98 +217,132 @@ def _build_lanes(
     queue: MyThreadsDashboard,
     unread_watched: list[ThreadObligationItem],
     plotting: PlottingDesk,
-    applications: ApplicationsDesk,
+    open_applications: list[ApplicationCharacterView],
     notifications: NotificationInbox,
 ) -> list[DeskLane]:
-    application_items = applications.my_applications[:3]
+    lanes: list[DeskLane] = []
+    if queue.needs_reply:
+        lanes.append(
+            DeskLane(
+                "attention",
+                "Needs reply",
+                "Scenes where another writer has the last beat.",
+                "/my/threads",
+                "Open queue",
+                len(queue.needs_reply),
+                _thread_preview_items(queue.needs_reply[:3], "Needs reply"),
+                "",
+            )
+        )
+    if unread_watched:
+        lanes.append(
+            DeskLane(
+                "scenes",
+                "Unread watched",
+                "Threads you are watching with fresh posts to read.",
+                "/my/threads",
+                "Read scenes",
+                len(unread_watched),
+                _thread_preview_items(unread_watched[:3], "Unread"),
+                "",
+            )
+        )
+    if queue.waiting_on_others:
+        lanes.append(
+            DeskLane(
+                "waiting",
+                "Waiting on others",
+                "Scenes where your roster currently has the last word.",
+                "/my/threads",
+                "Review waiting",
+                len(queue.waiting_on_others),
+                _thread_preview_items(queue.waiting_on_others[:3], "Waiting"),
+                "",
+            )
+        )
+    if plotting.rooms:
+        lanes.append(
+            DeskLane(
+                "plotting",
+                "Plotting rooms",
+                "Shared rooms where interest is becoming a scene.",
+                "/plotting",
+                "Open plotting",
+                len(plotting.rooms),
+                [
+                    DeskPreviewItem(
+                        f"/plotting/{item.room.id}",
+                        item.room.title,
+                        item.source_label,
+                        item.room.summary or f"{len(item.participants)} participant(s)",
+                        item.room.status,
+                    )
+                    for item in plotting.rooms[:3]
+                ],
+                "",
+            )
+        )
+    if open_applications:
+        lanes.append(
+            DeskLane(
+                "casting",
+                "Applications",
+                "Drafts, submissions, and requested revisions.",
+                "/applications",
+                "Open applications",
+                len(open_applications),
+                [
+                    DeskPreviewItem(
+                        f"/applications/{item.character.slug}",
+                        item.character.name,
+                        item.status_label,
+                        item.character.tagline or "Character application",
+                        item.status_label,
+                    )
+                    for item in open_applications[:3]
+                ],
+                "",
+            )
+        )
+    unread_items = [item for item in notifications.items if item.is_unread]
+    if unread_items:
+        lanes.append(
+            DeskLane(
+                "notifications",
+                "Notifications",
+                "Mentions, replies, plotting interest, and writer pings.",
+                "/notifications",
+                "Open inbox",
+                notifications.unread_count,
+                [
+                    DeskPreviewItem(
+                        item.href,
+                        item.title,
+                        item.created_at_label,
+                        item.snippet,
+                        "new",
+                    )
+                    for item in unread_items[:3]
+                ],
+                "",
+            )
+        )
+    return lanes
+
+
+def _open_application_items(applications: ApplicationsDesk) -> list[ApplicationCharacterView]:
     return [
-        DeskLane(
-            "attention",
-            "Needs reply",
-            "Scenes where another writer has the last beat.",
-            "/my/threads",
-            "Open queue",
-            len(queue.needs_reply),
-            _thread_preview_items(queue.needs_reply[:3], "Needs reply"),
-            "Your roster is caught up for now.",
-        ),
-        DeskLane(
-            "scenes",
-            "Unread watched",
-            "Threads you are watching with fresh posts to read.",
-            "/my/threads",
-            "Read scenes",
-            len(unread_watched),
-            _thread_preview_items(unread_watched[:3], "Unread"),
-            "No watched scenes have fresh posts.",
-        ),
-        DeskLane(
-            "waiting",
-            "Waiting on others",
-            "Scenes where your roster currently has the last word.",
-            "/my/threads",
-            "Review waiting",
-            len(queue.waiting_on_others),
-            _thread_preview_items(queue.waiting_on_others[:3], "Waiting"),
-            "No active scenes are waiting on other writers for you.",
-        ),
-        DeskLane(
-            "plotting",
-            "Plotting rooms",
-            "Shared rooms where interest is becoming a scene.",
-            "/plotting",
-            "Open plotting",
-            len(plotting.rooms),
-            [
-                DeskPreviewItem(
-                    f"/plotting/{item.room.id}",
-                    item.room.title,
-                    item.source_label,
-                    item.room.summary or f"{len(item.participants)} participant(s)",
-                    item.room.status,
-                )
-                for item in plotting.rooms[:3]
-            ],
-            "No plotting rooms are open yet.",
-        ),
-        DeskLane(
-            "casting",
-            "Applications",
-            "Drafts, submissions, and accepted faces tied to this writer.",
-            "/applications",
-            "Open applications",
-            len(applications.my_applications),
-            [
-                DeskPreviewItem(
-                    f"/characters/{item.character.slug}",
-                    item.character.name,
-                    item.status_label,
-                    item.character.tagline or "Character application",
-                    item.status_label,
-                )
-                for item in application_items
-            ],
-            "No character drafts are in motion.",
-        ),
-        DeskLane(
-            "notifications",
-            "Notifications",
-            "Mentions, replies, plotting interest, and writer pings.",
-            "/notifications",
-            "Open inbox",
-            notifications.unread_count,
-            [
-                DeskPreviewItem(
-                    item.href,
-                    item.title,
-                    item.created_at_label,
-                    item.snippet,
-                    "new" if item.is_unread else item.label,
-                )
-                for item in notifications.items[:3]
-            ],
-            "No notifications are waiting on you.",
-        ),
+        item
+        for item in applications.my_applications
+        if item.character.application_status in {"draft", "submitted", "revision_requested"}
+    ]
+
+
+def _actionable_roster_activity(queue: MyThreadsDashboard) -> list[CharacterThreadActivity]:
+    return [
+        activity
+        for activity in queue.roster_activity
+        if activity.needs_reply or activity.waiting_on_others
     ]
 
 

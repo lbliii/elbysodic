@@ -4,7 +4,7 @@
 {% from "chirpui/sidebar.html" import sidebar, sidebar_section %}
 {% from "chirpui/shell_frame.html" import shell_outlet_attrs %}
 {% from "chirpui/theme_toggle.html" import theme_toggle %}
-{% from "_components/sidebar.html" import sidebar_active_face, sidebar_attention_link, sidebar_destination, sidebar_footer, sidebar_link as elbysodic_sidebar_link, sidebar_location_tree, sidebar_plain_link %}
+{% from "_components/sidebar.html" import sidebar_attention_link, sidebar_destination, sidebar_footer, sidebar_link as elbysodic_sidebar_link, sidebar_location_tree, sidebar_plain_link %}
 
 {% set shell_has_community = show_community_shell | default(true) %}
 {% set shell_sidebar_hidden = shell_has_community and sidebar_is_hidden() %}
@@ -162,9 +162,12 @@
 {% end %}
 
 {% block topbar_center %}
-{% set topbar_board_section = "" %}
+{% set topbar_board_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
 {% if board is defined %}
-{% set topbar_board_section = board?.sidebar_section ?? "" %}
+{% set topbar_board_section = board | get("sidebar_section", "") %}
+{% end %}
+{% if current_board_section is defined %}
+{% set topbar_board_section = current_board_section %}
 {% end %}
 {% set topbar_route = shell_route_state(current_path or "/", topbar_board_section) %}
 {% set topbar_path = topbar_route.path %}
@@ -173,8 +176,8 @@
 {% if shell_has_community %}
 {{ drawer_trigger("elbysodic-mobile-shell", mobile_nav_label, cls="elbysodic-mobile-nav-trigger") }}
 <nav class="elbysodic-topnav elbysodic-topnav--community" aria-label="Community">
-  {{ topnav_link("/locations", "World", topbar_route.world_active) }}
-  {{ topnav_link("/wanted", "Play", topbar_route.play_active) }}
+  {{ topnav_link("/locations", "Locations", topbar_route.locations_room_active) }}
+  {{ topnav_link("/wanted", "Wanted", topbar_route.wanted_active) }}
   {{ topnav_link("/desk", "Desk", topbar_route.desk_active) }}
   {{ topnav_link("/studio", "Studio", topbar_route.studio_active) }}
 </nav>
@@ -193,9 +196,12 @@
 {% end %}
 
 {% block topbar_end %}
-{% set topbar_board_section = "" %}
+{% set topbar_board_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
 {% if board is defined %}
-{% set topbar_board_section = board?.sidebar_section ?? "" %}
+{% set topbar_board_section = board | get("sidebar_section", "") %}
+{% end %}
+{% if current_board_section is defined %}
+{% set topbar_board_section = current_board_section %}
 {% end %}
 {% set topbar_route = shell_route_state(current_path or "/", topbar_board_section) %}
 {% set notifications_active = topbar_route.notifications_active %}
@@ -359,19 +365,24 @@
 
 {% def community_map_sidebar(active_room) %}
   {% call sidebar_section("Community") %}
-    {{ sidebar_destination("/locations", "World", "grid", active_room == "world") }}
-    {{ sidebar_destination("/wanted", "Play", "star", active_room == "play") }}
+    {{ sidebar_destination("/", "World Home", "home", active_room == "home") }}
+    {{ sidebar_destination("/locations", "Locations", "grid", active_room == "locations") }}
+    {{ sidebar_destination("/wanted", "Wanted", "star", active_room == "wanted") }}
     {{ sidebar_destination("/desk", "Desk", "pencil", active_room == "desk") }}
     {{ sidebar_destination("/studio", "Studio", "diamond", active_room == "studio") }}
   {% end %}
 {% end %}
 
 {% def world_context_sidebar() %}
-  {% set current_board_section = board?.sidebar_section ?? "" if board is defined else "" %}
+  {% set current_board_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
+  {% if board is defined %}
+  {% set current_board_section = board | get("sidebar_section", "") %}
+  {% end %}
   {% set sidebar_route = shell_route_state(current_path or "/", current_board_section) %}
   {% set locations_label = viewer.location_sidebar_section.label if viewer else "Locations" %}
   {% set community_label = viewer.community_sidebar_section.label if viewer else "Community Table" %}
-  {% call sidebar_section("In World") %}
+  {% set world_context_label = "In Locations" if sidebar_route.locations_active else "On World Home" %}
+  {% call sidebar_section(world_context_label) %}
     {{ sidebar_destination("/locations", locations_label, "grid", sidebar_route.locations_active, viewer.location_navigation_boards | length if viewer else none) }}
     {{ sidebar_destination("/world", "Guidebook", "list", sidebar_route.guidebook_active) }}
     {{ sidebar_destination("/community", community_label, "user", sidebar_route.community_active, viewer.community_navigation_boards | length if viewer else none) }}
@@ -479,7 +490,7 @@
     {{ sidebar_plain_link("/studio#board-taxonomy", "Board taxonomy") }}
     {{ sidebar_plain_link("/studio#navigation-composer", "Navigation composer") }}
     {{ sidebar_plain_link("/world", "Guidebook") }}
-    {{ sidebar_plain_link("/", "World map") }}
+    {{ sidebar_plain_link("/", "World Home") }}
   {% end %}
 
   {% call sidebar_section("Production") %}
@@ -504,7 +515,7 @@
 
 {% def casting_sidebar() %}
   {% set sidebar_route = shell_route_state(current_path or "/") %}
-  {% call sidebar_section("In Play") %}
+  {% call sidebar_section("In Wanted") %}
     {% if sidebar_route.path != "/wanted" %}
     {{ sidebar_destination("/wanted", "Wanted board", "star", sidebar_route.wanted_detail_active) }}
     {% end %}
@@ -514,8 +525,6 @@
     {{ sidebar_plain_link("/plotting", "Plotting", sidebar_route.plotting_active) }}
     {{ sidebar_plain_link("/discover", "Discovery", sidebar_route.discovery_active) }}
   {% end %}
-
-  {{ sidebar_active_face(viewer) }}
 
   {% if board is defined and board.open_ads is defined and board.open_ads %}
   {% call sidebar_section("Open Wants") %}
@@ -533,7 +542,13 @@
 {% end %}
 
 {% def elbysodic_sidebar(include_community_map=False) %}
-{% set board_sidebar_section = board?.sidebar_section ?? "" if board is defined else "" %}
+{% set board_sidebar_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
+{% if board is defined %}
+{% set board_sidebar_section = board | get("sidebar_section", "") %}
+{% end %}
+{% if current_board_section is defined %}
+{% set board_sidebar_section = current_board_section %}
+{% end %}
 {% set sidebar_route = shell_route_state(current_path or "/", board_sidebar_section) %}
 {% call sidebar(cls="elbysodic-sidebar") %}
   {% slot footer %}

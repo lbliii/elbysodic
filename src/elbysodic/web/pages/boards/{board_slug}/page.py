@@ -45,6 +45,7 @@ def get(request: Request, board_slug: str) -> Page:
     return Page.mounted(
         "boards/{board_slug}/page.html",
         current_path=request.url,
+        current_board_section=board.sidebar_section,
         viewer=viewer,
         board=board,
         board_summary=board_summary,

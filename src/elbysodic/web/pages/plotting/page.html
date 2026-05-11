@@ -139,7 +139,7 @@
   </div>
   <div class="elbysodic-plotting-empty__actions">
     {% if viewer.current_character %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ viewer.current_character.slug }}#plotter">Open {{ viewer.current_character.name }}'s plotter</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ viewer.current_character.slug }}#plotter">Open active-face plotter</a>
     {% end %}
     <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Discover hooks</a>
   </div>
@@ -186,7 +186,7 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  {% call command_panel("Writer Desk", viewer.current_character.name if viewer.current_character else viewer.membership.display_name, "Turn interest into a private planning lane before it becomes an IC scene.", "plotting-pulse-heading", "elbysodic-plotting-pulse") %}
+  {% call command_panel("Writer Desk", "Plotting pulse", "Turn interest into a private planning lane before it becomes an IC scene.", "plotting-pulse-heading", "elbysodic-plotting-pulse") %}
     <div class="elbysodic-command-panel__metrics" aria-label="Plotting pulse">
       {{ metric_item(desk.rooms | length, "Rooms") }}
       {{ metric_item(desk.plot_hook_interests | length, "Plot interest") }}

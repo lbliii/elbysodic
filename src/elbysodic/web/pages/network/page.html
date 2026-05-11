@@ -118,7 +118,7 @@ A studio program ready for scenes, casting, and writer movement.
   <h2>{{ program.community.name }}</h2>
   <p>
     {% if program.current_character %}
-    Playing as {{ program.current_character.name }}.
+    Active face selected.
     {% else %}
     No active face selected.
     {% end %}
@@ -181,7 +181,7 @@ A studio program ready for scenes, casting, and writer movement.
     <p class="elbysodic-copy-meta">
       {{ program.membership.display_name or program.membership.username }}
       {% if program.current_character %}
-      · playing as {{ program.current_character.name }}
+      · active face selected
       {% else %}
       · no active face
       {% end %}
@@ -316,7 +316,7 @@ A studio program ready for scenes, casting, and writer movement.
           <span>
             {% if viewer %}
             {% if program.current_character %}
-            playing as {{ program.current_character.name }}
+            active face selected
             {% else %}
             no active face
             {% end %}
@@ -337,7 +337,7 @@ A studio program ready for scenes, casting, and writer movement.
     <div>
       <p class="elbysodic-section-kicker">Studio Network</p>
       <h2>Choose the realm you are writing in.</h2>
-      <p>Playable worlds with their own casts, themes, queues, wanted hooks, and current face defaults.</p>
+      <p>Playable worlds with their own casts, themes, queues, wanted hooks, and face defaults.</p>
     </div>
     <div class="elbysodic-network-strip__metrics">
       {{ metric_item(network.programs | length, "programs") }}

@@ -25,9 +25,9 @@
     <div class="elbysodic-command-panel__metrics" aria-label="Roster totals">
       {{ metric_item(viewer.roster | length, "Characters") }}
       {% if viewer.current_character %}
-      {{ metric_item(viewer.current_character.name, "Current face") }}
+      {{ metric_item("Selected", "Active face") }}
       {% else %}
-      {{ metric_item("Needed", "Current face") }}
+      {{ metric_item("Needed", "Active face") }}
       {% end %}
       {{ metric_item(viewer.membership.post_count, "Posts") }}
     </div>

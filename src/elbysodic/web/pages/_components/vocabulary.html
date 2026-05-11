@@ -1,6 +1,5 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/surface.html" import surface %}
 {% end %}
 
 {% def local_rail(label, cls="") %}
@@ -70,8 +69,7 @@
 {% end %}
 
 {% def lane_preview(lane, cls="") %}
-{% call surface(variant="elevated") %}
-<article id="{{ lane.anchor }}" class="elbysodic-lane-preview{{ " " ~ cls if cls else "" }}" aria-labelledby="{{ lane.anchor }}-heading">
+<section id="{{ lane.anchor }}" class="elbysodic-lane-preview{{ " " ~ cls if cls else "" }}" aria-labelledby="{{ lane.anchor }}-heading">
   <div class="elbysodic-lane-preview__header">
     <div>
       <p class="elbysodic-section-kicker">{{ lane.count }} open</p>
@@ -89,8 +87,7 @@
       <p class="elbysodic-empty-state">{{ lane.empty_text }}</p>
     {% end %}
   </div>
-</article>
-{% end %}
+</section>
 {% end %}
 
 {% def production_room_card(kicker, title, summary, href, primary, secondary, cls="") %}

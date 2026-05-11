@@ -15,9 +15,7 @@
   {% call section_header("Plot discovery") %}
   {% end %}
   {% if viewer.current_character and discovery.used_active_face_lens %}
-  <p class="elbysodic-copy-meta">For {{ viewer.current_character.name }}</p>
-  {% elif viewer.current_character %}
-  <p class="elbysodic-copy-meta">Face: {{ viewer.current_character.name }}</p>
+  <p class="elbysodic-copy-meta">Prioritizing active-face matches</p>
   {% end %}
 
   {% if discovery.selected_facets %}

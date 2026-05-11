@@ -55,16 +55,16 @@
         <div>
           <h2>
             {% if desk.active_face %}
-            Browsing as {{ desk.active_face.name }}
+            Active-face casting
             {% else %}
             No face selected
             {% end %}
           </h2>
           <p class="elbysodic-copy-section">
             {% if desk.active_face %}
-            Casting views are weighted toward the face you are playing as.
+            Casting views prioritize active-face relevance.
             {% else %}
-            Pick a character to make casting filters and claims feel more personal.
+            Choose a face to personalize casting filters and claims.
             {% end %}
           </p>
         </div>
@@ -81,7 +81,7 @@
       {{ stat(value=desk.wanted_with_interest | length, label="Hooks with interest") }}
       {{ stat(value=desk.my_reserves | length, label="My reserves") }}
       {% if desk.active_face %}
-      {{ stat(value=desk.active_face_reserves | length, label=desk.active_face.name ~ "'s reserves") }}
+      {{ stat(value=desk.active_face_reserves | length, label="Active-face reserves") }}
       {% end %}
     {% end %}
   </article>
@@ -90,8 +90,8 @@
   {% if desk.active_face %}
   {% if desk.active_face_reserves %}
   <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header(desk.active_face.name ~ "'s Reserves") %}
-    Hooks and claims currently attached to your active face.
+    {% call section_header("Active-face reserves") %}
+    Hooks and claims attached to the active face.
     {% end %}
     <div class="elbysodic-interest-list">
       {% for item in desk.active_face_reserves %}

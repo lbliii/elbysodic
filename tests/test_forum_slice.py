@@ -1463,7 +1463,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "#post-" in index.text
             assert "/members/starlane" in index.text
             assert "Latest details:" in index.text
-            assert "Relevant for Rogue:" in index.text
+            assert "Relevant to the active face:" in index.text
             assert "elbysodic-board-poster__face-signal-hint" in index.text
             assert "elbysodic-identity-menu" in index.text
             assert "elbysodic-identity-menu__notification-link" in index.text
@@ -1603,9 +1603,11 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             )
             assert ">Home</a>" not in index.text
             assert re.search(
-                r'<a class="elbysodic-topnav__link"\s+href="/c/x-men-apocalypse/locations"[^>]*>World</a>',
+                r'<a class="elbysodic-topnav__link"\s+href="/c/x-men-apocalypse/locations"[^>]*>Locations</a>',
                 index.text,
             )
+            assert ">Play</a>" not in index.text
+            assert ">Wanted</a>" in index.text
             assert re.search(
                 r'<a class="elbysodic-topnav__link"\s+href="/network"[^>]*>Explore</a>',
                 index.text,
@@ -1621,7 +1623,7 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             assert 'href="/wanted"' not in topbar.group("body")
             assert 'href="/desk"' not in topbar.group("body")
             assert 'href="/studio"' not in topbar.group("body")
-            assert '<span class="chirpui-sidebar__section-title">In World</span>' in index.text
+            assert '<span class="chirpui-sidebar__section-title">On World Home</span>' in index.text
             assert '<span class="chirpui-sidebar__label">Locations</span>' in index.text
             assert '<span class="chirpui-sidebar__label">Guidebook</span>' in index.text
             assert '<span class="chirpui-sidebar__label">Community</span>' in index.text
@@ -1813,15 +1815,18 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
 
             assert desk.status == 200
             assert "Writer Desk" in desk.text
-            assert "Lane's operating room" in desk.text
-            assert "Writing as Rogue" in desk.text
+            assert "Replies, reading, plotting, inbox, and character work." in desk.text
+            assert "Writing as Rogue" not in desk.text
             assert "What needs you" in desk.text
             assert "Face lanes" in desk.text
             assert "Work lanes" in desk.text
-            assert "Needs reply" in desk.text
+            assert "Read latest" in desk.text
             assert "Unread watched" in desk.text
             assert "Waiting on others" in desk.text
-            assert "Plotting rooms" in desk.text
+            assert "Desk shortcuts" not in desk.text
+            assert "Check applications" not in desk.text
+            assert "Accepted" not in desk.text
+            assert "0 open" not in desk.text
             assert "playing as Rogue" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
@@ -1831,7 +1836,6 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
             assert "/notifications" in desk.text
             assert "/characters" in desk.text
             assert "/applications" in desk.text
-            assert "/casting" in desk.text
             assert "/discover" in desk.text
 
     asyncio.run(run())
@@ -2788,7 +2792,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Guidebook" in guidebook.text
             assert "Start Here" in guidebook.text
             assert "World Map" not in guidebook.text
-            assert 'class="chirpui-sidebar__section-title">In World</span>' in guidebook.text
+            assert 'class="chirpui-sidebar__section-title">On World Home</span>' in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Guidebook Index</span>' in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Start Here</span>' not in guidebook.text
             assert 'class="chirpui-sidebar__section-title">Guides</span>' in guidebook.text
@@ -2821,7 +2825,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Wanted board" not in wanted.text
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
-            assert 'class="chirpui-sidebar__section-title">In Play</span>' in wanted.text
+            assert 'class="chirpui-sidebar__section-title">In Wanted</span>' in wanted.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in wanted.text
 
     asyncio.run(run())
@@ -2920,7 +2924,7 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "elbysodic-board-media--xavier-institute" in academy.text
             assert "elbysodic-location-compass" in academy.text
             assert "What is playable here" in academy.text
-            assert "Relevant for Rogue" in academy.text
+            assert "Relevant to the active face" in academy.text
             assert "Plot pressure" in academy.text
             assert "No scene spotlight yet" in academy.text
             assert "Total" in academy.text
@@ -3011,15 +3015,15 @@ def test_topbar_marks_active_community_mode() -> None:
             assert world.status == 200
             assert re.search(
                 r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/locations"[^>]*>World</a>',
+                r'\s+href="/locations"[^>]*>Locations</a>',
                 world.text,
             )
 
             guidebook = await client.get("/world")
             assert guidebook.status == 200
-            assert re.search(
+            assert not re.search(
                 r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/locations"[^>]*>World</a>',
+                r'\s+href="/locations"[^>]*>Locations</a>',
                 guidebook.text,
             )
 
@@ -3035,7 +3039,7 @@ def test_topbar_marks_active_community_mode() -> None:
             assert wanted.status == 200
             assert re.search(
                 r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/wanted"[^>]*>Play</a>',
+                r'\s+href="/wanted"[^>]*>Wanted</a>',
                 wanted.text,
             )
 
@@ -3043,7 +3047,7 @@ def test_topbar_marks_active_community_mode() -> None:
             assert claims.status == 200
             assert re.search(
                 r'<a class="[^"]*elbysodic-topnav__link--active[^"]*"'
-                r'\s+href="/wanted"[^>]*>Play</a>',
+                r'\s+href="/wanted"[^>]*>Wanted</a>',
                 claims.text,
             )
             assert re.search(
@@ -3143,7 +3147,7 @@ def test_discovery_defaults_to_active_face_lens_and_filters_facets() -> None:
             assert discover.status == 200
             assert "Plot discovery" in discover.text
             assert "chirpui-facet-chip" in discover.text
-            assert "For Rogue" in discover.text
+            assert "Prioritizing active-face matches" in discover.text
             assert "Mutant" in discover.text
             assert "X-Men" in discover.text
             assert "Academy" in discover.text
@@ -3616,7 +3620,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert "chirpui-detail-header" in detail.text
             assert "elbysodic-wanted-detail__signal" in detail.text
             assert "chirpui-facet-chip" in detail.text
-            assert "chirpui-scope-switcher" in detail.text
+            assert "chirpui-scope-switcher" not in detail.text
             assert "Rogue needs someone who remembers" in detail.text
             assert 'href="/characters/rogue"' in detail.text
             assert 'href="/world/factions"' in detail.text
@@ -3733,11 +3737,11 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert casting.status == 200
                 assert "Casting Desk" in casting.text
                 assert "elbysodic-casting-desk-hero__identity" in casting.text
-                assert "Browsing as Rogue" in casting.text
+                assert "Active-face casting" in casting.text
                 assert "Wanted With Interest" in casting.text
                 assert "Active Reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
-                assert "Rogue&#39;s Reserves" in casting.text
+                assert "Active-face reserves" in casting.text
 
             charlie_app = create_app(debug=False, services=charlie_services)
             async with TestClient(charlie_app) as charlie_client:
@@ -5272,7 +5276,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
         assert outsider_services.notifications().unread_count == 0
         assert inbox.status == 200
         assert "No notifications are waiting on you." in inbox.text
-        assert "Find hooks for Room-Notify Face" in inbox.text
+        assert "Find hooks" in inbox.text
         assert 'href="/characters/room-notify-face#plotter"' in inbox.text
         assert room.title not in inbox.text
         assert "Human UN liaison for B-24 talks: Rogue" not in inbox.text
@@ -5703,7 +5707,7 @@ def test_members_directory_and_profile_show_visible_community_cast() -> None:
 
             profile = await client.get("/members/starlane")
             assert profile.status == 200
-            assert "Current face: Rogue" in profile.text
+            assert "Featured face: Rogue" in profile.text
             assert "Known For" in profile.text
             assert "Current Roles" in profile.text
             assert "Collaborators" in profile.text
@@ -6106,7 +6110,7 @@ def test_identity_route_changes_default_character_face() -> None:
             assert response.status == 302
 
             index = await client.get("/c/x-men-apocalypse")
-            assert "Current face: Storm" in index.text
+            assert "playing as Storm" in index.text
 
     asyncio.run(run())
 
@@ -6199,7 +6203,7 @@ def test_character_roster_can_create_new_default_character() -> None:
             assert "Telepath with a plot-problem." in profile.text
 
             index = await client.get("/c/x-men-apocalypse")
-            assert "Current face: Jean Grey" in index.text
+            assert "playing as Jean Grey" in index.text
 
     asyncio.run(run())
 
@@ -6228,7 +6232,7 @@ def test_character_profile_can_set_current_face() -> None:
             assert "Find play for Storm" in profile.text
 
             index = await client.get("/c/x-men-apocalypse")
-            assert "Current face: Storm" in index.text
+            assert "playing as Storm" in index.text
 
     asyncio.run(run())
 

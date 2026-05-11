@@ -1465,15 +1465,15 @@ body {
 .elbysodic-command-action,
 .elbysodic-desk-action {
     align-items: start;
-    background: color-mix(in srgb, var(--chirpui-surface-alt) 84%, transparent);
+    background: color-mix(in srgb, var(--chirpui-surface-alt) 42%, transparent);
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text);
     display: grid;
-    gap: 0.55rem;
+    gap: 0.45rem;
     grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 7rem;
-    padding: 0.8rem;
+    min-height: 5.25rem;
+    padding: 0.65rem;
     text-decoration: none;
 }
 
@@ -1481,7 +1481,6 @@ body {
 .elbysodic-command-action:focus-visible,
 .elbysodic-desk-action:hover {
     border-color: var(--chirpui-border-strong);
-    transform: translateY(-1px);
 }
 
 .elbysodic-command-action span,
@@ -1619,9 +1618,11 @@ body {
 
 .elbysodic-lane-preview,
 .elbysodic-desk-lane {
+    border-block-start: 1px solid var(--chirpui-border-subtle);
     display: grid;
-    gap: 1rem;
+    gap: 0.8rem;
     height: 100%;
+    padding-block-start: 0.85rem;
 }
 
 .elbysodic-lane-preview__header,
@@ -1647,19 +1648,30 @@ body {
 
 .elbysodic-preview-row,
 .elbysodic-desk-preview {
-    background: color-mix(in srgb, var(--chirpui-surface) 86%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
     color: var(--chirpui-text);
     display: block;
-    padding: 0.7rem;
+    padding: 0.62rem 0 0;
     text-decoration: none;
+}
+
+.elbysodic-lane-preview__items .elbysodic-preview-row:first-child,
+.elbysodic-desk-lane__items .elbysodic-desk-preview:first-child {
+    border-block-start: 0;
+    padding-block-start: 0;
 }
 
 .elbysodic-preview-row:hover,
 .elbysodic-preview-row:focus-visible,
-.elbysodic-desk-preview:hover {
-    border-color: var(--chirpui-border-strong);
+.elbysodic-desk-preview:hover,
+.elbysodic-desk-preview:focus-visible {
+    color: var(--chirpui-link-hover);
+    outline: 0;
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
 }
 
 .elbysodic-preview-row__body,
@@ -1716,21 +1728,17 @@ body {
 }
 
 .elbysodic-director-hero {
-    background:
-        radial-gradient(circle at 78% 16%, color-mix(in srgb, var(--chirpui-accent) 24%, transparent), transparent 34%),
-        linear-gradient(145deg, var(--chirpui-surface-alt), var(--chirpui-bg-subtle));
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius);
+    border-block-end: 1px solid var(--chirpui-border-subtle);
     display: grid;
-    gap: clamp(1.25rem, 3vw, 2rem);
+    gap: clamp(1rem, 3vw, 1.6rem);
     grid-template-columns: minmax(0, 1fr) minmax(min(100%, 18rem), 0.35fr);
-    padding: clamp(1.5rem, 4vw, 2.75rem);
+    padding: 1.1rem 0 1.35rem;
 }
 
 .elbysodic-director-hero h1 {
-    font-size: clamp(2.5rem, 6vw, 5.5rem);
+    font-size: clamp(2.25rem, 4.6vw, 3.75rem);
     letter-spacing: 0;
-    line-height: 0.92;
+    line-height: 0.98;
     margin: 0;
 }
 
@@ -1797,17 +1805,15 @@ body {
 
 .elbysodic-production-room-card,
 .elbysodic-studio-room-card {
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-state-staff) 5%, transparent), transparent 56%),
-        color-mix(in srgb, var(--chirpui-surface) 78%, transparent);
+    background: color-mix(in srgb, var(--chirpui-surface) 48%, transparent);
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text);
     display: grid;
     gap: 0.35rem;
-    min-height: 12rem;
+    min-height: 8.25rem;
     min-inline-size: 0;
-    padding: 0.9rem;
+    padding: 0.75rem;
     text-decoration: none;
 }
 
@@ -1820,8 +1826,8 @@ body {
 
 .elbysodic-production-room-card strong,
 .elbysodic-studio-room-card strong {
-    font-size: clamp(var(--chirpui-font-lg), 1.6vw, var(--chirpui-font-xl));
-    line-height: 1.05;
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.12;
     overflow-wrap: break-word;
 }
 
@@ -1854,9 +1860,9 @@ body {
 }
 
 .elbysodic-operations-hero h1 {
-    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    font-size: clamp(2.15rem, 4vw, 3.4rem);
     letter-spacing: 0;
-    line-height: 0.95;
+    line-height: 1;
     margin: 0;
 }
 
@@ -1964,9 +1970,9 @@ body {
 
 .elbysodic-room-header h2,
 .elbysodic-studio-room__header h2 {
-    font-size: var(--chirpui-font-3xl);
+    font-size: var(--chirpui-font-2xl);
     letter-spacing: 0;
-    line-height: 1.05;
+    line-height: 1.12;
 }
 
 .elbysodic-room-header p:not(.elbysodic-kicker),
