@@ -96,7 +96,7 @@
   }
 
   function setupSubmitGuards(root) {
-    const forms = root.querySelectorAll("form[data-elbysodic-submit-label]");
+    const forms = root.querySelectorAll('form[method="post"], form[method="POST"]');
     forms.forEach((form) => {
       if (form.dataset.elbysodicSubmitReady === "true") {
         return;
@@ -121,6 +121,25 @@
     });
   }
 
+  function resetSubmitGuard(form) {
+    if (!form || form.dataset.elbysodicSubmitPending !== "true") {
+      return;
+    }
+    form.dataset.elbysodicSubmitPending = "false";
+    form.removeAttribute("aria-busy");
+    const group = form.closest("[data-elbysodic-submit-group]") || form;
+    submitControls(group).forEach((control) => {
+      control.disabled = false;
+      control.removeAttribute("aria-disabled");
+    });
+    const labelled = group.querySelectorAll("[data-elbysodic-submit-label-applied='true']");
+    labelled.forEach((control) => {
+      control.textContent = control.dataset.elbysodicSubmitOriginalLabel || control.textContent;
+      delete control.dataset.elbysodicSubmitLabelApplied;
+      delete control.dataset.elbysodicSubmitOriginalLabel;
+    });
+  }
+
   function setupEnhancements() {
     setupSidebarToggle();
     setupSubmitGuards(document);
@@ -132,4 +151,12 @@
     setupEnhancements();
   }
   document.body.addEventListener("htmx:afterSettle", () => setupEnhancements());
+  document.body.addEventListener("htmx:responseError", (event) => {
+    resetSubmitGuard(event.target && event.target.closest ? event.target.closest("form") : null);
+  });
+  window.addEventListener("pageshow", () => {
+    document
+      .querySelectorAll("form[data-elbysodic-submit-pending='true']")
+      .forEach((form) => resetSubmitGuard(form));
+  });
 })();

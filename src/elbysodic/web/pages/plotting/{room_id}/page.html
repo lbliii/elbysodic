@@ -151,8 +151,10 @@
               hx-post="/plotting/{{ room.room.id }}"
               hx-target="#plotting-room-composer"
               hx-swap="outerHTML"
+              hx-sync="this:replace"
               hx-disinherit="hx-select hx-target hx-swap"
               hx-boost="false"
+              data-elbysodic-submit-label="Sending..."
               class="elbysodic-room-composer">
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="post_message">

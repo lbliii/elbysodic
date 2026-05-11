@@ -1437,6 +1437,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert 'hx-target="#board-thread-region"' in board.text
             assert 'hx-select="#board-thread-region"' in board.text
             assert 'hx-disinherit="hx-select hx-target hx-swap"' in board.text
+            assert 'hx-sync="closest nav:replace"' in board.text
             assert 'hx-swap="outerHTML show:none"' in board.text
             assert "chirpui-breadcrumbs" in board.text
             assert "chirpui-saved-view-strip" in board.text
@@ -2801,6 +2802,9 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             assert "serverStyle.disabled = !hidden" in script.text
             assert "document.documentElement.classList.toggle(HIDDEN_CLASS, hidden)" in script.text
             assert 'window.localStorage.removeItem("chirpui-sidebar-collapsed")' in script.text
+            assert 'form[method="post"], form[method="POST"]' in script.text
+            assert "htmx:responseError" in script.text
+            assert "resetSubmitGuard" in script.text
 
             composer = await client.get("/elbysodic-static/elbysodic-composer.js")
             assert composer.status == 200
@@ -4881,6 +4885,8 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
         assert f'href="/c/{community.slug}/plotting"' in room_page.text
         assert f'sse-connect="/c/{community.slug}/plotting/{room.id}/stream"' in room_page.text
         assert f'hx-post="/c/{community.slug}/plotting/{room.id}"' in room_page.text
+        assert 'hx-sync="this:replace"' in room_page.text
+        assert 'data-elbysodic-submit-label="Sending..."' in room_page.text
         assert saved.status == 302
         assert _response_header(saved, "location") == f"/c/{community.slug}/plotting/{room.id}"
 
