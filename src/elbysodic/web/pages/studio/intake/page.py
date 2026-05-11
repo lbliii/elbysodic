@@ -9,6 +9,7 @@ from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
+from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
 from elbysodic.web.state import get_services
@@ -125,6 +126,7 @@ def _render_intake_editor(
         blueprint_yaml=blueprint_yaml,
         blueprint_preview=blueprint_preview,
         error=error,
+        shell_actions=_intake_shell_actions(),
     )
 
 
@@ -138,3 +140,26 @@ def _required_int(raw: object, message: str) -> int:
 def _options_json(raw: str) -> str:
     options = [line.strip() for line in raw.splitlines() if line.strip()]
     return json.dumps(options, separators=(",", ":"))
+
+
+def _intake_shell_actions() -> ShellActions:
+    return ShellActions(
+        controls=ShellActionZone(
+            items=(
+                ShellAction(
+                    id="intake-studio",
+                    label="Studio",
+                    href="/studio",
+                    icon="grid",
+                    variant="secondary",
+                ),
+                ShellAction(
+                    id="intake-operations",
+                    label="Operations",
+                    href="/studio/operations",
+                    icon="logs",
+                    variant="secondary",
+                ),
+            )
+        )
+    )

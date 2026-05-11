@@ -2100,6 +2100,9 @@ appearance:
 
         async with TestClient(app) as client:
             page = await client.get("/studio/intake")
+            assert 'id="chirp-shell-actions"' in page.text
+            assert 'href="/studio"' in page.text
+            assert 'href="/studio/operations"' in page.text
             response = await client.post(
                 "/studio/intake",
                 body=urlencode(
