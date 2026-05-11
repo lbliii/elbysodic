@@ -20,6 +20,14 @@ Elbysodic must not look like preserved 2014 forum software with a nicer coat of
 paint. The product should preserve forum-PBP power while feeling contemporary,
 calm, and roleplay-native on first contact.
 
+Elbysodic's default visual direction is technicolor futurism: saturated enough
+to feel alive, speculative enough to feel current, and expressive enough to
+honor board culture. That does not mean every screen should be loud. The
+strongest color, media, glow, texture, and poster treatment should appear where
+they carry identity, ritual, or atmosphere. Operational surfaces should inherit
+that world through tokens, accents, and restrained material choices while
+staying quiet enough for writers and directors to scan, compare, and act.
+
 Competitive signal from RPHub matters here. RPHub demonstrates that a modern
 roleplay platform can look clean, current, image-rich, mobile-conscious, and
 visibly built for roleplayers without abandoning character identity,
@@ -40,6 +48,47 @@ The visual standard:
   skin labor.
 - Customization improves atmosphere within Elbysodic's control spectrum; it
   must not be required to make the product feel alive.
+
+## Technicolor Restraint
+
+The product should feel more like a polished application for vivid writing
+worlds than a dashboard wrapped in forum skin. Use technicolor futurism as a
+controlled atmosphere system:
+
+- Let identity surfaces carry the brightest treatment: world gateways,
+  board/location heroes, character hubs, wanted hooks, guidebook covers, and
+  event notices.
+- Let work surfaces breathe: Writer Desk, queues, notifications, applications,
+  claims, reserves, Studio production rooms, and form-heavy pages should use
+  open rhythm, smaller headings, quiet borders, compact rows, and one clear
+  command area.
+- Prefer atmospheric accents over framed decoration on operational pages:
+  color bars, status dots, media thumbnails, subtle texture, and typography can
+  carry the room without putting every object inside an elevated card.
+- Reserve high-contrast panels for current commands, forms, warnings, previews,
+  and selected story objects. A page section does not need a card just because
+  it has a heading.
+- Size app-room typography one notch below landing or ritual surfaces. Hero
+  scale belongs to public promise and major world identity, not every Studio or
+  Desk header.
+- Keep negative space useful. Openness should separate jobs and give prose room
+  to lead; it should not hide next actions, active-face context, or state.
+
+Reference patterns worth studying:
+
+- Railway Central Station keeps a high-volume community/support surface
+  scannable with search, sparse navigation, compact CTA/stat treatment, and
+  plain thread lists.
+- Linear's 2026 interface refresh is a useful model for reducing equal-weight
+  chrome: important work stays foregrounded while navigation, borders, icons,
+  and support controls recede.
+- Vercel and shadcn-style application layouts show how modern app shells use
+  stable navigation, compact headers, grouped sidebars, command/search
+  shortcuts, tables, rows, and only a small number of summary cards.
+
+These are reference behaviors, not styles to copy. Elbysodic should translate
+them into PBP-native surfaces with faces, scenes, wanted hooks, claims,
+reserves, plotters, and active-face identity intact.
 
 ## Product Boundary
 

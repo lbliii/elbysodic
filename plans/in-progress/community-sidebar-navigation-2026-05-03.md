@@ -1,14 +1,34 @@
 # Community Sidebar Navigation Plan
 
-Status: active UX polish; browser QA remains
+Status: superseded by `layered-shell-navigation-2026-05-11.md`; archive after
+remaining useful verification notes are moved
 Owner: Product/UI stewardship
 Created: 2026-05-03
-Last updated: 2026-05-09
+Last updated: 2026-05-11
 Review by: 2026-05-30
 Closure criteria: topbar/sidebar ownership is documented, the Elbysodic
 sidebar primitives are implemented without duplicate route control, mobile and
 desktop sidebar behavior pass browser QA, and any upstream Chirp UI candidates
 are identified.
+
+## 2026-05-11 Supersession Note
+
+This plan is superseded by
+`plans/in-progress/layered-shell-navigation-2026-05-11.md`.
+
+The product decision changed after the layered shell steward and user-panel
+review:
+
+- `Play` is no longer accepted as a primary label; use `Wanted`.
+- `World` is the realm home/landing surface; `Locations` is the
+  in-character navigation surface.
+- The ordinary collapsed state should be a compact icon rail, not a fully
+  hidden sidebar.
+- The implementation should use one server-side nav model for rail, inner
+  shell, and mobile drawer.
+
+Keep this older plan only as historical context until any useful verification
+notes are moved, then archive it.
 
 ## 2026-05-09 Verification Update
 

@@ -67,6 +67,16 @@ pretend a behavior exists until code, tests, or product docs support it.
   futurism, PBP reading flow, and reduced-motion-safe interaction design.
 - `rendered-qa-pass.md`: latest rendered QA notes, accepted fixes, and
   deferred visual risks.
+- `sidebar-icon-vocabulary.md`: canonical SVG icon set and route mapping for
+  sidebar destinations, compact rail behavior, and Studio/Desk route cleanup.
+- `static-shell-mock.html`: static layered shell mock for the accepted icon rail
+  plus inner-shell model.
+- `static-shell-mock-notes.md`: review notes for the static shell mock and
+  implementation lessons to carry forward.
+- `static-shell-mock-v2.html`: implementation-oriented shell mock using
+  Chirp/Elbysodic class vocabulary and inline SVG placeholders.
+- `static-shell-mock-v2-notes.md`: component candidates and review notes for
+  the V2 shell mock.
 - `terminology-map.md`: UX writing conventions for PBP terms such as scene,
   thread, face, roster, guidebook, canon, wanted, claims, and reserves.
 - `technicolor-futurism.md`: the working design doctrine.

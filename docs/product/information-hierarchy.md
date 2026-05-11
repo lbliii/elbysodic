@@ -40,6 +40,98 @@ These screens repeat the same concepts. When they are styled ad hoc, everything
 competes for attention. Elbysodic should instead decide which concepts are
 identity, which are action, which are metadata, and which are signals.
 
+## Simplification Doctrine
+
+Simplification is not minimalism for its own sake. It is the discipline of
+letting the primary PBP object stay foregrounded while supporting context,
+counts, controls, and director tools recede until they are useful.
+
+### Hub Page Contract
+
+A hub page is not an index of every adjacent route. It earns its place only
+when it answers one cross-cutting question better than the scoped pages can.
+
+Use this contract before adding or expanding a hub:
+
+- **Writer Desk** answers: what needs the writer now? It can surface reply,
+  reading, waiting, plotting, application, and notification work only when
+  there is active work behind the lane. It should not mirror the sidebar,
+  roster, applications, casting, discovery, or inbox as persistent shortcuts.
+- **Studio** answers: what needs a director now? It can surface launch
+  blockers, review queues, production health, navigation warnings, and current
+  publishing work. It should not also be the full board taxonomy editor,
+  navigation composer, appearance editor, casting desk, and continuity editor
+  unless those are the current director job.
+- **Community home** answers: where am I in the world? It should orient around
+  realm identity, playable locations, current activity, and reply pressure. It
+  should not become a second Writer Desk or Studio dashboard.
+- **Character hub** answers: what is true and playable for this face? It can
+  show profile identity, active hooks, recent scenes, tracker context, and
+  character-specific actions. It should not repeat roster-wide work that the
+  Writer Desk already owns.
+
+Scoped pages own durable workflows:
+
+- `/my/threads` owns queue filtering, roster-wide thread state, and deeper
+  reply/waiting scans.
+- `/notifications` owns notification history and bulk inbox actions.
+- `/applications` owns draft, submitted, and revision-requested intake.
+  Accepted applications become character pages.
+- `/plotting` owns planning rooms and interest handoffs.
+- `/studio/operations` owns daily director production work.
+- `/studio/launch` owns launch readiness and setup sequencing.
+- Future Studio routes should own appearance, navigation, board taxonomy,
+  materials, and casting/review work before those editors are removed from the
+  Studio home.
+
+A hub section should pass at least one test:
+
+- It changes with active work, urgency, or production health.
+- It prevents a wrong next action.
+- It explains the current state of the realm, writer, director, or face.
+- It is the fastest safe path into a focused scoped page.
+
+If a section exists only to prove that another route exists, remove it from the
+hub and let the sidebar or object-local navigation do that work.
+
+This depends on navigation staying available. A fully invisible sidebar makes
+hub pages compensate by repeating routing options. Prefer a compact icon rail
+as the ordinary space-saving state so hubs can stay focused on current work
+instead of becoming backup navigation.
+
+Use this surface ladder before introducing a new frame, card, panel, or CTA:
+
+1. Open layout: page identity, section rhythm, prose, filters, and long lists.
+2. Compact rows: queues, notifications, claims, reserves, applications,
+   plotting rooms, recent activity, and thread lists.
+3. Story-object cards: faces, places, wanted hooks, guidebook materials, and
+   other repeated objects where media, identity, or comparison matters.
+4. Elevated command panels: one current page command, one form, one warning, or
+   one preview surface that needs to feel contained.
+
+Not every repeated datum deserves a card, chip, badge, or button. Metadata can
+be a line. Counts can be quiet metrics. Related objects can be rows. Secondary
+actions can be inline links or overflow menus. Negative space is part of the
+hierarchy when it separates jobs and gives story material room to breathe.
+
+Before adding a new component shape, ask:
+
+- Is this concept identity, action, metadata, status, or navigation?
+- Would a row, text line, metric, or local rail do the job with less chrome?
+- Is this action already available in the topbar, sidebar, local rail, command
+  area, object title, or row link?
+- Does this page already have an elevated command surface? If so, a second
+  elevated panel needs a distinct job.
+- Is the visual weight appropriate for the user's current journey: orient,
+  read or compare, act, continue?
+
+When two links lead to the same place from the same visual area, keep the one
+that matches user intent. A character poster and character name can both open a
+profile because they are identity affordances; a third `Open profile` button
+usually repeats the same action without adding confidence. A Desk command area
+can link to Queue or Inbox; a separate shortcut panel should exist only when it
+adds a different browsing model.
+
 ## Creator Launch Hierarchy
 
 Creator onboarding is a director launch room, not a generic signup wizard. The
@@ -96,10 +188,15 @@ Current promoted component shapes:
   actions, such as applications, plotting rooms, or queue focus.
 - `lane_preview`: a bounded work lane with count, explanation, deeper-room
   action, and a small list of `preview_row` items. Use when the page is a
-  command surface and the deeper workflow lives elsewhere.
+  command surface and the deeper workflow lives elsewhere. Prefer an open
+  section with rows when several lanes are already visible and the card frame
+  would make everything feel equally important.
 - `production_room_card`: a Studio-style room tile for director/admin surfaces
   where the card represents an area of board production rather than a single
-  story object.
+  story object. Use sparingly, mainly for a launch or room chooser. On a page
+  where directors already have local rail navigation, prefer a compact room
+  index or open sections so Studio does not become a grid of equal-weight
+  cards before the actual work.
 - `room_header`: a kicker, title, and short explanation for one room within a
   dense production surface. Use when a route is divided into several stable
   workrooms and those rooms need consistent anchor targets.
@@ -135,13 +232,13 @@ actions. Prefer poster-copy treatment: plain text, a small accent rule, or
 another typographic cue that feels attached to the title rather than like a
 clickable chip.
 
-Active-face relevance, such as `Relevant for Magneto`, is a smart contextual
-signal. It belongs on the image as a compact ASCII/icon overlay because it is
-about the relationship between the current face and the place, not a count,
-facet, or generic status. Keep the visible mark small and expose the full
-meaning through hover/focus disclosure and `aria-label`. Use the shared
-`meta_hint()` helper for this disclosure so the visible mark stays quiet while
-the explanation remains available.
+Active-face relevance, such as `Relevant to the active face`, is a smart
+contextual signal. It belongs on the image as a compact ASCII/icon overlay
+because it is about the relationship between the current face and the place,
+not a count, facet, or generic status. Keep the visible mark small and expose
+the full meaning through hover/focus disclosure and `aria-label`. Use the
+shared `meta_hint()` helper for this disclosure so the visible mark stays quiet
+while the explanation remains available.
 
 ### Counter
 
@@ -310,8 +407,8 @@ Use the stable community map to orient writers:
 - `Studio` is director work and appears only when the viewer can access it.
 
 Hydrate below or within the active room with local context: current location
-branch, current material, related wants, active-face context, desk lane, or
-Studio production surface. Empty contextual collections disappear.
+branch, current material, related wants, desk lane, or Studio production
+surface. Empty contextual collections disappear.
 
 The sidebar should not add a section label when the first row is already the
 named route parent.
@@ -319,8 +416,8 @@ named route parent.
 Use an unlabeled group when the row itself is the category: `Locations`,
 `Community`, `Overview`, `Start Here`, `Guides`, `Events`, `Wanted board`, or
 `Production`. Use labels only as optional dividers between unlike/contextual
-lists, such as `Current Event`, `Active Face`, `Open Wants`, `Related Wants`,
-or future director-configured sidebar collections.
+lists, such as `Current Event`, `Open Wants`, `Related Wants`, or future
+director-configured sidebar collections.
 
 Route parents stay clickable, active, counted rows. Labels are not routes and
 should never carry the main active state for a category.
@@ -613,6 +710,26 @@ Chirp-UI surface padding protect the text from tight custom frames.
 
 ## Condensing Rules
 
+- The global identity cluster owns the current membership and active face name.
+  Do not repeat `playing as <face>` or `Current face: <face>` in page headers,
+  passive helper copy, cards, stats, or sidebars. Use state language such as
+  `active-face matches`, `active-face reserves`, or `Relevant to the active
+  face`.
+- Name the face at identity-sensitive commitment points: `Reply as <face>`,
+  `Join as <face>`, `Message as <face>`, `I'm interested as <face>`, and
+  `Reserve for <face>`. Also name it inside explicit switchers or
+  cross-community identity menus where the user is choosing which face travels
+  with a realm.
+- Decide whether emptiness is useful before rendering an empty structure. Show
+  empty states when they reduce anxiety or teach a next step: no scenes need
+  reply, no notifications are waiting, an application form is incomplete, or a
+  staff review queue is clear. Hide empty optional lanes, shortcut panels,
+  duplicate CTAs, and zero-count rows when they only prove that nothing is
+  happening.
+- Treat accepted applications as resolved intake. They become character pages,
+  roster entries, profile hubs, and posting identities; they should not keep
+  appearing as application work unless a review/audit surface explicitly needs
+  historical acceptance state.
 - Place controls by page rhythm: orient first, let the user read or compare,
   show the action at the point of intent, and put continuation controls after
   completion. Previous/next thread controls can stay near the top when they
@@ -620,7 +737,7 @@ Chirp-UI surface padding protect the text from tight custom frames.
   unreplied` and `Next unread` belong beneath the last post because they answer
   "what needs me after reading?"
 - Prefer active-face defaults over repeated controls when the action is safe:
-  "Join as Rogue" beats a roster dropdown.
+  `Join as Rogue` beats a roster dropdown.
 - Use `docs/product/control-topology.md` before collapsing a visible action into
   an icon, overflow menu, disclosure, or inline edit affordance.
 - Hide optional sections when empty unless the empty state teaches the next
