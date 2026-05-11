@@ -4672,6 +4672,9 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                 assert plotting.status == 200
                 assert "Plotting Rooms" in plotting.text
                 assert "Open plotting room" in plotting.text
+                assert "Active face plotter" not in _page_content(plotting.text)
+                assert "Discover hooks" not in _page_content(plotting.text)
+                assert "Find plot hooks" not in _page_content(plotting.text)
 
                 profile = await owner_client.get("/characters/rogue")
                 assert profile.status == 200
@@ -4913,6 +4916,8 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
             assert plotting.status == 200
             assert "Interest Inbox" in plotting.text
             assert "Open plotting room" in plotting.text
+            assert "Active face plotter" not in _page_content(plotting.text)
+            assert "Browse wanted" not in _page_content(plotting.text)
 
         lane_inbox = AppServices(repo, services.seed).notifications()
         assert any(item.label == "Plotting room" for item in lane_inbox.items)

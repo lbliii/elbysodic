@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
@@ -130,37 +131,11 @@
 {% end %}
 
 {% def plotting_empty_room() %}
-{% call surface(variant="elevated") %}
-<div class="elbysodic-plotting-empty">
-  <div>
-    <p class="elbysodic-section-kicker">No open rooms</p>
-    <h3>Nothing is at the planning table yet.</h3>
-    <p class="elbysodic-copy-section">Raised hands become private rooms once a hook owner starts plotting.</p>
-  </div>
-  <div class="elbysodic-plotting-empty__actions">
-    {% if viewer.current_character %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/characters/{{ viewer.current_character.slug }}#plotter">Open active-face plotter</a>
-    {% end %}
-    <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Discover hooks</a>
-  </div>
-</div>
-{% end %}
+{{ empty_policy_block("Nothing is at the planning table yet.", "Raised hands become private rooms once a hook owner starts plotting.", "No open rooms") }}
 {% end %}
 
 {% def plotting_empty_interest() %}
-{% call surface(variant="elevated") %}
-<div class="elbysodic-plotting-empty">
-  <div>
-    <p class="elbysodic-section-kicker">No raised hands</p>
-    <h3>Nothing is waiting for a room.</h3>
-    <p class="elbysodic-copy-section">Wanted and plot-hook interest will land here when you can open the planning door.</p>
-  </div>
-  <div class="elbysodic-plotting-empty__actions">
-    <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
-    <a class="chirpui-btn chirpui-btn--secondary" href="/discover">Find plot hooks</a>
-  </div>
-</div>
-{% end %}
+{{ empty_policy_block("Nothing is waiting for a room.", "Wanted and plot-hook interest will land here when you can open the planning door.", "No raised hands") }}
 {% end %}
 
 {% def pulse_action(label, summary, href, count=none) %}
@@ -192,12 +167,12 @@
       {{ metric_item(desk.plot_hook_interests | length, "Plot interest") }}
       {{ metric_item(desk.wanted_interests | length, "Wanted interest") }}
     </div>
+    {% set interest_count = (desk.plot_hook_interests | length) + (desk.wanted_interests | length) %}
+    {% if interest_count %}
     <div class="elbysodic-plotting-pulse__actions">
-      {% if viewer.current_character %}
-      {{ pulse_action("Active face plotter", "Hooks, wanted ties, and room context.", "/characters/" ~ viewer.current_character.slug ~ "#plotter") }}
-      {% end %}
-      {{ pulse_action("Interest inbox", "Raised hands you can turn into rooms.", "#interest-inbox", (desk.plot_hook_interests | length) + (desk.wanted_interests | length)) }}
+      {{ pulse_action("Interest inbox", "Raised hands you can turn into rooms.", "#interest-inbox", interest_count) }}
     </div>
+    {% end %}
   {% end %}
   {% end %}
 
