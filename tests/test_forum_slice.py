@@ -51,6 +51,27 @@ def _response_header(response: Any, name: str) -> str:
     raise AssertionError(f"response header not found: {name}")
 
 
+async def _switch_membership(
+    client: TestClient,
+    membership: Any,
+    next_url: str,
+    *,
+    character_id: str = "0",
+) -> Any:
+    return await client.post(
+        "/identity",
+        body=urlencode(
+            {
+                "intent": "switch_membership",
+                "membership_id": str(membership.id),
+                "character_id": character_id,
+                "next": next_url,
+            }
+        ).encode(),
+        headers=_FORM,
+    )
+
+
 def _response_headers(response: Any, name: str) -> list[str]:
     headers = response.headers
     if isinstance(headers, dict):
@@ -1259,17 +1280,10 @@ def test_prefixed_cross_realm_recovery_switches_to_target_tenant() -> None:
             recovery = await client.get(
                 f"/c/{services.seed.community.slug}/world/paddock-twelve-incident",
             )
-            switch = await client.post(
-                "/identity",
-                body=urlencode(
-                    {
-                        "intent": "switch_membership",
-                        "membership_id": str(jurassic_membership.id),
-                        "character_id": "0",
-                        "next": "/c/jurassic-park-universe/world/paddock-twelve-incident",
-                    }
-                ).encode(),
-                headers=_FORM,
+            switch = await _switch_membership(
+                client,
+                jurassic_membership,
+                "/c/jurassic-park-universe/world/paddock-twelve-incident",
             )
 
         assert recovery.status == 200
@@ -1297,18 +1311,7 @@ def test_identity_switch_sanitizes_cross_realm_next_url() -> None:
         hp_membership = services.repo.get_membership_for_user(hp.id, 1)
 
         async with TestClient(app) as client:
-            response = await client.post(
-                "/identity",
-                body=urlencode(
-                    {
-                        "intent": "switch_membership",
-                        "membership_id": str(hp_membership.id),
-                        "character_id": "0",
-                        "next": "/applications/asha-bennett",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
+            response = await _switch_membership(client, hp_membership, "/applications/asha-bennett")
 
         assert response.status == 302
         assert _response_header(response, "location") == "/applications"
@@ -1322,65 +1325,25 @@ def test_identity_switch_sanitizes_cross_realm_plotting_board_and_thread_urls() 
         services = get_services()
         hp = services.repo.get_community_by_slug("hp-universe")
         hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+        cases = (
+            ("/plotting/1", "/plotting"),
+            ("/c/x-men-apocalypse/plotting/1", "/c/hp-universe/plotting"),
+            ("/boards/danger-room", "/locations"),
+            (
+                "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill",
+                "/c/hp-universe/locations",
+            ),
+        )
 
         async with TestClient(app) as client:
-            plotting = await client.post(
-                "/identity",
-                body=urlencode(
-                    {
-                        "intent": "switch_membership",
-                        "membership_id": str(hp_membership.id),
-                        "character_id": "0",
-                        "next": "/plotting/1",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
-            prefixed_plotting = await client.post(
-                "/identity",
-                body=urlencode(
-                    {
-                        "intent": "switch_membership",
-                        "membership_id": str(hp_membership.id),
-                        "character_id": "0",
-                        "next": "/c/x-men-apocalypse/plotting/1",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
-            board = await client.post(
-                "/identity",
-                body=urlencode(
-                    {
-                        "intent": "switch_membership",
-                        "membership_id": str(hp_membership.id),
-                        "character_id": "0",
-                        "next": "/boards/danger-room",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
-            thread = await client.post(
-                "/identity",
-                body=urlencode(
-                    {
-                        "intent": "switch_membership",
-                        "membership_id": str(hp_membership.id),
-                        "character_id": "0",
-                        "next": "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill",
-                    }
-                ).encode(),
-                headers=_FORM,
-            )
+            responses = [
+                (await _switch_membership(client, hp_membership, next_url), expected_location)
+                for next_url, expected_location in cases
+            ]
 
-        assert plotting.status == 302
-        assert _response_header(plotting, "location") == "/plotting"
-        assert prefixed_plotting.status == 302
-        assert _response_header(prefixed_plotting, "location") == "/c/hp-universe/plotting"
-        assert board.status == 302
-        assert _response_header(board, "location") == "/locations"
-        assert thread.status == 302
-        assert _response_header(thread, "location") == "/c/hp-universe/locations"
+        for response, expected_location in responses:
+            assert response.status == 302
+            assert _response_header(response, "location") == expected_location
 
     asyncio.run(run())
 
