@@ -3553,6 +3553,8 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             open_hook = await client.get("/wanted/human-un-liaison-for-b24")
             assert open_hook.status == 200
             assert 'data-elbysodic-submit-label="Sending interest..."' in open_hook.text
+            assert 'data-elbysodic-command-kind="express_wanted_interest"' in open_hook.text
+            assert 'data-elbysodic-actor-shape="current-face"' in open_hook.text
 
             interest_response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
@@ -7054,6 +7056,9 @@ def test_reply_command_token_prevents_duplicate_posts() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/danger-room/threads/sentinel-drill")
             assert page.status == 200
+            assert 'data-elbysodic-command-kind="reply"' in page.text
+            assert 'data-elbysodic-actor-shape="explicit-character"' in page.text
+            assert 'data-elbysodic-idempotency="command-token"' in page.text
             token = _input_value(page.text, "command_token")
             first = await client.post(
                 "/boards/danger-room/threads/sentinel-drill",

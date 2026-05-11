@@ -147,7 +147,13 @@
       </div>
       <div class="elbysodic-thread-stage__actions">
         {% if thread_view.can_join_scene and viewer.current_character %}
-        <form method="post" hx-boost="false">
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-command-kind="join_scene"
+              data-elbysodic-actor-shape="current-face"
+              data-elbysodic-target-object="thread"
+              data-elbysodic-stale-behavior="service-validates-current-face-and-thread-state"
+              data-elbysodic-idempotency="service-duplicate-policy">
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="join_scene">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">
@@ -162,7 +168,14 @@
         </a>
         {% end %}
         <div class="elbysodic-thread-stage__action-row">
-          <form method="post" hx-boost="false" class="elbysodic-thread-watch-form">
+          <form method="post"
+                hx-boost="false"
+                data-elbysodic-command-kind="toggle_thread_watch"
+                data-elbysodic-actor-shape="membership-only"
+                data-elbysodic-target-object="thread"
+                data-elbysodic-stale-behavior="service-validates-thread-visibility"
+                data-elbysodic-idempotency="idempotent-toggle-target"
+                class="elbysodic-thread-watch-form">
         {{ csrf_field() }}
             <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
             <button type="submit"
@@ -196,7 +209,14 @@
     </summary>
     <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="scene-management">
       <p class="elbysodic-copy-helper">Update the scene signal and tag other writers into the cast.</p>
-      <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+      <form method="post"
+            hx-boost="false"
+            data-elbysodic-command-kind="update_scene_metadata"
+            data-elbysodic-actor-shape="staff-actor"
+            data-elbysodic-target-object="thread"
+            data-elbysodic-stale-behavior="service-validates-staff-and-thread-community"
+            data-elbysodic-idempotency="last-write-wins"
+            class="chirpui-stack chirpui-stack--md">
         {{ csrf_field() }}
       <input type="hidden" name="intent" value="scene">
       <div class="elbysodic-scene-form-grid">
@@ -314,14 +334,26 @@
       <p class="elbysodic-copy-helper">Manage this thread's visibility in the community queue.</p>
       <div class="elbysodic-staff-panel__controls">
       <div class="chirpui-cluster chirpui-cluster--sm">
-        <form method="post" hx-boost="false">
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-command-kind="toggle_thread_pin"
+              data-elbysodic-actor-shape="staff-actor"
+              data-elbysodic-target-object="thread"
+              data-elbysodic-stale-behavior="service-validates-staff-and-thread-community"
+              data-elbysodic-idempotency="idempotent-toggle-target">
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">
             {{ "Unpin thread" if thread_view.thread.is_pinned else "Pin thread" }}
           </button>
         </form>
-        <form method="post" hx-boost="false">
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-command-kind="toggle_thread_lock"
+              data-elbysodic-actor-shape="staff-actor"
+              data-elbysodic-target-object="thread"
+              data-elbysodic-stale-behavior="service-validates-staff-and-thread-community"
+              data-elbysodic-idempotency="idempotent-toggle-target">
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="{{ "unlock" if thread_view.thread.is_locked else "lock" }}">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">
@@ -329,7 +361,14 @@
           </button>
         </form>
       </div>
-      <form method="post" hx-boost="false" class="elbysodic-move-thread-form">
+      <form method="post"
+            hx-boost="false"
+            data-elbysodic-command-kind="move_thread"
+            data-elbysodic-actor-shape="staff-actor"
+            data-elbysodic-target-object="thread"
+            data-elbysodic-stale-behavior="service-validates-target-board-community"
+            data-elbysodic-idempotency="last-write-wins"
+            class="elbysodic-move-thread-form">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="move">
         <label class="chirpui-field__label" for="target-board">Move to</label>
@@ -421,6 +460,11 @@
           method="post"
           hx-boost="false"
           data-elbysodic-submit-label="Posting..."
+          data-elbysodic-command-kind="reply"
+          data-elbysodic-actor-shape="explicit-character"
+          data-elbysodic-target-object="thread"
+          data-elbysodic-stale-behavior="service-validates-character-and-thread-state"
+          data-elbysodic-idempotency="command-token"
           class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--reply"
           x-data="elbysodicComposer('{{ composer_config_id }}')"
           @submit="submitDraft()">

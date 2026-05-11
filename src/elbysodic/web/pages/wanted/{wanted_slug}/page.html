@@ -131,6 +131,11 @@
       <form method="post"
             hx-boost="false"
             data-elbysodic-submit-label="Sending interest..."
+            data-elbysodic-command-kind="express_wanted_interest"
+            data-elbysodic-actor-shape="current-face"
+            data-elbysodic-target-object="wanted_ad"
+            data-elbysodic-stale-behavior="service-validates-current-face-and-open-hook"
+            data-elbysodic-idempotency="service-duplicate-policy"
             class="chirpui-cluster chirpui-cluster--end">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="express_interest">
@@ -152,6 +157,11 @@
         <form method="post"
               hx-boost="false"
               data-elbysodic-submit-label="Sending concept..."
+              data-elbysodic-command-kind="express_prospective_wanted_interest"
+              data-elbysodic-actor-shape="prospective-character"
+              data-elbysodic-target-object="wanted_ad"
+              data-elbysodic-stale-behavior="service-validates-membership-and-open-hook"
+              data-elbysodic-idempotency="service-duplicate-policy"
               class="chirpui-stack chirpui-stack--sm"
               aria-labelledby="prospective-interest">
         {{ csrf_field() }}
@@ -190,6 +200,11 @@
       <form method="post"
             hx-boost="false"
             data-elbysodic-submit-label="Saving lifecycle..."
+            data-elbysodic-command-kind="update_wanted_lifecycle"
+            data-elbysodic-actor-shape="staff-actor"
+            data-elbysodic-target-object="wanted_ad"
+            data-elbysodic-stale-behavior="service-validates-staff-and-hook-community"
+            data-elbysodic-idempotency="last-write-wins"
             class="chirpui-stack chirpui-stack--sm"
             aria-labelledby="wanted-lifecycle">
         {{ csrf_field() }}
@@ -256,7 +271,14 @@
       </div>
       {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
       <div class="chirpui-cluster chirpui-cluster--end">
-        <form method="post" hx-boost="false" data-elbysodic-submit-label="Starting room...">
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-submit-label="Starting room..."
+              data-elbysodic-command-kind="start_plotting_room_from_wanted"
+              data-elbysodic-actor-shape="staff-actor"
+              data-elbysodic-target-object="wanted_interest"
+              data-elbysodic-stale-behavior="service-validates-interest-state"
+              data-elbysodic-idempotency="service-duplicate-policy">
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="start_plotting_room">
           <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
@@ -264,7 +286,14 @@
             Start plotting room
           </button>
         </form>
-        <form method="post" hx-boost="false" data-elbysodic-submit-label="Reserving face...">
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-submit-label="Reserving face..."
+              data-elbysodic-command-kind="reserve_wanted_interest"
+              data-elbysodic-actor-shape="staff-actor"
+              data-elbysodic-target-object="wanted_interest"
+              data-elbysodic-stale-behavior="service-validates-interest-state"
+              data-elbysodic-idempotency="service-duplicate-policy">
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="reserve_interest">
           <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
@@ -279,6 +308,11 @@
       <form method="post"
             hx-boost="false"
             data-elbysodic-submit-label="Creating reserve..."
+            data-elbysodic-command-kind="create_reserve_for_wanted_interest"
+            data-elbysodic-actor-shape="staff-actor"
+            data-elbysodic-target-object="wanted_interest"
+            data-elbysodic-stale-behavior="service-validates-interest-and-character"
+            data-elbysodic-idempotency="service-duplicate-policy"
             class="chirpui-cluster chirpui-cluster--end">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="create_reserve">
