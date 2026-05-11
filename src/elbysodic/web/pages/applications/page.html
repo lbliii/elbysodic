@@ -46,6 +46,7 @@
       <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">Open review room</a>
       {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Submitting...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="submit_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
@@ -56,6 +57,7 @@
       </form>
       {% elif item.is_owned_by_viewer and item.character.application_status == "revision_requested" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Resubmitting...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="submit_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
@@ -67,6 +69,7 @@
       {% end %}
       {% if desk.can_review and item.character.application_status == "submitted" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Accepting...">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="accept_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"

@@ -49,6 +49,7 @@
         method="post"
         hx-boost="false"
         data-elbysodic-submit-label="Creating draft face...">
+        {{ csrf_field() }}
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>
     {% end %}

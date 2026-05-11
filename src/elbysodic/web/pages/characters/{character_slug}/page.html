@@ -91,17 +91,20 @@
       <div class="elbysodic-face-hub__actions elbysodic-face-hub__actions--primary">
         {% if profile.character.application_status == "draft" %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="submit_application">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">Submit application</button>
         </form>
         {% elif profile.character.application_status == "revision_requested" %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="submit_application">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">Resubmit application</button>
         </form>
         {% end %}
         {% if not profile.is_default %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="set_default">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">Set current face</button>
         </form>
@@ -191,6 +194,7 @@
       <a class="chirpui-btn chirpui-btn--secondary" href="/casting">Casting as {{ profile.character.name }}</a>
       {% else %}
       <form method="post" hx-boost="false">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="set_default">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">
           Make {{ profile.character.name }} current
@@ -272,6 +276,7 @@
       <small>A lightweight invitation for scenes, connections, or relationship plotting.</small>
     </summary>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md" aria-labelledby="new-plot-hook">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="create_plot_hook">
       <div class="elbysodic-form-grid">
         <div>
@@ -400,6 +405,7 @@
           class="chirpui-stack chirpui-stack--md"
           aria-labelledby="character-studio"
           x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
+        {{ csrf_field() }}
       {% if error %}
       <p class="chirpui-field__error">{{ error }}</p>
       {% end %}

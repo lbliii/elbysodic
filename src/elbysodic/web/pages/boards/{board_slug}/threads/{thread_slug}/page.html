@@ -148,6 +148,7 @@
       <div class="elbysodic-thread-stage__actions">
         {% if thread_view.can_join_scene and viewer.current_character %}
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="join_scene">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">
             <span class="chirpui-btn__icon" aria-hidden="true">{{ "add" | icon }}</span>
@@ -162,6 +163,7 @@
         {% end %}
         <div class="elbysodic-thread-stage__action-row">
           <form method="post" hx-boost="false" class="elbysodic-thread-watch-form">
+        {{ csrf_field() }}
             <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
             <button type="submit"
                     class="chirpui-btn chirpui-btn--secondary elbysodic-thread-watch-toggle"
@@ -195,6 +197,7 @@
     <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="scene-management">
       <p class="elbysodic-copy-helper">Update the scene signal and tag other writers into the cast.</p>
       <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="scene">
       <div class="elbysodic-scene-form-grid">
         <div>
@@ -312,12 +315,14 @@
       <div class="elbysodic-staff-panel__controls">
       <div class="chirpui-cluster chirpui-cluster--sm">
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">
             {{ "Unpin thread" if thread_view.thread.is_pinned else "Pin thread" }}
           </button>
         </form>
         <form method="post" hx-boost="false">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="{{ "unlock" if thread_view.thread.is_locked else "lock" }}">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">
             {{ "Unlock thread" if thread_view.thread.is_locked else "Lock thread" }}
@@ -325,6 +330,7 @@
         </form>
       </div>
       <form method="post" hx-boost="false" class="elbysodic-move-thread-form">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="move">
         <label class="chirpui-field__label" for="target-board">Move to</label>
         <select id="target-board" name="target_board_id" class="chirpui-field__input">
@@ -418,6 +424,7 @@
           class="chirpui-stack chirpui-stack--md elbysodic-composer elbysodic-composer--reply"
           x-data="elbysodicComposer('{{ composer_config_id }}')"
           @submit="submitDraft()">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="reply">
       <input type="hidden" name="command_token" value="{{ command_token }}">
       <div class="elbysodic-composer-heading">

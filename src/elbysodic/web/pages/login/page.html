@@ -21,6 +21,7 @@
 
   {% call surface(variant="elevated") %}
   <form method="post" class="chirpui-stack chirpui-stack--md" hx-boost="false">
+        {{ csrf_field() }}
     <input type="hidden" name="next" value="{{ next_url }}">
     {% if error %}
     <p class="elbysodic-form-error">{{ error }}</p>

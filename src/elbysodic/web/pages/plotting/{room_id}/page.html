@@ -154,6 +154,7 @@
               hx-disinherit="hx-select hx-target hx-swap"
               hx-boost="false"
               class="elbysodic-room-composer">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="post_message">
           <label class="chirpui-field__label" for="room-message">
             Message{% if viewer.current_character %} as {{ viewer.current_character.name }}{% end %}
@@ -184,6 +185,7 @@
 
         {% if room.can_edit_plan %}
         <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="save_plan">
           <div class="elbysodic-form-grid">
             <div>
@@ -295,6 +297,7 @@
     </div>
     {% if room.scene_boards and room.scene_character_options %}
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="start_scene">
       <div class="elbysodic-form-grid">
         <div>

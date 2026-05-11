@@ -58,6 +58,7 @@
       </p>
       {% elif hook.can_express_interest and viewer.current_character %}
       <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
           I'm interested as {{ viewer.current_character.name }}
@@ -96,6 +97,7 @@
       </div>
       {% if hook.can_manage and item.interest.status == "interested" %}
       <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="start_plotting_room">
         <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
@@ -119,6 +121,7 @@
       <small>Edit, retag, pause, or archive this invitation.</small>
     </summary>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md" aria-labelledby="plot-hook-studio">
+        {{ csrf_field() }}
       <div class="elbysodic-form-grid">
         <div>
           <label class="chirpui-field__label" for="hook-title">Title</label>

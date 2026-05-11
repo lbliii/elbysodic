@@ -18,6 +18,7 @@ A studio program ready for scenes, casting, and writer movement.
 
 {% def switch_form(program, next_href, label, variant="primary") %}
 <form action="/identity" method="post" hx-boost="false">
+        {{ csrf_field() }}
   <input type="hidden" name="intent" value="switch_membership">
   <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
   <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">

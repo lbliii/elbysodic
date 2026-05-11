@@ -21,6 +21,7 @@
     {% call cluster(gap="sm") %}
       {% if recovery.switch_action %}
       <form action="/identity" method="post" hx-boost="false">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="switch_membership">
         <input type="hidden" name="membership_id" value="{{ recovery.switch_action.membership_id }}">
         <input type="hidden" name="character_id" value="{{ recovery.switch_action.character_id }}">

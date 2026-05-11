@@ -37,6 +37,7 @@
 
   {% call surface(variant="elevated") %}
   <form class="elbysodic-interaction-form" method="post" hx-boost="false">
+        {{ csrf_field() }}
     {% if error %}
     <p class="chirpui-field__error">{{ error }}</p>
     {% end %}

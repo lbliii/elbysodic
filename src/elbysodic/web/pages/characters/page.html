@@ -127,6 +127,7 @@
         hx-boost="false"
         class="chirpui-stack chirpui-stack--md"
         x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
+        {{ csrf_field() }}
     <div>
       <h2>Add character</h2>
       <p class="elbysodic-copy-helper">Start a draft application for {{ viewer.community.name }}</p>

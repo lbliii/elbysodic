@@ -132,6 +132,7 @@
             hx-boost="false"
             data-elbysodic-submit-label="Sending interest..."
             class="chirpui-cluster chirpui-cluster--end">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
           I'm interested as {{ viewer.current_character.name }}
@@ -153,6 +154,7 @@
               data-elbysodic-submit-label="Sending concept..."
               class="chirpui-stack chirpui-stack--sm"
               aria-labelledby="prospective-interest">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="express_prospective_interest">
           <div>
             <label class="chirpui-field__label" for="prospective-character-name">Character concept</label>
@@ -190,6 +192,7 @@
             data-elbysodic-submit-label="Saving lifecycle..."
             class="chirpui-stack chirpui-stack--sm"
             aria-labelledby="wanted-lifecycle">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="update_lifecycle_status">
         <label class="chirpui-field__label" for="wanted-status">Lifecycle status</label>
         <select id="wanted-status" class="chirpui-field__input" name="status">
@@ -254,6 +257,7 @@
       {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
       <div class="chirpui-cluster chirpui-cluster--end">
         <form method="post" hx-boost="false" data-elbysodic-submit-label="Starting room...">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="start_plotting_room">
           <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">
@@ -261,6 +265,7 @@
           </button>
         </form>
         <form method="post" hx-boost="false" data-elbysodic-submit-label="Reserving face...">
+        {{ csrf_field() }}
           <input type="hidden" name="intent" value="reserve_interest">
           <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">
@@ -275,6 +280,7 @@
             hx-boost="false"
             data-elbysodic-submit-label="Creating reserve..."
             class="chirpui-cluster chirpui-cluster--end">
+        {{ csrf_field() }}
         <input type="hidden" name="intent" value="create_reserve">
         <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">

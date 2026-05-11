@@ -85,6 +85,7 @@
     <form method="post"
           action="/characters/{{ item.hook.character.slug }}/hooks/{{ item.hook.plot_hook.slug }}"
           hx-boost="false">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="start_plotting_room">
       <input type="hidden" name="interest_id" value="{{ item.interest.interest.id }}">
       <button type="submit" class="chirpui-btn chirpui-btn--primary">Start plotting room</button>
@@ -117,6 +118,7 @@
     <form method="post"
           action="/wanted/{{ item.wanted_ad.wanted_ad.slug }}"
           hx-boost="false">
+        {{ csrf_field() }}
       <input type="hidden" name="intent" value="start_plotting_room">
       <input type="hidden" name="interest_id" value="{{ item.interest.interest.id }}">
       <button type="submit" class="chirpui-btn chirpui-btn--primary">Start plotting room</button>
