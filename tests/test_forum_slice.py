@@ -3661,7 +3661,9 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             interested = await client.get("/wanted/human-un-liaison-for-b24")
             assert interested.status == 200
             assert "Rogue is interested in this hook." in interested.text
+            assert "Hook lifecycle" in interested.text
             assert "Interested faces" in interested.text
+            assert "elbysodic-lifecycle-section" in interested.text
 
             services = get_services()
             repo = services.repo
@@ -3718,6 +3720,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert reserve_view.status == 200
                 assert "Reserve created" in reserve_view.text
                 assert "Reserves" in reserve_view.text
+                assert "elbysodic-lifecycle-list" in reserve_view.text
                 assert (
                     "Reserved from wanted hook: Human UN liaison for B-24 talks"
                     in reserve_view.text

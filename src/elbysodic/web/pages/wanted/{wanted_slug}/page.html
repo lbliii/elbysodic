@@ -228,139 +228,143 @@
   </article>
   {% end %}
 
-  {% if wanted.interests %}
-  {% call section_header("Interested faces") %}
-  Writers who have raised a hand for this hook.
-  {% end %}
-  <div class="elbysodic-interest-list">
-    {% for item in wanted.interests %}
-    {% call surface(variant="elevated") %}
-    <article class="elbysodic-interest-card elbysodic-interest-card--{{ item.interest.status }}">
-      {% if item.character %}
-      <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
-        <span class="elbysodic-character-avatar" aria-hidden="true">
-          {% if item.character.avatar_url %}
-          <img src="{{ item.character.avatar_url }}" alt="">
+  {% if wanted.interests or wanted.reserves %}
+  <section class="elbysodic-lifecycle-section">
+    {% call section_header("Hook lifecycle") %}
+    Raised hands, plotting handoffs, and reserves for this wanted hook.
+    {% end %}
+
+    {% if wanted.interests %}
+    <div class="elbysodic-lifecycle-lane">
+      <h3 class="elbysodic-lifecycle-lane__heading">Interested faces</h3>
+      <div class="elbysodic-lifecycle-list">
+        {% for item in wanted.interests %}
+        <article class="elbysodic-interest-card elbysodic-interest-card--{{ item.interest.status }}">
+          {% if item.character %}
+          <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+            <span class="elbysodic-character-avatar" aria-hidden="true">
+              {% if item.character.avatar_url %}
+              <img src="{{ item.character.avatar_url }}" alt="">
+              {% else %}
+              {{ item.character.name[:1] }}
+              {% end %}
+            </span>
+            <span>{{ item.character.name }}</span>
+          </a>
           {% else %}
-          {{ item.character.name[:1] }}
+          <div>
+            <h3>{{ item.interest.prospective_character_name }}</h3>
+            <p class="elbysodic-copy-meta">
+              proposed by <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.username }}</a>
+            </p>
+          </div>
           {% end %}
-        </span>
-        <span>{{ item.character.name }}</span>
-      </a>
-      {% else %}
-      <div>
-        <h3>{{ item.interest.prospective_character_name }}</h3>
-        <p class="elbysodic-copy-meta">
-          proposed by <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.username }}</a>
-        </p>
-      </div>
-      {% end %}
-      <div class="elbysodic-interest-card__meta">
-        {{ badge(item.stage_label, variant=item.stage_variant) }}
-        <span>{{ item.created_at_label }}</span>
-      </div>
-      {% if item.can_view_note and item.interest.note %}
-      <p class="elbysodic-copy-summary">{{ item.interest.note }}</p>
-      {% end %}
-      {% if item.primary_action_label %}
-      <div class="chirpui-cluster chirpui-cluster--end">
-        <a class="chirpui-btn chirpui-btn--primary" href="{{ item.primary_action_href }}">{{ item.primary_action_label }}</a>
-        {% if item.secondary_action_label %}
-        <a class="chirpui-link" href="{{ item.secondary_action_href }}">{{ item.secondary_action_label }}</a>
+          <div class="elbysodic-interest-card__meta">
+            {{ badge(item.stage_label, variant=item.stage_variant) }}
+            <span>{{ item.created_at_label }}</span>
+          </div>
+          {% if item.can_view_note and item.interest.note %}
+          <p class="elbysodic-copy-summary">{{ item.interest.note }}</p>
+          {% end %}
+          {% if item.primary_action_label %}
+          <div class="chirpui-cluster chirpui-cluster--end">
+            <a class="chirpui-btn chirpui-btn--primary" href="{{ item.primary_action_href }}">{{ item.primary_action_label }}</a>
+            {% if item.secondary_action_label %}
+            <a class="chirpui-link" href="{{ item.secondary_action_href }}">{{ item.secondary_action_label }}</a>
+            {% end %}
+          </div>
+          {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
+          <div class="chirpui-cluster chirpui-cluster--end">
+            <form method="post"
+                  hx-boost="false"
+                  data-elbysodic-submit-label="Starting room..."
+                  data-elbysodic-command-kind="start_plotting_room_from_wanted"
+                  data-elbysodic-actor-shape="staff-actor"
+                  data-elbysodic-target-object="wanted_interest"
+                  data-elbysodic-stale-behavior="service-validates-interest-state"
+                  data-elbysodic-idempotency="service-duplicate-policy">
+        {{ csrf_field() }}
+              <input type="hidden" name="intent" value="start_plotting_room">
+              <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+              <button type="submit" class="chirpui-btn chirpui-btn--primary">
+                Start plotting room
+              </button>
+            </form>
+            <form method="post"
+                  hx-boost="false"
+                  data-elbysodic-submit-label="Reserving face..."
+                  data-elbysodic-command-kind="reserve_wanted_interest"
+                  data-elbysodic-actor-shape="staff-actor"
+                  data-elbysodic-target-object="wanted_interest"
+                  data-elbysodic-stale-behavior="service-validates-interest-state"
+                  data-elbysodic-idempotency="service-duplicate-policy">
+        {{ csrf_field() }}
+              <input type="hidden" name="intent" value="reserve_interest">
+              <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+              <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+                Reserve for {{ item.display_name }}
+              </button>
+            </form>
+          </div>
+          {% elif wanted.can_manage and item.interest.status == "plotting" %}
+          <p class="elbysodic-copy-status">Plotting room started.</p>
+          {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and item.interest.id not in wanted.reserve_interest_ids and item.character %}
+          <form method="post"
+                hx-boost="false"
+                data-elbysodic-submit-label="Creating reserve..."
+                data-elbysodic-command-kind="create_reserve_for_wanted_interest"
+                data-elbysodic-actor-shape="staff-actor"
+                data-elbysodic-target-object="wanted_interest"
+                data-elbysodic-stale-behavior="service-validates-interest-and-character"
+                data-elbysodic-idempotency="service-duplicate-policy"
+                class="chirpui-cluster chirpui-cluster--end">
+        {{ csrf_field() }}
+            <input type="hidden" name="intent" value="create_reserve">
+            <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
+            <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+              Create reserve
+            </button>
+          </form>
+          {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and not item.character %}
+          <p class="elbysodic-copy-helper">Create the character before making a reserve record.</p>
+          {% elif item.interest.id in wanted.reserve_interest_ids %}
+          <p class="elbysodic-copy-status">Reserve created</p>
+          {% end %}
+        </article>
         {% end %}
       </div>
-      {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
-      <div class="chirpui-cluster chirpui-cluster--end">
-        <form method="post"
-              hx-boost="false"
-              data-elbysodic-submit-label="Starting room..."
-              data-elbysodic-command-kind="start_plotting_room_from_wanted"
-              data-elbysodic-actor-shape="staff-actor"
-              data-elbysodic-target-object="wanted_interest"
-              data-elbysodic-stale-behavior="service-validates-interest-state"
-              data-elbysodic-idempotency="service-duplicate-policy">
-        {{ csrf_field() }}
-          <input type="hidden" name="intent" value="start_plotting_room">
-          <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
-          <button type="submit" class="chirpui-btn chirpui-btn--primary">
-            Start plotting room
-          </button>
-        </form>
-        <form method="post"
-              hx-boost="false"
-              data-elbysodic-submit-label="Reserving face..."
-              data-elbysodic-command-kind="reserve_wanted_interest"
-              data-elbysodic-actor-shape="staff-actor"
-              data-elbysodic-target-object="wanted_interest"
-              data-elbysodic-stale-behavior="service-validates-interest-state"
-              data-elbysodic-idempotency="service-duplicate-policy">
-        {{ csrf_field() }}
-          <input type="hidden" name="intent" value="reserve_interest">
-          <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
-          <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-            Reserve for {{ item.display_name }}
-          </button>
-        </form>
-      </div>
-      {% elif wanted.can_manage and item.interest.status == "plotting" %}
-      <p class="elbysodic-copy-status">Plotting room started.</p>
-      {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and item.interest.id not in wanted.reserve_interest_ids and item.character %}
-      <form method="post"
-            hx-boost="false"
-            data-elbysodic-submit-label="Creating reserve..."
-            data-elbysodic-command-kind="create_reserve_for_wanted_interest"
-            data-elbysodic-actor-shape="staff-actor"
-            data-elbysodic-target-object="wanted_interest"
-            data-elbysodic-stale-behavior="service-validates-interest-and-character"
-            data-elbysodic-idempotency="service-duplicate-policy"
-            class="chirpui-cluster chirpui-cluster--end">
-        {{ csrf_field() }}
-        <input type="hidden" name="intent" value="create_reserve">
-        <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-          Create reserve
-        </button>
-      </form>
-      {% elif wanted.can_manage and wanted.wanted_ad.status == "reserved" and item.interest.status == "reserved" and not item.character %}
-      <p class="elbysodic-copy-helper">Create the character before making a reserve record.</p>
-      {% elif item.interest.id in wanted.reserve_interest_ids %}
-      <p class="elbysodic-copy-status">Reserve created</p>
-      {% end %}
-    </article>
+    </div>
     {% end %}
-    {% end %}
-  </div>
-  {% end %}
 
-  {% if wanted.reserves %}
-  {% call section_header("Reserves") %}
-  Structured records created from this hook.
-  {% end %}
-  <div class="elbysodic-interest-list">
-    {% for item in wanted.reserves %}
-    {% call surface(variant="elevated") %}
-    <article class="elbysodic-interest-card elbysodic-interest-card--reserved">
-      <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
-        <span class="elbysodic-character-avatar" aria-hidden="true">
-          {% if item.character.avatar_url %}
-          <img src="{{ item.character.avatar_url }}" alt="">
-          {% else %}
-          {{ item.character.name[:1] }}
+    {% if wanted.reserves %}
+    <div class="elbysodic-lifecycle-lane">
+      <h3 class="elbysodic-lifecycle-lane__heading">Reserves</h3>
+      <div class="elbysodic-lifecycle-list">
+        {% for item in wanted.reserves %}
+        <article class="elbysodic-interest-card elbysodic-interest-card--reserved">
+          <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
+            <span class="elbysodic-character-avatar" aria-hidden="true">
+              {% if item.character.avatar_url %}
+              <img src="{{ item.character.avatar_url }}" alt="">
+              {% else %}
+              {{ item.character.name[:1] }}
+              {% end %}
+            </span>
+            <span>{{ item.character.name }}</span>
+          </a>
+          <div class="elbysodic-interest-card__meta">
+            {{ badge(item.reserve.status, variant="success") }}
+            <span>{{ item.created_at_label }}</span>
+          </div>
+          {% if item.reserve.notes %}
+          <p class="elbysodic-copy-summary">{{ item.reserve.notes }}</p>
           {% end %}
-        </span>
-        <span>{{ item.character.name }}</span>
-      </a>
-      <div class="elbysodic-interest-card__meta">
-        {{ badge(item.reserve.status, variant="success") }}
-        <span>{{ item.created_at_label }}</span>
+        </article>
+        {% end %}
       </div>
-      {% if item.reserve.notes %}
-      <p class="elbysodic-copy-summary">{{ item.reserve.notes }}</p>
-      {% end %}
-    </article>
+    </div>
     {% end %}
-    {% end %}
-  </div>
+  </section>
   {% end %}
 
   {% if wanted.related_ads %}

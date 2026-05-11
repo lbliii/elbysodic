@@ -8902,6 +8902,31 @@ a.elbysodic-metric:focus-visible {
     gap: 0.75rem;
 }
 
+.elbysodic-lifecycle-section {
+    display: grid;
+    gap: 1rem;
+}
+
+.elbysodic-lifecycle-lane {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.25rem;
+    padding-top: 0.75rem;
+}
+
+.elbysodic-lifecycle-lane__heading {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 850;
+    letter-spacing: 0;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.elbysodic-lifecycle-list {
+    display: grid;
+}
+
 .elbysodic-interest-card {
     --elbysodic-interest-accent: var(--chirpui-accent);
     align-items: center;
@@ -8912,6 +8937,16 @@ a.elbysodic-metric:focus-visible {
     display: grid;
     gap: 0.75rem;
     grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.elbysodic-lifecycle-list .elbysodic-interest-card {
+    background: transparent;
+    border-top: 1px solid color-mix(in srgb, var(--elbysodic-interest-accent) 22%, var(--chirpui-border-subtle));
+    padding-block: 0.85rem;
+}
+
+.elbysodic-lifecycle-list .elbysodic-interest-card:first-child {
+    border-top: 0;
 }
 
 .elbysodic-interest-card--reserved,
