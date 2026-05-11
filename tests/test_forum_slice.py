@@ -6063,9 +6063,10 @@ def test_my_threads_defaults_to_current_face_lens() -> None:
             whole_roster = await client.get("/my/threads?character=all")
 
         assert dashboard.status == 200
-        assert "Character threads" in dashboard.text
-        assert "Rogue" in dashboard.text
-        assert "Queue lens: Rogue" in dashboard.text
+        assert "My threads" in dashboard.text
+        assert "Active-face writing lane" in dashboard.text
+        assert "Queue lens: active face" in dashboard.text
+        assert "Rogue's writing lane" not in dashboard.text
         assert 'href="/my/threads?character=all"' in dashboard.text
         assert "Open thread roster" in dashboard.text
         assert "Welcome to the rebuild" not in dashboard.text

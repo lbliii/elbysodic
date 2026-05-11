@@ -55,13 +55,17 @@
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  {% if dashboard.selected_character %}
+  {% if dashboard.selected_character and character_lens_is_explicit %}
   {% call section_header("Character threads") %}
   {{ dashboard.selected_character.name }}'s current queue.
   {% end %}
   {% else %}
   {% call section_header("My threads") %}
+  {% if dashboard.selected_character %}
+  Active-face queue first; switch to the whole roster when you need the broader tracker.
+  {% else %}
   Track where your roster owes replies and where you are waiting on other writers.
+  {% end %}
   {% end %}
   {% end %}
 
@@ -69,9 +73,12 @@
   <section class="elbysodic-queue-focus" aria-labelledby="queue-focus-heading">
     <div class="elbysodic-queue-focus__copy">
       <p class="elbysodic-section-kicker">Queue focus</p>
-      {% if dashboard.selected_character %}
+      {% if dashboard.selected_character and character_lens_is_explicit %}
       <h2 id="queue-focus-heading">{{ dashboard.selected_character.name }}'s writing lane</h2>
       <p class="elbysodic-copy-section">Open the scenes that need this face first; use history when you need the broader tracker.</p>
+      {% elif dashboard.selected_character %}
+      <h2 id="queue-focus-heading">Active-face writing lane</h2>
+      <p class="elbysodic-copy-section">Open the scenes that need the active face first; use history when you need the broader tracker.</p>
       {% else %}
       <h2 id="queue-focus-heading">Roster writing lane</h2>
       <p class="elbysodic-copy-section">Open scenes that need any of your faces first; use history when you need the broader tracker.</p>
@@ -102,8 +109,11 @@
   {% call surface(variant="elevated") %}
   <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-lens">
     <summary>
-      {% if dashboard.selected_character %}
+      {% if dashboard.selected_character and character_lens_is_explicit %}
       <span>Queue lens: {{ dashboard.selected_character.name }}</span>
+      <small>Switch faces or return to the whole roster.</small>
+      {% elif dashboard.selected_character %}
+      <span>Queue lens: active face</span>
       <small>Switch faces or return to the whole roster.</small>
       {% else %}
       <span>Queue lens: whole roster</span>
