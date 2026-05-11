@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from pathlib import Path
 from urllib.parse import urlencode
 
 import pytest
@@ -14,6 +15,11 @@ from elbysodic.web.state import get_services
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 _CSRF_RE = re.compile(r'name="_csrf_token" value="([^"]+)"')
+_POST_FORM_TEMPLATE_RE = re.compile(
+    r"<form\b(?=[^>]*\bmethod=[\"']post[\"'])[^>]*>.*?</form>",
+    re.IGNORECASE | re.DOTALL,
+)
+_PAGES_DIR = Path(__file__).parents[1] / "src" / "elbysodic" / "web" / "pages"
 
 
 def _response_headers(response, name: str) -> list[str]:
@@ -86,6 +92,18 @@ def test_production_config_requires_secret_key(monkeypatch) -> None:
 
     with pytest.raises(RuntimeError, match="ELBYSODIC_SECRET_KEY"):
         create_app(debug=False, services=create_services(path=":memory:"))
+
+
+def test_post_form_templates_include_explicit_csrf_field() -> None:
+    missing: list[str] = []
+    for template in sorted(_PAGES_DIR.rglob("*.html")):
+        source = template.read_text()
+        for index, match in enumerate(_POST_FORM_TEMPLATE_RE.finditer(source), start=1):
+            if "csrf_field()" not in match.group(0):
+                relative = template.relative_to(_PAGES_DIR)
+                missing.append(f"{relative} form {index}")
+
+    assert missing == []
 
 
 def test_production_config_parses_allowed_hosts_and_hsts(monkeypatch) -> None:
