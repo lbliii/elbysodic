@@ -1321,6 +1321,75 @@ def test_identity_switch_sanitizes_cross_realm_next_url() -> None:
     asyncio.run(run())
 
 
+def test_identity_switch_sanitizes_cross_realm_plotting_board_and_thread_urls() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        hp = services.repo.get_community_by_slug("hp-universe")
+        hp_membership = services.repo.get_membership_for_user(hp.id, 1)
+
+        async with TestClient(app) as client:
+            plotting = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/plotting/1",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            prefixed_plotting = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/c/x-men-apocalypse/plotting/1",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            board = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/boards/danger-room",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            thread = await client.post(
+                "/identity",
+                body=urlencode(
+                    {
+                        "intent": "switch_membership",
+                        "membership_id": str(hp_membership.id),
+                        "character_id": "0",
+                        "next": "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert plotting.status == 302
+        assert _response_header(plotting, "location") == "/plotting"
+        assert prefixed_plotting.status == 302
+        assert _response_header(prefixed_plotting, "location") == "/c/hp-universe/plotting"
+        assert board.status == 302
+        assert _response_header(board, "location") == "/locations"
+        assert thread.status == 302
+        assert _response_header(thread, "location") == "/c/hp-universe/locations"
+
+    asyncio.run(run())
+
+
 def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
     async def run() -> None:
         app = _app()

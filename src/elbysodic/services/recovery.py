@@ -8,7 +8,15 @@ from typing import Literal, Protocol
 from elbysodic.domain.models import Community
 from elbysodic.services.read_models import ForumView
 
-RecoveryKind = Literal["character", "application", "wanted", "material", "plotting"]
+RecoveryKind = Literal[
+    "character",
+    "application",
+    "wanted",
+    "material",
+    "plotting",
+    "board",
+    "thread",
+]
 
 
 class RecoveryRepository(Protocol):
@@ -17,6 +25,14 @@ class RecoveryRepository(Protocol):
     def list_wanted_ad_communities_by_slug(self, slug: str) -> list[Community]: ...
 
     def list_published_material_communities_by_slug(self, slug: str) -> list[Community]: ...
+
+    def list_board_communities_by_slug(self, slug: str) -> list[Community]: ...
+
+    def list_thread_communities_by_slug(
+        self,
+        board_slug: str,
+        thread_slug: str,
+    ) -> list[Community]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +149,10 @@ def _kind_labels(kind: RecoveryKind) -> _KindLabels:
             return _KindLabels("Guidebook", "world material")
         case "plotting":
             return _KindLabels("Plotting room", "planning room")
+        case "board":
+            return _KindLabels("Board", "board")
+        case "thread":
+            return _KindLabels("Thread", "thread")
 
 
 def _communities_for_slug(
@@ -149,6 +169,13 @@ def _communities_for_slug(
             return repo.list_published_material_communities_by_slug(slug)
         case "plotting":
             return []
+        case "board":
+            return repo.list_board_communities_by_slug(slug)
+        case "thread":
+            board_slug, separator, thread_slug = slug.partition("/")
+            if not separator or not board_slug or not thread_slug:
+                return []
+            return repo.list_thread_communities_by_slug(board_slug, thread_slug)
 
 
 def _first_switchable_community(
@@ -200,6 +227,8 @@ def _fallback_label(kind: RecoveryKind) -> str:
             return "Open Guidebook"
         case "plotting":
             return "Open Plotting"
+        case "board" | "thread":
+            return "Open World Map"
 
 
 def _fallback_path(kind: RecoveryKind) -> str:
@@ -214,6 +243,8 @@ def _fallback_path(kind: RecoveryKind) -> str:
             return "/world"
         case "plotting":
             return "/plotting"
+        case "board" | "thread":
+            return "/locations"
 
 
 def _target_path(kind: RecoveryKind, slug: str) -> str:
@@ -228,6 +259,11 @@ def _target_path(kind: RecoveryKind, slug: str) -> str:
             return f"/world/{slug}"
         case "plotting":
             return f"/plotting/{slug}"
+        case "board":
+            return f"/boards/{slug}"
+        case "thread":
+            board_slug, _, thread_slug = slug.partition("/")
+            return f"/boards/{board_slug}/threads/{thread_slug}"
 
 
 def _kind_and_slug_for_next_url(next_url: str) -> tuple[RecoveryKind, str] | None:
@@ -239,6 +275,7 @@ def _kind_and_slug_for_next_url(next_url: str) -> tuple[RecoveryKind, str] | Non
         ("/characters/", "character"),
         ("/wanted/", "wanted"),
         ("/world/", "material"),
+        ("/plotting/", "plotting"),
     )
     for prefix, kind in patterns:
         if not normalized.startswith(prefix):
@@ -246,6 +283,12 @@ def _kind_and_slug_for_next_url(next_url: str) -> tuple[RecoveryKind, str] | Non
         slug = normalized.removeprefix(prefix).split("/", 1)[0]
         if slug:
             return kind, slug
+    if normalized.startswith("/boards/"):
+        parts = normalized.removeprefix("/boards/").split("/")
+        if len(parts) >= 3 and parts[1] == "threads" and parts[2] != "new":
+            return "thread", f"{parts[0]}/{parts[2]}"
+        if parts[0]:
+            return "board", parts[0]
     return None
 
 
