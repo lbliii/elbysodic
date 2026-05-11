@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -12,10 +14,32 @@ from chirp.templating.returns import Page
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class IntakeEditorForm:
+    intent: str
+    blueprint_yaml: str = ""
+    name: str = ""
+    claim_kind: str = ""
+    sort_order: str = ""
+    description: str = ""
+    is_required: bool = False
+    is_exclusive: bool = False
+    visibility: str = "public"
+    claim_type_id: str = ""
+    label: str = ""
+    field_type: str = ""
+    maps_to_claim_type_id: str = ""
+    help_text: str = ""
+    placeholder: str = ""
+    options: str = ""
+    field_id: str = ""
+
+
 def get(request: Request) -> Page:
     return _render_intake_editor(request)
 
 
+@contract(form=FormContract(IntakeEditorForm, "studio/intake/page.html"))
 async def post(request: Request) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()

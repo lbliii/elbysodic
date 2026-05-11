@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
@@ -11,10 +14,20 @@ from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
 
 
+@dataclass(frozen=True, slots=True)
+class WantedActionForm:
+    intent: str
+    prospective_character_name: str = ""
+    note: str = ""
+    status: str = ""
+    interest_id: str = ""
+
+
 def get(request: Request, wanted_slug: str) -> Page:
     return _render_wanted(request, wanted_slug)
 
 
+@contract(form=FormContract(WantedActionForm, "wanted/{wanted_slug}/page.html"))
 async def post(request: Request, wanted_slug: str) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
