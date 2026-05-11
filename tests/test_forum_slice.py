@@ -4889,6 +4889,24 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
 
             room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
             room_page = await charlie_client.get(f"/c/{community.slug}/plotting/{room.id}")
+            stream_task = asyncio.create_task(
+                charlie_client.sse(
+                    f"/c/{community.slug}/plotting/{room.id}/stream",
+                    max_events=2,
+                )
+            )
+            await asyncio.sleep(0.05)
+            message = await charlie_client.post(
+                f"/c/{community.slug}/plotting/{room.id}",
+                body=urlencode(
+                    {
+                        "intent": "post_message",
+                        "body": "Charles opens the planning thread.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            stream = await stream_task
             saved = await charlie_client.post(
                 f"/c/{community.slug}/plotting/{room.id}",
                 body=urlencode(
@@ -4909,6 +4927,11 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
         assert f'hx-post="/c/{community.slug}/plotting/{room.id}"' in room_page.text
         assert 'hx-sync="this:replace"' in room_page.text
         assert 'data-elbysodic-submit-label="Sending..."' in room_page.text
+        assert message.status == 302
+        assert stream.status == 200
+        assert stream.events[0].event == "plotting-room-ready"
+        assert f'href="/c/{community.slug}/characters/charles-xavier"' in stream.events[1].data
+        assert "Charles opens the planning thread." in stream.events[1].data
         assert saved.status == 302
         assert _response_header(saved, "location") == f"/c/{community.slug}/plotting/{room.id}"
 
@@ -7135,6 +7158,16 @@ def test_mentionable_search_supports_character_and_writer_scopes() -> None:
             assert cast_payload["items"][0]["kind"] == "character"
             assert cast_payload["items"][0]["handle"] == "charles-xavier"
 
+            tenant_cast = await client.get(
+                "/c/x-men-apocalypse/mentionables/search?q=char&scope=cast"
+            )
+            assert tenant_cast.status == 200
+            tenant_cast_payload = json.loads(tenant_cast.body)
+            assert (
+                tenant_cast_payload["items"][0]["href"]
+                == "/c/x-men-apocalypse/characters/charles-xavier"
+            )
+
             own_roster = await client.get("/mentionables/search?q=rogue&scope=cast")
             assert own_roster.status == 200
             assert json.loads(own_roster.body)["items"] == []
@@ -7144,6 +7177,16 @@ def test_mentionable_search_supports_character_and_writer_scopes() -> None:
             ooc_payload = json.loads(ooc.body)
             assert ooc_payload["items"][0]["kind"] == "writer"
             assert ooc_payload["items"][0]["handle"] == "starlane"
+
+            tenant_ooc = await client.get(
+                "/c/x-men-apocalypse/mentionables/search?q=star&scope=ooc"
+            )
+            assert tenant_ooc.status == 200
+            tenant_ooc_payload = json.loads(tenant_ooc.body)
+            assert (
+                tenant_ooc_payload["items"][0]["href"]
+                == "/c/x-men-apocalypse/members/starlane"
+            )
 
     asyncio.run(run())
 
