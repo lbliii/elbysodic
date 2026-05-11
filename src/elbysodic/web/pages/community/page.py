@@ -13,10 +13,8 @@ def get(request: Request) -> Page:
     services = get_services(request)
     viewer = services.viewer()
     boards = services.list_boards()
-    return Page(
+    return Page.mounted(
         "community/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         boards=boards,

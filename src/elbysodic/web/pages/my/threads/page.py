@@ -11,10 +11,8 @@ from elbysodic.web.state import get_services
 def get(request: Request) -> Page:
     services = get_services(request)
     viewer = services.viewer()
-    return Page(
+    return Page.mounted(
         "my/threads/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         dashboard=services.my_threads(character_slug=_selected_character_slug(request, viewer)),

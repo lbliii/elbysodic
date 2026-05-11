@@ -14,10 +14,8 @@ def get(request: Request) -> Page:
     studio = services.director_studio()
     if not studio.can_manage:
         raise HTTPError(status=403, detail="director access is required")
-    return Page(
+    return Page.mounted(
         "studio/launch/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         studio=studio,

@@ -38,10 +38,8 @@ def get(request: Request) -> Page:
         network = (
             services.studio_network() if viewer is not None else services.public_studio_network()
         )
-        return Page(
+        return Page.mounted(
             "network/page.html",
-            "page_content",
-            page_block_name="page_root",
             current_path=request.url,
             page_title="Elbysodic",
             network_mode="home",
@@ -57,10 +55,8 @@ def get(request: Request) -> Page:
     boards = services.list_boards()
     hub = services.world_hub()
     world_status_label, world_status_copy = _home_world_status(hub)
-    return Page(
+    return Page.mounted(
         "page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         world_status_label=world_status_label,

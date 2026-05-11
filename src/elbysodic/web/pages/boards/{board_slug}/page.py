@@ -42,10 +42,8 @@ def get(request: Request, board_slug: str) -> Page:
     parent_board = services.parent_board(board)
     is_location = is_location_board(board)
     is_community = is_community_board(board)
-    return Page(
+    return Page.mounted(
         "boards/{board_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         board=board,

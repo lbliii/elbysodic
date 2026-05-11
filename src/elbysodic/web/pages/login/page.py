@@ -71,10 +71,8 @@ def _render_login(
     error: str | None = None,
 ) -> Page:
     services = get_services()
-    return Page(
+    return Page.mounted(
         "login/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=None if get_web_security_config().production else services.viewer(),
         email=email,

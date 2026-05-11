@@ -147,10 +147,8 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page | Redi
     studio = services.director_studio()
     if error is None and studio.can_manage and _is_empty_configured_realm(studio):
         return Redirect("/studio/launch")
-    return Page(
+    return Page.mounted(
         "studio/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         studio=studio,

@@ -56,10 +56,8 @@ async def post(request: Request) -> Page | Redirect:
 
 def _render_applications(request: Request) -> Page:
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "applications/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         desk=services.applications_desk(),

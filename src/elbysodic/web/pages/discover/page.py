@@ -13,10 +13,8 @@ def get(request: Request) -> Page:
     viewer = services.viewer()
     raw_facets = str(request.query.get("facets") or "")
     discovery = services.discover_plots(facet_slugs=[raw_facets])
-    return Page(
+    return Page.mounted(
         "discover/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         discovery=discovery,

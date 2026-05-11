@@ -35,10 +35,8 @@ async def post(request: Request) -> Page | Redirect:
 def _render_notifications(request: Request) -> Page:
     services = get_services(request)
     viewer = services.viewer()
-    return Page(
+    return Page.mounted(
         "notifications/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         inbox=services.notifications(),

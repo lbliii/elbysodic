@@ -91,10 +91,8 @@ def _render_intake_editor(
     blueprint_preview: object | None = None,
 ) -> Page:
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "studio/intake/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         studio=services.director_studio(),

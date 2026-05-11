@@ -71,10 +71,8 @@ def _render_form(
 
     config_id = "edit-post-composer-config"
     initial_body = edit_view.post.post.body if body is None else body
-    return Page(
+    return Page.mounted(
         "boards/{board_slug}/threads/{thread_slug}/posts/{post_id}/edit/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         edit_view=edit_view,

@@ -10,10 +10,8 @@ from elbysodic.web.state import get_services
 
 def get(request: Request) -> Page:
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "casting/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         desk=services.casting_desk(),

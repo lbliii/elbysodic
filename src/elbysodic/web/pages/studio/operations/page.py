@@ -47,10 +47,8 @@ def get(request: Request) -> Page:
         plotting,
         services.viewer().unread_notification_count,
     )
-    return Page(
+    return Page.mounted(
         "studio/operations/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         operations=operations,

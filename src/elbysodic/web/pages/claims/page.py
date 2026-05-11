@@ -67,10 +67,8 @@ def _render_claims(
         status_filter=status_filter,
         search_query=search_query,
     )
-    return Page(
+    return Page.mounted(
         "claims/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         directory=directory,

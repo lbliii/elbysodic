@@ -25,10 +25,8 @@ def get(request: Request) -> Page:
     if not dev_tools_enabled():
         raise HTTPError(status=404, detail="dev personas are disabled")
     services = get_services(request)
-    return Page(
+    return Page.mounted(
         "dev/personas/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         personas=services.dev_personas(),

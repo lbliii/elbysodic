@@ -90,10 +90,8 @@ def _render_hook(request: Request, character_slug: str, hook_slug: str) -> Page:
         hook = services.read_plot_hook(character_slug, hook_slug)
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
-    return Page(
+    return Page.mounted(
         "characters/{character_slug}/hooks/{hook_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         hook=hook,

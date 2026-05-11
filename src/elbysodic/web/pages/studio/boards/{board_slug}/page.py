@@ -91,10 +91,8 @@ def _render_board_editor(
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
     values = form_values or _values_from_board(editor.board)
-    return Page(
+    return Page.mounted(
         "studio/boards/{board_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         studio=services.director_studio(),

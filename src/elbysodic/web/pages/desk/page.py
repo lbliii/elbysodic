@@ -133,10 +133,8 @@ def get(request: Request) -> Page:
         lanes=lanes,
         actions=actions,
     )
-    return Page(
+    return Page.mounted(
         "desk/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         desk=overview,

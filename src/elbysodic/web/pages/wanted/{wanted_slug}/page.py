@@ -104,10 +104,8 @@ def _render_wanted(request: Request, wanted_slug: str) -> Page:
         wanted = services.read_wanted_ad(wanted_slug)
     except LookupError:
         return recover_missing_route(request, kind="wanted", slug=wanted_slug)
-    return Page(
+    return Page.mounted(
         "wanted/{wanted_slug}/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=services.viewer(),
         wanted=wanted,

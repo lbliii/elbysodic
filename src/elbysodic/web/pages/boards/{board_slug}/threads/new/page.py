@@ -96,10 +96,8 @@ def _render_form(
     board, _threads = services.board_threads(board_slug)
     mention_endpoint = request_scoped_path(request, "/mentionables/search")
     if viewer.current_character is None:
-        return Page(
+        return Page.mounted(
             "boards/{board_slug}/threads/new/page.html",
-            "page_content",
-            page_block_name="page_root",
             current_path=request.url,
             viewer=viewer,
             board=board,
@@ -143,10 +141,8 @@ def _render_form(
     selected_cast = _character_mentionables(
         [character for character in taggable if character.id in selected_participant_ids]
     )
-    return Page(
+    return Page.mounted(
         "boards/{board_slug}/threads/new/page.html",
-        "page_content",
-        page_block_name="page_root",
         current_path=request.url,
         viewer=viewer,
         board=board,
