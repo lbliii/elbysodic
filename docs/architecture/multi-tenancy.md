@@ -15,6 +15,12 @@ architecture and explicit shared-host routing for seeded/demo networks.
   multi-community creation exists.
 - Shared-host community URLs use `/c/{community_slug}` so links resolve the
   intended realm before local slugs are looked up.
+- Tenant-scoped transports include rendered HTML links and forms, redirects,
+  htmx attributes, SSE fragments, and JSON payloads that carry local `href`
+  values. Query strings and hidden return paths must remain intact after
+  scoping.
+- Malformed tenant-local paths such as `/c/{community_slug}//login` fail closed
+  instead of wrapping platform/global routes inside a community prefix.
 - Core forum tables include `community_id`.
 - Core services accept and propagate `community_id`; it must not be assumed to
   be `1`.

@@ -87,3 +87,8 @@ fallback links are safe. Web templates render the prepared recovery read model.
 Recovery must not reveal private/staff object existence through shell counts,
 links, command labels, or exact target copy unless that reveal is allowed by the
 recovery visibility policy.
+
+Identity-switch `next` recovery applies the same rule to stale community paths.
+Character, application, wanted, world-material, plotting-room, board, and
+thread destinations must either remain valid inside the selected realm or fall
+back to a safe local hub for that route family.

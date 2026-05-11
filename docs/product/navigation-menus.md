@@ -377,7 +377,9 @@ Paths should reflect product meaning, not implementation convenience.
 
 Use nouns for stable places:
 
-- `/` for the world gateway.
+- `/` for the platform/network home on shared hosts, or the configured
+  community home on a single-community install.
+- `/c/{community_slug}` for the explicit shared-host community home.
 - `/locations` for the playable world map.
 - `/community` for community boards and writer-side public rooms.
 - `/boards/{board_slug}` for forum boards, with `board_kind` deciding how they
@@ -387,6 +389,12 @@ Use nouns for stable places:
 - `/desk`, `/my/threads`, `/characters`, `/applications`, `/plotting`,
   `/discover`, `/notifications` for writer work.
 - `/studio` for director/admin production.
+
+Route-active state uses the path without query strings or fragments. Filtered
+lanes such as `/claims?status=reserved`, `/network?q=...`, or
+`/my/threads?character=...` should keep the same topbar/sidebar room as their
+base route while preserving the full URL for login, identity-switch, and
+return-to form values.
 
 Nested routes should mean ownership or object containment:
 
