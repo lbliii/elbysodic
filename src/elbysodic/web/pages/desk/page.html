@@ -1,6 +1,7 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "_components/vocabulary.html" import command_action, lane_preview, metric_item %}
+  {% from "chirpui/layout.html" import container, stack %}
+  {% from "_components/ui.html" import empty_policy_block, page_section %}
+  {% from "_components/vocabulary.html" import command_action, lane_preview, metric_item, page_pulse %}
 {% end %}
 
 {% block page_root %}
@@ -17,12 +18,7 @@
     </div>
   </section>
 
-  <section class="elbysodic-desk-queue" aria-labelledby="desk-queue-heading">
-    <div class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-section-kicker">Today</p>
-      <h2 id="desk-queue-heading">What needs you</h2>
-      <p class="elbysodic-copy-helper">{{ desk.current_focus_label }}</p>
-    </div>
+  {% call page_pulse("Today", "What needs you", desk.current_focus_label, "desk-queue-heading", "elbysodic-page-pulse--desk") %}
     {% if desk.has_attention_counts %}
     <div class="elbysodic-desk-queue__metrics" aria-label="Desk queue totals">
       {% if desk.needs_reply_count %}
@@ -46,13 +42,14 @@
       {% end %}
     </div>
     {% end %}
-  </section>
+  {% end %}
+
+  {% if not desk.lanes %}
+  {{ empty_policy_block("No desk lanes need you right now.", "When replies, watched scenes, plotting movement, applications, or notifications need attention, they will appear here.", "Caught up") }}
+  {% end %}
 
   {% if desk.actionable_roster_activity %}
-  <section class="chirpui-stack chirpui-stack--sm">
-    {% call section_header("Face lanes") %}
-    Narrow the queue to the cleanest writing lane.
-    {% end %}
+  {% call page_section("Face lanes", "Narrow the queue to the cleanest writing lane.") %}
     <div class="elbysodic-desk-face-lanes">
       {% for activity in desk.actionable_roster_activity %}
       <a class="elbysodic-desk-face-lane" href="/my/threads?character={{ activity.character.slug }}">
@@ -64,19 +61,17 @@
       </a>
       {% end %}
     </div>
-  </section>
+  {% end %}
   {% end %}
 
   {% if desk.lanes %}
-  {% call section_header("Work lanes") %}
-  Active writing, reading, plotting, applications, and inbox work.
+  {% call page_section("Work lanes", "Active writing, reading, plotting, applications, and inbox work.") %}
+    <div class="elbysodic-desk-grid elbysodic-desk-grid--lanes">
+      {% for lane in desk.lanes %}
+      {{ lane_preview(lane) }}
+      {% end %}
+    </div>
   {% end %}
-
-  <div class="elbysodic-desk-grid elbysodic-desk-grid--lanes">
-    {% for lane in desk.lanes %}
-    {{ lane_preview(lane) }}
-    {% end %}
-  </div>
   {% end %}
 {% end %}
 {% end %}

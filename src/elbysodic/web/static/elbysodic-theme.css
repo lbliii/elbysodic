@@ -1545,11 +1545,108 @@ body {
     color: var(--chirpui-text);
 }
 
+.elbysodic-page-section {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.elbysodic-page-section__header {
+    border-block-end: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.2rem;
+    padding-block-end: 0.55rem;
+}
+
+.elbysodic-page-section__header h2,
+.elbysodic-page-section__header p {
+    margin: 0;
+}
+
+.elbysodic-page-section__header h2 {
+    font-size: var(--chirpui-font-2xl);
+    letter-spacing: 0;
+    line-height: 1.1;
+}
+
+.elbysodic-page-section__header p {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-md);
+    line-height: 1.45;
+}
+
+.elbysodic-page-section__body {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.elbysodic-empty-policy {
+    align-items: center;
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-block-start: 0.9rem;
+}
+
+.elbysodic-empty-policy h2,
+.elbysodic-empty-policy p {
+    margin: 0;
+}
+
+.elbysodic-empty-policy h2 {
+    font-size: var(--chirpui-font-xl);
+    letter-spacing: 0;
+    line-height: 1.12;
+}
+
+.elbysodic-empty-policy p:not(.elbysodic-section-kicker) {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-md);
+    line-height: 1.45;
+    max-width: 46rem;
+}
+
 .elbysodic-desk-queue {
     align-items: center;
     display: grid;
     gap: 1rem;
     grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-page-pulse {
+    align-items: center;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-page-pulse h2,
+.elbysodic-page-pulse p {
+    margin: 0;
+}
+
+.elbysodic-page-pulse h2 {
+    font-size: var(--chirpui-font-2xl);
+    letter-spacing: 0;
+    line-height: 1.08;
+}
+
+.elbysodic-page-pulse p:not(.elbysodic-section-kicker) {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-md);
+    line-height: 1.45;
+}
+
+.elbysodic-page-pulse__copy {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.elbysodic-page-pulse__tools {
+    display: grid;
+    gap: 0.65rem;
+    justify-items: end;
 }
 
 .elbysodic-desk-queue h2,
@@ -9379,6 +9476,8 @@ a.elbysodic-metric:focus-visible {
 
     .elbysodic-desk-hero,
     .elbysodic-desk-queue,
+    .elbysodic-page-pulse,
+    .elbysodic-empty-policy,
     .elbysodic-command-panel,
     .elbysodic-desk-shortcuts {
         align-items: stretch;
@@ -9407,6 +9506,7 @@ a.elbysodic-metric:focus-visible {
 
     .elbysodic-lane-preview__header .chirpui-btn,
     .elbysodic-desk-lane__header .chirpui-btn,
+    .elbysodic-page-pulse__tools,
     .elbysodic-command-panel__tools,
     .elbysodic-command-panel__actions,
     .elbysodic-command-panel__metrics,
