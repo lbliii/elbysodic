@@ -2267,6 +2267,54 @@ def test_director_can_revoke_pending_writer_invitation() -> None:
     asyncio.run(run())
 
 
+def test_expired_writer_invitation_cannot_be_accepted_or_revoked() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            created = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "create_invite",
+                        "email": "expired-writer@example.com",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            match = re.search(r'href="(?P<href>/invite/[^"]+)"', created.text)
+            assert match is not None
+            invitations = services.repo.list_community_invitations(staff.community.id)
+            services.repo.connection.execute(
+                """
+                UPDATE community_invitations
+                SET expires_at = '2026-01-01T00:00:00+00:00'
+                WHERE community_id = ? AND id = ?
+                """,
+                (staff.community.id, invitations[0].id),
+            )
+            services.repo.connection.commit()
+            expired_page = await client.get(match.group("href"))
+            launch = await client.get("/studio/launch")
+
+        assert created.status == 200
+        assert expired_page.status == 403
+        assert launch.status == 200
+        assert "expired-writer@example.com" in launch.text
+        assert "Expired" in launch.text
+        assert "Revoke invitation" not in launch.text
+
+    asyncio.run(run())
+
+
 def test_invited_writer_without_first_face_continues_to_application_form() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
