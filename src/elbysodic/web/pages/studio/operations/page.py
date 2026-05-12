@@ -235,7 +235,9 @@ def _operations_inspection(services: AppServices) -> OperationsInspection:
     connection = services.repo.connection
     security = get_web_security_config()
     database_row = connection.execute("PRAGMA database_list").fetchone()
-    migration_row = connection.execute("SELECT MAX(version) AS version FROM schema_migrations").fetchone()
+    migration_row = connection.execute(
+        "SELECT MAX(version) AS version FROM schema_migrations"
+    ).fetchone()
     user_version = connection.execute("PRAGMA user_version").fetchone()[0]
     community_count = connection.execute("SELECT COUNT(*) AS count FROM communities").fetchone()
     try:

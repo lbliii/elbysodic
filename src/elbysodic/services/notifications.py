@@ -205,9 +205,8 @@ def notification_item(
     actor_label = actor.name if actor is not None else actor_membership.display_name
     if notification.character_id is not None:
         character = repo.get_character(viewer.community.id, notification.character_id)
-        if (
-            character.membership_id != viewer.membership.id
-            and not policies.can_manage_casting(viewer.membership, viewer.role)
+        if character.membership_id != viewer.membership.id and not policies.can_manage_casting(
+            viewer.membership, viewer.role
         ):
             return None
         match notification.kind:
@@ -411,9 +410,8 @@ def _can_view_notification_target(
             )
         if notification.character_id is not None:
             character = repo.get_character(community_id, notification.character_id)
-            return (
-                character.membership_id == membership.id
-                or policies.can_manage_casting(membership, role)
+            return character.membership_id == membership.id or policies.can_manage_casting(
+                membership, role
             )
     except LookupError:
         return False

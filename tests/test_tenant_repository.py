@@ -294,8 +294,7 @@ def test_schema_migrates_community_launch_status_from_version_15() -> None:
     create_schema(connection)
 
     columns = {
-        row["name"]: row
-        for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+        row["name"]: row for row in connection.execute("PRAGMA table_info(communities)").fetchall()
     }
     migration = connection.execute(
         """

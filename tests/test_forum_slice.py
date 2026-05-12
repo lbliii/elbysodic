@@ -5859,6 +5859,7 @@ def test_faceless_writer_does_not_count_unowned_character_notifications() -> Non
             "Faceless Notify",
         )
         staff = resolve_seed_persona(repo, "xmen_staff")
+        assert staff.character is not None
         target = repo.get_character_by_slug(community.id, "rogue")
         repo.create_notification(
             community.id,
