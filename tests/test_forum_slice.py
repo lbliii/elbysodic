@@ -5730,6 +5730,93 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
     asyncio.run(run())
 
 
+def test_faceless_writer_does_not_count_unowned_character_notifications() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = services.seed.community
+        role = repo.get_role_by_slug(community.id, "member")
+        user = repo.create_user("faceless-notify@example.com", "hash")
+        faceless = repo.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "facelessnotify",
+            "Faceless Notify",
+        )
+        staff = resolve_seed_persona(repo, "xmen_staff")
+        target = repo.get_character_by_slug(community.id, "rogue")
+        repo.create_notification(
+            community.id,
+            faceless.id,
+            kind="application_submitted",
+            character_id=target.id,
+            actor_membership_id=staff.membership.id,
+            actor_character_id=staff.character.id,
+        )
+        faceless_services = AppServices(repo, DemoSeed(community, user, faceless, None))
+        faceless_app = create_app(debug=False, services=faceless_services)
+
+        async with TestClient(faceless_app) as client:
+            home = await client.get("/")
+            inbox = await client.get("/notifications")
+
+        assert faceless_services.viewer().current_character is None
+        assert faceless_services.viewer().unread_notification_count == 0
+        assert faceless_services.notifications().unread_count == 0
+        assert home.status == 200
+        assert "elbysodic-identity-menu__summary-badge" not in home.text
+        assert inbox.status == 200
+        assert "No notifications are waiting on you." in inbox.text
+        assert "Rogue" not in inbox.text
+
+    asyncio.run(run())
+
+
+def test_inactive_membership_notifications_do_not_render_identity_option_counts() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        active = services.seed
+        inactive_community = repo.create_community("inactive-notify", "Inactive Notify")
+        role = repo.create_role(inactive_community.id, "member", "Member")
+        inactive = repo.create_membership(
+            inactive_community.id,
+            active.user.id,
+            role.id,
+            "inactive-notify",
+            "Inactive Notify",
+        )
+        repo.connection.execute(
+            "UPDATE community_memberships SET is_active = 0 WHERE community_id = ? AND id = ?",
+            (inactive_community.id, inactive.id),
+        )
+        repo.connection.commit()
+        inactive = repo.get_membership(inactive_community.id, inactive.id)
+        target = repo.get_character_by_slug(active.community.id, "rogue")
+        repo.create_notification(
+            active.community.id,
+            active.membership.id,
+            kind="application_accepted",
+            character_id=target.id,
+            actor_membership_id=active.membership.id,
+            actor_character_id=target.id,
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            home = await client.get("/")
+
+        viewer = services.viewer()
+        assert not inactive.is_active
+        assert viewer.unread_notification_count == 1
+        assert all(option.membership.id != inactive.id for option in viewer.identity_options)
+        assert home.status == 200
+        assert "Inactive Notify" not in home.text
+
+    asyncio.run(run())
+
+
 def test_thread_cards_jump_to_first_unread_then_latest() -> None:
     async def run() -> None:
         app = _app()
