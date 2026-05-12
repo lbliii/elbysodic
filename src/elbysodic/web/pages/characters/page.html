@@ -3,6 +3,7 @@
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/post_style_preview.html" import post_style_preview %}
+  {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
@@ -22,7 +23,7 @@
       <a class="chirpui-btn chirpui-btn--primary" href="#new-character">Add face</a>
     </div>
     <div class="elbysodic-command-panel__metrics" aria-label="Roster totals">
-      {{ metric_item(viewer.roster | length, "Characters") }}
+      {{ metric_item(viewer.roster | length, "Faces") }}
       {% if viewer.current_character %}
       {{ metric_item("Selected", "Active face") }}
       {% else %}
@@ -33,6 +34,7 @@
     {% end %}
   {% end %}
 
+  {% if roster_dashboard.cards %}
   <div class="elbysodic-character-grid">
     {% for card in roster_dashboard.cards %}
     {% call surface(variant="elevated") %}
@@ -118,6 +120,9 @@
     {% end %}
     {% end %}
   </div>
+  {% else %}
+  {{ empty_policy_block("No faces on your roster yet.", "Start a draft face for this realm; once accepted, it becomes a playable roster identity.", "First face", "Use the form below", "#new-character") }}
+  {% end %}
 
   {% call surface(variant="elevated") %}
   {{ alpine_json_config(post_style_preview_config_id, post_style_preview_config) }}
@@ -128,7 +133,7 @@
         x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
         {{ csrf_field() }}
     <div>
-      <h2>Add character</h2>
+      <h2>Add face</h2>
       <p class="elbysodic-copy-helper">Start a draft application for {{ viewer.community.name }}</p>
     </div>
     {% if error %}
@@ -312,7 +317,7 @@
       <span>Set as current face</span>
     </label>
     <div class="chirpui-cluster chirpui-cluster--end">
-      <button type="submit" class="chirpui-btn chirpui-btn--primary">Add character</button>
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">Add face</button>
     </div>
   </form>
   {% end %}

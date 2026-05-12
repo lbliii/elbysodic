@@ -1,7 +1,7 @@
 # Community Sidebar Navigation Plan
 
-Status: superseded by `layered-shell-navigation-2026-05-11.md`; archive after
-remaining useful verification notes are moved
+Status: superseded by `layered-shell-navigation-2026-05-11.md`; archive
+candidate
 Owner: Product/UI stewardship
 Created: 2026-05-03
 Last updated: 2026-05-11
@@ -27,8 +27,10 @@ review:
 - The implementation should use one server-side nav model for rail, inner
   shell, and mobile drawer.
 
-Keep this older plan only as historical context until any useful verification
-notes are moved, then archive it.
+The remaining useful verification notes have been reflected in the layered
+shell plan's browser QA checklist and 2026-05-11 implementation readout. Keep
+this older plan only as historical context until the next plan-hygiene pass
+archives superseded plans.
 
 ## 2026-05-09 Verification Update
 

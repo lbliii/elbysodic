@@ -51,6 +51,7 @@ class DeskLane:
 @dataclass(frozen=True, slots=True)
 class DeskOverview:
     queue: MyThreadsDashboard
+    roster_count: int
     unread_notifications: int
     unread_watched_count: int
     plotting_room_count: int
@@ -77,6 +78,10 @@ class DeskOverview:
         return len(self.queue.started_by_me)
 
     @property
+    def needs_first_face(self) -> bool:
+        return self.roster_count == 0 and self.application_count == 0
+
+    @property
     def next_queue_href(self) -> str:
         if self.queue.needs_reply:
             item = self.queue.needs_reply[0]
@@ -97,6 +102,10 @@ class DeskOverview:
 
     @property
     def current_focus_label(self) -> str:
+        if self.needs_first_face:
+            return "Start with a first face"
+        if self.roster_count == 0 and self.application_count:
+            return "Your first face is in application work"
         if self.queue.needs_reply:
             item = self.queue.needs_reply[0]
             return f"{item.thread.title} needs a reply"
@@ -117,6 +126,7 @@ def get(request: Request) -> Page:
     open_applications = _open_application_items(applications)
     actions = _build_actions(
         queue=queue,
+        roster_count=len(viewer.roster),
         unread_watched=unread_watched,
         plotting=plotting,
         open_applications=open_applications,
@@ -131,6 +141,7 @@ def get(request: Request) -> Page:
     )
     overview = DeskOverview(
         queue=queue,
+        roster_count=len(viewer.roster),
         unread_notifications=viewer.unread_notification_count,
         unread_watched_count=len(unread_watched),
         plotting_room_count=len(plotting.rooms),
@@ -158,12 +169,31 @@ def get(request: Request) -> Page:
 def _build_actions(
     *,
     queue: MyThreadsDashboard,
+    roster_count: int,
     unread_watched: list[ThreadObligationItem],
     plotting: PlottingDesk,
     open_applications: list[ApplicationCharacterView],
     unread_notifications: int,
 ) -> list[DeskAction]:
     actions: list[DeskAction] = []
+    if roster_count == 0:
+        if open_applications:
+            actions.append(
+                DeskAction(
+                    "/applications",
+                    "Continue first face",
+                    "Move the draft or review room that will become your first roster face.",
+                    len(open_applications),
+                )
+            )
+        else:
+            actions.append(
+                DeskAction(
+                    "/applications/new",
+                    "Start first face",
+                    "Begin a draft application before queues and scenes can form.",
+                )
+            )
     if queue.needs_reply:
         actions.append(
             DeskAction(

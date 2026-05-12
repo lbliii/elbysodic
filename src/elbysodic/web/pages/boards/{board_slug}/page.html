@@ -10,7 +10,7 @@
 {% def next_unread_link(item) %}
 <a class="chirpui-btn chirpui-btn--secondary elbysodic-place-action"
    href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}{{ "#" ~ item.jump_post.anchor if item.jump_post else "" }}">
-  Next unread
+  Next unread here
 </a>
 {% end %}
 
@@ -40,7 +40,7 @@
       {{ next_unread_link(next_unread_thread) }}
       {% end %}
     {% if can_start_thread %}
-    <a class="chirpui-btn chirpui-btn--primary elbysodic-place-action" href="/boards/{{ board.slug }}/threads/new">Start scene</a>
+    <a class="chirpui-btn chirpui-btn--primary elbysodic-place-action" href="/boards/{{ board.slug }}/threads/new">Start scene here</a>
     {% end %}
     </div>
   </div>
@@ -202,17 +202,17 @@
       {% else %}
       {% if active_filter == "all" %}
       {% if is_location_board %}
-      {{ empty_policy_block("No scenes have opened directly here yet.", "This place is ready for a first direct scene when someone wants to set the pressure here.", "Scene list", cls="elbysodic-board-empty") }}
+      {{ empty_policy_block("No scenes have opened directly here yet.", "This place is ready for a first direct scene when someone wants to set the pressure here.", "Scene list", "Start scene", "/boards/" ~ board.slug ~ "/threads/new" if can_start_thread else "", "elbysodic-board-empty") }}
       {% else %}
       {{ empty_policy_block("No threads have opened here yet.", "New threads will appear here once this board has activity.", "Thread list", cls="elbysodic-board-empty") }}
       {% end %}
       {% elif active_filter == "unread" %}
-      {{ empty_policy_block("No new replies here.", "This filter only shows scenes with unread posts in this board.", "Caught up", cls="elbysodic-board-empty") }}
+      {{ empty_policy_block("No unread scenes here.", "You have caught up with the latest visible posts in this place.", "Caught up", cls="elbysodic-board-empty") }}
       {% elif active_filter == "attention" %}
-      {{ empty_policy_block("Nothing here needs your roster.", "Scenes where another writer posted last will appear here.", "Caught up", cls="elbysodic-board-empty") }}
+      {{ empty_policy_block("No scene turns need your roster here.", "Scenes where another writer posted last will appear here.", "Caught up", cls="elbysodic-board-empty") }}
       {% else %}
       {% if is_location_board %}
-      {{ empty_policy_block("No " ~ active_filter ~ " scenes here.", "Try another local filter when you need a different slice of this place.", "Filtered", cls="elbysodic-board-empty") }}
+      {{ empty_policy_block("No " ~ active_filter ~ " scenes in this place.", "Try another local filter when you need a different slice of this place.", "Filtered", cls="elbysodic-board-empty") }}
       {% else %}
       {{ empty_policy_block("No " ~ active_filter ~ " threads here.", "Try another local filter when you need a different slice of this board.", "Filtered", cls="elbysodic-board-empty") }}
       {% end %}

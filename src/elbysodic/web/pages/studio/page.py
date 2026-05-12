@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
-from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import BOARD_KIND_LABELS, BOARD_SIDEBAR_SECTION_LABELS
@@ -25,6 +26,18 @@ from elbysodic.services.themes import (
     THEME_MODE_FIELDS,
 )
 from elbysodic.web.state import get_services
+
+
+@dataclass(frozen=True, slots=True)
+class StudioCockpitLane:
+    kicker: str
+    title: str
+    summary: str
+    href: str
+    cta: str
+    count: int
+    items: tuple[str, ...] = ()
+    variant: str = "attention"
 
 
 def get(request: Request) -> Page | Redirect:
@@ -166,7 +179,7 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page | Redi
         theme_radius_labels=RADIUS_LABELS,
         theme_density_labels=DENSITY_LABELS,
         theme_texture_labels=TEXTURE_LABELS,
-        shell_actions=_studio_shell_actions(),
+        cockpit_lanes=_studio_cockpit_lanes(studio),
     )
 
 
@@ -199,31 +212,83 @@ def _theme_mode_values(form: object, mode: str) -> dict[str, str]:
     }
 
 
-def _studio_shell_actions() -> ShellActions:
-    return ShellActions(
-        controls=ShellActionZone(
-            items=(
-                ShellAction(
-                    id="studio-operations",
-                    label="Operations",
-                    href="/studio/operations",
-                    icon="grid",
-                    variant="secondary",
-                ),
-                ShellAction(
-                    id="studio-intake",
-                    label="Intake",
-                    href="/studio/intake",
-                    icon="logs",
-                    variant="secondary",
-                ),
-                ShellAction(
-                    id="studio-wanted",
-                    label="Wanted",
-                    href="/wanted",
-                    icon="search",
-                    variant="secondary",
-                ),
+def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
+    lanes: list[StudioCockpitLane] = []
+    if studio.review_queue_count:
+        lanes.append(
+            StudioCockpitLane(
+                "Applications",
+                "Review queue",
+                "Submitted faces waiting for director movement.",
+                "/applications",
+                "Review applications",
+                studio.review_queue_count,
+                tuple(item.character.name for item in studio.applications.review_queue[:4]),
             )
         )
-    )
+    if studio.claims.reserved_count:
+        lanes.append(
+            StudioCockpitLane(
+                "Claims",
+                "Reserved claims",
+                "Claims and reserves directors may need to honor before accepting new faces.",
+                "/claims?status=reserved",
+                "Open reserved claims",
+                studio.claims.reserved_count,
+                tuple(studio.claims.claim_type_names[:4]),
+            )
+        )
+    if studio.draft_materials:
+        lanes.append(
+            StudioCockpitLane(
+                "Materials",
+                "Draft materials",
+                "Guidebook, event, and canon pages still waiting on director publication.",
+                "/studio#continuity-events",
+                "Review drafts",
+                len(studio.draft_materials),
+                tuple(item.material.title for item in studio.draft_materials[:4]),
+            )
+        )
+    if studio.navigation_warnings:
+        lanes.append(
+            StudioCockpitLane(
+                "Navigation",
+                "Shell health",
+                "Sidebar, board taxonomy, and route-shape notes that need review.",
+                "/studio#navigation",
+                "Review navigation",
+                len(studio.navigation_warnings),
+                tuple(warning.title for warning in studio.navigation_warnings[:4]),
+                "warning",
+            )
+        )
+    if studio.theme_warnings:
+        lanes.append(
+            StudioCockpitLane(
+                "Appearance",
+                "Theme health",
+                "Readability warnings in the realm's light or dark palette.",
+                "/studio#appearance-theme",
+                "Review theme",
+                len(studio.theme_warnings),
+                tuple(warning.title for warning in studio.theme_warnings[:4]),
+                "warning",
+            )
+        )
+    missing_launch_items = [
+        item for item in studio.launch_readiness.items if item.is_required and not item.is_complete
+    ]
+    if missing_launch_items:
+        lanes.append(
+            StudioCockpitLane(
+                "Launch",
+                "Opening checklist",
+                "Required realm setup lanes still backstage before invite-only opening.",
+                "/studio/launch",
+                "Open launch room",
+                len(missing_launch_items),
+                tuple(f"{item.label} - {item.status_label}" for item in missing_launch_items[:4]),
+            )
+        )
+    return lanes

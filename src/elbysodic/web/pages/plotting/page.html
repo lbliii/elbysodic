@@ -130,14 +130,6 @@
 {% end %}
 {% end %}
 
-{% def plotting_empty_room() %}
-{{ empty_policy_block("Nothing is at the planning table yet.", "Raised hands become private rooms once a hook owner starts plotting.", "No open rooms") }}
-{% end %}
-
-{% def plotting_empty_interest() %}
-{{ empty_policy_block("Nothing is waiting for a room.", "Wanted and plot-hook interest will land here when you can open the planning door.", "No raised hands") }}
-{% end %}
-
 {% def pulse_action(label, summary, href, count=none) %}
 <a class="elbysodic-plotting-pulse-action" href="{{ href }}">
   <span>
@@ -161,7 +153,7 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  {% call command_panel("Writer Desk", "Plotting pulse", "Turn interest into a private planning lane before it becomes an IC scene.", "plotting-pulse-heading", "elbysodic-plotting-pulse") %}
+  {% call command_panel("Plotting", "Room pulse", "Turn interest into a private planning lane before it becomes an IC scene.", "plotting-pulse-heading", "elbysodic-plotting-pulse") %}
     <div class="elbysodic-command-panel__metrics" aria-label="Plotting pulse">
       {{ metric_item(desk.rooms | length, "Rooms") }}
       {{ metric_item(desk.plot_hook_interests | length, "Plot interest") }}
@@ -176,29 +168,39 @@
   {% end %}
   {% end %}
 
+  {% set has_plotting_work = desk.rooms or desk.plot_hook_interests or desk.wanted_interests %}
+  {% if not has_plotting_work %}
+  {{ empty_policy_block("No plotting handoffs need work right now.", "Raised hands become private rooms here once a hook owner starts planning toward a scene.", "Plotting clear") }}
+  {% else %}
+
+  {% if desk.rooms %}
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Active Rooms") %}
     Planning spaces you are part of.
     {% end %}
-    {% if desk.rooms %}
     <div class="elbysodic-interest-list">
       {% for item in desk.rooms %}
       {{ room_card(item) }}
       {% end %}
     </div>
-    {% else %}
-    {{ plotting_empty_room() }}
-    {% end %}
   </section>
+  {% end %}
 
+  {% if desk.plot_hook_interests or desk.wanted_interests %}
   <section id="interest-inbox" class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Interest Inbox") %}
+    {% call section_header("Raised hands") %}
     Raised hands on hooks you can manage.
     {% end %}
-    {% if desk.plot_hook_interests or desk.wanted_interests %}
     <div class="elbysodic-interest-list">
       {% for item in desk.plot_hook_interests %}
       {{ plot_interest_card(item) }}
+      {% end %}
+
+      {% if desk.wanted_ready_interests %}
+      <h3 class="elbysodic-section-kicker">Ready for scene</h3>
+      {% for item in desk.wanted_ready_interests %}
+      {{ wanted_interest_card(item) }}
+      {% end %}
       {% end %}
 
       {% if desk.wanted_raised_interests %}
@@ -215,13 +217,6 @@
       {% end %}
       {% end %}
 
-      {% if desk.wanted_ready_interests %}
-      <h3 class="elbysodic-section-kicker">Ready for scene</h3>
-      {% for item in desk.wanted_ready_interests %}
-      {{ wanted_interest_card(item) }}
-      {% end %}
-      {% end %}
-
       {% if desk.wanted_threaded_interests %}
       <h3 class="elbysodic-section-kicker">Scene started</h3>
       {% for item in desk.wanted_threaded_interests %}
@@ -229,10 +224,9 @@
       {% end %}
       {% end %}
     </div>
-    {% else %}
-    {{ plotting_empty_interest() }}
-    {% end %}
   </section>
+  {% end %}
+  {% end %}
 {% end %}
 {% end %}
 {% end %}

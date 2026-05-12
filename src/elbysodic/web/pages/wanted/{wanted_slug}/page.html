@@ -140,7 +140,7 @@
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
-          I'm interested as {{ viewer.current_character.name }}
+          Raise interest as {{ viewer.current_character.name }}
         </button>
       </form>
       {% elif wanted.is_created_by_viewer %}
@@ -151,7 +151,7 @@
       {% if wanted.can_express_prospective_interest %}
       <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-prospective-interest">
         <summary>
-          <span id="prospective-interest">I'd create a new character for this</span>
+          <span id="prospective-interest">Pitch a new face for this</span>
           <small>Share a short concept, not a full application.</small>
         </summary>
         <form method="post"
@@ -167,7 +167,7 @@
         {{ csrf_field() }}
           <input type="hidden" name="intent" value="express_prospective_interest">
           <div>
-            <label class="chirpui-field__label" for="prospective-character-name">Character concept</label>
+            <label class="chirpui-field__label" for="prospective-character-name">Face concept</label>
             <input id="prospective-character-name"
                    class="chirpui-field__input"
                    name="prospective_character_name"
@@ -236,7 +236,7 @@
 
     {% if wanted.interests %}
     <div class="elbysodic-lifecycle-lane">
-      <h3 class="elbysodic-lifecycle-lane__heading">Interested faces</h3>
+      <h3 class="elbysodic-lifecycle-lane__heading">Raised hands</h3>
       <div class="elbysodic-lifecycle-list">
         {% for item in wanted.interests %}
         <article class="elbysodic-interest-card elbysodic-interest-card--{{ item.interest.status }}">

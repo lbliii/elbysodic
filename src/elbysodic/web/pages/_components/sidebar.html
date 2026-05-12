@@ -1,4 +1,4 @@
-{% from "chirpui/sidebar.html" import sidebar_section %}
+{% from "chirpui/sidebar.html" import sidebar, sidebar_section %}
 
 {% def sidebar_svg_icon(icon_id) %}
 <svg class="elbysodic-sidebar-svg-icon" aria-hidden="true" focusable="false">
@@ -58,6 +58,57 @@
   {{ rail_icon_link(item.href, item.label, item.icon_id, item.active, item.count) }}
   {% end %}
 </nav>
+{% end %}
+
+{% def shell_nav_item(item, child=false) %}
+<a class="chirpui-sidebar__link{{ " elbysodic-sidebar-link" if not item.icon_id else " elbysodic-sidebar-destination" }}{{ " elbysodic-sidebar-tree__link elbysodic-sidebar-tree__link--child" if child else "" }}{{ " elbysodic-sidebar-tree__link--branch" if item.children else "" }}{{ " elbysodic-sidebar-tree__link--active" if item.active else "" }}"
+   href="{{ item.href }}"
+   title="{{ item.label }}"
+   hx-sync="#main:replace"
+   {% if item.active %}aria-current="page"{% end %}>
+  {% if item.icon_id %}
+  <span class="chirpui-sidebar__icon">{{ sidebar_svg_icon(item.icon_id) }}</span>
+  <span class="chirpui-sidebar__label">{{ item.label }}</span>
+  {% else %}
+  <span>{{ item.label }}</span>
+  {% end %}
+  {{ sidebar_count(item.count) }}
+</a>
+{% if item.children %}
+<div class="elbysodic-sidebar-tree__children">
+  {% for child_item in item.children %}
+  {{ shell_nav_item(child_item, true) }}
+  {% end %}
+</div>
+{% end %}
+{% end %}
+
+{% def shell_nav_section(section) %}
+{% call sidebar_section(section.label) %}
+  {% if section.source == "location_tree" %}
+  <nav class="elbysodic-sidebar-tree" aria-label="Location map">
+    {% for item in section.items %}
+    {{ shell_nav_item(item) }}
+    {% end %}
+  </nav>
+  {% else %}
+    {% for item in section.items %}
+    {{ shell_nav_item(item) }}
+    {% end %}
+  {% end %}
+{% end %}
+{% end %}
+
+{% def inner_sidebar_shell(navigation) %}
+{% call sidebar(cls="elbysodic-sidebar") %}
+  {% slot footer %}
+  {{ sidebar_footer() }}
+  {% end %}
+
+  {% for section in navigation.sidebar_sections %}
+  {{ shell_nav_section(section) }}
+  {% end %}
+{% end %}
 {% end %}
 
 {% def sidebar_attention_link(href, label, count=0, is_active=False) %}

@@ -160,7 +160,7 @@
         {% elif thread_view.can_reply and selected_character %}
         <a class="chirpui-btn chirpui-btn--primary" href="#reply-composer">
           <span class="chirpui-btn__icon" aria-hidden="true">{{ "reply" | icon }}</span>
-          Reply
+          Jump to reply
         </a>
         {% end %}
         <div class="elbysodic-thread-stage__action-row">
@@ -193,6 +193,15 @@
       </div>
     </aside>
   </section>
+
+  {% if thread_view.previous_thread or thread_view.next_thread %}
+  <nav class="elbysodic-thread-continuation" aria-label="Adjacent scenes">
+    <div class="elbysodic-thread-continuation__group">
+      {{ thread_nav_link(thread_view.previous_thread, "Previous scene") }}
+      {{ thread_nav_link(thread_view.next_thread, "Next scene") }}
+    </div>
+  </nav>
+  {% end %}
 
   {{ event_bridge(current_event, "Current event shaping this scene") }}
 
@@ -420,20 +429,12 @@
   {% end %}
 
   {% slot attention_nav %}
-  {% if thread_view.previous_thread or thread_view.next_thread or thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
+  {% if thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
   <nav class="elbysodic-thread-continuation" aria-label="Scene continuation">
-    {% if thread_view.previous_thread or thread_view.next_thread %}
-    <div class="elbysodic-thread-continuation__group" aria-label="Adjacent scenes">
-      {{ thread_nav_link(thread_view.previous_thread, "Previous scene") }}
-      {{ thread_nav_link(thread_view.next_thread, "Next scene") }}
-    </div>
-    {% end %}
-    {% if thread_view.previous_unreplied_thread or thread_view.next_unread_thread %}
     <div class="elbysodic-thread-continuation__group elbysodic-thread-continuation__group--attention" aria-label="Attention scenes">
       {{ thread_attention_link(thread_view.previous_unreplied_thread, "Previous unreplied", "previous") }}
       {{ thread_attention_link(thread_view.next_unread_thread, "Next unread", "next") }}
     </div>
-    {% end %}
   </nav>
   {% end %}
   {% end %}

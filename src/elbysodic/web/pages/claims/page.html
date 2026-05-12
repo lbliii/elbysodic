@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/ui.html" import empty_policy_block %}
 {% end %}
 
 {% block page_root %}
@@ -18,9 +19,9 @@
   <section class="elbysodic-claims-hero" aria-labelledby="claims-heading">
     <div>
       <p class="elbysodic-section-kicker">Intake map</p>
-      <h1 id="claims-heading">What is taken, open, and expected.</h1>
+      <h1 id="claims-heading">What is claimed, reserved, and open.</h1>
       <p class="elbysodic-copy-section">
-        Claims turn the old forum maintenance tables into a director-readable map.
+        Face, canon, role, and faction claims stay readable before a writer commits.
       </p>
     </div>
     <div class="elbysodic-claims-hero__metrics">
@@ -218,9 +219,7 @@
     {% end %}
   </div>
   {% else %}
-  {% call surface(variant="elevated") %}
-  <p class="elbysodic-empty-state">No claim types have been configured yet.</p>
-  {% end %}
+  {{ empty_policy_block("No claim types have been configured yet.", "Directors can add claim types from Studio intake when this realm is ready for structured claims.", "Claims missing") }}
   {% end %}
 {% end %}
 {% end %}

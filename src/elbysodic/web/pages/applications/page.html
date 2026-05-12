@@ -44,7 +44,9 @@
     <p class="elbysodic-copy-meta">{{ item.claim_conflict_summary }} Open the review room to resolve it.</p>
     {% end %}
     <div class="elbysodic-application-card__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">Open review room</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">
+        {{ "Open review room" if desk.can_review else "Open application room" }}
+      </a>
       {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Submitting...">
         {{ csrf_field() }}
@@ -102,7 +104,9 @@
   {% call surface(variant="elevated") %}
   {% call command_panel("Applications", "Active application work", "Drafts, submissions, and requested revisions stay here. Accepted faces move to the roster and profile pages.", "application-pipeline-heading") %}
     <div class="elbysodic-command-panel__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/world/application-guide">Open guide</a>
+      {% if desk.application_materials %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/world/{{ desk.application_materials[0].material.slug }}">Open guide</a>
+      {% end %}
       <a class="chirpui-btn chirpui-btn--primary" href="/applications/new">Start application</a>
     </div>
     <div class="elbysodic-command-panel__metrics" aria-label="Application pipeline totals">

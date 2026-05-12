@@ -1810,7 +1810,7 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
 
             assert desk.status == 200
             assert "Writer Desk" in desk.text
-            assert "Replies, reading, plotting, inbox, and character work." in desk.text
+            assert "Replies, reading, plotting, inbox, and face work." in desk.text
             assert "Writing as Rogue" not in desk.text
             assert "What needs you" in desk.text
             assert "Face lanes" in desk.text
@@ -1836,6 +1836,42 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
     asyncio.run(run())
 
 
+def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        faceless_services = _faceless_services(services)
+        app = create_app(debug=False, services=faceless_services)
+        async with TestClient(app) as client:
+            desk = await client.get("/desk")
+            threads = await client.get("/my/threads")
+            roster = await client.get("/characters")
+            applications = await client.get("/applications")
+
+            assert desk.status == 200
+            assert "Start with a first face" in desk.text
+            assert "No faces on your roster yet." in desk.text
+            assert "Start first face" in desk.text
+            assert 'href="/applications/new"' in desk.text
+            assert "Your roster is caught up" not in desk.text
+
+            assert threads.status == 200
+            assert "Roster writing lane" in threads.text
+            assert "No active thread queue yet." in threads.text
+            assert "Thread history" not in threads.text
+
+            assert roster.status == 200
+            assert "No faces on your roster yet." in roster.text
+            assert "Add face" in roster.text
+            assert "Add character" not in roster.text
+
+            assert applications.status == 200
+            assert "No application drafts need work." in applications.text
+            assert "Start application" in applications.text
+            assert "Accepted faces live in the roster." in applications.text
+
+    asyncio.run(run())
+
+
 def test_director_studio_surfaces_community_production_work() -> None:
     async def run() -> None:
         app = _app()
@@ -1846,28 +1882,30 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
-            assert "Studio rooms" in studio.text
+            assert "Production cockpit" in studio.text
+            assert "No director queues need attention right now." in studio.text
+            assert "Production calm" in studio.text
+            assert "Studio rooms" not in studio.text
             assert 'id="chirp-shell-actions"' in studio.text
-            assert 'href="/studio/operations"' in studio.text
+            assert 'href="/studio/operations"' not in _page_content(studio.text)
             assert 'href="/studio/intake"' in studio.text
             assert 'href="/wanted"' in studio.text
-            assert 'href="/studio/operations"' in studio.text
-            assert 'href="/studio/launch"' in studio.text
-            assert "Daily director console" in studio.text
-            assert "Realm opening checklist" in studio.text
-            assert 'href="#world-structure"' in studio.text
-            assert 'href="#navigation"' in studio.text
-            assert 'href="#identity-appearance"' in studio.text
-            assert 'href="#casting-applications"' in studio.text
-            assert 'href="#continuity-events"' in studio.text
+            assert 'href="/studio/launch"' not in _page_content(studio.text)
+            assert "Daily director console" not in studio.text
+            assert "Realm opening checklist" not in studio.text
+            assert 'href="#world-structure"' not in studio.text
+            assert 'href="#navigation"' not in studio.text
+            assert 'href="#identity-appearance"' not in studio.text
+            assert 'href="#casting-applications"' not in studio.text
+            assert 'href="#continuity-events"' not in studio.text
             assert 'id="world-structure"' in studio.text
             assert 'id="navigation"' in studio.text
             assert 'id="identity-appearance"' in studio.text
             assert 'id="casting-applications"' in studio.text
             assert 'id="continuity-events"' in studio.text
-            assert "Boards and places" in studio.text
-            assert "Sidebar composer" in studio.text
-            assert "Appearance vocabulary" in studio.text
+            assert "World structure" in studio.text
+            assert "Navigation composer" in studio.text
+            assert "Identity and appearance" in studio.text
             assert "World Bible" in studio.text
             assert "Location Studio" in studio.text
             assert "Event Studio" in studio.text
@@ -1900,29 +1938,20 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert operations.status == 200
             assert "Director Operations" in operations.text
             assert "What needs a director?" in operations.text
-            assert "Review queue" in operations.text
-            assert "Claim conflicts" in operations.text
-            assert "Active reserves" in operations.text
-            assert "Hooks with movement" in operations.text
-            assert "Ready for scene" in operations.text
-            assert "Staff notifications" in operations.text
-            assert "Production health" in operations.text
-            assert "Draft materials" in operations.text
-            assert "Dry-run intake" in operations.text
-            assert "Release smoke" in operations.text
-            assert "Community builder checklist" in operations.text
-            assert "Realm identity - Ready" in operations.text
-            assert "Scene hubs - Ready" in operations.text
-            assert "Director materials - Ready" in operations.text
-            assert "Intake and claims - Ready" in operations.text
-            assert "Log in, enter a realm, and switch memberships." in operations.text
-            assert 'href="/studio/intake#program-blueprint-preview"' in operations.text
-            assert 'href="/network"' in operations.text
-            assert 'href="/studio/launch"' in operations.text
-            assert "Application Triage" in operations.text
-            assert 'href="/applications"' in operations.text
-            assert 'href="/casting"' in operations.text
-            assert 'href="/notifications"' in operations.text
+            assert "No director operations need attention right now." in operations.text
+            assert "Operations clear" in operations.text
+            assert "Review queue" not in operations.text
+            assert "Claim conflicts" not in operations.text
+            assert "Active reserves" not in operations.text
+            assert "Hooks with movement" not in operations.text
+            assert "Ready for scene" not in operations.text
+            assert "Staff notifications" not in operations.text
+            assert "Production health" not in operations.text
+            assert "Draft materials" not in operations.text
+            assert "Dry-run intake" not in operations.text
+            assert "Release smoke" not in operations.text
+            assert "Community builder checklist" not in operations.text
+            assert "Application Triage" not in operations.text
 
         services = create_services(path=":memory:")
         staff = resolve_seed_persona(services.repo, "xmen_staff")
@@ -1947,6 +1976,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Wanted hooks" in launch.text
         assert "Appearance" in launch.text
         assert "Invite-only before public self-serve." in launch.text
+        assert "Open Studio" not in _page_content(launch.text)
         assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
 
     asyncio.run(run())
@@ -2242,9 +2272,10 @@ def test_director_studio_updates_sidebar_section_language() -> None:
             assert re.search(
                 r'<a class="[^"]*elbysodic-sidebar-destination[^"]*"'
                 r'[^>]*href="/locations"[^>]*>\s*'
-                r'<span class="chirpui-sidebar__icon">[^<]+</span>\s*'
+                r'<span class="chirpui-sidebar__icon">.*?</span>\s*'
                 r'<span class="chirpui-sidebar__label">Realms</span>',
                 locations.text,
+                re.S,
             )
 
             studio = await client.get("/studio")
@@ -2496,6 +2527,8 @@ def test_studio_board_editor_updates_board_identity_and_navigation() -> None:
             assert "Image focal point" in editor.text
             assert "Overlay strength" in editor.text
             assert "Composer effect" in editor.text
+            assert "Back to Studio" not in _page_content(editor.text)
+            assert 'href="/boards/announcements"' in editor.text
 
             response = await client.post(
                 "/studio/boards/announcements",
@@ -2771,8 +2804,10 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             locations = await client.get("/locations")
             assert locations.status == 200
             assert "Playable world map" in locations.text
+            assert "A place-first scan of the realm" in locations.text
             assert "Major locations" in locations.text
             assert "/boards/xavier-institute" in locations.text
+            assert "Location signals are tuned to the active face." not in locations.text
             assert "Community table" not in locations.text
             assert "Your location scenes are caught up for now." not in locations.text
 
@@ -2811,8 +2846,9 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Production" in studio.text
             assert "Wanted board" in studio.text
             assert "World Map" not in studio.text
-            assert 'class="chirpui-sidebar__section-title">In Studio</span>' in studio.text
-            assert 'class="chirpui-sidebar__section-title">Production</span>' in studio.text
+            assert 'class="chirpui-sidebar__section-title">In Studio</span>' not in studio.text
+            assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
+            assert 'aria-label="Studio"' not in studio.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in studio.text
 
             wanted = await client.get("/wanted")
@@ -2823,6 +2859,23 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "World Map" not in wanted.text
             assert 'class="chirpui-sidebar__section-title">In Wanted</span>' in wanted.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in wanted.text
+
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+        async with TestClient(staff_app) as staff_client:
+            staff_studio = await staff_client.get("/studio")
+
+        assert staff_studio.status == 200
+        assert 'aria-label="Studio"' in staff_studio.text
+        assert 'class="chirpui-sidebar__section-title">In Studio</span>' in staff_studio.text
+        assert 'class="chirpui-sidebar__section-title">Production</span>' in staff_studio.text
 
     asyncio.run(run())
 
@@ -2942,6 +2995,7 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "Choose a door inside Xavier Institute" in academy.text
             assert "Xavier Institute scenes" in academy.text
             assert "No scenes have opened directly here yet." in academy.text
+            assert "Start scene here" in academy.text
             assert "Sublocations" in academy.text
             assert "elbysodic-board-poster--tile" in academy.text
 
@@ -2983,6 +3037,7 @@ def test_quiet_location_page_keeps_actions_visible_without_empty_door_sections()
         assert 'href="#sublocations"' not in page.text
         assert 'id="sublocations"' not in page.text
         assert "No scenes have opened directly here yet." in page.text
+        assert "Start scene here" in page.text
 
     asyncio.run(run())
 
@@ -3066,7 +3121,7 @@ def test_topbar_marks_active_community_mode() -> None:
 
             studio = await client.get("/studio")
             assert studio.status == 200
-            assert re.search(
+            assert not re.search(
                 r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
                 r'\s+href="/studio"[^>]*aria-label="Studio"[^>]*aria-current="page"',
                 studio.text,
@@ -3084,6 +3139,25 @@ def test_topbar_marks_active_community_mode() -> None:
                 r'[^>]*href="/notifications"',
                 notifications.text,
             )
+
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+        async with TestClient(staff_app) as staff_client:
+            staff_studio = await staff_client.get("/studio")
+
+        assert staff_studio.status == 200
+        assert re.search(
+            r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
+            r'\s+href="/studio"[^>]*aria-label="Studio"[^>]*aria-current="page"',
+            staff_studio.text,
+        )
 
     asyncio.run(run())
 
@@ -3650,6 +3724,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert 'data-elbysodic-submit-label="Sending interest..."' in open_hook.text
             assert 'data-elbysodic-command-kind="express_wanted_interest"' in open_hook.text
             assert 'data-elbysodic-actor-shape="current-face"' in open_hook.text
+            assert "Raise interest as Rogue" in open_hook.text
 
             interest_response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
@@ -3662,7 +3737,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert interested.status == 200
             assert "Rogue is interested in this hook." in interested.text
             assert "Hook lifecycle" in interested.text
-            assert "Interested faces" in interested.text
+            assert "Raised hands" in interested.text
             assert "elbysodic-lifecycle-section" in interested.text
 
             services = get_services()
@@ -3753,7 +3828,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "Casting Desk" in casting.text
                 assert "elbysodic-casting-desk-hero__identity" in casting.text
                 assert "Active-face casting" in casting.text
-                assert "Wanted With Interest" in casting.text
+                assert "Wanted handoffs" in casting.text
                 assert "Active Reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
                 assert "Active-face reserves" in casting.text
@@ -3838,6 +3913,26 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert missing.status == 200
             assert "That wanted hook is not in X-Men Apocalypse." in missing.text
             assert "Open Wanted" in missing.text
+
+    asyncio.run(run())
+
+
+def test_handoff_desks_collapse_empty_work_sections() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            casting = await client.get("/casting")
+            plotting = await client.get("/plotting")
+
+        assert casting.status == 200
+        assert "No casting handoffs need work right now." in _page_content(casting.text)
+        assert "No raised hands yet." not in _page_content(casting.text)
+        assert "No active reserves right now." not in _page_content(casting.text)
+
+        assert plotting.status == 200
+        assert "No plotting handoffs need work right now." in _page_content(plotting.text)
+        assert "Nothing is at the planning table yet." not in _page_content(plotting.text)
+        assert "Nothing is waiting for a room." not in _page_content(plotting.text)
 
     asyncio.run(run())
 
@@ -4274,7 +4369,7 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
             studio = await client.get("/studio")
 
         assert claims.status == 200
-        assert "What is taken, open, and expected." in claims.text
+        assert "What is claimed, reserved, and open." in claims.text
         assert "Claimed" in claims.text
         assert "Reserved" in claims.text
         assert "Open slots" in claims.text
@@ -4284,7 +4379,7 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
         assert "Brotherhood" in claims.text
         assert "Collected by Face claim on the application template." in claims.text
         assert open_claims.status == 200
-        assert "What is taken, open, and expected." in open_claims.text
+        assert "What is claimed, reserved, and open." in open_claims.text
         assert "X-Men" in open_claims.text
         assert "Magneto visual reference" not in open_claims.text
         assert "No available claims match this type yet." in open_claims.text
@@ -4777,7 +4872,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
         async with TestClient(faceless_app) as faceless_client:
             wanted = await faceless_client.get("/wanted/human-un-liaison-for-b24")
             assert wanted.status == 200
-            assert "I'd create a new character for this" in wanted.text
+            assert "Pitch a new face for this" in wanted.text
 
             response = await faceless_client.post(
                 "/wanted/human-un-liaison-for-b24",
@@ -4920,7 +5015,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
 
             plotting = await charlie_client.get("/plotting")
             assert plotting.status == 200
-            assert "Interest Inbox" in plotting.text
+            assert "Raised hands" in plotting.text
             assert "Open plotting room" in plotting.text
             assert "Active face plotter" not in _page_content(plotting.text)
             assert "Browse wanted" not in _page_content(plotting.text)
@@ -5504,7 +5599,7 @@ def test_board_page_next_unread_jumps_to_first_unread_post() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/board-next")
             assert page.status == 200
-            assert "Next unread" in page.text
+            assert "Next unread here" in page.text
             assert (
                 f"/boards/board-next/threads/board-next-thread#post-{post.post_number}" in page.text
             )
@@ -5835,6 +5930,7 @@ def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/navigation/threads/middle")
             assert page.status == 200
+            assert "Adjacent scenes" in page.text
             assert "Scene continuation" in page.text
             assert "Previous scene" in page.text
             assert "Previous unreplied" in page.text
@@ -6007,7 +6103,7 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
 
             cleared = await client.get("/boards/plotting?filter=attention")
             assert cleared.status == 200
-            assert "Nothing here needs your roster." in cleared.text
+            assert "No scene turns need your roster here." in cleared.text
             assert "elbysodic-board-empty" in cleared.text
             locations = await client.get("/locations")
             assert "Open thread roster" not in locations.text

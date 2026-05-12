@@ -1,6 +1,8 @@
 # Layered Shell Navigation Implementation Plan
 
-Status: active implementation plan; phases 1 and 2 landed in code
+Status: active implementation plan; phases 1-4 plus writer-hub, handoff,
+Studio hub, and writing-flow cleanup slices landed locally; broader page
+conversion remains
 Owner: Product, design, web, privacy, and test stewardship
 Created: 2026-05-11
 Last updated: 2026-05-11
@@ -58,6 +60,342 @@ Accepted outer rail:
 
 `Network` stays out of the default community rail until cross-realm network
 behavior is a real daily workflow.
+
+## 2026-05-11 Implementation Readout
+
+Reviewed current `main` at `4f4afd2`, the V2 mock, live shell templates,
+rendered tests, and an independent designer-agent pass.
+
+What is now real:
+
+- The five-room route model exists in `src/elbysodic/web/navigation.py`.
+  `primary_nav_items()` returns `World Home`, `Locations`, `Wanted`, `Desk`,
+  and `Studio`, and `tests/test_shell_navigation.py` covers the active-state
+  mapping.
+- The primary icon rail is implemented in
+  `src/elbysodic/web/pages/_components/sidebar.html` and mounted from
+  `src/elbysodic/web/pages/_layout.html`.
+- Compact navigation now preserves the icon rail instead of fully hiding the
+  shell by default.
+- Desk and several flow pages have started the page-surface conversion: Desk
+  leads with attention state, accepted applications are moving out of work
+  lanes, duplicate shortcut grids are being reduced, and wanted/plotting
+  handoffs have begun to lose generic route CTAs.
+
+Remaining gaps:
+
+- The inner shell is still hardcoded through separate `_layout.html` sidebar
+  functions instead of rendered from one `ShellNavigation.sidebar_sections`
+  model.
+- `PrimaryNavItem` does not yet carry audience/capability visibility. The rail
+  always returns `Desk` and `Studio`, so privacy-safe public/member/staff rail
+  behavior is not represented in the server model yet.
+- The rail uses the SVG sprite vocabulary, but inner sidebar rows still use
+  mixed Chirp icon names such as `grid`, `star`, `pencil`, and `diamond`.
+- Mobile drawer and desktop sidebar share template output, but not yet a
+  shared typed navigation model with privacy-gated rows, badges, and tooltips.
+- Browser QA is still the proof gap for expanded desktop, compact rail, focus
+  mode, mobile drawer, and keyboard traversal.
+
+Priority reset:
+
+1. Finish Phase 3 and Phase 4 as one shell-foundation slice before broad page
+   polish. Build the server-side `ShellNavigation` model, render inner
+   sections from it, and add audience/capability visibility at the model layer.
+2. Convert inner-shell stable route icons to the sidebar SVG vocabulary while
+   keeping generated boards, locations, scenes, faces, and guidebook entries
+   text-first.
+3. Add rendered privacy tests for anonymous/public preview, applicant/no-face,
+   writer, staff/director, same-user-different-community, mobile drawer, and
+   compact rail states.
+4. Run browser QA across the V2 shell states before removing more page-local
+   route affordances.
+
+Designer-agent synthesis:
+
+- Accept the current five-room model and compact rail direction.
+- Treat the hardcoded inner sidebar as the main architectural/design gap.
+- Treat rail/sidebar audience gating as a privacy blocker, not a polish task.
+- Start page conversion with Desk only after shell reachability is proven
+  enough that pages can safely remove duplicate route CTAs.
+
+## 2026-05-11 Implementation Update
+
+The inner shell and privacy-gate slice landed locally after the readout above.
+
+Implemented:
+
+- Added `ShellNavItem`, `ShellNavSection`, and `ShellNavigation` in
+  `src/elbysodic/web/navigation.py`.
+- Moved rail, inner-sidebar, mobile-drawer, location tree, wanted context,
+  Desk, and Studio section construction into the server-side navigation model.
+- Removed the old hardcoded world/desk/studio/wanted sidebar branch builders
+  from `src/elbysodic/web/pages/_layout.html`.
+- Updated `_components/sidebar.html` with shared `shell_nav_item`,
+  `shell_nav_section`, and `inner_sidebar_shell` renderers.
+- Gated `Desk` to active signed-in memberships and `Studio` to staff/director
+  capabilities in the nav model while keeping existing route behavior intact.
+- Converted stable inner-shell rows to the SVG sprite icon vocabulary while
+  leaving generated boards, location branches, wanted hooks, and materials
+  text-first.
+
+Proof:
+
+- `uv run pytest -q tests/test_shell_navigation.py`
+- `uv run pytest -q tests/test_forum_slice.py`
+- `uv run pytest -q tests/test_web_security.py`
+- `uv run ruff check src/elbysodic/web/navigation.py src/elbysodic/web/app.py src/elbysodic/web/routes.py tests/test_shell_navigation.py tests/test_forum_slice.py`
+- `uv run ruff format src/elbysodic/web/navigation.py src/elbysodic/web/app.py src/elbysodic/web/routes.py tests/test_shell_navigation.py tests/test_forum_slice.py --check`
+- `uv run ty check src/elbysodic/ tests/`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
+- `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8004 --artifact-dir tests/browser/artifacts/shell-navigation-2026-05-11`
+
+Browser QA artifact path:
+
+- `tests/browser/artifacts/shell-navigation-2026-05-11`
+
+Remaining before closure:
+
+- Full release gate if this is shipped as a PR.
+- Page-surface cleanup in Phase 5 beyond the first Desk/writer hub,
+  Wanted/Casting/Claims/Plotting, Studio hub, and writing-flow cleanup slices.
+- Optional deeper browser QA after the Desk/Wanted/Studio page conversion
+  slices remove more duplicate route affordances.
+
+## 2026-05-11 Phase 5 First Slice Update
+
+The first Page Surface Conversion slice landed locally for writer hubs:
+
+- Desk handles faceless members as first-face/application work instead of
+  saying the roster is caught up.
+- My Threads keeps queue metrics but suppresses empty section noise.
+- Applications keeps active intake work separate from accepted roster/profile
+  faces and avoids assuming a hardcoded guide material route.
+- Roster copy now uses visible face language for the metric, form, submit
+  action, and no-roster state.
+
+This does not close Phase 5. Wanted/Casting/Claims/Plotting and Studio cleanup
+remain the next conversion slices.
+
+## 2026-05-11 Phase 5 Second Slice Update
+
+The Wanted/Casting/Claims/Plotting handoff slice landed locally:
+
+- Wanted remains browsing-first on the index and commitment-first on detail.
+- Wanted and plot-hook details use raised-hand language for lifecycle lanes.
+- Casting collapses empty handoff lanes into one clear state and hides optional
+  empty lanes when other handoff work exists.
+- Claims remains a low-chroma directory/editor with claim-specific language.
+- Plotting hides empty room/inbox sections and prioritizes ready scene
+  handoffs before lower-action groups.
+
+This still does not close Phase 5. Studio hub cleanup is the next major
+conversion slice.
+
+## 2026-05-11 Phase 5 Third Slice Update
+
+The Studio hub cleanup slice landed locally:
+
+- Studio home no longer repeats the shell with local room rail/card navigation.
+- The hub now renders production attention lanes only when director movement is
+  needed, otherwise one `Production calm` empty state.
+- Studio Operations hides zero-count cards and empty triage panels, otherwise
+  rendering one `Operations clear` state.
+- Launch and board editor shed duplicate return-to-Studio buttons while
+  preserving contextual actions.
+
+This still does not close Phase 5. Remaining page conversion should move next
+to Locations/Boards/Thread reading flow.
+
+## 2026-05-11 Phase 5 Fourth Slice Update
+
+The Locations/Boards/Thread reading flow slice landed locally:
+
+- Locations now reads as a place-first scan and no longer repeats passive
+  active-face copy.
+- Board actions and empty states are scene-native: `Start scene here`, `Next
+  unread here`, direct-scene empty action, and caught-up filter copy.
+- Thread readers split adjacent scene movement near the top from
+  previous-unreplied/next-unread continuation after the transcript.
+- The reply commitment remains face-specific at the composer while top-level
+  movement says `Jump to reply`.
+
+This still does not close Phase 5. Remaining page conversion should move next
+to character/member identity pages or public World/Guidebook surfaces.
+
+## Next Implementation Slice: Inner Shell And Privacy Gates
+
+Status: implemented locally on 2026-05-11.
+
+Goal: make the V2 shell trustworthy enough that page conversion can remove
+duplicate navigation without harming reachability or leaking private state.
+
+This is the next coding slice. It should land before more broad Desk/Wanted/
+Studio page cleanup.
+
+### Scope
+
+Implement one server-side shell navigation model for:
+
+- primary icon rail rows
+- inner sidebar sections
+- mobile drawer rendering
+- compact rail and focus mode state
+- privacy-safe counts, badges, labels, tooltips, and active states
+
+Do not add or remove public routes in this slice. Do not move application,
+claim, reserve, or Studio review behavior between route families yet. This
+slice changes how existing navigation is modeled and rendered, not which
+product workflows exist.
+
+### Proposed Objects
+
+Extend `src/elbysodic/web/navigation.py` with typed model objects:
+
+```python
+ShellAudience = Literal["public", "applicant", "member", "staff"]
+
+@dataclass(frozen=True, slots=True)
+class ShellNavItem:
+    key: str
+    label: str
+    href: str
+    icon_id: str | None
+    active: bool
+    count: int | None = None
+    description: str | None = None
+    aria_label: str | None = None
+
+@dataclass(frozen=True, slots=True)
+class ShellNavSection:
+    key: str
+    label: str | None
+    items: tuple[ShellNavItem, ...]
+    source: str
+
+@dataclass(frozen=True, slots=True)
+class ShellNavigation:
+    active_room: str
+    active_inner: str
+    primary_items: tuple[ShellNavItem, ...]
+    sidebar_sections: tuple[ShellNavSection, ...]
+```
+
+Keep visibility decisions out of templates. Hidden rows should not be created
+in the returned model. Avoid a `visible: bool` flag that relies on templates or
+CSS to suppress private data after it has already entered the DOM.
+
+### Audience Contract
+
+Use explicit viewer state when building navigation:
+
+| Audience | Rail | Inner Shell |
+|---|---|---|
+| Anonymous/public preview | `World Home`, `Locations` if public, `Wanted` if public-safe | Public orientation, guidebook, community-safe rows, public wanted/location context |
+| Applicant/no-face member | Public rail plus `Desk` only when signed in | Application status, claims/reserves next steps, no-face guidance, public wanted/location context |
+| Writer/member | Public rail plus `Desk` | Queue, Inbox, Roster, Plotting, Applications, Discovery, privacy-safe counts |
+| Staff/director | Writer/member rail plus `Studio` | Operations, Launch, Intake, Boards, Navigation, Appearance, Continuity, staff-only counts |
+
+Private labels, staff rows, application status, active-face context, counts, and
+tooltips must not be present in public DOM for unauthorized viewers. Same
+global user with different community memberships must only see rows for the
+resolved community.
+
+### Implementation Steps
+
+1. Add `ShellNavItem`, `ShellNavSection`, and `ShellNavigation` to
+   `src/elbysodic/web/navigation.py`.
+2. Replace `primary_nav_items(current_path, board_section)` with a wrapper
+   around `shell_navigation(viewer, current_path, board_section)`, preserving
+   the current helper temporarily for compatibility.
+3. Move current hardcoded sidebar section construction from
+   `src/elbysodic/web/pages/_layout.html` into navigation helpers:
+   - world home / guidebook / community context
+   - locations tree and generated board rows
+   - wanted / casting / claims / related wants
+   - Desk rows and desk navigation boards
+   - Studio rows and studio navigation boards
+4. Add template renderers in
+   `src/elbysodic/web/pages/_components/sidebar.html`:
+   - `shell_nav_item`
+   - `shell_nav_section`
+   - `inner_sidebar_shell`
+   - `mobile_shell_drawer` only if the current drawer markup cannot reuse the
+     same `inner_sidebar_shell` safely
+5. Switch `_layout.html` to render the model instead of calling separate
+   world/desk/studio/wanted sidebar functions.
+6. Convert stable inner-shell icons from mixed Chirp icon names to the sidebar
+   SVG sprite IDs. Generated boards, generated locations, individual scenes,
+   individual faces, and guidebook entries stay text-first.
+7. Keep legacy compatibility helpers until rendered shell tests pass, then
+   remove unused template branches in the same slice if the diff stays small.
+
+### Test Plan
+
+Focused unit tests:
+
+- `tests/test_shell_navigation.py` covers:
+  - active room and inner route mapping
+  - public/applicant/member/staff item inclusion
+  - no `Desk`/`Studio` rows for anonymous public preview
+  - no staff rows for ordinary members
+  - board section overrides for `locations`, `community`, `desk`, and `studio`
+  - sprite icon IDs for stable route rows
+
+Rendered tests:
+
+- Add or extend `tests/test_forum_slice.py` coverage for:
+  - expanded desktop sidebar uses the shared model
+  - compact rail still exposes icon-only accessible names
+  - mobile drawer renders the same allowed rows as desktop inner shell
+  - anonymous public pages do not render `Desk`, `Studio`, private counts,
+    active-face labels, application state, or staff/intake labels
+  - applicant/no-face state sees application guidance but not staff review
+    rows
+  - writer state sees `Desk`, `Queue`, `Inbox`, `Roster`, `Plotting`,
+    `Applications`, and `Discovery`
+  - staff/director state sees `Studio` and production rows
+  - same-user-different-community routes do not leak other-community counts
+
+Security/privacy tests:
+
+- Extend `tests/test_web_security.py` if rendered public/privacy assertions
+  better fit there, especially for anonymous public preview, denied-route
+  recovery, and same-user-different-community rail/drawer output.
+
+Browser QA:
+
+- Desktop expanded shell.
+- Desktop compact icon rail.
+- Desktop focus mode.
+- Mobile drawer.
+- Keyboard traversal of topbar, rail, inner shell, identity menu, and page
+  actions.
+- At least one route per room:
+  `/`, `/locations`, `/wanted`, `/desk`, `/studio`, `/my/threads`,
+  `/applications`, `/plotting`, `/world/...`, and a board/thread route.
+
+### Acceptance Criteria
+
+- Rail, inner sidebar, and mobile drawer are all rendered from
+  `ShellNavigation`.
+- Unauthorized rows/counts/tooltips are absent from server-rendered HTML, not
+  merely hidden by CSS.
+- Stable route icons use `src/elbysodic/web/static/icons/sidebar.svg`.
+- Existing route labels stay aligned with the accepted five-room model.
+- Focused shell tests and rendered privacy tests pass.
+- Browser QA notes are recorded before declaring the shell slice complete.
+
+### Follow-On Slice
+
+After this lands, resume page-surface conversion:
+
+1. Desk/writer work hubs: remove remaining duplicate page CTAs, prove empty
+   lanes, and cover no-face/applicant states.
+2. Wanted/Casting/Claims/Plotting: tighten handoff ownership and action
+   placement.
+3. Studio hub cleanup: let the inner shell carry room links so the hub can
+   become production pulse instead of a tool directory.
 
 ## Non-Negotiables
 
@@ -231,6 +569,8 @@ Proof:
 
 ### Phase 3: Inner Shell Refactor
 
+Status: landed locally on 2026-05-11.
+
 Scope:
 
 - Render current sidebar from `ShellNavigation.sidebar_sections`.
@@ -245,6 +585,8 @@ Proof:
 - Browser QA at mobile widths.
 
 ### Phase 4: Audience And Privacy Gates
+
+Status: landed locally on 2026-05-11.
 
 Scope:
 
@@ -262,6 +604,9 @@ Proof:
   denied-route recovery, and tenant-prefixed routes.
 
 ### Phase 5: Hub Cleanup
+
+Status: partially landed locally through Desk, writer hubs,
+Wanted/Casting/Claims/Plotting, Studio hub, and writing-flow cleanup.
 
 Scope:
 

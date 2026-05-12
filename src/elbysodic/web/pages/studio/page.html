@@ -3,7 +3,8 @@
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/vocabulary.html" import local_rail, local_rail_link, production_room_card, room_header %}
+  {% from "_components/ui.html" import empty_policy_block %}
+  {% from "_components/vocabulary.html" import room_header %}
 {% end %}
 
 {% def studio_signal(label, value, href=None) %}
@@ -120,85 +121,50 @@
       <p class="elbysodic-kicker">Director Studio</p>
       <h1>Shape {{ viewer.community.name }}</h1>
       <p class="elbysodic-copy-lead">
-        A production room for the canon, locations, applications, and hooks that make
-        this board feel authored instead of merely configured.
+        A production cockpit for the canon, locations, applications, and hooks that
+        need director attention now.
       </p>
     </div>
     <aside class="elbysodic-director-hero__signals" aria-label="Studio pulse">
-      {{ studio_signal("Materials", studio.material_count, "/world") }}
-      {{ studio_signal("Locations", studio.location_count, "/") }}
-      {{ studio_signal("Open hooks", studio.open_wanted_count, "/wanted") }}
-      {{ studio_signal("Review queue", studio.review_queue_count, "/applications") }}
+      {{ studio_signal("Materials", studio.material_count) }}
+      {{ studio_signal("Locations", studio.location_count) }}
+      {{ studio_signal("Open hooks", studio.open_wanted_count) }}
+      {{ studio_signal("Review queue", studio.review_queue_count) }}
     </aside>
   </section>
 
-  {% call local_rail("Studio rooms", "elbysodic-local-rail--outlined") %}
-    {{ local_rail_link("Operations", "/studio/operations") }}
-    {{ local_rail_link("Launch", "/studio/launch") }}
-    {{ local_rail_link("World structure", "#world-structure") }}
-    {{ local_rail_link("Navigation", "#navigation") }}
-    {{ local_rail_link("Identity and appearance", "#identity-appearance") }}
-    {{ local_rail_link("Casting and applications", "#casting-applications") }}
-    {{ local_rail_link("Continuity and events", "#continuity-events") }}
-  {% end %}
-
-  <section class="elbysodic-studio-overview" aria-label="Studio room overview">
-    {{ production_room_card(
-      "Operations",
-      "Daily director console",
-      "Applications, claims, reserves, hooks, and production health.",
-      "/studio/operations",
-      studio.review_queue_count ~ " in review",
-      studio.claims.reserved_count ~ " reserves"
-    ) }}
-    {{ production_room_card(
-      "Launch",
-      "Realm opening checklist",
-      "Backstage setup for scene hubs, materials, intake, appearance, and invites.",
-      "/studio/launch",
-      studio.launch_readiness.completed_required_count ~ "/" ~ studio.launch_readiness.required_count ~ " required",
-      studio.launch_readiness.status_label
-    ) }}
-    {{ production_room_card(
-      "World structure",
-      "Boards and places",
-      "Taxonomy, map lanes, and board placement.",
-      "#world-structure",
-      studio.location_count + studio.sublocation_count ~ " places",
-      studio.board_taxonomy | length ~ " boards"
-    ) }}
-    {{ production_room_card(
-      "Navigation",
-      "Sidebar composer",
-      "Labels, lanes, preview, and health notes.",
-      "#navigation",
-      studio.navigation_warnings | length ~ " notes",
-      studio.sidebar_sections | length ~ " sections"
-    ) }}
-    {{ production_room_card(
-      "Identity",
-      "Appearance vocabulary",
-      "Inherited accents and post style controls.",
-      "#identity-appearance",
-      studio.identity_accent_group.name if studio.identity_accent_group else "Theme default",
-      studio.post_style_policy.enabled_profile_variants | length ~ " post rails"
-    ) }}
-    {{ production_room_card(
-      "Casting",
-      "Applications and hooks",
-      "Review queues, wanted hooks, and intake.",
-      "#casting-applications",
-      studio.open_wanted_count ~ " open hooks",
-      studio.review_queue_count ~ " in review"
-    ) }}
-    {{ production_room_card(
-      "Continuity",
-      "Events and materials",
-      "Canon pressure, drafts, and guidebook work.",
-      "#continuity-events",
-      studio.current_event.material.title if studio.current_event else "No current event",
-      studio.draft_materials | length ~ " drafts"
-    ) }}
+  <section class="chirpui-stack chirpui-stack--md" aria-label="Production cockpit">
+    {% call section_header("Production cockpit") %}
+    Queues and setup risks that need director movement before writers feel them.
+    {% end %}
+    {% if cockpit_lanes %}
+    <div class="elbysodic-director-grid" aria-label="Studio attention lanes">
+      {% for lane in cockpit_lanes %}
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-director-lane elbysodic-director-lane--{{ lane.variant }}">
+        <div class="elbysodic-director-lane__header">
+          <div>
+            <p class="elbysodic-kicker">{{ lane.kicker }}</p>
+            <h2><a class="chirpui-link" href="{{ lane.href }}">{{ lane.title }}</a></h2>
+          </div>
+          <span class="elbysodic-director-lane__count">{{ lane.count }}</span>
+        </div>
+        <p class="elbysodic-copy-summary">{{ lane.summary }}</p>
+        {% if lane.items %}
+        <ul class="elbysodic-director-list">
+          {% for item in lane.items %}
+          <li>{{ item }}</li>
+          {% end %}
+        </ul>
+        {% end %}
+        <a class="elbysodic-director-action" href="{{ lane.href }}">{{ lane.cta }}</a>
+      </article>
+      {% end %}
+      {% end %}
+    </div>
+    {% else %}
+    {{ empty_policy_block("No director queues need attention right now.", "Studio subrooms stay available in the shell when you need to edit structure, intake, appearance, or materials.", "Production calm") }}
+    {% end %}
   </section>
 
   {% if not studio.can_manage %}

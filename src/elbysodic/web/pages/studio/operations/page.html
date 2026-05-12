@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/ui.html" import empty_policy_block %}
 {% end %}
 
 {% def operations_card(card) %}
@@ -21,8 +22,6 @@
     <li>{{ item }}</li>
     {% end %}
   </ul>
-  {% else %}
-  <p class="elbysodic-copy-meta">No active items in this lane.</p>
   {% end %}
   <a class="chirpui-btn chirpui-btn--secondary" href="{{ card.href }}">{{ card.cta }}</a>
 </article>
@@ -56,12 +55,17 @@
   </section>
   {% end %}
 
+  {% if operations.cards %}
   <section class="elbysodic-operations-grid" aria-label="Director operation signals">
     {% for card in operations.cards %}
     {{ operations_card(card) }}
     {% end %}
   </section>
+  {% else %}
+  {{ empty_policy_block("No director operations need attention right now.", "Applications, claim conflicts, reserves, wanted movement, ready-for-scene handoffs, drafts, and health warnings will appear here when they need movement.", "Operations clear") }}
+  {% end %}
 
+  {% if operations.ready_applications or operations.blocked_applications %}
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">
     {% call section_header("Application Triage") %}
     The fastest split between ready review and claim-blocked submissions.
@@ -104,6 +108,7 @@
       {% end %}
     </div>
   </section>
+  {% end %}
 {% end %}
 {% end %}
 {% end %}
