@@ -23,6 +23,8 @@ PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
 PUBLIC_PATHS = frozenset({"/", "/health", "/login", "/logout", "/network", "/request-access"})
 PUBLIC_PREFIXES = ("/elbysodic-static/",)
+PUBLIC_TENANT_GET_PATHS = frozenset({"/", "/world", "/wanted"})
+PUBLIC_TENANT_GET_PREFIXES = ("/world/", "/wanted/")
 PRODUCTION_CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; "
@@ -151,10 +153,17 @@ def _strict_transport_security() -> str | None:
 
 
 def _is_public_request(request: Request) -> bool:
-    from elbysodic.web.tenant import request_tenant_slug
+    from elbysodic.web.tenant import request_tenant_slug, split_tenant_path
 
-    if request_tenant_slug(request) is not None and request.path in {"/", "/network"}:
-        return False
+    tenant_local_path = request.path if request_tenant_slug(request) is not None else None
+    split = split_tenant_path(request.path)
+    if split is not None:
+        _community_slug, tenant_local_path = split
+    if tenant_local_path is not None:
+        return request.method in {"GET", "HEAD"} and (
+            tenant_local_path in PUBLIC_TENANT_GET_PATHS
+            or any(tenant_local_path.startswith(prefix) for prefix in PUBLIC_TENANT_GET_PREFIXES)
+        )
     return request.path in PUBLIC_PATHS or any(
         request.path.startswith(prefix) for prefix in PUBLIC_PREFIXES
     )

@@ -183,6 +183,16 @@ def wanted_board(repo: CastingReadRepository, viewer: ForumView) -> WantedBoard:
     )
 
 
+def public_wanted_board(repo: CastingReadRepository, community_id: int) -> WantedBoard:
+    return WantedBoard(
+        open_ads=[
+            public_wanted_ad_summary(repo, community_id, wanted_ad)
+            for wanted_ad in repo.list_wanted_ads(community_id, status=None)
+            if wanted_ad.status != "archived"
+        ]
+    )
+
+
 def casting_desk(repo: CastingReadRepository, viewer: ForumView) -> CastingDesk:
     active_reserves = [
         character_reserve_view(repo, viewer.community.id, reserve)
@@ -343,6 +353,68 @@ def read_wanted_ad(
         rendered_body=render_prose_body(
             body,
             mentions=post_mention_links(repo, viewer.community.id),
+        ),
+        casting_packet=casting_packet,
+        type_label=wanted_type_label(wanted_ad.wanted_type),
+        related_ads=related[:4],
+    )
+
+
+def public_read_wanted_ad(
+    repo: CastingReadRepository,
+    community_id: int,
+    wanted_slug: str,
+) -> WantedAdDetail:
+    wanted_ad = repo.get_wanted_ad_by_slug(community_id, wanted_slug)
+    if wanted_ad.status == "archived":
+        raise LookupError(f"wanted ad not found in community {community_id}: {wanted_slug}")
+    facets = facet_tags(
+        repo,
+        community_id,
+        repo.list_wanted_ad_facets(community_id, wanted_ad.id),
+    )
+    facet_ids = {tag.facet.id for tag in facets}
+    related = []
+    for candidate in repo.list_wanted_ads(community_id, status=None):
+        if candidate.id == wanted_ad.id or candidate.status == "archived":
+            continue
+        candidate_facets = facet_tags(
+            repo,
+            community_id,
+            repo.list_wanted_ad_facets(community_id, candidate.id),
+        )
+        if facet_ids and not facet_ids.intersection({tag.facet.id for tag in candidate_facets}):
+            continue
+        related.append(public_wanted_ad_summary(repo, community_id, candidate))
+    body, casting_packet = parse_wanted_casting_packet(wanted_ad.body)
+    return WantedAdDetail(
+        wanted_ad=wanted_ad,
+        creator_membership=repo.get_membership(
+            community_id,
+            wanted_ad.creator_membership_id,
+        ),
+        creator_character=(
+            repo.get_character(community_id, wanted_ad.creator_character_id)
+            if wanted_ad.creator_character_id is not None
+            else None
+        ),
+        related_material=public_related_material(repo, community_id, wanted_ad),
+        related_characters=repo.list_wanted_ad_related_characters(
+            community_id,
+            wanted_ad.id,
+        ),
+        facets=facets,
+        interests=[],
+        reserves=[],
+        reserve_interest_ids=set(),
+        viewer_interest=None,
+        can_express_interest=False,
+        can_express_prospective_interest=False,
+        is_created_by_viewer=False,
+        can_manage=False,
+        rendered_body=render_prose_body(
+            body,
+            mentions=post_mention_links(repo, community_id),
         ),
         casting_packet=casting_packet,
         type_label=wanted_type_label(wanted_ad.wanted_type),
@@ -558,6 +630,41 @@ def wanted_ad_summary(
         ),
         type_label=wanted_type_label(wanted_ad.wanted_type),
     )
+
+
+def public_wanted_ad_summary(
+    repo: CastingReadRepository,
+    community_id: int,
+    wanted_ad: WantedAd,
+) -> WantedAdSummary:
+    return WantedAdSummary(
+        wanted_ad=wanted_ad,
+        creator_membership=repo.get_membership(community_id, wanted_ad.creator_membership_id),
+        creator_character=(
+            repo.get_character(community_id, wanted_ad.creator_character_id)
+            if wanted_ad.creator_character_id is not None
+            else None
+        ),
+        related_material=public_related_material(repo, community_id, wanted_ad),
+        related_characters=[],
+        facets=facet_tags(
+            repo,
+            community_id,
+            repo.list_wanted_ad_facets(community_id, wanted_ad.id),
+        ),
+        type_label=wanted_type_label(wanted_ad.wanted_type),
+    )
+
+
+def public_related_material(
+    repo: CastingReadRepository,
+    community_id: int,
+    wanted_ad: WantedAd,
+) -> Material | None:
+    if wanted_ad.related_material_id is None:
+        return None
+    material = repo.get_material(community_id, wanted_ad.related_material_id)
+    return material if material.status == "published" else None
 
 
 def wanted_ad_interest_view(

@@ -195,7 +195,7 @@
   {% end %}
   <div class="elbysodic-wanted-grid">
     {% for item in material.related_wanted_ads %}
-    {{ wanted_card(item) }}
+    {{ wanted_card(item, viewer is not none) }}
     {% end %}
   </div>
   </section>

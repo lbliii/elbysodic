@@ -17,7 +17,7 @@
   {% if board.open_ads %}
   <div class="elbysodic-wanted-grid">
     {% for item in board.open_ads %}
-    {{ wanted_card(item) }}
+    {{ wanted_card(item, viewer is not none) }}
     {% end %}
   </div>
   {% else %}

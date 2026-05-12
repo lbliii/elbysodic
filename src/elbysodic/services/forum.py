@@ -83,6 +83,9 @@ from elbysodic.services.casting import (
     express_prospective_wanted_interest as _express_prospective_wanted_interest,
 )
 from elbysodic.services.casting import express_wanted_interest as _express_wanted_interest
+from elbysodic.services.casting import public_read_wanted_ad as _public_read_wanted_ad
+from elbysodic.services.casting import public_wanted_ad_summary as _public_wanted_ad_summary
+from elbysodic.services.casting import public_wanted_board as _public_wanted_board
 from elbysodic.services.casting import read_wanted_ad as _read_wanted_ad
 from elbysodic.services.casting import reserve_wanted_interest as _reserve_wanted_interest
 from elbysodic.services.casting import (
@@ -125,6 +128,7 @@ from elbysodic.services.materials import (
 )
 from elbysodic.services.materials import material_detail as _material_detail
 from elbysodic.services.materials import material_summary as _material_summary
+from elbysodic.services.materials import public_material_detail as _public_material_detail
 from elbysodic.services.materials import (
     update_material_production_state as _update_material_production_state,
 )
@@ -768,6 +772,87 @@ class AppServices:
                 )
             )
         return StudioNetworkDirectory(programs=programs)
+
+    def public_studio_program(self, community_slug: str) -> StudioNetworkProgramView:
+        community = self._public_preview_community(community_slug)
+        materials = self.repo.list_materials(community.id)
+        wanted_ads = self.repo.list_wanted_ads(community.id, status=None)
+        community_characters = self.repo.list_community_characters(community.id)
+        theme = community_theme_view(self.repo.get_default_theme(community.id))
+        return StudioNetworkProgramView(
+            community=community,
+            membership=None,
+            role=None,
+            current_character=None,
+            premise=_first_material_summary(materials, "premise", self.repo, community.id),
+            current_event=_first_material_summary(
+                materials,
+                "event",
+                self.repo,
+                community.id,
+            ),
+            roster_count=len(community_characters),
+            open_wanted_count=sum(1 for wanted_ad in wanted_ads if wanted_ad.status == "open"),
+            application_count=0,
+            plotting_room_count=0,
+            unread_notification_count=0,
+            theme_preview=_network_theme_preview(theme),
+            is_current=False,
+        )
+
+    def public_world_hub(self, community_slug: str) -> WorldHub:
+        community = self._public_preview_community(community_slug)
+        materials = [
+            _material_summary(self.repo, community.id, material)
+            for material in self.repo.list_materials(community.id)
+        ]
+        additional_materials = [item for item in materials if not item.material.is_featured]
+        return WorldHub(
+            featured=[item for item in materials if item.material.is_featured],
+            guides=[
+                item
+                for item in additional_materials
+                if item.material.material_type in {"premise", "guide", "factions"}
+            ],
+            events=[item for item in materials if item.material.material_type == "event"],
+            application_materials=[
+                item
+                for item in additional_materials
+                if item.material.material_type == "application"
+            ],
+            can_manage=False,
+        )
+
+    def public_read_material(self, community_slug: str, material_slug: str) -> MaterialDetail:
+        community = self._public_preview_community(community_slug)
+        material = self.repo.get_material_by_slug(community.id, material_slug)
+        if material.status != "published":
+            raise LookupError(f"material not found in community {community.id}: {material_slug}")
+        return _public_material_detail(
+            self.repo,
+            community.id,
+            material,
+            wanted_summary_factory=lambda wanted_ad: _public_wanted_ad_summary(
+                self.repo,
+                community.id,
+                wanted_ad,
+            ),
+        )
+
+    def public_wanted_ads(self, community_slug: str) -> WantedBoard:
+        community = self._public_preview_community(community_slug)
+        return _public_wanted_board(self.repo, community.id)
+
+    def public_read_wanted_ad(self, community_slug: str, wanted_slug: str) -> WantedAdDetail:
+        community = self._public_preview_community(community_slug)
+        return _public_read_wanted_ad(self.repo, community.id, wanted_slug)
+
+    def _public_preview_community(self, community_slug: str) -> Community:
+        community = self.repo.get_community_by_slug(community_slug)
+        materials = self.repo.list_materials(community.id)
+        if not _is_public_network_ready(self.repo, community, materials):
+            raise LookupError(f"community not available for public preview: {community_slug}")
+        return community
 
     def list_boards(self) -> list[BoardSummary]:
         viewer = self.viewer()

@@ -13,7 +13,7 @@
 </span>
 {% end %}
 
-{% def wanted_card(item) %}
+{% def wanted_card(item, link_context=true) %}
 {% call surface(variant="elevated", cls="elbysodic-wanted-card-shell elbysodic-wanted-card-shell--" ~ item.wanted_ad.status) %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card elbysodic-wanted-card--{{ item.wanted_ad.status }}">
   <div class="chirpui-cluster chirpui-cluster--between elbysodic-wanted-card__header">
@@ -35,16 +35,24 @@
     {% if item.creator_character %}
     <span>
       wanted by
+      {% if link_context %}
       <a class="chirpui-link" href="/characters/{{ item.creator_character.slug }}">
         {{ item.creator_character.name }}
       </a>
+      {% else %}
+      {{ item.creator_character.name }}
+      {% end %}
     </span>
     {% else %}
     <span>
       wanted by
+      {% if link_context %}
       <a class="chirpui-link" href="/members/{{ item.creator_membership.username }}">
         {{ item.creator_membership.username }}
       </a>
+      {% else %}
+      {{ item.creator_membership.display_name or item.creator_membership.username }}
+      {% end %}
     </span>
     {% end %}
     {% if item.related_material %}

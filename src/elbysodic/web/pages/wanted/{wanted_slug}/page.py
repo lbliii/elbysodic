@@ -12,6 +12,7 @@ from chirp.templating.returns import Page
 
 from elbysodic.web.recovery import recover_missing_route
 from elbysodic.web.state import get_services
+from elbysodic.web.tenant import request_tenant_slug
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,16 +113,33 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
 
 
 def _render_wanted(request: Request, wanted_slug: str) -> Page:
-    services = get_services(request)
+    tenant_slug = request_tenant_slug(request)
     try:
-        wanted = services.read_wanted_ad(wanted_slug)
-    except LookupError:
-        return recover_missing_route(request, kind="wanted", slug=wanted_slug)
+        services = get_services().for_request(request)
+        viewer = services.viewer()
+    except LookupError, PermissionError:
+        if tenant_slug is None:
+            raise
+        services = get_services()
+        try:
+            wanted = services.public_read_wanted_ad(tenant_slug, wanted_slug)
+            community = services.public_studio_program(tenant_slug).community
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        viewer = None
+    else:
+        try:
+            wanted = services.read_wanted_ad(wanted_slug)
+        except LookupError:
+            return recover_missing_route(request, kind="wanted", slug=wanted_slug)
+        community = viewer.community
     return Page.mounted(
         "wanted/{wanted_slug}/page.html",
         current_path=request.url,
-        viewer=services.viewer(),
+        viewer=viewer,
+        community=community,
         wanted=wanted,
+        show_community_shell=viewer is not None,
     )
 
 

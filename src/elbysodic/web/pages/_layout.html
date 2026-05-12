@@ -8,28 +8,33 @@
 {% set shell_has_community = show_community_shell | default(true) %}
 {% set shell_sidebar_hidden = shell_has_community and sidebar_is_hidden() %}
 
-{% block title %}{{ page_title if page_title is defined else (viewer.community.name if shell_has_community and viewer else "Elbysodic") }}{% end %}
+{% block title %}
+{% set title_viewer = viewer | default(none) %}
+{% set title_community = (title_viewer.community if shell_has_community and title_viewer else (community | default(none))) %}
+{{ page_title if page_title is defined else (title_community.name if title_community else "Elbysodic") }}
+{% end %}
 
 {% def program_theme_css(has_community, current_viewer) %}
-{% if has_community and current_viewer and current_viewer.program_theme %}
+{% set active_program_theme = current_viewer.program_theme if current_viewer else (program_theme if program_theme is defined else none) %}
+{% if has_community and active_program_theme %}
       :root {
-        {% for variable, value in current_viewer.program_theme.base_variables %}
+        {% for variable, value in active_program_theme.base_variables %}
         {{ variable }}: {{ value }};
         {% end %}
-        {% for variable, value in current_viewer.program_theme.dark_variables %}
+        {% for variable, value in active_program_theme.dark_variables %}
         {{ variable }}: {{ value }};
         {% end %}
       }
 
       [data-theme="light"] {
-        {% for variable, value in current_viewer.program_theme.light_variables %}
+        {% for variable, value in active_program_theme.light_variables %}
         {{ variable }}: {{ value }};
         {% end %}
       }
 
       @media (prefers-color-scheme: light) {
         [data-theme="system"] {
-          {% for variable, value in current_viewer.program_theme.light_variables %}
+          {% for variable, value in active_program_theme.light_variables %}
           {{ variable }}: {{ value }};
           {% end %}
         }
@@ -37,7 +42,7 @@
 
       @media (prefers-color-scheme: dark) {
         [data-theme="system"] {
-          {% for variable, value in current_viewer.program_theme.dark_variables %}
+          {% for variable, value in active_program_theme.dark_variables %}
           {{ variable }}: {{ value }};
           {% end %}
         }
@@ -112,7 +117,9 @@
 {% end %}
 
 {% block title_oob %}
-<title id="chirpui-document-title">{{ page_title if page_title is defined else (viewer.community.name if shell_has_community and viewer else "Elbysodic") }}</title>
+{% set title_viewer = viewer | default(none) %}
+{% set title_community = (title_viewer.community if show_community_shell | default(true) and title_viewer else (community | default(none))) %}
+<title id="chirpui-document-title">{{ page_title if page_title is defined else (title_community.name if title_community else "Elbysodic") }}</title>
 {% end %}
 
 {% block program_theme_oob %}
@@ -124,19 +131,22 @@
 {% end %}
 
 {% block brand_link %}
+{% set brand_has_community_shell = show_community_shell | default(true) %}
+{% set brand_viewer = viewer | default(none) %}
+{% set brand_community = (brand_viewer.community if brand_has_community_shell and brand_viewer else (community | default(none))) %}
 <a href="/"
    class="chirpui-app-shell__brand elbysodic-community-brand"
    hx-boost="false">
-  {% if shell_has_community and viewer and viewer.community.community_mark_url %}
+  {% if brand_community and brand_community.community_mark_url %}
   <img class="elbysodic-community-brand__mark"
-       src="{{ viewer.community.community_mark_url }}"
-       alt="{{ viewer.community.community_mark_alt }}">
-  {% elif not shell_has_community %}
+       src="{{ brand_community.community_mark_url }}"
+       alt="{{ brand_community.community_mark_alt }}">
+  {% elif not brand_has_community_shell %}
   <img class="elbysodic-community-brand__mark elbysodic-product-mark elbysodic-product-mark--brand"
        src="/elbysodic-static/brand/elbysodic-mark-small.svg"
        alt="">
   {% end %}
-  <span class="elbysodic-community-brand__name">{{ viewer.community.name if shell_has_community and viewer else "Elbysodic" }}</span>
+  <span class="elbysodic-community-brand__name">{{ brand_community.name if brand_community else "Elbysodic" }}</span>
 </a>
 {% end %}
 
