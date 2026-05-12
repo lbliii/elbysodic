@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
@@ -33,7 +34,8 @@ def _first_material(materials: list[MaterialSummary]) -> MaterialSummary | None:
 
 
 def get(request: Request) -> Page:
-    if request_tenant_slug(request) is None:
+    tenant_slug = request_tenant_slug(request)
+    if tenant_slug is None:
         services, viewer = _network_services(request)
         network = (
             services.studio_network() if viewer is not None else services.public_studio_network()
@@ -50,8 +52,29 @@ def get(request: Request) -> Page:
             show_community_shell=False,
         )
 
-    services = get_services(request)
-    viewer = services.viewer()
+    try:
+        services = get_services().for_request(request)
+        viewer = services.viewer()
+    except LookupError, PermissionError:
+        services = get_services()
+        try:
+            program = services.public_studio_program(tenant_slug)
+            hub = services.public_world_hub(tenant_slug)
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        world_status_label, world_status_copy = _home_world_status(hub)
+        return Page.mounted(
+            "page.html",
+            current_path=request.url,
+            page_title=program.community.name,
+            viewer=None,
+            public_program=program,
+            community=program.community,
+            world_status_label=world_status_label,
+            world_status_copy=world_status_copy,
+            guidebook=hub,
+            show_community_shell=False,
+        )
     boards = services.list_boards()
     hub = services.world_hub()
     world_status_label, world_status_copy = _home_world_status(hub)

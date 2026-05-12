@@ -157,6 +157,56 @@ def material_detail(
     )
 
 
+def public_material_detail(
+    repo: MaterialReadRepository,
+    community_id: int,
+    material: Material,
+    *,
+    wanted_summary_factory: WantedAdSummaryFactory,
+) -> MaterialDetail:
+    facets = facet_tags(
+        repo,
+        community_id,
+        repo.list_material_facets(community_id, material.id),
+    )
+    facet_ids = {tag.facet.id for tag in facets}
+    related = related_materials(repo, community_id, material, facet_ids)
+    related_wanted_ads = public_material_related_wanted_ads(
+        repo,
+        community_id,
+        material,
+        facet_ids,
+        wanted_summary_factory=wanted_summary_factory,
+    )[:4]
+    return MaterialDetail(
+        material=material,
+        facets=facets,
+        rendered_body=render_prose_body(
+            material.body,
+            mentions=post_mention_links(repo, community_id),
+        ),
+        type_label=material_type_label(material.material_type),
+        related_materials=related[:4],
+        related_locations=[],
+        related_scenes=[],
+        related_wanted_ads=related_wanted_ads,
+        continuity_beats=material_continuity_beats(
+            material,
+            [],
+            [],
+            related_wanted_ads,
+        ),
+        event_actions=material_event_actions(
+            material,
+            [],
+            [],
+            [],
+            related_wanted_ads,
+        ),
+        can_manage=False,
+    )
+
+
 def update_material_production_state(
     repo: MaterialReadRepository,
     viewer: ForumView,
@@ -311,6 +361,37 @@ def material_related_wanted_ads(
     for wanted_ad in repo.list_wanted_ads(viewer.community.id):
         wanted_facet_ids = {
             facet.id for facet in repo.list_wanted_ad_facets(viewer.community.id, wanted_ad.id)
+        }
+        if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
+            wanted_facet_ids
+        ):
+            continue
+        results.append(wanted_summary_factory(wanted_ad))
+    return sorted(
+        results,
+        key=lambda item: (
+            item.wanted_ad.related_material_id != material.id,
+            timestamp_key(item.wanted_ad.updated_at),
+            item.wanted_ad.id,
+        ),
+        reverse=True,
+    )
+
+
+def public_material_related_wanted_ads(
+    repo: MaterialReadRepository,
+    community_id: int,
+    material: Material,
+    facet_ids: set[int],
+    *,
+    wanted_summary_factory: WantedAdSummaryFactory,
+) -> list[WantedAdSummary]:
+    results: list[WantedAdSummary] = []
+    for wanted_ad in repo.list_wanted_ads(community_id, status=None):
+        if wanted_ad.status == "archived":
+            continue
+        wanted_facet_ids = {
+            facet.id for facet in repo.list_wanted_ad_facets(community_id, wanted_ad.id)
         }
         if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
             wanted_facet_ids

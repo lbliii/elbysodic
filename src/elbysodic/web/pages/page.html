@@ -20,37 +20,80 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
-  {% set hero_treatment = viewer.community.world_hero_treatment or "split" %}
-  {% set hero_uses_media = viewer.community.world_hero_image_url and hero_treatment != "text" %}
-  <section class="elbysodic-world-hero elbysodic-world-hero--{{ hero_treatment }} elbysodic-world-hero--height-{{ viewer.community.world_hero_height or "standard" }} elbysodic-world-hero--overlay-{{ viewer.community.world_hero_overlay or "medium" }} elbysodic-world-hero--focal-{{ viewer.community.world_hero_focal_point or "center" }}{{ " elbysodic-world-hero--with-media" if hero_uses_media else "" }}">
+  {% set home_community = viewer.community if viewer else public_program.community %}
+  {% set hero_treatment = home_community.world_hero_treatment or "split" %}
+  {% set hero_uses_media = home_community.world_hero_image_url and hero_treatment != "text" %}
+  <section class="elbysodic-world-hero elbysodic-world-hero--{{ hero_treatment }} elbysodic-world-hero--height-{{ home_community.world_hero_height or "standard" }} elbysodic-world-hero--overlay-{{ home_community.world_hero_overlay or "medium" }} elbysodic-world-hero--focal-{{ home_community.world_hero_focal_point or "center" }}{{ " elbysodic-world-hero--with-media" if hero_uses_media else "" }}">
     <div class="elbysodic-world-hero__copy">
-      <p class="elbysodic-kicker">World status</p>
-      <h1>{{ viewer.community.name }}</h1>
+      <p class="elbysodic-kicker">{{ "World status" if viewer else "Public realm preview" }}</p>
+      <h1>{{ home_community.name }}</h1>
       <p class="elbysodic-copy-lead">
         <strong>{{ world_status_label }}</strong> {{ world_status_copy }}
       </p>
+      {% if not viewer %}
+      <div class="chirpui-cluster">
+        <a class="chirpui-btn chirpui-btn--primary" href="/world">Open guidebook</a>
+        {% if public_program.open_wanted_count %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse wanted</a>
+        {% end %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/request-access" hx-boost="false">Request access</a>
+      </div>
+      {% end %}
+      {% if viewer %}
       {% if viewer.current_character %}
       <p class="elbysodic-copy-helper">
         Relevant locations are quietly marked for the active face.
       </p>
       {% else %}
       <p class="elbysodic-copy-helper">
-        Create your first character to start posting in {{ viewer.community.name }}.
+        Create your first character to start posting in {{ home_community.name }}.
       </p>
+      {% end %}
       {% end %}
     </div>
     <div class="elbysodic-world-hero__stats">
+      {% if viewer %}
       {{ stat(value=location_boards | length, label="Locations") }}
       {{ stat(value=viewer.roster | length, label="Characters") }}
       {{ stat(value=viewer.membership.post_count, label="Posts") }}
+      {% else %}
+      {{ stat(value=public_program.roster_count, label="Faces") }}
+      {{ stat(value=public_program.open_wanted_count, label="Wanted") }}
+      {{ stat(value=guidebook.featured | length + guidebook.guides | length + guidebook.events | length, label="Guides") }}
+      {% end %}
     </div>
     {% if hero_uses_media %}
     <figure class="elbysodic-world-hero__media">
-      <img src="{{ viewer.community.world_hero_image_url }}" alt="{{ viewer.community.world_hero_image_alt }}">
+      <img src="{{ home_community.world_hero_image_url }}" alt="{{ home_community.world_hero_image_alt }}">
     </figure>
     {% end %}
   </section>
 
+  {% if not viewer %}
+  {{ home_section_header("Start here", "Premise, current events, and public guidebook material directors have made visible.") }}
+
+  <div class="elbysodic-material-grid">
+    {% for item in guidebook.featured %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="/world/{{ item.material.slug }}">
+      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+    {% for item in guidebook.events[:2] %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="/world/{{ item.material.slug }}">
+      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+  </div>
+
+  {% if public_program.open_wanted_count %}
+  {{ home_section_header("Wanted hooks", "Open roles and story invitations that can become a first writing lane.") }}
+  <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse {{ public_program.open_wanted_count }} wanted hooks</a>
+  {% end %}
+  {% else %}
   {{ home_section_header("Locations", "In-character doors into the board's world, conflicts, and current event pressure.") }}
 
   <div class="elbysodic-location-grid">
@@ -90,6 +133,7 @@
     {{ activity_log_item(item.board, item.thread, item.post, item.snippet, "new" if item.is_unread else "", "info") }}
     {% end %}
   </div>
+  {% end %}
   {% end %}
 {% end %}
 {% end %}

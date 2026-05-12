@@ -25,13 +25,14 @@ Use these viewer modes when a route can expose scoped data:
 | inactive | Membership exists but is inactive. | Actions fail and private data stays hidden. |
 | cross-tenant | Membership belongs to another community or route slug exists elsewhere. | Current community does not leak the other community's object. |
 | faceless | Membership has no active/current character. | Character-backed actions disappear or ask for a face instead of guessing. |
+| public | Signed-out visitor on a public-ready tenant preview route. | Published premise, guidebook, and wanted context is visible; identity, staff, queues, drafts, private notes, reserves, and POST actions stay hidden or blocked. |
 
 ## Route Families
 
 | Route Family | Sensitive Data | Member | Owner | Staff | Cross-Tenant / Missing | Coverage |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/world`, `/world/{material}` | Draft materials, Material Studio controls, current event links. | Published materials only. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page; no draft body. | covered for draft material regressions |
-| `/wanted`, `/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls, private interest notes, plotting-room links, and scene-handoff links. | Open/non-archived hooks only; unrelated members do not see another writer's note or room link. | Own hook controls and interest notes visible. | Casting controls and interest notes visible. | Recovery page; no archived body, private note, or room link. | covered for prospective-note privacy and wanted backstage handoff |
+| `/c/{community}/`, `/c/{community}/world`, `/c/{community}/world/{material}` | Draft materials, Material Studio controls, current event links, raw scene/thread activity, private queue state. | Published materials only on member-local `/world`; public tenant preview uses published public read models. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page or 404; no draft body. | covered for draft material regressions and signed-out public tenant preview |
+| `/c/{community}/wanted`, `/c/{community}/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls, private interest notes, plotting-room links, reserves, and scene-handoff links. | Open/non-archived hooks only; unrelated members do not see another writer's note or room link. | Own hook controls and interest notes visible. | Casting controls and interest notes visible. | Recovery page or 404; no archived body, private note, reserve, or room link. | covered for prospective-note privacy, wanted backstage handoff, and signed-out public tenant preview |
 | `/claims`, `/claims?...` | Claim and reserve state, filtered counts, character links, director notes, staff maintenance controls. | Public claim/reserve directory state only; staff controls and director notes absent. | Same as member unless staff. | Claims maintenance forms and director notes visible only with casting/staff capability. | No claim, reserve, character, or count data from another community. | covered for rendered directory state and tenant-scoped query/link regressions; staff/member contrast still partial |
 | `/casting` | Casting desk lanes, active-face prompts, wanted handoffs, reserves, private notes surfaced through casting workflows. | Own visible casting opportunities and face-specific prompts. | Own hook/interest handoffs where applicable. | Casting controls, review lanes, and private notes visible only with capability. | No wanted, reserve, claim, or face data from another community. | partial |
 | `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. | partial |
@@ -83,7 +84,7 @@ control appears or does not appear than to snapshot large HTML sections.
 
 ## Current Gaps
 
-- Production public catalog/search proof for signed-out and signed-in users.
+- Browser QA evidence for responsive public realm preview pages.
 - Application review room owner/staff/outsider route-family coverage.
 - Claims conflict and reserve visibility coverage beyond directory and
   tenant-scoped query/link rendering.

@@ -64,6 +64,10 @@ Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
 - `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`, and static assets are public
+- signed-out shared-host tenant preview routes are public for `GET`/`HEAD` only:
+  `/c/{community}/`, `/c/{community}/world`,
+  `/c/{community}/world/{material_slug}`, `/c/{community}/wanted`, and
+  `/c/{community}/wanted/{wanted_slug}`
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
@@ -73,6 +77,15 @@ They can show realm names, public premise or current-event summaries, public
 media, roster counts, and wanted-hook counts. They must not render membership
 names, active faces, unread counts, staff signals, identity switch forms, or
 private writer queues.
+
+Signed-out tenant previews use the same posture inside one public-ready realm.
+They can show published guidebook materials, public premise/current-event
+summaries, non-archived wanted hooks, public media, face counts, and
+request-access/login calls to action. They must not render draft materials,
+private or raw scene/thread activity, wanted interest notes, reserves, plotting
+room links, lifecycle controls, identity menus, unread counts, or any mutating
+forms. Raising interest, reserving, applying, replying, watching, and staff
+workflow actions still require a valid session and community-local membership.
 
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global

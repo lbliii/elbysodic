@@ -182,6 +182,18 @@ def test_production_routes_require_session(monkeypatch) -> None:
             request_access = await client.get("/request-access")
             studio = await client.get("/studio")
             tenant = await client.get("/c/x-men-apocalypse")
+            tenant_world = await client.get("/c/x-men-apocalypse/world")
+            tenant_material = await client.get("/c/x-men-apocalypse/world/premise")
+            tenant_wanted = await client.get("/c/x-men-apocalypse/wanted")
+            tenant_wanted_detail = await client.get(
+                "/c/x-men-apocalypse/wanted/brotherhood-rival-for-rogue"
+            )
+            tenant_applications = await client.get("/c/x-men-apocalypse/applications")
+            tenant_wanted_post = await client.post(
+                "/c/x-men-apocalypse/wanted/brotherhood-rival-for-rogue",
+                body=urlencode({"intent": "express_interest"}).encode(),
+                headers=_FORM,
+            )
             post = await client.post(
                 "/identity",
                 body=urlencode({"intent": "set_default_character", "character_id": "0"}).encode(),
@@ -216,8 +228,36 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "chirpui-sidebar__section-title" not in request_access.text
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
-        assert tenant.status == 302
-        assert dict(tenant.headers)["location"] == "/login?next=%2Fc%2Fx-men-apocalypse"
+        assert tenant.status == 200
+        assert "Public realm preview" in tenant.text
+        assert "Current Event: B-24 Winter" in tenant.text
+        assert "starlane" not in tenant.text
+        assert "playing as Rogue" not in tenant.text
+        assert "elbysodic-identity-menu" not in tenant.text
+        assert tenant_world.status == 200
+        assert "World studio" in tenant_world.text
+        assert "Application Guide" in tenant_world.text
+        assert "Material studio" not in tenant_world.text
+        assert tenant_material.status == 200
+        assert "begins after the school has reopened under a fragile truce" in (
+            tenant_material.text
+        )
+        assert "Active scenes" not in tenant_material.text
+        assert "Material studio" not in tenant_material.text
+        assert tenant_wanted.status == 200
+        assert "Brotherhood rival from Rogue" in tenant_wanted.text
+        assert 'href="/c/x-men-apocalypse/characters/rogue"' not in tenant_wanted.text
+        assert tenant_wanted_detail.status == 200
+        assert "Rogue needs someone who remembers" in tenant_wanted_detail.text
+        assert "Log in to raise interest" in tenant_wanted_detail.text
+        assert "Hook lifecycle" not in tenant_wanted_detail.text
+        assert "Raised hands" not in tenant_wanted_detail.text
+        assert tenant_applications.status == 302
+        assert dict(tenant_applications.headers)["location"] == (
+            "/login?next=%2Fc%2Fx-men-apocalypse%2Fapplications"
+        )
+        assert tenant_wanted_post.status == 403
+        assert "Log in to keep writing." in tenant_wanted_post.text
         assert post.status == 403
         assert "Log in to keep writing." in post.text
         assert "/login?next=/identity" in post.text
@@ -267,6 +307,8 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         async with TestClient(app) as client:
             root = await client.get("/")
             network = await client.get("/network")
+            direct_preview = await client.get("/c/starter-realm")
+            direct_world = await client.get("/c/starter-realm/world")
             login, cookies = await _production_login(
                 client,
                 email="director@example.com",
@@ -285,6 +327,10 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
             assert "The first realm is still backstage." in response.text
             assert "Starter Realm" not in response.text
             assert "starter-realm" not in response.text
+        assert direct_preview.status == 404
+        assert direct_world.status == 404
+        assert "Starter Director" not in direct_preview.text
+        assert "Starter Director" not in direct_world.text
         assert login.status == 302
         assert director_network.status == 200
         assert "Starter Realm" in director_network.text

@@ -29,9 +29,17 @@
         <span>
           wanted by
           {% if wanted.creator_character %}
+          {% if viewer %}
           <a class="chirpui-link" href="/characters/{{ wanted.creator_character.slug }}">{{ wanted.creator_character.name }}</a>
           {% else %}
+          {{ wanted.creator_character.name }}
+          {% end %}
+          {% else %}
+          {% if viewer %}
           <a class="chirpui-link" href="/members/{{ wanted.creator_membership.username }}">{{ wanted.creator_membership.username }}</a>
+          {% else %}
+          {{ wanted.creator_membership.display_name or wanted.creator_membership.username }}
+          {% end %}
           {% end %}
         </span>
         {% if wanted.related_material %}
@@ -48,6 +56,7 @@
       <p class="elbysodic-copy-meta">Related characters</p>
       <div class="elbysodic-character-chip-row">
         {% for character in wanted.related_characters %}
+        {% if viewer %}
         <a class="elbysodic-character-chip" href="/characters/{{ character.slug }}">
           <span class="elbysodic-character-avatar" aria-hidden="true">
             {% if character.avatar_url %}
@@ -58,6 +67,18 @@
           </span>
           <span>{{ character.name }}</span>
         </a>
+        {% else %}
+        <span class="elbysodic-character-chip">
+          <span class="elbysodic-character-avatar" aria-hidden="true">
+            {% if character.avatar_url %}
+            <img src="{{ character.avatar_url }}" alt="">
+            {% else %}
+            {{ character.name[:1] }}
+            {% end %}
+          </span>
+          <span>{{ character.name }}</span>
+        </span>
+        {% end %}
         {% end %}
       </div>
     </div>
@@ -147,6 +168,11 @@
       <p class="elbysodic-copy-status">You created this hook.</p>
       {% elif wanted.wanted_ad.status != "open" %}
       <p class="elbysodic-copy-status">This hook is {{ wanted.wanted_ad.status }}.</p>
+      {% elif not viewer %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--primary" href="/login?next={{ current_path or "/" }}" hx-boost="false">Log in to raise interest</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="/request-access" hx-boost="false">Request access</a>
+      </div>
       {% end %}
       {% if wanted.can_express_prospective_interest %}
       <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-prospective-interest">
@@ -373,7 +399,7 @@
   {% end %}
   <div class="elbysodic-wanted-grid">
     {% for item in wanted.related_ads %}
-    {{ wanted_card(item) }}
+    {{ wanted_card(item, viewer is not none) }}
     {% end %}
   </div>
   {% end %}
