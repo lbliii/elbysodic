@@ -297,6 +297,9 @@ recorded runbook before sharing the URL. The production gate is still open until
 that smoke includes restart persistence on the attached volume.
 The current SQLite operating contract is documented in
 [docs/operations/sqlite-production.md](docs/operations/sqlite-production.md).
+Before creating the first real production realm, use
+[docs/operations/production-bootstrap.md](docs/operations/production-bootstrap.md)
+as the go/no-go checklist.
 
 ## Product Voice
 

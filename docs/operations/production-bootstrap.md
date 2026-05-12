@@ -1,0 +1,74 @@
+# Production Bootstrap Go/No-Go
+
+Use this checklist before running `elbysodic bootstrap-first-realm` against a
+real production Railway database. Staging smoke proves deploy mechanics;
+production bootstrap creates the first real director identity and realm.
+
+## Go Criteria
+
+- The Railway service is running one replica.
+- A Railway Volume is mounted and the app database path resolves to that
+  volume, usually `/app/var/elbysodic.sqlite3`.
+- `ELBYSODIC_ENV=production` or `staging` is intentional for the target.
+- `ELBYSODIC_SECRET_KEY` is present and at least 32 characters.
+- Demo mode is off for production unless the session is explicitly a demo.
+- A fresh backup exists, or the database is confirmed empty.
+- Studio Operations shows the expected environment, database path, schema
+  version, migration ledger, realm count, and launch status.
+- The first realm name, slug, director email, director username, and director
+  display name have been reviewed for typos.
+
+## No-Go Conditions
+
+- The seed command or Studio Operations points at a non-volume path such as
+  `var/elbysodic.sqlite3`.
+- More than one Railway replica is active while SQLite is the backing store.
+- The migration ledger is behind the app schema version.
+- The realm slug is uncertain or conflicts with planned host routing.
+- There is no rollback path for a mistaken director email, slug, or empty realm.
+- Secrets, variable values, or generated passwords would be pasted into a public
+  note or PR.
+
+## Execution Record
+
+Record values, not secrets:
+
+```text
+Production bootstrap:
+- Date:
+- Operator:
+- Railway project/service/environment:
+- Deployment:
+- App URL:
+- Volume path:
+- Database path:
+- Schema version:
+- Migration ledger:
+- Replica count:
+- Existing realm count before:
+- Realm name:
+- Realm slug:
+- Director email:
+- Director username:
+- Launch status after:
+- Backup path or empty-DB proof:
+- Result:
+```
+
+## Post-Bootstrap Proof
+
+After the command succeeds:
+
+1. Visit `/health`.
+2. Log in as the director.
+3. Open `/studio/operations` and verify the hosted inspection panel.
+4. Open `/studio/launch` and confirm launch status is `backstage`.
+5. Create or verify the minimum opening packet.
+6. Set launch status to `invite-only` only after the checklist is ready.
+7. Create one writer invitation, copy the link, then revoke it if it was only a
+   proof link.
+8. Restart the Railway service and confirm the realm, launch status, and
+   director login persist.
+
+Do not set `public-preview` until the public catalog copy, published premise,
+public scene hub, and signed-out privacy smoke all pass.
