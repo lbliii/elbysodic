@@ -2270,6 +2270,7 @@ def test_invited_writer_without_first_face_continues_to_application_form() -> No
         assert application.status == 200
         assert "Start Application" in application.text
         assert "Face name" in application.text
+        assert "This will become your first active face in X-Men Apocalypse" in application.text
         assert desk.status == 200
         assert "Start with a first face" in desk.text
 

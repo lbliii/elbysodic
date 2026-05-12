@@ -22,6 +22,11 @@
       <p class="elbysodic-copy-section">
         Start with the playable shape. The application room will hold the fuller notes.
       </p>
+      {% if not viewer.current_character %}
+      <p class="elbysodic-copy-meta">
+        This will become your first active face in {{ viewer.community.name }} after the draft is created.
+      </p>
+      {% end %}
     </div>
     {% if onboarding.application_materials %}
     <div class="elbysodic-application-starter__materials">
