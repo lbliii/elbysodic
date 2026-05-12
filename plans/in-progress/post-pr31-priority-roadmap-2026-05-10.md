@@ -44,11 +44,11 @@ Recent merged progress:
 
 Current priority reset:
 
-1. Close the remaining rendered privacy gap for inactive or faceless
-   notification counts.
+1. Keep notification count privacy green as shell/sidebar surfaces change.
 2. Build the read-only production inspection surface if Railway/env/session
    introspection still requires manual CLI or SQL.
-3. Decide launch status persistence: backstage, invite-only, public preview.
+3. Connect persisted launch status to hosted production runbooks and public
+   catalog opening checks.
 4. Polish first-face onboarding after invite acceptance when the writer does
    not create a face during acceptance.
 5. Add richer public catalog fields after the base browser QA proof.

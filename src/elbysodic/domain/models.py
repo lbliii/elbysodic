@@ -13,6 +13,7 @@ class Community:
     name: str
     slug: str
     host: str | None
+    launch_status: str
     default_theme_id: int | None
     identity_accent_facet_group_id: int | None
     community_mark_url: str | None

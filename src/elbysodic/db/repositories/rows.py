@@ -60,6 +60,7 @@ def _community_from_row(row: sqlite3.Row) -> Community:
         name=row["name"],
         slug=row["slug"],
         host=row["host"],
+        launch_status=row["launch_status"],
         default_theme_id=row["default_theme_id"],
         identity_accent_facet_group_id=row["identity_accent_facet_group_id"],
         community_mark_url=row["community_mark_url"],

@@ -17,6 +17,7 @@ class LaunchActionForm:
     intent: str = ""
     email: str = ""
     invitation_id: str = ""
+    launch_status: str = ""
     scene_hub_name: str = ""
     premise_summary: str = ""
     application_summary: str = ""
@@ -55,6 +56,17 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
             request,
             invite_management_message=f"Invitation for {revoked.email} was revoked.",
         )
+    if form.intent == "launch_status":
+        try:
+            updated = get_services(request).update_realm_launch_status(form.launch_status)
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            return _render_launch(request, launch_status_error=str(exc))
+        return _render_launch(
+            request,
+            launch_status_message=f"Launch status changed to {updated.launch_status}.",
+        )
     if form.intent != "create_invite":
         raise HTTPError(status=400, detail="unsupported launch action")
     try:
@@ -81,6 +93,8 @@ def _render_launch(
     builder_form: LaunchActionForm | None = None,
     invite_management_message: str = "",
     invite_management_error: str = "",
+    launch_status_message: str = "",
+    launch_status_error: str = "",
 ) -> Page:
     services = get_services(request)
     studio = services.director_studio()
@@ -101,4 +115,6 @@ def _render_launch(
         invite_items=services.writer_invitations(),
         invite_management_message=invite_management_message,
         invite_management_error=invite_management_error,
+        launch_status_message=launch_status_message,
+        launch_status_error=launch_status_error,
     )

@@ -34,9 +34,30 @@
       </div>
       <div class="elbysodic-director-signal">
         <span>Status</span>
-        <strong>{{ "Ready" if launch.is_ready else "Backstage" }}</strong>
+        <strong>{{ viewer.community.launch_status }}</strong>
       </div>
     </aside>
+    {% if launch_status_error %}
+    <p class="elbysodic-form-error" role="alert">{{ launch_status_error }}</p>
+    {% end %}
+    {% if launch_status_message %}
+    <div class="elbysodic-quiet-empty" role="status">{{ launch_status_message }}</div>
+    {% end %}
+    <form class="chirpui-stack chirpui-stack--sm" method="post" action="/studio/launch" hx-boost="false">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="launch_status">
+      <label class="chirpui-field">
+        <span>Launch status</span>
+        <select class="chirpui-field__input" name="launch_status">
+          <option value="backstage" {{ "selected" if viewer.community.launch_status == "backstage" else "" }}>Backstage</option>
+          <option value="invite-only" {{ "selected" if viewer.community.launch_status == "invite-only" else "" }}>Invite-only</option>
+          <option value="public-preview" {{ "selected" if viewer.community.launch_status == "public-preview" else "" }}>Public preview</option>
+        </select>
+      </label>
+      <div class="elbysodic-network-card__actions">
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save launch status</button>
+      </div>
+    </form>
   </section>
   {% end %}
 

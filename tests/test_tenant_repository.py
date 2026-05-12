@@ -236,6 +236,81 @@ def test_schema_migrates_community_invitations_from_version_14() -> None:
     assert migration["name"] == "community-invitations"
 
 
+def test_schema_migrates_community_launch_status_from_version_15() -> None:
+    connection = connect()
+    connection.execute(
+        """
+        CREATE TABLE communities (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE,
+            host TEXT UNIQUE,
+            default_theme_id INTEGER,
+            identity_accent_facet_group_id INTEGER,
+            community_mark_url TEXT,
+            community_mark_alt TEXT NOT NULL DEFAULT '',
+            world_hero_image_url TEXT,
+            world_hero_image_alt TEXT NOT NULL DEFAULT '',
+            world_hero_treatment TEXT NOT NULL DEFAULT 'split',
+            world_hero_focal_point TEXT NOT NULL DEFAULT 'center',
+            world_hero_overlay TEXT NOT NULL DEFAULT 'medium',
+            world_hero_height TEXT NOT NULL DEFAULT 'standard',
+            enabled_post_profile_variants TEXT NOT NULL DEFAULT '',
+            enabled_post_accent_styles TEXT NOT NULL DEFAULT '',
+            enabled_post_border_styles TEXT NOT NULL DEFAULT '',
+            enabled_post_title_styles TEXT NOT NULL DEFAULT '',
+            enabled_post_densities TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO communities (
+            id, name, slug, host, created_at, updated_at
+        )
+        VALUES (1, 'Historical Realm', 'historical-realm', NULL, '2026-01-01', '2026-01-01')
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE schema_migrations (
+            version INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            applied_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (15, 'community-invitations', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 15")
+    connection.commit()
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]: row
+        for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+    }
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 16
+        """
+    ).fetchone()
+    repo = ForumRepository(connection)
+
+    assert columns["launch_status"]["notnull"] == 1
+    assert repo.get_community(1).launch_status == "backstage"
+    assert migration["name"] == "community-launch-status"
+
+
 def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted-invitations", "Hosted Invitations")

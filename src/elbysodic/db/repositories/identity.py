@@ -28,6 +28,8 @@ from elbysodic.domain.models import (
     UserSession,
 )
 
+COMMUNITY_LAUNCH_STATUSES = {"backstage", "invite-only", "public-preview"}
+
 
 @dataclass(frozen=True, slots=True)
 class MembershipRoleIntegrityIssue:
@@ -113,6 +115,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 name,
                 slug,
                 host,
+                launch_status,
                 default_theme_id,
                 identity_accent_facet_group_id,
                 community_mark_url,
@@ -147,6 +150,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 name,
                 slug,
                 host,
+                launch_status,
                 default_theme_id,
                 identity_accent_facet_group_id,
                 community_mark_url,
@@ -181,6 +185,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 name,
                 slug,
                 host,
+                launch_status,
                 default_theme_id,
                 identity_accent_facet_group_id,
                 community_mark_url,
@@ -215,6 +220,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 name,
                 slug,
                 host,
+                launch_status,
                 default_theme_id,
                 identity_accent_facet_group_id,
                 community_mark_url,
@@ -237,6 +243,23 @@ class IdentityRepositoryMixin(RepositoryBase):
             """
         ).fetchall()
         return [_community_from_row(row) for row in rows]
+
+    def update_community_launch_status(self, community_id: int, launch_status: str) -> Community:
+        status = launch_status.strip().lower()
+        if status not in COMMUNITY_LAUNCH_STATUSES:
+            raise ValueError("launch status must be backstage, invite-only, or public-preview")
+        self.get_community(community_id)
+        self.connection.execute(
+            """
+            UPDATE communities
+            SET launch_status = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (status, _utc_now(), community_id),
+        )
+        self._commit()
+        return self.get_community(community_id)
 
     def update_community_identity_accent_group(
         self,

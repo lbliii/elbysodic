@@ -2084,6 +2084,55 @@ def test_guided_realm_builder_creates_minimum_opening_packet() -> None:
     asyncio.run(run())
 
 
+def test_director_can_update_realm_launch_status() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            updated = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "launch_status",
+                        "launch_status": "invite-only",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            invite_only = services.repo.get_community(staff.community.id)
+            public_directory = services.public_studio_network()
+            restored = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "launch_status",
+                        "launch_status": "public-preview",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert updated.status == 200
+        assert "Launch status changed to invite-only." in updated.text
+        assert invite_only.launch_status == "invite-only"
+        assert all(
+            program.community.id != staff.community.id for program in public_directory.programs
+        )
+        assert restored.status == 200
+        assert "Launch status changed to public-preview." in restored.text
+        assert services.repo.get_community(staff.community.id).launch_status == "public-preview"
+
+    asyncio.run(run())
+
+
 def test_director_invites_writer_through_first_face_handoff() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")

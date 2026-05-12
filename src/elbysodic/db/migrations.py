@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 15
+CURRENT_SCHEMA_VERSION = 16
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -577,6 +577,16 @@ def _add_community_invitations(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_community_launch_status(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+    }
+    if "launch_status" not in columns:
+        connection.execute(
+            "ALTER TABLE communities ADD COLUMN launch_status TEXT NOT NULL DEFAULT 'backstage'"
+        )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -596,6 +606,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(14, "command-submissions", _add_command_submissions),
     Migration(15, "community-invitations", _add_community_invitations),
+    Migration(16, "community-launch-status", _add_community_launch_status),
 )
 
 

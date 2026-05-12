@@ -454,7 +454,7 @@ move before manual scene outcomes and rendered privacy proof.
 | Production auth/session | CLI has production flags | `create_app(debug=False)` | Session cookie + CSRF | `user_sessions` | security docs current | seed personas | local tests green; Railway staging smoke recorded |
 | Tenant URL routing | N/A | resolver/middleware | `/c/{community_slug}` | `communities.slug/host` | tenant routing plan current | seeded realms | rendered tests green; Railway staging smoke recorded |
 | Public catalog/search | N/A | service-owned public catalog | `/network?q=` | no catalog primitive yet | homepage plan says richer fields future | seed programs | signed-out privacy tests and browser QA green |
-| Schema migration | CLI uses app factory | `create_schema()` | SQLite ledger | version 15 includes invitations | docs updated by this pass | N/A | migration and invitation lifecycle tests green |
+| Schema migration | CLI uses app factory | `create_schema()` | SQLite ledger | version 16 includes invitations and launch status | docs updated by this pass | N/A | migration, invitation lifecycle, and launch status tests green |
 | Program Blueprints | N/A | preview service only | Studio paste POST | typed parser, no apply | docs updated by this pass | seed blueprints | preview tests green; apply tests open |
 | S-tier flows | N/A | services/repos | rendered Chirp pages | current primitives | this roadmap | seed personas | focused tests and public browser QA green; full release smoke still evolving |
 

@@ -28,8 +28,8 @@ Still open:
 - The transition from no realm to empty configured realm is not implemented.
   It is now split into
   [First Realm Setup 2026-05-10](first-realm-setup-2026-05-10.md).
-- Launch status is read-only derived state; there is no persisted
-  backstage/invite-only/public-preview field yet.
+- Launch status now persists backstage, invite-only, and public-preview states
+  while public readiness still depends on required realm content.
 - Guided Realm Builder writes, invitation lifecycle, and first-face handoff are
   still future slices.
 - Program Blueprint Apply remains gated.
@@ -37,9 +37,9 @@ Still open:
 ## 2026-05-12 Baseline Update
 
 First realm setup has merged as the CLI/service bootstrap slice. Public-ready
-realm previews have also merged, but launch state is still derived from
-published premise plus public scene hub rather than a persisted
-backstage/invite-only/public-preview field.
+realm previews have also merged, and launch state now persists as
+`backstage`, `invite-only`, or `public-preview` while still requiring published
+premise plus public scene hub before public catalog exposure.
 
 The first guided builder and invitation slices are now implemented: directors
 can create the minimum opening packet from `/studio/launch`, create writer
@@ -55,8 +55,8 @@ Current onboarding sequence:
    richer intake/claims defaults, wanted hooks, and launch-state decisions.
 3. Add invitation delivery/copy-resend posture and no-face continuation polish
    before any public self-serve registration.
-4. Revisit persisted launch status only when derived readiness is no longer
-   expressive enough.
+4. Connect persisted launch status to hosted production runbooks and public
+   catalog opening checks.
 
 ## Purpose
 

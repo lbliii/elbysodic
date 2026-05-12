@@ -1594,6 +1594,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         repo.seed_default_community("X-Men Apocalypse"),
         X_MEN_MEDIA,
     )
+    community = repo.update_community_launch_status(community.id, "public-preview")
     member_role = _get_or_create(
         lambda: repo.get_role_by_slug(community.id, "member"),
         lambda: repo.create_role(community.id, "member", "Member"),
@@ -3335,10 +3336,17 @@ def _ensure_studio_program_community(
     try:
         community = repo.get_community_by_slug(program.slug)
     except LookupError:
-        return repo.create_community(program.slug, program.name)
-    if community.name == program.name and community.slug == program.slug:
-        return community
-    return repo.update_community_name_and_slug(community.id, slug=program.slug, name=program.name)
+        community = repo.create_community(program.slug, program.name)
+    else:
+        if community.name != program.name or community.slug != program.slug:
+            community = repo.update_community_name_and_slug(
+                community.id,
+                slug=program.slug,
+                name=program.name,
+            )
+    if community.launch_status != "public-preview":
+        community = repo.update_community_launch_status(community.id, "public-preview")
+    return community
 
 
 def _ensure_community_media_defaults(

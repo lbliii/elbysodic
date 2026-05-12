@@ -737,6 +737,12 @@ class AppServices:
             raise ValueError("only pending invitations can be revoked")
         return self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
 
+    def update_realm_launch_status(self, launch_status: str) -> Community:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to update launch status")
+        return self.repo.update_community_launch_status(viewer.community.id, launch_status)
+
     def apply_guided_realm_builder_minimum(
         self,
         *,
@@ -3319,6 +3325,8 @@ def _is_public_network_ready(
     community: Community,
     materials: list[Material],
 ) -> bool:
+    if community.launch_status != "public-preview":
+        return False
     has_public_premise = any(
         material.material_type == "premise" and material.status == "published"
         for material in materials

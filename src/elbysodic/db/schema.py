@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS communities (
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     host TEXT UNIQUE,
+    launch_status TEXT NOT NULL DEFAULT 'backstage',
     default_theme_id INTEGER,
     identity_accent_facet_group_id INTEGER REFERENCES facet_groups(id) ON DELETE SET NULL,
     community_mark_url TEXT,
