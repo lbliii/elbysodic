@@ -1500,6 +1500,8 @@ class StudioNetworkProgramView:
     current_event: MaterialSummary | None
     roster_count: int
     open_wanted_count: int
+    application_material_count: int
+    claim_type_count: int
     application_count: int
     plotting_room_count: int
     unread_notification_count: int
@@ -1528,6 +1530,30 @@ class StudioNetworkProgramView:
     @property
     def application_href(self) -> str:
         return _program_href(self, "/applications/new")
+
+    @property
+    def launch_status_label(self) -> str:
+        return self.community.launch_status.replace("-", " ").title()
+
+    @property
+    def application_posture_label(self) -> str:
+        if self.application_material_count:
+            return "Application guide ready"
+        return "Application guide pending"
+
+    @property
+    def claims_posture_label(self) -> str:
+        if self.claim_type_count:
+            return "Claims configured"
+        return "Claims not configured"
+
+    @property
+    def invite_posture_label(self) -> str:
+        if self.community.launch_status == "public-preview":
+            return "Public preview"
+        if self.community.launch_status == "invite-only":
+            return "Invite-only"
+        return "Backstage"
 
     @property
     def premise_href(self) -> str | None:

@@ -1370,6 +1370,9 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "RL NYC" in response.text
         assert "RL Small Town" in response.text
         assert "current realm" in response.text
+        assert "Public preview" in response.text
+        assert "Application guide ready" in response.text
+        assert "Claims configured" in response.text
         assert "playing as Rogue" in response.text
         assert response.text.count('name="intent" value="switch_membership"') >= 4
         assert 'name="next" value="/c/hp-universe"' in response.text

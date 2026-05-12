@@ -81,6 +81,8 @@ A studio program ready for scenes, casting, and writer movement.
     <div class="elbysodic-network-billboard__signals" aria-label="{{ program.community.name }} network signals">
       {{ metric_item(program.roster_count, "faces") }}
       {{ metric_item(program.open_wanted_count, "wanted") }}
+      {{ metric_item(program.application_material_count, "app guides") }}
+      {{ metric_item(program.claim_type_count, "claim groups") }}
       {% if program.is_authenticated %}
       {{ metric_item(program.plotting_room_count, "rooms") }}
       {% if program.unread_notification_count %}
@@ -174,9 +176,13 @@ A studio program ready for scenes, casting, and writer movement.
         {% if program.is_authenticated and program.unread_notification_count %}
         {{ badge(program.unread_notification_count ~ " unread", variant="info") }}
         {% end %}
+        {{ badge(program.invite_posture_label, variant="info") }}
       </div>
     </header>
     <p class="elbysodic-copy-summary">{{ program_summary(program) }}</p>
+    <p class="elbysodic-copy-meta">
+      {{ program.application_posture_label }} · {{ program.claims_posture_label }}
+    </p>
     {% if program.is_authenticated %}
     <p class="elbysodic-copy-meta">
       {{ program.membership.display_name or program.membership.username }}

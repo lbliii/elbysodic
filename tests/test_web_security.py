@@ -349,6 +349,8 @@ def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) 
 
         assert network.status == 200
         assert "Public preview" in network.text
+        assert "Application guide ready" in network.text
+        assert "Claims configured" in network.text
         assert "Open Wanted" in network.text or "wanted hooks" in network.text
         assert "starlane" not in network.text
         assert "moira" not in network.text
@@ -376,6 +378,9 @@ def test_public_network_search_contract_stays_service_owned() -> None:
     assert all(program.current_character is None for program in wanted_results)
     assert all(program.unread_notification_count == 0 for program in wanted_results)
     assert all(program.plotting_room_count == 0 for program in wanted_results)
+    assert all(program.invite_posture_label == "Public preview" for program in wanted_results)
+    assert all(program.application_material_count >= 0 for program in wanted_results)
+    assert all(program.claim_type_count >= 0 for program in wanted_results)
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:

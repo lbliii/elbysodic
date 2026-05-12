@@ -1005,6 +1005,10 @@ class AppServices:
                     open_wanted_count=sum(
                         1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
                     ),
+                    application_material_count=sum(
+                        1 for material in materials if material.material_type == "application"
+                    ),
+                    claim_type_count=len(self.repo.list_claim_types(community.id)),
                     application_count=_network_application_count(
                         community_characters,
                         can_review=policies.can_manage_applications(membership, role),
@@ -1067,6 +1071,10 @@ class AppServices:
                     open_wanted_count=sum(
                         1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
                     ),
+                    application_material_count=sum(
+                        1 for material in materials if material.material_type == "application"
+                    ),
+                    claim_type_count=len(self.repo.list_claim_types(community.id)),
                     application_count=0,
                     plotting_room_count=0,
                     unread_notification_count=0,
@@ -1096,6 +1104,10 @@ class AppServices:
             ),
             roster_count=len(community_characters),
             open_wanted_count=sum(1 for wanted_ad in wanted_ads if wanted_ad.status == "open"),
+            application_material_count=sum(
+                1 for material in materials if material.material_type == "application"
+            ),
+            claim_type_count=len(self.repo.list_claim_types(community.id)),
             application_count=0,
             plotting_room_count=0,
             unread_notification_count=0,
