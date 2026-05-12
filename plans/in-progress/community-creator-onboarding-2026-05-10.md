@@ -45,15 +45,17 @@ The first guided builder and invitation slices are now implemented: directors
 can create the minimum opening packet from `/studio/launch`, create writer
 invite links, manage pending/accepted/revoked invitation state, and accepted
 writers can create a first face during invite acceptance or continue to the
-first-face application form. Remaining work is delivery and polish, not proving
-that the first paths can write tenant-scoped data.
+first-face application form. Alpha delivery is copy-only, launch status is
+persisted, and remaining work is richer delivery and first-face polish, not
+proving that the first paths can write tenant-scoped data.
 
 Current onboarding sequence:
 
 1. Keep CLI bootstrap as the production-safe first realm creation path.
 2. Extend guided Studio builder writes beyond the minimum opening packet into
-   richer intake/claims defaults, wanted hooks, and launch-state decisions.
-3. Add invitation delivery/copy-resend posture and no-face continuation polish
+   richer intake/claims defaults and wanted hooks.
+3. Replace copy-only invitation delivery with email/resend when sender policy
+   exists, and extend no-face onboarding into claims/reserves/first-scene work
    before any public self-serve registration.
 4. Connect persisted launch status to hosted production runbooks and public
    catalog opening checks.

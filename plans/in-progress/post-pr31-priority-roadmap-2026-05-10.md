@@ -44,14 +44,14 @@ Recent merged progress:
 
 Current priority reset:
 
-1. Keep notification count privacy green as shell/sidebar surfaces change.
-2. Build the read-only production inspection surface if Railway/env/session
-   introspection still requires manual CLI or SQL.
-3. Connect persisted launch status to hosted production runbooks and public
-   catalog opening checks.
-4. Polish first-face onboarding after invite acceptance when the writer does
-   not create a face during acceptance.
-5. Add richer public catalog fields after the base browser QA proof.
+1. Execute production bootstrap only after the go/no-go checklist is approved.
+2. Keep notification count privacy green as shell/sidebar surfaces change.
+3. Extend first-face onboarding beyond current handoff copy into claims,
+   reserves, and first-scene guidance.
+4. Replace copy-only invitation delivery with an explicit email or resend
+   contract when credentials and sender policy exist.
+5. Broaden catalog posture beyond launch/application/claims into activity
+   freshness and request posture.
 
 ## Sequencing Principles
 

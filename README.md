@@ -300,6 +300,8 @@ The current SQLite operating contract is documented in
 Before creating the first real production realm, use
 [docs/operations/production-bootstrap.md](docs/operations/production-bootstrap.md)
 as the go/no-go checklist.
+For the first controlled writer session, use
+[docs/operations/invite-only-alpha.md](docs/operations/invite-only-alpha.md).
 
 ## Product Voice
 

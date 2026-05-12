@@ -481,11 +481,11 @@ move before manual scene outcomes and rendered privacy proof.
 
 ## Immediate PR Queue
 
-1. Remaining privacy tests: inactive/faceless notification counts and any shell
-   count regressions discovered around those identity modes.
-2. Read-only production inspection surface for DB/env/session posture.
-3. Invite delivery and copy/resend posture after the first link display.
-4. First-face onboarding polish after invited writers skip face creation.
+1. Execute production bootstrap only after the go/no-go checklist is approved.
+2. Run invite-only alpha using the alpha runbook and record restart persistence.
+3. Replace copy-only invitation delivery with an explicit email or resend
+   contract when credentials and sender policy exist.
+4. Extend first-face onboarding into claims, reserves, and first-scene guidance.
 5. Transaction helper expansion to the next high-risk workflow.
 6. Blueprint diff/apply readiness remains gated behind transaction and
    collision proof.

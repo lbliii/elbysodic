@@ -98,22 +98,22 @@ security, tenant repository, Blueprint, policy, CLI, domain, and markup tests.
 The product is not yet alpha-solid because the core loop is broader than the
 hardening proof:
 
-- Live Railway smoke and production operations proof are still plan-level gates
-  for production specifically; staging smoke is recorded.
+- Live production bootstrap is still a plan-level gate; staging smoke,
+  operations inspection, and invite-only alpha runbooks are recorded.
 - Public catalog/search has a base service-owned signed-out read model and
-  rendered privacy proof. It still needs richer catalog fields and
-  invite/request posture; desktop/mobile browser QA is recorded.
-- Rendered privacy matrix still has a narrow gap for inactive/faceless
-  notification counts. Direct application outsider access, plotting
-  cross-tenant collisions, and claims staff/member notes now have rendered
-  proof.
+  rendered privacy proof. Launch, application guide, and claims posture now
+  render from tenant-safe catalog data; desktop/mobile browser QA is recorded.
+- Rendered privacy matrix now covers inactive/faceless notification counts,
+  direct application outsider access, plotting cross-tenant collisions, and
+  claims staff/member notes.
 - Request access is still a placeholder, but invitation lifecycle now exists as
   a director-created invite link with pending/accepted/revoked management.
-  Email delivery and copy/resend-after-creation posture remain follow-up work.
+  Alpha delivery is copy-only; email delivery remains follow-up work.
 - First-face onboarding exists through invite acceptance when the writer creates
-  a face during acceptance; no-face continuation still needs polish.
-- First realm setup has a CLI path and guided builder writes. Launch status
-  persistence and public-preview transition are still future slices.
+  a face during acceptance, and no-face continuation has first-face handoff
+  copy.
+- First realm setup has a CLI path, guided builder writes, and persisted launch
+  status.
 - Program Blueprint apply remains correctly gated behind diff, transaction,
   rollback, collision, and tenant proof.
 - Studio has many surfaces, but director operations need daily workflow polish.
@@ -417,12 +417,12 @@ Reference only: `docs/product/ai-studio.md`.
 
 ## Immediate PR Queue
 
-1. Privacy matrix pass: close inactive/faceless notification count coverage.
-2. Invite delivery and copy/resend posture after the first link display.
-3. First-face continuation polish for accepted invitees who skip face creation.
-4. Launch status persistence: backstage, invite-only, public preview.
-5. Public catalog-field follow-up for `/`, `/network`, public realm preview,
-   guidebook, and wanted detail.
+1. Execute production bootstrap only after the go/no-go checklist is approved.
+2. Run invite-only alpha using the alpha runbook and record restart persistence.
+3. Replace copy-only invitation delivery with email/resend when sender policy
+   exists.
+4. Extend first-face onboarding into claims, reserves, and first-scene guidance.
+5. Public catalog-field follow-up for activity freshness and request posture.
 6. Studio Operations polish: attention-needed lanes for application, claims,
    wanted, reserves, and launch readiness.
 7. Modern design QA pass: screenshots and issue list for the public home,
