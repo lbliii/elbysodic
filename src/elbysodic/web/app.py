@@ -21,6 +21,7 @@ from elbysodic.web.routes import (
     active_route_path,
     board_section_for_path,
     primary_nav_items,
+    shell_navigation,
     shell_route_state,
 )
 from elbysodic.web.security import (
@@ -93,6 +94,7 @@ def create_app(
     app.template_global()(active_route_path)
     app.template_global()(board_section_for_path)
     app.template_global()(primary_nav_items)
+    app.template_global()(shell_navigation)
     app.template_global()(shell_route_state)
     if not security.production:
         app.template_global("csrf_field")(_empty_csrf_field)

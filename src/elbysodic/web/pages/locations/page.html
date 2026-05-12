@@ -2,6 +2,7 @@
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "_components/boards.html" import board_signal %}
   {% from "_components/thread_summary.html" import activity_item %}
+  {% from "_components/ui.html" import empty_policy_block %}
 {% end %}
 
 {% block page_root %}
@@ -15,15 +16,9 @@
       <p class="elbysodic-kicker">Locations</p>
       <h1>Playable world map</h1>
       <p class="elbysodic-copy-lead">
-        The places writers browse when they are looking for a door into the current
-        crisis: academy halls, public streets, underground rooms, diplomatic tables,
-        and machines pretending they are not plot devices.
+        A place-first scan of the realm: scene hubs, open doors, and active pressure
+        points writers can enter without turning the map into a queue.
       </p>
-      {% if viewer.current_character %}
-      <p class="elbysodic-copy-helper">
-        Location signals are tuned to the active face.
-      </p>
-      {% end %}
     </div>
     <div class="elbysodic-world-hero__stats">
       <strong>{{ location_boards | length }}</strong>
@@ -35,15 +30,19 @@
   Parent locations stay cinematic; sublocations open inside each place.
   {% end %}
 
+  {% if location_boards %}
   <div class="elbysodic-location-grid">
     {% for summary in location_boards %}
     {{ board_signal(summary, viewer) }}
     {% end %}
   </div>
+  {% else %}
+  {{ empty_policy_block("No major locations have been mapped yet.", "Director-published places will appear here once this realm has playable scene hubs.", "Map quiet") }}
+  {% end %}
 
   {% if attention %}
   <section class="elbysodic-location-attention-pulse" aria-label="Location scenes needing reply">
-    {% call section_header("Needs reply here") %}
+    {% call section_header("Scene turns here") %}
     Location scenes where another writer has the last beat.
     {% end %}
   <div class="chirpui-stack chirpui-stack--sm elbysodic-activity-list">

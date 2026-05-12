@@ -8,6 +8,7 @@ from elbysodic.web.navigation import (
     active_route_path,
     board_section_for_path,
     primary_nav_items,
+    shell_navigation,
     shell_route_state,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "active_route_path",
     "board_section_for_path",
     "primary_nav_items",
+    "shell_navigation",
     "shell_route_state",
 ]

@@ -1,8 +1,10 @@
 # Page Surface Conversion Plan
 
-Status: active planning artifact
+Status: active planning artifact; Desk/writer hub, Wanted/Casting/Claims/
+Plotting, Studio hub, and writing-flow slices landed locally
 Owner: Product design, web, Writer Network, Realm Studio, privacy, and rendered-route tests
 Created: 2026-05-11
+Last updated: 2026-05-11
 Review by: 2026-05-25
 Closure criteria: the major pages have been converted to the layered shell
 model; duplicate shell links and passive active-face repetition are removed;
@@ -40,6 +42,189 @@ page-local CSS either. That would preserve the current drift.
 
 The unit of work should be a page slice with a narrow shared-component
 promotion when the page proves the pattern.
+
+## 2026-05-11 Current State
+
+Reviewed current `main` at `4f4afd2`, the V2 static shell mock, the live
+templates, and a designer-agent pass.
+
+Progress already visible:
+
+- `page_pulse`, `empty_policy_block`, `page_section`, `lane_preview`,
+  `command_panel`, and related vocabulary components now exist and are being
+  used on Desk and application/wanted/studio surfaces.
+- `/desk` now behaves more like an attention cockpit: it starts with
+  `What needs you`, shows `Needs reply`, `Unread`, `Waiting`, and `Inbox`
+  only when present, and no longer leads with a shortcut grid.
+- `/applications` explicitly says active application work remains there while
+  accepted faces move to roster/profile pages.
+- Wanted, casting, plotting, character profile, and thread pages have started
+  removing generic `Browse wanted` / `Discover hooks` style CTAs when the shell
+  already owns the route.
+- Studio has early scoped rooms for operations, launch, intake, and board edit,
+  but the hub still carries too many production concerns.
+
+Current dependencies before more aggressive page simplification:
+
+- Inner sidebar reachability now renders from the shared `ShellNavigation`
+  model described in the layered shell plan.
+- Rail/sidebar privacy gating now lives in the navigation model, with `Desk`
+  limited to active signed-in memberships and `Studio` limited to
+  staff/director capabilities.
+- Browser QA passed for the smoke profile with screenshots in
+  `tests/browser/artifacts/shell-navigation-2026-05-11`.
+- Deeper browser QA should run after page conversion removes additional
+  duplicate links and shortcut panels.
+
+Next conversion order:
+
+1. Slice 1 remains Desk and writer work hubs. Its first tightening pass has
+   landed locally: no-face/applicant states are explicit, thread queue empty
+   noise is reduced, active application work stays separate from accepted
+   faces, and roster copy is face-native.
+2. Slice 2 remains Wanted/Casting/Claims/Plotting because it is the most
+   fragile handoff cluster. Its first tightening pass has landed locally:
+   empty handoff stacks are collapsed, raised-hand language is consistent, and
+   Plotting prioritizes ready scene handoffs.
+3. Studio hub cleanup has landed locally: the hub is now a production cockpit,
+   Operations hides quiet lanes, and route-directory movement lives in the
+   shell/subrooms.
+4. Locations/Boards/Thread reading flow has landed locally: the location index
+   reads as a place scan, board empty states are scene-native, adjacent scene
+   movement is near the top of the reader, and unread/unreplied continuation
+   stays after the transcript.
+
+## 2026-05-11 Slice 1 Implementation Update
+
+Desk and writer hub conversion slice 1 landed locally after the shared shell
+model:
+
+- `/desk` now distinguishes a no-face member from a caught-up writer. The
+  pulse points to first-face work, the empty policy avoids `Caught up`, and the
+  command action goes to application intake only when no roster/application
+  work exists.
+- `/my/threads` keeps zero metrics in the queue focus but hides empty lane
+  sections. If no primary queue work exists, it renders one reassurance block
+  and keeps history secondary.
+- `/applications` continues to show only active drafts, submissions, and
+  revision requests. Accepted faces remain in roster/profile pages, and the
+  guide button now points at the first published application material instead
+  of assuming a hardcoded guide slug.
+- `/characters` uses visible face/roster language for the metric, form title,
+  submit button, and no-roster state.
+
+Designer-agent findings accepted in this slice:
+
+- Desk no-face state must not read as caught up.
+- Thread queue should not stack large empty `Needs reply` and `Waiting`
+  sections when there are no scenes in those lanes.
+- Applications should keep active work only and use application-room language
+  for writer-owned application cards.
+- Roster should say faces in visible writer-facing copy.
+
+Proof:
+
+- `uv run pytest -q tests/test_forum_slice.py -k "writer_desk_hub or faceless_members or obligation_dashboard or my_threads_defaults or applications_desk" --tb=short`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
+
+## 2026-05-11 Slice 2 Implementation Update
+
+Wanted/Casting/Claims/Plotting conversion slice 2 landed locally:
+
+- `/wanted` remains a browsing board and its no-hook empty state now uses
+  `Quiet board` instead of queue-like `Caught up`.
+- `/wanted/{wanted_slug}` owns the commitment path with `Raise interest as
+  <face>`, `Pitch a new face`, raised-hand lifecycle language, reserve
+  movement, and staff lifecycle controls only on the detail surface.
+- `/casting` now reads as handoff work. It collapses empty raised-hand/reserve
+  lanes into one page-level clear state and hides empty lanes when another lane
+  has work.
+- `/claims` remains a directory/editor with search, status lenses, low-chroma
+  staff edit/create details, and claim-specific empty states.
+- `/plotting` now shows only active rooms and actual raised-hand work, renders
+  one clear empty state when neither exists, and prioritizes `Ready for scene`
+  before lower-action inbox groups.
+- `/characters/{character_slug}/hooks/{hook_slug}` uses raised-hand language
+  for plot-hook lifecycle lanes.
+
+Designer-agent findings accepted in this slice:
+
+- Wanted index should stay browsing-only; action belongs on wanted detail.
+- Casting should be handoff work, not a second Wanted/Claims directory.
+- Claims should keep directory/editor language and avoid raised-hand terms.
+- Plotting should hide empty room/inbox sections when they only prove absence.
+- Empty states render when they reduce anxiety or explain the next PBP state;
+  optional empty related/lifecycle/handoff sections disappear.
+
+Proof:
+
+- `uv run pytest -q tests/test_forum_slice.py -k "wanted_ads_render or handoff_desks or prospective_character_interest or plotting_rooms_start or claim or plot_hook_interest" --tb=short`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
+
+## 2026-05-11 Slice 3 Implementation Update
+
+Studio hub cleanup landed locally:
+
+- `/studio` no longer renders the `Studio rooms` local rail or equal-weight
+  room-card directory. The top of the page is now a production cockpit with
+  compact attention lanes and one `Production calm` state when no director
+  queues need movement.
+- Studio hero signals remain as read-only pulse counts instead of route links.
+- `/studio/operations` now hides zero-count operation cards and the empty
+  application triage columns. It renders one `Operations clear` state when
+  applications, claim conflicts, reserves, wanted movement, ready-for-scene
+  handoffs, drafts, and health warnings are quiet.
+- `/studio/launch` no longer includes a generic `Open Studio` button; the
+  launch checklist and Blueprint preview remain contextual.
+- `/studio/boards/{board_slug}` keeps `View board` as object inspection and
+  removes the redundant `Back to Studio` button because the breadcrumb and
+  shell already provide return movement.
+
+Designer-agent findings accepted in this slice:
+
+- Studio home should answer `what needs a director now?`, not repeat the Studio
+  directory.
+- Operations should be the durable daily production room and should hide
+  zero-count cards instead of repeating `No active items in this lane`.
+- Launch owns readiness, Intake owns claims/application fields/Blueprint
+  preview, and board editor owns one board's settings and preview.
+- Navigation, appearance, and materials can remain anchored Studio editor
+  sections for now, but their health warnings surface on the hub only when
+  attention exists.
+
+Proof:
+
+- `uv run pytest -q tests/test_forum_slice.py -k "director_studio_surfaces or studio_operations or board_editor" --tb=short`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
+
+## 2026-05-11 Slice 4 Implementation Update
+
+Locations/Boards/Thread reading flow cleanup landed locally:
+
+- `/locations` now reads as a place-first realm scan instead of a dashboard,
+  removes passive active-face copy, and has a useful no-location empty policy.
+- `/boards/{board_slug}` keeps `Start scene here` and `Next unread here` as
+  local actions, adds a direct-scene empty action when the viewer can start a
+  scene, and uses scene-native empty states for unread and needs-reply filters.
+- `/boards/{board_slug}/threads/{thread_slug}` splits reading movement from
+  obligation movement: adjacent scene links sit near the top for orientation,
+  while previous-unreplied and next-unread continuation remains after the
+  transcript.
+- The thread reader keeps face-specific commitment at the composer with
+  `Reply as <face>` while the hero only offers `Jump to reply`.
+
+User-panel findings accepted in this slice:
+
+- Active scene writers need place, cast, last beat, and active face clarity
+  without controls drowning out story context.
+- Returning regulars need first-unread/latest/continuation paths that restore
+  continuity without punishment or noise.
+- Staff controls should stay collapsed and out of the ordinary reading path.
+
+Proof:
+
+- `uv run pytest -q tests/test_forum_slice.py -k "sidebar_modes_follow_major_product_paths or board_pages_render_location_stage or quiet_location_page or board_page_next_unread or attention_surfaces or thread_page_links_previous_next" --tb=short`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
 
 ## Page Conversion Questions
 
@@ -288,6 +473,8 @@ Proof:
   related sections when empty/non-empty, community-board routing
 
 ### Slice 6: Studio And Production Rooms
+
+Status: first hub/operations cleanup slice landed locally on 2026-05-11.
 
 Pages:
 

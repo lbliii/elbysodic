@@ -2,6 +2,7 @@
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/thread_summary.html" import compact_thread_card, thread_card %}
+  {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
 
@@ -135,11 +136,24 @@
   </details>
   {% end %}
 
+  {% set has_thread_activity = dashboard.needs_reply or dashboard.waiting_on_others or dashboard.started_by_me or dashboard.participated %}
   {% if dashboard.selected_character %}
+  {% if not has_thread_activity %}
+  {{ empty_policy_block("No scenes for this face yet.", "Once this face enters a scene, reply needs and waiting lanes will appear here.", "Queue clear") }}
+  {% else %}
+  {% if not dashboard.needs_reply and not dashboard.waiting_on_others %}
+  {{ empty_policy_block("No scene turns need this face right now.", "Thread history is still here when you need to retrace where this face has written.", "Queue clear") }}
+  {% end %}
+
+  {% if dashboard.needs_reply %}
   {{ thread_section("Needs reply", "Threads where another face currently has the last word.", dashboard.needs_reply, "Nothing is waiting on this face right now.", "needs-reply") }}
+  {% end %}
 
+  {% if dashboard.waiting_on_others %}
   {{ thread_section("Waiting on others", "Threads where this character currently has the last word.", dashboard.waiting_on_others, "This face has the last word nowhere right now.", "waiting") }}
+  {% end %}
 
+  {% if dashboard.started_by_me or dashboard.participated %}
   {% call surface(variant="elevated") %}
   <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-history">
     <summary>
@@ -147,17 +161,35 @@
       <small>Started scenes and every visible scene touched by this face.</small>
     </summary>
     <div class="elbysodic-queue-history__body">
+      {% if dashboard.started_by_me %}
       {{ compact_thread_section("Started by character", "Threads opened by this character.", dashboard.started_by_me, "This face has not opened any visible scenes yet.", "history") }}
+      {% end %}
 
+      {% if dashboard.participated %}
       {{ compact_thread_section("All participated", "Every visible thread touched by this character.", dashboard.participated, "This face has not joined any visible scenes yet.", "history") }}
+      {% end %}
     </div>
   </details>
   {% end %}
+  {% end %}
+  {% end %}
   {% else %}
+  {% if not has_thread_activity %}
+  {{ empty_policy_block("No active thread queue yet.", "Once one of your faces enters a scene, reply needs, waiting lanes, and thread history will appear here.", "Queue clear") }}
+  {% else %}
+  {% if not dashboard.needs_reply and not dashboard.waiting_on_others %}
+  {{ empty_policy_block("No scene turns need your roster right now.", "Thread history is still here when you need to retrace where your faces have written.", "Queue clear") }}
+  {% end %}
+
+  {% if dashboard.needs_reply %}
   {{ thread_section("Needs reply", "Participated threads where someone outside your roster posted last.", dashboard.needs_reply, "Your roster is caught up for now.", "needs-reply") }}
+  {% end %}
 
+  {% if dashboard.waiting_on_others %}
   {{ thread_section("Waiting on others", "Threads where one of your characters currently has the last word.", dashboard.waiting_on_others, "No active scenes are waiting on other writers for you.", "waiting") }}
+  {% end %}
 
+  {% if dashboard.started_by_me or dashboard.participated %}
   {% call surface(variant="elevated") %}
   <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-queue-history">
     <summary>
@@ -165,11 +197,17 @@
       <small>Started scenes and every visible scene touched by your roster.</small>
     </summary>
     <div class="elbysodic-queue-history__body">
+      {% if dashboard.started_by_me %}
       {{ compact_thread_section("Started by me", "Threads opened by one of your community characters.", dashboard.started_by_me, "Your roster has not opened any visible scenes yet.", "history") }}
+      {% end %}
 
+      {% if dashboard.participated %}
       {{ compact_thread_section("All participated", "Every visible thread touched by your roster.", dashboard.participated, "Your roster has not joined any visible scenes yet.", "history") }}
+      {% end %}
     </div>
   </details>
+  {% end %}
+  {% end %}
   {% end %}
   {% end %}
 {% end %}

@@ -45,7 +45,7 @@
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
   {% call section_header("Casting Desk") %}
-  Reserves, raised hands, and wanted hooks across {{ viewer.community.name }}.
+  Raised hands, active reserves, and wanted handoffs across {{ viewer.community.name }}.
   {% end %}
 
   {% call surface(variant="elevated") %}
@@ -82,6 +82,11 @@
   </article>
   {% end %}
 
+  {% set has_handoffs = desk.active_face_reserves or desk.wanted_with_interest or desk.active_reserves %}
+  {% if not has_handoffs %}
+  {{ empty_policy_block("No casting handoffs need work right now.", "Raised hands, active-face reserves, and wanted reserves will appear here when they need movement.", "Casting clear") }}
+  {% else %}
+
   {% if desk.active_face %}
   {% if desk.active_face_reserves %}
   <section class="chirpui-stack chirpui-stack--md">
@@ -97,11 +102,11 @@
   {% end %}
   {% end %}
 
+  {% if desk.wanted_with_interest %}
   <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Wanted With Interest") %}
-    Hooks where someone has raised a hand or a creator has created a reserve.
+    {% call section_header("Wanted handoffs") %}
+    Hooks with raised hands, plotting movement, or created reserves.
     {% end %}
-    {% if desk.wanted_with_interest %}
     <div class="elbysodic-interest-list">
       {% for item in desk.wanted_with_interest %}
       {% call surface(variant="elevated") %}
@@ -130,7 +135,7 @@
         </div>
         {% if item.interests %}
         <div>
-          <p class="elbysodic-section-kicker">Interested faces</p>
+          <p class="elbysodic-section-kicker">Raised hands</p>
           <div class="elbysodic-character-chip-row">
             {% for interest in item.interests %}
             {% if interest.character %}
@@ -178,25 +183,22 @@
       {% end %}
       {% end %}
     </div>
-    {% else %}
-    {{ empty_policy_block("No raised hands yet.", "Wanted hooks appear here once someone expresses interest or a creator creates a reserve.", "Quiet") }}
-    {% end %}
   </section>
+  {% end %}
 
+  {% if desk.active_reserves %}
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Active Reserves") %}
     Community-wide claims that have moved beyond a raised hand.
     {% end %}
-    {% if desk.active_reserves %}
     <div class="elbysodic-interest-list">
       {% for item in desk.active_reserves %}
       {{ reserve_card(item) }}
       {% end %}
     </div>
-    {% else %}
-    {{ empty_policy_block("No active reserves right now.", "Resolved casting claims will appear here when a raised hand becomes an active reserve.", "Quiet") }}
-    {% end %}
   </section>
+  {% end %}
+  {% end %}
 {% end %}
 {% end %}
 {% end %}

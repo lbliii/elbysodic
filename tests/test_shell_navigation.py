@@ -1,4 +1,12 @@
-from elbysodic.web.navigation import active_route_path, primary_nav_items, shell_route_state
+from types import SimpleNamespace
+from typing import Any, cast
+
+from elbysodic.web.navigation import (
+    active_route_path,
+    primary_nav_items,
+    shell_navigation,
+    shell_route_state,
+)
 
 
 def test_active_route_path_strips_query_fragment_and_absolute_url() -> None:
@@ -50,14 +58,78 @@ def test_primary_nav_items_share_shell_route_active_state() -> None:
         "home",
         "locations",
         "wanted",
-        "desk",
-        "studio",
     ]
     assert [item.label for item in items] == [
         "World Home",
         "Locations",
         "Wanted",
-        "Desk",
-        "Studio",
     ]
     assert [item.key for item in items if item.active] == ["wanted"]
+
+
+def test_shell_navigation_gates_primary_rooms_by_viewer_audience() -> None:
+    public = shell_navigation(None, "/desk")
+    member = shell_navigation(cast(Any, _viewer(is_admin=False)), "/desk")
+    staff = shell_navigation(cast(Any, _viewer(is_admin=True)), "/studio")
+
+    assert [item.key for item in public.primary_items] == ["home", "locations", "wanted"]
+    assert [item.key for item in member.primary_items] == [
+        "home",
+        "locations",
+        "wanted",
+        "desk",
+    ]
+    assert [item.key for item in staff.primary_items] == [
+        "home",
+        "locations",
+        "wanted",
+        "desk",
+        "studio",
+    ]
+    assert [item.key for item in member.primary_items if item.active] == ["desk"]
+    assert [item.key for item in staff.primary_items if item.active] == ["studio"]
+
+
+def test_shell_navigation_builds_inner_sections_from_shared_model() -> None:
+    member = shell_navigation(cast(Any, _viewer(is_admin=False)), "/desk")
+    staff = shell_navigation(cast(Any, _viewer(is_admin=True)), "/studio")
+
+    assert [(section.key, section.label) for section in member.sidebar_sections] == [
+        ("desk", "On Your Desk")
+    ]
+    assert [item.key for item in member.sidebar_sections[0].items[:4]] == [
+        "queue",
+        "inbox",
+        "roster",
+        "plotting",
+    ]
+    assert [(section.key, section.label) for section in staff.sidebar_sections[:2]] == [
+        ("studio", "In Studio"),
+        ("production", "Production"),
+    ]
+
+
+def _viewer(*, is_admin: bool) -> SimpleNamespace:
+    role = SimpleNamespace(id=1, community_id=1, is_admin=is_admin)
+    membership = SimpleNamespace(
+        id=1,
+        community_id=1,
+        role_id=1,
+        is_active=True,
+    )
+    section = SimpleNamespace(label="Locations", show_label=True)
+    return SimpleNamespace(
+        membership=membership,
+        role=role,
+        current_character=SimpleNamespace(id=1) if not is_admin else None,
+        location_navigation_boards=[],
+        location_navigation_groups=[],
+        location_sidebar_section=section,
+        community_navigation_boards=[],
+        community_sidebar_section=SimpleNamespace(label="Community", show_label=True),
+        desk_navigation_boards=[],
+        desk_sidebar_section=SimpleNamespace(label="Desk", show_label=True),
+        studio_navigation_boards=[],
+        studio_sidebar_section=SimpleNamespace(label="Studio", show_label=True),
+        unread_notification_count=0,
+    )
