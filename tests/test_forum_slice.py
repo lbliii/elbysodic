@@ -2011,10 +2011,13 @@ def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
             debug=False,
             services=AppServices(repo, DemoSeed(community, user, membership, None)),
         )
+        repo.update_community_launch_status(community.id, "public-preview")
 
         async with TestClient(app) as client:
             studio = await client.get("/studio")
             launch = await client.get("/studio/launch")
+
+        public_directory = AppServices(repo, None).public_studio_network()
 
         assert studio.status == 302
         assert _response_header(studio, "location") == "/studio/launch"
@@ -2026,6 +2029,7 @@ def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
         assert "Intake and claims" in launch.text
         assert "Needed" in launch.text
         assert "Open the realm with the writing surface intact." in launch.text
+        assert all(program.community.id != community.id for program in public_directory.programs)
 
     asyncio.run(run())
 
