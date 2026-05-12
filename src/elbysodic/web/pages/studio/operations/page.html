@@ -65,6 +65,49 @@
   {{ empty_policy_block("No director operations need attention right now.", "Applications, claim conflicts, reserves, wanted movement, ready-for-scene handoffs, drafts, and health warnings will appear here when they need movement.", "Operations clear") }}
   {% end %}
 
+  {% if operations.inspection %}
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-panel" aria-labelledby="hosted-inspection-heading">
+    <p class="elbysodic-section-kicker">Hosted inspection</p>
+    <h2 id="hosted-inspection-heading">Runtime and persistence</h2>
+    <dl class="elbysodic-definition-grid">
+      <div>
+        <dt>App version</dt>
+        <dd>{{ operations.inspection.app_version }}</dd>
+      </div>
+      <div>
+        <dt>Environment</dt>
+        <dd>{{ operations.inspection.environment }}</dd>
+      </div>
+      <div>
+        <dt>Secure cookies</dt>
+        <dd>{{ "enabled" if operations.inspection.secure_cookies else "disabled" }}</dd>
+      </div>
+      <div>
+        <dt>Database path</dt>
+        <dd>{{ operations.inspection.database_path }}</dd>
+      </div>
+      <div>
+        <dt>Schema</dt>
+        <dd>{{ operations.inspection.sqlite_user_version }} / {{ operations.inspection.current_schema_version }}</dd>
+      </div>
+      <div>
+        <dt>Migration ledger</dt>
+        <dd>{{ operations.inspection.latest_migration_version }}</dd>
+      </div>
+      <div>
+        <dt>Realms</dt>
+        <dd>{{ operations.inspection.community_count }}</dd>
+      </div>
+      <div>
+        <dt>Launch status</dt>
+        <dd>{{ operations.inspection.launch_status }}</dd>
+      </div>
+    </dl>
+  </section>
+  {% end %}
+  {% end %}
+
   {% if operations.ready_applications or operations.blocked_applications %}
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">
     {% call section_header("Application Triage") %}

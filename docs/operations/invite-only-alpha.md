@@ -1,0 +1,57 @@
+# Invite-Only Alpha Runbook
+
+This runbook is the narrow operating path for Elbysodic's first real realm:
+one director-owned realm, invite-only access, SQLite on a single Railway
+replica, and explicit smoke evidence before writers are invited.
+
+## 1. Prepare
+
+- Read `docs/operations/production-bootstrap.md`.
+- Confirm the Railway Volume and database path through Studio Operations.
+- Take a SQLite backup or confirm the database is empty.
+- Keep `public-preview` off until signed-out privacy smoke passes.
+
+## 2. Bootstrap
+
+- Run `elbysodic bootstrap-first-realm` only after the go criteria pass.
+- Log in as the director.
+- Verify `/studio/operations` shows the expected environment, database path,
+  schema version, migration ledger, realm count, and launch status.
+- Confirm `/studio/launch` starts at `backstage`.
+
+## 3. Shape The Realm
+
+- Use Realm Builder for the minimum opening packet.
+- Add or review premise, application guide, scene hub, claims posture, wanted
+  hooks, and appearance.
+- Keep the launch checklist green before inviting writers.
+
+## 4. Open Invite-Only
+
+- Set launch status to `invite-only`.
+- Create one writer invitation.
+- Copy the link immediately; alpha delivery is copy-only.
+- If the link is lost or shared with the wrong person, revoke it and create a
+  fresh invitation.
+- Confirm expired, revoked, and accepted links do not grant access.
+
+## 5. Smoke
+
+- Run the Railway smoke checklist.
+- Confirm restart persistence for launch status, realm content, director login,
+  writer membership, and invitation state.
+- Confirm public `/network` does not expose the realm until launch status is
+  `public-preview` and public-ready content exists.
+
+## 6. Decide
+
+Stay invite-only unless all are true:
+
+- backup/restore has been rehearsed recently
+- notification/sidebar privacy tests are green
+- public catalog copy is intentional
+- signed-out preview routes expose only published public content
+- directors understand invite revoke and copy-only delivery
+
+Record the alpha decision with date, URL, launch status, smoke result, backup
+path, and any deferred risks.

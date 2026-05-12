@@ -1,10 +1,10 @@
 # Page Surface Conversion Plan
 
 Status: active planning artifact; Desk/writer hub, Wanted/Casting/Claims/
-Plotting, Studio hub, and writing-flow slices landed locally
+Plotting, Studio hub, writing-flow, and public-preview slices are merged
 Owner: Product design, web, Writer Network, Realm Studio, privacy, and rendered-route tests
 Created: 2026-05-11
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 Review by: 2026-05-25
 Closure criteria: the major pages have been converted to the layered shell
 model; duplicate shell links and passive active-face repetition are removed;
@@ -42,6 +42,31 @@ page-local CSS either. That would preserve the current drift.
 
 The unit of work should be a page slice with a narrow shared-component
 promotion when the page proves the pattern.
+
+## 2026-05-12 Current State
+
+Pulled baseline: `main` at `f08eae8`.
+
+Merged progress:
+
+- PR #37 shipped the first four conversion slices: Desk/writer hubs,
+  Wanted/Casting/Claims/Plotting, Studio hub/Operations/Launch/Boards, and
+  Locations/Boards/Thread reading flow.
+- PR #38 added signed-out public realm preview paths for the realm gateway,
+  world/guidebook material, wanted board, and wanted detail. These paths reuse
+  service-owned public read models and hide identity, staff, queue, interest,
+  and write-action signals from anonymous visitors.
+- Public `/` and `/network` now use a service-owned public catalog for
+  signed-out visitors, while signed-in viewers still receive membership
+  continuation data.
+
+Remaining conversion focus:
+
+1. Character, member, roster, and identity pages.
+2. World/Guidebook public and signed-in parity beyond the initial preview pass.
+3. Network Explore polish, catalog fields, and browser QA.
+4. Responsive/mobile QA after the remaining route families stop carrying
+   duplicate page-local navigation.
 
 ## 2026-05-11 Current State
 

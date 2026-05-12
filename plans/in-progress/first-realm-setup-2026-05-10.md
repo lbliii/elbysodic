@@ -1,9 +1,9 @@
 # First Realm Setup Plan
 
-Status: implemented locally; guided builder follow-up remains
+Status: implemented and merged; builder follow-up and persisted launch status landed
 Owner: Service/auth, storage, web, tests, docs, and planning stewardship
 Created: 2026-05-10
-Last updated: 2026-05-10
+Last updated: 2026-05-12
 Review by: 2026-05-24
 Closure criteria: the no-realm to empty-configured-realm transition is
 implemented or superseded by a narrower bootstrap plan; accepted steward
@@ -25,15 +25,15 @@ Landed commits:
 - `1eb8bce` moved the empty-community guard inside the first-realm transaction
   boundary.
 
-The implementation intentionally did not add a persisted `launch_status`
-column. Public readiness is derived from existing published premise and public
-scene-hub state until a schema change is approved. CLI setup does not update a
-web session because there is no web-triggered setup path yet.
+The implementation now includes a persisted `community.launch_status` column
+with `backstage`, `invite-only`, and `public-preview` states. Public catalog
+readiness still also requires published premise and public scene-hub content so
+an empty realm cannot become public-ready by status alone. CLI setup does not
+update a web session because there is no web-triggered setup path yet.
 
 Remaining onboarding work moves back to the creator-onboarding roadmap:
-guided realm builder writes, invitation handoff, first-face setup, and a future
-explicit launch-state schema if public preview needs states beyond the derived
-backstage/public-ready gate.
+invitation delivery polish, no-face first-face UX polish, and hosted launch
+operations proof.
 
 ## Purpose
 
@@ -236,11 +236,11 @@ Scope:
   settings, and optional launch-status default inside `repo.transaction()`
 - keep demo seed and `seed_default_community()` separate from this path
 
-Open decision before implementation:
+Resolved follow-up:
 
-- confirm whether to add persisted `community.launch_status` now
-  (`backstage`, later `invite_only`, later `public_preview`) or keep all
-  first-realm communities non-public until a later schema PR
+- persisted `community.launch_status` now exists with `backstage`,
+  `invite-only`, and `public-preview`; public catalog exposure still requires
+  public-ready content in addition to the status.
 
 Proof:
 
@@ -308,13 +308,15 @@ Collateral:
 Goal: only after the first-realm boundary is safe, add writes for scene hubs,
 director materials, intake/claims, appearance, and invites one slice at a time.
 
-This PR is intentionally out of scope for the first-realm setup transition.
+Status: first slice landed for scene hub, premise material, application guide,
+and default appearance tokens. Wanted hooks, richer intake/claim defaults,
+invite management, and launch status remain community-creator onboarding work.
 
 ## Parity Matrix
 
 | Contract | API/CLI | Programmatic | Protocol | Schema/Types | Docs | Examples | Tests |
 |---|---|---|---|---|---|---|---|
-| First realm setup creates community-local director identity | CLI command required | `create_first_realm` service command | no public HTTP setup in PR 1 | possible `launch_status`; community/role/membership rows scoped | README, security, multi-tenancy | CLI usage snippet if command lands | service/storage/CLI tests |
+| First realm setup creates community-local director identity | CLI command required | `create_first_realm` service command | no public HTTP setup in PR 1 | `community.launch_status`; community/role/membership rows scoped | README, security, multi-tenancy | CLI usage snippet if command lands | service/storage/CLI tests |
 | Empty configured realm stays backstage | CLI reports backstage status | public catalog read model filters backstage | signed-out `/` and `/network` sparse | persisted status preferred; needs approval | privacy matrix, information hierarchy | none | rendered public/privacy tests |
 | Session selects new director membership | optional CLI note; web-auth path if present | returns `RequestIdentityContext` | session row selected before redirect | `user_sessions.selected_*` existing fields | security boundaries | none | session/security tests |
 | Studio launch room remains director-scoped | none | launch read model/policy method | `/studio/launch` denied or sanitized | no new schema | privacy matrix | none | director/member/cross-tenant rendered tests |

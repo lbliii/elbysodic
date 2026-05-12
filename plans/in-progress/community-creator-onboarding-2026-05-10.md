@@ -3,7 +3,7 @@
 Status: active product and implementation plan
 Owner: Product, web, service, storage, auth, Blueprint, docs, and test stewardship
 Created: 2026-05-10
-Last updated: 2026-05-10
+Last updated: 2026-05-12
 Review by: 2026-05-30
 Closure criteria: split into implementation PRs for first realm setup, guided
 realm builder, invitation handoff, launch checklist, and docs/test collateral;
@@ -28,11 +28,37 @@ Still open:
 - The transition from no realm to empty configured realm is not implemented.
   It is now split into
   [First Realm Setup 2026-05-10](first-realm-setup-2026-05-10.md).
-- Launch status is read-only derived state; there is no persisted
-  backstage/invite-only/public-preview field yet.
+- Launch status now persists backstage, invite-only, and public-preview states
+  while public readiness still depends on required realm content.
 - Guided Realm Builder writes, invitation lifecycle, and first-face handoff are
   still future slices.
 - Program Blueprint Apply remains gated.
+
+## 2026-05-12 Baseline Update
+
+First realm setup has merged as the CLI/service bootstrap slice. Public-ready
+realm previews have also merged, and launch state now persists as
+`backstage`, `invite-only`, or `public-preview` while still requiring published
+premise plus public scene hub before public catalog exposure.
+
+The first guided builder and invitation slices are now implemented: directors
+can create the minimum opening packet from `/studio/launch`, create writer
+invite links, manage pending/accepted/revoked invitation state, and accepted
+writers can create a first face during invite acceptance or continue to the
+first-face application form. Alpha delivery is copy-only, launch status is
+persisted, and remaining work is richer delivery and first-face polish, not
+proving that the first paths can write tenant-scoped data.
+
+Current onboarding sequence:
+
+1. Keep CLI bootstrap as the production-safe first realm creation path.
+2. Extend guided Studio builder writes beyond the minimum opening packet into
+   richer intake/claims defaults and wanted hooks.
+3. Replace copy-only invitation delivery with email/resend when sender policy
+   exists, and extend no-face onboarding into claims/reserves/first-scene work
+   before any public self-serve registration.
+4. Connect persisted launch status to hosted production runbooks and public
+   catalog opening checks.
 
 ## Purpose
 
@@ -374,7 +400,8 @@ Collateral:
 
 Scope:
 
-- connect invites or director-created membership flow to first-face onboarding
+- continue the invite flow for writers who skip first-face creation during
+  acceptance
 - define no-face writer states across roster, application, queues, and composer
 - configure minimum application/claim policy during setup
 

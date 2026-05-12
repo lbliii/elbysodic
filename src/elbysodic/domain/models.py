@@ -13,6 +13,7 @@ class Community:
     name: str
     slug: str
     host: str | None
+    launch_status: str
     default_theme_id: int | None
     identity_accent_facet_group_id: int | None
     community_mark_url: str | None
@@ -61,6 +62,23 @@ class UserSession:
     created_at: str
     last_seen_at: str
     expires_at: str | None
+    revoked_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CommunityInvitation:
+    id: int
+    community_id: int
+    email: str
+    role_id: int
+    invited_by_membership_id: int
+    token_hash: str
+    status: str
+    expires_at: str | None
+    accepted_user_id: int | None
+    accepted_membership_id: int | None
+    created_at: str
+    accepted_at: str | None
     revoked_at: str | None
 
 

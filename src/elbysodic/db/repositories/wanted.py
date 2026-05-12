@@ -136,6 +136,7 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
                 communities.name,
                 communities.slug,
                 communities.host,
+                communities.launch_status,
                 communities.default_theme_id,
                 communities.identity_accent_facet_group_id,
                 communities.community_mark_url,

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 14
+CURRENT_SCHEMA_VERSION = 16
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -543,6 +543,50 @@ def _add_command_submissions(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_community_invitations(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS community_invitations (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            email TEXT NOT NULL,
+            role_id INTEGER NOT NULL REFERENCES roles(id),
+            invited_by_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            token_hash TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'pending',
+            expires_at TEXT,
+            accepted_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            accepted_membership_id INTEGER REFERENCES community_memberships(id) ON DELETE SET NULL,
+            created_at TEXT NOT NULL,
+            accepted_at TEXT,
+            revoked_at TEXT
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_community_invitations_lookup
+        ON community_invitations(token_hash, status, expires_at)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_community_invitations_community
+        ON community_invitations(community_id, status, created_at)
+        """
+    )
+
+
+def _add_community_launch_status(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(communities)").fetchall()
+    }
+    if "launch_status" not in columns:
+        connection.execute(
+            "ALTER TABLE communities ADD COLUMN launch_status TEXT NOT NULL DEFAULT 'backstage'"
+        )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -561,6 +605,8 @@ MIGRATIONS: tuple[Migration, ...] = (
         _enforce_user_session_identity_selection,
     ),
     Migration(14, "command-submissions", _add_command_submissions),
+    Migration(15, "community-invitations", _add_community_invitations),
+    Migration(16, "community-launch-status", _add_community_launch_status),
 )
 
 

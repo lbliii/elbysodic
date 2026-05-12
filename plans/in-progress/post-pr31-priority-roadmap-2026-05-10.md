@@ -3,7 +3,7 @@
 Status: active sequencing snapshot
 Owner: Product, operations, web, service, storage, and test stewardship
 Created: 2026-05-10
-Last updated: 2026-05-10
+Last updated: 2026-05-12
 Review by: 2026-05-24
 Closure criteria: The first five priorities are merged or superseded by more
 specific implementation plans, and remaining items are linked into the
@@ -19,6 +19,39 @@ bootstrap, and SQLite inspection docs.
 This plan captures the next work queue after that merge. It is not a feature
 spec. It exists so future agents have a current, ranked sequence for turning
 Elbysodic from a production-like demo into a real, supportable PBP studio.
+
+## 2026-05-12 Project State
+
+Pulled `main` to `f08eae8`.
+
+Recent merged progress:
+
+- PR #37 merged the layered shell, shared inner-sidebar model, privacy-gated
+  rail rows, and first page-surface cleanup waves.
+- First realm setup is implemented as a CLI/service bootstrap path with
+  transaction rollback proof; the launch room can now create the minimum
+  opening packet for an empty configured realm.
+- Studio Launch and Studio Operations exist as product-native rooms, but the
+  production inspection surface for DB/env/session posture is still not the
+  read-only ops scope described below.
+- PR #38 added service-owned signed-out public catalog paths and public realm
+  previews for premise/guidebook/wanted surfaces without exposing identity,
+  staff, queue, interest, or write-action state.
+- Railway staging smoke, restart persistence, and a SQLite backup/restore drill
+  were recorded on 2026-05-12.
+- Director-created writer invitations now create one-realm memberships and can
+  hand accepted writers into first-face setup.
+
+Current priority reset:
+
+1. Execute production bootstrap only after the go/no-go checklist is approved.
+2. Keep notification count privacy green as shell/sidebar surfaces change.
+3. Extend first-face onboarding beyond current handoff copy into claims,
+   reserves, and first-scene guidance.
+4. Replace copy-only invitation delivery with an explicit email or resend
+   contract when credentials and sender policy exist.
+5. Broaden catalog posture beyond launch/application/claims into activity
+   freshness and request posture.
 
 ## Sequencing Principles
 
@@ -38,6 +71,9 @@ Elbysodic from a production-like demo into a real, supportable PBP studio.
 
 Goal: prove the staging Railway environment is usable before touching real
 production data.
+
+Status: completed on 2026-05-12 for staging. The record lives in
+`docs/operations/railway-smoke.md`.
 
 Required work:
 
@@ -84,6 +120,12 @@ Collateral:
 ### 3. Define First Realm Setup
 
 Goal: make the first non-demo production community intentional.
+
+Status: CLI/service bootstrap is implemented and covered locally. The first
+realm can be created without global director power, partial setup rows roll
+back on failure, and empty configured realms remain backstage until they have
+public-ready material. The next planning question is guided Studio builder
+writes and launch status, not whether first realm setup exists at all.
 
 Required work:
 
@@ -133,6 +175,14 @@ Collateral:
 Goal: replace placeholder request-access with a real invite flow without
 opening unsafe public registration.
 
+Status: first slices implemented. Directors can create invite links from the
+launch room, list pending/accepted/revoked invitation state, and revoke pending
+invites. Accepting an invite creates or reuses the global user, creates a
+membership in the invited realm, optionally creates a first face, starts a
+session, rejects replayed tokens, and routes no-face writers to first-face
+application setup. Email delivery and copy/resend-after-creation posture remain
+follow-up work.
+
 Open decisions:
 
 - director-created accounts vs invite links vs request-access queue
@@ -179,6 +229,9 @@ Collateral:
 Goal: make SQLite safe enough for real writer data while it remains the
 production-like store.
 
+Status: staging drill completed on 2026-05-12. The record lives in
+`docs/operations/sqlite-production.md`.
+
 Required work:
 
 - document exact backup command
@@ -199,6 +252,11 @@ Collateral:
 
 Goal: give directors a controlled way to create real realm structure beyond
 manual seed data.
+
+Status: guided builder minimum write slice is implemented for scene hub,
+premise material, application guide, and default appearance tokens. Program
+Blueprint Apply remains gated behind diff, collision, transaction, and rollback
+proof.
 
 Required work:
 
@@ -223,6 +281,12 @@ Collateral:
 
 Goal: make `/` and `/network` feel like the front door once real or seeded
 realms exist.
+
+Status: base public discovery landed in PR #38. Signed-out visitors now use a
+service-owned public catalog and can preview public-ready realm guidebook and
+wanted surfaces. Desktop/mobile browser QA smoke and deep profiles passed on
+2026-05-12; remaining work is richer catalog shape and invite/request posture,
+not the first privacy-safe read model.
 
 Required work:
 
@@ -272,8 +336,10 @@ Collateral:
 
 ## Immediate Next PR Candidates
 
-1. Staging smoke record and any doc corrections discovered by Railway.
-2. Read-only Ops surface scaffold.
-3. First realm setup decision record plus empty configured realm tests.
-4. Backup/restore drill documentation.
-5. Invitation model implementation plan.
+1. Remaining privacy matrix closure tests for inactive/faceless notification
+   count identity modes.
+2. Read-only production inspection surface if Railway smoke shows manual SQL
+   or env/session introspection remains unavoidable.
+3. Invite delivery and copy/resend posture after the first link display.
+4. First-face onboarding polish for accepted invitees who skip face creation.
+5. Public catalog-field follow-up.

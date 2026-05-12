@@ -1,11 +1,11 @@
 # Layered Shell Navigation Implementation Plan
 
 Status: active implementation plan; phases 1-4 plus writer-hub, handoff,
-Studio hub, and writing-flow cleanup slices landed locally; broader page
-conversion remains
+Studio hub, writing-flow cleanup, and public-preview shell slices are merged;
+broader page conversion remains
 Owner: Product, design, web, privacy, and test stewardship
 Created: 2026-05-11
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 Review by: 2026-05-25
 Closure criteria: the accepted layered shell model is implemented or split into
 merged PRs; the stale `World`/`Play` shell labels are replaced; compact sidebar
@@ -60,6 +60,25 @@ Accepted outer rail:
 
 `Network` stays out of the default community rail until cross-realm network
 behavior is a real daily workflow.
+
+## 2026-05-12 Baseline Update
+
+After pulling `main` to `f08eae8`, the shell foundation and first page
+conversion waves are no longer local-only. PR #37 merged the layered shell,
+inner-sidebar privacy gates, Desk/Wanted/Studio/writing-flow cleanup, and
+browser QA artifacts. PR #38 extended the same public-safe shell contract to
+signed-out realm previews for `/c/{community_slug}`, guidebook, and wanted
+surfaces.
+
+Open before closure:
+
+- Keep this plan active until the remaining identity, member, character, and
+  public guidebook surfaces are either converted or split into narrower plans.
+- Add another browser QA pass after public preview, identity, and member pages
+  stop relying on older page-local movement patterns.
+- Preserve rendered privacy proof for anonymous/public preview, ordinary
+  writer, staff/director, and same-user-different-community paths as page
+  conversion continues.
 
 ## 2026-05-11 Implementation Readout
 
