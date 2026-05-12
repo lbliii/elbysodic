@@ -2427,9 +2427,16 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Privacy Queue Face" not in member_operations.text
         assert "Private application body should not leak" not in member_operations.text
         assert "0 ready apps" in member_operations.text
+        assert "Hosted inspection" not in member_operations.text
+        assert "Database path" not in member_operations.text
         assert staff_operations.status == 200
         assert "Privacy Queue Face - ready" in staff_operations.text
         assert "ready apps" in staff_operations.text
+        assert "Hosted inspection" in staff_operations.text
+        assert "Runtime and persistence" in staff_operations.text
+        assert "Database path" in staff_operations.text
+        assert "Schema" in staff_operations.text
+        assert "Launch status" in staff_operations.text
 
     asyncio.run(run())
 

@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib.metadata import PackageNotFoundError, version
 
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
+from elbysodic.db.migrations import CURRENT_SCHEMA_VERSION
+from elbysodic.services import AppServices
 from elbysodic.services.read_models import (
     ApplicationCharacterView,
     CastingDesk,
     DirectorStudio,
     PlottingDesk,
 )
-from elbysodic.web.state import get_services
+from elbysodic.web.state import get_services, get_web_security_config
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +37,20 @@ class DirectorOperations:
     ready_applications: list[ApplicationCharacterView]
     blocked_applications: list[ApplicationCharacterView]
     can_manage: bool
+    inspection: OperationsInspection | None
+
+
+@dataclass(frozen=True, slots=True)
+class OperationsInspection:
+    app_version: str
+    environment: str
+    secure_cookies: bool
+    database_path: str
+    sqlite_user_version: int
+    current_schema_version: int
+    latest_migration_version: int
+    community_count: int
+    launch_status: str
 
 
 def get(request: Request) -> Page:
@@ -46,6 +63,7 @@ def get(request: Request) -> Page:
         casting,
         plotting,
         services.viewer().unread_notification_count,
+        inspection=_operations_inspection(services) if studio.can_manage else None,
     )
     return Page.mounted(
         "studio/operations/page.html",
@@ -60,6 +78,8 @@ def _director_operations(
     casting: CastingDesk,
     plotting: PlottingDesk,
     unread_notification_count: int,
+    *,
+    inspection: OperationsInspection | None,
 ) -> DirectorOperations:
     ready_applications = [
         item for item in studio.applications.review_queue if not item.has_claim_conflicts
@@ -207,6 +227,31 @@ def _director_operations(
         ready_applications=ready_applications,
         blocked_applications=blocked_applications,
         can_manage=studio.can_manage,
+        inspection=inspection,
+    )
+
+
+def _operations_inspection(services: AppServices) -> OperationsInspection:
+    connection = services.repo.connection
+    security = get_web_security_config()
+    database_row = connection.execute("PRAGMA database_list").fetchone()
+    migration_row = connection.execute("SELECT MAX(version) AS version FROM schema_migrations").fetchone()
+    user_version = connection.execute("PRAGMA user_version").fetchone()[0]
+    community_count = connection.execute("SELECT COUNT(*) AS count FROM communities").fetchone()
+    try:
+        app_version = version("elbysodic")
+    except PackageNotFoundError:
+        app_version = "local"
+    return OperationsInspection(
+        app_version=app_version,
+        environment=security.env,
+        secure_cookies=security.secure_cookies,
+        database_path=str(database_row["file"] or ":memory:"),
+        sqlite_user_version=int(user_version),
+        current_schema_version=CURRENT_SCHEMA_VERSION,
+        latest_migration_version=int(migration_row["version"] or 0),
+        community_count=int(community_count["count"] if community_count is not None else 0),
+        launch_status=services.viewer().community.launch_status,
     )
 
 
