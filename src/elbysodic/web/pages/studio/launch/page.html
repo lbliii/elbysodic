@@ -67,6 +67,38 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-panel" aria-labelledby="builder-heading">
+    <p class="elbysodic-section-kicker">Realm Builder</p>
+    <h2 id="builder-heading">Create the minimum opening packet.</h2>
+    {% if builder_error %}
+    <p class="elbysodic-form-error" role="alert">{{ builder_error }}</p>
+    {% end %}
+    {% if builder_message %}
+    <div class="elbysodic-quiet-empty" role="status">{{ builder_message }}</div>
+    {% end %}
+    <form class="chirpui-stack chirpui-stack--sm" method="post" action="/studio/launch" hx-boost="false">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="apply_builder">
+      <label class="chirpui-field">
+        <span>Scene hub</span>
+        <input name="scene_hub_name" value="{{ builder_form.scene_hub_name or 'Opening Scenes' }}" required>
+      </label>
+      <label class="chirpui-field">
+        <span>Premise</span>
+        <textarea name="premise_summary" rows="3">{{ builder_form.premise_summary }}</textarea>
+      </label>
+      <label class="chirpui-field">
+        <span>Application guide</span>
+        <textarea name="application_summary" rows="3">{{ builder_form.application_summary }}</textarea>
+      </label>
+      <div class="elbysodic-network-card__actions">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">Create opening packet</button>
+      </div>
+    </form>
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
   <section class="elbysodic-operations-panel" aria-labelledby="launch-boundary-heading">
     <p class="elbysodic-section-kicker">Opening boundary</p>
     <h2 id="launch-boundary-heading">Invite-only before public self-serve.</h2>
@@ -76,6 +108,65 @@
     <div class="elbysodic-network-card__actions">
       <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake#program-blueprint-preview">Preview Program Blueprint</a>
     </div>
+  </section>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-panel" aria-labelledby="invite-writers-heading">
+    <p class="elbysodic-section-kicker">Writer invitations</p>
+    <h2 id="invite-writers-heading">Invite one writer into this realm.</h2>
+    <p class="elbysodic-copy-section">
+      Invitations create a global login account if needed, then create the writer's membership inside {{ viewer.community.name }}. The acceptance form can also create their first face.
+    </p>
+    {% if invite_error %}
+    <p class="elbysodic-form-error" role="alert">{{ invite_error }}</p>
+    {% end %}
+    {% if invite_management_error %}
+    <p class="elbysodic-form-error" role="alert">{{ invite_management_error }}</p>
+    {% end %}
+    {% if invite_management_message %}
+    <div class="elbysodic-quiet-empty" role="status">{{ invite_management_message }}</div>
+    {% end %}
+    {% if invite_path %}
+    <div class="elbysodic-quiet-empty" role="status">
+      Invitation ready for {{ invite_email }}: <a class="chirpui-link" href="{{ invite_path }}">{{ invite_path }}</a>
+    </div>
+    {% end %}
+    <form class="chirpui-stack chirpui-stack--sm" method="post" action="/studio/launch" hx-boost="false">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="create_invite">
+      <label class="chirpui-field">
+        <span>Writer email</span>
+        <input name="email" type="email" value="{{ invite_email if invite_error else '' }}" autocomplete="email" required>
+      </label>
+      <div class="elbysodic-network-card__actions">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">Create invitation</button>
+      </div>
+    </form>
+    {% if invite_items %}
+    <ul class="elbysodic-operations-list" aria-label="Writer invitations">
+      {% for item in invite_items %}
+      <li>
+        <div>
+          <strong>{{ item.invitation.email }}</strong>
+          <span>{{ item.status_label }}{% if item.invitation.expires_at %} · expires {{ item.invitation.expires_at }}{% end %}</span>
+        </div>
+        <div class="elbysodic-network-card__actions">
+          {% if item.can_revoke %}
+          <form method="post" action="/studio/launch" hx-boost="false">
+            {{ csrf_field() }}
+            <input type="hidden" name="intent" value="revoke_invite">
+            <input type="hidden" name="invitation_id" value="{{ item.invitation.id }}">
+            <button class="chirpui-btn chirpui-btn--secondary" type="submit">Revoke invitation</button>
+          </form>
+          {% else %}
+          {{ badge(item.status_label, variant="success" if item.status_label == "Accepted" else "muted") }}
+          {% end %}
+        </div>
+      </li>
+      {% end %}
+    </ul>
+    {% end %}
   </section>
   {% end %}
 {% end %}

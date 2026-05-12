@@ -65,6 +65,23 @@ class UserSession:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityInvitation:
+    id: int
+    community_id: int
+    email: str
+    role_id: int
+    invited_by_membership_id: int
+    token_hash: str
+    status: str
+    expires_at: str | None
+    accepted_user_id: int | None
+    accepted_membership_id: int | None
+    created_at: str
+    accepted_at: str | None
+    revoked_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class Role:
     id: int
     community_id: int

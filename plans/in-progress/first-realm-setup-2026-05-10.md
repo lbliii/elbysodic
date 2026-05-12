@@ -1,9 +1,9 @@
 # First Realm Setup Plan
 
-Status: implemented locally; guided builder follow-up remains
+Status: implemented and merged; builder follow-up landed, launch status follow-up remains
 Owner: Service/auth, storage, web, tests, docs, and planning stewardship
 Created: 2026-05-10
-Last updated: 2026-05-10
+Last updated: 2026-05-12
 Review by: 2026-05-24
 Closure criteria: the no-realm to empty-configured-realm transition is
 implemented or superseded by a narrower bootstrap plan; accepted steward
@@ -31,8 +31,8 @@ scene-hub state until a schema change is approved. CLI setup does not update a
 web session because there is no web-triggered setup path yet.
 
 Remaining onboarding work moves back to the creator-onboarding roadmap:
-guided realm builder writes, invitation handoff, first-face setup, and a future
-explicit launch-state schema if public preview needs states beyond the derived
+invitation management, no-face first-face continuation, and a future explicit
+launch-state schema if public preview needs states beyond the derived
 backstage/public-ready gate.
 
 ## Purpose
@@ -308,7 +308,9 @@ Collateral:
 Goal: only after the first-realm boundary is safe, add writes for scene hubs,
 director materials, intake/claims, appearance, and invites one slice at a time.
 
-This PR is intentionally out of scope for the first-realm setup transition.
+Status: first slice landed for scene hub, premise material, application guide,
+and default appearance tokens. Wanted hooks, richer intake/claim defaults,
+invite management, and launch status remain community-creator onboarding work.
 
 ## Parity Matrix
 

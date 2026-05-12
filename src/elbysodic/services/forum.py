@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import os
 import re
+import secrets
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from elbysodic.blueprints import ProgramBlueprintPreview
@@ -41,6 +44,7 @@ from elbysodic.domain.models import (
     Character,
     CharacterReserve,
     Community,
+    CommunityInvitation,
     CommunityMembership,
     Material,
     Post,
@@ -68,11 +72,13 @@ from elbysodic.services.applications import (
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
 from elbysodic.services.auth import (
+    SESSION_TTL,
     LoginSession,
     create_login_session,
     hash_password,
     session_for_session_token,
     session_token_hash,
+    verify_password,
 )
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
 from elbysodic.services.casting import casting_desk as _casting_desk
@@ -281,6 +287,51 @@ def _load_viewer_role(
         return repo.get_role(community.id, membership.role_id)
     except LookupError as exc:
         raise PermissionError("realm membership role is not valid for this community") from exc
+
+
+@dataclass(frozen=True, slots=True)
+class CreatedInvitation:
+    invitation: CommunityInvitation
+    token: str
+
+    @property
+    def path(self) -> str:
+        return f"/invite/{self.token}"
+
+
+@dataclass(frozen=True, slots=True)
+class AcceptedInvitation:
+    invitation: CommunityInvitation
+    session: LoginSession
+    identity: RequestIdentityContext
+    first_character: Character | None
+
+    @property
+    def next_path(self) -> str:
+        if self.first_character is not None:
+            return f"/c/{self.identity.community_slug}/desk"
+        return f"/c/{self.identity.community_slug}/applications/new"
+
+
+@dataclass(frozen=True, slots=True)
+class GuidedRealmBuilderResult:
+    scene_hub: Board
+    premise: Material
+    application_guide: Material
+    created_labels: tuple[str, ...]
+
+    @property
+    def status_message(self) -> str:
+        if not self.created_labels:
+            return "Realm Builder found the minimum launch pieces already in place."
+        return f"Realm Builder added {', '.join(self.created_labels)}."
+
+
+@dataclass(frozen=True, slots=True)
+class InvitationManagementItem:
+    invitation: CommunityInvitation
+    status_label: str
+    can_revoke: bool
 
 
 class AppServices:
@@ -619,6 +670,7 @@ class AppServices:
                 "Director",
                 is_admin=True,
             )
+            self.repo.create_role(community.id, "member", "Member")
             user = self.repo.create_user(clean_email, hash_password(director_password))
             self.repo.create_membership(
                 community.id,
@@ -640,6 +692,251 @@ class AppServices:
             membership=self.repo.get_membership_for_user(community.id, user.id),
             role=self.repo.get_role_by_slug(community.id, "director"),
         )
+
+    def create_writer_invitation(self, email: str, *, days_valid: int = 14) -> CreatedInvitation:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to invite writers")
+        clean_email = email.strip().lower()
+        if "@" not in clean_email:
+            raise ValueError("invitee email is required")
+        if days_valid <= 0:
+            raise ValueError("invite expiration must be in the future")
+        try:
+            role = self.repo.get_role_by_slug(viewer.community.id, "member")
+        except LookupError:
+            role = self.repo.create_role(viewer.community.id, "member", "Member")
+        token = secrets.token_urlsafe(32)
+        expires_at = (datetime.now(UTC) + timedelta(days=days_valid)).isoformat(timespec="seconds")
+        invitation = self.repo.create_community_invitation(
+            viewer.community.id,
+            email=clean_email,
+            role_id=role.id,
+            invited_by_membership_id=viewer.membership.id,
+            token_hash=session_token_hash(token),
+            expires_at=expires_at,
+        )
+        return CreatedInvitation(invitation=invitation, token=token)
+
+    def writer_invitations(self) -> list[InvitationManagementItem]:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage invitations")
+        return [
+            _invitation_management_item(invitation)
+            for invitation in self.repo.list_community_invitations(viewer.community.id)
+        ]
+
+    def revoke_writer_invitation(self, invitation_id: int) -> CommunityInvitation:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to revoke invitations")
+        invitation = self.repo.get_community_invitation(viewer.community.id, invitation_id)
+        item = _invitation_management_item(invitation)
+        if not item.can_revoke:
+            raise ValueError("only pending invitations can be revoked")
+        return self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
+
+    def apply_guided_realm_builder_minimum(
+        self,
+        *,
+        scene_hub_name: str = "",
+        premise_summary: str = "",
+        application_summary: str = "",
+    ) -> GuidedRealmBuilderResult:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to shape the realm")
+        clean_scene_hub_name = scene_hub_name.strip() or "Opening Scenes"
+        clean_premise_summary = premise_summary.strip() or (
+            f"{viewer.community.name} is taking shape. Directors can replace this "
+            "premise with the realm's opening pitch before inviting writers."
+        )
+        clean_application_summary = application_summary.strip() or (
+            "Application guidance will tell incoming writers what to bring for their first face."
+        )
+        created_labels: list[str] = []
+        with self.repo.transaction():
+            self.repo.ensure_sidebar_section_defaults(viewer.community.id)
+            self.repo.upsert_default_theme(
+                viewer.community.id,
+                slug=str(DEFAULT_THEME_TOKENS["slug"]),
+                name=str(DEFAULT_THEME_TOKENS["name"]),
+                tokens_json=theme_tokens_json(DEFAULT_THEME_TOKENS),
+            )
+            scene_hub = _first_public_scene_hub(self.repo, viewer.community.id)
+            if scene_hub is None:
+                scene_hub = self.repo.create_board(
+                    viewer.community.id,
+                    _slugify_with_fallback(clean_scene_hub_name, "opening-scenes"),
+                    clean_scene_hub_name,
+                    "A public scene hub for first threads and opening beats.",
+                    board_kind="location",
+                    sidebar_section="locations",
+                    tagline="First scenes and opening threads.",
+                    sort_order=10,
+                    navigation_order=10,
+                )
+                created_labels.append("scene hub")
+            premise = _first_material_of_type(self.repo, viewer.community.id, "premise")
+            if premise is None:
+                premise = self.repo.create_material(
+                    viewer.community.id,
+                    "realm-premise",
+                    f"{viewer.community.name} Premise",
+                    material_type="premise",
+                    summary=clean_premise_summary,
+                    body=clean_premise_summary,
+                    status="published",
+                    sort_order=10,
+                    is_featured=True,
+                )
+                created_labels.append("premise material")
+            application_guide = _first_material_of_type(
+                self.repo,
+                viewer.community.id,
+                "application",
+            )
+            if application_guide is None:
+                application_guide = self.repo.create_material(
+                    viewer.community.id,
+                    "application-guide",
+                    "Application Guide",
+                    material_type="application",
+                    summary=clean_application_summary,
+                    body=clean_application_summary,
+                    status="published",
+                    sort_order=20,
+                )
+                created_labels.append("application guide")
+        return GuidedRealmBuilderResult(
+            scene_hub=scene_hub,
+            premise=premise,
+            application_guide=application_guide,
+            created_labels=tuple(created_labels),
+        )
+
+    def read_invitation(self, token: str) -> tuple[CommunityInvitation, Community]:
+        invitation = self.repo.get_community_invitation_by_token_hash(session_token_hash(token))
+        self._ensure_invitation_can_be_accepted(invitation)
+        return invitation, self.repo.get_community(invitation.community_id)
+
+    def accept_invitation(
+        self,
+        token: str,
+        *,
+        password: str,
+        username: str,
+        display_name: str,
+        first_face_name: str = "",
+    ) -> AcceptedInvitation:
+        invitation = self.repo.get_community_invitation_by_token_hash(session_token_hash(token))
+        self._ensure_invitation_can_be_accepted(invitation)
+        if not password:
+            raise ValueError("password is required")
+        clean_display_name = display_name.strip() or invitation.email.split("@", 1)[0]
+        clean_username = _unique_membership_username(
+            self.repo,
+            invitation.community_id,
+            _slugify_with_fallback(username or clean_display_name, "writer"),
+        )
+        clean_face_name = first_face_name.strip()
+        with self.repo.transaction():
+            try:
+                user = self.repo.get_user_by_email(invitation.email)
+            except LookupError:
+                user = self.repo.create_user(invitation.email, hash_password(password))
+            else:
+                if not verify_password(password, user.password_hash):
+                    raise PermissionError("email or password is incorrect")
+            try:
+                self.repo.get_membership_for_user(invitation.community_id, user.id)
+            except LookupError:
+                membership = self.repo.create_membership(
+                    invitation.community_id,
+                    user.id,
+                    invitation.role_id,
+                    clean_username,
+                    clean_display_name,
+                )
+            else:
+                raise ValueError("this account is already a member of the invited realm")
+            character = None
+            if clean_face_name:
+                character = self.repo.create_character(
+                    invitation.community_id,
+                    membership.id,
+                    _unique_character_slug(
+                        self.repo,
+                        invitation.community_id,
+                        _slugify_with_fallback(clean_face_name, "face"),
+                    ),
+                    clean_face_name,
+                    application_status="accepted",
+                    make_default=True,
+                )
+            accepted_invitation = self.repo.accept_community_invitation(
+                invitation.id,
+                user_id=user.id,
+                membership_id=membership.id,
+            )
+            session = self._create_session_for_user(
+                user.id,
+                community_id=invitation.community_id,
+                membership_id=membership.id,
+            )
+        community = self.repo.get_community(invitation.community_id)
+        identity = RequestIdentityContext(
+            community_id=community.id,
+            community_slug=community.slug,
+            user_id=user.id,
+            membership_id=membership.id,
+        )
+        return AcceptedInvitation(
+            invitation=accepted_invitation,
+            session=session,
+            identity=identity,
+            first_character=character,
+        )
+
+    def _create_session_for_user(
+        self,
+        user_id: int,
+        *,
+        community_id: int,
+        membership_id: int,
+    ) -> LoginSession:
+        token = secrets.token_urlsafe(32)
+        expires_at = (datetime.now(UTC) + SESSION_TTL).isoformat(timespec="seconds")
+        stored_session = self.repo.create_user_session(
+            user_id,
+            session_token_hash(token),
+            expires_at=expires_at,
+        )
+        self.repo.update_user_session_identity(
+            stored_session.id,
+            community_id=community_id,
+            membership_id=membership_id,
+        )
+        return LoginSession(
+            session_id=stored_session.id,
+            user=self.repo.get_user(user_id),
+            token=token,
+            expires_at=expires_at,
+        )
+
+    def _ensure_invitation_can_be_accepted(self, invitation: CommunityInvitation) -> None:
+        if invitation.status != "pending" or invitation.revoked_at is not None:
+            raise PermissionError("this invitation is no longer open")
+        if invitation.accepted_at is not None:
+            raise PermissionError("this invitation has already been accepted")
+        if invitation.expires_at is not None:
+            try:
+                expires_at = datetime.fromisoformat(invitation.expires_at)
+            except ValueError as exc:
+                raise PermissionError("this invitation has an invalid expiration") from exc
+            if expires_at <= datetime.now(UTC):
+                raise PermissionError("this invitation has expired")
 
     def _default_identity_for_user(
         self,
@@ -2884,6 +3181,52 @@ def _latest_thread(threads: list[Thread]) -> Thread | None:
     return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
 
 
+def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board | None:
+    return next(
+        (
+            board
+            for board in repo.list_boards(community_id)
+            if board.board_kind in {"location", "community"} and not board.is_private
+        ),
+        None,
+    )
+
+
+def _first_material_of_type(
+    repo: ForumRepository,
+    community_id: int,
+    material_type: str,
+) -> Material | None:
+    return next(
+        (
+            material
+            for material in repo.list_materials(community_id, status=None)
+            if material.material_type == material_type
+        ),
+        None,
+    )
+
+
+def _invitation_management_item(invitation: CommunityInvitation) -> InvitationManagementItem:
+    expired = _invitation_is_expired(invitation)
+    if invitation.status == "accepted" or invitation.accepted_at is not None:
+        return InvitationManagementItem(invitation, "Accepted", can_revoke=False)
+    if invitation.status == "revoked" or invitation.revoked_at is not None:
+        return InvitationManagementItem(invitation, "Revoked", can_revoke=False)
+    if expired:
+        return InvitationManagementItem(invitation, "Expired", can_revoke=False)
+    return InvitationManagementItem(invitation, "Pending", can_revoke=True)
+
+
+def _invitation_is_expired(invitation: CommunityInvitation) -> bool:
+    if invitation.expires_at is None:
+        return False
+    try:
+        return datetime.fromisoformat(invitation.expires_at) <= datetime.now(UTC)
+    except ValueError:
+        return True
+
+
 def _realm_launch_readiness(
     *,
     viewer: ForumView,
@@ -3518,6 +3861,19 @@ def _unique_character_slug(
         if existing.id == current_character_id:
             return slug
         slug = f"{base}-{suffix}"
+        suffix += 1
+
+
+def _unique_membership_username(repo: ForumRepository, community_id: int, username: str) -> str:
+    base = _slugify_with_fallback(username, "writer")
+    candidate = base
+    suffix = 2
+    while True:
+        try:
+            repo.get_membership_by_username(community_id, candidate)
+        except LookupError:
+            return candidate
+        candidate = f"{base}-{suffix}"
         suffix += 1
 
 

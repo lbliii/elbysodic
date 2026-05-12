@@ -93,6 +93,22 @@ CREATE TABLE IF NOT EXISTS community_memberships (
     UNIQUE (community_id, username)
 );
 
+CREATE TABLE IF NOT EXISTS community_invitations (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    role_id INTEGER NOT NULL REFERENCES roles(id),
+    invited_by_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    expires_at TEXT,
+    accepted_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    accepted_membership_id INTEGER REFERENCES community_memberships(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    accepted_at TEXT,
+    revoked_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS characters (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -728,6 +744,10 @@ CREATE INDEX IF NOT EXISTS idx_realm_interaction_answers_response
 ON realm_interaction_answers(community_id, response_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user
 ON user_sessions(user_id, revoked_at, expires_at);
+CREATE INDEX IF NOT EXISTS idx_community_invitations_lookup
+ON community_invitations(token_hash, status, expires_at);
+CREATE INDEX IF NOT EXISTS idx_community_invitations_community
+ON community_invitations(community_id, status, created_at);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id, facet_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);

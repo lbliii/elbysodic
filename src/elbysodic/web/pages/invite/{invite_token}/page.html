@@ -1,0 +1,61 @@
+{% imports %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="42rem") %}
+{% call stack(gap="lg") %}
+  <div class="elbysodic-product-identity">
+    <img class="elbysodic-product-identity__mark"
+         src="/elbysodic-static/brand/elbysodic-mark.svg"
+         alt="">
+    <span class="elbysodic-product-identity__name">Elbysodic</span>
+  </div>
+  {% call section_header("Accept Invitation") %}
+  Join {{ community.name }} with a community-local writer identity.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <form class="elbysodic-access-panel" method="post" action="/invite/{{ invite_token }}" hx-boost="false">
+    {{ csrf_field() }}
+    <p class="elbysodic-section-kicker">Invite-only access</p>
+    <h1>{{ community.name }}</h1>
+    <p>
+      This invitation is for {{ invitation.email }}. Your login account is global,
+      but your writer name, role, and faces belong to this realm.
+    </p>
+    {% if error %}
+    <p class="elbysodic-form-error" role="alert">{{ error }}</p>
+    {% end %}
+    <label class="chirpui-field">
+      <span>Writer username</span>
+      <input name="username" value="{{ form.username }}" autocomplete="username" required>
+    </label>
+    <label class="chirpui-field">
+      <span>Display name</span>
+      <input name="display_name" value="{{ form.display_name }}" autocomplete="name" required>
+    </label>
+    <label class="chirpui-field">
+      <span>Password</span>
+      <input name="password" type="password" autocomplete="new-password" required>
+    </label>
+    <label class="chirpui-field">
+      <span>First face</span>
+      <input name="first_face_name" value="{{ form.first_face_name }}" placeholder="Optional">
+    </label>
+    <div class="elbysodic-access-panel__actions">
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Enter realm</button>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Explore realms</a>
+    </div>
+  </form>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

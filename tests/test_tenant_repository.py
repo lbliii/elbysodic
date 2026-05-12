@@ -189,6 +189,133 @@ def _index_names(connection: sqlite3.Connection) -> set[str]:
     return {row["name"] for row in rows}
 
 
+def test_schema_migrates_community_invitations_from_version_14() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DROP INDEX IF EXISTS idx_community_invitations_lookup")
+    connection.execute("DROP INDEX IF EXISTS idx_community_invitations_community")
+    connection.execute("DROP TABLE IF EXISTS community_invitations")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (14, 'command-submissions', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 14")
+    connection.commit()
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_invitations)").fetchall()
+    }
+    indexes = _index_names(connection)
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 15
+        """
+    ).fetchone()
+
+    assert {
+        "community_id",
+        "email",
+        "role_id",
+        "invited_by_membership_id",
+        "token_hash",
+        "status",
+        "expires_at",
+        "accepted_user_id",
+        "accepted_membership_id",
+    }.issubset(columns)
+    assert "idx_community_invitations_lookup" in indexes
+    assert "idx_community_invitations_community" in indexes
+    assert migration["name"] == "community-invitations"
+
+
+def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-invitations", "Hosted Invitations")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_director_role = repo.create_role(hosted.id, "director", "Director", is_admin=True)
+    hosted_member_role = repo.create_role(hosted.id, "member", "Member")
+    director_user = repo.create_user("inviting-director@example.com", "hash")
+    writer_user = repo.create_user("invited-writer@example.com", "hash")
+    default_director = repo.create_membership(
+        default.id,
+        director_user.id,
+        default_role.id,
+        "inviting-director",
+        "Inviting Director",
+    )
+    hosted_director = repo.create_membership(
+        hosted.id,
+        director_user.id,
+        hosted_director_role.id,
+        "inviting-director",
+        "Inviting Director",
+    )
+
+    with pytest.raises(LookupError, match="membership not found"):
+        repo.create_community_invitation(
+            hosted.id,
+            email="wrong-realm@example.com",
+            role_id=hosted_member_role.id,
+            invited_by_membership_id=default_director.id,
+            token_hash=f"{hosted.id}:wrong-realm",
+            expires_at="2026-06-01T00:00:00+00:00",
+        )
+
+    invitation = repo.create_community_invitation(
+        hosted.id,
+        email="invited-writer@example.com",
+        role_id=hosted_member_role.id,
+        invited_by_membership_id=hosted_director.id,
+        token_hash=f"{hosted.id}:invitation",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+    membership = repo.create_membership(
+        hosted.id,
+        writer_user.id,
+        hosted_member_role.id,
+        "invited-writer",
+        "Invited Writer",
+    )
+    accepted = repo.accept_community_invitation(
+        invitation.id,
+        user_id=writer_user.id,
+        membership_id=membership.id,
+    )
+    second_invitation = repo.create_community_invitation(
+        hosted.id,
+        email="revoked-writer@example.com",
+        role_id=hosted_member_role.id,
+        invited_by_membership_id=hosted_director.id,
+        token_hash=f"{hosted.id}:revoked-invitation",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+    revoked = repo.revoke_community_invitation(hosted.id, second_invitation.id)
+
+    assert invitation.community_id == hosted.id
+    assert (
+        repo.get_community_invitation_by_token_hash(f"{hosted.id}:invitation").id == invitation.id
+    )
+    assert [item.id for item in repo.list_community_invitations(hosted.id)] == [
+        second_invitation.id,
+        invitation.id,
+    ]
+    assert repo.list_community_invitations(default.id) == []
+    assert accepted.status == "accepted"
+    assert accepted.accepted_user_id == writer_user.id
+    assert accepted.accepted_membership_id == membership.id
+    assert accepted.accepted_at is not None
+    assert revoked.status == "revoked"
+    assert revoked.revoked_at is not None
+
+
 def test_schema_migrates_existing_posts_for_thread_local_public_numbers() -> None:
     connection = connect()
     create_schema(connection)

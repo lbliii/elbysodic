@@ -25,6 +25,7 @@ from elbysodic.domain.models import (
     CharacterReserve,
     ClaimType,
     Community,
+    CommunityInvitation,
     CommunityMembership,
     CommunityTheme,
     Facet,
@@ -110,6 +111,24 @@ def _user_session_from_row(row: sqlite3.Row) -> UserSession:
         created_at=row["created_at"],
         last_seen_at=row["last_seen_at"],
         expires_at=row["expires_at"],
+        revoked_at=row["revoked_at"],
+    )
+
+
+def _community_invitation_from_row(row: sqlite3.Row) -> CommunityInvitation:
+    return CommunityInvitation(
+        id=row["id"],
+        community_id=row["community_id"],
+        email=row["email"],
+        role_id=row["role_id"],
+        invited_by_membership_id=row["invited_by_membership_id"],
+        token_hash=row["token_hash"],
+        status=row["status"],
+        expires_at=row["expires_at"],
+        accepted_user_id=row["accepted_user_id"],
+        accepted_membership_id=row["accepted_membership_id"],
+        created_at=row["created_at"],
+        accepted_at=row["accepted_at"],
         revoked_at=row["revoked_at"],
     )
 

@@ -1,13 +1,40 @@
 # Studio Network Homepage Plan
 
-Status: partially implemented; public catalog read model and browser QA remain
+Status: partially implemented; public catalog and public realm previews landed;
+catalog fields, browser QA, and later personalization remain
 Owner: Product/UI and network homepage stewardship
 Created: 2026-05-03
-Last updated: 2026-05-09
+Last updated: 2026-05-12
 Review by: 2026-05-30
 Closure criteria: split into PR-sized work for the editorial platform home,
 network read models, privacy-safe public browsing, responsive browser QA, and
 later personalization/search lanes.
+
+## 2026-05-12 Baseline Update
+
+Pulled `main` to `f08eae8` after PR #38. The public discovery baseline is now
+stronger than this plan's 2026-05-09 snapshot:
+
+- `AppServices.public_studio_network()` provides a signed-out public catalog
+  path with membership, role, active-face, unread, plotting-room, and staff
+  counts removed.
+- `/` and `/network` choose signed-in continuation data only when a viewer is
+  authenticated; otherwise they use the public catalog.
+- Tenant-prefixed public previews now render `/c/{community_slug}`,
+  `/world`, `/world/{material_slug}`, `/wanted`, and
+  `/wanted/{wanted_slug}` for public-ready realms.
+- Rendered security tests prove empty/backstage realms stay out of the public
+  catalog and direct public preview, and public network cards do not expose
+  membership or staff signals.
+
+Still open:
+
+- Formal catalog fields for genre, mood, availability, editorial collection,
+  and invite/request posture.
+- A cleaner `NetworkHome`/Explore read model if homepage rows need more shape
+  than the current `StudioNetworkDirectory` can carry.
+- Desktop/mobile browser QA for `/`, `/network`, public realm preview,
+  public guidebook, and public wanted detail.
 
 ## 2026-05-09 Verification Update
 

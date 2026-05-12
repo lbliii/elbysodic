@@ -14,6 +14,76 @@ real host, volume, cookie, static media, and restart posture.
   `ELBYSODIC_DB_PATH` points at an attached volume path.
 - The service runs one replica while SQLite is the production-like store.
 
+## Managing Staging
+
+Staging is the rehearsal environment for Railway deploys, seeded demo data,
+volume persistence, login/session behavior, and tenant-prefixed realm routes.
+Keep it separated from production by environment, secret, volume, and database
+path.
+
+Current staging posture:
+
+- URL: `https://elbysodic-staging.up.railway.app`
+- Railway project: `intuitive-friendship`
+- Railway service: `elbysodic`
+- Railway environment: `staging`
+- SQLite volume mount: `/app/var`
+- SQLite database path: `/app/var/elbysodic.sqlite3`
+- Demo credentials: enabled with `ELBYSODIC_DEMO_MODE=1`
+- Seed command: `elbysodic seed-demo`
+
+Required staging variables:
+
+- `ELBYSODIC_ENV=staging`
+- `ELBYSODIC_DEMO_MODE=1`
+- `ELBYSODIC_SECRET_KEY=<staging-only random secret>`
+- `ELBYSODIC_DB_PATH=/app/var/elbysodic.sqlite3`
+
+Use a staging-only Railway Volume mounted at `/app/var`. Attaching the volume is
+not enough by itself; confirm the running app writes SQLite to
+`/app/var/elbysodic.sqlite3`, not `var/elbysodic.sqlite3` inside the disposable
+container filesystem.
+
+Useful staging commands:
+
+```bash
+railway link --environment staging --service elbysodic
+railway volume list --json
+railway variable list --service elbysodic --environment staging --kv
+railway ssh --service elbysodic elbysodic seed-demo
+railway service redeploy --service elbysodic --yes
+railway service restart --service elbysodic --yes
+```
+
+Do not paste or publish `railway variable list --kv` output; it includes secret
+values. When recording a run, list variable names only.
+
+After changing volume or DB path settings, redeploy staging before seeding. A
+plain restart may keep the previous runtime environment. The seed command should
+report:
+
+```text
+seeded /app/var/elbysodic.sqlite3
+```
+
+If it reports `seeded var/elbysodic.sqlite3`, the app is still writing to the
+container filesystem and persistence is not proven.
+
+Staging smoke should include:
+
+- `GET /health` returns `200`.
+- `GET /network` renders seeded realms such as `Jurassic Park Universe`,
+  `RL NYC`, and `X-Men Apocalypse`.
+- At least one seed media URL, such as
+  `/elbysodic-static/seed-media/xmen-hero.svg`, returns `200`.
+- A restart preserves database row counts and rendered seeded realms.
+- Demo login works for the intended seed account policy.
+
+Known follow-up: `HEAD` requests to some app and static routes can currently
+produce a Railway `502` through the Pounce/Chirp response path. Use `GET` for
+staging smoke until that server bug is fixed, and keep the bug visible in PR or
+plan notes.
+
 ## Smoke Script
 
 Record the date, Railway deployment ID, public URL, and tester account used.
@@ -60,3 +130,32 @@ Railway smoke:
 
 Do not mark the production gate closed until the smoke record includes restart
 persistence and the one-replica SQLite posture.
+
+## Staging Record
+
+Latest known staging smoke:
+
+```text
+Railway smoke:
+- Date: 2026-05-12
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 13a712ad-da07-4d8f-8617-078a1ca4add6
+- Commit: f08eae8ea1ec79e7830b17bf1317aec2fc092996
+- Volume path: /app/var
+- Replica count: 1
+- Demo mode: on
+- Account: writer@example.com demo account
+- Public GETs: /health, /network?q=magic, /c/x-men-apocalypse, and
+  /elbysodic-static/seed-media/xmen-hero.svg returned 200
+- Authenticated GETs: /c/x-men-apocalypse,
+  /c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill,
+  /c/x-men-apocalypse/applications, and /c/x-men-apocalypse/studio returned 200
+- Write tested: CSRF-protected identity switch from X-Men Apocalypse member
+  Rogue to HP Universe director Rowan Ash
+- Restart persistence: passed after Railway service restart; the switched
+  identity still rendered HP Universe with Rowan Ash
+- Logout boundary: protected Studio route redirected to login after logout
+- Seed media: passed
+- Result: staging is volume-backed, one-replica, demo-login capable, and
+  restart-persistent for the tested write
+```

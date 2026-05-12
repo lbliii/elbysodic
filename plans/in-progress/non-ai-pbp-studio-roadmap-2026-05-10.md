@@ -3,7 +3,7 @@
 Status: active research-backed sequencing snapshot
 Owner: Product, research, web, service, storage, design, and test stewardship
 Created: 2026-05-10
-Last updated: 2026-05-10
+Last updated: 2026-05-12
 Review by: 2026-05-31
 Closure criteria: Split the top roadmap phases into PR-sized implementation
 plans or mark them superseded by existing active plans; archive when Elbysodic
@@ -52,6 +52,13 @@ Strategy doctrine:
 
 ## Current State
 
+2026-05-12 pull baseline: `main` is at `f08eae8`. Since this roadmap was
+created, the project has merged the layered shell/page cleanup wave and the
+first public realm preview/catalog privacy slice. The current work also records
+Railway staging smoke, SQLite backup/restore proof, first invite-first
+onboarding, guided launch-room writes, and public browser QA. Treat public
+discovery as a real but still thin product surface, not a future-only idea.
+
 ### What Is Already Real
 
 The codebase already has substantial non-AI backbone:
@@ -72,9 +79,14 @@ The codebase already has substantial non-AI backbone:
   wanted hooks.
 - Studio surfaces for operations, launch readiness, board editing, intake,
   Blueprint dry-run preview, theme tokens, post style policy, and navigation.
-- Public/network shell, tenant-prefixed routes, request-access placeholder,
-  production auth/session/CSRF scaffolding, development persona tools, and
-  first-realm bootstrap CLI.
+- Public/network shell, public catalog read model, public-ready realm previews,
+  tenant-prefixed routes, request-access placeholder, production auth/session/
+  CSRF scaffolding, development persona tools, and first-realm bootstrap CLI.
+- Railway staging runbook proof for volume-backed demo login, tenant-prefixed
+  routes, seed media, identity switch write, logout, and restart persistence.
+- Director-created writer invitations through first-face handoff.
+- Guided Realm Builder minimum writes for scene hub, premise material,
+  application guide, and appearance defaults.
 - Safe Appearance Studio direction through theme tokens, media slots, health
   warnings, and disallowed raw CSS/script/template boundaries.
 
@@ -86,17 +98,22 @@ security, tenant repository, Blueprint, policy, CLI, domain, and markup tests.
 The product is not yet alpha-solid because the core loop is broader than the
 hardening proof:
 
-- Live Railway smoke and production operations proof are still plan-level
-  gates.
-- Public catalog/search needs a service-owned read model and signed-out privacy
+- Live Railway smoke and production operations proof are still plan-level gates
+  for production specifically; staging smoke is recorded.
+- Public catalog/search has a base service-owned signed-out read model and
+  rendered privacy proof. It still needs richer catalog fields and
+  invite/request posture; desktop/mobile browser QA is recorded.
+- Rendered privacy matrix still has a narrow gap for inactive/faceless
+  notification counts. Direct application outsider access, plotting
+  cross-tenant collisions, and claims staff/member notes now have rendered
   proof.
-- Rendered privacy matrix still has gaps for applications, plotting,
-  notifications/counts, claims/reserves, Studio, and responsive surfaces.
-- Request access is still a placeholder; invitation lifecycle is not real yet.
-- First-face onboarding exists in pieces but is not a complete invited-writer
-  journey.
-- First realm setup has a CLI path, but guided builder writes, launch status,
-  and invite-first opening are still future slices.
+- Request access is still a placeholder, but invitation lifecycle now exists as
+  a director-created invite link with pending/accepted/revoked management.
+  Email delivery and copy/resend-after-creation posture remain follow-up work.
+- First-face onboarding exists through invite acceptance when the writer creates
+  a face during acceptance; no-face continuation still needs polish.
+- First realm setup has a CLI path and guided builder writes. Launch status
+  persistence and public-preview transition are still future slices.
 - Program Blueprint apply remains correctly gated behind diff, transaction,
   rollback, collision, and tenant proof.
 - Studio has many surfaces, but director operations need daily workflow polish.
@@ -310,10 +327,10 @@ Goal: raise the design bar before alpha users decide the product is dated.
 
 Deliverables:
 
-- `/` and `/network` split into platform home and Explore/catalog with a
-  service-owned public read model.
-- Public realm cards expose premise, activity, public media, wanted pressure,
-  and request/invite posture without membership or staff leakage.
+- `/` and `/network` continue splitting platform home and Explore/catalog on
+  top of the base service-owned public read model.
+- Public realm cards expose premise, public media, and wanted pressure without
+  membership or staff leakage; request/invite posture remains to be modeled.
 - Default seeded realms demonstrate contemporary visual quality, strong media,
   mobile-conscious layouts, and dense-but-calm information hierarchy.
 - Appearance Studio V1 focuses on safe token editing, health warnings, media
@@ -400,18 +417,17 @@ Reference only: `docs/product/ai-studio.md`.
 
 ## Immediate PR Queue
 
-1. Plan hygiene: update/close active plans whose progress logs are stale.
-2. Public catalog read model: service-owned `/network` cards and signed-out
-   privacy proof.
-3. Privacy matrix pass: close one route-family gap at a time, starting with
-   applications or plotting rooms.
-4. Invitation lifecycle: director-created invites through first-face handoff.
-5. Guided Realm Builder minimum writes: scene hub plus director materials.
+1. Privacy matrix pass: close inactive/faceless notification count coverage.
+2. Invite delivery and copy/resend posture after the first link display.
+3. First-face continuation polish for accepted invitees who skip face creation.
+4. Launch status persistence: backstage, invite-only, public preview.
+5. Public catalog-field follow-up for `/`, `/network`, public realm preview,
+   guidebook, and wanted detail.
 6. Studio Operations polish: attention-needed lanes for application, claims,
    wanted, reserves, and launch readiness.
 7. Modern design QA pass: screenshots and issue list for the public home,
    realm gateway, board, thread, wanted, applications, and Studio.
-8. Backup/restore drill and alpha operations notes.
+8. Alpha operations notes and feedback protocol.
 
 ## Not Now
 

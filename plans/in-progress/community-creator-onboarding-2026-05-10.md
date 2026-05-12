@@ -3,7 +3,7 @@
 Status: active product and implementation plan
 Owner: Product, web, service, storage, auth, Blueprint, docs, and test stewardship
 Created: 2026-05-10
-Last updated: 2026-05-10
+Last updated: 2026-05-12
 Review by: 2026-05-30
 Closure criteria: split into implementation PRs for first realm setup, guided
 realm builder, invitation handoff, launch checklist, and docs/test collateral;
@@ -33,6 +33,30 @@ Still open:
 - Guided Realm Builder writes, invitation lifecycle, and first-face handoff are
   still future slices.
 - Program Blueprint Apply remains gated.
+
+## 2026-05-12 Baseline Update
+
+First realm setup has merged as the CLI/service bootstrap slice. Public-ready
+realm previews have also merged, but launch state is still derived from
+published premise plus public scene hub rather than a persisted
+backstage/invite-only/public-preview field.
+
+The first guided builder and invitation slices are now implemented: directors
+can create the minimum opening packet from `/studio/launch`, create writer
+invite links, manage pending/accepted/revoked invitation state, and accepted
+writers can create a first face during invite acceptance or continue to the
+first-face application form. Remaining work is delivery and polish, not proving
+that the first paths can write tenant-scoped data.
+
+Current onboarding sequence:
+
+1. Keep CLI bootstrap as the production-safe first realm creation path.
+2. Extend guided Studio builder writes beyond the minimum opening packet into
+   richer intake/claims defaults, wanted hooks, and launch-state decisions.
+3. Add invitation delivery/copy-resend posture and no-face continuation polish
+   before any public self-serve registration.
+4. Revisit persisted launch status only when derived readiness is no longer
+   expressive enough.
 
 ## Purpose
 
@@ -374,7 +398,8 @@ Collateral:
 
 Scope:
 
-- connect invites or director-created membership flow to first-face onboarding
+- continue the invite flow for writers who skip first-face creation during
+  acceptance
 - define no-face writer states across roster, application, queues, and composer
 - configure minimum application/claim policy during setup
 

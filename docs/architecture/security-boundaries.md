@@ -63,7 +63,8 @@ Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
 Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
-- `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`, and static assets are public
+- `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`,
+  `/invite/{token}`, and static assets are public
 - signed-out shared-host tenant preview routes are public for `GET`/`HEAD` only:
   `/c/{community}/`, `/c/{community}/world`,
   `/c/{community}/world/{material_slug}`, `/c/{community}/wanted`, and
@@ -93,6 +94,16 @@ login user plus a community-local director membership in the same transaction.
 An empty configured realm remains backstage in public catalog read models until
 it has public-ready content. Directors see setup continuation through their own
 membership; ordinary members cannot enter `/studio/launch`.
+
+Director-created invitation links are the only public account/membership
+creation path. Invite acceptance resolves the token server-side, rejects
+accepted, revoked, or expired tokens, creates or reuses the global `User`,
+creates the `CommunityMembership` only inside the invited community, and can
+create the writer's first face as that membership's default character. Invite
+tokens must not grant access to Studio, staff queues, draft materials, or any
+other realm. Studio invitation management may list invitation state and revoke
+pending invites, but only the creation response renders the raw invite link
+because stored invitations retain token hashes.
 
 Current community and membership selection is stored on `user_sessions` as
 `selected_community_id` and `selected_membership_id`. Switching membership

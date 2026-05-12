@@ -3,7 +3,7 @@
 Status: active production gate
 Owner: Cross-steward production readiness
 Created: 2026-05-09
-Last updated: 2026-05-09
+Last updated: 2026-05-12
 Review by: 2026-05-16
 Closure criteria: Railway smoke is recorded, schema/seed persistence risks are
 resolved or explicitly deferred, S-tier core user flows have rendered and
@@ -36,6 +36,44 @@ The theme for this roadmap is production trust:
 
 ## Verification Snapshot
 
+Baseline refreshed on 2026-05-12 after pulling `main` to `f08eae8`:
+
+- PR #37 merged the layered shell/navigation contract, inner-sidebar privacy
+  gates, and first page-surface cleanup waves.
+- PR #38 merged public realm previews for public-ready tenant-prefixed realms:
+  realm gateway, world/guidebook material, wanted board, and wanted detail.
+- Signed-out `/` and `/network` now use a service-owned public catalog path,
+  while signed-in viewers still receive membership continuation lanes.
+- Railway staging smoke is recorded for deployment
+  `13a712ad-da07-4d8f-8617-078a1ca4add6`: `/health`, public network/realm
+  pages, seed media, demo login, tenant-prefixed authenticated routes, identity
+  switch write, logout boundary, and service restart persistence passed.
+- SQLite backup/restore drill is recorded against the staging volume-backed DB;
+  the copied DB/WAL/SHM set passed `PRAGMA integrity_check` and service readback.
+- Director-created writer invitations, accepted invite replay denial, and the
+  first-face handoff are covered locally.
+- Guided Realm Builder can create the minimum opening packet for an empty
+  configured realm.
+- Public discovery browser QA smoke and deep profiles passed on desktop/mobile
+  widths against a local seeded app.
+- `tests/test_web_security.py` now includes rendered proof that backstage
+  realms stay out of the public network/direct preview, public catalog cards
+  hide membership/staff signals, public wanted/material previews omit write and
+  staff controls, and core production smoke covers login, tenant entry,
+  membership switch, major route families, logout, and stale-session denial.
+
+Still unverified:
+
+- Production, as distinct from staging, still has not been bootstrapped or
+  smoke-tested.
+- Read-only ops inspection for DB/env/session posture is still future work.
+- Invitation email delivery and resend/copy-later posture remain open; Studio
+  can now list invitation state and revoke pending invitations.
+- Rendered privacy matrix gaps remain for inactive/faceless notification counts;
+  claims notes, direct outsider access to another writer's application room, and
+  cross-tenant plotting-room id leakage now have rendered proof.
+- Transaction coverage for broader multi-step workflows remains future work.
+
 Verified locally on 2026-05-09:
 
 - Production auth/session/CSRF scaffolding exists in `src/elbysodic/web/app.py`,
@@ -51,8 +89,9 @@ Verified locally on 2026-05-09:
   markup, and policies.
 - Public registration does not exist. Current production posture is
   login-only/demo/invite-style until an onboarding contract is designed.
-- Network search exists, but it is page-local filtering over the logged-in
-  `studio_network()` directory, not yet a public catalog/search read model.
+- Network search exists and now operates over either the signed-in
+  `studio_network()` directory or signed-out `public_studio_network()` catalog.
+  It is still keyword/filter-light rather than a formal catalog-fields system.
 - Program Blueprint Studio intake is dry-run preview only. Hydration/apply is
   intentionally gated.
 - Live Railway smoke remains unrecorded in this repository.
@@ -310,8 +349,9 @@ Deliverables:
 - Browser QA at desktop and mobile widths.
 - Navigation/search affordance decision: add visible topbar/global search or
   explicitly defer it in docs and UI.
-- NetworkHome service read model: public catalog and signed-in continuation
-  lanes split at the service boundary.
+- Public catalog and signed-in continuation lanes split at the service
+  boundary; keep maturing this into a fuller `NetworkHome`/Explore model only
+  when catalog rows need fields beyond `StudioNetworkDirectory`.
 
 Proof:
 
@@ -411,12 +451,12 @@ move before manual scene outcomes and rendered privacy proof.
 
 | Contract | API/CLI | Programmatic | Protocol | Schema/Types | Docs | Examples | Tests |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Production auth/session | CLI has production flags | `create_app(debug=False)` | Session cookie + CSRF | `user_sessions` | security docs current | seed personas | local tests green; Railway smoke open |
-| Tenant URL routing | N/A | resolver/middleware | `/c/{community_slug}` | `communities.slug/host` | tenant routing plan current | seeded realms | rendered tests green; Railway smoke open |
-| Public catalog/search | N/A | page-local filter today | `/network?q=` | no catalog primitive yet | homepage plan says future read model | seed programs | logged-in tests only; public privacy proof open |
-| Schema migration | CLI uses app factory | `create_schema()` | SQLite ledger | version 12; parity gap open | docs updated by this pass | N/A | migration tests exist; parity test open |
+| Production auth/session | CLI has production flags | `create_app(debug=False)` | Session cookie + CSRF | `user_sessions` | security docs current | seed personas | local tests green; Railway staging smoke recorded |
+| Tenant URL routing | N/A | resolver/middleware | `/c/{community_slug}` | `communities.slug/host` | tenant routing plan current | seeded realms | rendered tests green; Railway staging smoke recorded |
+| Public catalog/search | N/A | service-owned public catalog | `/network?q=` | no catalog primitive yet | homepage plan says richer fields future | seed programs | signed-out privacy tests and browser QA green |
+| Schema migration | CLI uses app factory | `create_schema()` | SQLite ledger | version 15 includes invitations | docs updated by this pass | N/A | migration and invitation lifecycle tests green |
 | Program Blueprints | N/A | preview service only | Studio paste POST | typed parser, no apply | docs updated by this pass | seed blueprints | preview tests green; apply tests open |
-| S-tier flows | N/A | services/repos | rendered Chirp pages | current primitives | this roadmap | seed personas | focused tests exist; browser QA open |
+| S-tier flows | N/A | services/repos | rendered Chirp pages | current primitives | this roadmap | seed personas | focused tests and public browser QA green; full release smoke still evolving |
 
 ## Dependencies
 
@@ -441,17 +481,14 @@ move before manual scene outcomes and rendered privacy proof.
 
 ## Immediate PR Queue
 
-1. Storage parity PR: fresh-schema index parity, parity test, migration docs.
-2. Seed persistence PR: startup seed create-missing-only or explicit demo reset,
-   plus file-backed restart test.
-3. Railway smoke/checklist PR: record smoke results and deployment posture.
-4. Privacy matrix PR: mark covered/partial/missing and add first missing route
-   family tests.
-5. NetworkHome PR: service-backed catalog/search read model and signed-out
-   privacy tests.
-6. Transaction helper PR: repository transaction boundary and one converted
-   workflow with forced-failure proof.
-7. Blueprint diff PR: typed dry-run diff rows without apply.
+1. Remaining privacy tests: inactive/faceless notification counts and any shell
+   count regressions discovered around those identity modes.
+2. Read-only production inspection surface for DB/env/session posture.
+3. Invite delivery and copy/resend posture after the first link display.
+4. First-face onboarding polish after invited writers skip face creation.
+5. Transaction helper expansion to the next high-risk workflow.
+6. Blueprint diff/apply readiness remains gated behind transaction and
+   collision proof.
 
 ## Progress Log
 
@@ -486,3 +523,11 @@ move before manual scene outcomes and rendered privacy proof.
   application-room CSRF/privacy proof, safer tenant URL scoping for authored
   form values, draft-preserving composer submit behavior, shared PBP
   vocabulary validation, and repository write guards for story vocabulary.
+- 2026-05-12: Recorded Railway staging smoke and restart persistence, recorded
+  SQLite backup/restore drill, added director-created writer invitations with
+  first-face handoff, added Guided Realm Builder minimum writes, ran public
+  browser QA smoke/deep profiles, and refreshed the rendered privacy matrix.
+- 2026-05-12: Added Studio invite management for pending/accepted/revoked
+  invitations, rendered no-face invite continuation proof, and closed privacy
+  gaps for claims notes, direct application outsider access, and cross-tenant
+  plotting room id leakage.

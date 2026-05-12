@@ -33,15 +33,15 @@ Use these viewer modes when a route can expose scoped data:
 | --- | --- | --- | --- | --- | --- | --- |
 | `/c/{community}/`, `/c/{community}/world`, `/c/{community}/world/{material}` | Draft materials, Material Studio controls, current event links, raw scene/thread activity, private queue state. | Published materials only on member-local `/world`; public tenant preview uses published public read models. | Same as member unless staff. | Drafts and edit controls visible. | Recovery page or 404; no draft body. | covered for draft material regressions and signed-out public tenant preview |
 | `/c/{community}/wanted`, `/c/{community}/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls, private interest notes, plotting-room links, reserves, and scene-handoff links. | Open/non-archived hooks only; unrelated members do not see another writer's note or room link. | Own hook controls and interest notes visible. | Casting controls and interest notes visible. | Recovery page or 404; no archived body, private note, reserve, or room link. | covered for prospective-note privacy, wanted backstage handoff, and signed-out public tenant preview |
-| `/claims`, `/claims?...` | Claim and reserve state, filtered counts, character links, director notes, staff maintenance controls. | Public claim/reserve directory state only; staff controls and director notes absent. | Same as member unless staff. | Claims maintenance forms and director notes visible only with casting/staff capability. | No claim, reserve, character, or count data from another community. | covered for rendered directory state and tenant-scoped query/link regressions; staff/member contrast still partial |
+| `/claims`, `/claims?...` | Claim and reserve state, filtered counts, character links, director notes, staff maintenance controls. | Public claim/reserve directory state only; staff controls and director notes absent. | Same as member unless staff. | Claims maintenance forms and director notes visible only with casting/staff capability. | No claim, reserve, character, or count data from another community. | covered for rendered directory state, staff write controls, application conflict handling, and tenant-scoped query/link regressions |
 | `/casting` | Casting desk lanes, active-face prompts, wanted handoffs, reserves, private notes surfaced through casting workflows. | Own visible casting opportunities and face-specific prompts. | Own hook/interest handoffs where applicable. | Casting controls, review lanes, and private notes visible only with capability. | No wanted, reserve, claim, or face data from another community. | partial |
-| `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only. | Own applicant controls. | Review queue and staff notes visible. | Recovery page or local applications hub. | partial |
-| `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants, backstage stage grouping. | Participant rooms only. | Owner plan controls. | Staff access only when explicitly designed. | Recovery page; no room notes. | partial; notification leakage and wanted stage grouping covered |
-| `/notifications` | Membership-specific inbox and unread counts, wanted-interest notes, plotting-room targets. | Own visible notifications only; forged inaccessible wanted/room targets are hidden. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications. | partial; forged wanted/room target regressions covered |
+| `/applications`, `/applications/{character}` | Applicant draft body, staff notes, checklist, revision notes. | Own applications only; faceless members are routed to first-face work without another writer's application. | Own applicant controls. | Review queue, staff notes, claim conflicts, revision requests, and accept controls visible. | Recovery page or local applications hub; identity switch sanitizes cross-realm application URLs. | covered for draft, submit, review, revision, acceptance, claim conflict, faceless, and cross-realm recovery paths |
+| `/plotting`, `/plotting/{room}` | Private planning notes, messages, participants, backstage stage grouping. | Participant rooms only. | Owner plan controls. | Casting-capable staff access only where the handoff policy allows. | Recovery/403; no room notes, messages, or notification targets. | covered for wanted and plot-hook handoffs, tenant-prefixed live routes, outsider denial, notification leakage, scene handoff, and rollback paths |
+| `/notifications` | Membership-specific inbox and unread counts, wanted-interest notes, plotting-room targets, watched-thread and mention snippets. | Own visible notifications only; forged inaccessible wanted/room targets are hidden. | Same as member. | Staff still sees own inbox, not global inbox. | No other membership notifications; inaccessible room/wanted targets do not contribute unread counts. | covered for own inbox, unread/read state, watched-thread replies, mentions, plotting-room leakage, and wanted-interest leakage |
 | `/studio`, `/studio/*` | Draft materials, private boards, production health, launch checklist, edit forms. | Read-only preview or forbidden controls absent; launch room setup is denied without director capability. | Same as capability. | Capability-scoped controls and setup signals visible. | No staff power leakage across communities. | partial; launch room director/member route covered |
 | `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. | partial |
 | `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. | covered for inactive identity regressions |
-| `/network`, `/network?q=...` | Public catalog cards, signed-in continuation, staff/member counts, backstage realm names. | Safe public or own membership data only; backstage realms stay hidden unless scoped to the viewer. | Own continuation lanes only. | Staff signals only where policy allows. | No private/staff data from other realms. | signed-out public catalog and backstage realm filtering covered |
+| `/network`, `/network?q=...` | Public catalog cards, signed-in continuation, staff/member counts, backstage realm names. | Safe public or own membership data only; backstage realms stay hidden unless scoped to the viewer. | Own continuation lanes only. | Staff signals only where policy allows. | No private/staff data from other realms. | signed-out public catalog, backstage realm filtering, Railway smoke, and local browser QA covered |
 | shell/sidebar counts | Private board counts, notification counts, Studio attention counts. | Own permitted counts only. | Same as member. | Capability-scoped counts only. | No cross-realm or private counts. | partial |
 
 ## Test Checklist
@@ -63,34 +63,43 @@ control appears or does not appear than to snapshot large HTML sections.
 
 ## Covered Regressions
 
+- Browser QA smoke and deep profiles passed on 2026-05-12 against a local seeded
+  app on port 8004. The deep profile skipped only the director-only launch room
+  with expected 403 responses.
 - Draft world materials stay staff-only on `/world`, direct material routes,
   and Studio/editor surfaces.
+- Director-created invitation acceptance is public only through `/invite/{token}`;
+  accepted/revoked/expired invite tokens fail instead of revealing launch-room
+  or membership internals. Studio invite management lists invitation state and
+  can revoke pending invitations without rendering token hashes.
 - Inactive memberships are absent from `/members`, `/members/{username}`, and
   direct character profile routes, and recovery does not offer cross-realm
   switches for inactive faces.
 - Plotting room notifications do not render private room titles, unread counts,
   or open redirects for memberships that are not room owners, participants, or
   casting-capable staff.
+- Tenant-prefixed plotting room routes do not leak an existing planning room
+  when the current realm does not own that room id.
 - Wanted-interest notifications do not render prospective pitch notes or open
   redirects for memberships that are not the interested writer, hook creator,
   or casting-capable staff.
 - Studio operations renders as a read-only console for ordinary members without
   exposing submitted application names or review queue counts.
 - Studio launch room renders the realm opening checklist from existing
-  community-scoped setup state.
+  community-scoped setup state and denies non-director memberships.
+- Guided Realm Builder writes the minimum scene hub, premise material,
+  application guide, and default appearance tokens only for the director's
+  current community.
 - Wanted detail hides private interest notes from unrelated ordinary members
   while showing hook creators and casting staff the backstage controls needed
   to start or open plotting rooms.
+- Application review rooms deny unrelated members direct access to another
+  writer's application body and staff review surface.
+- Claims directory rendering hides director claim notes and maintenance
+  controls from ordinary members while preserving staff edit visibility.
 
 ## Current Gaps
 
-- Browser QA evidence for responsive public realm preview pages.
-- Application review room owner/staff/outsider route-family coverage.
-- Claims conflict and reserve visibility coverage beyond directory and
-  tenant-scoped query/link rendering.
-- Plotting room rendered page coverage across participant, owner, outsider,
-  staff, and cross-tenant identities.
-- Notification inbox and shell/sidebar count coverage across membership,
-  inactive, faceless, and cross-tenant identities.
-- Browser QA evidence for responsive privacy-adjacent surfaces where counts,
-  drawers, or recovery actions can render differently from desktop.
+- Notifications still need shell/sidebar count coverage across inactive and
+  faceless identities; current proof covers forged targets, own inbox,
+  watched-thread replies, and mentions.

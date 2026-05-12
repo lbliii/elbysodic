@@ -10,6 +10,7 @@ from typing import Any
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
     _community_from_row,
+    _community_invitation_from_row,
     _community_theme_from_row,
     _membership_from_row,
     _role_from_row,
@@ -19,6 +20,7 @@ from elbysodic.db.repositories.rows import (
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
 from elbysodic.domain.models import (
     Community,
+    CommunityInvitation,
     CommunityMembership,
     CommunityTheme,
     Role,
@@ -521,6 +523,12 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"user not found: {email}")
         return _user_from_row(row)
 
+    def get_or_create_user(self, email: str, password_hash: str) -> User:
+        try:
+            return self.get_user_by_email(email)
+        except LookupError:
+            return self.create_user(email, password_hash)
+
     def create_user_session(
         self,
         user_id: int,
@@ -710,6 +718,148 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self._commit()
         return self.get_membership(community_id, _last_id(cursor))
+
+    def create_community_invitation(
+        self,
+        community_id: int,
+        *,
+        email: str,
+        role_id: int,
+        invited_by_membership_id: int,
+        token_hash: str,
+        expires_at: str | None,
+    ) -> CommunityInvitation:
+        self.get_role(community_id, role_id)
+        self.get_membership(community_id, invited_by_membership_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO community_invitations (
+                community_id,
+                email,
+                role_id,
+                invited_by_membership_id,
+                token_hash,
+                status,
+                expires_at,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+            """,
+            (community_id, email, role_id, invited_by_membership_id, token_hash, expires_at, now),
+        )
+        self._commit()
+        return self.get_community_invitation(community_id, _last_id(cursor))
+
+    def get_community_invitation(
+        self,
+        community_id: int,
+        invitation_id: int,
+    ) -> CommunityInvitation:
+        row = self._community_invitation_row(
+            "WHERE community_id = ? AND id = ?",
+            (community_id, invitation_id),
+        )
+        if row is None:
+            raise LookupError(f"invitation not found in community {community_id}: {invitation_id}")
+        return _community_invitation_from_row(row)
+
+    def get_community_invitation_by_id(self, invitation_id: int) -> CommunityInvitation:
+        row = self._community_invitation_row("WHERE id = ?", (invitation_id,))
+        if row is None:
+            raise LookupError(f"invitation not found: {invitation_id}")
+        return _community_invitation_from_row(row)
+
+    def get_community_invitation_by_token_hash(self, token_hash: str) -> CommunityInvitation:
+        row = self._community_invitation_row("WHERE token_hash = ?", (token_hash,))
+        if row is None:
+            raise LookupError("invitation not found")
+        return _community_invitation_from_row(row)
+
+    def list_community_invitations(self, community_id: int) -> list[CommunityInvitation]:
+        rows = self.connection.execute(
+            self._community_invitation_select()
+            + """
+            WHERE community_id = ?
+            ORDER BY created_at DESC, id DESC
+            """,
+            (community_id,),
+        ).fetchall()
+        return [_community_invitation_from_row(row) for row in rows]
+
+    def accept_community_invitation(
+        self,
+        invitation_id: int,
+        *,
+        user_id: int,
+        membership_id: int,
+    ) -> CommunityInvitation:
+        invitation = self.get_community_invitation_by_id(invitation_id)
+        membership = self.get_membership(invitation.community_id, membership_id)
+        if membership.user_id != user_id:
+            raise PermissionError("accepted invitation membership must belong to accepted user")
+        now = _utc_now()
+        self.connection.execute(
+            """
+            UPDATE community_invitations
+            SET status = 'accepted',
+                accepted_user_id = ?,
+                accepted_membership_id = ?,
+                accepted_at = ?,
+                revoked_at = NULL
+            WHERE id = ?
+            """,
+            (user_id, membership_id, now, invitation_id),
+        )
+        self._commit()
+        return self.get_community_invitation(invitation.community_id, invitation_id)
+
+    def revoke_community_invitation(
+        self,
+        community_id: int,
+        invitation_id: int,
+    ) -> CommunityInvitation:
+        self.get_community_invitation(community_id, invitation_id)
+        self.connection.execute(
+            """
+            UPDATE community_invitations
+            SET status = 'revoked',
+                revoked_at = COALESCE(revoked_at, ?)
+            WHERE community_id = ? AND id = ?
+            """,
+            (_utc_now(), community_id, invitation_id),
+        )
+        self._commit()
+        return self.get_community_invitation(community_id, invitation_id)
+
+    def _community_invitation_row(
+        self,
+        where_clause: str,
+        parameters: tuple[object, ...],
+    ) -> sqlite3.Row | None:
+        return self.connection.execute(
+            f"{self._community_invitation_select()} {where_clause}",
+            parameters,
+        ).fetchone()
+
+    def _community_invitation_select(self) -> str:
+        return """
+            SELECT
+                id,
+                community_id,
+                email,
+                role_id,
+                invited_by_membership_id,
+                token_hash,
+                status,
+                expires_at,
+                accepted_user_id,
+                accepted_membership_id,
+                created_at,
+                accepted_at,
+                revoked_at
+            FROM community_invitations
+        """
 
     def get_membership(self, community_id: int, membership_id: int) -> CommunityMembership:
         row = self.connection.execute(

@@ -87,8 +87,8 @@ Gated production-readiness work is tracked in
 [plans/in-progress/production-readiness-roadmap-2026-05-09.md](plans/in-progress/production-readiness-roadmap-2026-05-09.md).
 The current launch posture is invite-style access: public discovery and a
 request-access placeholder are visible, while account and membership creation
-remain director-provisioned until a full registration contract is explicitly
-designed.
+happens through director-created invite links until a full registration
+contract is explicitly designed.
 
 Creator onboarding is tracked as a director-led realm opening flow, not public
 self-serve registration. A production install starts with no realm or one empty
@@ -99,8 +99,9 @@ launch checklist before public preview.
 The current first-realm path is an operator bootstrap command. It creates the
 community, first director login account, community-local director membership,
 sidebar defaults, and default theme inside one transaction; it does not create
-placeholder boards, threads, director materials, claims, wanted hooks, or
-invites.
+placeholder threads, claims, wanted hooks, or invite-management rows. Directors
+can use the Studio launch room afterward to create the minimum opening packet
+and invite writers.
 
 ```bash
 uv run elbysodic bootstrap-first-realm \
