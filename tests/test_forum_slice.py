@@ -2139,6 +2139,8 @@ def test_director_invites_writer_through_first_face_handoff() -> None:
         assert "Invite one writer into this realm." in launch.text
         assert created.status == 200
         assert "Invitation ready for new-writer@example.com" in created.text
+        assert "Delivery is copy-only for this alpha slice." in created.text
+        assert "Copy this link now; Studio stores only the token hash." in created.text
         assert invite.status == 200
         assert "This invitation is for new-writer@example.com" in invite.text
         assert accepted.status == 302

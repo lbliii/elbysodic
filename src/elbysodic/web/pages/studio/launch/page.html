@@ -118,6 +118,9 @@
     <p class="elbysodic-copy-section">
       Invitations create a global login account if needed, then create the writer's membership inside {{ viewer.community.name }}. The acceptance form can also create their first face.
     </p>
+    <p class="elbysodic-copy-meta">
+      Delivery is copy-only for this alpha slice. Copy the link when it is created; if a writer loses it, revoke the pending invite and create a fresh one.
+    </p>
     {% if invite_error %}
     <p class="elbysodic-form-error" role="alert">{{ invite_error }}</p>
     {% end %}
@@ -130,6 +133,7 @@
     {% if invite_path %}
     <div class="elbysodic-quiet-empty" role="status">
       Invitation ready for {{ invite_email }}: <a class="chirpui-link" href="{{ invite_path }}">{{ invite_path }}</a>
+      <span>Copy this link now; Studio stores only the token hash.</span>
     </div>
     {% end %}
     <form class="chirpui-stack chirpui-stack--sm" method="post" action="/studio/launch" hx-boost="false">
