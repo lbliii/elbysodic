@@ -325,7 +325,7 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         services = create_services(path=":memory:")
         app = create_app(debug=False, services=services)
         budgets = {
-            "/network": 180,
+            "/network": 165,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 120,
             "/c/x-men-apocalypse/boards/danger-room": 215,
