@@ -1,8 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import signal
+import socket
 import sqlite3
+import subprocess
+import sys
+import time
 from pathlib import Path
+from typing import IO
+from urllib.error import URLError
+from urllib.request import urlopen
 
 import pytest
 from chirp.testing import TestClient
@@ -13,6 +22,7 @@ from elbysodic.services import AppServices, initialize_database
 from elbysodic.web import app as web_app
 
 RAILWAY_HOST = ".".join(("0", "0", "0", "0"))
+LOCAL_HOST = "127.0.0.1"
 
 
 class _FakeApp:
@@ -30,6 +40,74 @@ class _FakeServices:
 
     def close(self) -> None:
         self._calls["services_closed"] = True
+
+
+def _unused_port() -> int:
+    with socket.socket() as sock:
+        sock.bind((LOCAL_HOST, 0))
+        return int(sock.getsockname()[1])
+
+
+def _start_cli_subprocess(args: list[str]) -> subprocess.Popen[str]:
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    return subprocess.Popen(  # noqa: S603 - argv is built by these tests, not user input.
+        [sys.executable, "-c", "from elbysodic.cli import main; main()", *args],
+        cwd=Path(__file__).parents[1],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+
+def _read_process_output(stream: IO[str] | None) -> str:
+    return "" if stream is None else stream.read()
+
+
+def _wait_for_health(port: int, process: subprocess.Popen[str]) -> None:
+    deadline = time.monotonic() + 20
+    last_error: Exception | None = None
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            output = _read_process_output(process.stdout)
+            raise AssertionError(f"server exited before health check: {output}")
+        try:
+            with urlopen(f"http://{LOCAL_HOST}:{port}/health", timeout=0.5) as response:
+                if response.status == 200:
+                    return
+        except (OSError, URLError) as exc:
+            last_error = exc
+        time.sleep(0.1)
+    raise AssertionError(f"server did not become healthy: {last_error}")
+
+
+def _stop_process_cleanly(process: subprocess.Popen[str], stop_signal: signal.Signals) -> str:
+    process.send_signal(stop_signal)
+    try:
+        process.wait(timeout=15)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        output = _read_process_output(process.stdout)
+        raise AssertionError(f"server did not exit after {stop_signal.name}: {output}") from None
+    output = _read_process_output(process.stdout)
+    assert process.returncode == 0, output
+    return output
+
+
+def _assert_port_reusable(port: int) -> None:
+    with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((LOCAL_HOST, port))
+
+
+def _assert_database_writable(db_path: Path) -> None:
+    connection = connect(db_path)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.rollback()
+    finally:
+        connection.close()
 
 
 def test_cli_can_start_production_server_on_railway_host_and_port(monkeypatch) -> None:
@@ -262,6 +340,90 @@ def test_create_app_closes_internally_created_services_on_shutdown(monkeypatch) 
 
     assert calls["seed_demo"] is False
     assert calls["services_closed"] is True
+
+
+@pytest.mark.parametrize("stop_signal", [signal.SIGTERM, signal.SIGINT])
+def test_cli_serve_exits_cleanly_on_stop_signal(tmp_path, stop_signal: signal.Signals) -> None:
+    port = _unused_port()
+    db_path = tmp_path / "serve.sqlite3"
+    process = _start_cli_subprocess(
+        [
+            "serve",
+            "--host",
+            LOCAL_HOST,
+            "--port",
+            str(port),
+            "--db-path",
+            str(db_path),
+            "--no-debug",
+        ]
+    )
+    try:
+        _wait_for_health(port, process)
+        _stop_process_cleanly(process, stop_signal)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
+
+    _assert_port_reusable(port)
+    _assert_database_writable(db_path)
+
+
+def test_dev_preview_exits_cleanly_on_sigterm(tmp_path) -> None:
+    port = _unused_port()
+    db_path = tmp_path / "preview.sqlite3"
+    process = _start_cli_subprocess(
+        [
+            "dev",
+            "preview",
+            "--host",
+            LOCAL_HOST,
+            "--port",
+            str(port),
+            "--db-path",
+            str(db_path),
+        ]
+    )
+    try:
+        _wait_for_health(port, process)
+        output = _stop_process_cleanly(process, signal.SIGTERM)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
+
+    assert "preview database ready" in output
+    _assert_port_reusable(port)
+    _assert_database_writable(db_path)
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGHUP"), reason="SIGHUP is POSIX-only")
+def test_dev_preview_debug_exits_cleanly_on_sighup(tmp_path) -> None:
+    port = _unused_port()
+    db_path = tmp_path / "preview.sqlite3"
+    process = _start_cli_subprocess(
+        [
+            "dev",
+            "preview",
+            "--host",
+            LOCAL_HOST,
+            "--port",
+            str(port),
+            "--db-path",
+            str(db_path),
+        ]
+    )
+    try:
+        _wait_for_health(port, process)
+        _stop_process_cleanly(process, signal.SIGHUP)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
+
+    _assert_port_reusable(port)
+    _assert_database_writable(db_path)
 
 
 def test_cli_init_db_creates_schema_without_demo_seed_by_default(monkeypatch, tmp_path) -> None:
