@@ -37,3 +37,21 @@ compatibility setting for connections that are otherwise scoped or synchronized.
 - Query-budget tests should be added for shell navigation, board thread lists,
   writer queues, and network catalog read models as those surfaces move to
   batched APIs.
+
+## Query Budgets
+
+Query budgets are route-specific guardrails, not performance targets. They
+should start from measured local baselines, include enough slack for harmless
+template or seed movement, and ratchet down only after a batch read API lands.
+
+Budgets should protect two contracts:
+
+- warm rendered routes do not reintroduce accidental per-board, per-thread, or
+  per-face query fanout after batching
+- performance work preserves tenant, membership, role, active-face, and
+  publication boundaries in the service read model
+
+Scale fixtures should be added when a surface has a true batch read contract.
+Those fixtures should seed multiple communities, boards, faces, scenes, claims,
+reserves, wanted hooks, private rows, and staff rows, then assert query growth is
+bounded against the number of rendered cards.
