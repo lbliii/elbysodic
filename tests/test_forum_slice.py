@@ -22,6 +22,7 @@ from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import scope_response_urls
+from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
@@ -294,6 +295,27 @@ def test_concurrent_rendered_get_navigation_stays_stable(tmp_path: Path) -> None
         for path, status, expected_text in responses:
             assert status == 200, path
             assert expected_text, path
+
+    asyncio.run(run())
+
+
+def test_rendered_get_navigation_does_not_write_to_database() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
+        routes = (
+            "/network",
+            "/c/rl-nyc/my/threads",
+            "/c/rl-small-town/boards/town-hall?filter=mine",
+            "/c/x-men-apocalypse/boards/danger-room",
+        )
+
+        async with TestClient(app) as client:
+            for path in routes:
+                with trace_sql(services.repo.connection) as trace:
+                    response = await client.get(path)
+                assert response.status == 200, path
+                assert trace.writes == [], path
 
     asyncio.run(run())
 
