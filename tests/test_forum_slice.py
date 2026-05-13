@@ -363,6 +363,25 @@ def test_board_thread_batch_render_preserves_scene_cards() -> None:
     asyncio.run(run())
 
 
+def test_writer_queue_batch_render_preserves_lenses() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            active_face = await client.get("/c/rl-nyc/my/threads")
+            whole_roster = await client.get("/c/rl-nyc/my/threads?character=all")
+
+        assert active_face.status == 200
+        assert whole_roster.status == 200
+        assert "My threads" in active_face.text
+        assert "Queue lens: active face" in active_face.text
+        assert "Needs reply" in active_face.text or "Queue clear" in active_face.text
+        assert "Queue lens: whole roster" in whole_roster.text
+        assert "Waiting" in whole_roster.text or "Queue clear" in whole_roster.text
+
+    asyncio.run(run())
+
+
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
     services = create_services(path=":memory:")
     community, user_id, membership_id, character_id = _add_hosted_membership(
