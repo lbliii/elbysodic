@@ -300,7 +300,7 @@ def test_app_services_close_releases_filesystem_database(tmp_path) -> None:
     db_path = tmp_path / "forum.sqlite3"
     initialize_database(db_path)
     connection = connect(db_path)
-    services = AppServices(ForumRepository(connection), None)
+    services = AppServices(ForumRepository(connection), None, owns_repo=True)
 
     services.close()
     services.close()
