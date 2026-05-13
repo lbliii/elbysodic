@@ -1048,16 +1048,22 @@ class AppServices:
     def studio_network(self) -> StudioNetworkDirectory:
         identity = self._identity_context or self._identity_resolver.resolve()
         programs: list[StudioNetworkProgramView] = []
-        for membership in self.repo.list_memberships_for_user(identity.user_id):
-            if not membership.is_active:
-                continue
+        memberships = [
+            membership
+            for membership in self.repo.list_memberships_for_user(identity.user_id)
+            if membership.is_active
+        ]
+        counts_by_community = self.repo.network_program_counts(
+            [membership.community_id for membership in memberships]
+        )
+        for membership in memberships:
             community = self.repo.get_community(membership.community_id)
             role = self.repo.get_role(community.id, membership.role_id)
             roster = self.repo.list_characters(community.id, membership.id)
             materials = self.repo.list_materials(community.id)
-            wanted_ads = self.repo.list_wanted_ads(community.id)
             community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
+            counts = counts_by_community.get(community.id, {})
             programs.append(
                 StudioNetworkProgramView(
                     community=community,
@@ -1072,13 +1078,9 @@ class AppServices:
                         community.id,
                     ),
                     roster_count=len(community_characters),
-                    open_wanted_count=sum(
-                        1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
-                    ),
-                    application_material_count=sum(
-                        1 for material in materials if material.material_type == "application"
-                    ),
-                    claim_type_count=len(self.repo.list_claim_types(community.id)),
+                    open_wanted_count=counts.get("open_wanted_count", 0),
+                    application_material_count=counts.get("application_material_count", 0),
+                    claim_type_count=counts.get("claim_type_count", 0),
                     application_count=_network_application_count(
                         community_characters,
                         can_review=policies.can_manage_applications(membership, role),
@@ -1117,13 +1119,16 @@ class AppServices:
 
     def public_studio_network(self) -> StudioNetworkDirectory:
         programs: list[StudioNetworkProgramView] = []
-        for community in self.repo.list_communities():
+        communities = self.repo.list_communities()
+        counts_by_community = self.repo.network_program_counts(
+            [community.id for community in communities]
+        )
+        for community in communities:
             materials = self.repo.list_materials(community.id, status="published")
             if not _is_public_network_ready(self.repo, community, materials):
                 continue
-            wanted_ads = self.repo.list_wanted_ads(community.id)
-            community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
+            counts = counts_by_community.get(community.id, {})
             programs.append(
                 StudioNetworkProgramView(
                     community=community,
@@ -1137,14 +1142,10 @@ class AppServices:
                         self.repo,
                         community.id,
                     ),
-                    roster_count=len(community_characters),
-                    open_wanted_count=sum(
-                        1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
-                    ),
-                    application_material_count=sum(
-                        1 for material in materials if material.material_type == "application"
-                    ),
-                    claim_type_count=len(self.repo.list_claim_types(community.id)),
+                    roster_count=counts.get("roster_count", 0),
+                    open_wanted_count=counts.get("open_wanted_count", 0),
+                    application_material_count=counts.get("application_material_count", 0),
+                    claim_type_count=counts.get("claim_type_count", 0),
                     application_count=0,
                     plotting_room_count=0,
                     unread_notification_count=0,

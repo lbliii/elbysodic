@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import sqlite3
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
@@ -251,6 +252,50 @@ class IdentityRepositoryMixin(RepositoryBase):
             """
         ).fetchall()
         return [_community_from_row(row) for row in rows]
+
+    def network_program_counts(self, community_ids: list[int]) -> dict[int, dict[str, int]]:
+        if not community_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                communities.id AS community_id,
+                (
+                    SELECT COUNT(*)
+                    FROM characters
+                    WHERE characters.community_id = communities.id
+                ) AS roster_count,
+                (
+                    SELECT COUNT(*)
+                    FROM wanted_ads
+                    WHERE wanted_ads.community_id = communities.id
+                      AND wanted_ads.status = 'open'
+                ) AS open_wanted_count,
+                (
+                    SELECT COUNT(*)
+                    FROM materials
+                    WHERE materials.community_id = communities.id
+                      AND materials.material_type = 'application'
+                ) AS application_material_count,
+                (
+                    SELECT COUNT(*)
+                    FROM claim_types
+                    WHERE claim_types.community_id = communities.id
+                ) AS claim_type_count
+            FROM communities
+            WHERE communities.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        return {
+            int(row["community_id"]): {
+                "roster_count": int(row["roster_count"]),
+                "open_wanted_count": int(row["open_wanted_count"]),
+                "application_material_count": int(row["application_material_count"]),
+                "claim_type_count": int(row["claim_type_count"]),
+            }
+            for row in rows
+        }
 
     def update_community_launch_status(self, community_id: int, launch_status: str) -> Community:
         status = launch_status.strip().lower()
