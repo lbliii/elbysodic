@@ -128,7 +128,14 @@ def current_character_facet_ids(repo: FacetReadRepository, viewer: ForumView) ->
 
 
 def facet_tags(repo: FacetReadRepository, community_id: int, facets: list[Facet]) -> list[FacetTag]:
-    groups = {group.id: group for group in repo.list_facet_groups(community_id)}
+    return facet_tags_with_groups(repo.list_facet_groups(community_id), facets)
+
+
+def facet_tags_with_groups(
+    facet_groups: list[FacetGroup],
+    facets: list[Facet],
+) -> list[FacetTag]:
+    groups = {group.id: group for group in facet_groups}
     return [
         FacetTag(group=groups[facet.facet_group_id], facet=facet)
         for facet in facets

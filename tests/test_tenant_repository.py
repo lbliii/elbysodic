@@ -1630,6 +1630,13 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     thread = repo.create_thread(
         community.id, board.id, rogue.id, "sentinel-drill", "Sentinel Drill"
     )
+    second_thread = repo.create_thread(
+        community.id,
+        board.id,
+        rogue.id,
+        "blackbird-briefing",
+        "Blackbird Briefing",
+    )
 
     species = repo.create_facet_group(community.id, "species", "Species", sort_order=10)
     affiliation = repo.create_facet_group(
@@ -1645,6 +1652,8 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     repo.assign_character_facet(community.id, rogue.id, x_men.id)
     repo.assign_board_facet(community.id, board.id, x_men.id)
     repo.assign_thread_facet(community.id, thread.id, x_men.id)
+    repo.assign_thread_facet(community.id, second_thread.id, mutant.id)
+    repo.assign_thread_facet(community.id, second_thread.id, x_men.id)
 
     assert [facet.slug for facet in repo.list_character_facets(community.id, rogue.id)] == [
         "mutant",
@@ -1652,8 +1661,21 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     ]
     assert [facet.slug for facet in repo.list_board_facets(community.id, board.id)] == ["x-men"]
     assert [facet.slug for facet in repo.list_thread_facets(community.id, thread.id)] == ["x-men"]
+    assert {
+        thread_id: [facet.slug for facet in facets]
+        for thread_id, facets in repo.list_thread_facets_for_threads(
+            community.id,
+            [thread.id, second_thread.id],
+        ).items()
+    } == {
+        thread.id: ["x-men"],
+        second_thread.id: ["mutant", "x-men"],
+    }
     assert repo.list_character_ids_for_facets(community.id, [mutant.id, x_men.id]) == {rogue.id}
-    assert repo.list_thread_ids_for_facets(community.id, [x_men.id]) == {thread.id}
+    assert repo.list_thread_ids_for_facets(community.id, [x_men.id]) == {
+        thread.id,
+        second_thread.id,
+    }
 
 
 def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:

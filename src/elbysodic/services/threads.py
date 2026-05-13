@@ -19,6 +19,7 @@ from elbysodic.services.facets import (
     FacetReadRepository,
     current_character_facet_ids,
     facet_tags,
+    facet_tags_with_groups,
 )
 from elbysodic.services.posts import PostViewRepository, post_view
 from elbysodic.services.read_models import (
@@ -87,6 +88,12 @@ class ThreadReadRepository(
 
     def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]: ...
 
+    def list_thread_facets_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Facet]]: ...
+
     def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]: ...
 
     def list_community_characters(self, community_id: int) -> list[Character]: ...
@@ -116,6 +123,8 @@ def board_thread_summaries(
         viewer.community.id,
         thread_ids,
     )
+    facet_groups = repo.list_facet_groups(viewer.community.id)
+    facets_by_thread = repo.list_thread_facets_for_threads(viewer.community.id, thread_ids)
     for thread in threads:
         summary = thread_summary(
             repo,
@@ -125,6 +134,8 @@ def board_thread_summaries(
             roster_character_ids=roster_character_ids,
             posts=posts_by_thread.get(thread.id, []),
             participants=participants_by_thread.get(thread.id, []),
+            facet_groups=facet_groups,
+            thread_facets=facets_by_thread.get(thread.id, []),
         )
         if thread_matches_filter(summary, filter_by):
             summaries.append(summary)
@@ -140,6 +151,8 @@ def thread_summary(
     roster_character_ids: set[int],
     posts: list[Post] | None = None,
     participants: list[Character] | None = None,
+    facet_groups: list[FacetGroup] | None = None,
+    thread_facets: list[Facet] | None = None,
 ) -> ThreadSummary:
     posts = repo.list_posts(viewer.community.id, thread.id) if posts is None else posts
     participants = (
@@ -148,11 +161,14 @@ def thread_summary(
         else participants
     )
     participant_ids = {character.id for character in participants}
-    thread_facets = facet_tags(
-        repo,
-        viewer.community.id,
-        repo.list_thread_facets(viewer.community.id, thread.id),
-    )
+    if facet_groups is None or thread_facets is None:
+        thread_facet_tags = facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_thread_facets(viewer.community.id, thread.id),
+        )
+    else:
+        thread_facet_tags = facet_tags_with_groups(facet_groups, thread_facets)
     latest_post = posts[-1] if posts else None
     first_unread = first_unread_post(
         repo,
@@ -169,10 +185,10 @@ def thread_summary(
             thread.author_membership_id,
         ),
         participants=participants,
-        facets=thread_facets,
+        facets=thread_facet_tags,
         is_relevant_to_current_face=bool(
             current_facet_ids
-            and {tag.facet.id for tag in thread_facets}.intersection(current_facet_ids)
+            and {tag.facet.id for tag in thread_facet_tags}.intersection(current_facet_ids)
         ),
         reply_count=max(0, len(posts) - 1),
         latest_post=post_view(repo, viewer.community.id, latest_post) if latest_post else None,
