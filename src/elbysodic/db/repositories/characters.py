@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from elbysodic.db.repositories.base import TenantBoundaryError, _last_id, _utc_now
 from elbysodic.db.repositories.identity import IdentityRepositoryMixin
 from elbysodic.db.repositories.rows import (
@@ -126,6 +128,43 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         if row is None:
             raise LookupError(f"character not found in community {community_id}: {character_id}")
         return _character_from_row(row)
+
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]:
+        if not character_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                name,
+                slug,
+                avatar_url,
+                poster_url,
+                poster_alt,
+                tagline,
+                accent_color,
+                summary,
+                post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
+                application_status,
+                created_at,
+                updated_at
+            FROM characters
+            WHERE community_id = ?
+              AND id IN (SELECT value FROM json_each(?))
+            """,
+            (community_id, json.dumps(character_ids)),
+        ).fetchall()
+        return {int(row["id"]): _character_from_row(row) for row in rows}
 
     def get_character_by_slug(self, community_id: int, slug: str) -> Character:
         row = self.connection.execute(

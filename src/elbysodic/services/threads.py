@@ -66,11 +66,23 @@ class ThreadReadRepository(
 
     def get_character(self, community_id: int, character_id: int) -> Character: ...
 
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]: ...
+
     def get_membership(
         self,
         community_id: int,
         membership_id: int,
     ) -> CommunityMembership: ...
+
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]: ...
 
     def list_thread_participants(self, community_id: int, thread_id: int) -> list[Character]: ...
 
@@ -125,6 +137,14 @@ def board_thread_summaries(
     )
     facet_groups = repo.list_facet_groups(viewer.community.id)
     facets_by_thread = repo.list_thread_facets_for_threads(viewer.community.id, thread_ids)
+    authors = repo.list_characters_by_ids(
+        viewer.community.id,
+        list({thread.author_character_id for thread in threads}),
+    )
+    author_memberships = repo.list_memberships_by_ids(
+        viewer.community.id,
+        list({thread.author_membership_id for thread in threads}),
+    )
     for thread in threads:
         summary = thread_summary(
             repo,
@@ -136,6 +156,8 @@ def board_thread_summaries(
             participants=participants_by_thread.get(thread.id, []),
             facet_groups=facet_groups,
             thread_facets=facets_by_thread.get(thread.id, []),
+            authors=authors,
+            author_memberships=author_memberships,
         )
         if thread_matches_filter(summary, filter_by):
             summaries.append(summary)
@@ -153,6 +175,8 @@ def thread_summary(
     participants: list[Character] | None = None,
     facet_groups: list[FacetGroup] | None = None,
     thread_facets: list[Facet] | None = None,
+    authors: dict[int, Character] | None = None,
+    author_memberships: dict[int, CommunityMembership] | None = None,
 ) -> ThreadSummary:
     posts = repo.list_posts(viewer.community.id, thread.id) if posts is None else posts
     participants = (
@@ -177,13 +201,23 @@ def thread_summary(
         thread,
         posts,
     )
-    return ThreadSummary(
-        thread=thread,
-        author=repo.get_character(viewer.community.id, thread.author_character_id),
-        author_membership=repo.get_membership(
+    author = (
+        repo.get_character(viewer.community.id, thread.author_character_id)
+        if authors is None
+        else authors[thread.author_character_id]
+    )
+    author_membership = (
+        repo.get_membership(
             viewer.community.id,
             thread.author_membership_id,
-        ),
+        )
+        if author_memberships is None
+        else author_memberships[thread.author_membership_id]
+    )
+    return ThreadSummary(
+        thread=thread,
+        author=author,
+        author_membership=author_membership,
         participants=participants,
         facets=thread_facet_tags,
         is_relevant_to_current_face=bool(
@@ -367,6 +401,14 @@ def thread_obligations(
         viewer.community.id,
         thread_ids,
     )
+    authors = repo.list_characters_by_ids(
+        viewer.community.id,
+        list({thread.author_character_id for thread in candidate_threads}),
+    )
+    author_memberships = repo.list_memberships_by_ids(
+        viewer.community.id,
+        list({thread.author_membership_id for thread in candidate_threads}),
+    )
     items = []
     for thread in candidate_threads:
         board = visible_boards[thread.board_id]
@@ -403,14 +445,8 @@ def thread_obligations(
             ThreadObligationItem(
                 board=board,
                 thread=thread,
-                author=repo.get_character(
-                    viewer.community.id,
-                    thread.author_character_id,
-                ),
-                author_membership=repo.get_membership(
-                    viewer.community.id,
-                    thread.author_membership_id,
-                ),
+                author=authors[thread.author_character_id],
+                author_membership=author_memberships[thread.author_membership_id],
                 participants=participants,
                 latest_post=(
                     post_view(repo, viewer.community.id, latest_post) if latest_post else None

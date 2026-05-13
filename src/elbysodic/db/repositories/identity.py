@@ -961,6 +961,35 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"membership not found in community {community_id}: {membership_id}")
         return _membership_from_row(row)
 
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]:
+        if not membership_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                user_id,
+                username,
+                display_name,
+                avatar_url,
+                role_id,
+                default_character_id,
+                post_count,
+                is_active,
+                joined_at
+            FROM community_memberships
+            WHERE community_id = ?
+              AND id IN (SELECT value FROM json_each(?))
+            """,
+            (community_id, json.dumps(membership_ids)),
+        ).fetchall()
+        return {int(row["id"]): _membership_from_row(row) for row in rows}
+
     def get_membership_for_user(self, community_id: int, user_id: int) -> CommunityMembership:
         row = self.connection.execute(
             """
