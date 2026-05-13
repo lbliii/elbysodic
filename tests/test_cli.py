@@ -294,6 +294,80 @@ def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
     assert result.exit_code == 0
     assert "preview" in result.output
     assert "local preview" in result.output
+    assert "checkpoint" in result.output
+    assert "backup" in result.output
+
+
+def test_dev_db_checkpoint_requires_existing_filesystem_database(tmp_path, capsys) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    initialize_database(db_path)
+
+    cli.main(["dev", "db", "checkpoint", "--db-path", str(db_path)])
+
+    output = capsys.readouterr().out
+    assert f"checkpointed {db_path}" in output
+    assert "busy=0" in output
+
+
+def test_dev_db_backup_creates_integrity_checked_copy(tmp_path, capsys) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    backup_path = tmp_path / "backups" / "forum-backup.sqlite3"
+    initialize_database(db_path)
+    connection = connect(db_path)
+    try:
+        connection.execute(
+            "INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, ?)",
+            ("backup@example.com", "hash", "2026-05-13T00:00:00Z"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    cli.main(
+        [
+            "dev",
+            "db",
+            "backup",
+            "--db-path",
+            str(db_path),
+            "--output",
+            str(backup_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert f"backed up {db_path} to {backup_path}" in output
+    copied = connect(backup_path)
+    try:
+        integrity = copied.execute("PRAGMA integrity_check").fetchone()[0]
+        email = copied.execute("SELECT email FROM users").fetchone()[0]
+    finally:
+        copied.close()
+    assert integrity == "ok"
+    assert email == "backup@example.com"
+
+
+def test_dev_db_backup_refuses_to_overwrite_without_flag(tmp_path) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    backup_path = tmp_path / "forum-backup.sqlite3"
+    initialize_database(db_path)
+    backup_path.write_text("already here")
+
+    with pytest.raises(FileExistsError):
+        cli.backup_database(db_path, backup_path)
+
+    cli.main(
+        [
+            "dev",
+            "db",
+            "backup",
+            "--db-path",
+            str(db_path),
+            "--output",
+            str(backup_path),
+            "--overwrite",
+        ]
+    )
 
 
 def test_app_services_close_releases_filesystem_database(tmp_path) -> None:

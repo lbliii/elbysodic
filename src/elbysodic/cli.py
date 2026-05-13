@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import signal
+import sqlite3
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -104,7 +105,92 @@ def build_dev_cli() -> CLI:
             stop_on_sighup=debug,
         )
 
+    db = dev_cli.group("db", description="SQLite maintenance helpers for local work.")
+
+    @db.command(
+        "checkpoint",
+        description="Checkpoint the local SQLite WAL file.",
+        display_result=False,
+    )
+    def checkpoint(db_path: str = "") -> None:
+        """Run a best-effort TRUNCATE checkpoint against a local database."""
+
+        source_path = _coerce_db_path(db_path)
+        result = checkpoint_database(source_path)
+        sys.stdout.write(
+            "checkpointed "
+            f"{result.path} "
+            f"busy={result.busy} log={result.log_frames} checkpointed={result.checkpointed_frames}\n"
+        )
+
+    @db.command(
+        "backup",
+        description="Create an online SQLite backup of the local database.",
+        display_result=False,
+    )
+    def backup(db_path: str = "", output: str = "", overwrite: bool = False) -> None:
+        """Copy a local database using SQLite's online backup API."""
+
+        source_path = _coerce_db_path(db_path)
+        if output.strip() == "":
+            raise ValueError("output is required")
+        backup_path = backup_database(source_path, Path(output), overwrite=overwrite)
+        sys.stdout.write(f"backed up {source_path} to {backup_path}\n")
+
     return dev_cli
+
+
+class CheckpointResult:
+    def __init__(self, *, path: Path, busy: int, log_frames: int, checkpointed_frames: int) -> None:
+        self.path = path
+        self.busy = busy
+        self.log_frames = log_frames
+        self.checkpointed_frames = checkpointed_frames
+
+
+def checkpoint_database(path: Path) -> CheckpointResult:
+    if str(path) == ":memory:":
+        raise ValueError("checkpoint requires a filesystem database path")
+    if not path.exists():
+        raise FileNotFoundError(path)
+    connection = connect_for_maintenance(path)
+    try:
+        row = connection.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+        return CheckpointResult(
+            path=path,
+            busy=int(row[0]),
+            log_frames=int(row[1]),
+            checkpointed_frames=int(row[2]),
+        )
+    finally:
+        connection.close()
+
+
+def backup_database(source_path: Path, backup_path: Path, *, overwrite: bool = False) -> Path:
+    if str(source_path) == ":memory:":
+        raise ValueError("backup requires a filesystem database path")
+    if not source_path.exists():
+        raise FileNotFoundError(source_path)
+    if backup_path.exists() and not overwrite:
+        raise FileExistsError(backup_path)
+    backup_path.parent.mkdir(parents=True, exist_ok=True)
+    if backup_path.exists():
+        backup_path.unlink()
+    source = connect_for_maintenance(source_path)
+    destination = sqlite3.connect(backup_path)
+    try:
+        source.backup(destination)
+        integrity = destination.execute("PRAGMA integrity_check").fetchone()[0]
+        if integrity != "ok":
+            raise RuntimeError(f"backup integrity check failed: {integrity}")
+    finally:
+        destination.close()
+        source.close()
+    return backup_path
+
+
+def connect_for_maintenance(path: Path) -> sqlite3.Connection:
+    return sqlite3.connect(path)
 
 
 def _run_server(

@@ -243,6 +243,18 @@ also treat `SIGHUP` as a local shutdown signal. Deleting or archiving a live
 worktree is not a clean shutdown contract; stop the process first, then archive
 or remove the isolated checkout.
 
+Use the developer DB helpers before copying or preserving a local realm
+database:
+
+```bash
+elbysodic dev db checkpoint
+elbysodic dev db backup --output var/elbysodic-backup.sqlite3
+```
+
+`checkpoint` runs a TRUNCATE WAL checkpoint against the configured SQLite file.
+`backup` uses SQLite's online backup API and refuses to overwrite an existing
+file unless `--overwrite` is passed.
+
 In this workspace, the direct app form is also useful:
 
 ```bash
