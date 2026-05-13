@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 from threading import RLock
-from typing import Any
+from typing import Any, cast
 
 from elbysodic.db.migrations import apply_migrations
 from elbysodic.domain.boards import DEFAULT_SIDEBAR_SECTION_CONFIGS
@@ -879,7 +879,7 @@ def connect(
     connection.execute("PRAGMA busy_timeout = 5000")
     if str(path) != ":memory:":
         connection.execute("PRAGMA journal_mode = WAL")
-    return SynchronizedConnection(connection)
+    return cast(sqlite3.Connection, SynchronizedConnection(connection))
 
 
 def create_schema(connection: sqlite3.Connection) -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -27,7 +28,7 @@ class Database:
             connection.close()
 
     @contextmanager
-    def connection(self) -> Iterator[object]:
+    def connection(self) -> Iterator[sqlite3.Connection]:
         connection = connect(self.path, check_same_thread=False)
         try:
             yield connection

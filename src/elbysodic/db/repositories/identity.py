@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import sqlite3
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol, cast
 
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
@@ -29,6 +29,10 @@ from elbysodic.domain.models import (
 )
 
 COMMUNITY_LAUNCH_STATUSES = {"backstage", "invite-only", "public-preview"}
+
+
+class _SidebarDefaultsRepository(Protocol):
+    def ensure_sidebar_section_defaults(self, community_id: int) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +98,7 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self._commit()
         community = self.get_community(DEFAULT_COMMUNITY_ID)
-        self.ensure_sidebar_section_defaults(community.id)
+        cast(_SidebarDefaultsRepository, self).ensure_sidebar_section_defaults(community.id)
         return community
 
     def create_community(self, slug: str, name: str, host: str | None = None) -> Community:
@@ -108,7 +112,7 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self._commit()
         community = self.get_community(_last_id(cursor))
-        self.ensure_sidebar_section_defaults(community.id)
+        cast(_SidebarDefaultsRepository, self).ensure_sidebar_section_defaults(community.id)
         return community
 
     def get_community(self, community_id: int) -> Community:
