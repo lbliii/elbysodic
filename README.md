@@ -237,6 +237,14 @@ It prepares the local SQLite database with demo realm data and serves the app
 at `http://127.0.0.1:8001/`. Pass `--no-seed-demo` when you only want schema
 initialization before serving.
 
+For local navigation and htmx timing checks, use the production-like preview
+task. It keeps `debug=False` while enabling dev tools, including the htmx timing
+harness.
+
+```bash
+uv run poe preview-prod-devtools
+```
+
 Stop local servers with `Ctrl-C`/`SIGINT` or `SIGTERM` so Elbysodic can close
 its app services and SQLite connection. Debug-mode `serve` and `dev preview`
 also treat `SIGHUP` as a local shutdown signal. Deleting or archiving a live
