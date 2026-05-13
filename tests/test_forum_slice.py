@@ -231,6 +231,18 @@ def _scale_board_services(*, thread_count: int = 30) -> AppServices:
     return AppServices(repo, DemoSeed(community, user, membership, viewer_character))
 
 
+def _scale_network_services(*, community_count: int = 12) -> AppServices:
+    services = create_services(path=":memory:")
+    for index in range(community_count):
+        _add_hosted_membership(
+            services,
+            slug=f"network-scale-{index}",
+            user_id=services.seed.user.id,
+            username=f"network-scale-{index}",
+        )
+    return services
+
+
 def _add_hosted_membership(
     services: AppServices,
     *,
@@ -507,6 +519,26 @@ def test_public_network_catalog_hides_member_state(monkeypatch: pytest.MonkeyPat
         assert "Dev personas" not in response.text
         assert "Log out" not in response.text
         assert "unread" not in response.text
+
+    asyncio.run(run())
+
+
+def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
+    async def run() -> None:
+        services = _scale_network_services(community_count=12)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            warm = await client.get("/network")
+            assert warm.status == 200
+
+            with trace_sql(services.repo.connection) as trace:
+                response = await client.get("/network")
+
+        assert response.status == 200
+        assert "Studio Network" in response.text
+        assert "Hosted Program" in response.text
+        assert trace.count <= 370
 
     asyncio.run(run())
 
