@@ -1057,14 +1057,18 @@ class AppServices:
         counts_by_community = self.repo.network_program_counts(
             [membership.community_id for membership in memberships]
         )
+        counts_by_membership = self.repo.network_membership_counts(
+            [membership.id for membership in memberships]
+        )
         for membership in memberships:
             community = self.repo.get_community(membership.community_id)
             role = self.repo.get_role(community.id, membership.role_id)
             roster = self.repo.list_characters(community.id, membership.id)
             materials = self.repo.list_materials(community.id)
-            community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
             counts = counts_by_community.get(community.id, {})
+            membership_counts = counts_by_membership.get(membership.id, {})
+            can_review_applications = policies.can_manage_applications(membership, role)
             programs.append(
                 StudioNetworkProgramView(
                     community=community,
@@ -1078,21 +1082,19 @@ class AppServices:
                         self.repo,
                         community.id,
                     ),
-                    roster_count=len(community_characters),
+                    roster_count=counts.get("roster_count", 0),
                     open_wanted_count=counts.get("open_wanted_count", 0),
                     application_material_count=counts.get("application_material_count", 0),
                     claim_type_count=counts.get("claim_type_count", 0),
-                    application_count=_network_application_count(
-                        community_characters,
-                        can_review=policies.can_manage_applications(membership, role),
-                        membership_id=membership.id,
+                    application_count=membership_counts.get(
+                        (
+                            "reviewable_application_count"
+                            if can_review_applications
+                            else "own_application_count"
+                        ),
+                        0,
                     ),
-                    plotting_room_count=len(
-                        self.repo.list_plotting_rooms_for_membership(
-                            community.id,
-                            membership.id,
-                        )
-                    ),
+                    plotting_room_count=membership_counts.get("plotting_room_count", 0),
                     unread_notification_count=_count_visible_unread_notifications(
                         self.repo,
                         community.id,
@@ -4082,22 +4084,6 @@ def _network_explore_lanes() -> list[NetworkExploreLane]:
             "story",
         ),
     ]
-
-
-def _network_application_count(
-    characters: list[Character],
-    *,
-    can_review: bool,
-    membership_id: int,
-) -> int:
-    statuses = {"draft", "submitted", "revision_requested"}
-    if can_review:
-        return sum(1 for character in characters if character.application_status in statuses)
-    return sum(
-        1
-        for character in characters
-        if character.membership_id == membership_id and character.application_status in statuses
-    )
 
 
 def _network_theme_preview(theme: object | None) -> StudioNetworkThemePreview:

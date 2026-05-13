@@ -297,6 +297,57 @@ class IdentityRepositoryMixin(RepositoryBase):
             for row in rows
         }
 
+    def network_membership_counts(self, membership_ids: list[int]) -> dict[int, dict[str, int]]:
+        if not membership_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                memberships.id AS membership_id,
+                (
+                    SELECT COUNT(*)
+                    FROM characters
+                    WHERE characters.community_id = memberships.community_id
+                      AND characters.application_status IN (
+                        'draft',
+                        'submitted',
+                        'revision_requested'
+                      )
+                ) AS reviewable_application_count,
+                (
+                    SELECT COUNT(*)
+                    FROM characters
+                    WHERE characters.community_id = memberships.community_id
+                      AND characters.membership_id = memberships.id
+                      AND characters.application_status IN (
+                        'draft',
+                        'submitted',
+                        'revision_requested'
+                      )
+                ) AS own_application_count,
+                (
+                    SELECT COUNT(DISTINCT rooms.id)
+                    FROM plotting_rooms AS rooms
+                    JOIN plotting_room_participants AS participants
+                      ON participants.community_id = rooms.community_id
+                     AND participants.plotting_room_id = rooms.id
+                    WHERE rooms.community_id = memberships.community_id
+                      AND participants.membership_id = memberships.id
+                ) AS plotting_room_count
+            FROM community_memberships AS memberships
+            WHERE memberships.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(membership_ids),),
+        ).fetchall()
+        return {
+            int(row["membership_id"]): {
+                "reviewable_application_count": int(row["reviewable_application_count"]),
+                "own_application_count": int(row["own_application_count"]),
+                "plotting_room_count": int(row["plotting_room_count"]),
+            }
+            for row in rows
+        }
+
     def update_community_launch_status(self, community_id: int, launch_status: str) -> Community:
         status = launch_status.strip().lower()
         if status not in COMMUNITY_LAUNCH_STATUSES:

@@ -1733,6 +1733,50 @@ def test_board_rollup_batch_reads_are_tenant_scoped(repo: ForumRepository) -> No
     ) == {thread.id: thread.updated_at}
 
 
+def test_network_membership_counts_batch_application_state(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "network-member", "Network Member")
+    user = repo.create_user("network@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "network", "Network")
+    other_user = repo.create_user("network-other@example.com", "hash")
+    other_membership = repo.create_membership(
+        community.id,
+        other_user.id,
+        role.id,
+        "network-other",
+        "Network Other",
+    )
+    repo.create_character(
+        community.id,
+        membership.id,
+        "network-draft",
+        "Network Draft",
+        application_status="draft",
+    )
+    repo.create_character(
+        community.id,
+        other_membership.id,
+        "network-submitted",
+        "Network Submitted",
+        application_status="submitted",
+    )
+    repo.create_character(
+        community.id,
+        other_membership.id,
+        "network-accepted",
+        "Network Accepted",
+        application_status="accepted",
+    )
+
+    assert repo.network_membership_counts([membership.id]) == {
+        membership.id: {
+            "reviewable_application_count": 2,
+            "own_application_count": 1,
+            "plotting_room_count": 0,
+        },
+    }
+
+
 def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
