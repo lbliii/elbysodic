@@ -18,15 +18,12 @@
 <article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card elbysodic-wanted-card--{{ item.wanted_ad.status }}">
   <div class="chirpui-cluster chirpui-cluster--between elbysodic-wanted-card__header">
     <div class="elbysodic-wanted-card__heading">
-      {{ thread_signal() }}
-      <div>
-        <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>
-        <h2>
-          <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">
-            {{ item.wanted_ad.title }}
-          </a>
-        </h2>
-      </div>
+      <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>
+      <h2>
+        <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">
+          {{ item.wanted_ad.title }}
+        </a>
+      </h2>
     </div>
     {{ badge(item.wanted_ad.status, variant="success" if item.wanted_ad.status == "open" else "muted") }}
   </div>

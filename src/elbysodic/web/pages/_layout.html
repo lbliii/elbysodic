@@ -80,7 +80,7 @@
     })();
     </script>
     <link rel="icon" href="/elbysodic-static/brand/elbysodic-favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-cookie-1">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-reexpand-1">
     <style id="elbysodic-program-theme">
 {{ program_theme_css(shell_has_community, viewer) }}
     </style>
@@ -95,7 +95,9 @@
         }
 
         .chirpui-app-shell__sidebar {
-          background: color-mix(in srgb, var(--chirpui-bg-subtle) 72%, transparent);
+          background:
+            linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-shell-accent) 12%, transparent), transparent 24rem),
+            color-mix(in srgb, var(--chirpui-bg-subtle) 86%, transparent);
           border-right-color: color-mix(in srgb, var(--chirpui-border) 58%, transparent);
           overflow: visible;
         }
@@ -367,6 +369,16 @@
 {% end %}
 {% end %}
 
+{% def sidebar_resize_handle(is_hidden) %}
+<div class="chirpui-app-shell__sidebar-resize elbysodic-sidebar-resize"
+     data-elbysodic-sidebar-toggle
+     role="button"
+     tabindex="0"
+     title="{{ "Show navigation" if is_hidden else "Hide navigation" }}"
+     aria-label="{{ "Show navigation" if is_hidden else "Hide navigation" }}"
+     aria-expanded="{{ "false" if is_hidden else "true" }}"></div>
+{% end %}
+
 {% block sidebar %}
 {% if show_community_shell | default(true) %}
 {% set rail_board_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
@@ -376,13 +388,7 @@
 {% set shell_nav = shell_navigation(viewer if viewer is defined else none, current_path or "/", rail_board_section, board=board if board is defined else none, parent_board=parent_board if parent_board is defined else none, guidebook=guidebook if guidebook is defined else none, material=material if material is defined else none, wanted=wanted if wanted is defined else none, studio=studio if studio is defined else none) %}
 {{ primary_icon_rail(shell_nav.primary_items) }}
 {{ inner_sidebar_shell(shell_nav) }}
-<div class="chirpui-app-shell__sidebar-resize elbysodic-sidebar-resize"
-     data-elbysodic-sidebar-toggle
-     role="button"
-     tabindex="0"
-     title="{{ "Show navigation" if shell_sidebar_hidden else "Hide navigation" }}"
-     aria-label="{{ "Show navigation" if shell_sidebar_hidden else "Hide navigation" }}"
-     aria-expanded="{{ "false" if shell_sidebar_hidden else "true" }}"></div>
+{{ sidebar_resize_handle(sidebar_is_hidden()) }}
 {% end %}
 {% end %}
 
@@ -395,5 +401,6 @@
 {% set shell_nav = shell_navigation(viewer if viewer is defined else none, current_path or "/", rail_board_section, board=board if board is defined else none, parent_board=parent_board if parent_board is defined else none, guidebook=guidebook if guidebook is defined else none, material=material if material is defined else none, wanted=wanted if wanted is defined else none, studio=studio if studio is defined else none) %}
 {{ primary_icon_rail(shell_nav.primary_items) }}
 {{ inner_sidebar_shell(shell_nav) }}
+{{ sidebar_resize_handle(sidebar_is_hidden()) }}
 {% end %}
 {% end %}

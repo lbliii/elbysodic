@@ -9,6 +9,7 @@ Related docs:
 - `README.md`
 - `docs/product/strategy-spine.md`
 - `docs/architecture/*.md`
+- `docs/architecture/surface-contract-architecture.md`
 - `docs/product/*.md`
 - `docs/product/ai-studio.md`
 - `docs/product/user-personas-panel.md`
@@ -43,7 +44,7 @@ and tests.
 ## Contract Checklist
 
 - Architecture: primitives, multi-tenancy, migrations, security, rendered
-  privacy, and seed personas agree with code and tests.
+  privacy, surface contracts, and seed personas agree with code and tests.
 - Product: mission, information hierarchy, controls, navigation, paragraph
   rhythm, notices, appearance, user personas, blueprints, and the strategy
   spine agree with UI/service behavior.

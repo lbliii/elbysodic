@@ -5,6 +5,10 @@ when adding a rendered page, route action, sidebar count, notification surface,
 or Studio room that can expose community-, membership-, role-, or
 character-scoped data.
 
+Use `surface-contract-architecture.md` for the broader service/read-model,
+template, and proof contract that should exist before a rendered surface grows
+privacy, filtering, ranking, or lifecycle decisions.
+
 Canonical shared-host route and link scoping rules live in
 `docs/architecture/multi-tenancy.md#route-and-link-contract`; this matrix tracks
 rendered privacy expectations and proof for route families.

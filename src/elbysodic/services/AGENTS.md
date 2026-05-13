@@ -10,6 +10,7 @@ Related docs:
 - `docs/architecture/security-boundaries.md`
 - `docs/architecture/multi-tenancy.md`
 - `docs/architecture/rendered-route-privacy-matrix.md`
+- `docs/architecture/surface-contract-architecture.md`
 - `docs/product/information-hierarchy.md`
 
 ## Point Of View
@@ -37,6 +38,9 @@ raw database operations.
 
 - Services: command/query methods accept the right context and return stable
   read models.
+- Surface contracts: page-level service methods own filtering, sorting,
+  publication posture, permission posture, and workflow assembly before the
+  template renders.
 - Policies: role, membership, active, and staff checks stay centralized.
 - Storage: repository calls are tenant-scoped and do not bypass boundary
   errors.

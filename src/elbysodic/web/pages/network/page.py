@@ -15,11 +15,12 @@ def get(request: Request) -> Page:
     services, viewer = _network_services(request)
     network = services.studio_network() if viewer is not None else services.public_studio_network()
     query = str(request.query.get("q") or "").strip()
+    mode = "search" if query else "explore"
     return Page.mounted(
         "network/page.html",
         current_path=request.url,
         page_title="Explore · Elbysodic",
-        network_mode="explore",
+        network_mode=mode,
         network_search_query=query,
         viewer=viewer,
         network=network,

@@ -114,6 +114,20 @@ be a line. Counts can be quiet metrics. Related objects can be rows. Secondary
 actions can be inline links or overflow menus. Negative space is part of the
 hierarchy when it separates jobs and gives story material room to breathe.
 
+### Divider Rhythm
+
+Dividers mark workflow mode changes; whitespace marks narrative hierarchy. Use
+borders for action zones, records, forms, dense lists, moderation tools, and
+scene/thread modules. Use spacing, alignment, shelf headings, media, or quiet
+metadata for ordinary story context.
+
+Avoid stacking a section-header rule, container border, filter rule, and
+empty-state rule inside the same module. Atmospheric pages such as world,
+location, wanted, character, and member surfaces should prefer shelf rhythm and
+cards. Operational pages such as Studio, casting, claims, applications, queues,
+and plotting rooms may use more structure, but should still keep one primary
+boundary per workflow region.
+
 Before adding a new component shape, ask:
 
 - Is this concept identity, action, metadata, status, or navigation?

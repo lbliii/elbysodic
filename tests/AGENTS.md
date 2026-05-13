@@ -11,6 +11,7 @@ Related docs:
 - `docs/architecture/multi-tenancy.md`
 - `docs/architecture/security-boundaries.md`
 - `docs/architecture/rendered-route-privacy-matrix.md`
+- `docs/architecture/surface-contract-architecture.md`
 - `docs/product/program-blueprints.md`
 
 ## Point Of View
@@ -34,6 +35,9 @@ protects tenants, identities, privacy, writing workflows, and PBP vocabulary.
 - Repository changes: tenant, membership, boundary, and row-mapping tests.
 - Service changes: policy, workflow, read model, and permission tests.
 - Web changes: rendered page, markup, security, route, and shell tests.
+- Surface contract changes: assert both visible state and absent private,
+  staff, draft, cross-tenant, inactive, or faceless state for the affected
+  audience.
 - Blueprint changes: parser, validation, hydration, and tenant tests.
 - CLI/package changes: focused CLI smoke and import checks.
 - Docs/examples: update expected behavior in docs when test-backed contracts

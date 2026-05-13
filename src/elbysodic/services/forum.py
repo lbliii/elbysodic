@@ -138,6 +138,7 @@ from elbysodic.services.materials import public_material_detail as _public_mater
 from elbysodic.services.materials import (
     update_material_production_state as _update_material_production_state,
 )
+from elbysodic.services.network import search_public_catalog as _search_public_catalog
 from elbysodic.services.notifications import (
     count_visible_unread_notifications as _count_visible_unread_notifications,
 )
@@ -218,12 +219,19 @@ from elbysodic.services.read_models import (
     NavigationHealthWarning,
     NavigationPreviewItem,
     NavigationPreviewSection,
+    NetworkBrowseFacet,
+    NetworkExploreLane,
+    NetworkExploreView,
+    NetworkHomeView,
+    NetworkReturnPath,
+    NetworkSlice,
     NotificationInbox,
     PlotDiscovery,
     PlottingDesk,
     PlottingRoomDetail,
     PostRevisionHistory,
     PostStylePolicy,
+    PublicCatalogCard,
     RealmInteractionDetail,
     RealmInteractionHub,
     RealmLaunchChecklistItem,
@@ -1048,7 +1056,7 @@ class AppServices:
     def public_studio_network(self) -> StudioNetworkDirectory:
         programs: list[StudioNetworkProgramView] = []
         for community in self.repo.list_communities():
-            materials = self.repo.list_materials(community.id)
+            materials = self.repo.list_materials(community.id, status="published")
             if not _is_public_network_ready(self.repo, community, materials):
                 continue
             wanted_ads = self.repo.list_wanted_ads(community.id)
@@ -1084,9 +1092,48 @@ class AppServices:
             )
         return StudioNetworkDirectory(programs=programs)
 
+    def network_home(self) -> NetworkHomeView:
+        cards = self._public_catalog_cards()
+        return_path = None
+        try:
+            viewer = self.viewer()
+        except PermissionError:
+            viewer = None
+        if viewer is not None:
+            return_path = NetworkReturnPath(
+                desk_href=f"/c/{viewer.community.slug}/desk",
+                notification_href="/notifications",
+                unread_notification_count=viewer.unread_notification_count,
+            )
+        return NetworkHomeView(
+            featured=cards[0] if cards else None,
+            slices=[
+                NetworkSlice("Trending realms", "/network", cards),
+                NetworkSlice("Superhero crisis", "/network?q=superhero", cards),
+                NetworkSlice("Magic, survival, and small towns", "/network?q=magic", cards),
+            ],
+            browse_facets=_network_browse_facets(),
+            return_path=return_path,
+        )
+
+    def network_explore(self, query: str = "") -> NetworkExploreView:
+        cards = self._public_catalog_cards()
+        return NetworkExploreView(
+            query=query.strip(),
+            browse_facets=_network_browse_facets(),
+            relationship_lanes=_network_explore_lanes(),
+            results=_search_public_catalog(cards, query),
+        )
+
+    def _public_catalog_cards(self) -> list[PublicCatalogCard]:
+        return [
+            _public_catalog_card_from_program(program)
+            for program in self.public_studio_network().programs
+        ]
+
     def public_studio_program(self, community_slug: str) -> StudioNetworkProgramView:
         community = self._public_preview_community(community_slug)
-        materials = self.repo.list_materials(community.id)
+        materials = self.repo.list_materials(community.id, status="published")
         wanted_ads = self.repo.list_wanted_ads(community.id, status=None)
         community_characters = self.repo.list_community_characters(community.id)
         theme = community_theme_view(self.repo.get_default_theme(community.id))
@@ -3804,6 +3851,63 @@ def _first_material_summary(
         if material.material_type == material_type:
             return _material_summary(repo, community_id, material)
     return None
+
+
+def _public_catalog_card_from_program(program: StudioNetworkProgramView) -> PublicCatalogCard:
+    return PublicCatalogCard(
+        community=program.community,
+        premise=program.premise,
+        current_event=program.current_event,
+        roster_count=program.roster_count,
+        open_wanted_count=program.open_wanted_count,
+        application_material_count=program.application_material_count,
+        claim_type_count=program.claim_type_count,
+        theme_preview=program.theme_preview,
+    )
+
+
+def _network_browse_facets() -> list[NetworkBrowseFacet]:
+    return [
+        NetworkBrowseFacet("superhero crisis", "/network?q=superhero", "hot"),
+        NetworkBrowseFacet("magic school", "/network?q=magic"),
+        NetworkBrowseFacet("survival sci-fi", "/network?q=survival"),
+        NetworkBrowseFacet("small town", "/network?q=town"),
+        NetworkBrowseFacet("urban real life", "/network?q=nyc"),
+        NetworkBrowseFacet("wanted hooks", "/network?q=wanted", "hot"),
+        NetworkBrowseFacet("current events", "/network?q=event"),
+        NetworkBrowseFacet("plotting rooms", "/network?q=plotting"),
+        NetworkBrowseFacet("claims", "/network?q=claims"),
+        NetworkBrowseFacet("reserves", "/network?q=reserves"),
+    ]
+
+
+def _network_explore_lanes() -> list[NetworkExploreLane]:
+    return [
+        NetworkExploreLane(
+            "Start with a wanted hook",
+            "Open roles, rivals, factions, and face requests.",
+            "/network?q=wanted",
+            "casting",
+        ),
+        NetworkExploreLane(
+            "Start with a mood",
+            "Magic, crisis, survival, town, or urban play.",
+            "/network?q=magic",
+            "tags",
+        ),
+        NetworkExploreLane(
+            "Start with an active roster",
+            "Find realms with visible faces already in motion.",
+            "/network?q=faces",
+            "roster",
+        ),
+        NetworkExploreLane(
+            "Start with current events",
+            "World-state pressure and scenes already moving.",
+            "/network?q=event",
+            "story",
+        ),
+    ]
 
 
 def _network_application_count(

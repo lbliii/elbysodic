@@ -36,6 +36,45 @@ Still open:
 - Desktop/mobile browser QA for `/`, `/network`, public realm preview,
   public guidebook, and public wanted detail.
 
+## 2026-05-13 Music-App Pattern Update
+
+Apple Music and Spotify are the stronger reference class for the platform home
+than forum indexes. The home surface should behave like editorial discovery:
+featured media, trending rails, genre/mood shelves, and a light return path for
+signed-in writers. It should not become the Writer Desk or a profile dashboard;
+most returning writers will bookmark their realm or enter through the identity
+menu.
+
+Route posture:
+
+- `/`: glossy discovery and visitor hook. Use large featured realm media,
+  portrait trending tiles, landscape genre shelves, and low-copy CTAs.
+- `/network`: explicit search/browse. This is where tag relationships, query
+  refinement, genre/mood browsing, and deeper catalog filtering belong if the
+  route survives as a distinct surface.
+- Naming recommendation: label this surface `Explore` in navigation and page
+  copy. Keep `/network` until a public-route migration is approved, then add
+  `/explore` as an alias or redirect before considering removal of `/network`.
+- `/desk`: personal obligations, needs reply, waiting, watching, applications,
+  plotting, and active-face work.
+
+Slice management should not be inferred only from free-text descriptions. The
+durable model should combine:
+
+- director-owned catalog tags: genre, mood, fandom/original, pace, writing
+  length, invite posture, application posture, claims/reserves posture
+- app-owned activity signals: recent public scene activity, open wanted count,
+  roster size, newly opened status, public-preview eligibility
+- optional editorial curation: featured weight and collection membership for
+  launch week, seasonal spotlights, or staff-picked realms
+- viewer personalization only after privacy gates: membership, active face,
+  watched scenes, accepted interests, and writer-safe return paths
+
+Early implementation can use seeded/search keywords to populate prototype
+slices, but the product contract should move toward structured tags and
+service-owned `NetworkHome` rows so public discovery stays explainable and
+privacy-safe.
+
 ## 2026-05-09 Verification Update
 
 `/` and `/network` now render a platform/network surface and `/network?q=...`
