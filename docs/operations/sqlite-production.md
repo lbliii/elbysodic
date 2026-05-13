@@ -18,6 +18,10 @@ chooses a different persistence backend.
   persistent database file.
 - Seed demo data intentionally with `elbysodic seed-demo`; app startup creates
   the schema but should not be treated as a demo reset.
+- Demo seeding is idempotent for interrupted local/staging setup. If a seed run
+  is stopped partway through, rerun `elbysodic seed-demo` or
+  `elbysodic dev preview` against the same database to repair the missing demo
+  rows before using the realm.
 
 ## Shutdown Contract
 
@@ -72,6 +76,19 @@ before:
 Keep the backup process simple and explicit. A copied SQLite file is acceptable
 when the service is stopped or quiescent; a live backup command can replace
 that once the deployment runbook grows a maintenance window.
+
+For local and staging-like developer workflows, use the Milo-backed helpers:
+
+```bash
+elbysodic dev db checkpoint --db-path /app/var/elbysodic.sqlite3
+elbysodic dev db backup --db-path /app/var/elbysodic.sqlite3 \
+  --output /app/var/elbysodic-backup.sqlite3
+```
+
+`checkpoint` performs `PRAGMA wal_checkpoint(TRUNCATE)` against the configured
+file. `backup` uses SQLite's online backup API and verifies
+`PRAGMA integrity_check` on the copied database before reporting success. It
+will not overwrite an existing backup unless `--overwrite` is passed.
 
 ## Backup/Restore Drill Record
 

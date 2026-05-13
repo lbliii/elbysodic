@@ -293,14 +293,133 @@ def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
 
     assert result.exit_code == 0
     assert "preview" in result.output
+    assert "check" in result.output
     assert "local preview" in result.output
+    assert "checkpoint" in result.output
+    assert "backup" in result.output
+
+
+def test_dev_check_runs_standard_gate(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    cli.main(["dev", "check"])
+
+    assert calls == cli.developer_check_commands(quick=False)
+
+
+def test_dev_check_quick_runs_focused_pytest(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    cli.main(["dev", "check", "--quick"])
+
+    assert ["uv", "run", "pytest", "tests/test_cli.py", "-q", "--tb=short"] in calls
+
+
+def test_dev_check_exits_on_first_failure(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 2)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.run_developer_checks()
+
+    assert exc_info.value.code == 2
+    assert calls == [cli.developer_check_commands(quick=False)[0]]
+
+
+def test_dev_db_checkpoint_requires_existing_filesystem_database(tmp_path, capsys) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    initialize_database(db_path)
+
+    cli.main(["dev", "db", "checkpoint", "--db-path", str(db_path)])
+
+    output = capsys.readouterr().out
+    assert f"checkpointed {db_path}" in output
+    assert "busy=0" in output
+
+
+def test_dev_db_backup_creates_integrity_checked_copy(tmp_path, capsys) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    backup_path = tmp_path / "backups" / "forum-backup.sqlite3"
+    initialize_database(db_path)
+    connection = connect(db_path)
+    try:
+        connection.execute(
+            "INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, ?)",
+            ("backup@example.com", "hash", "2026-05-13T00:00:00Z"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    cli.main(
+        [
+            "dev",
+            "db",
+            "backup",
+            "--db-path",
+            str(db_path),
+            "--output",
+            str(backup_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert f"backed up {db_path} to {backup_path}" in output
+    copied = connect(backup_path)
+    try:
+        integrity = copied.execute("PRAGMA integrity_check").fetchone()[0]
+        email = copied.execute("SELECT email FROM users").fetchone()[0]
+    finally:
+        copied.close()
+    assert integrity == "ok"
+    assert email == "backup@example.com"
+
+
+def test_dev_db_backup_refuses_to_overwrite_without_flag(tmp_path) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    backup_path = tmp_path / "forum-backup.sqlite3"
+    initialize_database(db_path)
+    backup_path.write_text("already here")
+
+    with pytest.raises(FileExistsError):
+        cli.backup_database(db_path, backup_path)
+
+    cli.main(
+        [
+            "dev",
+            "db",
+            "backup",
+            "--db-path",
+            str(db_path),
+            "--output",
+            str(backup_path),
+            "--overwrite",
+        ]
+    )
 
 
 def test_app_services_close_releases_filesystem_database(tmp_path) -> None:
     db_path = tmp_path / "forum.sqlite3"
     initialize_database(db_path)
     connection = connect(db_path)
-    services = AppServices(ForumRepository(connection), None)
+    services = AppServices(ForumRepository(connection), None, owns_repo=True)
 
     services.close()
     services.close()
@@ -480,6 +599,50 @@ def test_initialize_database_leaves_demo_seed_explicit(tmp_path) -> None:
         connection.close()
 
     assert seeded_community_count > 0
+
+
+def test_initialize_database_repairs_partial_demo_seed(tmp_path) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    connection = connect(db_path)
+    try:
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        repo.seed_default_community("Interrupted Seed")
+    finally:
+        connection.close()
+
+    initialize_database(db_path, seed_demo=True)
+    seeded = connect(db_path)
+    try:
+        counts = {
+            "communities": seeded.execute("SELECT COUNT(*) FROM communities").fetchone()[0],
+            "boards": seeded.execute("SELECT COUNT(*) FROM boards").fetchone()[0],
+            "threads": seeded.execute("SELECT COUNT(*) FROM threads").fetchone()[0],
+            "posts": seeded.execute("SELECT COUNT(*) FROM posts").fetchone()[0],
+            "characters": seeded.execute("SELECT COUNT(*) FROM characters").fetchone()[0],
+        }
+    finally:
+        seeded.close()
+
+    initialize_database(db_path, seed_demo=True)
+    rerun = connect(db_path)
+    try:
+        rerun_counts = {
+            "communities": rerun.execute("SELECT COUNT(*) FROM communities").fetchone()[0],
+            "boards": rerun.execute("SELECT COUNT(*) FROM boards").fetchone()[0],
+            "threads": rerun.execute("SELECT COUNT(*) FROM threads").fetchone()[0],
+            "posts": rerun.execute("SELECT COUNT(*) FROM posts").fetchone()[0],
+            "characters": rerun.execute("SELECT COUNT(*) FROM characters").fetchone()[0],
+        }
+    finally:
+        rerun.close()
+
+    assert counts["communities"] > 1
+    assert counts["boards"] > 0
+    assert counts["threads"] > 0
+    assert counts["posts"] > 0
+    assert counts["characters"] > 0
+    assert rerun_counts == counts
 
 
 def test_cli_bootstrap_first_realm_creates_empty_configured_realm(tmp_path, capsys) -> None:

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from threading import RLock
+from typing import Any, cast
 
 from elbysodic.db.migrations import apply_migrations
 from elbysodic.domain.boards import DEFAULT_SIDEBAR_SECTION_CONFIGS
@@ -800,14 +802,84 @@ END;
 """
 
 
-def connect(path: str | Path = ":memory:", *, check_same_thread: bool = True) -> sqlite3.Connection:
+class SynchronizedCursor:
+    """Serialize cursor reads that share one SQLite connection."""
+
+    def __init__(self, cursor: sqlite3.Cursor, lock: RLock) -> None:
+        self._cursor = cursor
+        self._lock = lock
+
+    def fetchone(self) -> sqlite3.Row | None:
+        with self._lock:
+            return self._cursor.fetchone()
+
+    def fetchall(self) -> list[sqlite3.Row]:
+        with self._lock:
+            return self._cursor.fetchall()
+
+    def __iter__(self) -> Any:
+        return iter(self.fetchall())
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._cursor, name)
+
+
+class SynchronizedConnection:
+    """Thin synchronized wrapper for SQLite access in local threaded servers."""
+
+    def __init__(self, connection: sqlite3.Connection) -> None:
+        self._connection = connection
+        self._lock = RLock()
+
+    def execute(self, *args: Any, **kwargs: Any) -> SynchronizedCursor:
+        with self._lock:
+            return SynchronizedCursor(self._connection.execute(*args, **kwargs), self._lock)
+
+    def executemany(self, *args: Any, **kwargs: Any) -> SynchronizedCursor:
+        with self._lock:
+            return SynchronizedCursor(self._connection.executemany(*args, **kwargs), self._lock)
+
+    def executescript(self, *args: Any, **kwargs: Any) -> SynchronizedCursor:
+        with self._lock:
+            return SynchronizedCursor(self._connection.executescript(*args, **kwargs), self._lock)
+
+    def commit(self) -> None:
+        with self._lock:
+            self._connection.commit()
+
+    def rollback(self) -> None:
+        with self._lock:
+            self._connection.rollback()
+
+    def close(self) -> None:
+        with self._lock:
+            self._connection.close()
+
+    def set_trace_callback(self, trace_callback: Any) -> None:
+        with self._lock:
+            self._connection.set_trace_callback(trace_callback)
+
+    @property
+    def in_transaction(self) -> bool:
+        with self._lock:
+            return self._connection.in_transaction
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._connection, name)
+
+
+def connect(
+    path: str | Path = ":memory:",
+    *,
+    check_same_thread: bool = True,
+) -> sqlite3.Connection:
     connection = sqlite3.connect(path, check_same_thread=check_same_thread)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA busy_timeout = 5000")
     if str(path) != ":memory:":
         connection.execute("PRAGMA journal_mode = WAL")
-    return connection
+    return cast(sqlite3.Connection, SynchronizedConnection(connection))
 
 
 def create_schema(connection: sqlite3.Connection) -> None:

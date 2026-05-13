@@ -53,7 +53,7 @@ def get(request: Request) -> Page:
         )
 
     try:
-        services = get_services().for_request(request)
+        services = get_services(request)
         viewer = services.viewer()
     except LookupError, PermissionError:
         services = get_services()

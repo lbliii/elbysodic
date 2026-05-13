@@ -6,13 +6,13 @@ import os
 import re
 import secrets
 import sqlite3
-from contextlib import suppress
+from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from elbysodic.blueprints import ProgramBlueprintPreview
-from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db import Database, ForumRepository, connect, create_schema
 from elbysodic.db.seed import (
     SEED_PERSONAS,
     DemoSeed,
@@ -179,6 +179,7 @@ from elbysodic.services.posting import search_mentionables as _search_mentionabl
 from elbysodic.services.posting import start_thread as _start_thread
 from elbysodic.services.posting import update_post as _update_post
 from elbysodic.services.posting import update_thread_scene as _update_thread_scene
+from elbysodic.services.posts import PostViewContextBuilder
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
@@ -352,17 +353,29 @@ class AppServices:
         repo: ForumRepository,
         seed: DemoSeed | None,
         *,
+        database: Database | None = None,
         identity_resolver: RequestIdentityResolver | None = None,
         identity_context: RequestIdentityContext | None = None,
+        allow_development_identity: bool = True,
+        require_session: bool = False,
+        repo_context: AbstractContextManager[ForumRepository] | None = None,
+        owns_repo: bool = True,
     ) -> None:
         self.repo = repo
+        self._database = database
         self._seed = seed
+        self._allow_development_identity = allow_development_identity
+        self._require_session = require_session
         self._identity_resolver = identity_resolver or RequestIdentityResolver(
             repo,
             _default_request_identity(seed),
+            allow_development_identity=allow_development_identity,
+            require_session=require_session,
         )
         self._identity_context = identity_context
         self._viewer: ForumView | None = None
+        self._repo_context = repo_context
+        self._owns_repo = owns_repo
         self._closed = False
 
     @property
@@ -372,13 +385,35 @@ class AppServices:
         return self._seed
 
     def for_request(self, request: object) -> AppServices:
-        """Return a request-scoped facade sharing the same repository."""
+        """Return a request-scoped facade."""
 
+        if self._database is not None:
+            repo_context = self._database.repository()
+            repo = repo_context.__enter__()
+            identity_resolver = RequestIdentityResolver(
+                repo,
+                _default_request_identity(self._seed),
+                allow_development_identity=self._allow_development_identity,
+                require_session=self._require_session,
+            )
+            return AppServices(
+                repo,
+                self._seed,
+                database=self._database,
+                identity_resolver=identity_resolver,
+                identity_context=identity_resolver.resolve(request),
+                allow_development_identity=self._allow_development_identity,
+                require_session=self._require_session,
+                repo_context=repo_context,
+            )
         return AppServices(
             self.repo,
             self._seed,
             identity_resolver=self._identity_resolver,
             identity_context=self._identity_resolver.resolve(request),
+            allow_development_identity=self._allow_development_identity,
+            require_session=self._require_session,
+            owns_repo=False,
         )
 
     def with_request_auth(self, *, production: bool) -> AppServices:
@@ -387,12 +422,16 @@ class AppServices:
         return AppServices(
             self.repo,
             self._seed,
+            database=self._database,
             identity_resolver=RequestIdentityResolver(
                 self.repo,
                 _default_request_identity(self._seed),
                 allow_development_identity=not production,
                 require_session=production,
             ),
+            allow_development_identity=not production,
+            require_session=production,
+            owns_repo=self._owns_repo,
         )
 
     def close(self) -> None:
@@ -401,6 +440,11 @@ class AppServices:
         if self._closed:
             return
         self._closed = True
+        if self._repo_context is not None:
+            self._repo_context.__exit__(None, None, None)
+            return
+        if not self._owns_repo:
+            return
         connection = self.repo.connection
         with suppress(sqlite3.Error):
             if connection.in_transaction:
@@ -1005,16 +1049,26 @@ class AppServices:
     def studio_network(self) -> StudioNetworkDirectory:
         identity = self._identity_context or self._identity_resolver.resolve()
         programs: list[StudioNetworkProgramView] = []
-        for membership in self.repo.list_memberships_for_user(identity.user_id):
-            if not membership.is_active:
-                continue
+        memberships = [
+            membership
+            for membership in self.repo.list_memberships_for_user(identity.user_id)
+            if membership.is_active
+        ]
+        counts_by_community = self.repo.network_program_counts(
+            [membership.community_id for membership in memberships]
+        )
+        counts_by_membership = self.repo.network_membership_counts(
+            [membership.id for membership in memberships]
+        )
+        for membership in memberships:
             community = self.repo.get_community(membership.community_id)
             role = self.repo.get_role(community.id, membership.role_id)
             roster = self.repo.list_characters(community.id, membership.id)
             materials = self.repo.list_materials(community.id)
-            wanted_ads = self.repo.list_wanted_ads(community.id)
-            community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
+            counts = counts_by_community.get(community.id, {})
+            membership_counts = counts_by_membership.get(membership.id, {})
+            can_review_applications = policies.can_manage_applications(membership, role)
             programs.append(
                 StudioNetworkProgramView(
                     community=community,
@@ -1028,25 +1082,19 @@ class AppServices:
                         self.repo,
                         community.id,
                     ),
-                    roster_count=len(community_characters),
-                    open_wanted_count=sum(
-                        1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
+                    roster_count=counts.get("roster_count", 0),
+                    open_wanted_count=counts.get("open_wanted_count", 0),
+                    application_material_count=counts.get("application_material_count", 0),
+                    claim_type_count=counts.get("claim_type_count", 0),
+                    application_count=membership_counts.get(
+                        (
+                            "reviewable_application_count"
+                            if can_review_applications
+                            else "own_application_count"
+                        ),
+                        0,
                     ),
-                    application_material_count=sum(
-                        1 for material in materials if material.material_type == "application"
-                    ),
-                    claim_type_count=len(self.repo.list_claim_types(community.id)),
-                    application_count=_network_application_count(
-                        community_characters,
-                        can_review=policies.can_manage_applications(membership, role),
-                        membership_id=membership.id,
-                    ),
-                    plotting_room_count=len(
-                        self.repo.list_plotting_rooms_for_membership(
-                            community.id,
-                            membership.id,
-                        )
-                    ),
+                    plotting_room_count=membership_counts.get("plotting_room_count", 0),
                     unread_notification_count=_count_visible_unread_notifications(
                         self.repo,
                         community.id,
@@ -1074,13 +1122,16 @@ class AppServices:
 
     def public_studio_network(self) -> StudioNetworkDirectory:
         programs: list[StudioNetworkProgramView] = []
-        for community in self.repo.list_communities():
+        communities = self.repo.list_communities()
+        counts_by_community = self.repo.network_program_counts(
+            [community.id for community in communities]
+        )
+        for community in communities:
             materials = self.repo.list_materials(community.id, status="published")
             if not _is_public_network_ready(self.repo, community, materials):
                 continue
-            wanted_ads = self.repo.list_wanted_ads(community.id)
-            community_characters = self.repo.list_community_characters(community.id)
             theme = community_theme_view(self.repo.get_default_theme(community.id))
+            counts = counts_by_community.get(community.id, {})
             programs.append(
                 StudioNetworkProgramView(
                     community=community,
@@ -1094,14 +1145,10 @@ class AppServices:
                         self.repo,
                         community.id,
                     ),
-                    roster_count=len(community_characters),
-                    open_wanted_count=sum(
-                        1 for wanted_ad in wanted_ads if wanted_ad.status == "open"
-                    ),
-                    application_material_count=sum(
-                        1 for material in materials if material.material_type == "application"
-                    ),
-                    claim_type_count=len(self.repo.list_claim_types(community.id)),
+                    roster_count=counts.get("roster_count", 0),
+                    open_wanted_count=counts.get("open_wanted_count", 0),
+                    application_material_count=counts.get("application_material_count", 0),
+                    claim_type_count=counts.get("claim_type_count", 0),
                     application_count=0,
                     plotting_room_count=0,
                     unread_notification_count=0,
@@ -1238,12 +1285,12 @@ class AppServices:
     def list_boards(self) -> list[BoardSummary]:
         viewer = self.viewer()
         current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        summaries: list[BoardSummary] = []
-        for board in self.repo.list_boards(viewer.community.id):
-            if not policies.can_view_board(viewer.membership, board, viewer.role):
-                continue
-            summaries.append(_board_summary(self.repo, viewer, board, current_facet_ids))
-        return summaries
+        visible_boards = [
+            board
+            for board in self.repo.list_boards(viewer.community.id)
+            if policies.can_view_board(viewer.membership, board, viewer.role)
+        ]
+        return _board_summaries(self.repo, viewer, visible_boards, current_facet_ids)
 
     def child_board_summaries(self, board: Board) -> list[BoardSummary]:
         viewer = self.viewer()
@@ -3039,7 +3086,8 @@ def create_services(path: str | Path | None = None, *, seed_demo: bool = True) -
     create_schema(connection)
     repo = ForumRepository(connection)
     seed = seed_demo_forum(repo) if seed_demo else None
-    return AppServices(repo, seed)
+    database = None if database_path == ":memory:" else Database(database_path)
+    return AppServices(repo, seed, database=database, owns_repo=True)
 
 
 def _connection_has_filesystem_database(connection: sqlite3.Connection) -> bool:
@@ -3155,15 +3203,18 @@ def _board_navigation(
         repo.list_boards(community_id),
         key=lambda board: (board.navigation_order, board.name, board.id),
     )
-    for board in boards:
-        if not board.show_in_navigation:
-            continue
-        if not policies.can_view_board(membership, board, role):
-            continue
-        threads = repo.list_threads(community_id, board.id)
-        unread_thread_count = sum(
-            1 for thread in threads if _is_unread(repo, community_id, membership.id, thread)
-        )
+    visible_boards = [
+        board
+        for board in boards
+        if board.show_in_navigation and policies.can_view_board(membership, board, role)
+    ]
+    unread_counts = repo.unread_thread_counts_by_board(
+        community_id,
+        [board.id for board in visible_boards],
+        membership.id,
+    )
+    for board in visible_boards:
+        unread_thread_count = unread_counts.get(board.id, 0)
         items.append(BoardNavigationItem(board=board, unread_thread_count=unread_thread_count))
     return items
 
@@ -3261,6 +3312,106 @@ def _board_summary(
             and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
         ),
     )
+
+
+def _board_summaries(
+    repo: ForumRepository,
+    viewer: ForumView,
+    boards: list[Board],
+    current_facet_ids: set[int],
+) -> list[BoardSummary]:
+    if not boards:
+        return []
+    board_ids = [board.id for board in boards]
+    children_by_board = repo.list_child_boards_for_boards(viewer.community.id, board_ids)
+    visible_children_by_board = {
+        board_id: [
+            child
+            for child in children
+            if policies.can_view_board(viewer.membership, child, viewer.role)
+        ]
+        for board_id, children in children_by_board.items()
+    }
+    activity_boards_by_summary = {
+        board.id: [board, *visible_children_by_board.get(board.id, [])] for board in boards
+    }
+    activity_board_ids = list(
+        {
+            activity_board.id
+            for activity_boards in activity_boards_by_summary.values()
+            for activity_board in activity_boards
+        }
+    )
+    threads_by_board = repo.list_threads_for_boards(viewer.community.id, activity_board_ids)
+    all_thread_ids = [thread.id for threads in threads_by_board.values() for thread in threads]
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, all_thread_ids)
+    thread_read_at = repo.thread_read_at_for_threads(
+        viewer.community.id,
+        all_thread_ids,
+        viewer.membership.id,
+    )
+    all_posts = [post for posts in posts_by_thread.values() for post in posts]
+    post_context = (
+        PostViewContextBuilder(repo, viewer.community.id).context(all_posts) if all_posts else None
+    )
+    summaries: list[BoardSummary] = []
+    for board in boards:
+        threads_with_boards = [
+            (activity_board, thread)
+            for activity_board in activity_boards_by_summary[board.id]
+            for thread in threads_by_board.get(activity_board.id, [])
+        ]
+        latest_board: Board | None = None
+        latest_thread: Thread | None = None
+        if threads_with_boards:
+            latest_board, latest_thread = max(
+                threads_with_boards,
+                key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
+            )
+        latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
+        latest_post = (
+            _post_view(
+                repo,
+                viewer.community.id,
+                latest_thread_posts[-1],
+                context=post_context,
+            )
+            if latest_thread_posts
+            else None
+        )
+        threads = [thread for _, thread in threads_with_boards]
+        board_facets = _facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_board_facets(viewer.community.id, board.id),
+        )
+        summaries.append(
+            BoardSummary(
+                board=board,
+                child_boards=visible_children_by_board.get(board.id, []),
+                thread_count=len(threads),
+                post_count=sum(len(posts_by_thread.get(thread.id, [])) for thread in threads),
+                unread_thread_count=sum(
+                    1 for thread in threads if _is_unread_from_map(thread, thread_read_at)
+                ),
+                latest_thread=latest_thread,
+                latest_board=latest_board,
+                latest_post=latest_post,
+                facets=board_facets,
+                is_relevant_to_current_face=bool(
+                    current_facet_ids
+                    and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
+                ),
+            )
+        )
+    return summaries
+
+
+def _is_unread_from_map(thread: Thread, read_at_by_thread: dict[int, str]) -> bool:
+    read_at = read_at_by_thread.get(thread.id)
+    if read_at is None:
+        return True
+    return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
 
 
 def _latest_thread(threads: list[Thread]) -> Thread | None:
@@ -3931,22 +4082,6 @@ def _network_explore_lanes() -> list[NetworkExploreLane]:
             "story",
         ),
     ]
-
-
-def _network_application_count(
-    characters: list[Character],
-    *,
-    can_review: bool,
-    membership_id: int,
-) -> int:
-    statuses = {"draft", "submitted", "revision_requested"}
-    if can_review:
-        return sum(1 for character in characters if character.application_status in statuses)
-    return sum(
-        1
-        for character in characters
-        if character.membership_id == membership_id and character.application_status in statuses
-    )
 
 
 def _network_theme_preview(theme: object | None) -> StudioNetworkThemePreview:

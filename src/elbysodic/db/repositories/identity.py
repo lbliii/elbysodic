@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import sqlite3
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol, cast
 
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
@@ -29,6 +30,10 @@ from elbysodic.domain.models import (
 )
 
 COMMUNITY_LAUNCH_STATUSES = {"backstage", "invite-only", "public-preview"}
+
+
+class _SidebarDefaultsRepository(Protocol):
+    def ensure_sidebar_section_defaults(self, community_id: int) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,7 +98,9 @@ class IdentityRepositoryMixin(RepositoryBase):
             ),
         )
         self._commit()
-        return self.get_community(DEFAULT_COMMUNITY_ID)
+        community = self.get_community(DEFAULT_COMMUNITY_ID)
+        cast(_SidebarDefaultsRepository, self).ensure_sidebar_section_defaults(community.id)
+        return community
 
     def create_community(self, slug: str, name: str, host: str | None = None) -> Community:
         now = _utc_now()
@@ -105,7 +112,9 @@ class IdentityRepositoryMixin(RepositoryBase):
             (name, slug, host, now, now),
         )
         self._commit()
-        return self.get_community(_last_id(cursor))
+        community = self.get_community(_last_id(cursor))
+        cast(_SidebarDefaultsRepository, self).ensure_sidebar_section_defaults(community.id)
+        return community
 
     def get_community(self, community_id: int) -> Community:
         row = self.connection.execute(
@@ -243,6 +252,101 @@ class IdentityRepositoryMixin(RepositoryBase):
             """
         ).fetchall()
         return [_community_from_row(row) for row in rows]
+
+    def network_program_counts(self, community_ids: list[int]) -> dict[int, dict[str, int]]:
+        if not community_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                communities.id AS community_id,
+                (
+                    SELECT COUNT(*)
+                    FROM characters
+                    WHERE characters.community_id = communities.id
+                ) AS roster_count,
+                (
+                    SELECT COUNT(*)
+                    FROM wanted_ads
+                    WHERE wanted_ads.community_id = communities.id
+                      AND wanted_ads.status = 'open'
+                ) AS open_wanted_count,
+                (
+                    SELECT COUNT(*)
+                    FROM materials
+                    WHERE materials.community_id = communities.id
+                      AND materials.material_type = 'application'
+                ) AS application_material_count,
+                (
+                    SELECT COUNT(*)
+                    FROM claim_types
+                    WHERE claim_types.community_id = communities.id
+                ) AS claim_type_count
+            FROM communities
+            WHERE communities.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        return {
+            int(row["community_id"]): {
+                "roster_count": int(row["roster_count"]),
+                "open_wanted_count": int(row["open_wanted_count"]),
+                "application_material_count": int(row["application_material_count"]),
+                "claim_type_count": int(row["claim_type_count"]),
+            }
+            for row in rows
+        }
+
+    def network_membership_counts(self, membership_ids: list[int]) -> dict[int, dict[str, int]]:
+        if not membership_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                memberships.id AS membership_id,
+                (
+                    SELECT COUNT(*)
+                    FROM characters
+                    WHERE characters.community_id = memberships.community_id
+                      AND characters.application_status IN (
+                        'draft',
+                        'submitted',
+                        'revision_requested'
+                      )
+                ) AS reviewable_application_count,
+                (
+                    SELECT COUNT(*)
+                    FROM characters
+                    WHERE characters.community_id = memberships.community_id
+                      AND characters.membership_id = memberships.id
+                      AND characters.application_status IN (
+                        'draft',
+                        'submitted',
+                        'revision_requested'
+                      )
+                ) AS own_application_count,
+                (
+                    SELECT COUNT(DISTINCT rooms.id)
+                    FROM plotting_rooms AS rooms
+                    JOIN plotting_room_participants AS participants
+                      ON participants.community_id = rooms.community_id
+                     AND participants.plotting_room_id = rooms.id
+                    WHERE rooms.community_id = memberships.community_id
+                      AND participants.membership_id = memberships.id
+                ) AS plotting_room_count
+            FROM community_memberships AS memberships
+            WHERE memberships.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(membership_ids),),
+        ).fetchall()
+        return {
+            int(row["membership_id"]): {
+                "reviewable_application_count": int(row["reviewable_application_count"]),
+                "own_application_count": int(row["own_application_count"]),
+                "plotting_room_count": int(row["plotting_room_count"]),
+            }
+            for row in rows
+        }
 
     def update_community_launch_status(self, community_id: int, launch_status: str) -> Community:
         status = launch_status.strip().lower()
@@ -907,6 +1011,35 @@ class IdentityRepositoryMixin(RepositoryBase):
         if row is None:
             raise LookupError(f"membership not found in community {community_id}: {membership_id}")
         return _membership_from_row(row)
+
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]:
+        if not membership_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                user_id,
+                username,
+                display_name,
+                avatar_url,
+                role_id,
+                default_character_id,
+                post_count,
+                is_active,
+                joined_at
+            FROM community_memberships
+            WHERE community_id = ?
+              AND id IN (SELECT value FROM json_each(?))
+            """,
+            (community_id, json.dumps(membership_ids)),
+        ).fetchall()
+        return {int(row["id"]): _membership_from_row(row) for row in rows}
 
     def get_membership_for_user(self, community_id: int, user_id: int) -> CommunityMembership:
         row = self.connection.execute(

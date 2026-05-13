@@ -22,6 +22,7 @@ from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import scope_response_urls
+from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 
@@ -164,6 +165,84 @@ def _faceless_services(services: AppServices, *, prefix: str = "faceless") -> Ap
     return AppServices(repo, DemoSeed(community, user, membership, None))
 
 
+def _scale_board_services(*, thread_count: int = 30) -> AppServices:
+    connection = connect(check_same_thread=False)
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Scale Realm")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("scale-writer@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "scale", "Scale")
+    viewer_character = repo.create_character(
+        community.id,
+        membership.id,
+        "scale-face",
+        "Scale Face",
+        make_default=True,
+    )
+    authors = [viewer_character]
+    for index in range(5):
+        author_user = repo.create_user(f"scale-author-{index}@example.com", "hash")
+        author_membership = repo.create_membership(
+            community.id,
+            author_user.id,
+            role.id,
+            f"scale-author-{index}",
+            f"Scale Author {index}",
+        )
+        authors.append(
+            repo.create_character(
+                community.id,
+                author_membership.id,
+                f"scale-author-{index}",
+                f"Scale Author {index}",
+            )
+        )
+    facet_group = repo.create_facet_group(community.id, "scale-lens", "Scale Lens")
+    facets = [
+        repo.create_facet(community.id, facet_group.id, f"scale-{index}", f"Scale {index}")
+        for index in range(3)
+    ]
+    board = repo.create_board(community.id, "scale-yard", "Scale Yard")
+    repo.assign_board_facet(community.id, board.id, facets[0].id)
+    for index in range(thread_count):
+        author = authors[index % len(authors)]
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            author.id,
+            f"scale-thread-{index}",
+            f"Scale Thread {index}",
+        )
+        repo.assign_thread_facet(community.id, thread.id, facets[index % len(facets)].id)
+        repo.create_post(
+            community.id,
+            thread.id,
+            author.id,
+            f"Opening post for scale thread {index}.",
+        )
+        repo.create_post(
+            community.id,
+            thread.id,
+            authors[(index + 1) % len(authors)].id,
+            f"Reply for scale thread {index} mentioning @Scale.",
+        )
+    membership = repo.get_membership(community.id, membership.id)
+    return AppServices(repo, DemoSeed(community, user, membership, viewer_character))
+
+
+def _scale_network_services(*, community_count: int = 12) -> AppServices:
+    services = create_services(path=":memory:")
+    for index in range(community_count):
+        _add_hosted_membership(
+            services,
+            slug=f"network-scale-{index}",
+            user_id=services.seed.user.id,
+            username=f"network-scale-{index}",
+        )
+    return services
+
+
 def _add_hosted_membership(
     services: AppServices,
     *,
@@ -261,6 +340,205 @@ def test_health_check_does_not_require_registered_community_host() -> None:
         assert response.text == "ok\n"
         assert "app;dur=" in _response_header(response, "Server-Timing")
         assert float(_response_header(response, "X-Elbysodic-Route-Time-Ms")) >= 0
+
+    asyncio.run(run())
+
+
+def test_concurrent_rendered_get_navigation_stays_stable(tmp_path: Path) -> None:
+    async def run() -> None:
+        services = create_services(path=tmp_path / "rapid-navigation.sqlite3")
+        app = create_app(debug=False, services=services)
+        routes = [
+            ("/network", "Studio Network"),
+            ("/c/rl-nyc/my/threads", "RL NYC"),
+            ("/c/rl-small-town/boards/town-hall?filter=mine", "RL Small Town"),
+            ("/c/jurassic-park-universe/world", "Jurassic Park Universe"),
+            ("/c/x-men-apocalypse/boards/danger-room", "X-Men Apocalypse"),
+            ("/c/rl-nyc/claims", "RL NYC"),
+        ]
+
+        async with TestClient(app) as client:
+            for path, _expected in routes:
+                warm = await client.get(path)
+                assert warm.status == 200
+
+            async def fetch(path: str, expected: str) -> tuple[str, int, str]:
+                response = await client.get(path)
+                return path, response.status, response.text if expected in response.text else ""
+
+            responses = await asyncio.gather(
+                *(fetch(path, expected) for path, expected in routes * 2)
+            )
+
+        for path, status, expected_text in responses:
+            assert status == 200, path
+            assert expected_text, path
+
+    asyncio.run(run())
+
+
+def test_rendered_get_navigation_does_not_write_to_database() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
+        routes = (
+            "/network",
+            "/c/rl-nyc/my/threads",
+            "/c/rl-small-town/boards/town-hall?filter=mine",
+            "/c/x-men-apocalypse/boards/danger-room",
+        )
+
+        async with TestClient(app) as client:
+            for path in routes:
+                with trace_sql(services.repo.connection) as trace:
+                    response = await client.get(path)
+                assert response.status == 200, path
+                assert trace.writes == [], path
+
+    asyncio.run(run())
+
+
+def test_rendered_route_query_budgets_are_tracked() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
+        budgets = {
+            "/network": 165,
+            "/c/x-men-apocalypse": 390,
+            "/c/x-men-apocalypse/locations": 200,
+            "/c/x-men-apocalypse/community": 350,
+            "/c/rl-nyc/my/threads": 80,
+            "/c/rl-small-town/boards/town-hall?filter=mine": 120,
+            "/c/x-men-apocalypse/boards/danger-room": 215,
+            "/c/rl-nyc/claims": 80,
+        }
+
+        async with TestClient(app) as client:
+            for path, budget in budgets.items():
+                warm = await client.get(path)
+                assert warm.status == 200, path
+
+                with trace_sql(services.repo.connection) as trace:
+                    response = await client.get(path)
+
+                assert response.status == 200, path
+                assert trace.count <= budget, path
+
+    asyncio.run(run())
+
+
+def test_board_thread_batch_render_preserves_scene_cards() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/x-men-apocalypse/boards/danger-room")
+
+        assert response.status == 200
+        assert "X-Men Apocalypse" in response.text
+        assert "Danger Room" in response.text
+        assert "Cast" in response.text
+        assert "writer" in response.text
+        assert "town-hall" not in response.text
+
+    asyncio.run(run())
+
+
+def test_scaled_board_page_stays_within_batched_query_budget() -> None:
+    async def run() -> None:
+        services = _scale_board_services(thread_count=30)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            warm = await client.get("/c/x-men-apocalypse/boards/scale-yard")
+            assert warm.status == 200
+
+            with trace_sql(services.repo.connection) as trace:
+                response = await client.get("/c/x-men-apocalypse/boards/scale-yard")
+
+        assert response.status == 200
+        assert "Scale Yard" in response.text
+        assert "Scale Thread 29" in response.text
+        assert trace.count <= 350
+
+    asyncio.run(run())
+
+
+def test_writer_queue_batch_render_preserves_lenses() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            active_face = await client.get("/c/rl-nyc/my/threads")
+            whole_roster = await client.get("/c/rl-nyc/my/threads?character=all")
+
+        assert active_face.status == 200
+        assert whole_roster.status == 200
+        assert "My threads" in active_face.text
+        assert "Queue lens: active face" in active_face.text
+        assert "Needs reply" in active_face.text or "Queue clear" in active_face.text
+        assert "Queue lens: whole roster" in whole_roster.text
+        assert "Waiting" in whole_roster.text or "Queue clear" in whole_roster.text
+
+    asyncio.run(run())
+
+
+def test_scaled_my_threads_stays_within_batched_query_budget() -> None:
+    async def run() -> None:
+        services = _scale_board_services(thread_count=30)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            warm = await client.get("/c/x-men-apocalypse/my/threads")
+            assert warm.status == 200
+
+            with trace_sql(services.repo.connection) as trace:
+                response = await client.get("/c/x-men-apocalypse/my/threads")
+
+        assert response.status == 200
+        assert "Scale Realm" in response.text
+        assert "Scale Thread 0" in response.text
+        assert trace.count <= 370
+
+    asyncio.run(run())
+
+
+def test_public_network_catalog_hides_member_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def run() -> None:
+        monkeypatch.setenv("ELBYSODIC_ENV", "production")
+        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/network")
+
+        assert response.status == 200
+        assert "Explore" in response.text
+        assert "playing as" not in response.text
+        assert "Dev personas" not in response.text
+        assert "Log out" not in response.text
+        assert "unread" not in response.text
+
+    asyncio.run(run())
+
+
+def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
+    async def run() -> None:
+        services = _scale_network_services(community_count=12)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            warm = await client.get("/network")
+            assert warm.status == 200
+
+            with trace_sql(services.repo.connection) as trace:
+                response = await client.get("/network")
+
+        assert response.status == 200
+        assert "Studio Network" in response.text
+        assert "Hosted Program" in response.text
+        assert trace.count <= 370
 
     asyncio.run(run())
 
@@ -837,6 +1115,32 @@ def test_dev_personas_are_gated_by_development_tools() -> None:
         assert "xmen_staff" in enabled.text
         assert "HP director" in enabled.text
         assert "inactive" in enabled.text
+
+    asyncio.run(run())
+
+
+def test_htmx_timing_harness_is_gated_by_development_tools() -> None:
+    async def run() -> None:
+        disabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=False,
+        )
+        async with TestClient(disabled_app) as client:
+            disabled = await client.get("/")
+
+        enabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        async with TestClient(enabled_app) as client:
+            enabled = await client.get("/")
+
+        assert disabled.status == 200
+        assert enabled.status == 200
+        assert "elbysodic-htmx-timing.js" not in disabled.text
+        assert "elbysodic-htmx-timing.js" in enabled.text
 
     asyncio.run(run())
 

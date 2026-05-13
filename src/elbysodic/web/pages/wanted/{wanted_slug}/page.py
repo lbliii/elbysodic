@@ -115,7 +115,7 @@ async def post(request: Request, wanted_slug: str) -> Page | Redirect:
 def _render_wanted(request: Request, wanted_slug: str) -> Page:
     tenant_slug = request_tenant_slug(request)
     try:
-        services = get_services().for_request(request)
+        services = get_services(request)
         viewer = services.viewer()
     except LookupError, PermissionError:
         if tenant_slug is None:

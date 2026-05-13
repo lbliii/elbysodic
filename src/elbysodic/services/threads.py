@@ -19,8 +19,14 @@ from elbysodic.services.facets import (
     FacetReadRepository,
     current_character_facet_ids,
     facet_tags,
+    facet_tags_with_groups,
 )
-from elbysodic.services.posts import PostViewRepository, post_view
+from elbysodic.services.posts import (
+    PostViewContext,
+    PostViewContextBuilder,
+    PostViewRepository,
+    post_view,
+)
 from elbysodic.services.read_models import (
     POSTING_MODES,
     THREAD_STATUSES,
@@ -57,7 +63,19 @@ class ThreadReadRepository(
 
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]: ...
 
+    def list_posts_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Post]]: ...
+
     def get_character(self, community_id: int, character_id: int) -> Character: ...
+
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]: ...
 
     def get_membership(
         self,
@@ -65,7 +83,19 @@ class ThreadReadRepository(
         membership_id: int,
     ) -> CommunityMembership: ...
 
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]: ...
+
     def list_thread_participants(self, community_id: int, thread_id: int) -> list[Character]: ...
+
+    def list_thread_participants_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Character]]: ...
 
     def list_thread_participant_ids(self, community_id: int, thread_id: int) -> set[int]: ...
 
@@ -74,6 +104,12 @@ class ThreadReadRepository(
     def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
 
     def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]: ...
+
+    def list_thread_facets_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Facet]]: ...
 
     def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]: ...
 
@@ -97,13 +133,41 @@ def board_thread_summaries(
     summaries = []
     current_facet_ids = current_character_facet_ids(repo, viewer)
     roster_character_ids = {character.id for character in viewer.roster}
-    for thread in repo.list_threads(viewer.community.id, board.id):
+    threads = repo.list_threads(viewer.community.id, board.id)
+    thread_ids = [thread.id for thread in threads]
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, thread_ids)
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        viewer.community.id,
+        thread_ids,
+    )
+    facet_groups = repo.list_facet_groups(viewer.community.id)
+    facets_by_thread = repo.list_thread_facets_for_threads(viewer.community.id, thread_ids)
+    authors = repo.list_characters_by_ids(
+        viewer.community.id,
+        list({thread.author_character_id for thread in threads}),
+    )
+    author_memberships = repo.list_memberships_by_ids(
+        viewer.community.id,
+        list({thread.author_membership_id for thread in threads}),
+    )
+    post_context = PostViewContextBuilder(
+        repo,
+        viewer.community.id,
+    ).context([post for posts in posts_by_thread.values() for post in posts])
+    for thread in threads:
         summary = thread_summary(
             repo,
             viewer,
             thread,
             current_facet_ids=current_facet_ids,
             roster_character_ids=roster_character_ids,
+            posts=posts_by_thread.get(thread.id, []),
+            participants=participants_by_thread.get(thread.id, []),
+            facet_groups=facet_groups,
+            thread_facets=facets_by_thread.get(thread.id, []),
+            authors=authors,
+            author_memberships=author_memberships,
+            post_context=post_context,
         )
         if thread_matches_filter(summary, filter_by):
             summaries.append(summary)
@@ -117,15 +181,29 @@ def thread_summary(
     *,
     current_facet_ids: set[int],
     roster_character_ids: set[int],
+    posts: list[Post] | None = None,
+    participants: list[Character] | None = None,
+    facet_groups: list[FacetGroup] | None = None,
+    thread_facets: list[Facet] | None = None,
+    authors: dict[int, Character] | None = None,
+    author_memberships: dict[int, CommunityMembership] | None = None,
+    post_context: PostViewContext | None = None,
 ) -> ThreadSummary:
-    posts = repo.list_posts(viewer.community.id, thread.id)
-    participants = repo.list_thread_participants(viewer.community.id, thread.id)
-    participant_ids = {character.id for character in participants}
-    thread_facets = facet_tags(
-        repo,
-        viewer.community.id,
-        repo.list_thread_facets(viewer.community.id, thread.id),
+    posts = repo.list_posts(viewer.community.id, thread.id) if posts is None else posts
+    participants = (
+        repo.list_thread_participants(viewer.community.id, thread.id)
+        if participants is None
+        else participants
     )
+    participant_ids = {character.id for character in participants}
+    if facet_groups is None or thread_facets is None:
+        thread_facet_tags = facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_thread_facets(viewer.community.id, thread.id),
+        )
+    else:
+        thread_facet_tags = facet_tags_with_groups(facet_groups, thread_facets)
     latest_post = posts[-1] if posts else None
     first_unread = first_unread_post(
         repo,
@@ -134,23 +212,39 @@ def thread_summary(
         thread,
         posts,
     )
-    return ThreadSummary(
-        thread=thread,
-        author=repo.get_character(viewer.community.id, thread.author_character_id),
-        author_membership=repo.get_membership(
+    author = (
+        repo.get_character(viewer.community.id, thread.author_character_id)
+        if authors is None
+        else authors[thread.author_character_id]
+    )
+    author_membership = (
+        repo.get_membership(
             viewer.community.id,
             thread.author_membership_id,
-        ),
+        )
+        if author_memberships is None
+        else author_memberships[thread.author_membership_id]
+    )
+    return ThreadSummary(
+        thread=thread,
+        author=author,
+        author_membership=author_membership,
         participants=participants,
-        facets=thread_facets,
+        facets=thread_facet_tags,
         is_relevant_to_current_face=bool(
             current_facet_ids
-            and {tag.facet.id for tag in thread_facets}.intersection(current_facet_ids)
+            and {tag.facet.id for tag in thread_facet_tags}.intersection(current_facet_ids)
         ),
         reply_count=max(0, len(posts) - 1),
-        latest_post=post_view(repo, viewer.community.id, latest_post) if latest_post else None,
+        latest_post=(
+            post_view(repo, viewer.community.id, latest_post, context=post_context)
+            if latest_post
+            else None
+        ),
         first_unread_post=(
-            post_view(repo, viewer.community.id, first_unread) if first_unread else None
+            post_view(repo, viewer.community.id, first_unread, context=post_context)
+            if first_unread
+            else None
         ),
         episode=episode_credits(repo, viewer.community.id, posts),
         is_unread=is_unread(
@@ -313,13 +407,34 @@ def thread_obligations(
         for board in repo.list_boards(viewer.community.id)
         if policies.can_view_board(viewer.membership, board, viewer.role)
     }
+    candidate_threads = [
+        thread
+        for thread in repo.list_threads(viewer.community.id)
+        if thread.board_id in visible_boards and is_live_queue_thread(thread)
+    ]
+    thread_ids = [thread.id for thread in candidate_threads]
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, thread_ids)
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        viewer.community.id,
+        thread_ids,
+    )
+    authors = repo.list_characters_by_ids(
+        viewer.community.id,
+        list({thread.author_character_id for thread in candidate_threads}),
+    )
+    author_memberships = repo.list_memberships_by_ids(
+        viewer.community.id,
+        list({thread.author_membership_id for thread in candidate_threads}),
+    )
+    post_context = PostViewContextBuilder(
+        repo,
+        viewer.community.id,
+    ).context([post for posts in posts_by_thread.values() for post in posts])
     items = []
-    for thread in repo.list_threads(viewer.community.id):
-        board = visible_boards.get(thread.board_id)
-        if board is None or not is_live_queue_thread(thread):
-            continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        participants = repo.list_thread_participants(viewer.community.id, thread.id)
+    for thread in candidate_threads:
+        board = visible_boards[thread.board_id]
+        posts = posts_by_thread.get(thread.id, [])
+        participants = participants_by_thread.get(thread.id, [])
         participant_ids = {character.id for character in participants}
         if not thread_belongs_to_roster(
             thread,
@@ -351,23 +466,23 @@ def thread_obligations(
             ThreadObligationItem(
                 board=board,
                 thread=thread,
-                author=repo.get_character(
-                    viewer.community.id,
-                    thread.author_character_id,
-                ),
-                author_membership=repo.get_membership(
-                    viewer.community.id,
-                    thread.author_membership_id,
-                ),
+                author=authors[thread.author_character_id],
+                author_membership=author_memberships[thread.author_membership_id],
                 participants=participants,
                 latest_post=(
-                    post_view(repo, viewer.community.id, latest_post) if latest_post else None
+                    post_view(repo, viewer.community.id, latest_post, context=post_context)
+                    if latest_post
+                    else None
                 ),
                 first_unread_post=(
-                    post_view(repo, viewer.community.id, first_unread) if first_unread else None
+                    post_view(repo, viewer.community.id, first_unread, context=post_context)
+                    if first_unread
+                    else None
                 ),
                 last_own_post=(
-                    post_view(repo, viewer.community.id, last_own_post) if last_own_post else None
+                    post_view(repo, viewer.community.id, last_own_post, context=post_context)
+                    if last_own_post
+                    else None
                 ),
                 episode=episode_credits(repo, viewer.community.id, posts),
                 reply_count=max(0, len(posts) - 1),

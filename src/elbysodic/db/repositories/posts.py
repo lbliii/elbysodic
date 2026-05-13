@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from collections import defaultdict
+
 from elbysodic.db.repositories.base import (
     _last_id,
     _next_update_stamp,
@@ -239,6 +242,57 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             (community_id, thread_id),
         ).fetchall()
         return [_post_from_row(row) for row in rows]
+
+    def list_posts_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Post]]:
+        if not thread_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                thread_id,
+                post_number,
+                author_membership_id,
+                author_character_id,
+                body,
+                created_at,
+                updated_at
+            FROM posts
+            WHERE community_id = ?
+              AND thread_id IN (SELECT value FROM json_each(?))
+            ORDER BY thread_id, post_number
+            """,
+            (community_id, json.dumps(thread_ids)),
+        ).fetchall()
+        posts_by_thread: dict[int, list[Post]] = defaultdict(list)
+        for row in rows:
+            post = _post_from_row(row)
+            posts_by_thread[post.thread_id].append(post)
+        return dict(posts_by_thread)
+
+    def post_counts_by_thread(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, int]:
+        if not thread_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT thread_id, COUNT(*) AS post_count
+            FROM posts
+            WHERE community_id = ?
+              AND thread_id IN (SELECT value FROM json_each(?))
+            GROUP BY thread_id
+            """,
+            (community_id, json.dumps(thread_ids)),
+        ).fetchall()
+        return {int(row["thread_id"]): int(row["post_count"]) for row in rows}
 
     def list_posts_by_character(self, community_id: int, character_id: int) -> list[Post]:
         self.get_character(community_id, character_id)

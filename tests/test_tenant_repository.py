@@ -1630,6 +1630,13 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     thread = repo.create_thread(
         community.id, board.id, rogue.id, "sentinel-drill", "Sentinel Drill"
     )
+    second_thread = repo.create_thread(
+        community.id,
+        board.id,
+        rogue.id,
+        "blackbird-briefing",
+        "Blackbird Briefing",
+    )
 
     species = repo.create_facet_group(community.id, "species", "Species", sort_order=10)
     affiliation = repo.create_facet_group(
@@ -1645,6 +1652,8 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     repo.assign_character_facet(community.id, rogue.id, x_men.id)
     repo.assign_board_facet(community.id, board.id, x_men.id)
     repo.assign_thread_facet(community.id, thread.id, x_men.id)
+    repo.assign_thread_facet(community.id, second_thread.id, mutant.id)
+    repo.assign_thread_facet(community.id, second_thread.id, x_men.id)
 
     assert [facet.slug for facet in repo.list_character_facets(community.id, rogue.id)] == [
         "mutant",
@@ -1652,8 +1661,120 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     ]
     assert [facet.slug for facet in repo.list_board_facets(community.id, board.id)] == ["x-men"]
     assert [facet.slug for facet in repo.list_thread_facets(community.id, thread.id)] == ["x-men"]
+    assert repo.list_characters_by_ids(community.id, [rogue.id]) == {rogue.id: rogue}
+    assert repo.list_memberships_by_ids(community.id, [membership.id]) == {
+        membership.id: membership,
+    }
+    assert {
+        thread_id: [facet.slug for facet in facets]
+        for thread_id, facets in repo.list_thread_facets_for_threads(
+            community.id,
+            [thread.id, second_thread.id],
+        ).items()
+    } == {
+        thread.id: ["x-men"],
+        second_thread.id: ["mutant", "x-men"],
+    }
     assert repo.list_character_ids_for_facets(community.id, [mutant.id, x_men.id]) == {rogue.id}
-    assert repo.list_thread_ids_for_facets(community.id, [x_men.id]) == {thread.id}
+    assert repo.list_thread_ids_for_facets(community.id, [x_men.id]) == {
+        thread.id,
+        second_thread.id,
+    }
+
+
+def test_board_rollup_batch_reads_are_tenant_scoped(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "rollup-member", "Rollup Member")
+    user = repo.create_user("rollup@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "rollup", "Rollup")
+    character = repo.create_character(community.id, membership.id, "rollup-face", "Rollup Face")
+    parent = repo.create_board(community.id, "rollup-parent", "Rollup Parent")
+    child = repo.create_board(
+        community.id,
+        "rollup-child",
+        "Rollup Child",
+        parent_board_id=parent.id,
+    )
+    other_parent = repo.create_board(community.id, "rollup-other", "Rollup Other")
+    thread = repo.create_thread(community.id, parent.id, character.id, "rollup-scene", "Scene")
+    child_thread = repo.create_thread(
+        community.id,
+        child.id,
+        character.id,
+        "rollup-child-scene",
+        "Child Scene",
+    )
+    repo.create_post(community.id, thread.id, character.id, "First post.")
+    repo.create_post(community.id, thread.id, character.id, "Second post.")
+    repo.create_post(community.id, child_thread.id, character.id, "Child post.")
+    repo.mark_thread_read(community.id, thread.id, membership.id, read_at=thread.updated_at)
+
+    assert repo.list_child_boards_for_boards(community.id, [parent.id, other_parent.id]) == {
+        parent.id: [child],
+    }
+    assert {
+        board_id: [item.id for item in threads]
+        for board_id, threads in repo.list_threads_for_boards(
+            community.id,
+            [parent.id, child.id],
+        ).items()
+    } == {
+        parent.id: [thread.id],
+        child.id: [child_thread.id],
+    }
+    assert repo.post_counts_by_thread(community.id, [thread.id, child_thread.id]) == {
+        thread.id: 2,
+        child_thread.id: 1,
+    }
+    assert repo.thread_read_at_for_threads(
+        community.id,
+        [thread.id, child_thread.id],
+        membership.id,
+    ) == {thread.id: thread.updated_at}
+
+
+def test_network_membership_counts_batch_application_state(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "network-member", "Network Member")
+    user = repo.create_user("network@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "network", "Network")
+    other_user = repo.create_user("network-other@example.com", "hash")
+    other_membership = repo.create_membership(
+        community.id,
+        other_user.id,
+        role.id,
+        "network-other",
+        "Network Other",
+    )
+    repo.create_character(
+        community.id,
+        membership.id,
+        "network-draft",
+        "Network Draft",
+        application_status="draft",
+    )
+    repo.create_character(
+        community.id,
+        other_membership.id,
+        "network-submitted",
+        "Network Submitted",
+        application_status="submitted",
+    )
+    repo.create_character(
+        community.id,
+        other_membership.id,
+        "network-accepted",
+        "Network Accepted",
+        application_status="accepted",
+    )
+
+    assert repo.network_membership_counts([membership.id]) == {
+        membership.id: {
+            "reviewable_application_count": 2,
+            "own_application_count": 1,
+            "plotting_room_count": 0,
+        },
+    }
 
 
 def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:
