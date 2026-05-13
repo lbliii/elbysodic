@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import signal
 import sqlite3
+import subprocess
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -105,6 +106,17 @@ def build_dev_cli() -> CLI:
             stop_on_sighup=debug,
         )
 
+    @dev_cli.command(
+        "check",
+        description="Run the standard local developer verification gate.",
+        annotations={"destructiveHint": False, "idempotentHint": True},
+        display_result=False,
+    )
+    def check(quick: bool = False) -> None:
+        """Run the standard local verification commands."""
+
+        run_developer_checks(quick=quick)
+
     db = dev_cli.group("db", description="SQLite maintenance helpers for local work.")
 
     @db.command(
@@ -138,6 +150,35 @@ def build_dev_cli() -> CLI:
         sys.stdout.write(f"backed up {source_path} to {backup_path}\n")
 
     return dev_cli
+
+
+def developer_check_commands(*, quick: bool = False) -> list[list[str]]:
+    test_command = ["uv", "run", "pytest", "tests/test_cli.py", "-q", "--tb=short"]
+    if not quick:
+        test_command = ["uv", "run", "pytest", "-q", "--tb=short"]
+    return [
+        ["uv", "run", "ruff", "check", "."],
+        ["uv", "run", "ruff", "format", ".", "--check"],
+        test_command,
+        ["uv", "run", "ty", "check", "src/elbysodic/", "tests/"],
+        [
+            "uv",
+            "run",
+            "python",
+            "-c",
+            "from elbysodic.web import create_app; "
+            "create_app(debug=False, db_path=':memory:').check()",
+        ],
+    ]
+
+
+def run_developer_checks(*, quick: bool = False) -> None:
+    for command in developer_check_commands(quick=quick):
+        sys.stdout.write(f"$ {' '.join(command)}\n")
+        sys.stdout.flush()
+        completed = subprocess.run(command, check=False)  # noqa: S603 - commands are fixed gates.
+        if completed.returncode != 0:
+            raise SystemExit(completed.returncode)
 
 
 class CheckpointResult:

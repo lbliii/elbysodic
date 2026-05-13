@@ -293,9 +293,54 @@ def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
 
     assert result.exit_code == 0
     assert "preview" in result.output
+    assert "check" in result.output
     assert "local preview" in result.output
     assert "checkpoint" in result.output
     assert "backup" in result.output
+
+
+def test_dev_check_runs_standard_gate(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    cli.main(["dev", "check"])
+
+    assert calls == cli.developer_check_commands(quick=False)
+
+
+def test_dev_check_quick_runs_focused_pytest(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    cli.main(["dev", "check", "--quick"])
+
+    assert ["uv", "run", "pytest", "tests/test_cli.py", "-q", "--tb=short"] in calls
+
+
+def test_dev_check_exits_on_first_failure(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 2)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.run_developer_checks()
+
+    assert exc_info.value.code == 2
+    assert calls == [cli.developer_check_commands(quick=False)[0]]
 
 
 def test_dev_db_checkpoint_requires_existing_filesystem_database(tmp_path, capsys) -> None:

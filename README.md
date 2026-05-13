@@ -255,6 +255,15 @@ elbysodic dev db backup --output var/elbysodic-backup.sqlite3
 `backup` uses SQLite's online backup API and refuses to overwrite an existing
 file unless `--overwrite` is passed.
 
+Before handing off a branch, run the developer gate:
+
+```bash
+elbysodic dev check
+```
+
+Use `--quick` when iterating on the CLI itself; it keeps the lint/type/app
+checks but narrows pytest to the CLI tests.
+
 In this workspace, the direct app form is also useful:
 
 ```bash
