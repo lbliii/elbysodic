@@ -10,9 +10,11 @@ and identity safety contract, not as incidental plumbing.
   and app-owned shutdown.
 - Filesystem-backed web requests use a request-scoped repository connection and
   close it after the response settles.
-- Page handlers must obtain request services through `get_services(request)`.
-  Manual `get_services().for_request(request)` calls bypass the shared request
-  cache and are not an accepted web entrypoint.
+- Authenticated page branches must obtain request services through
+  `get_services(request)`. Manual `get_services().for_request(request)` calls
+  bypass the shared request cache and are not an accepted web entrypoint.
+  Signed-out public preview fallbacks may use the root public facade after
+  request identity has failed.
 - `:memory:` test services may share one synchronized connection because each
   new connection would create an empty database.
 - `connect()` owns SQLite pragmas: foreign keys, busy timeout, and WAL for

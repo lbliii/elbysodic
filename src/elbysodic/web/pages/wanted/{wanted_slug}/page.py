@@ -120,7 +120,7 @@ def _render_wanted(request: Request, wanted_slug: str) -> Page:
     except LookupError, PermissionError:
         if tenant_slug is None:
             raise
-        services = get_services(request)
+        services = get_services()
         try:
             wanted = services.public_read_wanted_ad(tenant_slug, wanted_slug)
             community = services.public_studio_program(tenant_slug).community

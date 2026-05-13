@@ -82,7 +82,7 @@ def _render_material(
     except LookupError, PermissionError:
         if tenant_slug is None:
             raise
-        services = get_services(request)
+        services = get_services()
         try:
             material = services.public_read_material(tenant_slug, material_slug)
             guidebook = services.public_world_hub(tenant_slug)

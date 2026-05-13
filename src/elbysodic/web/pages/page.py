@@ -56,7 +56,7 @@ def get(request: Request) -> Page:
         services = get_services(request)
         viewer = services.viewer()
     except LookupError, PermissionError:
-        services = get_services(request)
+        services = get_services()
         try:
             program = services.public_studio_program(tenant_slug)
             hub = services.public_world_hub(tenant_slug)

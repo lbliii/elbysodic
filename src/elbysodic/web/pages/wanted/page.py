@@ -20,7 +20,7 @@ def get(request: Request) -> Page:
     except LookupError, PermissionError:
         if tenant_slug is None:
             raise
-        services = get_services(request)
+        services = get_services()
         viewer = None
         try:
             board = services.public_wanted_ads(tenant_slug)
