@@ -211,6 +211,7 @@ source = { editable = "." }
 dependencies = [
     { name = "bengal-chirp", extra = ["config", "forms", "sessions", "ui"] },
     { name = "chirp-ui" },
+    { name = "milo-cli" },
     { name = "pyyaml" },
 ]
 
@@ -237,6 +238,7 @@ docs = [
 requires-dist = [
     { name = "bengal-chirp", extras = ["config", "forms", "sessions", "ui"], specifier = ">=0.6.0" },
     { name = "chirp-ui", specifier = ">=0.8.0" },
+    { name = "milo-cli", specifier = ">=0.2.2" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]
 

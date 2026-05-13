@@ -13,7 +13,7 @@ from elbysodic.web.tenant import request_tenant_slug
 def get(request: Request) -> Page:
     tenant_slug = request_tenant_slug(request)
     try:
-        services = get_services().for_request(request)
+        services = get_services(request)
         viewer = services.viewer()
         hub = services.world_hub()
         community = viewer.community

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from collections import defaultdict
+
 from elbysodic.db.repositories.base import (
     TenantBoundaryError,
     _last_id,
@@ -66,7 +69,6 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         self._commit()
 
     def list_sidebar_sections(self, community_id: int) -> list[SidebarSectionConfig]:
-        self.ensure_sidebar_section_defaults(community_id)
         rows = self.connection.execute(
             """
             SELECT
@@ -103,7 +105,6 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         section_key: str,
     ) -> SidebarSectionConfig:
         normalized_key = normalize_board_sidebar_section(section_key)
-        self.ensure_sidebar_section_defaults(community_id)
         row = self.connection.execute(
             """
             SELECT
@@ -519,3 +520,47 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
                 (community_id, parent_board_id),
             ).fetchall()
         return [_board_from_row(row) for row in rows]
+
+    def list_child_boards_for_boards(
+        self,
+        community_id: int,
+        parent_board_ids: list[int],
+    ) -> dict[int, list[Board]]:
+        if not parent_board_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                parent_board_id,
+                slug,
+                name,
+                board_kind,
+                sidebar_section,
+                tagline,
+                description,
+                image_url,
+                image_alt,
+                image_treatment,
+                image_focal_point,
+                image_overlay,
+                sort_order,
+                navigation_order,
+                show_in_navigation,
+                is_private,
+                created_at,
+                updated_at
+            FROM boards
+            WHERE community_id = ?
+              AND parent_board_id IN (SELECT value FROM json_each(?))
+            ORDER BY parent_board_id, sort_order, name
+            """,
+            (community_id, json.dumps(parent_board_ids)),
+        ).fetchall()
+        children_by_parent: dict[int, list[Board]] = defaultdict(list)
+        for row in rows:
+            board = _board_from_row(row)
+            if board.parent_board_id is not None:
+                children_by_parent[board.parent_board_id].append(board)
+        return dict(children_by_parent)

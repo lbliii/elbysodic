@@ -226,6 +226,59 @@ elbysodic seed-demo
 elbysodic serve --port 8001
 ```
 
+For the standard seeded local preview, developers can use the Milo-backed dev
+namespace:
+
+```bash
+elbysodic dev preview
+```
+
+It prepares the local SQLite database with demo realm data and serves the app
+at `http://127.0.0.1:8001/`. Pass `--no-seed-demo` when you only want schema
+initialization before serving.
+
+For local navigation and htmx timing checks, use the production-like preview
+task. It keeps `debug=False` while enabling dev tools, including the htmx timing
+harness.
+
+```bash
+uv run poe preview-prod-devtools
+```
+
+With that preview running, the latest-click-wins browser harness can exercise
+rapid htmx navigation settlement:
+
+```bash
+uv run poe latest-click-wins-qa
+```
+
+Stop local servers with `Ctrl-C`/`SIGINT` or `SIGTERM` so Elbysodic can close
+its app services and SQLite connection. Debug-mode `serve` and `dev preview`
+also treat `SIGHUP` as a local shutdown signal. Deleting or archiving a live
+worktree is not a clean shutdown contract; stop the process first, then archive
+or remove the isolated checkout.
+
+Use the developer DB helpers before copying or preserving a local realm
+database:
+
+```bash
+elbysodic dev db checkpoint
+elbysodic dev db backup --output var/elbysodic-backup.sqlite3
+```
+
+`checkpoint` runs a TRUNCATE WAL checkpoint against the configured SQLite file.
+`backup` uses SQLite's online backup API and refuses to overwrite an existing
+file unless `--overwrite` is passed.
+
+Before handing off a branch, run the developer gate:
+
+```bash
+elbysodic dev check
+```
+
+Use `--quick` when iterating on the CLI itself; it keeps the lint/type/app
+checks but narrows pytest to the CLI tests.
+
 In this workspace, the direct app form is also useful:
 
 ```bash

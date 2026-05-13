@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 from chirp.app import App
 from chirp.config import AppConfig
@@ -31,7 +32,12 @@ from elbysodic.web.security import (
     resolve_web_security_config,
 )
 from elbysodic.web.shell import sidebar_is_hidden
-from elbysodic.web.state import configure_services, dev_tools_enabled, get_services
+from elbysodic.web.state import (
+    close_request_services,
+    configure_services,
+    dev_tools_enabled,
+    get_services,
+)
 from elbysodic.web.tenant import TenantPrefixMiddleware
 from elbysodic.web.timing import RequestTimingMiddleware
 
@@ -59,9 +65,11 @@ def create_app(
     )
     app = App(config=config)
     register_error_handlers(app, include_internal=not debug)
-    configured_services = (
-        services or create_services(db_path, seed_demo=seed_demo)
-    ).with_request_auth(production=security.production)
+    owns_services = services is None
+    base_services = services or create_services(db_path, seed_demo=seed_demo)
+    configured_services = base_services.with_request_auth(production=security.production)
+    if owns_services:
+        app.on_shutdown(configured_services.close)
 
     configure_services(
         configured_services,
@@ -100,6 +108,7 @@ def create_app(
         app.template_global("csrf_field")(_empty_csrf_field)
         app.template_global("csrf_token")(_empty_csrf_token)
     app.add_middleware(RequestTimingMiddleware())
+    app.add_middleware(RequestServicesCleanupMiddleware())
     app.add_middleware(TenantPrefixMiddleware())
     if security.production:
         app.add_middleware(
@@ -156,3 +165,13 @@ def _empty_csrf_field() -> str:
 
 def _empty_csrf_token() -> str:
     return ""
+
+
+class RequestServicesCleanupMiddleware:
+    """Close request-scoped service repositories after each response."""
+
+    async def __call__(self, request: object, call_next: Any) -> object:
+        try:
+            return await call_next(request)
+        finally:
+            close_request_services(request)
