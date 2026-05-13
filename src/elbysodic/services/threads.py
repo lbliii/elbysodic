@@ -21,7 +21,12 @@ from elbysodic.services.facets import (
     facet_tags,
     facet_tags_with_groups,
 )
-from elbysodic.services.posts import PostViewRepository, post_view
+from elbysodic.services.posts import (
+    PostViewContext,
+    PostViewContextBuilder,
+    PostViewRepository,
+    post_view,
+)
 from elbysodic.services.read_models import (
     POSTING_MODES,
     THREAD_STATUSES,
@@ -145,6 +150,10 @@ def board_thread_summaries(
         viewer.community.id,
         list({thread.author_membership_id for thread in threads}),
     )
+    post_context = PostViewContextBuilder(
+        repo,
+        viewer.community.id,
+    ).context([post for posts in posts_by_thread.values() for post in posts])
     for thread in threads:
         summary = thread_summary(
             repo,
@@ -158,6 +167,7 @@ def board_thread_summaries(
             thread_facets=facets_by_thread.get(thread.id, []),
             authors=authors,
             author_memberships=author_memberships,
+            post_context=post_context,
         )
         if thread_matches_filter(summary, filter_by):
             summaries.append(summary)
@@ -177,6 +187,7 @@ def thread_summary(
     thread_facets: list[Facet] | None = None,
     authors: dict[int, Character] | None = None,
     author_memberships: dict[int, CommunityMembership] | None = None,
+    post_context: PostViewContext | None = None,
 ) -> ThreadSummary:
     posts = repo.list_posts(viewer.community.id, thread.id) if posts is None else posts
     participants = (
@@ -225,9 +236,15 @@ def thread_summary(
             and {tag.facet.id for tag in thread_facet_tags}.intersection(current_facet_ids)
         ),
         reply_count=max(0, len(posts) - 1),
-        latest_post=post_view(repo, viewer.community.id, latest_post) if latest_post else None,
+        latest_post=(
+            post_view(repo, viewer.community.id, latest_post, context=post_context)
+            if latest_post
+            else None
+        ),
         first_unread_post=(
-            post_view(repo, viewer.community.id, first_unread) if first_unread else None
+            post_view(repo, viewer.community.id, first_unread, context=post_context)
+            if first_unread
+            else None
         ),
         episode=episode_credits(repo, viewer.community.id, posts),
         is_unread=is_unread(
@@ -409,6 +426,10 @@ def thread_obligations(
         viewer.community.id,
         list({thread.author_membership_id for thread in candidate_threads}),
     )
+    post_context = PostViewContextBuilder(
+        repo,
+        viewer.community.id,
+    ).context([post for posts in posts_by_thread.values() for post in posts])
     items = []
     for thread in candidate_threads:
         board = visible_boards[thread.board_id]
@@ -449,13 +470,19 @@ def thread_obligations(
                 author_membership=author_memberships[thread.author_membership_id],
                 participants=participants,
                 latest_post=(
-                    post_view(repo, viewer.community.id, latest_post) if latest_post else None
+                    post_view(repo, viewer.community.id, latest_post, context=post_context)
+                    if latest_post
+                    else None
                 ),
                 first_unread_post=(
-                    post_view(repo, viewer.community.id, first_unread) if first_unread else None
+                    post_view(repo, viewer.community.id, first_unread, context=post_context)
+                    if first_unread
+                    else None
                 ),
                 last_own_post=(
-                    post_view(repo, viewer.community.id, last_own_post) if last_own_post else None
+                    post_view(repo, viewer.community.id, last_own_post, context=post_context)
+                    if last_own_post
+                    else None
                 ),
                 episode=episode_credits(repo, viewer.community.id, posts),
                 reply_count=max(0, len(posts) - 1),
