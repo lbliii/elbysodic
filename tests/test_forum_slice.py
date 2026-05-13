@@ -165,6 +165,72 @@ def _faceless_services(services: AppServices, *, prefix: str = "faceless") -> Ap
     return AppServices(repo, DemoSeed(community, user, membership, None))
 
 
+def _scale_board_services(*, thread_count: int = 30) -> AppServices:
+    connection = connect(check_same_thread=False)
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Scale Realm")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("scale-writer@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "scale", "Scale")
+    viewer_character = repo.create_character(
+        community.id,
+        membership.id,
+        "scale-face",
+        "Scale Face",
+        make_default=True,
+    )
+    authors = [viewer_character]
+    for index in range(5):
+        author_user = repo.create_user(f"scale-author-{index}@example.com", "hash")
+        author_membership = repo.create_membership(
+            community.id,
+            author_user.id,
+            role.id,
+            f"scale-author-{index}",
+            f"Scale Author {index}",
+        )
+        authors.append(
+            repo.create_character(
+                community.id,
+                author_membership.id,
+                f"scale-author-{index}",
+                f"Scale Author {index}",
+            )
+        )
+    facet_group = repo.create_facet_group(community.id, "scale-lens", "Scale Lens")
+    facets = [
+        repo.create_facet(community.id, facet_group.id, f"scale-{index}", f"Scale {index}")
+        for index in range(3)
+    ]
+    board = repo.create_board(community.id, "scale-yard", "Scale Yard")
+    repo.assign_board_facet(community.id, board.id, facets[0].id)
+    for index in range(thread_count):
+        author = authors[index % len(authors)]
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            author.id,
+            f"scale-thread-{index}",
+            f"Scale Thread {index}",
+        )
+        repo.assign_thread_facet(community.id, thread.id, facets[index % len(facets)].id)
+        repo.create_post(
+            community.id,
+            thread.id,
+            author.id,
+            f"Opening post for scale thread {index}.",
+        )
+        repo.create_post(
+            community.id,
+            thread.id,
+            authors[(index + 1) % len(authors)].id,
+            f"Reply for scale thread {index} mentioning @Scale.",
+        )
+    membership = repo.get_membership(community.id, membership.id)
+    return AppServices(repo, DemoSeed(community, user, membership, viewer_character))
+
+
 def _add_hosted_membership(
     services: AppServices,
     *,
@@ -359,6 +425,26 @@ def test_board_thread_batch_render_preserves_scene_cards() -> None:
         assert "Cast" in response.text
         assert "writer" in response.text
         assert "town-hall" not in response.text
+
+    asyncio.run(run())
+
+
+def test_scaled_board_page_stays_within_batched_query_budget() -> None:
+    async def run() -> None:
+        services = _scale_board_services(thread_count=30)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            warm = await client.get("/c/x-men-apocalypse/boards/scale-yard")
+            assert warm.status == 200
+
+            with trace_sql(services.repo.connection) as trace:
+                response = await client.get("/c/x-men-apocalypse/boards/scale-yard")
+
+        assert response.status == 200
+        assert "Scale Yard" in response.text
+        assert "Scale Thread 29" in response.text
+        assert trace.count <= 350
 
     asyncio.run(run())
 
