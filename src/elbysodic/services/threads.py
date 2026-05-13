@@ -340,13 +340,22 @@ def thread_obligations(
         for board in repo.list_boards(viewer.community.id)
         if policies.can_view_board(viewer.membership, board, viewer.role)
     }
+    candidate_threads = [
+        thread
+        for thread in repo.list_threads(viewer.community.id)
+        if thread.board_id in visible_boards and is_live_queue_thread(thread)
+    ]
+    thread_ids = [thread.id for thread in candidate_threads]
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, thread_ids)
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        viewer.community.id,
+        thread_ids,
+    )
     items = []
-    for thread in repo.list_threads(viewer.community.id):
-        board = visible_boards.get(thread.board_id)
-        if board is None or not is_live_queue_thread(thread):
-            continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
-        participants = repo.list_thread_participants(viewer.community.id, thread.id)
+    for thread in candidate_threads:
+        board = visible_boards[thread.board_id]
+        posts = posts_by_thread.get(thread.id, [])
+        participants = participants_by_thread.get(thread.id, [])
         participant_ids = {character.id for character in participants}
         if not thread_belongs_to_roster(
             thread,
