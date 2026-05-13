@@ -392,6 +392,9 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         app = create_app(debug=False, services=services)
         budgets = {
             "/network": 165,
+            "/c/x-men-apocalypse": 390,
+            "/c/x-men-apocalypse/locations": 200,
+            "/c/x-men-apocalypse/community": 350,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 120,
             "/c/x-men-apocalypse/boards/danger-room": 215,
