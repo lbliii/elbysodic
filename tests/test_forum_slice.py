@@ -320,6 +320,32 @@ def test_rendered_get_navigation_does_not_write_to_database() -> None:
     asyncio.run(run())
 
 
+def test_rendered_route_query_budgets_are_tracked() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
+        budgets = {
+            "/network": 220,
+            "/c/rl-nyc/my/threads": 90,
+            "/c/rl-small-town/boards/town-hall?filter=mine": 130,
+            "/c/x-men-apocalypse/boards/danger-room": 270,
+            "/c/rl-nyc/claims": 90,
+        }
+
+        async with TestClient(app) as client:
+            for path, budget in budgets.items():
+                warm = await client.get(path)
+                assert warm.status == 200, path
+
+                with trace_sql(services.repo.connection) as trace:
+                    response = await client.get(path)
+
+                assert response.status == 200, path
+                assert trace.count <= budget, path
+
+    asyncio.run(run())
+
+
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
     services = create_services(path=":memory:")
     community, user_id, membership_id, character_id = _add_hosted_membership(
