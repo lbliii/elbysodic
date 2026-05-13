@@ -3199,15 +3199,18 @@ def _board_navigation(
         repo.list_boards(community_id),
         key=lambda board: (board.navigation_order, board.name, board.id),
     )
-    for board in boards:
-        if not board.show_in_navigation:
-            continue
-        if not policies.can_view_board(membership, board, role):
-            continue
-        threads = repo.list_threads(community_id, board.id)
-        unread_thread_count = sum(
-            1 for thread in threads if _is_unread(repo, community_id, membership.id, thread)
-        )
+    visible_boards = [
+        board
+        for board in boards
+        if board.show_in_navigation and policies.can_view_board(membership, board, role)
+    ]
+    unread_counts = repo.unread_thread_counts_by_board(
+        community_id,
+        [board.id for board in visible_boards],
+        membership.id,
+    )
+    for board in visible_boards:
+        unread_thread_count = unread_counts.get(board.id, 0)
         items.append(BoardNavigationItem(board=board, unread_thread_count=unread_thread_count))
     return items
 

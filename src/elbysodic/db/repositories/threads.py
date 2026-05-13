@@ -336,6 +336,37 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             ).fetchone()
         return int(row["thread_count"]) if row is not None else 0
 
+    def unread_thread_counts_by_board(
+        self,
+        community_id: int,
+        board_ids: list[int],
+        membership_id: int,
+    ) -> dict[int, int]:
+        if not board_ids:
+            return {}
+        placeholders = ", ".join("?" for _ in board_ids)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                threads.board_id,
+                COUNT(*) AS unread_count
+            FROM threads
+            LEFT JOIN thread_reads
+              ON thread_reads.community_id = threads.community_id
+             AND thread_reads.thread_id = threads.id
+             AND thread_reads.membership_id = ?
+            WHERE threads.community_id = ?
+              AND threads.board_id IN ({placeholders})
+              AND (
+                    thread_reads.read_at IS NULL
+                 OR thread_reads.read_at < threads.updated_at
+              )
+            GROUP BY threads.board_id
+            """,
+            (membership_id, community_id, *board_ids),
+        ).fetchall()
+        return {int(row["board_id"]): int(row["unread_count"]) for row in rows}
+
     def list_threads_by_character(self, community_id: int, character_id: int) -> list[Thread]:
         self.get_character(community_id, character_id)
         rows = self.connection.execute(
