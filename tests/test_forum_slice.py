@@ -265,6 +265,39 @@ def test_health_check_does_not_require_registered_community_host() -> None:
     asyncio.run(run())
 
 
+def test_concurrent_rendered_get_navigation_stays_stable(tmp_path: Path) -> None:
+    async def run() -> None:
+        services = create_services(path=tmp_path / "rapid-navigation.sqlite3")
+        app = create_app(debug=False, services=services)
+        routes = [
+            ("/network", "Studio Network"),
+            ("/c/rl-nyc/my/threads", "RL NYC"),
+            ("/c/rl-small-town/boards/town-hall?filter=mine", "RL Small Town"),
+            ("/c/jurassic-park-universe/world", "Jurassic Park Universe"),
+            ("/c/x-men-apocalypse/boards/danger-room", "X-Men Apocalypse"),
+            ("/c/rl-nyc/claims", "RL NYC"),
+        ]
+
+        async with TestClient(app) as client:
+            for path, _expected in routes:
+                warm = await client.get(path)
+                assert warm.status == 200
+
+            async def fetch(path: str, expected: str) -> tuple[str, int, str]:
+                response = await client.get(path)
+                return path, response.status, response.text if expected in response.text else ""
+
+            responses = await asyncio.gather(
+                *(fetch(path, expected) for path, expected in routes * 2)
+            )
+
+        for path, status, expected_text in responses:
+            assert status == 200, path
+            assert expected_text, path
+
+    asyncio.run(run())
+
+
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
     services = create_services(path=":memory:")
     community, user_id, membership_id, character_id = _add_hosted_membership(
