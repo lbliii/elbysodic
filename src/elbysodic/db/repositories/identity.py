@@ -93,7 +93,9 @@ class IdentityRepositoryMixin(RepositoryBase):
             ),
         )
         self._commit()
-        return self.get_community(DEFAULT_COMMUNITY_ID)
+        community = self.get_community(DEFAULT_COMMUNITY_ID)
+        self.ensure_sidebar_section_defaults(community.id)
+        return community
 
     def create_community(self, slug: str, name: str, host: str | None = None) -> Community:
         now = _utc_now()
@@ -105,7 +107,9 @@ class IdentityRepositoryMixin(RepositoryBase):
             (name, slug, host, now, now),
         )
         self._commit()
-        return self.get_community(_last_id(cursor))
+        community = self.get_community(_last_id(cursor))
+        self.ensure_sidebar_section_defaults(community.id)
+        return community
 
     def get_community(self, community_id: int) -> Community:
         row = self.connection.execute(

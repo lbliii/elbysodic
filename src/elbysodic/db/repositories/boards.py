@@ -66,7 +66,6 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         self._commit()
 
     def list_sidebar_sections(self, community_id: int) -> list[SidebarSectionConfig]:
-        self.ensure_sidebar_section_defaults(community_id)
         rows = self.connection.execute(
             """
             SELECT
@@ -103,7 +102,6 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         section_key: str,
     ) -> SidebarSectionConfig:
         normalized_key = normalize_board_sidebar_section(section_key)
-        self.ensure_sidebar_section_defaults(community_id)
         row = self.connection.execute(
             """
             SELECT
