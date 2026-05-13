@@ -1682,6 +1682,57 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
     }
 
 
+def test_board_rollup_batch_reads_are_tenant_scoped(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "rollup-member", "Rollup Member")
+    user = repo.create_user("rollup@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "rollup", "Rollup")
+    character = repo.create_character(community.id, membership.id, "rollup-face", "Rollup Face")
+    parent = repo.create_board(community.id, "rollup-parent", "Rollup Parent")
+    child = repo.create_board(
+        community.id,
+        "rollup-child",
+        "Rollup Child",
+        parent_board_id=parent.id,
+    )
+    other_parent = repo.create_board(community.id, "rollup-other", "Rollup Other")
+    thread = repo.create_thread(community.id, parent.id, character.id, "rollup-scene", "Scene")
+    child_thread = repo.create_thread(
+        community.id,
+        child.id,
+        character.id,
+        "rollup-child-scene",
+        "Child Scene",
+    )
+    repo.create_post(community.id, thread.id, character.id, "First post.")
+    repo.create_post(community.id, thread.id, character.id, "Second post.")
+    repo.create_post(community.id, child_thread.id, character.id, "Child post.")
+    repo.mark_thread_read(community.id, thread.id, membership.id, read_at=thread.updated_at)
+
+    assert repo.list_child_boards_for_boards(community.id, [parent.id, other_parent.id]) == {
+        parent.id: [child],
+    }
+    assert {
+        board_id: [item.id for item in threads]
+        for board_id, threads in repo.list_threads_for_boards(
+            community.id,
+            [parent.id, child.id],
+        ).items()
+    } == {
+        parent.id: [thread.id],
+        child.id: [child_thread.id],
+    }
+    assert repo.post_counts_by_thread(community.id, [thread.id, child_thread.id]) == {
+        thread.id: 2,
+        child_thread.id: 1,
+    }
+    assert repo.thread_read_at_for_threads(
+        community.id,
+        [thread.id, child_thread.id],
+        membership.id,
+    ) == {thread.id: thread.updated_at}
+
+
 def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")

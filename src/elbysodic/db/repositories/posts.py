@@ -275,6 +275,25 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             posts_by_thread[post.thread_id].append(post)
         return dict(posts_by_thread)
 
+    def post_counts_by_thread(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, int]:
+        if not thread_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT thread_id, COUNT(*) AS post_count
+            FROM posts
+            WHERE community_id = ?
+              AND thread_id IN (SELECT value FROM json_each(?))
+            GROUP BY thread_id
+            """,
+            (community_id, json.dumps(thread_ids)),
+        ).fetchall()
+        return {int(row["thread_id"]): int(row["post_count"]) for row in rows}
+
     def list_posts_by_character(self, community_id: int, character_id: int) -> list[Post]:
         self.get_character(community_id, character_id)
         rows = self.connection.execute(

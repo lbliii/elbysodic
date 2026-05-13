@@ -318,6 +318,45 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             ).fetchall()
         return [_thread_from_row(row) for row in rows]
 
+    def list_threads_for_boards(
+        self,
+        community_id: int,
+        board_ids: list[int],
+    ) -> dict[int, list[Thread]]:
+        if not board_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                board_id,
+                author_membership_id,
+                author_character_id,
+                slug,
+                title,
+                status,
+                location,
+                timeline,
+                summary,
+                posting_mode,
+                is_locked,
+                is_pinned,
+                created_at,
+                updated_at
+            FROM threads
+            WHERE community_id = ?
+              AND board_id IN (SELECT value FROM json_each(?))
+            ORDER BY board_id, is_pinned DESC, updated_at DESC, id DESC
+            """,
+            (community_id, json.dumps(board_ids)),
+        ).fetchall()
+        threads_by_board: dict[int, list[Thread]] = defaultdict(list)
+        for row in rows:
+            thread = _thread_from_row(row)
+            threads_by_board[thread.board_id].append(thread)
+        return dict(threads_by_board)
+
     def count_threads(self, community_id: int, board_id: int | None = None) -> int:
         if board_id is None:
             row = self.connection.execute(
@@ -594,6 +633,26 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         if row is None:
             return None
         return str(row["read_at"])
+
+    def thread_read_at_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+        membership_id: int,
+    ) -> dict[int, str]:
+        if not thread_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT thread_id, read_at
+            FROM thread_reads
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND thread_id IN (SELECT value FROM json_each(?))
+            """,
+            (community_id, membership_id, json.dumps(thread_ids)),
+        ).fetchall()
+        return {int(row["thread_id"]): str(row["read_at"]) for row in rows}
 
     def mark_thread_read(
         self,
