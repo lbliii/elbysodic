@@ -328,7 +328,7 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
             "/network": 180,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 120,
-            "/c/x-men-apocalypse/boards/danger-room": 225,
+            "/c/x-men-apocalypse/boards/danger-room": 215,
             "/c/rl-nyc/claims": 80,
         }
 
