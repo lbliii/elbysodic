@@ -237,6 +237,12 @@ It prepares the local SQLite database with demo realm data and serves the app
 at `http://127.0.0.1:8001/`. Pass `--no-seed-demo` when you only want schema
 initialization before serving.
 
+Stop local servers with `Ctrl-C`/`SIGINT` or `SIGTERM` so Elbysodic can close
+its app services and SQLite connection. Debug-mode `serve` and `dev preview`
+also treat `SIGHUP` as a local shutdown signal. Deleting or archiving a live
+worktree is not a clean shutdown contract; stop the process first, then archive
+or remove the isolated checkout.
+
 In this workspace, the direct app form is also useful:
 
 ```bash

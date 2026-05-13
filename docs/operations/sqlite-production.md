@@ -19,6 +19,25 @@ chooses a different persistence backend.
 - Seed demo data intentionally with `elbysodic seed-demo`; app startup creates
   the schema but should not be treated as a demo reset.
 
+## Shutdown Contract
+
+`elbysodic serve` and `elbysodic dev preview` own the app service lifecycle for
+the process they start. On normal server exit, Elbysodic closes the shared
+SQLite connection and best-effort checkpoints WAL data for filesystem-backed
+databases before releasing the connection.
+
+Supported clean stop paths are:
+
+- `SIGTERM` from a process manager or deployment platform.
+- `SIGINT`, including local `Ctrl-C`.
+- `SIGHUP` for local debug-mode `serve` and `dev preview` processes.
+
+Abrupt filesystem removal is outside that contract. Do not delete, archive, or
+move an isolated worktree while an Elbysodic server from that checkout is still
+running; the process can still hold its port and SQLite handles while page and
+static assets disappear from disk. Stop the process first, verify the port is
+free, then archive or remove the checkout.
+
 ## Persistence Checks
 
 Before sharing a URL, prove these survive restart or redeploy:
