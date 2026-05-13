@@ -601,6 +601,50 @@ def test_initialize_database_leaves_demo_seed_explicit(tmp_path) -> None:
     assert seeded_community_count > 0
 
 
+def test_initialize_database_repairs_partial_demo_seed(tmp_path) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    connection = connect(db_path)
+    try:
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        repo.seed_default_community("Interrupted Seed")
+    finally:
+        connection.close()
+
+    initialize_database(db_path, seed_demo=True)
+    seeded = connect(db_path)
+    try:
+        counts = {
+            "communities": seeded.execute("SELECT COUNT(*) FROM communities").fetchone()[0],
+            "boards": seeded.execute("SELECT COUNT(*) FROM boards").fetchone()[0],
+            "threads": seeded.execute("SELECT COUNT(*) FROM threads").fetchone()[0],
+            "posts": seeded.execute("SELECT COUNT(*) FROM posts").fetchone()[0],
+            "characters": seeded.execute("SELECT COUNT(*) FROM characters").fetchone()[0],
+        }
+    finally:
+        seeded.close()
+
+    initialize_database(db_path, seed_demo=True)
+    rerun = connect(db_path)
+    try:
+        rerun_counts = {
+            "communities": rerun.execute("SELECT COUNT(*) FROM communities").fetchone()[0],
+            "boards": rerun.execute("SELECT COUNT(*) FROM boards").fetchone()[0],
+            "threads": rerun.execute("SELECT COUNT(*) FROM threads").fetchone()[0],
+            "posts": rerun.execute("SELECT COUNT(*) FROM posts").fetchone()[0],
+            "characters": rerun.execute("SELECT COUNT(*) FROM characters").fetchone()[0],
+        }
+    finally:
+        rerun.close()
+
+    assert counts["communities"] > 1
+    assert counts["boards"] > 0
+    assert counts["threads"] > 0
+    assert counts["posts"] > 0
+    assert counts["characters"] > 0
+    assert rerun_counts == counts
+
+
 def test_cli_bootstrap_first_realm_creates_empty_configured_realm(tmp_path, capsys) -> None:
     db_path = tmp_path / "forum.sqlite3"
 

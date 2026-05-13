@@ -18,6 +18,10 @@ chooses a different persistence backend.
   persistent database file.
 - Seed demo data intentionally with `elbysodic seed-demo`; app startup creates
   the schema but should not be treated as a demo reset.
+- Demo seeding is idempotent for interrupted local/staging setup. If a seed run
+  is stopped partway through, rerun `elbysodic seed-demo` or
+  `elbysodic dev preview` against the same database to repair the missing demo
+  rows before using the realm.
 
 ## Shutdown Contract
 
