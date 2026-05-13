@@ -6,13 +6,20 @@ import argparse
 import sys
 from pathlib import Path
 
+from milo import CLI
+
 from elbysodic.services import bootstrap_first_realm, default_database_path, initialize_database
 from elbysodic.web.app import create_app
 
 
 def main(argv: list[str] | None = None) -> None:
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+    if raw_args and raw_args[0] == "dev":
+        build_dev_cli().run(raw_args[1:])
+        return
+
     parser = _build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw_args)
 
     command = args.command or "serve"
     if command == "init-db":
@@ -43,6 +50,41 @@ def main(argv: list[str] | None = None) -> None:
 
     app = create_app(debug=args.debug, db_path=args.db_path, seed_demo=args.seed_demo)
     app.run(host=args.host, port=args.port)
+
+
+def build_dev_cli() -> CLI:
+    """Build the Milo-backed developer workflow namespace."""
+
+    dev_cli = CLI(
+        name="elbysodic dev",
+        description="Developer workflows for local Elbysodic work.",
+        version="0.1.0",
+    )
+
+    @dev_cli.command(
+        "preview",
+        description="Prepare seeded demo data and run the local preview server.",
+        annotations={"destructiveHint": False, "idempotentHint": True},
+        display_result=False,
+    )
+    def preview(
+        db_path: str = "",
+        host: str = "127.0.0.1",
+        port: int = 8001,
+        debug: bool = True,
+        seed_demo: bool = True,
+    ) -> None:
+        """Run a seeded local preview on the standard development port."""
+
+        resolved_db_path = _coerce_db_path(db_path)
+        initialized_path = initialize_database(resolved_db_path, seed_demo=seed_demo)
+        sys.stdout.write(f"preview database ready {initialized_path}\n")
+        sys.stdout.write(f"serving local preview at http://{host}:{port}/\n")
+        sys.stdout.flush()
+        app = create_app(debug=debug, db_path=initialized_path, seed_demo=False)
+        app.run(host=host, port=port)
+
+    return dev_cli
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -114,7 +156,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     serve = subparsers.add_parser("serve", parents=[shared], help="Run the web server.")
     _add_serve_options(serve, include_defaults=False)
+    subparsers.add_parser(
+        "dev",
+        add_help=False,
+        help="Run developer workflows powered by Milo.",
+    )
     return parser
+
+
+def _coerce_db_path(db_path: str | Path | None) -> Path:
+    if db_path is None or str(db_path).strip() == "":
+        return default_database_path()
+    return Path(db_path)
 
 
 def _add_serve_options(parser: argparse.ArgumentParser, *, include_defaults: bool) -> None:

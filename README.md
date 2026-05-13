@@ -226,6 +226,17 @@ elbysodic seed-demo
 elbysodic serve --port 8001
 ```
 
+For the standard seeded local preview, developers can use the Milo-backed dev
+namespace:
+
+```bash
+elbysodic dev preview
+```
+
+It prepares the local SQLite database with demo realm data and serves the app
+at `http://127.0.0.1:8001/`. Pass `--no-seed-demo` when you only want schema
+initialization before serving.
+
 In this workspace, the direct app form is also useful:
 
 ```bash

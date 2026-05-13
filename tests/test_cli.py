@@ -74,6 +74,85 @@ def test_cli_serve_can_explicitly_seed_demo_data(monkeypatch) -> None:
     assert calls["seed_demo"] is True
 
 
+def test_cli_dev_preview_seeds_demo_and_runs_standard_preview_port(monkeypatch, tmp_path) -> None:
+    calls: dict[str, object] = {}
+    db_path = tmp_path / "preview.sqlite3"
+
+    def fake_initialize_database(path: Path, *, seed_demo: bool) -> Path:
+        calls["initialize_path"] = path
+        calls["initialize_seed_demo"] = seed_demo
+        return path
+
+    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
+        calls["debug"] = debug
+        calls["db_path"] = db_path
+        calls["create_seed_demo"] = seed_demo
+        return _FakeApp(calls)
+
+    monkeypatch.setattr(cli, "initialize_database", fake_initialize_database)
+    monkeypatch.setattr(cli, "create_app", fake_create_app)
+
+    cli.main(["dev", "preview", "--db-path", str(db_path)])
+
+    assert calls["initialize_path"] == db_path
+    assert calls["initialize_seed_demo"] is True
+    assert calls["debug"] is True
+    assert calls["db_path"] == db_path
+    assert calls["create_seed_demo"] is False
+    assert calls["host"] == "127.0.0.1"
+    assert calls["port"] == 8001
+
+
+def test_cli_dev_preview_accepts_server_options(monkeypatch, tmp_path) -> None:
+    calls: dict[str, object] = {}
+    db_path = tmp_path / "preview.sqlite3"
+
+    def fake_initialize_database(path: Path, *, seed_demo: bool) -> Path:
+        calls["initialize_path"] = path
+        calls["initialize_seed_demo"] = seed_demo
+        return path
+
+    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
+        calls["debug"] = debug
+        calls["db_path"] = db_path
+        calls["create_seed_demo"] = seed_demo
+        return _FakeApp(calls)
+
+    monkeypatch.setattr(cli, "initialize_database", fake_initialize_database)
+    monkeypatch.setattr(cli, "create_app", fake_create_app)
+
+    cli.main(
+        [
+            "dev",
+            "preview",
+            "--db-path",
+            str(db_path),
+            "--host",
+            RAILWAY_HOST,
+            "--port",
+            "9001",
+            "--no-debug",
+            "--no-seed-demo",
+        ]
+    )
+
+    assert calls["initialize_path"] == db_path
+    assert calls["initialize_seed_demo"] is False
+    assert calls["debug"] is False
+    assert calls["db_path"] == db_path
+    assert calls["create_seed_demo"] is False
+    assert calls["host"] == RAILWAY_HOST
+    assert calls["port"] == 9001
+
+
+def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
+    result = cli.build_dev_cli().invoke(["--llms-txt"])
+
+    assert result.exit_code == 0
+    assert "preview" in result.output
+    assert "local preview" in result.output
+
+
 def test_cli_init_db_creates_schema_without_demo_seed_by_default(monkeypatch, tmp_path) -> None:
     calls: dict[str, object] = {}
     db_path = tmp_path / "forum.sqlite3"
