@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from collections import defaultdict
+
 from elbysodic.db.repositories.base import _last_id, _utc_now
 from elbysodic.db.repositories.reserves import ReserveRepositoryMixin
 from elbysodic.db.repositories.rows import (
@@ -514,6 +517,54 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             (community_id, thread_id),
         ).fetchall()
         return [_character_from_row(row) for row in rows]
+
+    def list_thread_participants_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Character]]:
+        if not thread_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                thread_participants.thread_id,
+                characters.id,
+                characters.community_id,
+                characters.membership_id,
+                characters.name,
+                characters.slug,
+                characters.avatar_url,
+                characters.poster_url,
+                characters.poster_alt,
+                characters.tagline,
+                characters.accent_color,
+                characters.summary,
+                characters.post_profile_variant,
+                characters.post_accent_style,
+                characters.post_border_style,
+                characters.post_title_style,
+                characters.post_density,
+                characters.application_status,
+                characters.created_at,
+                characters.updated_at
+            FROM thread_participants
+            JOIN characters
+              ON characters.community_id = thread_participants.community_id
+             AND characters.id = thread_participants.character_id
+            WHERE thread_participants.community_id = ?
+              AND thread_participants.thread_id IN (SELECT value FROM json_each(?))
+            ORDER BY thread_participants.thread_id,
+                     thread_participants.added_at,
+                     characters.name,
+                     characters.id
+            """,
+            (community_id, json.dumps(thread_ids)),
+        ).fetchall()
+        participants_by_thread: dict[int, list[Character]] = defaultdict(list)
+        for row in rows:
+            participants_by_thread[int(row["thread_id"])].append(_character_from_row(row))
+        return dict(participants_by_thread)
 
     def list_thread_participant_ids(self, community_id: int, thread_id: int) -> set[int]:
         rows = self.connection.execute(

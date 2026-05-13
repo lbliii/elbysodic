@@ -57,6 +57,12 @@ class ThreadReadRepository(
 
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]: ...
 
+    def list_posts_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Post]]: ...
+
     def get_character(self, community_id: int, character_id: int) -> Character: ...
 
     def get_membership(
@@ -66,6 +72,12 @@ class ThreadReadRepository(
     ) -> CommunityMembership: ...
 
     def list_thread_participants(self, community_id: int, thread_id: int) -> list[Character]: ...
+
+    def list_thread_participants_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Character]]: ...
 
     def list_thread_participant_ids(self, community_id: int, thread_id: int) -> set[int]: ...
 
@@ -97,13 +109,22 @@ def board_thread_summaries(
     summaries = []
     current_facet_ids = current_character_facet_ids(repo, viewer)
     roster_character_ids = {character.id for character in viewer.roster}
-    for thread in repo.list_threads(viewer.community.id, board.id):
+    threads = repo.list_threads(viewer.community.id, board.id)
+    thread_ids = [thread.id for thread in threads]
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, thread_ids)
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        viewer.community.id,
+        thread_ids,
+    )
+    for thread in threads:
         summary = thread_summary(
             repo,
             viewer,
             thread,
             current_facet_ids=current_facet_ids,
             roster_character_ids=roster_character_ids,
+            posts=posts_by_thread.get(thread.id, []),
+            participants=participants_by_thread.get(thread.id, []),
         )
         if thread_matches_filter(summary, filter_by):
             summaries.append(summary)
@@ -117,9 +138,15 @@ def thread_summary(
     *,
     current_facet_ids: set[int],
     roster_character_ids: set[int],
+    posts: list[Post] | None = None,
+    participants: list[Character] | None = None,
 ) -> ThreadSummary:
-    posts = repo.list_posts(viewer.community.id, thread.id)
-    participants = repo.list_thread_participants(viewer.community.id, thread.id)
+    posts = repo.list_posts(viewer.community.id, thread.id) if posts is None else posts
+    participants = (
+        repo.list_thread_participants(viewer.community.id, thread.id)
+        if participants is None
+        else participants
+    )
     participant_ids = {character.id for character in participants}
     thread_facets = facet_tags(
         repo,
