@@ -382,6 +382,26 @@ def test_writer_queue_batch_render_preserves_lenses() -> None:
     asyncio.run(run())
 
 
+def test_public_network_catalog_hides_member_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def run() -> None:
+        monkeypatch.setenv("ELBYSODIC_ENV", "production")
+        monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+        monkeypatch.setenv("ELBYSODIC_ALLOWED_HOSTS", "*")
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/network")
+
+        assert response.status == 200
+        assert "Explore" in response.text
+        assert "playing as" not in response.text
+        assert "Dev personas" not in response.text
+        assert "Log out" not in response.text
+        assert "unread" not in response.text
+
+    asyncio.run(run())
+
+
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
     services = create_services(path=":memory:")
     community, user_id, membership_id, character_id = _add_hosted_membership(
