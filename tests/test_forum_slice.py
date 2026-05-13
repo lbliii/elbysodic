@@ -1119,6 +1119,32 @@ def test_dev_personas_are_gated_by_development_tools() -> None:
     asyncio.run(run())
 
 
+def test_htmx_timing_harness_is_gated_by_development_tools() -> None:
+    async def run() -> None:
+        disabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=False,
+        )
+        async with TestClient(disabled_app) as client:
+            disabled = await client.get("/")
+
+        enabled_app = create_app(
+            debug=False,
+            services=create_services(path=":memory:"),
+            dev_tools=True,
+        )
+        async with TestClient(enabled_app) as client:
+            enabled = await client.get("/")
+
+        assert disabled.status == 200
+        assert enabled.status == 200
+        assert "elbysodic-htmx-timing.js" not in disabled.text
+        assert "elbysodic-htmx-timing.js" in enabled.text
+
+    asyncio.run(run())
+
+
 def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
     services = create_services(path=":memory:")
     xmen_writer = resolve_seed_persona(services.repo, "xmen_writer")
