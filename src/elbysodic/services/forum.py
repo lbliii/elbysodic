@@ -3352,9 +3352,7 @@ def _board_summaries(
     )
     all_posts = [post for posts in posts_by_thread.values() for post in posts]
     post_context = (
-        PostViewContextBuilder(repo, viewer.community.id).context(all_posts)
-        if all_posts
-        else None
+        PostViewContextBuilder(repo, viewer.community.id).context(all_posts) if all_posts else None
     )
     summaries: list[BoardSummary] = []
     for board in boards:
