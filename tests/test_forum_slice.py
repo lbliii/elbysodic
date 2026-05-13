@@ -1362,8 +1362,11 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
             response = await client.get("/network")
 
         assert response.status == 200
-        assert "Explore Elbysodic" in response.text
-        assert "Search worlds, wanted hooks, and writing lanes." in response.text
+        assert "Find realms by mood, hook, face, or story pressure." in response.text
+        assert "Public-preview realm catalog." in response.text
+        assert "Start with a wanted hook" in response.text
+        assert "Start with current events" in response.text
+        assert "Home hub" not in response.text
         assert "X-Men Apocalypse" in response.text
         assert "HP Universe" in response.text
         assert "Jurassic Park Universe" in response.text
@@ -1387,7 +1390,8 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "elbysodic-network-card__tooltip" in response.text
         assert 'title="Wanted hooks"' not in response.text
         assert "elbysodic-network-search__control" in response.text
-        assert "face you want to play next" in response.text
+        assert "connected tags, wanted hooks, roster signals" in response.text
+        assert "superhero crisis" in response.text
         assert "face you want to wear next" not in response.text
         assert "elbysodic-network-card__mark" in response.text
         assert "XMA" in response.text
@@ -1574,10 +1578,20 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in root.text
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
         assert "Studio Network" in root.text
-        assert "Choose the realm you are writing in." in root.text
+        assert "Featured realm" in root.text
+        assert "Trending realms" in root.text
+        assert "Superhero crisis" in root.text
+        assert "Magic, survival, and small towns" in root.text
+        assert "Search realms, hooks, faces, and moods." in root.text
+        assert "Your desk is one click away." in root.text
+        assert "What can move next." not in root.text
+        assert "Memberships on this account." not in root.text
+        assert "Choose the realm you are writing in." not in root.text
+        assert "Explore Elbysodic" not in root.text
         assert 'aria-label="Community"' not in root.text
         assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
         assert 'href="/c/x-men-apocalypse"' in root.text
+        assert 'href="/c/x-men-apocalypse/desk"' in root.text
         assert "/elbysodic-static/seed-media/xmen-mark.svg" in root.text
         assert "/elbysodic-static/seed-media/xmen-hero.svg" in root.text
 
@@ -1592,15 +1606,14 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
 
             assert index.status == 200
             assert "/elbysodic-static/brand/elbysodic-favicon.svg" in index.text
-            assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in index.text
+            assert "/elbysodic-static/brand/elbysodic-mark-one-color-dark.svg" in index.text
             assert "/elbysodic-static/seed-media/xmen-mark.svg" in index.text
             assert 'alt="X-Men Apocalypse academy signal mark"' in index.text
             assert (
                 '<span class="elbysodic-community-brand__name">X-Men Apocalypse</span>'
                 in index.text
             )
-            assert "Built on" in index.text
-            assert "<strong>Elbysodic</strong>" in index.text
+            assert 'data-rail-tooltip="Built on Elbysodic"' in index.text
             assert 'href="/c/x-men-apocalypse"' in index.text
             assert 'href="/c/x-men-apocalypse/desk"' in index.text
             assert 'aria-label="Primary community rooms"' in index.text
@@ -3255,7 +3268,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
-            assert "elbysodic-theme.css?v=sidebar-cookie-1" in world.text
+            assert "elbysodic-theme.css?v=sidebar-reexpand-1" in world.text
             assert "elbysodic-shell.js?v=sidebar-cookie-2" in world.text
             assert "elbysodic-composer.js?v=sidebar-cookie-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
@@ -4077,7 +4090,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             assert 'href="/wanted/brotherhood-rival-for-rogue"' in wanted.text
             assert "Open casting desk" not in _page_content(wanted.text)
             assert 'href="/casting"' not in _page_content(wanted.text)
-            assert "elbysodic-thread-signal" in wanted.text
+            assert "elbysodic-thread-signal" not in wanted.text
             assert "United Nations" in wanted.text
 
             detail = await client.get("/wanted/brotherhood-rival-for-rogue")

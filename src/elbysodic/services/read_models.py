@@ -1568,6 +1568,110 @@ class StudioNetworkProgramView:
         return _program_href(self, f"/world/{self.current_event.material.slug}")
 
 
+@dataclass(frozen=True, slots=True)
+class PublicCatalogCard:
+    community: Community
+    premise: MaterialSummary | None
+    current_event: MaterialSummary | None
+    roster_count: int
+    open_wanted_count: int
+    application_material_count: int
+    claim_type_count: int
+    theme_preview: StudioNetworkThemePreview
+
+    @property
+    def entry_href(self) -> str:
+        return f"/c/{self.community.slug}"
+
+    @property
+    def monogram(self) -> str:
+        parts = [
+            part for part in self.community.name.replace("-", " ").replace("_", " ").split() if part
+        ]
+        if not parts:
+            return "EB"
+        if len(parts) == 1:
+            return parts[0][:2].upper()
+        return "".join(part[:1] for part in parts[:3]).upper()
+
+    @property
+    def invite_posture_label(self) -> str:
+        if self.community.launch_status == "public-preview":
+            return "Public preview"
+        if self.community.launch_status == "invite-only":
+            return "Invite-only"
+        return "Backstage"
+
+    @property
+    def application_posture_label(self) -> str:
+        if self.application_material_count:
+            return "Application guide ready"
+        return "Application guide pending"
+
+    @property
+    def claims_posture_label(self) -> str:
+        if self.claim_type_count:
+            return "Claims configured"
+        return "Claims not configured"
+
+    @property
+    def premise_href(self) -> str | None:
+        if self.premise is None:
+            return None
+        return f"{self.entry_href}/world/{self.premise.material.slug}"
+
+    @property
+    def current_event_href(self) -> str | None:
+        if self.current_event is None:
+            return None
+        return f"{self.entry_href}/world/{self.current_event.material.slug}"
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkSlice:
+    title: str
+    href: str
+    programs: list[PublicCatalogCard]
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkBrowseFacet:
+    label: str
+    href: str
+    tone: str = "neutral"
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkExploreLane:
+    title: str
+    summary: str
+    href: str
+    metric_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkReturnPath:
+    desk_href: str
+    notification_href: str
+    unread_notification_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkHomeView:
+    featured: PublicCatalogCard | None
+    slices: list[NetworkSlice]
+    browse_facets: list[NetworkBrowseFacet]
+    return_path: NetworkReturnPath | None
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkExploreView:
+    query: str
+    browse_facets: list[NetworkBrowseFacet]
+    relationship_lanes: list[NetworkExploreLane]
+    results: list[PublicCatalogCard]
+
+
 def _program_href(program: StudioNetworkProgramView, path: str) -> str:
     if path == "/":
         return f"/c/{program.community.slug}"

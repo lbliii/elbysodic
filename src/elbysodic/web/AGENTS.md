@@ -14,6 +14,7 @@ Related docs:
 - `docs/product/notices-admonitions.md`
 - `docs/product/appearance-studio.md`
 - `docs/architecture/rendered-route-privacy-matrix.md`
+- `docs/architecture/surface-contract-architecture.md`
 - `docs/architecture/security-boundaries.md`
 
 ## Point Of View
@@ -41,6 +42,8 @@ face-aware browsing, staff workflows, and community atmosphere.
 ## Contract Checklist
 
 - Routes/pages: Chirp app check passes and route context is tenant-aware.
+- Surface contracts: route handlers receive named service read models and keep
+  privacy, ranking, and lifecycle decisions out of templates.
 - Templates/components: shared patterns use `_components/` where appropriate.
 - Static assets: CSS/JS changes preserve theme tokens, composer behavior, and
   shell navigation.

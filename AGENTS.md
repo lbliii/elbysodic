@@ -125,6 +125,35 @@ Cross-boundary PRs should include short **Steward Notes** naming consulted
 stewards, accepted/deferred findings, proof, collateral updates, and remaining
 risks.
 
+## Surface Contract Steward
+
+The Surface Contract Steward is a cross-cutting steward for View Contract
+Architecture. It coordinates the service, web, docs, and tests stewards when a
+page or route needs a named contract between workflow state and rendered UI.
+
+Consult it when work changes or creates a rendered surface, page-level read
+model, discovery/search slice, shell/sidebar count, public preview, member
+dashboard, staff queue, character posting surface, or director workflow room.
+
+Surface contract review asks:
+
+- Who is the audience: public visitor, member, owner, character-backed writer,
+  staff, director, inactive member, or cross-tenant recovery visitor?
+- Which service method owns the page state, and which read model does the
+  template render?
+- Which tenant, membership, character, staff, and publication boundaries are
+  enforced before rendering?
+- Which filtering, sorting, ranking, lifecycle, or discovery decisions are
+  service-owned rather than template-owned?
+- Which repeated PBP card, lane, queue, or action shape should become a shared
+  read model or `_components/` pattern?
+- Which rendered tests prove the contract, and which docs or privacy matrix
+  rows need to move with it?
+
+The Surface Contract Steward does not replace local stewards. It creates
+tension across them so public, member, character, and staff state do not blur
+inside templates or page handlers.
+
 ## Contract Checklist
 
 For cross-surface changes:
@@ -193,6 +222,10 @@ minority reports, ranked backlog, and not-now items.
 - Proactively consult stewards for cross-boundary, public-facing,
   hard-to-reverse, performance-sensitive, concurrency-sensitive,
   security-sensitive, or contract-affecting work.
+- Consult the Surface Contract Steward for new or changed rendered surfaces,
+  page-level read models, public catalog/search behavior, shell counts, staff
+  queues, and any template currently making product, privacy, or ranking
+  decisions.
 - For UX, onboarding, navigation, writing-flow, Studio, Appearance Studio,
   wanted/backstage, application, claim, reserve, or public discovery changes,
   consult the user panel in `docs/product/user-personas-panel.md` in addition

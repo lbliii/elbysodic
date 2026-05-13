@@ -203,7 +203,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
 
         assert health.status == 200
         assert root.status == 200
-        assert "Studio Network" in root.text
+        assert "Play-by-post realms with faces, scenes, wanted hooks, and continuity." in root.text
         assert "starlane" not in root.text
         assert "playing as Rogue" not in root.text
         assert "elbysodic-identity-menu" not in root.text
@@ -381,6 +381,89 @@ def test_public_network_search_contract_stays_service_owned() -> None:
     assert all(program.invite_posture_label == "Public preview" for program in wanted_results)
     assert all(program.application_material_count >= 0 for program in wanted_results)
     assert all(program.claim_type_count >= 0 for program in wanted_results)
+
+
+def test_public_network_uses_only_published_catalog_materials(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        hp = services.repo.get_community_by_slug("hp-universe")
+        services.repo.create_material(
+            hp.id,
+            "draft-public-catalog-leak",
+            "Draft Public Catalog Leak",
+            material_type="premise",
+            summary="draft-only catalog phrase",
+            body="This draft should never appear in public discovery.",
+            status="draft",
+            sort_order=-100,
+            is_featured=True,
+        )
+        services.repo.create_material(
+            hp.id,
+            "draft-event-leak",
+            "Draft Event Leak",
+            material_type="event",
+            summary="draft-only event phrase",
+            body="This draft event should never appear in public discovery.",
+            status="draft",
+            sort_order=-100,
+            is_featured=True,
+        )
+        app = create_app(debug=False, services=services)
+
+        directory = services.public_studio_network()
+        hp_program = next(
+            program for program in directory.programs if program.community.id == hp.id
+        )
+        explore = services.network_explore("draft-only")
+
+        async with TestClient(app) as client:
+            network = await client.get("/network?q=draft-only")
+
+        assert hp_program.premise is None or hp_program.premise.material.status == "published"
+        assert (
+            hp_program.current_event is None
+            or hp_program.current_event.material.status == "published"
+        )
+        assert explore.results == []
+        assert network.status == 200
+        assert "Draft Public Catalog Leak" not in network.text
+        assert "draft-only catalog phrase" not in network.text
+        assert "Draft Event Leak" not in network.text
+        assert "draft-only event phrase" not in network.text
+
+    asyncio.run(run())
+
+
+def test_network_read_models_split_public_cards_from_viewer_state() -> None:
+    services = create_services(path=":memory:")
+
+    home = services.network_home()
+    explore = services.network_explore("wanted")
+
+    assert home.featured is not None
+    assert home.return_path is not None
+    assert home.return_path.desk_href.startswith("/c/")
+    assert explore.results
+    assert {facet.label for facet in explore.browse_facets} >= {
+        "wanted hooks",
+        "superhero crisis",
+        "magic school",
+    }
+    assert {lane.title for lane in explore.relationship_lanes} >= {
+        "Start with a wanted hook",
+        "Start with current events",
+    }
+
+    for card in [home.featured, *explore.results]:
+        assert card is not None
+        assert not hasattr(card, "membership")
+        assert not hasattr(card, "role")
+        assert not hasattr(card, "current_character")
+        assert not hasattr(card, "unread_notification_count")
+        assert not hasattr(card, "plotting_room_count")
+        assert card.invite_posture_label == "Public preview"
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:
