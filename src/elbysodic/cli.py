@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import signal
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from milo import CLI
 
-from elbysodic.services import bootstrap_first_realm, default_database_path, initialize_database
+from elbysodic.services import (
+    bootstrap_first_realm,
+    create_services,
+    default_database_path,
+    initialize_database,
+)
 from elbysodic.web.app import create_app
 
 
@@ -48,8 +56,14 @@ def main(argv: list[str] | None = None) -> None:
         )
         return
 
-    app = create_app(debug=args.debug, db_path=args.db_path, seed_demo=args.seed_demo)
-    app.run(host=args.host, port=args.port)
+    _run_server(
+        debug=args.debug,
+        db_path=args.db_path,
+        seed_demo=args.seed_demo,
+        host=args.host,
+        port=args.port,
+        stop_on_sighup=args.debug,
+    )
 
 
 def build_dev_cli() -> CLI:
@@ -81,10 +95,51 @@ def build_dev_cli() -> CLI:
         sys.stdout.write(f"preview database ready {initialized_path}\n")
         sys.stdout.write(f"serving local preview at http://{host}:{port}/\n")
         sys.stdout.flush()
-        app = create_app(debug=debug, db_path=initialized_path, seed_demo=False)
-        app.run(host=host, port=port)
+        _run_server(
+            debug=debug,
+            db_path=initialized_path,
+            seed_demo=False,
+            host=host,
+            port=port,
+            stop_on_sighup=debug,
+        )
 
     return dev_cli
+
+
+def _run_server(
+    *,
+    debug: bool,
+    db_path: Path,
+    seed_demo: bool,
+    host: str,
+    port: int,
+    stop_on_sighup: bool,
+) -> None:
+    services = create_services(db_path, seed_demo=seed_demo)
+    app = create_app(debug=debug, services=services)
+    try:
+        with _sighup_as_keyboard_interrupt(enabled=stop_on_sighup):
+            app.run(host=host, port=port)
+    finally:
+        services.close()
+
+
+@contextmanager
+def _sighup_as_keyboard_interrupt(*, enabled: bool) -> Iterator[None]:
+    if not enabled or not hasattr(signal, "SIGHUP"):
+        yield
+        return
+    previous_handler = signal.getsignal(signal.SIGHUP)
+
+    def handle_sighup(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGHUP, handle_sighup)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGHUP, previous_handler)
 
 
 def _build_parser() -> argparse.ArgumentParser:

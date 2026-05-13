@@ -59,9 +59,11 @@ def create_app(
     )
     app = App(config=config)
     register_error_handlers(app, include_internal=not debug)
-    configured_services = (
-        services or create_services(db_path, seed_demo=seed_demo)
-    ).with_request_auth(production=security.production)
+    owns_services = services is None
+    base_services = services or create_services(db_path, seed_demo=seed_demo)
+    configured_services = base_services.with_request_auth(production=security.production)
+    if owns_services:
+        app.on_shutdown(configured_services.close)
 
     configure_services(
         configured_services,

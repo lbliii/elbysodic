@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import sqlite3
 from pathlib import Path
 
 import pytest
+from chirp.testing import TestClient
 
 from elbysodic import cli
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.services import AppServices, initialize_database
+from elbysodic.web import app as web_app
 
 RAILWAY_HOST = ".".join(("0", "0", "0", "0"))
 
@@ -20,15 +24,28 @@ class _FakeApp:
         self._calls["port"] = port
 
 
+class _FakeServices:
+    def __init__(self, calls: dict[str, object]) -> None:
+        self._calls = calls
+
+    def close(self) -> None:
+        self._calls["services_closed"] = True
+
+
 def test_cli_can_start_production_server_on_railway_host_and_port(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
-        calls["debug"] = debug
-        calls["db_path"] = db_path
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
         calls["seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> _FakeApp:
+        calls["debug"] = debug
+        calls["services"] = services
         return _FakeApp(calls)
 
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
     cli.main(["--host", RAILWAY_HOST, "--port", "1234", "--no-debug"])
@@ -37,17 +54,23 @@ def test_cli_can_start_production_server_on_railway_host_and_port(monkeypatch) -
     assert calls["seed_demo"] is False
     assert calls["host"] == RAILWAY_HOST
     assert calls["port"] == 1234
+    assert calls["services_closed"] is True
 
 
 def test_cli_serve_subcommand_accepts_same_server_options(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
-        calls["debug"] = debug
-        calls["db_path"] = db_path
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
         calls["seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> _FakeApp:
+        calls["debug"] = debug
+        calls["services"] = services
         return _FakeApp(calls)
 
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
     cli.main(["serve", "--host", RAILWAY_HOST, "--port", "5678", "--no-debug"])
@@ -61,12 +84,17 @@ def test_cli_serve_subcommand_accepts_same_server_options(monkeypatch) -> None:
 def test_cli_serve_can_explicitly_seed_demo_data(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
-        calls["debug"] = debug
-        calls["db_path"] = db_path
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
         calls["seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> _FakeApp:
+        calls["debug"] = debug
+        calls["services"] = services
         return _FakeApp(calls)
 
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
     cli.main(["serve", "--seed-demo"])
@@ -83,13 +111,18 @@ def test_cli_dev_preview_seeds_demo_and_runs_standard_preview_port(monkeypatch, 
         calls["initialize_seed_demo"] = seed_demo
         return path
 
-    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
-        calls["debug"] = debug
-        calls["db_path"] = db_path
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
         calls["create_seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> _FakeApp:
+        calls["debug"] = debug
+        calls["services"] = services
         return _FakeApp(calls)
 
     monkeypatch.setattr(cli, "initialize_database", fake_initialize_database)
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
     cli.main(["dev", "preview", "--db-path", str(db_path)])
@@ -112,13 +145,18 @@ def test_cli_dev_preview_accepts_server_options(monkeypatch, tmp_path) -> None:
         calls["initialize_seed_demo"] = seed_demo
         return path
 
-    def fake_create_app(*, debug: bool, db_path: Path, seed_demo: bool) -> _FakeApp:
-        calls["debug"] = debug
-        calls["db_path"] = db_path
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
         calls["create_seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> _FakeApp:
+        calls["debug"] = debug
+        calls["services"] = services
         return _FakeApp(calls)
 
     monkeypatch.setattr(cli, "initialize_database", fake_initialize_database)
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
     cli.main(
@@ -145,12 +183,85 @@ def test_cli_dev_preview_accepts_server_options(monkeypatch, tmp_path) -> None:
     assert calls["port"] == 9001
 
 
+def test_cli_closes_services_when_server_run_raises(monkeypatch, tmp_path) -> None:
+    calls: dict[str, object] = {}
+
+    class FailingApp(_FakeApp):
+        def run(self, *, host: str | None = None, port: int | None = None) -> None:
+            super().run(host=host, port=port)
+            raise RuntimeError("server failed")
+
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
+        calls["seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> FailingApp:
+        calls["debug"] = debug
+        calls["services"] = services
+        return FailingApp(calls)
+
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
+    monkeypatch.setattr(cli, "create_app", fake_create_app)
+
+    with pytest.raises(RuntimeError, match="server failed"):
+        cli.main(["serve", "--db-path", str(tmp_path / "forum.sqlite3")])
+
+    assert calls["services_closed"] is True
+
+
 def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
     result = cli.build_dev_cli().invoke(["--llms-txt"])
 
     assert result.exit_code == 0
     assert "preview" in result.output
     assert "local preview" in result.output
+
+
+def test_app_services_close_releases_filesystem_database(tmp_path) -> None:
+    db_path = tmp_path / "forum.sqlite3"
+    initialize_database(db_path)
+    connection = connect(db_path)
+    services = AppServices(ForumRepository(connection), None)
+
+    services.close()
+    services.close()
+
+    with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+        connection.execute("SELECT 1")
+
+    reopened = connect(db_path)
+    try:
+        reopened.execute("BEGIN IMMEDIATE")
+        reopened.rollback()
+    finally:
+        reopened.close()
+
+
+def test_create_app_closes_internally_created_services_on_shutdown(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeAppServices(_FakeServices):
+        def with_request_auth(self, *, production: bool) -> FakeAppServices:
+            calls["production"] = production
+            return self
+
+    def fake_create_services(path: Path, *, seed_demo: bool) -> FakeAppServices:
+        calls["db_path"] = path
+        calls["seed_demo"] = seed_demo
+        return FakeAppServices(calls)
+
+    async def run_lifespan() -> None:
+        app = web_app.create_app(debug=True, db_path=Path(":memory:"), seed_demo=False)
+        async with TestClient(app):
+            pass
+
+    monkeypatch.setattr(web_app, "create_services", fake_create_services)
+
+    asyncio.run(run_lifespan())
+
+    assert calls["seed_demo"] is False
+    assert calls["services_closed"] is True
 
 
 def test_cli_init_db_creates_schema_without_demo_seed_by_default(monkeypatch, tmp_path) -> None:

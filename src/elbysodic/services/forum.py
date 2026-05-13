@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import re
 import secrets
+import sqlite3
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -361,6 +363,7 @@ class AppServices:
         )
         self._identity_context = identity_context
         self._viewer: ForumView | None = None
+        self._closed = False
 
     @property
     def seed(self) -> DemoSeed:
@@ -391,6 +394,22 @@ class AppServices:
                 require_session=production,
             ),
         )
+
+    def close(self) -> None:
+        """Release the shared repository connection owned by this service facade."""
+
+        if self._closed:
+            return
+        self._closed = True
+        connection = self.repo.connection
+        with suppress(sqlite3.Error):
+            if connection.in_transaction:
+                connection.rollback()
+        with suppress(sqlite3.Error):
+            if _connection_has_filesystem_database(connection):
+                connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        with suppress(sqlite3.Error):
+            connection.close()
 
     def viewer(self) -> ForumView:
         if self._identity_context is not None and self._viewer is not None:
@@ -3021,6 +3040,10 @@ def create_services(path: str | Path | None = None, *, seed_demo: bool = True) -
     repo = ForumRepository(connection)
     seed = seed_demo_forum(repo) if seed_demo else None
     return AppServices(repo, seed)
+
+
+def _connection_has_filesystem_database(connection: sqlite3.Connection) -> bool:
+    return any(row["file"] for row in connection.execute("PRAGMA database_list").fetchall())
 
 
 def initialize_database(path: str | Path | None = None, *, seed_demo: bool = False) -> Path:
