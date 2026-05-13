@@ -346,6 +346,23 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
     asyncio.run(run())
 
 
+def test_board_thread_batch_render_preserves_scene_cards() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/x-men-apocalypse/boards/danger-room")
+
+        assert response.status == 200
+        assert "X-Men Apocalypse" in response.text
+        assert "Danger Room" in response.text
+        assert "Cast" in response.text
+        assert "writer" in response.text
+        assert "town-hall" not in response.text
+
+    asyncio.run(run())
+
+
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
     services = create_services(path=":memory:")
     community, user_id, membership_id, character_id = _add_hosted_membership(
