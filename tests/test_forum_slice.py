@@ -468,6 +468,26 @@ def test_writer_queue_batch_render_preserves_lenses() -> None:
     asyncio.run(run())
 
 
+def test_scaled_my_threads_stays_within_batched_query_budget() -> None:
+    async def run() -> None:
+        services = _scale_board_services(thread_count=30)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            warm = await client.get("/c/x-men-apocalypse/my/threads")
+            assert warm.status == 200
+
+            with trace_sql(services.repo.connection) as trace:
+                response = await client.get("/c/x-men-apocalypse/my/threads")
+
+        assert response.status == 200
+        assert "Scale Realm" in response.text
+        assert "Scale Thread 0" in response.text
+        assert trace.count <= 370
+
+    asyncio.run(run())
+
+
 def test_public_network_catalog_hides_member_state(monkeypatch: pytest.MonkeyPatch) -> None:
     async def run() -> None:
         monkeypatch.setenv("ELBYSODIC_ENV", "production")
