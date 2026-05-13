@@ -245,6 +245,13 @@ harness.
 uv run poe preview-prod-devtools
 ```
 
+With that preview running, the latest-click-wins browser harness can exercise
+rapid htmx navigation settlement:
+
+```bash
+uv run poe latest-click-wins-qa
+```
+
 Stop local servers with `Ctrl-C`/`SIGINT` or `SIGTERM` so Elbysodic can close
 its app services and SQLite connection. Debug-mode `serve` and `dev preview`
 also treat `SIGHUP` as a local shutdown signal. Deleting or archiving a live
