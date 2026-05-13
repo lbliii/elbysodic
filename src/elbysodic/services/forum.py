@@ -179,6 +179,7 @@ from elbysodic.services.posting import search_mentionables as _search_mentionabl
 from elbysodic.services.posting import start_thread as _start_thread
 from elbysodic.services.posting import update_post as _update_post
 from elbysodic.services.posting import update_thread_scene as _update_thread_scene
+from elbysodic.services.posts import PostViewContextBuilder
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
@@ -1282,12 +1283,12 @@ class AppServices:
     def list_boards(self) -> list[BoardSummary]:
         viewer = self.viewer()
         current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        summaries: list[BoardSummary] = []
-        for board in self.repo.list_boards(viewer.community.id):
-            if not policies.can_view_board(viewer.membership, board, viewer.role):
-                continue
-            summaries.append(_board_summary(self.repo, viewer, board, current_facet_ids))
-        return summaries
+        visible_boards = [
+            board
+            for board in self.repo.list_boards(viewer.community.id)
+            if policies.can_view_board(viewer.membership, board, viewer.role)
+        ]
+        return _board_summaries(self.repo, viewer, visible_boards, current_facet_ids)
 
     def child_board_summaries(self, board: Board) -> list[BoardSummary]:
         viewer = self.viewer()
@@ -3309,6 +3310,108 @@ def _board_summary(
             and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
         ),
     )
+
+
+def _board_summaries(
+    repo: ForumRepository,
+    viewer: ForumView,
+    boards: list[Board],
+    current_facet_ids: set[int],
+) -> list[BoardSummary]:
+    if not boards:
+        return []
+    board_ids = [board.id for board in boards]
+    children_by_board = repo.list_child_boards_for_boards(viewer.community.id, board_ids)
+    visible_children_by_board = {
+        board_id: [
+            child
+            for child in children
+            if policies.can_view_board(viewer.membership, child, viewer.role)
+        ]
+        for board_id, children in children_by_board.items()
+    }
+    activity_boards_by_summary = {
+        board.id: [board, *visible_children_by_board.get(board.id, [])] for board in boards
+    }
+    activity_board_ids = list(
+        {
+            activity_board.id
+            for activity_boards in activity_boards_by_summary.values()
+            for activity_board in activity_boards
+        }
+    )
+    threads_by_board = repo.list_threads_for_boards(viewer.community.id, activity_board_ids)
+    all_thread_ids = [thread.id for threads in threads_by_board.values() for thread in threads]
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, all_thread_ids)
+    thread_read_at = repo.thread_read_at_for_threads(
+        viewer.community.id,
+        all_thread_ids,
+        viewer.membership.id,
+    )
+    all_posts = [post for posts in posts_by_thread.values() for post in posts]
+    post_context = (
+        PostViewContextBuilder(repo, viewer.community.id).context(all_posts)
+        if all_posts
+        else None
+    )
+    summaries: list[BoardSummary] = []
+    for board in boards:
+        threads_with_boards = [
+            (activity_board, thread)
+            for activity_board in activity_boards_by_summary[board.id]
+            for thread in threads_by_board.get(activity_board.id, [])
+        ]
+        latest_board: Board | None = None
+        latest_thread: Thread | None = None
+        if threads_with_boards:
+            latest_board, latest_thread = max(
+                threads_with_boards,
+                key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
+            )
+        latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
+        latest_post = (
+            _post_view(
+                repo,
+                viewer.community.id,
+                latest_thread_posts[-1],
+                context=post_context,
+            )
+            if latest_thread_posts
+            else None
+        )
+        threads = [thread for _, thread in threads_with_boards]
+        board_facets = _facet_tags(
+            repo,
+            viewer.community.id,
+            repo.list_board_facets(viewer.community.id, board.id),
+        )
+        summaries.append(
+            BoardSummary(
+                board=board,
+                child_boards=visible_children_by_board.get(board.id, []),
+                thread_count=len(threads),
+                post_count=sum(len(posts_by_thread.get(thread.id, [])) for thread in threads),
+                unread_thread_count=sum(
+                    1 for thread in threads if _is_unread_from_map(thread, thread_read_at)
+                ),
+                latest_thread=latest_thread,
+                latest_board=latest_board,
+                latest_post=latest_post,
+                facets=board_facets,
+                is_relevant_to_current_face=bool(
+                    current_facet_ids
+                    and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
+                ),
+            )
+        )
+    return summaries
+
+
+def _is_unread_from_map(thread: Thread, read_at_by_thread: dict[int, str]) -> bool:
+    read_at = read_at_by_thread.get(thread.id)
+    if read_at is None:
+        return True
+    return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
 
 
 def _latest_thread(threads: list[Thread]) -> Thread | None:
