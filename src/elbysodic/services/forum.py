@@ -6,13 +6,13 @@ import os
 import re
 import secrets
 import sqlite3
-from contextlib import suppress
+from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from elbysodic.blueprints import ProgramBlueprintPreview
-from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db import Database, ForumRepository, connect, create_schema
 from elbysodic.db.seed import (
     SEED_PERSONAS,
     DemoSeed,
@@ -352,17 +352,29 @@ class AppServices:
         repo: ForumRepository,
         seed: DemoSeed | None,
         *,
+        database: Database | None = None,
         identity_resolver: RequestIdentityResolver | None = None,
         identity_context: RequestIdentityContext | None = None,
+        allow_development_identity: bool = True,
+        require_session: bool = False,
+        repo_context: AbstractContextManager[ForumRepository] | None = None,
+        owns_repo: bool = True,
     ) -> None:
         self.repo = repo
+        self._database = database
         self._seed = seed
+        self._allow_development_identity = allow_development_identity
+        self._require_session = require_session
         self._identity_resolver = identity_resolver or RequestIdentityResolver(
             repo,
             _default_request_identity(seed),
+            allow_development_identity=allow_development_identity,
+            require_session=require_session,
         )
         self._identity_context = identity_context
         self._viewer: ForumView | None = None
+        self._repo_context = repo_context
+        self._owns_repo = owns_repo
         self._closed = False
 
     @property
@@ -372,13 +384,35 @@ class AppServices:
         return self._seed
 
     def for_request(self, request: object) -> AppServices:
-        """Return a request-scoped facade sharing the same repository."""
+        """Return a request-scoped facade."""
 
+        if self._database is not None:
+            repo_context = self._database.repository()
+            repo = repo_context.__enter__()
+            identity_resolver = RequestIdentityResolver(
+                repo,
+                _default_request_identity(self._seed),
+                allow_development_identity=self._allow_development_identity,
+                require_session=self._require_session,
+            )
+            return AppServices(
+                repo,
+                self._seed,
+                database=self._database,
+                identity_resolver=identity_resolver,
+                identity_context=identity_resolver.resolve(request),
+                allow_development_identity=self._allow_development_identity,
+                require_session=self._require_session,
+                repo_context=repo_context,
+            )
         return AppServices(
             self.repo,
             self._seed,
             identity_resolver=self._identity_resolver,
             identity_context=self._identity_resolver.resolve(request),
+            allow_development_identity=self._allow_development_identity,
+            require_session=self._require_session,
+            owns_repo=False,
         )
 
     def with_request_auth(self, *, production: bool) -> AppServices:
@@ -387,12 +421,16 @@ class AppServices:
         return AppServices(
             self.repo,
             self._seed,
+            database=self._database,
             identity_resolver=RequestIdentityResolver(
                 self.repo,
                 _default_request_identity(self._seed),
                 allow_development_identity=not production,
                 require_session=production,
             ),
+            allow_development_identity=not production,
+            require_session=production,
+            owns_repo=self._owns_repo,
         )
 
     def close(self) -> None:
@@ -401,6 +439,11 @@ class AppServices:
         if self._closed:
             return
         self._closed = True
+        if self._repo_context is not None:
+            self._repo_context.__exit__(None, None, None)
+            return
+        if not self._owns_repo:
+            return
         connection = self.repo.connection
         with suppress(sqlite3.Error):
             if connection.in_transaction:
@@ -3039,7 +3082,8 @@ def create_services(path: str | Path | None = None, *, seed_demo: bool = True) -
     create_schema(connection)
     repo = ForumRepository(connection)
     seed = seed_demo_forum(repo) if seed_demo else None
-    return AppServices(repo, seed)
+    database = None if database_path == ":memory:" else Database(database_path)
+    return AppServices(repo, seed, database=database, owns_repo=True)
 
 
 def _connection_has_filesystem_database(connection: sqlite3.Connection) -> bool:
