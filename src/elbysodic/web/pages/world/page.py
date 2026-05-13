@@ -13,14 +13,14 @@ from elbysodic.web.tenant import request_tenant_slug
 def get(request: Request) -> Page:
     tenant_slug = request_tenant_slug(request)
     try:
-        services = get_services().for_request(request)
+        services = get_services(request)
         viewer = services.viewer()
         hub = services.world_hub()
         community = viewer.community
     except LookupError, PermissionError:
         if tenant_slug is None:
             raise
-        services = get_services()
+        services = get_services(request)
         viewer = None
         try:
             hub = services.public_world_hub(tenant_slug)
