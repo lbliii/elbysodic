@@ -325,11 +325,11 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         services = create_services(path=":memory:")
         app = create_app(debug=False, services=services)
         budgets = {
-            "/network": 220,
-            "/c/rl-nyc/my/threads": 90,
-            "/c/rl-small-town/boards/town-hall?filter=mine": 130,
-            "/c/x-men-apocalypse/boards/danger-room": 270,
-            "/c/rl-nyc/claims": 90,
+            "/network": 180,
+            "/c/rl-nyc/my/threads": 80,
+            "/c/rl-small-town/boards/town-hall?filter=mine": 120,
+            "/c/x-men-apocalypse/boards/danger-room": 225,
+            "/c/rl-nyc/claims": 80,
         }
 
         async with TestClient(app) as client:
