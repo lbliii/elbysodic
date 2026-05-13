@@ -53,33 +53,56 @@ class PostViewContext:
     mention_links: list[MentionLink]
 
 
+@dataclass(slots=True)
+class PostViewContextBuilder:
+    """Build post views with request-local lookup reuse."""
+
+    repo: PostViewRepository
+    community_id: int
+    _community: Community | None = None
+    _mention_links: list[MentionLink] | None = None
+
+    def context(self, posts: list[Post]) -> PostViewContext:
+        community = self.community()
+        author_ids = {post.author_character_id for post in posts}
+        membership_ids = {post.author_membership_id for post in posts}
+        authors = {
+            character_id: self.repo.get_character(self.community_id, character_id)
+            for character_id in sorted(author_ids)
+        }
+        memberships = {
+            membership_id: self.repo.get_membership(self.community_id, membership_id)
+            for membership_id in sorted(membership_ids)
+        }
+        accent_colors = {
+            character_id: resolve_character_accent(self.repo, community, character)
+            for character_id, character in authors.items()
+        }
+        return PostViewContext(
+            community=community,
+            authors=authors,
+            memberships=memberships,
+            accent_colors=accent_colors,
+            mention_links=self.mention_links(),
+        )
+
+    def community(self) -> Community:
+        if self._community is None:
+            self._community = self.repo.get_community(self.community_id)
+        return self._community
+
+    def mention_links(self) -> list[MentionLink]:
+        if self._mention_links is None:
+            self._mention_links = post_mention_links(self.repo, self.community_id)
+        return self._mention_links
+
+
 def build_post_view_context(
     repo: PostViewRepository,
     community_id: int,
     posts: list[Post],
 ) -> PostViewContext:
-    community = repo.get_community(community_id)
-    author_ids = {post.author_character_id for post in posts}
-    membership_ids = {post.author_membership_id for post in posts}
-    authors = {
-        character_id: repo.get_character(community_id, character_id)
-        for character_id in sorted(author_ids)
-    }
-    memberships = {
-        membership_id: repo.get_membership(community_id, membership_id)
-        for membership_id in sorted(membership_ids)
-    }
-    accent_colors = {
-        character_id: resolve_character_accent(repo, community, character)
-        for character_id, character in authors.items()
-    }
-    return PostViewContext(
-        community=community,
-        authors=authors,
-        memberships=memberships,
-        accent_colors=accent_colors,
-        mention_links=post_mention_links(repo, community_id),
-    )
+    return PostViewContextBuilder(repo, community_id).context(posts)
 
 
 def post_view(
