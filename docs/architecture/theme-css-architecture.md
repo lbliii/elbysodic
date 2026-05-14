@@ -30,9 +30,13 @@ Use these layers when adding or moving CSS:
 - **page-compositions**: broad page layouts and temporary composition surfaces
   that are not yet stable product components. This should stay small and act as
   a review queue, not a permanent home.
-- **pbp-components**: roleplay-native product components: faces, threads,
-  scenes, wanted hooks, claims, reserves, boards, rosters, staff queues,
-  writer obligations, and director material cards.
+- **pbp-components**: shared roleplay-native product components that cross
+  families, currently broad notices, notification surfaces, and recovery UI.
+  Product-family components live in numbered sibling layers:
+  `41-boards-places.css`, `42-threads-queues.css`,
+  `43-faces-composer.css`, `44-claims-intake.css`,
+  `45-posts-scenes.css`, `46-world-materials.css`, `47-network.css`, and
+  `48-wanted-plotting.css`.
 - **studio**: Director Studio, launch, operations, intake, appearance editor,
   navigation composer, board taxonomy, and director workflow rooms.
 - **legacy-ledger**: selectors that still need markup work, component

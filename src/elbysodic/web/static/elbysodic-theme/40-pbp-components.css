@@ -1,4 +1,8 @@
-/* PBP product components: boards, threads, faces, claims, wanted hooks, materials, and writer/director workflows. */
+/* Shared PBP product components.
+ *
+ * Keep broad notices, notification surfaces, and cross-family recovery UI here.
+ * Put product-family selectors in the neighboring 41-48 files.
+ */
 
 .elbysodic-notification-card {
     align-items: center;
