@@ -1956,6 +1956,9 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
     assert repo.get_wanted_ad_by_slug(hosted.id, "rogue-rival").title == "Hosted rival"
     assert [item.title for item in repo.list_wanted_ads(default.id)] == ["Rogue rival"]
     assert [facet.slug for facet in repo.list_wanted_ad_facets(default.id, wanted.id)] == ["x-men"]
+    assert repo.list_wanted_ad_facets_for_wanted_ads(default.id, [wanted.id]) == {
+        wanted.id: [x_men],
+    }
     assert repo.list_wanted_ad_related_characters(default.id, wanted.id) == [magneto]
     assert repo.list_wanted_ad_interests(default.id, wanted.id) == [interest]
     assert repo.list_wanted_ads_for_character(default.id, rogue.id) == [wanted]

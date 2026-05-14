@@ -17,7 +17,7 @@ from elbysodic.domain.models import (
 )
 from elbysodic.domain.vocabulary import material_type_label
 from elbysodic.services import policies
-from elbysodic.services.facets import FacetReadRepository, facet_tags
+from elbysodic.services.facets import FacetReadRepository, facet_tags, facet_tags_with_groups
 from elbysodic.services.markup import post_snippet, render_prose_body
 from elbysodic.services.posts import PostViewRepository, post_mention_links
 from elbysodic.services.read_models import (
@@ -40,6 +40,12 @@ type WantedAdSummaryFactory = Callable[[WantedAd], WantedAdSummary]
 
 class MaterialSummaryRepository(FacetReadRepository, Protocol):
     def list_material_facets(self, community_id: int, material_id: int) -> list[Facet]: ...
+
+    def list_material_facets_for_materials(
+        self,
+        community_ids: list[int],
+        material_ids: list[int],
+    ) -> dict[tuple[int, int], list[Facet]]: ...
 
 
 class MaterialReadRepository(MaterialSummaryRepository, PostViewRepository, Protocol):
@@ -67,9 +73,33 @@ class MaterialReadRepository(MaterialSummaryRepository, PostViewRepository, Prot
 
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]: ...
 
+    def list_posts_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Post]]: ...
+
     def list_thread_participants(self, community_id: int, thread_id: int) -> list[Character]: ...
 
+    def list_thread_participants_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Character]]: ...
+
     def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]: ...
+
+    def list_board_facets_for_boards(
+        self,
+        community_id: int,
+        board_ids: list[int],
+    ) -> dict[int, list[Facet]]: ...
+
+    def list_thread_facets_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Facet]]: ...
 
     def list_wanted_ads(
         self, community_id: int, *, status: str | None = "open"
@@ -77,7 +107,19 @@ class MaterialReadRepository(MaterialSummaryRepository, PostViewRepository, Prot
 
     def list_wanted_ad_facets(self, community_id: int, wanted_ad_id: int) -> list[Facet]: ...
 
+    def list_wanted_ad_facets_for_wanted_ads(
+        self,
+        community_id: int,
+        wanted_ad_ids: list[int],
+    ) -> dict[int, list[Facet]]: ...
+
     def get_character(self, community_id: int, character_id: int) -> Character: ...
+
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]: ...
 
     def get_membership(self, community_id: int, membership_id: int) -> CommunityMembership: ...
 
@@ -87,13 +129,23 @@ def material_summary(
     community_id: int,
     material: Material,
 ) -> MaterialSummary:
-    return MaterialSummary(
-        material=material,
-        facets=facet_tags(
+    return _material_summary_from_tags(
+        material,
+        facet_tags(
             repo,
             community_id,
             repo.list_material_facets(community_id, material.id),
         ),
+    )
+
+
+def _material_summary_from_tags(
+    material: Material,
+    facets: list[FacetTag],
+) -> MaterialSummary:
+    return MaterialSummary(
+        material=material,
+        facets=facets,
         rendered_summary=material.summary or post_snippet(material.body, limit=160),
         type_label=material_type_label(material.material_type),
     )
@@ -257,17 +309,22 @@ def related_materials(
     facet_ids: set[int],
 ) -> list[MaterialSummary]:
     related = []
-    for candidate in repo.list_materials(community_id):
-        if candidate.id == material.id:
-            continue
-        candidate_facets = facet_tags(
-            repo,
-            community_id,
-            repo.list_material_facets(community_id, candidate.id),
+    candidates = [
+        candidate for candidate in repo.list_materials(community_id) if candidate.id != material.id
+    ]
+    facets_by_material = repo.list_material_facets_for_materials(
+        [community_id],
+        [candidate.id for candidate in candidates],
+    )
+    facet_groups = repo.list_facet_groups(community_id)
+    for candidate in candidates:
+        candidate_facets = facet_tags_with_groups(
+            facet_groups,
+            facets_by_material.get((community_id, candidate.id), []),
         )
         if facet_ids and not facet_ids.intersection({tag.facet.id for tag in candidate_facets}):
             continue
-        related.append(material_summary(repo, community_id, candidate))
+        related.append(_material_summary_from_tags(candidate, candidate_facets))
     return related
 
 
@@ -280,13 +337,18 @@ def material_related_locations(
 ) -> list[BoardSummary]:
     if not facet_ids:
         return []
+    visible_boards = [
+        board
+        for board in repo.list_boards(viewer.community.id)
+        if policies.can_view_board(viewer.membership, board, viewer.role)
+    ]
+    facets_by_board = repo.list_board_facets_for_boards(
+        viewer.community.id,
+        [board.id for board in visible_boards],
+    )
     summaries: list[BoardSummary] = []
-    for board in repo.list_boards(viewer.community.id):
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            continue
-        board_facet_ids = {
-            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
-        }
+    for board in visible_boards:
+        board_facet_ids = {facet.id for facet in facets_by_board.get(board.id, [])}
         if not facet_ids.intersection(board_facet_ids):
             continue
         summaries.append(board_summary_factory(board))
@@ -313,30 +375,51 @@ def material_related_scenes(
         for board in repo.list_boards(viewer.community.id)
         if policies.can_view_board(viewer.membership, board, viewer.role)
     }
+    threads = [
+        thread
+        for thread in repo.list_threads(viewer.community.id)
+        if thread.board_id in visible_boards
+    ]
+    thread_ids = [thread.id for thread in threads]
+    thread_facets_by_thread = repo.list_thread_facets_for_threads(
+        viewer.community.id,
+        thread_ids,
+    )
+    board_facets_by_board = repo.list_board_facets_for_boards(
+        viewer.community.id,
+        list(visible_boards),
+    )
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, thread_ids)
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        viewer.community.id,
+        thread_ids,
+    )
+    authors = repo.list_characters_by_ids(
+        viewer.community.id,
+        list({thread.author_character_id for thread in threads}),
+    )
+    facet_groups = repo.list_facet_groups(viewer.community.id)
     results: list[DiscoveryThreadResult] = []
-    for thread in repo.list_threads(viewer.community.id):
+    for thread in threads:
         board = visible_boards.get(thread.board_id)
         if board is None:
             continue
-        thread_facets = facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_thread_facets(viewer.community.id, thread.id),
+        thread_facets = facet_tags_with_groups(
+            facet_groups,
+            thread_facets_by_thread.get(thread.id, []),
         )
         thread_facet_ids = {tag.facet.id for tag in thread_facets}
-        board_facet_ids = {
-            facet.id for facet in repo.list_board_facets(viewer.community.id, board.id)
-        }
+        board_facet_ids = {facet.id for facet in board_facets_by_board.get(board.id, [])}
         matching_facets = [tag for tag in thread_facets if tag.facet.id in facet_ids]
         if not facet_ids.intersection(thread_facet_ids | board_facet_ids):
             continue
-        posts = repo.list_posts(viewer.community.id, thread.id)
+        posts = posts_by_thread.get(thread.id, [])
         results.append(
             DiscoveryThreadResult(
                 board=board,
                 thread=thread,
-                author=repo.get_character(viewer.community.id, thread.author_character_id),
-                participants=repo.list_thread_participants(viewer.community.id, thread.id),
+                author=authors[thread.author_character_id],
+                participants=participants_by_thread.get(thread.id, []),
                 facets=thread_facets,
                 matching_facets=matching_facets,
                 reply_count=max(0, len(posts) - 1),
@@ -358,10 +441,13 @@ def material_related_wanted_ads(
     wanted_summary_factory: WantedAdSummaryFactory,
 ) -> list[WantedAdSummary]:
     results: list[WantedAdSummary] = []
-    for wanted_ad in repo.list_wanted_ads(viewer.community.id):
-        wanted_facet_ids = {
-            facet.id for facet in repo.list_wanted_ad_facets(viewer.community.id, wanted_ad.id)
-        }
+    wanted_ads = repo.list_wanted_ads(viewer.community.id)
+    facets_by_wanted_ad = repo.list_wanted_ad_facets_for_wanted_ads(
+        viewer.community.id,
+        [wanted_ad.id for wanted_ad in wanted_ads],
+    )
+    for wanted_ad in wanted_ads:
+        wanted_facet_ids = {facet.id for facet in facets_by_wanted_ad.get(wanted_ad.id, [])}
         if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
             wanted_facet_ids
         ):
@@ -387,12 +473,15 @@ def public_material_related_wanted_ads(
     wanted_summary_factory: WantedAdSummaryFactory,
 ) -> list[WantedAdSummary]:
     results: list[WantedAdSummary] = []
-    for wanted_ad in repo.list_wanted_ads(community_id, status=None):
+    wanted_ads = repo.list_wanted_ads(community_id, status=None)
+    facets_by_wanted_ad = repo.list_wanted_ad_facets_for_wanted_ads(
+        community_id,
+        [wanted_ad.id for wanted_ad in wanted_ads],
+    )
+    for wanted_ad in wanted_ads:
         if wanted_ad.status == "archived":
             continue
-        wanted_facet_ids = {
-            facet.id for facet in repo.list_wanted_ad_facets(community_id, wanted_ad.id)
-        }
+        wanted_facet_ids = {facet.id for facet in facets_by_wanted_ad.get(wanted_ad.id, [])}
         if wanted_ad.related_material_id != material.id and not facet_ids.intersection(
             wanted_facet_ids
         ):
@@ -417,11 +506,16 @@ def current_event_for_facet_ids(
     if not facet_ids:
         return None
     matches: list[Material] = []
-    for material in repo.list_materials(community_id):
+    materials = repo.list_materials(community_id)
+    facets_by_material = repo.list_material_facets_for_materials(
+        [community_id],
+        [material.id for material in materials],
+    )
+    for material in materials:
         if material.material_type != "event" or material.status != "published":
             continue
         material_facet_ids = {
-            facet.id for facet in repo.list_material_facets(community_id, material.id)
+            facet.id for facet in facets_by_material.get((community_id, material.id), [])
         }
         if facet_ids.intersection(material_facet_ids):
             matches.append(material)
@@ -436,7 +530,13 @@ def current_event_for_facet_ids(
             item.id,
         ),
     )[0]
-    return material_summary(repo, community_id, current)
+    return _material_summary_from_tags(
+        current,
+        facet_tags_with_groups(
+            repo.list_facet_groups(community_id),
+            facets_by_material.get((community_id, current.id), []),
+        ),
+    )
 
 
 def material_event_actions(

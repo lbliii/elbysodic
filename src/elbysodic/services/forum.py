@@ -6,6 +6,7 @@ import os
 import re
 import secrets
 import sqlite3
+from collections.abc import Callable
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -2450,10 +2451,9 @@ class AppServices:
             self.repo,
             viewer,
             material,
-            board_summary_factory=lambda board: _board_summary(
+            board_summary_factory=_board_summary_factory(
                 self.repo,
                 viewer,
-                board,
                 _current_character_facet_ids(self.repo, viewer),
             ),
             wanted_summary_factory=lambda wanted_ad: _wanted_ad_summary(
@@ -3563,6 +3563,30 @@ def _board_summaries(
             )
         )
     return summaries
+
+
+def _board_summary_factory(
+    repo: ForumRepository,
+    viewer: ForumView,
+    current_facet_ids: set[int],
+) -> Callable[[Board], BoardSummary]:
+    summaries_by_id: dict[int, BoardSummary] | None = None
+
+    def factory(board: Board) -> BoardSummary:
+        nonlocal summaries_by_id
+        if summaries_by_id is None:
+            visible_boards = [
+                candidate
+                for candidate in repo.list_boards(viewer.community.id)
+                if policies.can_view_board(viewer.membership, candidate, viewer.role)
+            ]
+            summaries_by_id = {
+                summary.board.id: summary
+                for summary in _board_summaries(repo, viewer, visible_boards, current_facet_ids)
+            }
+        return summaries_by_id[board.id]
+
+    return factory
 
 
 def _is_unread_from_map(thread: Thread, read_at_by_thread: dict[int, str]) -> bool:

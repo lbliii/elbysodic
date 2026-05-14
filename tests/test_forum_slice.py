@@ -407,6 +407,7 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
             "/c/x-men-apocalypse": 340,
             "/c/x-men-apocalypse/locations": 150,
             "/c/x-men-apocalypse/community": 300,
+            "/c/x-men-apocalypse/world/b-24-winter": 155,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 105,
             "/c/x-men-apocalypse/boards/danger-room": 180,

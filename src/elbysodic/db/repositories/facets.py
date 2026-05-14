@@ -506,6 +506,49 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             wanted_ad_id,
         )
 
+    def list_wanted_ad_facets_for_wanted_ads(
+        self,
+        community_id: int,
+        wanted_ad_ids: list[int],
+    ) -> dict[int, list[Facet]]:
+        if not wanted_ad_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                wanted_ad_facets.wanted_ad_id,
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM wanted_ad_facets
+            JOIN facets
+              ON facets.community_id = wanted_ad_facets.community_id
+             AND facets.id = wanted_ad_facets.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE wanted_ad_facets.community_id = ?
+              AND wanted_ad_facets.wanted_ad_id IN (SELECT value FROM json_each(?))
+            ORDER BY wanted_ad_facets.wanted_ad_id,
+                     facet_groups.sort_order,
+                     facet_groups.name,
+                     facets.sort_order,
+                     facets.name
+            """,
+            (community_id, json.dumps(wanted_ad_ids)),
+        ).fetchall()
+        facets_by_wanted_ad: dict[int, list[Facet]] = defaultdict(list)
+        for row in rows:
+            facets_by_wanted_ad[int(row["wanted_ad_id"])].append(_facet_from_row(row))
+        return dict(facets_by_wanted_ad)
+
     def list_character_plot_hook_facets(
         self,
         community_id: int,
