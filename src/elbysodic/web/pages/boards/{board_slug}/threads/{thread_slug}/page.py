@@ -10,7 +10,7 @@ from chirp.templating.returns import Page
 from elbysodic.domain import Character
 from elbysodic.services import Mentionable
 from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
-from elbysodic.web.commands import command_token
+from elbysodic.web.commands import idempotency_key
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path
@@ -98,12 +98,12 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
 
     character_id = _parse_character_id(form.get("character_id"))
     body = str(form.get("body") or "")
-    token = str(form.get("command_token") or "")
+    key = str(form.get("idempotency_key") or "")
     command_key = f"reply:{board_slug}:{thread_slug}"
-    existing_result = services.command_result(command_key, token)
+    existing_result = services.command_result(command_key, key)
     if existing_result is not None:
         return Redirect(existing_result)
-    if not services.reserve_command(command_key, token):
+    if not services.reserve_command(command_key, key):
         return Redirect(request.path)
 
     try:
@@ -119,7 +119,7 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
         )
 
     result_path = f"{request.path}#post-{post.post_number}"
-    services.complete_command(command_key, token, result_path)
+    services.complete_command(command_key, key, result_path)
     return Redirect(result_path)
 
 
@@ -165,7 +165,7 @@ def _render_thread(
             body=body,
             composer_config={},
             composer_config_id="reply-composer-config",
-            command_token=command_token(),
+            idempotency_key=idempotency_key(),
             thread_statuses=THREAD_STATUSES,
             posting_modes=POSTING_MODES,
             cast_picker_config_id="scene-cast-picker-config",
@@ -198,7 +198,7 @@ def _render_thread(
             mention_endpoint=mention_endpoint,
         ),
         composer_config_id=config_id,
-        command_token=command_token(),
+        idempotency_key=idempotency_key(),
         thread_statuses=THREAD_STATUSES,
         posting_modes=POSTING_MODES,
         cast_picker_config_id="scene-cast-picker-config",

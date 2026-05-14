@@ -39,7 +39,7 @@
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="submitDraft()">
         {{ csrf_field() }}
-    <input type="hidden" name="command_token" value="{{ command_token }}">
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
     <div class="elbysodic-composer-heading">
       <div>
         <p class="elbysodic-kicker">Scene draft</p>

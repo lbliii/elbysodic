@@ -8279,7 +8279,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert 'aria-label="Quote"' in form.text
             assert 'aria-label="Link"' in form.text
             assert "Power-stealing brawler with a careful heart." in form.text
-            token = _input_value(form.text, "command_token")
+            key = _input_value(form.text, "idempotency_key")
 
             response = await client.post(
                 "/boards/danger-room/threads/new",
@@ -8294,7 +8294,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "summary": "Magneto tags Xavier into an unreasonable simulation.",
                         "posting_mode": "posting_order",
                         "body": "Magneto sets the simulation to unfair.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     },
                     doseq=True,
                 ).encode(),
@@ -8307,7 +8307,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "character_id": magneto.id,
                         "title": "Metal and Memory Duplicate",
                         "body": "This duplicate should not be posted.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     },
                     doseq=True,
                 ).encode(),
@@ -8344,7 +8344,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
     asyncio.run(run())
 
 
-def test_reply_command_token_prevents_duplicate_posts() -> None:
+def test_reply_idempotency_key_prevents_duplicate_posts() -> None:
     async def run() -> None:
         app = _app()
         services = get_services()
@@ -8362,14 +8362,14 @@ def test_reply_command_token_prevents_duplicate_posts() -> None:
             assert 'data-elbysodic-command-kind="reply"' in page.text
             assert 'data-elbysodic-actor-shape="explicit-character"' in page.text
             assert 'data-elbysodic-idempotency="command-token"' in page.text
-            token = _input_value(page.text, "command_token")
+            key = _input_value(page.text, "idempotency_key")
             first = await client.post(
                 "/boards/danger-room/threads/sentinel-drill",
                 body=urlencode(
                     {
                         "character_id": str(character.id),
                         "body": "Rogue checks the duplicate-submit guard.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     }
                 ).encode(),
                 headers=_FORM,
@@ -8380,7 +8380,7 @@ def test_reply_command_token_prevents_duplicate_posts() -> None:
                     {
                         "character_id": str(character.id),
                         "body": "This duplicate should not create another post.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     }
                 ).encode(),
                 headers=_FORM,
