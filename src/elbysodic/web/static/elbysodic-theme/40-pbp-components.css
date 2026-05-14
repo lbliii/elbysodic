@@ -54,6 +54,102 @@
     line-height: 1.1;
 }
 
+.elbysodic-metric,
+.elbysodic-queue-metric {
+    align-items: baseline;
+    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0.35rem 0.55rem;
+    text-decoration: none;
+}
+
+a.elbysodic-metric {
+    position: relative;
+    z-index: 2;
+}
+
+a.elbysodic-metric:hover,
+a.elbysodic-metric:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 14%, var(--chirpui-bg-subtle));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 44%, var(--chirpui-border));
+    color: var(--chirpui-text);
+}
+
+.elbysodic-metric strong,
+.elbysodic-queue-metric strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-lg);
+    line-height: 1;
+}
+
+.elbysodic-metric span,
+.elbysodic-queue-metric span {
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.elbysodic-counter {
+    align-items: center;
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.28rem;
+    line-height: 1;
+    min-height: 1.6rem;
+}
+
+.elbysodic-counter__mark {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    height: 1.25rem;
+    justify-content: center;
+    min-width: 1.25rem;
+}
+
+.elbysodic-counter__value {
+    color: var(--chirpui-text);
+    font-weight: 800;
+}
+
+.elbysodic-counter__label {
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-signal {
+    display: grid;
+    gap: 0.15rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-signal > span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.elbysodic-signal strong,
+.elbysodic-signal a {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xl);
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: right;
+    text-decoration: none;
+}
+
 .elbysodic-notice {
     --elbysodic-notice-accent: var(--chirpui-accent);
     align-items: center;

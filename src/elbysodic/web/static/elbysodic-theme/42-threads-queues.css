@@ -761,46 +761,6 @@
     justify-content: end;
 }
 
-.elbysodic-metric,
-.elbysodic-queue-metric {
-    align-items: baseline;
-    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-bg-subtle));
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
-    color: var(--chirpui-text-muted);
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 2rem;
-    padding: 0.35rem 0.55rem;
-    text-decoration: none;
-}
-
-a.elbysodic-metric {
-    position: relative;
-    z-index: 2;
-}
-
-a.elbysodic-metric:hover,
-a.elbysodic-metric:focus-visible {
-    background: color-mix(in srgb, var(--chirpui-accent) 14%, var(--chirpui-bg-subtle));
-    border-color: color-mix(in srgb, var(--chirpui-accent) 44%, var(--chirpui-border));
-    color: var(--chirpui-text);
-}
-
-.elbysodic-metric strong,
-.elbysodic-queue-metric strong {
-    color: var(--chirpui-text);
-    font-size: var(--chirpui-font-lg);
-    line-height: 1;
-}
-
-.elbysodic-metric span,
-.elbysodic-queue-metric span {
-    font-size: var(--chirpui-font-xs);
-    font-weight: 800;
-    letter-spacing: 0;
-}
-
 .elbysodic-queue-focus__action {
     justify-content: center;
     white-space: nowrap;

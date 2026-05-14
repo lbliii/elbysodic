@@ -31,27 +31,7 @@
 
 .elbysodic-director-signal {
     border-top: 1px solid var(--chirpui-border-subtle);
-    display: grid;
-    gap: 0.15rem;
-    grid-template-columns: minmax(0, 1fr) auto;
     padding-top: 0.65rem;
-}
-
-.elbysodic-director-signal span {
-    color: var(--chirpui-text-muted);
-    font-size: var(--chirpui-font-xs);
-    font-weight: 900;
-    text-transform: uppercase;
-}
-
-.elbysodic-director-signal strong,
-.elbysodic-director-signal a {
-    color: var(--chirpui-accent);
-    font-size: var(--chirpui-font-xl);
-    font-weight: 900;
-    line-height: 1.1;
-    text-align: right;
-    text-decoration: none;
 }
 
 .elbysodic-local-rail--outlined a,
