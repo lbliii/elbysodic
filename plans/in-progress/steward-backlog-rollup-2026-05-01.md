@@ -186,6 +186,13 @@ focused plans, issues, or follow-up PRs.
   plan's backlog split into an explicit remaining-work list and moving material
   production-state orchestration into `services/materials.py`, leaving
   `AppServices` as a route-facing delegator.
+- 2026-05-14: Continued progressive surface extraction after the performance
+  hardening pass. Writer activation, Studio operations, network catalog,
+  board/thread read models, and material detail orchestration now live in
+  domain-named service modules with narrower repository protocols where the
+  module owns the read model. `AppServices` remains the route-facing facade,
+  and `surface-contract-architecture.md` now records the extraction pattern for
+  future steward review.
 - 2026-05-01: Continued the next priority batch on
   `codex/steward-next-priorities`: plotting room notifications now filter
   private room targets from non-participant inboxes, visible unread counts honor

@@ -53,6 +53,36 @@ For each rendered surface, record or make obvious:
   Studio rooms should become shared read models or shared components before
   markup forks across pages.
 
+## Extraction Pattern
+
+When a surface grows enough orchestration to hide policy, batching, or privacy
+decisions inside `AppServices` or a page handler, extract it in this order:
+
+1. Keep the route handler thin. It may resolve request-local web settings,
+   call one `AppServices` method, and render the template.
+2. Keep `AppServices` as the route-facing facade. It resolves the viewer and
+   passes request-scoped service inputs into a narrower module such as
+   `services/activation.py`, `services/operations.py`, `services/network.py`,
+   `services/boards.py`, or `services/materials.py`.
+3. Put the read-model assembly in a domain-named service module. That module
+   owns filtering, sorting, publication rules, capability checks, and batching
+   for the surface.
+4. Give the extracted module a repository `Protocol` that names the reads it
+   needs. Prefer existing narrower protocols such as thread, material, facet,
+   notification, or post-view protocols over a concrete `ForumRepository`
+   dependency.
+5. Keep `community_id` explicit in every repository call and cache-shaped map.
+   Batch maps should be keyed by tenant-local ids or by `(community_id, id)`
+   when results can cross realm boundaries.
+6. Move focused proof with the extraction: service/read-model tests for pure
+   contracts, rendered privacy tests for route output, query-budget tests for
+   batching-sensitive surfaces, and browser QA when the interaction flow can
+   regress outside HTML assertions.
+
+The extracted module should be boring to call from `AppServices`: a small
+function with explicit inputs, no request object, no template dependency, and no
+page-local SQL fallback.
+
 ## Audit Questions
 
 Use these questions when a page feels hard to reason about:
