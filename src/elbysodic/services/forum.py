@@ -32,6 +32,7 @@ from elbysodic.domain.boards import (
     BOARD_SIDEBAR_SECTION_GUIDANCE,
     BOARD_SIDEBAR_SECTION_LABELS,
     BoardKind,
+    is_community_board,
     is_community_sidebar_board,
     is_desk_sidebar_board,
     is_location_board,
@@ -203,6 +204,7 @@ from elbysodic.services.read_models import (
     ApplicationsDesk,
     AttentionItem,
     BoardNavigationItem,
+    BoardPage,
     BoardSummary,
     BoardTaxonomyItem,
     BoardThreadFilter,
@@ -1361,11 +1363,71 @@ class AppServices:
 
     def board_summary(self, board: Board) -> BoardSummary:
         viewer = self.viewer()
-        return _board_summary(
+        return _board_summaries(
+            self.repo,
+            viewer,
+            [board],
+            _current_character_facet_ids(self.repo, viewer),
+        )[0]
+
+    def board_page(
+        self,
+        board_slug: str,
+        *,
+        filter_by: BoardThreadFilter = "all",
+    ) -> BoardPage:
+        viewer = self.viewer()
+        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        threads = _board_thread_summaries(
             self.repo,
             viewer,
             board,
-            _current_character_facet_ids(self.repo, viewer),
+            filter_by=filter_by,
+        )
+        summary = _board_summaries(self.repo, viewer, [board], current_facet_ids)[0]
+        parent = (
+            self.repo.get_board(viewer.community.id, board.parent_board_id)
+            if board.parent_board_id is not None
+            else None
+        )
+        if parent is not None and not policies.can_view_board(
+            viewer.membership,
+            parent,
+            viewer.role,
+        ):
+            parent = None
+        is_location = is_location_board(board)
+        is_community = is_community_board(board)
+        subboards = self.child_board_summaries(board) if is_location else []
+        sibling_boards = self.sibling_board_summaries(board) if is_location else []
+        facet_ids = {tag.facet.id for tag in summary.facets}
+        current_event = (
+            _current_event_for_facet_ids(self.repo, viewer.community.id, facet_ids)
+            if is_location
+            else None
+        )
+        direct_thread_count = (
+            len(threads)
+            if filter_by == "all"
+            else self.repo.count_threads(viewer.community.id, board.id)
+        )
+        return BoardPage(
+            board=board,
+            summary=summary,
+            parent_board=parent,
+            is_location_board=is_location,
+            is_community_board=is_community,
+            board_facets=summary.facets,
+            subboards=subboards,
+            sibling_boards=sibling_boards,
+            current_event=current_event,
+            threads=threads,
+            direct_thread_count=direct_thread_count,
+            next_unread_thread=_next_unread_thread(self.repo, viewer, board),
+            can_start_thread=policies.can_start_thread(viewer.membership, board, viewer.role),
         )
 
     def parent_board(self, board: Board) -> Board | None:

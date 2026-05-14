@@ -228,6 +228,23 @@ class BoardSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class BoardPage:
+    board: Board
+    summary: BoardSummary
+    parent_board: Board | None
+    is_location_board: bool
+    is_community_board: bool
+    board_facets: list[FacetTag]
+    subboards: list[BoardSummary]
+    sibling_boards: list[BoardSummary]
+    current_event: MaterialSummary | None
+    threads: list[ThreadSummary]
+    direct_thread_count: int
+    next_unread_thread: ThreadNavigationItem | None
+    can_start_thread: bool
+
+
+@dataclass(frozen=True, slots=True)
 class BoardNavigationItem:
     board: Board
     unread_thread_count: int
