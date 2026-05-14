@@ -59,6 +59,7 @@ def get(request: Request) -> Page:
     casting = services.casting_desk()
     plotting = services.plotting_desk()
     operations = _director_operations(
+        services,
         studio,
         casting,
         plotting,
@@ -74,6 +75,7 @@ def get(request: Request) -> Page:
 
 
 def _director_operations(
+    services: AppServices,
     studio: DirectorStudio,
     casting: CastingDesk,
     plotting: PlottingDesk,
@@ -95,6 +97,9 @@ def _director_operations(
     )
     conflicted_applications = [item for item in conflicted_applications if item.has_claim_conflicts]
     cards: list[OperationsCard] = []
+    activation_card = _writer_activation_card(services, studio, casting, plotting)
+    if activation_card is not None:
+        cards.append(activation_card)
     if studio.applications.review_queue:
         cards.append(
             OperationsCard(
@@ -228,6 +233,70 @@ def _director_operations(
         blocked_applications=blocked_applications,
         can_manage=studio.can_manage,
         inspection=inspection,
+    )
+
+
+def _writer_activation_card(
+    services: AppServices,
+    studio: DirectorStudio,
+    casting: CastingDesk,
+    plotting: PlottingDesk,
+) -> OperationsCard | None:
+    if not studio.can_manage:
+        return None
+    viewer = services.viewer()
+    pending_invites = [
+        item for item in services.writer_invitations() if item.invitation.status == "pending"
+    ]
+    active_applications = [
+        character
+        for character in services.repo.list_community_characters(viewer.community.id)
+        if character.application_status in {"draft", "submitted", "revision_requested"}
+    ]
+    no_face_members = []
+    for membership in services.repo.list_memberships(viewer.community.id):
+        if not membership.is_active:
+            continue
+        role = services.repo.get_role(viewer.community.id, membership.role_id)
+        if role.is_admin:
+            continue
+        accepted_faces = [
+            character
+            for character in services.repo.list_characters(viewer.community.id, membership.id)
+            if character.application_status == "accepted"
+        ]
+        if not accepted_faces:
+            no_face_members.append(membership)
+    activation_items: list[str] = []
+    if pending_invites:
+        activation_items.append(f"{len(pending_invites)} pending invite(s)")
+    if no_face_members:
+        activation_items.append(f"{len(no_face_members)} accepted member(s) without faces")
+    if active_applications:
+        activation_items.append(f"{len(active_applications)} draft/review face(s)")
+    if casting.wanted_with_interest:
+        activation_items.append(f"{len(casting.wanted_with_interest)} wanted hook(s) with raised hands")
+    if plotting.wanted_ready_interests:
+        activation_items.append(f"{len(plotting.wanted_ready_interests)} ready scene handoff(s)")
+    if not activation_items:
+        return None
+    return OperationsCard(
+        kicker="Activation",
+        title="Writer activation",
+        summary="Invites, first faces, applications, raised hands, and first-scene handoffs.",
+        count=sum(
+            (
+                len(pending_invites),
+                len(no_face_members),
+                len(active_applications),
+                len(casting.wanted_with_interest),
+                len(plotting.wanted_ready_interests),
+            )
+        ),
+        href="/studio/launch",
+        cta="Open launch room",
+        variant="attention",
+        items=tuple(activation_items[:4]),
     )
 
 

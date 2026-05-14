@@ -2460,6 +2460,40 @@ def test_director_studio_surfaces_community_production_work() -> None:
     asyncio.run(run())
 
 
+def test_studio_operations_tracks_writer_activation_oversight() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        role = services.repo.get_role_by_slug(staff.community.id, "member")
+        user = services.repo.create_user("activation-watch@example.com", "hash")
+        services.repo.create_membership(
+            staff.community.id,
+            user.id,
+            role.id,
+            "activation-watch",
+            "Activation Watch",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            operations = await client.get("/studio/operations")
+
+        assert operations.status == 200
+        assert "Writer activation" in operations.text
+        assert "accepted member(s) without faces" in operations.text
+        assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
+            operations.text
+        )
+
+    asyncio.run(run())
+
+
 def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
     async def run() -> None:
         connection = connect(":memory:", check_same_thread=False)
