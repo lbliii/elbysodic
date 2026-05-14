@@ -120,6 +120,18 @@ def test_production_config_parses_allowed_hosts_and_hsts(monkeypatch) -> None:
     assert app.config.strict_transport_security == "max-age=31536000"
 
 
+def test_production_default_allowed_hosts_pass_chirp_check(monkeypatch) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "production")
+    monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)
+    monkeypatch.delenv("ELBYSODIC_ALLOWED_HOSTS", raising=False)
+    monkeypatch.setenv("ELBYSODIC_DEMO_MODE", "1")
+
+    app = create_app(debug=False, services=create_services(path=":memory:"))
+
+    assert app.config.allowed_hosts == (".up.railway.app", ".railway.app")
+    app.check(warnings_as_errors=True)
+
+
 def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
@@ -534,6 +546,27 @@ def test_production_login_rate_limit_blocks_repeated_posts(monkeypatch) -> None:
         assert [response.status for response in responses[:10]] == [403] * 10
         assert responses[10].status == 429
         assert dict(responses[10].headers)["retry-after"] == "300"
+
+    asyncio.run(run())
+
+
+def test_production_login_rate_limit_ignores_spoofed_forwarded_for(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            responses = [
+                await client.post(
+                    "/login",
+                    body=b"",
+                    headers={**_FORM, "X-Forwarded-For": f"198.51.100.{attempt}"},
+                )
+                for attempt in range(11)
+            ]
+
+        assert [response.status for response in responses[:10]] == [403] * 10
+        assert responses[10].status == 429
 
     asyncio.run(run())
 

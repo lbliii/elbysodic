@@ -27,6 +27,14 @@ def test_post_markup_escapes_raw_html() -> None:
     assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in rendered
 
 
+def test_post_markup_escapes_event_handler_html() -> None:
+    rendered = str(render_post_body('<img src="x" onerror="alert(1)">'))
+
+    assert "<img" not in rendered
+    assert 'onerror="alert(1)"' not in rendered
+    assert "&lt;img src=&quot;x&quot; onerror=&quot;alert(1)&quot;&gt;" in rendered
+
+
 def test_post_markup_renders_known_mentions_as_links() -> None:
     rendered = str(
         render_post_body(

@@ -6057,6 +6057,60 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
     asyncio.run(run())
 
 
+def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_app = create_app(
+            debug=False,
+            services=AppServices(
+                repo,
+                DemoSeed(community, charlie_user, charlie_membership, xavier),
+            ),
+        )
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+            room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            stream = await charlie_client.sse(
+                f"/plotting/{room.id}/stream",
+                max_events=1,
+                timeout=1.0,
+            )
+
+        assert stream.status == 200
+        assert len(stream.events) == 1
+        event = stream.events[0]
+        assert event.event == "plotting-room-ready"
+        assert event.data == "connected"
+        assert "\r" not in event.event
+        assert "\n" not in event.event
+        assert "\x00" not in event.event
+
+    asyncio.run(run())
+
+
 def test_tenant_prefixed_plotting_room_id_does_not_leak_cross_realm_room() -> None:
     async def run() -> None:
         app = _app()
