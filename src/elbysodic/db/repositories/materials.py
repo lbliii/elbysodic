@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from collections import defaultdict
+
 from elbysodic.db.repositories.base import _last_id, _utc_now
 from elbysodic.db.repositories.facets import FacetRepositoryMixin
 from elbysodic.db.repositories.rows import _community_from_row, _material_from_row
@@ -223,6 +226,46 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
             params,
         ).fetchall()
         return [_material_from_row(row) for row in rows]
+
+    def list_materials_for_communities(
+        self,
+        community_ids: list[int],
+        *,
+        status: str | None = "published",
+    ) -> dict[int, list[Material]]:
+        if not community_ids:
+            return {}
+        where = "WHERE community_id IN (SELECT value FROM json_each(?))"
+        params: tuple[object, ...] = (json.dumps(community_ids),)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (json.dumps(community_ids), status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                slug,
+                title,
+                material_type,
+                summary,
+                body,
+                status,
+                sort_order,
+                is_featured,
+                created_at,
+                updated_at
+            FROM materials
+            {where}
+            ORDER BY community_id, is_featured DESC, sort_order, title, id
+            """,
+            params,
+        ).fetchall()
+        materials_by_community: dict[int, list[Material]] = defaultdict(list)
+        for row in rows:
+            material = _material_from_row(row)
+            materials_by_community[material.community_id].append(material)
+        return dict(materials_by_community)
 
 
 def _require_material_type(material_type: str) -> None:

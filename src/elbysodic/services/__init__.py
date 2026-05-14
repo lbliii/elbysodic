@@ -17,6 +17,7 @@ from elbysodic.services.read_models import (
     ApplicationsDesk,
     AttentionItem,
     BoardNavigationItem,
+    BoardPage,
     BoardSummary,
     BoardTaxonomyItem,
     CastingDesk,
@@ -80,6 +81,8 @@ from elbysodic.services.read_models import (
     WantedBoard,
     WantedInterestInboxItem,
     WorldHub,
+    WriterActivation,
+    WriterActivationOpening,
     WriterCollaborator,
 )
 
@@ -94,6 +97,7 @@ __all__ = [
     "ApplicationsDesk",
     "AttentionItem",
     "BoardNavigationItem",
+    "BoardPage",
     "BoardSummary",
     "BoardTaxonomyItem",
     "CastingDesk",
@@ -156,6 +160,8 @@ __all__ = [
     "WantedBoard",
     "WantedInterestInboxItem",
     "WorldHub",
+    "WriterActivation",
+    "WriterActivationOpening",
     "WriterCollaborator",
     "create_services",
     "default_database_path",

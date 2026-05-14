@@ -1,0 +1,40 @@
+/* Shared media and poster primitives.
+ *
+ * These selectors only own repeated frame/image mechanics. Product-family
+ * files keep their overlays, fallback typography, aspect ratios, and hover
+ * behavior.
+ */
+
+.elbysodic-board-editor-preview-stage__media,
+.elbysodic-board-poster__media,
+.elbysodic-board-stage__media {
+    inset: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: 0;
+}
+
+.elbysodic-world-hero__media img,
+.elbysodic-board-editor-preview-stage__media img,
+.elbysodic-board-poster__media img,
+.elbysodic-board-stage__media img,
+.elbysodic-network-billboard__media img,
+.elbysodic-network-home-showcase__media img,
+.elbysodic-network-card__poster > img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.elbysodic-character-card__poster img,
+.elbysodic-roster-card__poster img,
+.elbysodic-profile-hero__poster img,
+.elbysodic-post__poster-media img {
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    position: absolute;
+    width: 100%;
+    z-index: -2;
+}

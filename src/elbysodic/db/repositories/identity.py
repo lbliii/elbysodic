@@ -253,6 +253,65 @@ class IdentityRepositoryMixin(RepositoryBase):
         ).fetchall()
         return [_community_from_row(row) for row in rows]
 
+    def list_communities_by_ids(self, community_ids: list[int]) -> dict[int, Community]:
+        if not community_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                name,
+                slug,
+                host,
+                launch_status,
+                default_theme_id,
+                identity_accent_facet_group_id,
+                community_mark_url,
+                community_mark_alt,
+                world_hero_image_url,
+                world_hero_image_alt,
+                world_hero_treatment,
+                world_hero_focal_point,
+                world_hero_overlay,
+                world_hero_height,
+                enabled_post_profile_variants,
+                enabled_post_accent_styles,
+                enabled_post_border_styles,
+                enabled_post_title_styles,
+                enabled_post_densities,
+                created_at,
+                updated_at
+            FROM communities
+            WHERE id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        return {int(row["id"]): _community_from_row(row) for row in rows}
+
+    def roles_for_memberships(self, membership_ids: list[int]) -> dict[int, Role]:
+        if not membership_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                community_memberships.id AS membership_id,
+                roles.id,
+                roles.community_id,
+                roles.slug,
+                roles.name,
+                roles.is_admin,
+                roles.created_at,
+                roles.updated_at
+            FROM community_memberships
+            JOIN roles
+              ON roles.community_id = community_memberships.community_id
+             AND roles.id = community_memberships.role_id
+            WHERE community_memberships.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(membership_ids),),
+        ).fetchall()
+        return {int(row["membership_id"]): _role_from_row(row) for row in rows}
+
     def network_program_counts(self, community_ids: list[int]) -> dict[int, dict[str, int]]:
         if not community_ids:
             return {}
@@ -518,6 +577,32 @@ class IdentityRepositoryMixin(RepositoryBase):
         if community.default_theme_id is None:
             return None
         return self.get_theme(community_id, community.default_theme_id)
+
+    def default_themes_for_communities(
+        self,
+        community_ids: list[int],
+    ) -> dict[int, CommunityTheme]:
+        if not community_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                themes.id,
+                themes.community_id,
+                themes.slug,
+                themes.name,
+                themes.tokens_json,
+                themes.created_at,
+                themes.updated_at
+            FROM communities
+            JOIN themes
+              ON themes.community_id = communities.id
+             AND themes.id = communities.default_theme_id
+            WHERE communities.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        return {int(row["community_id"]): _community_theme_from_row(row) for row in rows}
 
     def update_theme(
         self,

@@ -15,6 +15,8 @@ from elbysodic.services.read_models import (
     NotificationInbox,
     PlottingDesk,
     ThreadObligationItem,
+    WriterActivation,
+    WriterActivationOpening,
 )
 from elbysodic.web.state import get_services
 
@@ -50,6 +52,7 @@ class DeskLane:
 
 @dataclass(frozen=True, slots=True)
 class DeskOverview:
+    activation: WriterActivation
     queue: MyThreadsDashboard
     roster_count: int
     unread_notifications: int
@@ -58,6 +61,7 @@ class DeskOverview:
     application_count: int
     lanes: list[DeskLane]
     actions: list[DeskAction]
+    first_playable_openings: list[WriterActivationOpening]
     actionable_roster_activity: list[CharacterThreadActivity]
     has_attention_counts: bool
 
@@ -79,7 +83,7 @@ class DeskOverview:
 
     @property
     def needs_first_face(self) -> bool:
-        return self.roster_count == 0 and self.application_count == 0
+        return self.activation.needs_first_face
 
     @property
     def next_queue_href(self) -> str:
@@ -102,10 +106,8 @@ class DeskOverview:
 
     @property
     def current_focus_label(self) -> str:
-        if self.needs_first_face:
-            return "Start with a first face"
-        if self.roster_count == 0 and self.application_count:
-            return "Your first face is in application work"
+        if self.activation.stage != "active_scene":
+            return self.activation.headline
         if self.queue.needs_reply:
             item = self.queue.needs_reply[0]
             return f"{item.thread.title} needs a reply"
@@ -124,22 +126,35 @@ def get(request: Request) -> Page:
     notifications = services.notifications(limit=5)
     unread_watched = _unread_watched_threads(queue)
     open_applications = _open_application_items(applications)
-    actions = _build_actions(
+    activation = services.writer_activation(
         queue=queue,
-        roster_count=len(viewer.roster),
+        applications=applications,
+        plotting=plotting,
+    )
+    first_playable_openings = services.first_playable_openings(
+        applications=applications,
+        plotting=plotting,
+        limit=4,
+    )
+    actions = _build_actions(
+        activation=activation,
+        queue=queue,
         unread_watched=unread_watched,
         plotting=plotting,
         open_applications=open_applications,
         unread_notifications=viewer.unread_notification_count,
     )
     lanes = _build_lanes(
+        activation=activation,
         queue=queue,
         unread_watched=unread_watched,
         plotting=plotting,
         open_applications=open_applications,
+        first_playable_openings=first_playable_openings,
         notifications=notifications,
     )
     overview = DeskOverview(
+        activation=activation,
         queue=queue,
         roster_count=len(viewer.roster),
         unread_notifications=viewer.unread_notification_count,
@@ -148,6 +163,7 @@ def get(request: Request) -> Page:
         application_count=len(open_applications),
         lanes=lanes,
         actions=actions,
+        first_playable_openings=first_playable_openings,
         actionable_roster_activity=_actionable_roster_activity(queue),
         has_attention_counts=any(
             (
@@ -168,32 +184,23 @@ def get(request: Request) -> Page:
 
 def _build_actions(
     *,
+    activation: WriterActivation,
     queue: MyThreadsDashboard,
-    roster_count: int,
     unread_watched: list[ThreadObligationItem],
     plotting: PlottingDesk,
     open_applications: list[ApplicationCharacterView],
     unread_notifications: int,
 ) -> list[DeskAction]:
     actions: list[DeskAction] = []
-    if roster_count == 0:
-        if open_applications:
-            actions.append(
-                DeskAction(
-                    "/applications",
-                    "Continue first face",
-                    "Move the draft or review room that will become your first roster face.",
-                    len(open_applications),
-                )
+    if activation.stage != "active_scene":
+        actions.append(
+            DeskAction(
+                activation.primary_href,
+                activation.primary_label,
+                activation.summary,
+                _activation_action_count(activation),
             )
-        else:
-            actions.append(
-                DeskAction(
-                    "/applications/new",
-                    "Start first face",
-                    "Begin a draft application before queues and scenes can form.",
-                )
-            )
+        )
     if queue.needs_reply:
         actions.append(
             DeskAction(
@@ -221,7 +228,7 @@ def _build_actions(
                 len(plotting.rooms),
             )
         )
-    if open_applications:
+    if open_applications and activation.stage == "active_scene":
         actions.append(
             DeskAction(
                 "/applications",
@@ -242,15 +249,49 @@ def _build_actions(
     return actions
 
 
+def _activation_action_count(activation: WriterActivation) -> int | None:
+    if activation.has_application_work:
+        return activation.open_application_count
+    if activation.stage == "plotting":
+        return activation.plotting_room_count
+    if activation.stage == "wanted_interest":
+        return activation.wanted_interest_count
+    return None
+
+
 def _build_lanes(
     *,
+    activation: WriterActivation,
     queue: MyThreadsDashboard,
     unread_watched: list[ThreadObligationItem],
     plotting: PlottingDesk,
     open_applications: list[ApplicationCharacterView],
+    first_playable_openings: list[WriterActivationOpening],
     notifications: NotificationInbox,
 ) -> list[DeskLane]:
     lanes: list[DeskLane] = []
+    if activation.stage == "accepted_no_scene" and first_playable_openings:
+        lanes.append(
+            DeskLane(
+                "first-openings",
+                "First playable openings",
+                "Wanted hooks, guide material, and starter scenes that can move this face into play.",
+                activation.primary_href,
+                activation.primary_label,
+                len(first_playable_openings),
+                [
+                    DeskPreviewItem(
+                        opening.href,
+                        opening.label,
+                        opening.detail,
+                        opening.summary,
+                        opening.kind,
+                    )
+                    for opening in first_playable_openings[:3]
+                ],
+                "",
+            )
+        )
     if queue.needs_reply:
         lanes.append(
             DeskLane(

@@ -22,6 +22,13 @@ class ReadSessionRepository(Protocol):
         membership_id: int,
     ) -> str | None: ...
 
+    def thread_read_at_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+        membership_id: int,
+    ) -> dict[int, str]: ...
+
 
 @dataclass(slots=True)
 class ReadModelSession:
@@ -64,3 +71,19 @@ class ReadModelSession:
                 membership_id,
             )
         return self._thread_reads[key]
+
+    def prefetch_thread_reads(self, thread_ids: list[int], membership_id: int) -> None:
+        missing_thread_ids = [
+            thread_id
+            for thread_id in dict.fromkeys(thread_ids)
+            if (thread_id, membership_id) not in self._thread_reads
+        ]
+        if not missing_thread_ids:
+            return
+        read_at_by_thread = self.repo.thread_read_at_for_threads(
+            self.community_id,
+            missing_thread_ids,
+            membership_id,
+        )
+        for thread_id in missing_thread_ids:
+            self._thread_reads[(thread_id, membership_id)] = read_at_by_thread.get(thread_id)

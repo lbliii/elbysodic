@@ -1,0 +1,357 @@
+/* Shared PBP product components.
+ *
+ * Keep broad notices, notification surfaces, and cross-family recovery UI here.
+ * Put product-family selectors in the neighboring 41-48 files.
+ */
+
+.elbysodic-notification-card {
+    align-items: center;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-notification-card--unread {
+    border-color: color-mix(in srgb, var(--chirpui-accent) 46%, var(--chirpui-border));
+}
+
+.elbysodic-notification-card__body {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.elbysodic-notification-card h2,
+.elbysodic-notification-card p {
+    margin: 0;
+}
+
+.elbysodic-notification-card__action {
+    justify-self: end;
+}
+
+.elbysodic-notification-command .elbysodic-command-panel__tools {
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.elbysodic-notification-command form {
+    margin: 0;
+}
+
+.elbysodic-notification-empty {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.elbysodic-notification-empty h2,
+.elbysodic-notification-empty p {
+    margin: 0;
+}
+
+.elbysodic-notification-empty h2 {
+    font-size: var(--chirpui-font-2xl);
+    line-height: 1.1;
+}
+
+.elbysodic-metric,
+.elbysodic-queue-metric {
+    align-items: baseline;
+    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0.35rem 0.55rem;
+    text-decoration: none;
+}
+
+a.elbysodic-metric {
+    position: relative;
+    z-index: 2;
+}
+
+a.elbysodic-metric:hover,
+a.elbysodic-metric:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 14%, var(--chirpui-bg-subtle));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 44%, var(--chirpui-border));
+    color: var(--chirpui-text);
+}
+
+.elbysodic-metric strong,
+.elbysodic-queue-metric strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-lg);
+    line-height: 1;
+}
+
+.elbysodic-metric span,
+.elbysodic-queue-metric span {
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.elbysodic-counter {
+    align-items: center;
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    gap: 0.28rem;
+    line-height: 1;
+    min-height: 1.6rem;
+}
+
+.elbysodic-counter__mark {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    height: 1.25rem;
+    justify-content: center;
+    min-width: 1.25rem;
+}
+
+.elbysodic-counter__value {
+    color: var(--chirpui-text);
+    font-weight: 800;
+}
+
+.elbysodic-counter__label {
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-signal {
+    display: grid;
+    gap: 0.15rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.elbysodic-signal > span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.elbysodic-signal strong,
+.elbysodic-signal a {
+    color: var(--chirpui-accent);
+    font-size: var(--chirpui-font-xl);
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: right;
+    text-decoration: none;
+}
+
+.elbysodic-mention-link {
+    background: color-mix(in srgb, var(--chirpui-accent) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 34%, transparent);
+    border-radius: 999px;
+    color: var(--chirpui-accent);
+    display: inline-block;
+    font-size: 0.92em;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.05rem 0.35rem;
+    text-decoration: none;
+}
+
+.elbysodic-mention-link:hover {
+    background: color-mix(in srgb, var(--chirpui-accent) 20%, transparent);
+    color: var(--chirpui-text);
+}
+
+.elbysodic-notice {
+    --elbysodic-notice-accent: var(--chirpui-accent);
+    align-items: center;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-notice-accent) 10%, transparent), transparent 52%),
+        color-mix(in srgb, var(--chirpui-surface) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-notice-accent) 34%, var(--chirpui-border-subtle));
+    border-radius: var(--chirpui-radius-sm);
+    box-shadow: inset 0.22rem 0 0 color-mix(in srgb, var(--elbysodic-notice-accent) 68%, var(--chirpui-border));
+    display: grid;
+    gap: 0.45rem 0.8rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0.8rem 0.95rem 0.8rem 1.05rem;
+    transition:
+        background var(--elbysodic-motion-feedback),
+        border-color var(--elbysodic-motion-feedback),
+        box-shadow var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-notice--event {
+    --elbysodic-notice-accent: var(--chirpui-link);
+}
+
+.elbysodic-notice--staff,
+.elbysodic-notice--note,
+.elbysodic-notice--status {
+    --elbysodic-notice-accent: var(--elbysodic-state-staff);
+}
+
+.elbysodic-notice--warning {
+    --elbysodic-notice-accent: var(--chirpui-warning);
+}
+
+.elbysodic-notice--attention,
+.elbysodic-notice--error {
+    --elbysodic-notice-accent: var(--chirpui-error);
+}
+
+.elbysodic-notice--success {
+    --elbysodic-notice-accent: var(--chirpui-success);
+}
+
+.elbysodic-notice--private {
+    --elbysodic-notice-accent: var(--elbysodic-state-private);
+}
+
+.elbysodic-notice__mark {
+    align-items: center;
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in srgb, var(--elbysodic-notice-accent) 50%, var(--chirpui-border));
+    border-radius: 999px;
+    color: var(--elbysodic-notice-accent);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    grid-row: 1 / span 2;
+    justify-content: center;
+    line-height: 1;
+    width: 1.65rem;
+}
+
+.elbysodic-notice__action {
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 850;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    padding: 0.35rem 0.6rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.elbysodic-notice__action:hover,
+.elbysodic-notice__action:focus-visible {
+    border-color: var(--elbysodic-notice-accent);
+    color: var(--elbysodic-notice-accent);
+}
+
+.elbysodic-notice__label,
+.elbysodic-event-bridge__label {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 850;
+    grid-column: 2;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.elbysodic-notice__body,
+.elbysodic-event-bridge__body {
+    display: grid;
+    gap: 0.15rem;
+    grid-column: 2;
+    min-inline-size: 0;
+}
+
+.elbysodic-notice__title,
+.elbysodic-event-bridge__title {
+    color: var(--elbysodic-notice-accent);
+    font-weight: 850;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.elbysodic-notice__summary,
+.elbysodic-event-bridge__summary {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.35;
+    margin: 0;
+}
+
+.elbysodic-notice .chirpui-field__error {
+    grid-column: 2 / -1;
+    margin: 0.25rem 0 0;
+}
+
+.elbysodic-error-page {
+    align-items: center;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--chirpui-accent) 10%, transparent), transparent 34rem),
+        var(--chirpui-bg);
+    color: var(--chirpui-text);
+    display: grid;
+    min-block-size: 100svh;
+    padding: clamp(1rem, 5vw, 3rem);
+}
+
+.elbysodic-error-page .elbysodic-recovery {
+    background: var(--chirpui-surface);
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--chirpui-radius);
+    box-shadow: var(--chirpui-shadow-lg);
+    inline-size: min(100%, 42rem);
+    margin-inline: auto;
+}
+
+.elbysodic-recovery {
+    display: grid;
+    gap: 0.9rem;
+    padding: clamp(1.1rem, 3vw, 1.8rem);
+}
+
+.elbysodic-recovery__mark {
+    aspect-ratio: 1;
+    display: block;
+    height: 3rem;
+    width: 3rem;
+}
+
+.elbysodic-recovery h1 {
+    color: var(--chirpui-text);
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    letter-spacing: 0;
+    line-height: 0.98;
+    margin: 0;
+    max-inline-size: 13ch;
+}
+
+.elbysodic-recovery form {
+    margin: 0;
+}
+
+@media (max-width: 48rem) {
+    .elbysodic-notice {
+        align-items: start;
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .elbysodic-notice__action {
+        grid-column: 2;
+        grid-row: auto;
+        justify-self: start;
+    }
+
+    .elbysodic-notification-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-notification-card__action {
+        justify-self: start;
+    }
+}

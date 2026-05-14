@@ -1,0 +1,13 @@
+/* Legacy cleanup ledger.
+ *
+ * No selectors live here by default. Add a selector here only when it needs
+ * markup work, component extraction, or Chirp adoption that cannot safely ride
+ * with the current change.
+ *
+ * Current follow-up classes:
+ * - Continue replacing generic card/panel surfaces with Chirp surface/card
+ *   axes while keeping wanted, face, thread, claim, reserve, and staff queue
+ *   wrappers Elbysodic-owned.
+ * - Review each 41-48 product-family file for repeated card/list row shells
+ *   that can move into shared page patterns or Chirp card/surface axes.
+ */

@@ -108,7 +108,7 @@
 {% end %}
 
 {% def production_room_card(kicker, title, summary, href, primary, secondary, cls="") %}
-<a class="elbysodic-production-room-card{{ " " ~ cls if cls else "" }}" href="{{ href }}">
+<a class="chirpui-card chirpui-card--outlined chirpui-card--neutral elbysodic-production-room-card{{ " " ~ cls if cls else "" }}" href="{{ href }}">
   <span class="elbysodic-kicker">{{ kicker }}</span>
   <strong>{{ title }}</strong>
   <em>{{ summary }}</em>

@@ -780,6 +780,7 @@ App-specific styling belongs in:
 
 ```text
 src/elbysodic/web/static/elbysodic-theme.css
+src/elbysodic/web/static/elbysodic-theme/
 ```
 
 ChirpUI remains the primitive layer. Elbysodic components should compose
@@ -787,6 +788,10 @@ ChirpUI surfaces, badges, buttons, layout helpers, `tooltip`, `avatar`, and
 tokens rather than creating page-local component systems. Use heavier
 navigation primitives such as `route_tabs` sparingly, only when their
 interaction model fits the product surface.
+
+Use `docs/architecture/theme-css-architecture.md` when deciding whether a
+selector should be a Chirp primitive override, an Elbysodic PBP component, a
+page composition, or a temporary legacy entry.
 
 For compact disclosures, prefer `_components/ui.html` `meta_hint()` before
 adding page-local tooltip markup. It follows the ChirpUI tooltip contract while

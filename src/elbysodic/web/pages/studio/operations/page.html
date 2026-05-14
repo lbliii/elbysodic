@@ -6,7 +6,8 @@
 {% end %}
 
 {% def operations_card(card) %}
-{% call surface(variant="elevated") %}
+{% set surface_tone = "warning" if card.variant in ("warning", "attention") else ("success" if card.variant == "success" else "neutral") %}
+{% call surface(variant="elevated", appearance="tonal", tone=surface_tone) %}
 <article class="elbysodic-operations-card elbysodic-operations-card--{{ card.variant }}">
   <header class="elbysodic-operations-card__header">
     <div>

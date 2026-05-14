@@ -8,7 +8,7 @@
 {% end %}
 
 {% def studio_signal(label, value, href=None) %}
-<div class="elbysodic-director-signal">
+<div class="elbysodic-signal elbysodic-director-signal">
   <span>{{ label }}</span>
   {% if href %}
   <a href="{{ href }}">{{ value }}</a>
@@ -77,9 +77,9 @@
 {% end %}
 
 {% def theme_select(name, label, current, options) %}
-<label class="elbysodic-form-field">
-  <span>{{ label }}</span>
-  <select name="{{ name }}">
+<label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+  <span class="chirpui-field__label">{{ label }}</span>
+  <select class="chirpui-field__input" name="{{ name }}">
     {% for value, option_label in options.items() %}
     <option value="{{ value }}" {% if current == value %}selected{% end %}>{{ option_label }}</option>
     {% end %}
@@ -92,14 +92,14 @@
   <legend>{{ "Light palette" if mode_name == "light" else "Dark palette" }}</legend>
   <div class="elbysodic-theme-token-grid">
     {% for key, label in fields %}
-    <label class="elbysodic-theme-token-field">
-      <span>{{ label }}</span>
+    <label class="chirpui-field chirpui-field--outlined chirpui-field--dense elbysodic-theme-token-field">
+      <span class="chirpui-field__label">{{ label }}</span>
       <span class="elbysodic-theme-token-field__input">
-        <input type="color"
+        <input class="chirpui-field__input elbysodic-theme-token-field__swatch" type="color"
                value="{{ mode.value_for(key) }}"
                aria-label="{{ label }} {{ mode_name }} color preview"
                disabled>
-        <input name="theme_{{ mode_name }}_{{ key }}"
+        <input class="chirpui-field__input" name="theme_{{ mode_name }}_{{ key }}"
                value="{{ mode.value_for(key) }}"
                pattern="#[0-9a-fA-F]{6}"
                aria-label="{{ label }} {{ mode_name }} hex">
@@ -210,13 +210,13 @@
     <p class="elbysodic-form-error">{{ error }}</p>
     {% end %}
     <div class="elbysodic-theme-editor-grid">
-      <label class="elbysodic-form-field">
-        <span>Theme slug</span>
-        <input name="theme_slug" value="{{ studio.theme_editor.slug }}" required>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Theme slug</span>
+        <input class="chirpui-field__input" name="theme_slug" value="{{ studio.theme_editor.slug }}" required>
       </label>
-      <label class="elbysodic-form-field">
-        <span>Theme name</span>
-        <input name="theme_name" value="{{ studio.theme_editor.name }}" required>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Theme name</span>
+        <input class="chirpui-field__input" name="theme_name" value="{{ studio.theme_editor.name }}" required>
       </label>
       {{ theme_select("theme_typography_display", "Display font", studio.theme_editor.typography_display, theme_font_labels) }}
       {{ theme_select("theme_typography_body", "Body font", studio.theme_editor.typography_body, theme_font_labels) }}
@@ -283,34 +283,34 @@
       </p>
     </div>
     <div class="elbysodic-theme-editor-grid">
-      <label class="elbysodic-form-field">
-        <span>Community mark URL</span>
-        <input name="community_mark_url" value="{{ viewer.community.community_mark_url or '' }}">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Community mark URL</span>
+        <input class="chirpui-field__input" name="community_mark_url" value="{{ viewer.community.community_mark_url or '' }}">
       </label>
-      <label class="elbysodic-form-field">
-        <span>Community mark alt text</span>
-        <input name="community_mark_alt" value="{{ viewer.community.community_mark_alt }}">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Community mark alt text</span>
+        <input class="chirpui-field__input" name="community_mark_alt" value="{{ viewer.community.community_mark_alt }}">
       </label>
-      <label class="elbysodic-form-field">
-        <span>World hero image URL</span>
-        <input name="world_hero_image_url" value="{{ viewer.community.world_hero_image_url or '' }}">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">World hero image URL</span>
+        <input class="chirpui-field__input" name="world_hero_image_url" value="{{ viewer.community.world_hero_image_url or '' }}">
       </label>
-      <label class="elbysodic-form-field">
-        <span>World hero alt text</span>
-        <input name="world_hero_image_alt" value="{{ viewer.community.world_hero_image_alt }}">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">World hero alt text</span>
+        <input class="chirpui-field__input" name="world_hero_image_alt" value="{{ viewer.community.world_hero_image_alt }}">
       </label>
-      <label class="elbysodic-form-field">
-        <span>Hero treatment</span>
-        <select name="world_hero_treatment">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Hero treatment</span>
+        <select class="chirpui-field__input" name="world_hero_treatment">
           <option value="split" {% if viewer.community.world_hero_treatment == "split" %}selected{% end %}>Split media</option>
           <option value="background" {% if viewer.community.world_hero_treatment == "background" %}selected{% end %}>Full background</option>
           <option value="poster" {% if viewer.community.world_hero_treatment == "poster" %}selected{% end %}>Poster masthead</option>
           <option value="text" {% if viewer.community.world_hero_treatment == "text" %}selected{% end %}>Text first</option>
         </select>
       </label>
-      <label class="elbysodic-form-field">
-        <span>Image focal point</span>
-        <select name="world_hero_focal_point">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Image focal point</span>
+        <select class="chirpui-field__input" name="world_hero_focal_point">
           <option value="center" {% if viewer.community.world_hero_focal_point == "center" %}selected{% end %}>Center</option>
           <option value="top" {% if viewer.community.world_hero_focal_point == "top" %}selected{% end %}>Top</option>
           <option value="bottom" {% if viewer.community.world_hero_focal_point == "bottom" %}selected{% end %}>Bottom</option>
@@ -318,18 +318,18 @@
           <option value="right" {% if viewer.community.world_hero_focal_point == "right" %}selected{% end %}>Right</option>
         </select>
       </label>
-      <label class="elbysodic-form-field">
-        <span>Overlay strength</span>
-        <select name="world_hero_overlay">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Overlay strength</span>
+        <select class="chirpui-field__input" name="world_hero_overlay">
           <option value="none" {% if viewer.community.world_hero_overlay == "none" %}selected{% end %}>None</option>
           <option value="light" {% if viewer.community.world_hero_overlay == "light" %}selected{% end %}>Light</option>
           <option value="medium" {% if viewer.community.world_hero_overlay == "medium" %}selected{% end %}>Medium</option>
           <option value="heavy" {% if viewer.community.world_hero_overlay == "heavy" %}selected{% end %}>Heavy</option>
         </select>
       </label>
-      <label class="elbysodic-form-field">
-        <span>Hero height</span>
-        <select name="world_hero_height">
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Hero height</span>
+        <select class="chirpui-field__input" name="world_hero_height">
           <option value="compact" {% if viewer.community.world_hero_height == "compact" %}selected{% end %}>Compact</option>
           <option value="standard" {% if viewer.community.world_hero_height == "standard" %}selected{% end %}>Standard</option>
           <option value="immersive" {% if viewer.community.world_hero_height == "immersive" %}selected{% end %}>Immersive</option>
@@ -360,9 +360,9 @@
     {% if error %}
     <p class="elbysodic-form-error">{{ error }}</p>
     {% end %}
-    <label class="elbysodic-form-field">
-      <span>Accent source</span>
-      <select name="identity_accent_facet_group_id">
+    <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+      <span class="chirpui-field__label">Accent source</span>
+      <select class="chirpui-field__input" name="identity_accent_facet_group_id">
         <option value="">Theme default</option>
         {% for group in studio.facet_groups %}
         <option value="{{ group.id }}" {% if studio.identity_accent_group and studio.identity_accent_group.id == group.id %}selected{% end %}>
@@ -424,17 +424,17 @@
             <small>{{ item.kind_label }} · nav {{ item.board.navigation_order }}</small>
           </summary>
           <div class="elbysodic-board-taxonomy-row__controls">
-            <label class="elbysodic-form-field">
-              <span>Kind</span>
-              <select name="board_kind">
+            <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+              <span class="chirpui-field__label">Kind</span>
+              <select class="chirpui-field__input" name="board_kind">
                 {% for value, label in board_kind_labels.items() %}
                 <option value="{{ value }}" {% if item.board.board_kind == value %}selected{% end %}>{{ label }}</option>
                 {% end %}
               </select>
             </label>
-            <label class="elbysodic-form-field">
-              <span>Parent</span>
-              <select name="parent_board_id">
+            <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+              <span class="chirpui-field__label">Parent</span>
+              <select class="chirpui-field__input" name="parent_board_id">
                 <option value="">None</option>
                 {% for location in studio.location_boards %}
                 {% if location.board.id != item.board.id %}
@@ -445,17 +445,17 @@
                 {% end %}
               </select>
             </label>
-            <label class="elbysodic-form-field">
-              <span>Sidebar</span>
-              <select name="sidebar_section">
+            <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+              <span class="chirpui-field__label">Sidebar</span>
+              <select class="chirpui-field__input" name="sidebar_section">
                 {% for value, label in sidebar_section_labels.items() %}
                 <option value="{{ value }}" {% if item.board.sidebar_section == value %}selected{% end %}>{{ label }}</option>
                 {% end %}
               </select>
             </label>
-            <label class="elbysodic-form-field">
-              <span>Order</span>
-              <input type="number"
+            <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+              <span class="chirpui-field__label">Order</span>
+              <input class="chirpui-field__input" type="number"
                      name="navigation_order"
                      value="{{ item.board.navigation_order }}"
                      min="0"
@@ -500,17 +500,17 @@
           <h3>{{ section.label }}</h3>
           <p class="elbysodic-copy-summary">{{ section.description }}</p>
         </div>
-        <label class="elbysodic-form-field">
-          <span>Label</span>
-          <input name="label" value="{{ section.label }}" required>
+        <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+          <span class="chirpui-field__label">Label</span>
+          <input class="chirpui-field__input" name="label" value="{{ section.label }}" required>
         </label>
-        <label class="elbysodic-form-field">
-          <span>Description</span>
-          <input name="description" value="{{ section.description }}">
+        <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+          <span class="chirpui-field__label">Description</span>
+          <input class="chirpui-field__input" name="description" value="{{ section.description }}">
         </label>
-        <label class="elbysodic-form-field">
-          <span>Order</span>
-          <input type="number" name="sort_order" value="{{ section.sort_order }}" min="0" step="1">
+        <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+          <span class="chirpui-field__label">Order</span>
+          <input class="chirpui-field__input" type="number" name="sort_order" value="{{ section.sort_order }}" min="0" step="1">
         </label>
         <label class="elbysodic-checkbox">
           <input type="checkbox" name="show_label" {% if section.show_label %}checked{% end %}>

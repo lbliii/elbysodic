@@ -1659,7 +1659,21 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
         "mutant",
         "x-men",
     ]
+    assert {
+        character_id: [facet.slug for facet in facets]
+        for character_id, facets in repo.list_character_facets_for_characters(
+            community.id,
+            [rogue.id],
+        ).items()
+    } == {rogue.id: ["mutant", "x-men"]}
     assert [facet.slug for facet in repo.list_board_facets(community.id, board.id)] == ["x-men"]
+    assert {
+        board_id: [facet.slug for facet in facets]
+        for board_id, facets in repo.list_board_facets_for_boards(
+            community.id,
+            [board.id],
+        ).items()
+    } == {board.id: ["x-men"]}
     assert [facet.slug for facet in repo.list_thread_facets(community.id, thread.id)] == ["x-men"]
     assert repo.list_characters_by_ids(community.id, [rogue.id]) == {rogue.id: rogue}
     assert repo.list_memberships_by_ids(community.id, [membership.id]) == {
@@ -1733,6 +1747,48 @@ def test_board_rollup_batch_reads_are_tenant_scoped(repo: ForumRepository) -> No
     ) == {thread.id: thread.updated_at}
 
 
+def test_network_catalog_batch_reads_are_tenant_scoped(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    other = repo.create_community("catalog-other", "Catalog Other")
+    community_premise = repo.create_material(
+        community.id,
+        "catalog-premise",
+        "Catalog Premise",
+        material_type="premise",
+        summary="Public catalog pitch.",
+    )
+    other_premise = repo.create_material(
+        other.id,
+        "other-premise",
+        "Other Premise",
+        material_type="premise",
+        summary="Other public catalog pitch.",
+    )
+    group = repo.create_facet_group(community.id, "mood", "Mood")
+    facet = repo.create_facet(community.id, group.id, "superhero", "Superhero")
+    repo.assign_material_facet(community.id, community_premise.id, facet.id)
+    scene_hub = repo.create_board(community.id, "catalog-scenes", "Catalog Scenes")
+    repo.create_board(other.id, "other-scenes", "Other Scenes")
+    theme = repo.upsert_default_theme(
+        community.id,
+        slug="catalog-theme",
+        name="Catalog Theme",
+        tokens_json="{}",
+    )
+
+    assert repo.public_scene_hub_community_ids([community.id]) == {community.id}
+    assert repo.list_materials_for_communities([community.id]) == {
+        community.id: [community_premise],
+    }
+    assert repo.list_material_facets_for_materials(
+        [community.id],
+        [community_premise.id, other_premise.id],
+    ) == {(community.id, community_premise.id): [facet]}
+    assert repo.list_facet_groups_for_communities([community.id]) == {community.id: [group]}
+    assert repo.default_themes_for_communities([community.id]) == {community.id: theme}
+    assert scene_hub.community_id == community.id
+
+
 def test_network_membership_counts_batch_application_state(repo: ForumRepository) -> None:
     community = repo.get_community(1)
     role = repo.create_role(community.id, "network-member", "Network Member")
@@ -1746,7 +1802,7 @@ def test_network_membership_counts_batch_application_state(repo: ForumRepository
         "network-other",
         "Network Other",
     )
-    repo.create_character(
+    draft = repo.create_character(
         community.id,
         membership.id,
         "network-draft",
@@ -1768,6 +1824,11 @@ def test_network_membership_counts_batch_application_state(repo: ForumRepository
         application_status="accepted",
     )
 
+    assert repo.list_communities_by_ids([community.id]) == {community.id: community}
+    assert repo.roles_for_memberships([membership.id]) == {membership.id: role}
+    assert repo.list_characters_for_memberships(community.id, [membership.id]) == {
+        membership.id: [draft],
+    }
     assert repo.network_membership_counts([membership.id]) == {
         membership.id: {
             "reviewable_application_count": 2,
@@ -1895,6 +1956,9 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
     assert repo.get_wanted_ad_by_slug(hosted.id, "rogue-rival").title == "Hosted rival"
     assert [item.title for item in repo.list_wanted_ads(default.id)] == ["Rogue rival"]
     assert [facet.slug for facet in repo.list_wanted_ad_facets(default.id, wanted.id)] == ["x-men"]
+    assert repo.list_wanted_ad_facets_for_wanted_ads(default.id, [wanted.id]) == {
+        wanted.id: [x_men],
+    }
     assert repo.list_wanted_ad_related_characters(default.id, wanted.id) == [magneto]
     assert repo.list_wanted_ad_interests(default.id, wanted.id) == [interest]
     assert repo.list_wanted_ads_for_character(default.id, rogue.id) == [wanted]

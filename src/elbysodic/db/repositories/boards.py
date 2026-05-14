@@ -456,6 +456,21 @@ class BoardRepositoryMixin(NotificationRepositoryMixin):
         ).fetchall()
         return [_board_from_row(row) for row in rows]
 
+    def public_scene_hub_community_ids(self, community_ids: list[int]) -> set[int]:
+        if not community_ids:
+            return set()
+        rows = self.connection.execute(
+            """
+            SELECT DISTINCT community_id
+            FROM boards
+            WHERE community_id IN (SELECT value FROM json_each(?))
+              AND board_kind IN ('location', 'community')
+              AND is_private = 0
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        return {int(row["community_id"]) for row in rows}
+
     def list_child_boards(self, community_id: int, parent_board_id: int | None) -> list[Board]:
         if parent_board_id is not None:
             self.get_board(community_id, parent_board_id)

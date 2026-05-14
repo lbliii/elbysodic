@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin
 
 import pytest
 from chirp.app import App
@@ -50,6 +50,26 @@ def _response_header(response: Any, name: str) -> str:
         if str(key).lower() == name.lower():
             return str(value)
     raise AssertionError(f"response header not found: {name}")
+
+
+async def _stylesheet_text_with_imports(
+    client: TestClient,
+    path: str = "/elbysodic-static/elbysodic-theme.css",
+    *,
+    seen: set[str] | None = None,
+) -> str:
+    seen = seen or set()
+    if path in seen:
+        return ""
+    seen.add(path)
+    response = await client.get(path)
+    assert response.status == 200
+    text = response.text
+    imported = [
+        await _stylesheet_text_with_imports(client, urljoin(path, href), seen=seen)
+        for href in re.findall(r'@import\s+url\("([^"]+)"\);', text)
+    ]
+    return text + "\n".join(imported)
 
 
 async def _switch_membership(
@@ -403,14 +423,15 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         services = create_services(path=":memory:")
         app = create_app(debug=False, services=services)
         budgets = {
-            "/network": 165,
-            "/c/x-men-apocalypse": 390,
-            "/c/x-men-apocalypse/locations": 200,
-            "/c/x-men-apocalypse/community": 350,
+            "/network": 105,
+            "/c/x-men-apocalypse": 340,
+            "/c/x-men-apocalypse/locations": 150,
+            "/c/x-men-apocalypse/community": 300,
+            "/c/x-men-apocalypse/world/b-24-winter": 155,
             "/c/rl-nyc/my/threads": 80,
-            "/c/rl-small-town/boards/town-hall?filter=mine": 120,
-            "/c/x-men-apocalypse/boards/danger-room": 215,
-            "/c/rl-nyc/claims": 80,
+            "/c/rl-small-town/boards/town-hall?filter=mine": 105,
+            "/c/x-men-apocalypse/boards/danger-room": 180,
+            "/c/rl-nyc/claims": 70,
         }
 
         async with TestClient(app) as client:
@@ -459,7 +480,7 @@ def test_scaled_board_page_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Scale Yard" in response.text
         assert "Scale Thread 29" in response.text
-        assert trace.count <= 350
+        assert trace.count <= 150
 
     asyncio.run(run())
 
@@ -498,7 +519,7 @@ def test_scaled_my_threads_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Scale Realm" in response.text
         assert "Scale Thread 0" in response.text
-        assert trace.count <= 370
+        assert trace.count <= 100
 
     asyncio.run(run())
 
@@ -538,7 +559,7 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Studio Network" in response.text
         assert "Hosted Program" in response.text
-        assert trace.count <= 370
+        assert trace.count <= 75
 
     asyncio.run(run())
 
@@ -2199,6 +2220,157 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
     asyncio.run(run())
 
 
+def test_writer_desk_keeps_first_face_application_active() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        applicant_services = _faceless_services(services, prefix="applicant")
+        character = applicant_services.repo.create_character(
+            applicant_services.seed.community.id,
+            applicant_services.seed.membership.id,
+            "draft-face",
+            "Draft Face",
+            application_status="draft",
+        )
+        applicant_services.repo.ensure_character_application(
+            applicant_services.seed.community.id,
+            character.id,
+        )
+        app = create_app(debug=False, services=applicant_services)
+
+        async with TestClient(app) as client:
+            desk = await client.get("/desk")
+
+        assert desk.status == 200
+        assert "Finish Draft Face" in desk.text
+        assert "Continue application" in desk.text
+        assert 'href="/applications/draft-face"' in desk.text
+        assert "Your roster is caught up" not in desk.text
+        assert "Caught up" not in desk.text
+
+    asyncio.run(run())
+
+
+def test_writer_activation_read_model_tracks_first_face_states() -> None:
+    services = _faceless_services(create_services(path=":memory:"), prefix="activation")
+
+    no_face = services.writer_activation()
+    assert no_face.stage == "needs_face"
+    assert no_face.primary_href == "/applications/new"
+    assert no_face.needs_first_face
+
+    draft = services.repo.create_character(
+        services.seed.community.id,
+        services.seed.membership.id,
+        "activation-face",
+        "Activation Face",
+        application_status="draft",
+    )
+    services.repo.ensure_character_application(services.seed.community.id, draft.id)
+    services._invalidate_viewer()
+    draft_state = services.writer_activation()
+    assert draft_state.stage == "application_draft"
+    assert draft_state.primary_href == "/applications/activation-face"
+    assert draft_state.open_application_count == 1
+
+    accepted = services.repo.update_character_application_status(
+        services.seed.community.id,
+        draft.id,
+        "accepted",
+    )
+    services.repo.set_default_character(
+        services.seed.community.id,
+        services.seed.membership.id,
+        accepted.id,
+    )
+    services._invalidate_viewer()
+    accepted_state = services.writer_activation()
+    assert accepted_state.stage == "accepted_no_scene"
+    assert accepted_state.primary_href == "/claims"
+    assert accepted_state.accepted_face_count == 1
+    assert accepted_state.claim_gap_count >= 1
+
+
+def test_first_playable_openings_hide_closed_and_private_candidates() -> None:
+    services, _ = _outsider_services(create_services(path=":memory:"), prefix="opening")
+    community = services.seed.community
+    repo = services.repo
+    repo.create_material(
+        community.id,
+        "draft-application-only",
+        "Draft Application Only",
+        material_type="application",
+        summary="Draft-only intake note.",
+        body="Draft-only intake note.",
+        status="draft",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        services.seed.membership.id,
+        "my-own-hook",
+        "My Own Hook",
+        status="open",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        services.seed.membership.id,
+        "closed-hook",
+        "Closed Hook",
+        status="archived",
+    )
+
+    openings = services.first_playable_openings(limit=20)
+    hrefs = {item.href for item in openings}
+    labels = {item.label for item in openings}
+
+    assert "/world/draft-application-only" not in hrefs
+    assert "/wanted/my-own-hook" not in hrefs
+    assert "/wanted/closed-hook" not in hrefs
+    assert any(item.kind == "wanted" for item in openings)
+    assert "Draft Application Only" not in labels
+
+
+def test_first_face_activation_surfaces_claim_and_reserve_work() -> None:
+    async def run() -> None:
+        services, character_id = _outsider_services(
+            create_services(path=":memory:"),
+            prefix="claimwork",
+        )
+        community = services.seed.community
+        repo = services.repo
+        repo.create_claim_type(
+            community.id,
+            "required-face-name",
+            "Required Face Name",
+            is_required=True,
+        )
+        repo.create_character_reserve(
+            community.id,
+            services.seed.membership.id,
+            character_id,
+            "Reserved wanted lane",
+            status="active",
+        )
+        app = create_app(debug=False, services=services)
+
+        activation = services.writer_activation()
+        openings = services.first_playable_openings(limit=4)
+        async with TestClient(app) as client:
+            desk = await client.get("/desk")
+
+        assert activation.stage == "accepted_no_scene"
+        assert activation.primary_href == "/claims"
+        assert activation.claim_gap_count >= 1
+        assert activation.reserve_count == 1
+        assert any(item.kind == "claims" and item.href == "/claims" for item in openings)
+        assert any(item.kind == "reserves" for item in openings)
+        assert desk.status == 200
+        assert "Settle first-face claims" in desk.text
+        assert "Required face claims" in desk.text
+        assert "Active reserves" in desk.text
+
+    asyncio.run(run())
+
+
 def test_director_studio_surfaces_community_production_work() -> None:
     async def run() -> None:
         app = _app()
@@ -2305,6 +2477,40 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Invite-only before public self-serve." in launch.text
         assert "Open Studio" not in _page_content(launch.text)
         assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
+
+    asyncio.run(run())
+
+
+def test_studio_operations_tracks_writer_activation_oversight() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        role = services.repo.get_role_by_slug(staff.community.id, "member")
+        user = services.repo.create_user("activation-watch@example.com", "hash")
+        services.repo.create_membership(
+            staff.community.id,
+            user.id,
+            role.id,
+            "activation-watch",
+            "Activation Watch",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            operations = await client.get("/studio/operations")
+
+        assert operations.status == 200
+        assert "Writer activation" in operations.text
+        assert "accepted member(s) without faces" in operations.text
+        assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
+            operations.text
+        )
 
     asyncio.run(run())
 
@@ -2696,6 +2902,27 @@ def test_invited_writer_without_first_face_continues_to_application_form() -> No
         assert "Start with a first face" in desk.text
 
     asyncio.run(run())
+
+
+def test_invitation_acceptance_uses_writer_activation_handoff() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    staff_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    created = staff_services.create_writer_invitation("activation-invite@example.com")
+
+    accepted = staff_services.accept_invitation(
+        created.token,
+        username="activation-invite",
+        display_name="Activation Invite",
+        password="writer-" + "password",
+    )
+
+    assert accepted.activation.stage == "needs_face"
+    assert accepted.activation.primary_href == "/applications/new"
+    assert accepted.next_path == "/c/x-men-apocalypse/applications/new"
 
 
 def test_realm_launch_room_requires_director_membership() -> None:
@@ -3593,11 +3820,10 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             assert 'aria-label="Show navigation"' in hidden_world.text
             assert 'aria-expanded="false"' in hidden_world.text
 
-            stylesheet = await client.get("/elbysodic-static/elbysodic-theme.css")
-            assert stylesheet.status == 200
-            assert "--elbysodic-primary-rail-width" in stylesheet.text
-            assert '.elbysodic-primary-rail__link[aria-current="page"]' in stylesheet.text
-            assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet.text
+            stylesheet_text = await _stylesheet_text_with_imports(client)
+            assert "--elbysodic-primary-rail-width" in stylesheet_text
+            assert '.elbysodic-primary-rail__link[aria-current="page"]' in stylesheet_text
+            assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet_text
 
             script = await client.get("/elbysodic-static/elbysodic-shell.js")
             assert script.status == 200
@@ -7092,10 +7318,9 @@ def test_theme_stylesheet_is_loaded_and_theme_aware() -> None:
             assert index.status == 200
             assert "/elbysodic-static/elbysodic-theme.css" in index.text
 
-            stylesheet = await client.get("/elbysodic-static/elbysodic-theme.css")
-            assert stylesheet.status == 200
-            assert '[data-theme="light"]' in stylesheet.text
-            assert '[data-theme="system"]' in stylesheet.text
+            stylesheet_text = await _stylesheet_text_with_imports(client)
+            assert '[data-theme="light"]' in stylesheet_text
+            assert '[data-theme="system"]' in stylesheet_text
 
     asyncio.run(run())
 

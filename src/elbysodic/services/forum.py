@@ -58,6 +58,9 @@ from elbysodic.domain.models import (
 )
 from elbysodic.services import policies
 from elbysodic.services.access import DefaultRequestIdentity, RequestIdentityResolver
+from elbysodic.services.activation import first_playable_openings as _first_playable_openings
+from elbysodic.services.activation import tenant_activation_path as _tenant_activation_path
+from elbysodic.services.activation import writer_activation as _writer_activation
 from elbysodic.services.applications import (
     accept_character_application as _accept_character_application,
 )
@@ -83,6 +86,12 @@ from elbysodic.services.auth import (
     verify_password,
 )
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
+from elbysodic.services.boards import board_page as _board_page
+from elbysodic.services.boards import board_summary as _board_summary
+from elbysodic.services.boards import board_summary_factory as _board_summary_factory
+from elbysodic.services.boards import child_board_summaries as _child_board_summaries
+from elbysodic.services.boards import sibling_board_summaries as _sibling_board_summaries
+from elbysodic.services.boards import visible_board_summaries as _visible_board_summaries
 from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
     create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
@@ -134,13 +143,21 @@ from elbysodic.services.markup import post_snippet
 from elbysodic.services.materials import (
     current_event_for_facet_ids as _current_event_for_facet_ids,
 )
-from elbysodic.services.materials import material_detail as _material_detail
 from elbysodic.services.materials import material_summary as _material_summary
-from elbysodic.services.materials import public_material_detail as _public_material_detail
+from elbysodic.services.materials import public_read_material as _public_read_material
+from elbysodic.services.materials import public_world_hub as _public_world_hub
+from elbysodic.services.materials import read_material as _read_material
 from elbysodic.services.materials import (
     update_material_production_state as _update_material_production_state,
 )
-from elbysodic.services.network import search_public_catalog as _search_public_catalog
+from elbysodic.services.materials import world_hub as _world_hub
+from elbysodic.services.network import network_explore as _network_explore
+from elbysodic.services.network import network_home as _network_home
+from elbysodic.services.network import public_catalog_cards as _public_catalog_cards
+from elbysodic.services.network import public_preview_community as _public_preview_community
+from elbysodic.services.network import public_studio_network as _public_studio_network
+from elbysodic.services.network import public_studio_program as _public_studio_program
+from elbysodic.services.network import studio_network as _studio_network
 from elbysodic.services.notifications import (
     count_visible_unread_notifications as _count_visible_unread_notifications,
 )
@@ -149,6 +166,11 @@ from elbysodic.services.notifications import (
 )
 from elbysodic.services.notifications import notification_inbox as _notification_inbox
 from elbysodic.services.notifications import open_notification as _open_notification
+from elbysodic.services.notifications import (
+    visible_unread_notification_counts as _visible_unread_notification_counts,
+)
+from elbysodic.services.operations import DirectorOperations, OperationsInspectionConfig
+from elbysodic.services.operations import director_operations as _director_operations
 from elbysodic.services.plot_hooks import (
     create_plot_hook as _create_plot_hook,
 )
@@ -179,7 +201,6 @@ from elbysodic.services.posting import search_mentionables as _search_mentionabl
 from elbysodic.services.posting import start_thread as _start_thread
 from elbysodic.services.posting import update_post as _update_post
 from elbysodic.services.posting import update_thread_scene as _update_thread_scene
-from elbysodic.services.posts import PostViewContextBuilder
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
@@ -197,6 +218,7 @@ from elbysodic.services.read_models import (
     ApplicationsDesk,
     AttentionItem,
     BoardNavigationItem,
+    BoardPage,
     BoardSummary,
     BoardTaxonomyItem,
     BoardThreadFilter,
@@ -222,12 +244,8 @@ from elbysodic.services.read_models import (
     NavigationHealthWarning,
     NavigationPreviewItem,
     NavigationPreviewSection,
-    NetworkBrowseFacet,
-    NetworkExploreLane,
     NetworkExploreView,
     NetworkHomeView,
-    NetworkReturnPath,
-    NetworkSlice,
     NotificationInbox,
     PlotDiscovery,
     PlottingDesk,
@@ -243,7 +261,6 @@ from elbysodic.services.read_models import (
     StudioIdentityOption,
     StudioNetworkDirectory,
     StudioNetworkProgramView,
-    StudioNetworkThemePreview,
     ThreadNavigationItem,
     ThreadSummary,
     ThreadView,
@@ -251,6 +268,8 @@ from elbysodic.services.read_models import (
     WantedAdSummary,
     WantedBoard,
     WorldHub,
+    WriterActivation,
+    WriterActivationOpening,
 )
 from elbysodic.services.read_models import (
     POSTING_MODES as POSTING_MODES,
@@ -316,12 +335,13 @@ class AcceptedInvitation:
     session: LoginSession
     identity: RequestIdentityContext
     first_character: Character | None
+    activation: WriterActivation
 
     @property
     def next_path(self) -> str:
         if self.first_character is not None:
             return f"/c/{self.identity.community_slug}/desk"
-        return f"/c/{self.identity.community_slug}/applications/new"
+        return _tenant_activation_path(self.identity, self.activation.primary_href)
 
 
 @dataclass(frozen=True, slots=True)
@@ -343,6 +363,15 @@ class InvitationManagementItem:
     invitation: CommunityInvitation
     status_label: str
     can_revoke: bool
+
+
+@dataclass(frozen=True, slots=True)
+class _MembershipContext:
+    community: Community
+    membership: CommunityMembership
+    role: Role
+    roster: list[Character]
+    current_character: Character | None
 
 
 class AppServices:
@@ -374,6 +403,7 @@ class AppServices:
         )
         self._identity_context = identity_context
         self._viewer: ForumView | None = None
+        self._membership_contexts_by_user: dict[int, list[_MembershipContext]] = {}
         self._repo_context = repo_context
         self._owns_repo = owns_repo
         self._closed = False
@@ -520,30 +550,26 @@ class AppServices:
 
     def _invalidate_viewer(self) -> None:
         self._viewer = None
+        self._membership_contexts_by_user.clear()
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
         options: list[StudioIdentityOption] = []
-        for membership in self.repo.list_memberships_for_user(identity.user_id):
-            if not membership.is_active:
-                continue
-            community = self.repo.get_community(membership.community_id)
-            try:
-                role = self.repo.get_role(community.id, membership.role_id)
-            except LookupError:
-                continue
-            roster = self.repo.list_characters(community.id, membership.id)
+        contexts = self._membership_contexts_for_user(identity.user_id)
+        unread_counts = _visible_unread_notification_counts(
+            self.repo,
+            [(context.community.id, context.membership, context.role) for context in contexts],
+        )
+        for context in contexts:
+            community = context.community
+            membership = context.membership
+            role = context.role
             options.append(
                 StudioIdentityOption(
                     community=community,
                     membership=membership,
                     role=role,
-                    current_character=_resolve_current_character(self.repo, membership, roster),
-                    unread_notification_count=_count_visible_unread_notifications(
-                        self.repo,
-                        community.id,
-                        membership,
-                        role,
-                    ),
+                    current_character=context.current_character,
+                    unread_notification_count=unread_counts.get(membership.id, 0),
                     is_current=(
                         community.id == identity.community_id
                         and membership.id == identity.membership_id
@@ -559,6 +585,51 @@ class AppServices:
                 option.membership.id,
             ),
         )
+
+    def _membership_contexts_for_user(self, user_id: int) -> list[_MembershipContext]:
+        if user_id in self._membership_contexts_by_user:
+            return self._membership_contexts_by_user[user_id]
+        memberships = [
+            membership
+            for membership in self.repo.list_memberships_for_user(user_id)
+            if membership.is_active
+        ]
+        if not memberships:
+            self._membership_contexts_by_user[user_id] = []
+            return []
+        communities = self.repo.list_communities_by_ids(
+            [membership.community_id for membership in memberships],
+        )
+        roles = self.repo.roles_for_memberships([membership.id for membership in memberships])
+        memberships_by_community: dict[int, list[CommunityMembership]] = {}
+        for membership in memberships:
+            memberships_by_community.setdefault(membership.community_id, []).append(membership)
+        characters_by_membership: dict[int, list[Character]] = {}
+        for community_id, community_memberships in memberships_by_community.items():
+            characters_by_membership.update(
+                self.repo.list_characters_for_memberships(
+                    community_id,
+                    [membership.id for membership in community_memberships],
+                )
+            )
+        contexts: list[_MembershipContext] = []
+        for membership in memberships:
+            community = communities.get(membership.community_id)
+            role = roles.get(membership.id)
+            if community is None or role is None:
+                continue
+            roster = characters_by_membership.get(membership.id, [])
+            contexts.append(
+                _MembershipContext(
+                    community=community,
+                    membership=membership,
+                    role=role,
+                    roster=roster,
+                    current_character=_resolve_current_character(self.repo, membership, roster),
+                )
+            )
+        self._membership_contexts_by_user[user_id] = contexts
+        return contexts
 
     def switch_dev_identity(self, membership_id: int) -> RequestIdentityContext:
         identity = self._identity_context or self._identity_resolver.resolve()
@@ -969,12 +1040,24 @@ class AppServices:
             user_id=user.id,
             membership_id=membership.id,
         )
+        activation = self._activation_for_identity(identity)
         return AcceptedInvitation(
             invitation=accepted_invitation,
             session=session,
             identity=identity,
             first_character=character,
+            activation=activation,
         )
+
+    def _activation_for_identity(self, identity: RequestIdentityContext) -> WriterActivation:
+        return AppServices(
+            self.repo,
+            self._seed,
+            identity_context=identity,
+            allow_development_identity=self._allow_development_identity,
+            require_session=self._require_session,
+            owns_repo=False,
+        ).writer_activation()
 
     def _create_session_for_user(
         self,
@@ -1048,218 +1131,40 @@ class AppServices:
 
     def studio_network(self) -> StudioNetworkDirectory:
         identity = self._identity_context or self._identity_resolver.resolve()
-        programs: list[StudioNetworkProgramView] = []
-        memberships = [
-            membership
-            for membership in self.repo.list_memberships_for_user(identity.user_id)
-            if membership.is_active
-        ]
-        counts_by_community = self.repo.network_program_counts(
-            [membership.community_id for membership in memberships]
-        )
-        counts_by_membership = self.repo.network_membership_counts(
-            [membership.id for membership in memberships]
-        )
-        for membership in memberships:
-            community = self.repo.get_community(membership.community_id)
-            role = self.repo.get_role(community.id, membership.role_id)
-            roster = self.repo.list_characters(community.id, membership.id)
-            materials = self.repo.list_materials(community.id)
-            theme = community_theme_view(self.repo.get_default_theme(community.id))
-            counts = counts_by_community.get(community.id, {})
-            membership_counts = counts_by_membership.get(membership.id, {})
-            can_review_applications = policies.can_manage_applications(membership, role)
-            programs.append(
-                StudioNetworkProgramView(
-                    community=community,
-                    membership=membership,
-                    role=role,
-                    current_character=_resolve_current_character(self.repo, membership, roster),
-                    premise=_first_material_summary(materials, "premise", self.repo, community.id),
-                    current_event=_first_material_summary(
-                        materials,
-                        "event",
-                        self.repo,
-                        community.id,
-                    ),
-                    roster_count=counts.get("roster_count", 0),
-                    open_wanted_count=counts.get("open_wanted_count", 0),
-                    application_material_count=counts.get("application_material_count", 0),
-                    claim_type_count=counts.get("claim_type_count", 0),
-                    application_count=membership_counts.get(
-                        (
-                            "reviewable_application_count"
-                            if can_review_applications
-                            else "own_application_count"
-                        ),
-                        0,
-                    ),
-                    plotting_room_count=membership_counts.get("plotting_room_count", 0),
-                    unread_notification_count=_count_visible_unread_notifications(
-                        self.repo,
-                        community.id,
-                        membership,
-                        role,
-                    ),
-                    theme_preview=_network_theme_preview(theme),
-                    is_current=(
-                        community.id == identity.community_id
-                        and membership.id == identity.membership_id
-                    ),
-                )
-            )
-        return StudioNetworkDirectory(
-            programs=sorted(
-                programs,
-                key=lambda program: (
-                    0 if program.is_current else 1,
-                    program.community.name,
-                    program.membership.display_name,
-                    program.membership.id,
-                ),
-            )
-        )
+        contexts = self._membership_contexts_for_user(identity.user_id)
+        return _studio_network(self.repo, identity, contexts)
 
     def public_studio_network(self) -> StudioNetworkDirectory:
-        programs: list[StudioNetworkProgramView] = []
-        communities = self.repo.list_communities()
-        counts_by_community = self.repo.network_program_counts(
-            [community.id for community in communities]
-        )
-        for community in communities:
-            materials = self.repo.list_materials(community.id, status="published")
-            if not _is_public_network_ready(self.repo, community, materials):
-                continue
-            theme = community_theme_view(self.repo.get_default_theme(community.id))
-            counts = counts_by_community.get(community.id, {})
-            programs.append(
-                StudioNetworkProgramView(
-                    community=community,
-                    membership=None,
-                    role=None,
-                    current_character=None,
-                    premise=_first_material_summary(materials, "premise", self.repo, community.id),
-                    current_event=_first_material_summary(
-                        materials,
-                        "event",
-                        self.repo,
-                        community.id,
-                    ),
-                    roster_count=counts.get("roster_count", 0),
-                    open_wanted_count=counts.get("open_wanted_count", 0),
-                    application_material_count=counts.get("application_material_count", 0),
-                    claim_type_count=counts.get("claim_type_count", 0),
-                    application_count=0,
-                    plotting_room_count=0,
-                    unread_notification_count=0,
-                    theme_preview=_network_theme_preview(theme),
-                    is_current=False,
-                )
-            )
-        return StudioNetworkDirectory(programs=programs)
+        return _public_studio_network(self.repo)
 
     def network_home(self) -> NetworkHomeView:
         cards = self._public_catalog_cards()
-        return_path = None
         try:
             viewer = self.viewer()
         except PermissionError:
             viewer = None
-        if viewer is not None:
-            return_path = NetworkReturnPath(
-                desk_href=f"/c/{viewer.community.slug}/desk",
-                notification_href="/notifications",
-                unread_notification_count=viewer.unread_notification_count,
-            )
-        return NetworkHomeView(
-            featured=cards[0] if cards else None,
-            slices=[
-                NetworkSlice("Trending realms", "/network", cards),
-                NetworkSlice("Superhero crisis", "/network?q=superhero", cards),
-                NetworkSlice("Magic, survival, and small towns", "/network?q=magic", cards),
-            ],
-            browse_facets=_network_browse_facets(),
-            return_path=return_path,
-        )
+        return _network_home(cards, viewer)
 
     def network_explore(self, query: str = "") -> NetworkExploreView:
         cards = self._public_catalog_cards()
-        return NetworkExploreView(
-            query=query.strip(),
-            browse_facets=_network_browse_facets(),
-            relationship_lanes=_network_explore_lanes(),
-            results=_search_public_catalog(cards, query),
-        )
+        return _network_explore(cards, query)
 
     def _public_catalog_cards(self) -> list[PublicCatalogCard]:
-        return [
-            _public_catalog_card_from_program(program)
-            for program in self.public_studio_network().programs
-        ]
+        return _public_catalog_cards(self.public_studio_network())
 
     def public_studio_program(self, community_slug: str) -> StudioNetworkProgramView:
-        community = self._public_preview_community(community_slug)
-        materials = self.repo.list_materials(community.id, status="published")
-        wanted_ads = self.repo.list_wanted_ads(community.id, status=None)
-        community_characters = self.repo.list_community_characters(community.id)
-        theme = community_theme_view(self.repo.get_default_theme(community.id))
-        return StudioNetworkProgramView(
-            community=community,
-            membership=None,
-            role=None,
-            current_character=None,
-            premise=_first_material_summary(materials, "premise", self.repo, community.id),
-            current_event=_first_material_summary(
-                materials,
-                "event",
-                self.repo,
-                community.id,
-            ),
-            roster_count=len(community_characters),
-            open_wanted_count=sum(1 for wanted_ad in wanted_ads if wanted_ad.status == "open"),
-            application_material_count=sum(
-                1 for material in materials if material.material_type == "application"
-            ),
-            claim_type_count=len(self.repo.list_claim_types(community.id)),
-            application_count=0,
-            plotting_room_count=0,
-            unread_notification_count=0,
-            theme_preview=_network_theme_preview(theme),
-            is_current=False,
-        )
+        return _public_studio_program(self.repo, community_slug)
 
     def public_world_hub(self, community_slug: str) -> WorldHub:
         community = self._public_preview_community(community_slug)
-        materials = [
-            _material_summary(self.repo, community.id, material)
-            for material in self.repo.list_materials(community.id)
-        ]
-        additional_materials = [item for item in materials if not item.material.is_featured]
-        return WorldHub(
-            featured=[item for item in materials if item.material.is_featured],
-            guides=[
-                item
-                for item in additional_materials
-                if item.material.material_type in {"premise", "guide", "factions"}
-            ],
-            events=[item for item in materials if item.material.material_type == "event"],
-            application_materials=[
-                item
-                for item in additional_materials
-                if item.material.material_type == "application"
-            ],
-            can_manage=False,
-        )
+        return _public_world_hub(self.repo, community.id)
 
     def public_read_material(self, community_slug: str, material_slug: str) -> MaterialDetail:
         community = self._public_preview_community(community_slug)
-        material = self.repo.get_material_by_slug(community.id, material_slug)
-        if material.status != "published":
-            raise LookupError(f"material not found in community {community.id}: {material_slug}")
-        return _public_material_detail(
+        return _public_read_material(
             self.repo,
             community.id,
-            material,
+            material_slug,
             wanted_summary_factory=lambda wanted_ad: _public_wanted_ad_summary(
                 self.repo,
                 community.id,
@@ -1276,50 +1181,31 @@ class AppServices:
         return _public_read_wanted_ad(self.repo, community.id, wanted_slug)
 
     def _public_preview_community(self, community_slug: str) -> Community:
-        community = self.repo.get_community_by_slug(community_slug)
-        materials = self.repo.list_materials(community.id)
-        if not _is_public_network_ready(self.repo, community, materials):
-            raise LookupError(f"community not available for public preview: {community_slug}")
-        return community
+        return _public_preview_community(self.repo, community_slug)
 
     def list_boards(self) -> list[BoardSummary]:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        visible_boards = [
-            board
-            for board in self.repo.list_boards(viewer.community.id)
-            if policies.can_view_board(viewer.membership, board, viewer.role)
-        ]
-        return _board_summaries(self.repo, viewer, visible_boards, current_facet_ids)
+        return _visible_board_summaries(self.repo, self.viewer())
 
     def child_board_summaries(self, board: Board) -> list[BoardSummary]:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        return [
-            _board_summary(self.repo, viewer, child, current_facet_ids)
-            for child in self.repo.list_child_boards(viewer.community.id, board.id)
-            if policies.can_view_board(viewer.membership, child, viewer.role)
-        ]
+        return _child_board_summaries(self.repo, self.viewer(), board)
 
     def sibling_board_summaries(self, board: Board) -> list[BoardSummary]:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        siblings = self.repo.list_child_boards(viewer.community.id, board.parent_board_id)
-        return [
-            _board_summary(self.repo, viewer, sibling, current_facet_ids)
-            for sibling in siblings
-            if sibling.id != board.id
-            and is_location_board(sibling)
-            and policies.can_view_board(viewer.membership, sibling, viewer.role)
-        ]
+        return _sibling_board_summaries(self.repo, self.viewer(), board)
 
     def board_summary(self, board: Board) -> BoardSummary:
-        viewer = self.viewer()
-        return _board_summary(
+        return _board_summary(self.repo, self.viewer(), board)
+
+    def board_page(
+        self,
+        board_slug: str,
+        *,
+        filter_by: BoardThreadFilter = "all",
+    ) -> BoardPage:
+        return _board_page(
             self.repo,
-            viewer,
-            board,
-            _current_character_facet_ids(self.repo, viewer),
+            self.viewer(),
+            board_slug,
+            filter_by=filter_by,
         )
 
     def parent_board(self, board: Board) -> Board | None:
@@ -1436,6 +1322,43 @@ class AppServices:
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
         return _applications_desk(self.repo, viewer)
+
+    def writer_activation(
+        self,
+        *,
+        queue: MyThreadsDashboard | None = None,
+        applications: ApplicationsDesk | None = None,
+        plotting: PlottingDesk | None = None,
+    ) -> WriterActivation:
+        viewer = self.viewer()
+        queue = queue if queue is not None else self.my_threads()
+        applications = applications if applications is not None else self.applications_desk()
+        plotting = plotting if plotting is not None else self.plotting_desk()
+        return _writer_activation(
+            self.repo,
+            viewer,
+            queue=queue,
+            applications=applications,
+            plotting=plotting,
+        )
+
+    def first_playable_openings(
+        self,
+        *,
+        applications: ApplicationsDesk | None = None,
+        plotting: PlottingDesk | None = None,
+        limit: int = 6,
+    ) -> list[WriterActivationOpening]:
+        viewer = self.viewer()
+        applications = applications if applications is not None else self.applications_desk()
+        plotting = plotting if plotting is not None else self.plotting_desk()
+        return _first_playable_openings(
+            self.repo,
+            viewer,
+            applications=applications,
+            plotting=plotting,
+            limit=limit,
+        )
 
     def application_onboarding(self) -> ApplicationOnboarding:
         viewer = self.viewer()
@@ -1784,26 +1707,27 @@ class AppServices:
         return _discover_plots(self.repo, self.viewer(), facet_slugs=facet_slugs)
 
     def world_hub(self) -> WorldHub:
+        return _world_hub(self.repo, self.viewer())
+
+    def director_operations(
+        self,
+        *,
+        inspection_config: OperationsInspectionConfig | None = None,
+    ) -> DirectorOperations:
         viewer = self.viewer()
-        materials = [
-            _material_summary(self.repo, viewer.community.id, material)
-            for material in self.repo.list_materials(viewer.community.id)
-        ]
-        additional_materials = [item for item in materials if not item.material.is_featured]
-        return WorldHub(
-            featured=[item for item in materials if item.material.is_featured],
-            guides=[
-                item
-                for item in additional_materials
-                if item.material.material_type in {"premise", "guide", "factions"}
-            ],
-            events=[item for item in materials if item.material.material_type == "event"],
-            application_materials=[
-                item
-                for item in additional_materials
-                if item.material.material_type == "application"
-            ],
-            can_manage=policies.can_manage_world(viewer.membership, viewer.role),
+        studio = self.director_studio()
+        casting = self.casting_desk()
+        plotting = self.plotting_desk()
+        writer_invitations = self.writer_invitations() if studio.can_manage else []
+        return _director_operations(
+            self.repo,
+            viewer,
+            studio,
+            casting,
+            plotting,
+            writer_invitations=writer_invitations,
+            unread_notification_count=viewer.unread_notification_count,
+            inspection_config=inspection_config,
         )
 
     def director_studio(self) -> DirectorStudio:
@@ -2065,7 +1989,6 @@ class AppServices:
             self.repo,
             viewer,
             board,
-            _current_character_facet_ids(self.repo, viewer),
         )
         parent = (
             self.repo.get_board(viewer.community.id, board.parent_board_id)
@@ -2281,22 +2204,13 @@ class AppServices:
 
     def read_material(self, material_slug: str) -> MaterialDetail:
         viewer = self.viewer()
-        material = self.repo.get_material_by_slug(viewer.community.id, material_slug)
-        if material.status != "published" and not policies.can_manage_world(
-            viewer.membership,
-            viewer.role,
-        ):
-            raise LookupError(
-                f"material not found in community {viewer.community.id}: {material_slug}"
-            )
-        return _material_detail(
+        return _read_material(
             self.repo,
             viewer,
-            material,
-            board_summary_factory=lambda board: _board_summary(
+            material_slug,
+            board_summary_factory=_board_summary_factory(
                 self.repo,
                 viewer,
-                board,
                 _current_character_facet_ids(self.repo, viewer),
             ),
             wanted_summary_factory=lambda wanted_ad: _wanted_ad_summary(
@@ -3251,175 +3165,6 @@ def _location_navigation_groups(
     ]
 
 
-def _board_summary(
-    repo: ForumRepository,
-    viewer: ForumView,
-    board: Board,
-    current_facet_ids: set[int],
-) -> BoardSummary:
-    child_boards = [
-        child
-        for child in repo.list_child_boards(viewer.community.id, board.id)
-        if policies.can_view_board(viewer.membership, child, viewer.role)
-    ]
-    boards_for_activity = [board, *child_boards]
-    board_facets = _facet_tags(
-        repo,
-        viewer.community.id,
-        repo.list_board_facets(viewer.community.id, board.id),
-    )
-    threads_with_boards: list[tuple[Board, Thread]] = []
-    posts_by_thread: dict[int, list[Post]] = {}
-    for activity_board in boards_for_activity:
-        for thread in repo.list_threads(viewer.community.id, activity_board.id):
-            threads_with_boards.append((activity_board, thread))
-            posts_by_thread[thread.id] = repo.list_posts(viewer.community.id, thread.id)
-    latest_board: Board | None = None
-    latest_thread: Thread | None = None
-    if threads_with_boards:
-        latest_board, latest_thread = max(
-            threads_with_boards,
-            key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
-        )
-    latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
-    latest_post = (
-        _post_view(repo, viewer.community.id, latest_thread_posts[-1])
-        if latest_thread_posts
-        else None
-    )
-    threads = [thread for _, thread in threads_with_boards]
-    return BoardSummary(
-        board=board,
-        child_boards=child_boards,
-        thread_count=len(threads),
-        post_count=sum(len(posts) for posts in posts_by_thread.values()),
-        unread_thread_count=sum(
-            1
-            for thread in threads
-            if _is_unread(
-                repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-            )
-        ),
-        latest_thread=latest_thread,
-        latest_board=latest_board,
-        latest_post=latest_post,
-        facets=board_facets,
-        is_relevant_to_current_face=bool(
-            current_facet_ids
-            and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
-        ),
-    )
-
-
-def _board_summaries(
-    repo: ForumRepository,
-    viewer: ForumView,
-    boards: list[Board],
-    current_facet_ids: set[int],
-) -> list[BoardSummary]:
-    if not boards:
-        return []
-    board_ids = [board.id for board in boards]
-    children_by_board = repo.list_child_boards_for_boards(viewer.community.id, board_ids)
-    visible_children_by_board = {
-        board_id: [
-            child
-            for child in children
-            if policies.can_view_board(viewer.membership, child, viewer.role)
-        ]
-        for board_id, children in children_by_board.items()
-    }
-    activity_boards_by_summary = {
-        board.id: [board, *visible_children_by_board.get(board.id, [])] for board in boards
-    }
-    activity_board_ids = list(
-        {
-            activity_board.id
-            for activity_boards in activity_boards_by_summary.values()
-            for activity_board in activity_boards
-        }
-    )
-    threads_by_board = repo.list_threads_for_boards(viewer.community.id, activity_board_ids)
-    all_thread_ids = [thread.id for threads in threads_by_board.values() for thread in threads]
-    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, all_thread_ids)
-    thread_read_at = repo.thread_read_at_for_threads(
-        viewer.community.id,
-        all_thread_ids,
-        viewer.membership.id,
-    )
-    all_posts = [post for posts in posts_by_thread.values() for post in posts]
-    post_context = (
-        PostViewContextBuilder(repo, viewer.community.id).context(all_posts) if all_posts else None
-    )
-    summaries: list[BoardSummary] = []
-    for board in boards:
-        threads_with_boards = [
-            (activity_board, thread)
-            for activity_board in activity_boards_by_summary[board.id]
-            for thread in threads_by_board.get(activity_board.id, [])
-        ]
-        latest_board: Board | None = None
-        latest_thread: Thread | None = None
-        if threads_with_boards:
-            latest_board, latest_thread = max(
-                threads_with_boards,
-                key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
-            )
-        latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
-        latest_post = (
-            _post_view(
-                repo,
-                viewer.community.id,
-                latest_thread_posts[-1],
-                context=post_context,
-            )
-            if latest_thread_posts
-            else None
-        )
-        threads = [thread for _, thread in threads_with_boards]
-        board_facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            repo.list_board_facets(viewer.community.id, board.id),
-        )
-        summaries.append(
-            BoardSummary(
-                board=board,
-                child_boards=visible_children_by_board.get(board.id, []),
-                thread_count=len(threads),
-                post_count=sum(len(posts_by_thread.get(thread.id, [])) for thread in threads),
-                unread_thread_count=sum(
-                    1 for thread in threads if _is_unread_from_map(thread, thread_read_at)
-                ),
-                latest_thread=latest_thread,
-                latest_board=latest_board,
-                latest_post=latest_post,
-                facets=board_facets,
-                is_relevant_to_current_face=bool(
-                    current_facet_ids
-                    and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
-                ),
-            )
-        )
-    return summaries
-
-
-def _is_unread_from_map(thread: Thread, read_at_by_thread: dict[int, str]) -> bool:
-    read_at = read_at_by_thread.get(thread.id)
-    if read_at is None:
-        return True
-    return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
-
-
-def _latest_thread(threads: list[Thread]) -> Thread | None:
-    if not threads:
-        return None
-    return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
-
-
 def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board | None:
     return next(
         (
@@ -3551,24 +3296,6 @@ def _realm_launch_readiness(
             ),
         ]
     )
-
-
-def _is_public_network_ready(
-    repo: ForumRepository,
-    community: Community,
-    materials: list[Material],
-) -> bool:
-    if community.launch_status != "public-preview":
-        return False
-    has_public_premise = any(
-        material.material_type == "premise" and material.status == "published"
-        for material in materials
-    )
-    has_public_scene_hub = any(
-        board.board_kind in {"location", "community"} and not board.is_private
-        for board in repo.list_boards(community.id)
-    )
-    return has_public_premise and has_public_scene_hub
 
 
 def _post_style_policy(community: Community) -> PostStylePolicy:
@@ -4013,89 +3740,6 @@ def _ensure_enabled_style_value(
         raise ValueError(f"{label} is not supported")
     if value not in enabled_values and value != current_value:
         raise ValueError(f"{label} is not available in this community")
-
-
-def _first_material_summary(
-    materials: list[Material],
-    material_type: str,
-    repo: ForumRepository,
-    community_id: int,
-) -> MaterialSummary | None:
-    for material in materials:
-        if material.material_type == material_type:
-            return _material_summary(repo, community_id, material)
-    return None
-
-
-def _public_catalog_card_from_program(program: StudioNetworkProgramView) -> PublicCatalogCard:
-    return PublicCatalogCard(
-        community=program.community,
-        premise=program.premise,
-        current_event=program.current_event,
-        roster_count=program.roster_count,
-        open_wanted_count=program.open_wanted_count,
-        application_material_count=program.application_material_count,
-        claim_type_count=program.claim_type_count,
-        theme_preview=program.theme_preview,
-    )
-
-
-def _network_browse_facets() -> list[NetworkBrowseFacet]:
-    return [
-        NetworkBrowseFacet("superhero crisis", "/network?q=superhero", "hot"),
-        NetworkBrowseFacet("magic school", "/network?q=magic"),
-        NetworkBrowseFacet("survival sci-fi", "/network?q=survival"),
-        NetworkBrowseFacet("small town", "/network?q=town"),
-        NetworkBrowseFacet("urban real life", "/network?q=nyc"),
-        NetworkBrowseFacet("wanted hooks", "/network?q=wanted", "hot"),
-        NetworkBrowseFacet("current events", "/network?q=event"),
-        NetworkBrowseFacet("plotting rooms", "/network?q=plotting"),
-        NetworkBrowseFacet("claims", "/network?q=claims"),
-        NetworkBrowseFacet("reserves", "/network?q=reserves"),
-    ]
-
-
-def _network_explore_lanes() -> list[NetworkExploreLane]:
-    return [
-        NetworkExploreLane(
-            "Start with a wanted hook",
-            "Open roles, rivals, factions, and face requests.",
-            "/network?q=wanted",
-            "casting",
-        ),
-        NetworkExploreLane(
-            "Start with a mood",
-            "Magic, crisis, survival, town, or urban play.",
-            "/network?q=magic",
-            "tags",
-        ),
-        NetworkExploreLane(
-            "Start with an active roster",
-            "Find realms with visible faces already in motion.",
-            "/network?q=faces",
-            "roster",
-        ),
-        NetworkExploreLane(
-            "Start with current events",
-            "World-state pressure and scenes already moving.",
-            "/network?q=event",
-            "story",
-        ),
-    ]
-
-
-def _network_theme_preview(theme: object | None) -> StudioNetworkThemePreview:
-    variables = dict(getattr(theme, "dark_variables", ()) or ())
-    base_variables = dict(getattr(theme, "base_variables", ()) or ())
-    return StudioNetworkThemePreview(
-        accent=variables.get("--chirpui-accent", "var(--chirpui-accent)"),
-        surface=variables.get("--chirpui-surface", "var(--chirpui-surface)"),
-        text=variables.get("--chirpui-text", "var(--chirpui-text)"),
-        display_font=base_variables.get(
-            "--elbysodic-display-font-family",
-            "var(--elbysodic-display-font-family)",
-        ),
-    )
 
 
 def _apply_post_style_preset(

@@ -45,7 +45,7 @@
   {% end %}
 
   {% if desk.needs_first_face %}
-  {{ empty_policy_block("No faces on your roster yet.", "Start a first face before reply queues, plotting rooms, and active-face lanes can form.", "First face", "Start application", "/applications/new") }}
+  {{ empty_policy_block("No faces on your roster yet.", desk.activation.summary, "First face", desk.activation.primary_label, desk.activation.primary_href) }}
   {% elif not desk.lanes %}
   {{ empty_policy_block("No desk lanes need you right now.", "When replies, watched scenes, plotting movement, applications, or notifications need attention, they will appear here.", "Caught up") }}
   {% end %}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 
 from elbysodic.db.repositories.base import TenantBoundaryError, _last_id, _utc_now
 from elbysodic.db.repositories.identity import IdentityRepositoryMixin
@@ -690,6 +691,48 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
             (community_id, membership_id),
         ).fetchall()
         return [_character_from_row(row) for row in rows]
+
+    def list_characters_for_memberships(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, list[Character]]:
+        if not membership_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                membership_id,
+                name,
+                slug,
+                avatar_url,
+                poster_url,
+                poster_alt,
+                tagline,
+                accent_color,
+                summary,
+                post_profile_variant,
+                post_accent_style,
+                post_border_style,
+                post_title_style,
+                post_density,
+                application_status,
+                created_at,
+                updated_at
+            FROM characters
+            WHERE community_id = ?
+              AND membership_id IN (SELECT value FROM json_each(?))
+            ORDER BY membership_id, name, id
+            """,
+            (community_id, json.dumps(membership_ids)),
+        ).fetchall()
+        characters_by_membership: dict[int, list[Character]] = defaultdict(list)
+        for row in rows:
+            character = _character_from_row(row)
+            characters_by_membership[character.membership_id].append(character)
+        return dict(characters_by_membership)
 
     def list_community_characters(self, community_id: int) -> list[Character]:
         rows = self.connection.execute(

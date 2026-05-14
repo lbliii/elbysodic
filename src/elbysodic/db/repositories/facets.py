@@ -141,6 +141,37 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
         ).fetchall()
         return [_facet_group_from_row(row) for row in rows]
 
+    def list_facet_groups_for_communities(
+        self,
+        community_ids: list[int],
+    ) -> dict[int, list[FacetGroup]]:
+        if not community_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                slug,
+                name,
+                description,
+                selection_mode,
+                visibility,
+                sort_order,
+                created_at,
+                updated_at
+            FROM facet_groups
+            WHERE community_id IN (SELECT value FROM json_each(?))
+            ORDER BY community_id, sort_order, name, id
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        groups_by_community: dict[int, list[FacetGroup]] = defaultdict(list)
+        for row in rows:
+            group = _facet_group_from_row(row)
+            groups_by_community[group.community_id].append(group)
+        return dict(groups_by_community)
+
     def create_facet(
         self,
         community_id: int,
@@ -264,6 +295,49 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             character_id,
         )
 
+    def list_character_facets_for_characters(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, list[Facet]]:
+        if not character_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                character_facets.character_id,
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM character_facets
+            JOIN facets
+              ON facets.community_id = character_facets.community_id
+             AND facets.id = character_facets.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE character_facets.community_id = ?
+              AND character_facets.character_id IN (SELECT value FROM json_each(?))
+            ORDER BY character_facets.character_id,
+                     facet_groups.sort_order,
+                     facet_groups.name,
+                     facets.sort_order,
+                     facets.name
+            """,
+            (community_id, json.dumps(character_ids)),
+        ).fetchall()
+        facets_by_character: dict[int, list[Facet]] = defaultdict(list)
+        for row in rows:
+            facets_by_character[int(row["character_id"])].append(_facet_from_row(row))
+        return dict(facets_by_character)
+
     def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]:
         self.get_board(community_id, board_id)
         return self._list_facets_for_assignment(
@@ -272,6 +346,49 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             community_id,
             board_id,
         )
+
+    def list_board_facets_for_boards(
+        self,
+        community_id: int,
+        board_ids: list[int],
+    ) -> dict[int, list[Facet]]:
+        if not board_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                board_facets.board_id,
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM board_facets
+            JOIN facets
+              ON facets.community_id = board_facets.community_id
+             AND facets.id = board_facets.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE board_facets.community_id = ?
+              AND board_facets.board_id IN (SELECT value FROM json_each(?))
+            ORDER BY board_facets.board_id,
+                     facet_groups.sort_order,
+                     facet_groups.name,
+                     facets.sort_order,
+                     facets.name
+            """,
+            (community_id, json.dumps(board_ids)),
+        ).fetchall()
+        facets_by_board: dict[int, list[Facet]] = defaultdict(list)
+        for row in rows:
+            facets_by_board[int(row["board_id"])].append(_facet_from_row(row))
+        return dict(facets_by_board)
 
     def list_thread_facets(self, community_id: int, thread_id: int) -> list[Facet]:
         self.get_thread(community_id, thread_id)
@@ -334,6 +451,52 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             material_id,
         )
 
+    def list_material_facets_for_materials(
+        self,
+        community_ids: list[int],
+        material_ids: list[int],
+    ) -> dict[tuple[int, int], list[Facet]]:
+        if not community_ids or not material_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                material_facets.community_id AS assignment_community_id,
+                material_facets.material_id,
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM material_facets
+            JOIN facets
+              ON facets.community_id = material_facets.community_id
+             AND facets.id = material_facets.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE material_facets.community_id IN (SELECT value FROM json_each(?))
+              AND material_facets.material_id IN (SELECT value FROM json_each(?))
+            ORDER BY material_facets.community_id,
+                     material_facets.material_id,
+                     facet_groups.sort_order,
+                     facet_groups.name,
+                     facets.sort_order,
+                     facets.name
+            """,
+            (json.dumps(community_ids), json.dumps(material_ids)),
+        ).fetchall()
+        facets_by_material: dict[tuple[int, int], list[Facet]] = defaultdict(list)
+        for row in rows:
+            key = (int(row["assignment_community_id"]), int(row["material_id"]))
+            facets_by_material[key].append(_facet_from_row(row))
+        return dict(facets_by_material)
+
     def list_wanted_ad_facets(self, community_id: int, wanted_ad_id: int) -> list[Facet]:
         self.get_wanted_ad(community_id, wanted_ad_id)
         return self._list_facets_for_assignment(
@@ -342,6 +505,49 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             community_id,
             wanted_ad_id,
         )
+
+    def list_wanted_ad_facets_for_wanted_ads(
+        self,
+        community_id: int,
+        wanted_ad_ids: list[int],
+    ) -> dict[int, list[Facet]]:
+        if not wanted_ad_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                wanted_ad_facets.wanted_ad_id,
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM wanted_ad_facets
+            JOIN facets
+              ON facets.community_id = wanted_ad_facets.community_id
+             AND facets.id = wanted_ad_facets.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE wanted_ad_facets.community_id = ?
+              AND wanted_ad_facets.wanted_ad_id IN (SELECT value FROM json_each(?))
+            ORDER BY wanted_ad_facets.wanted_ad_id,
+                     facet_groups.sort_order,
+                     facet_groups.name,
+                     facets.sort_order,
+                     facets.name
+            """,
+            (community_id, json.dumps(wanted_ad_ids)),
+        ).fetchall()
+        facets_by_wanted_ad: dict[int, list[Facet]] = defaultdict(list)
+        for row in rows:
+            facets_by_wanted_ad[int(row["wanted_ad_id"])].append(_facet_from_row(row))
+        return dict(facets_by_wanted_ad)
 
     def list_character_plot_hook_facets(
         self,
