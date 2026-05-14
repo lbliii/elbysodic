@@ -31,10 +31,35 @@ class CountingPostRepo:
         assert community_id == self.community.id
         return self.memberships[membership_id]
 
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]:
+        assert community_id == self.community.id
+        return {character_id: self.characters[character_id] for character_id in character_ids}
+
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]:
+        assert community_id == self.community.id
+        return {membership_id: self.memberships[membership_id] for membership_id in membership_ids}
+
     def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]:
         assert community_id == self.community.id
         self.list_character_facets_calls.append(character_id)
         return []
+
+    def list_character_facets_for_characters(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, list[Facet]]:
+        assert community_id == self.community.id
+        self.list_character_facets_calls.extend(character_ids)
+        return {}
 
     def list_community_characters(self, community_id: int) -> list[Character]:
         assert community_id == self.community.id
