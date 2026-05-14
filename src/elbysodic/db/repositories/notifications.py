@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from collections import defaultdict
+
 from elbysodic.db.repositories.base import TenantBoundaryError, _utc_now
 from elbysodic.db.repositories.characters import CharacterRepositoryMixin
 from elbysodic.db.repositories.rows import _notification_from_row
@@ -444,6 +447,62 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
             (community_id, membership_id, limit),
         ).fetchall()
         return [_notification_from_row(row) for row in rows]
+
+    def list_unread_notifications_for_memberships(
+        self,
+        membership_pairs: list[tuple[int, int]],
+    ) -> dict[tuple[int, int], list[Notification]]:
+        if not membership_pairs:
+            return {}
+        requested_json = json.dumps(
+            [
+                {"community_id": community_id, "membership_id": membership_id}
+                for community_id, membership_id in membership_pairs
+            ]
+        )
+        rows = self.connection.execute(
+            """
+            WITH requested AS (
+                SELECT
+                    CAST(json_extract(value, '$.community_id') AS INTEGER) AS community_id,
+                    CAST(json_extract(value, '$.membership_id') AS INTEGER) AS membership_id
+                FROM json_each(?)
+            )
+            SELECT
+                notifications.id,
+                notifications.community_id,
+                notifications.membership_id,
+                notifications.kind,
+                notifications.thread_id,
+                notifications.post_id,
+                notifications.wanted_ad_id,
+                notifications.wanted_ad_interest_id,
+                notifications.character_plot_hook_id,
+                notifications.plotting_room_id,
+                notifications.character_id,
+                notifications.actor_membership_id,
+                notifications.actor_character_id,
+                notifications.read_at,
+                notifications.created_at
+            FROM notifications
+            JOIN requested
+              ON requested.community_id = notifications.community_id
+             AND requested.membership_id = notifications.membership_id
+            WHERE notifications.read_at IS NULL
+            ORDER BY notifications.community_id,
+                     notifications.membership_id,
+                     notifications.created_at DESC,
+                     notifications.id DESC
+            """,
+            (requested_json,),
+        ).fetchall()
+        notifications_by_membership: dict[tuple[int, int], list[Notification]] = defaultdict(list)
+        for row in rows:
+            notification = _notification_from_row(row)
+            notifications_by_membership[
+                (notification.community_id, notification.membership_id)
+            ].append(notification)
+        return dict(notifications_by_membership)
 
     def count_unread_notifications(self, community_id: int, membership_id: int) -> int:
         self.get_membership(community_id, membership_id)

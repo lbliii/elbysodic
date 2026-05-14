@@ -64,6 +64,11 @@ class NotificationRepository(PostViewRepository, Protocol):
         limit: int = 50,
     ) -> list[Notification]: ...
 
+    def list_unread_notifications_for_memberships(
+        self,
+        membership_pairs: list[tuple[int, int]],
+    ) -> dict[tuple[int, int], list[Notification]]: ...
+
     def count_unread_notifications(self, community_id: int, membership_id: int) -> int: ...
 
     def mark_notification_read(self, community_id: int, notification_id: int) -> Notification: ...
@@ -132,6 +137,26 @@ def count_visible_unread_notifications(
         if notification.read_at is None
         and _can_view_notification_target(repo, community_id, membership, role, notification)
     )
+
+
+def visible_unread_notification_counts(
+    repo: NotificationRepository,
+    contexts: list[tuple[int, CommunityMembership, Role | None]],
+) -> dict[int, int]:
+    if not contexts:
+        return {}
+    notifications_by_membership = repo.list_unread_notifications_for_memberships(
+        [(community_id, membership.id) for community_id, membership, _role in contexts]
+    )
+    counts: dict[int, int] = {}
+    for community_id, membership, role in contexts:
+        notifications = notifications_by_membership.get((community_id, membership.id), [])
+        counts[membership.id] = sum(
+            1
+            for notification in notifications
+            if _can_view_notification_target(repo, community_id, membership, role, notification)
+        )
+    return counts
 
 
 def open_notification(

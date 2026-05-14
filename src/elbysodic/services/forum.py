@@ -156,6 +156,9 @@ from elbysodic.services.notifications import (
 )
 from elbysodic.services.notifications import notification_inbox as _notification_inbox
 from elbysodic.services.notifications import open_notification as _open_notification
+from elbysodic.services.notifications import (
+    visible_unread_notification_counts as _visible_unread_notification_counts,
+)
 from elbysodic.services.plot_hooks import (
     create_plot_hook as _create_plot_hook,
 )
@@ -542,7 +545,12 @@ class AppServices:
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
         options: list[StudioIdentityOption] = []
-        for context in self._membership_contexts_for_user(identity.user_id):
+        contexts = self._membership_contexts_for_user(identity.user_id)
+        unread_counts = _visible_unread_notification_counts(
+            self.repo,
+            [(context.community.id, context.membership, context.role) for context in contexts],
+        )
+        for context in contexts:
             community = context.community
             membership = context.membership
             role = context.role
@@ -552,12 +560,7 @@ class AppServices:
                     membership=membership,
                     role=role,
                     current_character=context.current_character,
-                    unread_notification_count=_count_visible_unread_notifications(
-                        self.repo,
-                        community.id,
-                        membership,
-                        role,
-                    ),
+                    unread_notification_count=unread_counts.get(membership.id, 0),
                     is_current=(
                         community.id == identity.community_id
                         and membership.id == identity.membership_id
@@ -1125,6 +1128,10 @@ class AppServices:
         counts_by_membership = self.repo.network_membership_counts(
             [context.membership.id for context in contexts]
         )
+        unread_counts = _visible_unread_notification_counts(
+            self.repo,
+            [(context.community.id, context.membership, context.role) for context in contexts],
+        )
         for context in contexts:
             community = context.community
             membership = context.membership
@@ -1165,12 +1172,7 @@ class AppServices:
                         0,
                     ),
                     plotting_room_count=membership_counts.get("plotting_room_count", 0),
-                    unread_notification_count=_count_visible_unread_notifications(
-                        self.repo,
-                        community.id,
-                        membership,
-                        role,
-                    ),
+                    unread_notification_count=unread_counts.get(membership.id, 0),
                     theme_preview=_network_theme_preview(theme),
                     is_current=(
                         community.id == identity.community_id
