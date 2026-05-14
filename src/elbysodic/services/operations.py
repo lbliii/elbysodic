@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
 from typing import Protocol
 
-from elbysodic.db import ForumRepository
 from elbysodic.db.migrations import CURRENT_SCHEMA_VERSION
-from elbysodic.domain.models import CommunityInvitation
+from elbysodic.domain.models import Character, CommunityInvitation, CommunityMembership, Role
 from elbysodic.services import policies
 from elbysodic.services.read_models import (
     ApplicationCharacterView,
@@ -22,6 +22,18 @@ from elbysodic.services.read_models import (
 
 class InvitationManagementItemLike(Protocol):
     invitation: CommunityInvitation
+
+
+class OperationsRepository(Protocol):
+    connection: sqlite3.Connection
+
+    def get_role(self, community_id: int, role_id: int) -> Role: ...
+
+    def list_characters(self, community_id: int, membership_id: int) -> list[Character]: ...
+
+    def list_community_characters(self, community_id: int) -> list[Character]: ...
+
+    def list_memberships(self, community_id: int) -> list[CommunityMembership]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,7 +77,7 @@ class DirectorOperations:
 
 
 def director_operations(
-    repo: ForumRepository,
+    repo: OperationsRepository,
     viewer: ForumView,
     studio: DirectorStudio,
     casting: CastingDesk,
@@ -241,7 +253,7 @@ def director_operations(
 
 
 def operations_inspection(
-    repo: ForumRepository,
+    repo: OperationsRepository,
     viewer: ForumView,
     config: OperationsInspectionConfig,
 ) -> OperationsInspection:
@@ -270,7 +282,7 @@ def operations_inspection(
 
 
 def _writer_activation_card(
-    repo: ForumRepository,
+    repo: OperationsRepository,
     viewer: ForumView,
     studio: DirectorStudio,
     casting: CastingDesk,

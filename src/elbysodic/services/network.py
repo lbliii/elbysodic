@@ -5,23 +5,30 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Protocol
 
-from elbysodic.db import ForumRepository
 from elbysodic.domain.context import RequestIdentityContext
 from elbysodic.domain.models import (
+    Board,
     Character,
+    ClaimType,
     Community,
     CommunityMembership,
+    CommunityTheme,
     Facet,
     FacetGroup,
     Material,
     Role,
+    WantedAd,
 )
 from elbysodic.domain.vocabulary import material_type_label
 from elbysodic.services import policies
 from elbysodic.services.facets import facet_tags_with_groups
 from elbysodic.services.markup import post_snippet
+from elbysodic.services.materials import MaterialSummaryRepository
 from elbysodic.services.materials import material_summary as _material_summary
-from elbysodic.services.notifications import visible_unread_notification_counts
+from elbysodic.services.notifications import (
+    NotificationRepository,
+    visible_unread_notification_counts,
+)
 from elbysodic.services.read_models import (
     ForumView,
     MaterialSummary,
@@ -46,8 +53,80 @@ class NetworkMembershipContext(Protocol):
     current_character: Character | None
 
 
+class NetworkCatalogRepository(
+    MaterialSummaryRepository,
+    NotificationRepository,
+    Protocol,
+):
+    def get_community_by_slug(self, slug: str) -> Community: ...
+
+    def get_default_theme(self, community_id: int) -> CommunityTheme | None: ...
+
+    def list_boards(self, community_id: int) -> list[Board]: ...
+
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]: ...
+
+    def list_claim_types(self, community_id: int) -> list[ClaimType]: ...
+
+    def list_communities(self) -> list[Community]: ...
+
+    def list_community_characters(self, community_id: int) -> list[Character]: ...
+
+    def list_facet_groups_for_communities(
+        self,
+        community_ids: list[int],
+    ) -> dict[int, list[FacetGroup]]: ...
+
+    def list_materials_for_communities(
+        self,
+        community_ids: list[int],
+        *,
+        status: str | None = None,
+    ) -> dict[int, list[Material]]: ...
+
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]: ...
+
+    def list_thread_participants_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+    ) -> dict[int, list[Character]]: ...
+
+    def list_wanted_ads(
+        self,
+        community_id: int,
+        *,
+        status: str | None = "open",
+    ) -> list[WantedAd]: ...
+
+    def network_membership_counts(
+        self,
+        membership_ids: list[int],
+    ) -> dict[int, dict[str, int]]: ...
+
+    def network_program_counts(
+        self,
+        community_ids: list[int],
+    ) -> dict[int, dict[str, int]]: ...
+
+    def public_scene_hub_community_ids(self, community_ids: list[int]) -> set[int]: ...
+
+    def default_themes_for_communities(
+        self,
+        community_ids: list[int],
+    ) -> dict[int, CommunityTheme]: ...
+
+
 def studio_network(
-    repo: ForumRepository,
+    repo: NetworkCatalogRepository,
     identity: RequestIdentityContext,
     contexts: Sequence[NetworkMembershipContext],
 ) -> StudioNetworkDirectory:
@@ -133,7 +212,7 @@ def studio_network(
     )
 
 
-def public_studio_network(repo: ForumRepository) -> StudioNetworkDirectory:
+def public_studio_network(repo: NetworkCatalogRepository) -> StudioNetworkDirectory:
     programs: list[StudioNetworkProgramView] = []
     communities = repo.list_communities()
     community_ids = [community.id for community in communities]
@@ -229,7 +308,7 @@ def public_catalog_cards(directory: StudioNetworkDirectory) -> list[PublicCatalo
 
 
 def public_studio_program(
-    repo: ForumRepository,
+    repo: NetworkCatalogRepository,
     community_slug: str,
 ) -> StudioNetworkProgramView:
     community = public_preview_community(repo, community_slug)
@@ -263,7 +342,7 @@ def public_studio_program(
     )
 
 
-def public_preview_community(repo: ForumRepository, community_slug: str) -> Community:
+def public_preview_community(repo: NetworkCatalogRepository, community_slug: str) -> Community:
     community = repo.get_community_by_slug(community_slug)
     materials = repo.list_materials(community.id)
     if not is_public_network_ready(repo, community, materials):
@@ -300,7 +379,7 @@ def search_public_catalog(
 
 
 def is_public_network_ready(
-    repo: ForumRepository,
+    repo: NetworkCatalogRepository,
     community: Community,
     materials: list[Material],
 ) -> bool:
@@ -334,7 +413,7 @@ def is_public_network_ready_from_batches(
 def first_material_summary(
     materials: list[Material],
     material_type: str,
-    repo: ForumRepository,
+    repo: NetworkCatalogRepository,
     community_id: int,
 ) -> MaterialSummary | None:
     for material in materials:

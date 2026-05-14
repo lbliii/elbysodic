@@ -3,22 +3,40 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Protocol
 
-from elbysodic.db import ForumRepository
 from elbysodic.domain.boards import is_community_board, is_location_board
 from elbysodic.domain.models import Board, Thread
 from elbysodic.services import policies
 from elbysodic.services.facets import current_character_facet_ids, facet_tags
-from elbysodic.services.materials import current_event_for_facet_ids
+from elbysodic.services.materials import MaterialReadRepository, current_event_for_facet_ids
 from elbysodic.services.posts import PostViewContextBuilder
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import BoardPage, BoardSummary, BoardThreadFilter, ForumView
-from elbysodic.services.threads import board_thread_summaries, next_unread_thread
+from elbysodic.services.threads import (
+    ThreadReadRepository,
+    board_thread_summaries,
+    next_unread_thread,
+)
 from elbysodic.services.timestamps import timestamp_key
 
 
+class BoardReadRepository(ThreadReadRepository, MaterialReadRepository, Protocol):
+    def get_board_by_slug(self, community_id: int, slug: str) -> Board: ...
+
+    def list_child_boards(self, community_id: int, parent_board_id: int | None) -> list[Board]: ...
+
+    def list_child_boards_for_boards(
+        self,
+        community_id: int,
+        parent_board_ids: list[int],
+    ) -> dict[int, list[Board]]: ...
+
+    def count_threads(self, community_id: int, board_id: int) -> int: ...
+
+
 def visible_board_summaries(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
 ) -> list[BoardSummary]:
     current_facet_ids = current_character_facet_ids(repo, viewer)
@@ -31,7 +49,7 @@ def visible_board_summaries(
 
 
 def child_board_summaries(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
     board: Board,
 ) -> list[BoardSummary]:
@@ -45,7 +63,7 @@ def child_board_summaries(
 
 
 def sibling_board_summaries(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
     board: Board,
 ) -> list[BoardSummary]:
@@ -62,7 +80,7 @@ def sibling_board_summaries(
 
 
 def board_summary(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
     board: Board,
 ) -> BoardSummary:
@@ -75,7 +93,7 @@ def board_summary(
 
 
 def board_page(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
     board_slug: str,
     *,
@@ -136,7 +154,7 @@ def board_page(
 
 
 def board_summaries(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
     boards: list[Board],
     current_facet_ids: set[int],
@@ -230,7 +248,7 @@ def board_summaries(
 
 
 def board_summary_factory(
-    repo: ForumRepository,
+    repo: BoardReadRepository,
     viewer: ForumView,
     current_facet_ids: set[int],
 ) -> Callable[[Board], BoardSummary]:
