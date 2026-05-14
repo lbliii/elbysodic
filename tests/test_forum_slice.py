@@ -538,7 +538,7 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Studio Network" in response.text
         assert "Hosted Program" in response.text
-        assert trace.count <= 280
+        assert trace.count <= 145
 
     asyncio.run(run())
 

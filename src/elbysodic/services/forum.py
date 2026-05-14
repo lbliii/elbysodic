@@ -353,6 +353,15 @@ class InvitationManagementItem:
     can_revoke: bool
 
 
+@dataclass(frozen=True, slots=True)
+class _MembershipContext:
+    community: Community
+    membership: CommunityMembership
+    role: Role
+    roster: list[Character]
+    current_character: Character | None
+
+
 class AppServices:
     """Small application service facade for the dev forum."""
 
@@ -382,6 +391,7 @@ class AppServices:
         )
         self._identity_context = identity_context
         self._viewer: ForumView | None = None
+        self._membership_contexts_by_user: dict[int, list[_MembershipContext]] = {}
         self._repo_context = repo_context
         self._owns_repo = owns_repo
         self._closed = False
@@ -528,24 +538,20 @@ class AppServices:
 
     def _invalidate_viewer(self) -> None:
         self._viewer = None
+        self._membership_contexts_by_user.clear()
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
         options: list[StudioIdentityOption] = []
-        for membership in self.repo.list_memberships_for_user(identity.user_id):
-            if not membership.is_active:
-                continue
-            community = self.repo.get_community(membership.community_id)
-            try:
-                role = self.repo.get_role(community.id, membership.role_id)
-            except LookupError:
-                continue
-            roster = self.repo.list_characters(community.id, membership.id)
+        for context in self._membership_contexts_for_user(identity.user_id):
+            community = context.community
+            membership = context.membership
+            role = context.role
             options.append(
                 StudioIdentityOption(
                     community=community,
                     membership=membership,
                     role=role,
-                    current_character=_resolve_current_character(self.repo, membership, roster),
+                    current_character=context.current_character,
                     unread_notification_count=_count_visible_unread_notifications(
                         self.repo,
                         community.id,
@@ -567,6 +573,51 @@ class AppServices:
                 option.membership.id,
             ),
         )
+
+    def _membership_contexts_for_user(self, user_id: int) -> list[_MembershipContext]:
+        if user_id in self._membership_contexts_by_user:
+            return self._membership_contexts_by_user[user_id]
+        memberships = [
+            membership
+            for membership in self.repo.list_memberships_for_user(user_id)
+            if membership.is_active
+        ]
+        if not memberships:
+            self._membership_contexts_by_user[user_id] = []
+            return []
+        communities = self.repo.list_communities_by_ids(
+            [membership.community_id for membership in memberships],
+        )
+        roles = self.repo.roles_for_memberships([membership.id for membership in memberships])
+        memberships_by_community: dict[int, list[CommunityMembership]] = {}
+        for membership in memberships:
+            memberships_by_community.setdefault(membership.community_id, []).append(membership)
+        characters_by_membership: dict[int, list[Character]] = {}
+        for community_id, community_memberships in memberships_by_community.items():
+            characters_by_membership.update(
+                self.repo.list_characters_for_memberships(
+                    community_id,
+                    [membership.id for membership in community_memberships],
+                )
+            )
+        contexts: list[_MembershipContext] = []
+        for membership in memberships:
+            community = communities.get(membership.community_id)
+            role = roles.get(membership.id)
+            if community is None or role is None:
+                continue
+            roster = characters_by_membership.get(membership.id, [])
+            contexts.append(
+                _MembershipContext(
+                    community=community,
+                    membership=membership,
+                    role=role,
+                    roster=roster,
+                    current_character=_resolve_current_character(self.repo, membership, roster),
+                )
+            )
+        self._membership_contexts_by_user[user_id] = contexts
+        return contexts
 
     def switch_dev_identity(self, membership_id: int) -> RequestIdentityContext:
         identity = self._identity_context or self._identity_resolver.resolve()
@@ -1057,12 +1108,8 @@ class AppServices:
     def studio_network(self) -> StudioNetworkDirectory:
         identity = self._identity_context or self._identity_resolver.resolve()
         programs: list[StudioNetworkProgramView] = []
-        memberships = [
-            membership
-            for membership in self.repo.list_memberships_for_user(identity.user_id)
-            if membership.is_active
-        ]
-        community_ids = [membership.community_id for membership in memberships]
+        contexts = self._membership_contexts_for_user(identity.user_id)
+        community_ids = [context.community.id for context in contexts]
         materials_by_community = self.repo.list_materials_for_communities(community_ids)
         themes_by_community = self.repo.default_themes_for_communities(community_ids)
         facet_groups_by_community = self.repo.list_facet_groups_for_communities(community_ids)
@@ -1076,12 +1123,12 @@ class AppServices:
         )
         counts_by_community = self.repo.network_program_counts(community_ids)
         counts_by_membership = self.repo.network_membership_counts(
-            [membership.id for membership in memberships]
+            [context.membership.id for context in contexts]
         )
-        for membership in memberships:
-            community = self.repo.get_community(membership.community_id)
-            role = self.repo.get_role(community.id, membership.role_id)
-            roster = self.repo.list_characters(community.id, membership.id)
+        for context in contexts:
+            community = context.community
+            membership = context.membership
+            role = context.role
             materials = materials_by_community.get(community.id, [])
             theme = community_theme_view(themes_by_community.get(community.id))
             counts = counts_by_community.get(community.id, {})
@@ -1092,7 +1139,7 @@ class AppServices:
                     community=community,
                     membership=membership,
                     role=role,
-                    current_character=_resolve_current_character(self.repo, membership, roster),
+                    current_character=context.current_character,
                     premise=_first_material_summary_from_batch(
                         materials,
                         "premise",

@@ -1802,7 +1802,7 @@ def test_network_membership_counts_batch_application_state(repo: ForumRepository
         "network-other",
         "Network Other",
     )
-    repo.create_character(
+    draft = repo.create_character(
         community.id,
         membership.id,
         "network-draft",
@@ -1824,6 +1824,11 @@ def test_network_membership_counts_batch_application_state(repo: ForumRepository
         application_status="accepted",
     )
 
+    assert repo.list_communities_by_ids([community.id]) == {community.id: community}
+    assert repo.roles_for_memberships([membership.id]) == {membership.id: role}
+    assert repo.list_characters_for_memberships(community.id, [membership.id]) == {
+        membership.id: [draft],
+    }
     assert repo.network_membership_counts([membership.id]) == {
         membership.id: {
             "reviewable_application_count": 2,
