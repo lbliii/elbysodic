@@ -16,7 +16,7 @@
   {% if hub.interactions %}
   <div class="elbysodic-interaction-grid">
     {% for item in hub.interactions %}
-    <a class="elbysodic-interaction-card" href="/interactions/{{ item.interaction.slug }}">
+    <a class="chirpui-card chirpui-card--primary elbysodic-interaction-card" href="/interactions/{{ item.interaction.slug }}">
       <span class="elbysodic-section-kicker">{{ item.type_label }} · {{ item.status_label }}</span>
       <strong>{{ item.interaction.title }}</strong>
       <span>{{ item.interaction.summary }}</span>

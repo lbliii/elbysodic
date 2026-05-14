@@ -7,21 +7,12 @@
 }
 
 .elbysodic-interaction-card {
-    background: color-mix(in srgb, var(--chirpui-accent) 6%, var(--chirpui-surface-elevated));
-    border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius);
     color: var(--chirpui-text);
     display: grid;
     gap: 0.55rem;
     min-height: 12rem;
     padding: 1rem;
     text-decoration: none;
-}
-
-.elbysodic-interaction-card:hover,
-.elbysodic-interaction-card:focus-visible {
-    border-color: var(--chirpui-card-hover-border);
-    box-shadow: var(--chirpui-card-hover-shadow);
 }
 
 .elbysodic-interaction-card strong {

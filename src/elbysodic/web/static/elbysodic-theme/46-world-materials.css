@@ -374,20 +374,12 @@
 }
 
 .elbysodic-event-action-card {
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 72%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text);
     display: grid;
     gap: 0.45rem;
     min-height: 100%;
     padding: 0.9rem;
     text-decoration: none;
-}
-
-.elbysodic-event-action-card:hover {
-    border-color: var(--chirpui-card-hover-border);
-    transform: translateY(-1px);
 }
 
 .elbysodic-event-action-card__label {
