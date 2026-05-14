@@ -71,7 +71,7 @@ ty:
 	uv run ty check src/elbysodic/ tests/
 
 app-check:
-	uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"
+	uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"
 
 check: lint format-check ty app-check
 

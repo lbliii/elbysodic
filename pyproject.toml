@@ -188,7 +188,7 @@ format-check = { cmd = "ruff format . --check", help = "Check formatting" }
 
 hooks = { cmd = "prek run --all-files", help = "Run all pre-commit hooks" }
 hooks-install = { cmd = "prek install", help = "Install pre-commit hooks" }
-app-check = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()\"", help = "Run Chirp route/template check" }
+app-check = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)\"", help = "Run Chirp route/template check" }
 
 ci = { sequence = ["lint", "format-check", "ty", "app-check", "test"], help = "Full CI check" }
 check = { sequence = ["lint", "format-check", "ty", "app-check"], help = "Quick check without tests" }
