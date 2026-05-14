@@ -1646,7 +1646,7 @@ class AppServices:
                     "Create or apply with a posting face before reply queues, "
                     "plotting rooms, and scene lanes can form."
                 ),
-                primary_label="Start application",
+                primary_label="Start first face",
                 primary_href="/applications/new",
                 secondary_label="Read application guide",
                 secondary_href=_first_application_material_href(applications),

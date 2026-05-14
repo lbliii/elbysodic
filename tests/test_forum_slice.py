@@ -2200,6 +2200,36 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
     asyncio.run(run())
 
 
+def test_writer_desk_keeps_first_face_application_active() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        applicant_services = _faceless_services(services, prefix="applicant")
+        character = applicant_services.repo.create_character(
+            applicant_services.seed.community.id,
+            applicant_services.seed.membership.id,
+            "draft-face",
+            "Draft Face",
+            application_status="draft",
+        )
+        applicant_services.repo.ensure_character_application(
+            applicant_services.seed.community.id,
+            character.id,
+        )
+        app = create_app(debug=False, services=applicant_services)
+
+        async with TestClient(app) as client:
+            desk = await client.get("/desk")
+
+        assert desk.status == 200
+        assert "Finish Draft Face" in desk.text
+        assert "Continue application" in desk.text
+        assert 'href="/applications/draft-face"' in desk.text
+        assert "Your roster is caught up" not in desk.text
+        assert "Caught up" not in desk.text
+
+    asyncio.run(run())
+
+
 def test_writer_activation_read_model_tracks_first_face_states() -> None:
     services = _faceless_services(create_services(path=":memory:"), prefix="activation")
 
