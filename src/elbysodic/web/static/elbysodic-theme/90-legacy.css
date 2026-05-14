@@ -3084,7 +3084,7 @@
 }
 
 .elbysodic-board-stat-row .chirpui-badge {
-    border-radius: 999px;
+    border-radius: var(--chirpui-radius-full);
     font-size: var(--chirpui-font-xs);
     min-height: 1.5rem;
     padding: 0.18rem 0.45rem;
@@ -3092,7 +3092,7 @@
 
 .elbysodic-board-stat-row .chirpui-badge,
 .elbysodic-state-row .chirpui-badge {
-    border-radius: 999px;
+    border-radius: var(--chirpui-radius-full);
     font-size: var(--chirpui-font-xs);
     min-height: 1.55rem;
     padding: 0.2rem 0.52rem;
@@ -3100,33 +3100,6 @@
         background var(--elbysodic-motion-feedback),
         border-color var(--elbysodic-motion-feedback),
         color var(--elbysodic-motion-feedback);
-}
-
-.elbysodic-state-row .chirpui-badge--muted {
-    background: color-mix(in srgb, var(--elbysodic-state-archived) 12%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--elbysodic-state-archived) 38%, var(--chirpui-border));
-    color: color-mix(in srgb, var(--elbysodic-state-archived) 78%, var(--chirpui-text));
-}
-
-.elbysodic-state-row .chirpui-badge--info,
-.elbysodic-thread-card__signals .chirpui-badge--info {
-    background: color-mix(in srgb, var(--elbysodic-state-watching) 12%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--elbysodic-state-watching) 48%, var(--chirpui-border));
-    color: color-mix(in srgb, var(--elbysodic-state-watching) 82%, var(--chirpui-text));
-}
-
-.elbysodic-state-row .chirpui-badge--warning,
-.elbysodic-thread-card__signals .chirpui-badge--warning {
-    background: color-mix(in srgb, var(--elbysodic-state-needs-reply) 12%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 52%, var(--chirpui-border));
-    color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 84%, var(--chirpui-text));
-}
-
-.elbysodic-state-row .chirpui-badge--success,
-.elbysodic-thread-card__signals .chirpui-badge--success {
-    background: color-mix(in srgb, var(--elbysodic-state-caught-up) 11%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--elbysodic-state-caught-up) 46%, var(--chirpui-border));
-    color: color-mix(in srgb, var(--elbysodic-state-caught-up) 82%, var(--chirpui-text));
 }
 
 .elbysodic-counter {

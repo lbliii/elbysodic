@@ -182,7 +182,7 @@
             {{ csrf_field() }}
             <input type="hidden" name="intent" value="revoke_invite">
             <input type="hidden" name="invitation_id" value="{{ item.invitation.id }}">
-            <button class="chirpui-btn chirpui-btn--secondary" type="submit">Revoke invitation</button>
+            <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Revoke invitation</button>
           </form>
           {% else %}
           {{ badge(item.status_label, variant="success" if item.status_label == "Accepted" else "muted") }}

@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin
 
 import pytest
 from chirp.app import App
@@ -50,6 +50,27 @@ def _response_header(response: Any, name: str) -> str:
         if str(key).lower() == name.lower():
             return str(value)
     raise AssertionError(f"response header not found: {name}")
+
+
+async def _stylesheet_text_with_imports(
+    client: TestClient,
+    path: str = "/elbysodic-static/elbysodic-theme.css",
+    *,
+    seen: set[str] | None = None,
+) -> str:
+    seen = seen or set()
+    if path in seen:
+        return ""
+    seen.add(path)
+    response = await client.get(path)
+    assert response.status == 200
+    text = response.text
+    imported = []
+    for match in re.finditer(r'@import\s+url\("(?P<href>[^"]+)"\);', text):
+        imported.append(
+            await _stylesheet_text_with_imports(client, urljoin(path, match.group("href")), seen=seen)
+        )
+    return text + "\n".join(imported)
 
 
 async def _switch_membership(
@@ -3800,11 +3821,10 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             assert 'aria-label="Show navigation"' in hidden_world.text
             assert 'aria-expanded="false"' in hidden_world.text
 
-            stylesheet = await client.get("/elbysodic-static/elbysodic-theme.css")
-            assert stylesheet.status == 200
-            assert "--elbysodic-primary-rail-width" in stylesheet.text
-            assert '.elbysodic-primary-rail__link[aria-current="page"]' in stylesheet.text
-            assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet.text
+            stylesheet_text = await _stylesheet_text_with_imports(client)
+            assert "--elbysodic-primary-rail-width" in stylesheet_text
+            assert '.elbysodic-primary-rail__link[aria-current="page"]' in stylesheet_text
+            assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet_text
 
             script = await client.get("/elbysodic-static/elbysodic-shell.js")
             assert script.status == 200
@@ -7299,10 +7319,9 @@ def test_theme_stylesheet_is_loaded_and_theme_aware() -> None:
             assert index.status == 200
             assert "/elbysodic-static/elbysodic-theme.css" in index.text
 
-            stylesheet = await client.get("/elbysodic-static/elbysodic-theme.css")
-            assert stylesheet.status == 200
-            assert '[data-theme="light"]' in stylesheet.text
-            assert '[data-theme="system"]' in stylesheet.text
+            stylesheet_text = await _stylesheet_text_with_imports(client)
+            assert '[data-theme="light"]' in stylesheet_text
+            assert '[data-theme="system"]' in stylesheet_text
 
     asyncio.run(run())
 
