@@ -1018,11 +1018,48 @@
     }
 
     .elbysodic-topnav {
+        display: none;
         flex: 1 1 auto;
         min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;
         padding-bottom: 0.1rem;
         scrollbar-width: thin;
+    }
+
+    .elbysodic-shell-identity {
+        gap: 0;
+    }
+
+    .elbysodic-anonymous-actions {
+        gap: 0.35rem;
+    }
+
+    .elbysodic-sidebar-resize {
+        display: none;
+    }
+
+    .elbysodic-community-brand__name {
+        max-width: min(14rem, 58vw);
+    }
+
+    .elbysodic-identity-menu__copy {
+        display: none;
+        min-width: 0;
+    }
+
+    .elbysodic-identity-menu__summary {
+        gap: 0.35rem;
+        padding-inline-end: 0.45rem;
+    }
+
+    .elbysodic-identity-menu__summary::after {
+        display: none;
+    }
+
+    .elbysodic-identity-menu__panel {
+        max-width: calc(100vw - 1.5rem);
+        right: 0;
+        width: min(18rem, calc(100vw - 1.5rem));
     }
 }

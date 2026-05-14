@@ -1004,3 +1004,33 @@
     line-height: 1.45;
     margin: 0;
 }
+
+@media (max-width: 48rem) {
+    .elbysodic-director-hero,
+    .elbysodic-operations-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-operations-hero__badges {
+        justify-content: flex-start;
+    }
+
+    .elbysodic-operations-columns,
+    .elbysodic-director-grid,
+    .elbysodic-director-queue,
+    .elbysodic-studio-overview,
+    .elbysodic-director-event,
+    .elbysodic-board-taxonomy-row,
+    .elbysodic-board-editor-layout,
+    .elbysodic-navigation-composer,
+    .elbysodic-sidebar-section-config,
+    .elbysodic-sidebar-section-configs,
+    .elbysodic-navigation-preview__list li {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-sidebar-section-config .chirpui-btn {
+        justify-self: start;
+        min-inline-size: 5rem;
+    }
+}

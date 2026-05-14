@@ -853,3 +853,86 @@
 .elbysodic-community-row__latest .elbysodic-latest {
     justify-content: end;
 }
+
+@media (max-width: 48rem) {
+    .elbysodic-world-hero {
+        grid-template-columns: 1fr;
+        padding-top: 1rem;
+    }
+
+    .elbysodic-world-hero__media {
+        grid-column: auto;
+        grid-row: auto;
+        min-height: 14rem;
+    }
+
+    .elbysodic-world-hero__copy h1 {
+        font-size: 2.4rem;
+    }
+
+    .elbysodic-world-hero__stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        justify-content: stretch;
+    }
+
+    .elbysodic-desk-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-desk-hero,
+    .elbysodic-desk-queue,
+    .elbysodic-page-pulse,
+    .elbysodic-empty-policy,
+    .elbysodic-command-panel,
+    .elbysodic-desk-shortcuts {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-desk-queue__metrics {
+        grid-column: auto;
+        grid-row: auto;
+        justify-content: start;
+        max-width: none;
+    }
+
+    .elbysodic-desk-action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-desk-face-lanes {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-lane-preview__header,
+    .elbysodic-desk-lane__header {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-lane-preview__header .chirpui-btn,
+    .elbysodic-desk-lane__header .chirpui-btn,
+    .elbysodic-page-pulse__tools,
+    .elbysodic-command-panel__tools,
+    .elbysodic-command-panel__actions,
+    .elbysodic-command-panel__metrics,
+    .elbysodic-desk-shortcuts__links {
+        justify-content: start;
+        justify-items: start;
+    }
+
+    .elbysodic-community-row,
+    .elbysodic-community-row__main,
+    .elbysodic-activity-log-item {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-community-row__mark,
+    .elbysodic-community-row__stats,
+    .elbysodic-community-row__latest {
+        justify-self: start;
+    }
+
+    .elbysodic-community-row__latest .elbysodic-latest {
+        justify-content: start;
+    }
+}
