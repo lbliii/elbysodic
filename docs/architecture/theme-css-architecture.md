@@ -104,3 +104,32 @@ If a selector only sets background, border, radius, padding, hover elevation, or
 form/control chrome, try Chirp first. If a selector encodes PBP state,
 identity, authorship, continuity, or staff visibility, keep an Elbysodic
 wrapper and compose Chirp underneath it.
+
+## Browser QA Coverage
+
+Use the app check and unit tests for ownership and route contracts, then run
+browser QA when a cleanup changes layout, interaction, or responsive behavior.
+
+```bash
+uv run poe preview-prod-devtools
+uv run poe latest-click-wins-qa
+uv run poe browser-qa-deep --base-url http://127.0.0.1:8001
+```
+
+The deep browser pass should keep covering these CSS ownership slices:
+
+| Layer | Routes/Flows To Exercise |
+|---|---|
+| `20-shell.css` | root, Network, community home, board, thread, boosted navigation, identity menu |
+| `30-page-patterns.css` | root, community home, writer desk, world, dev personas, operations summary |
+| `35-media-patterns.css` | board posters, character cards, rendered posts, Network cards, world hero media |
+| `40-pbp-components.css` | notices, metrics, inline mention links, notifications/recovery |
+| `41-48` product families | board index/detail, thread list/detail, members/roster, claims, wanted, world, Network catalog |
+| `47-network-catalog.css` | `/network`, `/network?q=...`, realm entry actions, application starter |
+| `49-composer.css` | new thread, reply composer, post edit, scene setup/cast mention picker, post style preview |
+| `60-studio.css` | Studio overview, launch, operations, intake, appearance, board taxonomy |
+
+When a browser failure appears after CSS movement, first check whether the
+selector lives in the same layer as the markup flow above. Cross-layer selectors
+should either move to their product family, become a shared pattern, or reduce
+to a Chirp primitive.
