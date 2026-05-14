@@ -163,6 +163,8 @@ from elbysodic.services.notifications import open_notification as _open_notifica
 from elbysodic.services.notifications import (
     visible_unread_notification_counts as _visible_unread_notification_counts,
 )
+from elbysodic.services.operations import DirectorOperations, OperationsInspectionConfig
+from elbysodic.services.operations import director_operations as _director_operations
 from elbysodic.services.plot_hooks import (
     create_plot_hook as _create_plot_hook,
 )
@@ -2017,6 +2019,27 @@ class AppServices:
                 if item.material.material_type == "application"
             ],
             can_manage=policies.can_manage_world(viewer.membership, viewer.role),
+        )
+
+    def director_operations(
+        self,
+        *,
+        inspection_config: OperationsInspectionConfig | None = None,
+    ) -> DirectorOperations:
+        viewer = self.viewer()
+        studio = self.director_studio()
+        casting = self.casting_desk()
+        plotting = self.plotting_desk()
+        writer_invitations = self.writer_invitations() if studio.can_manage else []
+        return _director_operations(
+            self.repo,
+            viewer,
+            studio,
+            casting,
+            plotting,
+            writer_invitations=writer_invitations,
+            unread_notification_count=viewer.unread_notification_count,
+            inspection_config=inspection_config,
         )
 
     def director_studio(self) -> DirectorStudio:
