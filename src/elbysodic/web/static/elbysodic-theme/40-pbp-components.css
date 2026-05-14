@@ -150,6 +150,24 @@ a.elbysodic-metric:focus-visible {
     text-decoration: none;
 }
 
+.elbysodic-mention-link {
+    background: color-mix(in srgb, var(--chirpui-accent) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 34%, transparent);
+    border-radius: 999px;
+    color: var(--chirpui-accent);
+    display: inline-block;
+    font-size: 0.92em;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.05rem 0.35rem;
+    text-decoration: none;
+}
+
+.elbysodic-mention-link:hover {
+    background: color-mix(in srgb, var(--chirpui-accent) 20%, transparent);
+    color: var(--chirpui-text);
+}
+
 .elbysodic-notice {
     --elbysodic-notice-accent: var(--chirpui-accent);
     align-items: center;

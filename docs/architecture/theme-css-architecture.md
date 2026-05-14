@@ -38,8 +38,11 @@ Use these layers when adding or moving CSS:
   Product-family components live in numbered sibling layers:
   `41-boards-places.css`, `42-threads-queues.css`,
   `43-faces-composer.css`, `44-claims-intake.css`,
-  `45-posts-scenes.css`, `46-world-materials.css`, `47-network.css`, and
-  `48-wanted-plotting.css`.
+  `45-posts-scenes.css`, `46-world-materials.css`, `47-network.css`,
+  `48-wanted-plotting.css`, and `49-composer.css`.
+- **composer**: writer input surfaces, formatting controls, body mention
+  pickers, scene setup fields, draft status, and post style previews. Rendered
+  post shells and scene cast displays stay in `45-posts-scenes.css`.
 - **studio**: Director Studio, launch, operations, intake, appearance editor,
   navigation composer, board taxonomy, and director workflow rooms.
 - **legacy-ledger**: selectors that still need markup work, component
