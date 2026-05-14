@@ -48,6 +48,8 @@ from elbysodic.domain.models import (
     Community,
     CommunityInvitation,
     CommunityMembership,
+    Facet,
+    FacetGroup,
     Material,
     Post,
     Role,
@@ -56,6 +58,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
+from elbysodic.domain.vocabulary import material_type_label
 from elbysodic.services import policies
 from elbysodic.services.access import DefaultRequestIdentity, RequestIdentityResolver
 from elbysodic.services.applications import (
@@ -114,6 +117,9 @@ from elbysodic.services.facets import (
 )
 from elbysodic.services.facets import (
     facet_tags as _facet_tags,
+)
+from elbysodic.services.facets import (
+    facet_tags_with_groups as _facet_tags_with_groups,
 )
 from elbysodic.services.facets import resolve_facets as _resolve_facets
 from elbysodic.services.identity import character_profile as _character_profile
@@ -1054,9 +1060,19 @@ class AppServices:
             for membership in self.repo.list_memberships_for_user(identity.user_id)
             if membership.is_active
         ]
-        counts_by_community = self.repo.network_program_counts(
-            [membership.community_id for membership in memberships]
+        community_ids = [membership.community_id for membership in memberships]
+        materials_by_community = self.repo.list_materials_for_communities(community_ids)
+        themes_by_community = self.repo.default_themes_for_communities(community_ids)
+        facet_groups_by_community = self.repo.list_facet_groups_for_communities(community_ids)
+        material_facets = self.repo.list_material_facets_for_materials(
+            community_ids,
+            [
+                material.id
+                for materials in materials_by_community.values()
+                for material in materials
+            ],
         )
+        counts_by_community = self.repo.network_program_counts(community_ids)
         counts_by_membership = self.repo.network_membership_counts(
             [membership.id for membership in memberships]
         )
@@ -1064,8 +1080,8 @@ class AppServices:
             community = self.repo.get_community(membership.community_id)
             role = self.repo.get_role(community.id, membership.role_id)
             roster = self.repo.list_characters(community.id, membership.id)
-            materials = self.repo.list_materials(community.id)
-            theme = community_theme_view(self.repo.get_default_theme(community.id))
+            materials = materials_by_community.get(community.id, [])
+            theme = community_theme_view(themes_by_community.get(community.id))
             counts = counts_by_community.get(community.id, {})
             membership_counts = counts_by_membership.get(membership.id, {})
             can_review_applications = policies.can_manage_applications(membership, role)
@@ -1075,12 +1091,17 @@ class AppServices:
                     membership=membership,
                     role=role,
                     current_character=_resolve_current_character(self.repo, membership, roster),
-                    premise=_first_material_summary(materials, "premise", self.repo, community.id),
-                    current_event=_first_material_summary(
+                    premise=_first_material_summary_from_batch(
+                        materials,
+                        "premise",
+                        facet_groups_by_community.get(community.id, []),
+                        material_facets,
+                    ),
+                    current_event=_first_material_summary_from_batch(
                         materials,
                         "event",
-                        self.repo,
-                        community.id,
+                        facet_groups_by_community.get(community.id, []),
+                        material_facets,
                     ),
                     roster_count=counts.get("roster_count", 0),
                     open_wanted_count=counts.get("open_wanted_count", 0),
@@ -1123,14 +1144,32 @@ class AppServices:
     def public_studio_network(self) -> StudioNetworkDirectory:
         programs: list[StudioNetworkProgramView] = []
         communities = self.repo.list_communities()
-        counts_by_community = self.repo.network_program_counts(
-            [community.id for community in communities]
+        community_ids = [community.id for community in communities]
+        materials_by_community = self.repo.list_materials_for_communities(
+            community_ids,
+            status="published",
         )
+        public_scene_hub_community_ids = self.repo.public_scene_hub_community_ids(community_ids)
+        themes_by_community = self.repo.default_themes_for_communities(community_ids)
+        facet_groups_by_community = self.repo.list_facet_groups_for_communities(community_ids)
+        material_facets = self.repo.list_material_facets_for_materials(
+            community_ids,
+            [
+                material.id
+                for materials in materials_by_community.values()
+                for material in materials
+            ],
+        )
+        counts_by_community = self.repo.network_program_counts(community_ids)
         for community in communities:
-            materials = self.repo.list_materials(community.id, status="published")
-            if not _is_public_network_ready(self.repo, community, materials):
+            materials = materials_by_community.get(community.id, [])
+            if not _is_public_network_ready_from_batches(
+                community,
+                materials,
+                public_scene_hub_community_ids,
+            ):
                 continue
-            theme = community_theme_view(self.repo.get_default_theme(community.id))
+            theme = community_theme_view(themes_by_community.get(community.id))
             counts = counts_by_community.get(community.id, {})
             programs.append(
                 StudioNetworkProgramView(
@@ -1138,12 +1177,17 @@ class AppServices:
                     membership=None,
                     role=None,
                     current_character=None,
-                    premise=_first_material_summary(materials, "premise", self.repo, community.id),
-                    current_event=_first_material_summary(
+                    premise=_first_material_summary_from_batch(
+                        materials,
+                        "premise",
+                        facet_groups_by_community.get(community.id, []),
+                        material_facets,
+                    ),
+                    current_event=_first_material_summary_from_batch(
                         materials,
                         "event",
-                        self.repo,
-                        community.id,
+                        facet_groups_by_community.get(community.id, []),
+                        material_facets,
                     ),
                     roster_count=counts.get("roster_count", 0),
                     open_wanted_count=counts.get("open_wanted_count", 0),
@@ -1295,23 +1339,25 @@ class AppServices:
     def child_board_summaries(self, board: Board) -> list[BoardSummary]:
         viewer = self.viewer()
         current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        return [
-            _board_summary(self.repo, viewer, child, current_facet_ids)
+        children = [
+            child
             for child in self.repo.list_child_boards(viewer.community.id, board.id)
             if policies.can_view_board(viewer.membership, child, viewer.role)
         ]
+        return _board_summaries(self.repo, viewer, children, current_facet_ids)
 
     def sibling_board_summaries(self, board: Board) -> list[BoardSummary]:
         viewer = self.viewer()
         current_facet_ids = _current_character_facet_ids(self.repo, viewer)
         siblings = self.repo.list_child_boards(viewer.community.id, board.parent_board_id)
-        return [
-            _board_summary(self.repo, viewer, sibling, current_facet_ids)
+        visible_siblings = [
+            sibling
             for sibling in siblings
             if sibling.id != board.id
             and is_location_board(sibling)
             and policies.can_view_board(viewer.membership, sibling, viewer.role)
         ]
+        return _board_summaries(self.repo, viewer, visible_siblings, current_facet_ids)
 
     def board_summary(self, board: Board) -> BoardSummary:
         viewer = self.viewer()
@@ -3342,6 +3388,7 @@ def _board_summaries(
             for activity_board in activity_boards
         }
     )
+    facets_by_board = repo.list_board_facets_for_boards(viewer.community.id, board_ids)
     threads_by_board = repo.list_threads_for_boards(viewer.community.id, activity_board_ids)
     all_thread_ids = [thread.id for threads in threads_by_board.values() for thread in threads]
     posts_by_thread = repo.list_posts_for_threads(viewer.community.id, all_thread_ids)
@@ -3383,7 +3430,7 @@ def _board_summaries(
         board_facets = _facet_tags(
             repo,
             viewer.community.id,
-            repo.list_board_facets(viewer.community.id, board.id),
+            facets_by_board.get(board.id, []),
         )
         summaries.append(
             BoardSummary(
@@ -3569,6 +3616,20 @@ def _is_public_network_ready(
         for board in repo.list_boards(community.id)
     )
     return has_public_premise and has_public_scene_hub
+
+
+def _is_public_network_ready_from_batches(
+    community: Community,
+    materials: list[Material],
+    public_scene_hub_community_ids: set[int],
+) -> bool:
+    if community.launch_status != "public-preview":
+        return False
+    has_public_premise = any(
+        material.material_type == "premise" and material.status == "published"
+        for material in materials
+    )
+    return has_public_premise and community.id in public_scene_hub_community_ids
 
 
 def _post_style_policy(community: Community) -> PostStylePolicy:
@@ -4024,6 +4085,27 @@ def _first_material_summary(
     for material in materials:
         if material.material_type == material_type:
             return _material_summary(repo, community_id, material)
+    return None
+
+
+def _first_material_summary_from_batch(
+    materials: list[Material],
+    material_type: str,
+    facet_groups: list[FacetGroup],
+    facets_by_material: dict[tuple[int, int], list[Facet]],
+) -> MaterialSummary | None:
+    for material in materials:
+        if material.material_type != material_type:
+            continue
+        return MaterialSummary(
+            material=material,
+            facets=_facet_tags_with_groups(
+                facet_groups,
+                facets_by_material.get((material.community_id, material.id), []),
+            ),
+            rendered_summary=material.summary or post_snippet(material.body, limit=160),
+            type_label=material_type_label(material.material_type),
+        )
     return None
 
 

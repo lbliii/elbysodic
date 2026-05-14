@@ -519,6 +519,32 @@ class IdentityRepositoryMixin(RepositoryBase):
             return None
         return self.get_theme(community_id, community.default_theme_id)
 
+    def default_themes_for_communities(
+        self,
+        community_ids: list[int],
+    ) -> dict[int, CommunityTheme]:
+        if not community_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                themes.id,
+                themes.community_id,
+                themes.slug,
+                themes.name,
+                themes.tokens_json,
+                themes.created_at,
+                themes.updated_at
+            FROM communities
+            JOIN themes
+              ON themes.community_id = communities.id
+             AND themes.id = communities.default_theme_id
+            WHERE communities.id IN (SELECT value FROM json_each(?))
+            """,
+            (json.dumps(community_ids),),
+        ).fetchall()
+        return {int(row["community_id"]): _community_theme_from_row(row) for row in rows}
+
     def update_theme(
         self,
         community_id: int,

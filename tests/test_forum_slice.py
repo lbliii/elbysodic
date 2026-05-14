@@ -403,14 +403,14 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         services = create_services(path=":memory:")
         app = create_app(debug=False, services=services)
         budgets = {
-            "/network": 165,
-            "/c/x-men-apocalypse": 390,
-            "/c/x-men-apocalypse/locations": 200,
-            "/c/x-men-apocalypse/community": 350,
+            "/network": 105,
+            "/c/x-men-apocalypse": 340,
+            "/c/x-men-apocalypse/locations": 150,
+            "/c/x-men-apocalypse/community": 300,
             "/c/rl-nyc/my/threads": 80,
-            "/c/rl-small-town/boards/town-hall?filter=mine": 120,
-            "/c/x-men-apocalypse/boards/danger-room": 215,
-            "/c/rl-nyc/claims": 80,
+            "/c/rl-small-town/boards/town-hall?filter=mine": 105,
+            "/c/x-men-apocalypse/boards/danger-room": 180,
+            "/c/rl-nyc/claims": 70,
         }
 
         async with TestClient(app) as client:
@@ -459,7 +459,7 @@ def test_scaled_board_page_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Scale Yard" in response.text
         assert "Scale Thread 29" in response.text
-        assert trace.count <= 350
+        assert trace.count <= 240
 
     asyncio.run(run())
 
@@ -498,7 +498,7 @@ def test_scaled_my_threads_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Scale Realm" in response.text
         assert "Scale Thread 0" in response.text
-        assert trace.count <= 370
+        assert trace.count <= 130
 
     asyncio.run(run())
 
@@ -538,7 +538,7 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Studio Network" in response.text
         assert "Hosted Program" in response.text
-        assert trace.count <= 370
+        assert trace.count <= 280
 
     asyncio.run(run())
 

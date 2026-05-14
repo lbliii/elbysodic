@@ -60,3 +60,19 @@ Scale fixtures should be added when a surface has a true batch read contract.
 Those fixtures should seed multiple communities, boards, faces, scenes, claims,
 reserves, wanted hooks, private rows, and staff rows, then assert query growth is
 bounded against the number of rendered cards.
+
+## Route Timing Capture
+
+Use the browser and server timing channels together when investigating local
+slowness:
+
+- Start the production-like preview with `uv run poe preview-prod-devtools`.
+- In the browser console, inspect `window.__elbysodicHtmxTimings` after route
+  clicks. It records htmx request timing from the client side, so use it for
+  perceived navigation delay and latest-click-wins checks.
+- Inspect the response `Server-Timing` header for server-side route duration.
+  Use this when the browser timing is high and you need to separate template or
+  SQLite work from client-side rendering and network overhead.
+- Reproduce suspicious fanout with the query-budget tests in
+  `tests/test_forum_slice.py`. Budgets are the regression contract; browser and
+  `Server-Timing` captures explain where to look before changing them.

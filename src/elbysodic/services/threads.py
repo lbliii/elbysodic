@@ -54,12 +54,25 @@ class ThreadReadRepository(
 
     def list_threads(self, community_id: int, board_id: int | None = None) -> list[Thread]: ...
 
+    def list_threads_for_boards(
+        self,
+        community_id: int,
+        board_ids: list[int],
+    ) -> dict[int, list[Thread]]: ...
+
     def get_thread_read_at(
         self,
         community_id: int,
         thread_id: int,
         membership_id: int,
     ) -> str | None: ...
+
+    def thread_read_at_for_threads(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+        membership_id: int,
+    ) -> dict[int, str]: ...
 
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]: ...
 
@@ -142,6 +155,11 @@ def board_thread_summaries(
     )
     facet_groups = repo.list_facet_groups(viewer.community.id)
     facets_by_thread = repo.list_thread_facets_for_threads(viewer.community.id, thread_ids)
+    read_at_by_thread = repo.thread_read_at_for_threads(
+        viewer.community.id,
+        thread_ids,
+        viewer.membership.id,
+    )
     authors = repo.list_characters_by_ids(
         viewer.community.id,
         list({thread.author_character_id for thread in threads}),
@@ -168,6 +186,7 @@ def board_thread_summaries(
             authors=authors,
             author_memberships=author_memberships,
             post_context=post_context,
+            read_at_by_thread=read_at_by_thread,
         )
         if thread_matches_filter(summary, filter_by):
             summaries.append(summary)
@@ -188,6 +207,7 @@ def thread_summary(
     authors: dict[int, Character] | None = None,
     author_memberships: dict[int, CommunityMembership] | None = None,
     post_context: PostViewContext | None = None,
+    read_at_by_thread: dict[int, str] | None = None,
 ) -> ThreadSummary:
     posts = repo.list_posts(viewer.community.id, thread.id) if posts is None else posts
     participants = (
@@ -205,13 +225,14 @@ def thread_summary(
     else:
         thread_facet_tags = facet_tags_with_groups(facet_groups, thread_facets)
     latest_post = posts[-1] if posts else None
-    first_unread = first_unread_post(
+    read_at = _read_at_for_thread(
         repo,
         viewer.community.id,
         viewer.membership.id,
         thread,
-        posts,
+        read_at_by_thread,
     )
+    first_unread = first_unread_post_from_read_at(thread, posts, read_at)
     author = (
         repo.get_character(viewer.community.id, thread.author_character_id)
         if authors is None
@@ -252,6 +273,7 @@ def thread_summary(
             viewer.community.id,
             viewer.membership.id,
             thread,
+            read_at_by_thread=read_at_by_thread,
         ),
         is_mine=thread_belongs_to_roster(
             thread,
@@ -269,6 +291,7 @@ def thread_summary(
                 thread,
                 latest_post,
                 roster_character_ids,
+                read_at_by_thread=read_at_by_thread,
             )
         ),
     )
@@ -279,14 +302,35 @@ def next_unread_thread(
     viewer: ForumView,
     board: Board,
 ) -> ThreadNavigationItem | None:
-    for thread in repo.list_threads(viewer.community.id, board.id):
-        if is_unread(repo, viewer.community.id, viewer.membership.id, thread):
+    threads = repo.list_threads(viewer.community.id, board.id)
+    thread_ids = [thread.id for thread in threads]
+    read_at_by_thread = repo.thread_read_at_for_threads(
+        viewer.community.id,
+        thread_ids,
+        viewer.membership.id,
+    )
+    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, thread_ids)
+    all_posts = [post for posts in posts_by_thread.values() for post in posts]
+    post_context = (
+        PostViewContextBuilder(repo, viewer.community.id).context(all_posts) if all_posts else None
+    )
+    for thread in threads:
+        if is_unread(
+            repo,
+            viewer.community.id,
+            viewer.membership.id,
+            thread,
+            read_at_by_thread=read_at_by_thread,
+        ):
             return thread_navigation_item(
                 repo,
                 viewer.community.id,
                 viewer.membership.id,
                 board,
                 thread,
+                posts=posts_by_thread.get(thread.id, []),
+                read_at_by_thread=read_at_by_thread,
+                post_context=post_context,
             )
     return None
 
@@ -426,6 +470,11 @@ def thread_obligations(
         viewer.community.id,
         list({thread.author_membership_id for thread in candidate_threads}),
     )
+    read_at_by_thread = repo.thread_read_at_for_threads(
+        viewer.community.id,
+        thread_ids,
+        viewer.membership.id,
+    )
     post_context = PostViewContextBuilder(
         repo,
         viewer.community.id,
@@ -444,12 +493,10 @@ def thread_obligations(
         ):
             continue
         latest_post = posts[-1] if posts else None
-        first_unread = first_unread_post(
-            repo,
-            viewer.community.id,
-            viewer.membership.id,
+        first_unread = first_unread_post_from_read_at(
             thread,
             posts,
+            read_at_by_thread.get(thread.id),
         )
         last_own_post = last_roster_post(posts, target_character_ids)
         needs_reply = (
@@ -491,6 +538,7 @@ def thread_obligations(
                     viewer.community.id,
                     viewer.membership.id,
                     thread,
+                    read_at_by_thread=read_at_by_thread,
                 ),
                 is_started_by_roster=thread.author_character_id in target_character_ids,
                 needs_reply=needs_reply,
@@ -509,8 +557,10 @@ def is_unread(
     community_id: int,
     membership_id: int,
     thread: Thread,
+    *,
+    read_at_by_thread: dict[int, str] | None = None,
 ) -> bool:
-    read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
+    read_at = _read_at_for_thread(repo, community_id, membership_id, thread, read_at_by_thread)
     if read_at is None:
         return True
     return timestamp_key(read_at) < timestamp_key(thread.updated_at)
@@ -523,16 +573,38 @@ def first_unread_post(
     thread: Thread,
     posts: list[Post],
 ) -> Post | None:
-    if not posts or not is_unread(repo, community_id, membership_id, thread):
-        return None
     read_at = repo.get_thread_read_at(community_id, thread.id, membership_id)
+    return first_unread_post_from_read_at(thread, posts, read_at)
+
+
+def first_unread_post_from_read_at(
+    thread: Thread,
+    posts: list[Post],
+    read_at: str | None,
+) -> Post | None:
+    if not posts:
+        return None
     if read_at is None:
         return posts[0]
     read_stamp = timestamp_key(read_at)
+    if read_stamp >= timestamp_key(thread.updated_at):
+        return None
     for post in posts:
         if timestamp_key(post.created_at) > read_stamp:
             return post
     return posts[-1]
+
+
+def _read_at_for_thread(
+    repo: ThreadReadRepository,
+    community_id: int,
+    membership_id: int,
+    thread: Thread,
+    read_at_by_thread: dict[int, str] | None,
+) -> str | None:
+    if read_at_by_thread is None:
+        return repo.get_thread_read_at(community_id, thread.id, membership_id)
+    return read_at_by_thread.get(thread.id)
 
 
 def thread_navigation(
@@ -553,13 +625,47 @@ def thread_navigation(
     current_index = _thread_index(threads, current.id)
     if current_index is None:
         return None, None, None, None
+    navigation_thread_ids = list(
+        dict.fromkeys(
+            [thread.id for thread in threads]
+            + [candidate_thread.id for _, candidate_thread in attention_threads]
+        )
+    )
+    posts_by_thread = repo.list_posts_for_threads(community_id, navigation_thread_ids)
+    read_at_by_thread = repo.thread_read_at_for_threads(
+        community_id,
+        navigation_thread_ids,
+        membership_id,
+    )
+    all_posts = [post for posts in posts_by_thread.values() for post in posts]
+    post_context = (
+        PostViewContextBuilder(repo, community_id).context(all_posts) if all_posts else None
+    )
     previous_thread = (
-        thread_navigation_item(repo, community_id, membership_id, board, threads[current_index - 1])
+        thread_navigation_item(
+            repo,
+            community_id,
+            membership_id,
+            board,
+            threads[current_index - 1],
+            posts=posts_by_thread.get(threads[current_index - 1].id, []),
+            read_at_by_thread=read_at_by_thread,
+            post_context=post_context,
+        )
         if current_index > 0
         else None
     )
     next_thread = (
-        thread_navigation_item(repo, community_id, membership_id, board, threads[current_index + 1])
+        thread_navigation_item(
+            repo,
+            community_id,
+            membership_id,
+            board,
+            threads[current_index + 1],
+            posts=posts_by_thread.get(threads[current_index + 1].id, []),
+            read_at_by_thread=read_at_by_thread,
+            post_context=post_context,
+        )
         if current_index + 1 < len(threads)
         else None
     )
@@ -579,7 +685,7 @@ def thread_navigation(
         )
     previous_unreplied = None
     for candidate_board, thread in previous_attention_candidates:
-        posts = repo.list_posts(community_id, thread.id)
+        posts = posts_by_thread.get(thread.id, [])
         latest_post = posts[-1] if posts else None
         if (
             latest_post
@@ -592,17 +698,29 @@ def thread_navigation(
                 membership_id,
                 candidate_board,
                 thread,
+                posts=posts,
+                read_at_by_thread=read_at_by_thread,
+                post_context=post_context,
             )
             break
     next_unread = None
     for candidate_board, thread in next_attention_candidates:
-        if is_unread(repo, community_id, membership_id, thread):
+        if is_unread(
+            repo,
+            community_id,
+            membership_id,
+            thread,
+            read_at_by_thread=read_at_by_thread,
+        ):
             next_unread = thread_navigation_item(
                 repo,
                 community_id,
                 membership_id,
                 candidate_board,
                 thread,
+                posts=posts_by_thread.get(thread.id, []),
+                read_at_by_thread=read_at_by_thread,
+                post_context=post_context,
             )
             break
     return previous_thread, next_thread, previous_unreplied, next_unread
@@ -613,16 +731,18 @@ def community_attention_threads(
     viewer: ForumView,
 ) -> list[tuple[Board, Thread]]:
     candidates: list[tuple[Board, Thread]] = []
-    for candidate_board in repo.list_boards(viewer.community.id):
-        if not policies.can_view_board(
-            viewer.membership,
-            candidate_board,
-            viewer.role,
-        ):
-            continue
+    visible_boards = [
+        candidate_board
+        for candidate_board in repo.list_boards(viewer.community.id)
+        if policies.can_view_board(viewer.membership, candidate_board, viewer.role)
+    ]
+    threads_by_board = repo.list_threads_for_boards(
+        viewer.community.id,
+        [board.id for board in visible_boards],
+    )
+    for candidate_board in visible_boards:
         candidates.extend(
-            (candidate_board, thread)
-            for thread in repo.list_threads(viewer.community.id, candidate_board.id)
+            (candidate_board, thread) for thread in threads_by_board.get(candidate_board.id, [])
         )
     return sorted(
         candidates,
@@ -637,15 +757,22 @@ def thread_navigation_item(
     membership_id: int,
     board: Board,
     thread: Thread,
+    *,
+    posts: list[Post] | None = None,
+    read_at_by_thread: dict[int, str] | None = None,
+    post_context: PostViewContext | None = None,
 ) -> ThreadNavigationItem:
-    posts = repo.list_posts(community_id, thread.id)
-    jump_post = first_unread_post(repo, community_id, membership_id, thread, posts)
+    posts = repo.list_posts(community_id, thread.id) if posts is None else posts
+    read_at = _read_at_for_thread(repo, community_id, membership_id, thread, read_at_by_thread)
+    jump_post = first_unread_post_from_read_at(thread, posts, read_at)
     if jump_post is None and posts:
         jump_post = posts[-1]
     return ThreadNavigationItem(
         board=board,
         thread=thread,
-        jump_post=post_view(repo, community_id, jump_post) if jump_post else None,
+        jump_post=(
+            post_view(repo, community_id, jump_post, context=post_context) if jump_post else None
+        ),
     )
 
 
@@ -676,9 +803,17 @@ def thread_needs_attention(
     thread: Thread,
     latest_post: Post,
     roster_character_ids: set[int],
+    *,
+    read_at_by_thread: dict[int, str] | None = None,
 ) -> bool:
     return (
-        is_unread(repo, community_id, membership_id, thread)
+        is_unread(
+            repo,
+            community_id,
+            membership_id,
+            thread,
+            read_at_by_thread=read_at_by_thread,
+        )
         and latest_post.author_character_id not in roster_character_ids
     )
 
