@@ -265,6 +265,10 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 }
 
+.elbysodic-form-field {
+    margin: 0;
+}
+
 .elbysodic-theme-mode-fields {
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius);
@@ -291,12 +295,14 @@
     display: grid;
     gap: 0.75rem;
     grid-template-columns: minmax(0, 1fr) minmax(8rem, 10rem);
+    margin: 0;
 }
 
-.elbysodic-theme-token-field > span:first-child {
+.elbysodic-theme-token-field .chirpui-field__label {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
     font-weight: 800;
+    margin: 0;
 }
 
 .elbysodic-theme-token-field__input {
@@ -306,11 +312,10 @@
     grid-template-columns: 2rem minmax(0, 1fr);
 }
 
-.elbysodic-theme-token-field__input input[type="color"] {
+.elbysodic-theme-token-field__swatch {
     block-size: 2rem;
-    border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius-sm);
     inline-size: 2rem;
+    min-block-size: 2rem;
     opacity: 1;
     padding: 0;
 }
