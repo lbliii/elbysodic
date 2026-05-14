@@ -859,3 +859,39 @@
     justify-content: space-between;
     margin-top: -0.75rem;
 }
+
+@media (max-width: 48rem) {
+    .elbysodic-board-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-board-hero h1 {
+        font-size: 2.25rem;
+    }
+
+    .elbysodic-board-stage {
+        aspect-ratio: var(--elbysodic-ratio-widescreen);
+        min-height: min(44vh, 24rem);
+    }
+
+    .elbysodic-board-media-treatment--background.elbysodic-board-stage {
+        min-height: min(52vh, 27rem);
+    }
+
+    .elbysodic-board-stage h1 {
+        font-size: 2.6rem;
+        line-height: 0.98;
+    }
+
+    .elbysodic-location-compass {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-board-card__header {
+        display: grid;
+    }
+
+    .elbysodic-move-thread-form {
+        grid-template-columns: 1fr;
+    }
+}

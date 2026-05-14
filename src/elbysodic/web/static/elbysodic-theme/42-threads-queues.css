@@ -967,3 +967,85 @@ a.elbysodic-metric:focus-visible {
     color: var(--chirpui-text-muted);
     line-height: 1.35;
 }
+
+@media (max-width: 48rem) {
+    .elbysodic-thread-stage {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .elbysodic-thread-stage__aside {
+        align-content: stretch;
+    }
+
+    .elbysodic-scene-transcript {
+        align-items: flex-start;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-thread-toolbar {
+        display: block;
+    }
+
+    .elbysodic-thread-nav__links .chirpui-btn {
+        max-width: 100%;
+    }
+
+    .elbysodic-thread-skim-nav {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-thread-skim-nav .chirpui-btn:nth-child(2) {
+        justify-self: stretch;
+    }
+
+    .elbysodic-thread-attention-nav {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-thread-attention-nav__link--previous,
+    .elbysodic-thread-attention-nav__link--next {
+        grid-column: 1;
+        justify-self: stretch;
+        margin-inline: 0;
+    }
+
+    .elbysodic-thread-continuation__group {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-thread-continuation__group .chirpui-btn {
+        max-width: 100%;
+    }
+
+    .elbysodic-thread-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-thread-card__poster {
+        aspect-ratio: 16 / 7;
+        grid-row: auto;
+        height: auto;
+        min-height: 8rem;
+    }
+
+    .elbysodic-thread-card__aside {
+        border-inline-start: 0;
+        border-top: 1px solid var(--chirpui-border-subtle);
+        grid-column: auto;
+        padding-inline-start: 0;
+        padding-top: 1rem;
+    }
+
+    .elbysodic-queue-focus {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-queue-focus__metrics {
+        justify-content: start;
+    }
+}

@@ -854,3 +854,107 @@
     position: relative;
     top: auto;
 }
+
+@media (max-width: 64rem) {
+    .elbysodic-profile-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-profile-hero__poster {
+        aspect-ratio: 16 / 9;
+        min-height: 16rem;
+    }
+
+    .elbysodic-face-hub__actions {
+        justify-content: start;
+    }
+
+    .elbysodic-face-writing-lane {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-face-writing-lane__metrics {
+        justify-content: start;
+    }
+
+    .elbysodic-face-writing-lane__action {
+        justify-self: start;
+    }
+
+    .elbysodic-roster-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-roster-card__poster {
+        aspect-ratio: 16 / 5;
+        min-height: 6.5rem;
+    }
+
+    .elbysodic-roster-card__poster span {
+        font-size: 3.25rem;
+    }
+}
+
+@media (max-width: 48rem) {
+    .elbysodic-composer-heading {
+        display: grid;
+    }
+
+    .elbysodic-composer-character--selectable {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .elbysodic-composer-character__control {
+        grid-column: 1 / -1;
+    }
+
+    .elbysodic-composer-panel__header,
+    .elbysodic-composer-panel__bar {
+        display: grid;
+    }
+
+    .elbysodic-profile-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-profile-hero__poster {
+        aspect-ratio: 16 / 9;
+        min-height: 13rem;
+    }
+
+    .elbysodic-face-hub__status,
+    .elbysodic-face-hub__actions {
+        justify-content: start;
+    }
+
+    .elbysodic-face-writing-lane {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-face-writing-lane__metrics {
+        justify-content: start;
+    }
+
+    .elbysodic-face-writing-lane__action {
+        justify-self: start;
+    }
+
+    .elbysodic-roster-card__header {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-roster-card__status,
+    .elbysodic-roster-card__actions {
+        justify-content: flex-start;
+    }
+
+    .elbysodic-member-profile-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-member-profile-hero__metrics {
+        justify-content: flex-start;
+    }
+}

@@ -508,3 +508,10 @@
     line-height: 1.55;
     min-height: 20rem;
 }
+
+@media (max-width: 48rem) {
+    .elbysodic-material-studio-hero,
+    .elbysodic-material-hero {
+        grid-template-columns: 1fr;
+    }
+}

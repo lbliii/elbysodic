@@ -800,3 +800,69 @@
     position: absolute;
     width: 1px;
 }
+
+@media (max-width: 64rem) {
+    .elbysodic-plotting-stage,
+    .elbysodic-plotting-workspace,
+    .elbysodic-plotting-room-card,
+    .elbysodic-plotting-interest-card,
+    .elbysodic-plotting-empty {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-plotting-stage__status,
+    .elbysodic-plotting-room-card__actions,
+    .elbysodic-plotting-interest-card__action {
+        align-items: start;
+        justify-items: start;
+        min-width: 0;
+    }
+
+    .elbysodic-plotting-workspace__aside {
+        position: static;
+    }
+
+    .elbysodic-plotting-empty__actions {
+        justify-content: flex-start;
+    }
+
+    .elbysodic-application-card {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .elbysodic-application-card__body {
+        grid-column: 1;
+    }
+
+    .elbysodic-application-card__review {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
+}
+
+@media (max-width: 48rem) {
+    .elbysodic-interest-card {
+        align-items: start;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-application-card {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-application-card__body,
+    .elbysodic-application-card__review {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .elbysodic-application-card__review {
+        justify-items: start;
+    }
+
+    .elbysodic-application-card__badges,
+    .elbysodic-application-card__actions {
+        justify-content: flex-start;
+    }
+}

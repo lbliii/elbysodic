@@ -956,3 +956,56 @@
     border-color: var(--chirpui-card-hover-border);
     color: var(--chirpui-accent);
 }
+
+@media (max-width: 48rem) {
+    .elbysodic-post {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-post-list > .chirpui-surface:nth-child(even) .elbysodic-post {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-post-list > .chirpui-surface:nth-child(even) .elbysodic-post__poster,
+    .elbysodic-post-list > .chirpui-surface:nth-child(even) .elbysodic-post__body {
+        order: initial;
+    }
+
+    .elbysodic-post__poster {
+        --elbysodic-post-profile-rail-block: auto;
+        --elbysodic-post-profile-media-block: 12rem;
+        position: static;
+    }
+
+    .elbysodic-post-profile--poster,
+    .elbysodic-post-profile--dock {
+        gap: 0.75rem;
+        grid-template: none;
+    }
+
+    .elbysodic-post-profile--poster .elbysodic-post__poster-media,
+    .elbysodic-post-profile--poster .elbysodic-post__poster-card,
+    .elbysodic-post-profile--dock .elbysodic-post__poster-media,
+    .elbysodic-post-profile--dock .elbysodic-post__poster-card {
+        grid-area: auto;
+    }
+
+    .elbysodic-post-profile--poster .elbysodic-post__poster-card,
+    .elbysodic-post-profile--dock .elbysodic-post__poster-card {
+        margin: 0;
+    }
+
+    .elbysodic-post-profile--poster .elbysodic-post__poster-card {
+        max-height: none;
+        opacity: 1;
+        overflow: visible;
+        pointer-events: auto;
+        transform: none;
+        visibility: visible;
+    }
+
+    .elbysodic-post__poster-media {
+        aspect-ratio: 16 / 9;
+        min-height: 12rem;
+    }
+}
