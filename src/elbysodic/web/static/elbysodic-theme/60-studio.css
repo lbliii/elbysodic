@@ -560,24 +560,6 @@
     z-index: 1;
 }
 
-.elbysodic-board-editor-preview-stage__media,
-.elbysodic-board-poster__media,
-.elbysodic-board-stage__media {
-    inset: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: 0;
-}
-
-.elbysodic-board-editor-preview-stage__media img,
-.elbysodic-board-poster__media img,
-.elbysodic-board-stage__media img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
 .elbysodic-board-media-focal--top img {
     object-position: center top;
 }

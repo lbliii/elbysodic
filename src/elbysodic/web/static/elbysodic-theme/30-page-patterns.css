@@ -158,13 +158,6 @@
     justify-content: start;
 }
 
-.elbysodic-world-hero__media img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
 .elbysodic-world-hero--focal-center .elbysodic-world-hero__media img {
     object-position: center;
 }

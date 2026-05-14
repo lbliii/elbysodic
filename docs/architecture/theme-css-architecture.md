@@ -27,6 +27,9 @@ Use these layers when adding or moving CSS:
   member, board, and Studio surfaces: world heroes, local rails, command panels,
   page pulses, empty policy blocks, preview rows, copy styles, and listing
   grids.
+- **media-patterns**: repeated frame and image mechanics for posters, board
+  media slots, hero media, and catalog media. Product-family files still own
+  overlays, fallback typography, aspect ratios, and hover behavior.
 - **page-compositions**: broad page layouts and temporary composition surfaces
   that are not yet stable product components. This should stay small and act as
   a review queue, not a permanent home.

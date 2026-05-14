@@ -24,13 +24,6 @@
     min-block-size: 100%;
 }
 
-.elbysodic-network-billboard__media img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
 .elbysodic-network-billboard__media--fallback {
     background:
         linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-network-accent) 58%, transparent), transparent 62%),
@@ -180,13 +173,6 @@
 .elbysodic-network-home-showcase__media {
     block-size: 100%;
     margin: 0;
-}
-
-.elbysodic-network-home-showcase__media img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
 }
 
 .elbysodic-network-home-showcase__media--fallback {
@@ -805,11 +791,7 @@
 }
 
 .elbysodic-network-card__poster > img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
     transition: transform 160ms ease;
-    width: 100%;
 }
 
 .elbysodic-network-card__poster:hover > img,
