@@ -23,14 +23,24 @@ Use these layers when adding or moving CSS:
 - **shell**: app chrome, sidebar, top navigation, mobile drawer, route tabs,
   identity menu, notification shell affordances, and global navigation
   behavior.
+- **page-patterns**: reusable route-level page vocabulary shared across public,
+  member, board, and Studio surfaces: world heroes, local rails, command panels,
+  page pulses, empty policy blocks, preview rows, copy styles, and listing
+  grids.
 - **page-compositions**: broad page layouts and temporary composition surfaces
-  that are not yet stable product components.
+  that are not yet stable product components. This should stay small and act as
+  a review queue, not a permanent home.
 - **pbp-components**: roleplay-native product components: faces, threads,
   scenes, wanted hooks, claims, reserves, boards, rosters, staff queues,
   writer obligations, and director material cards.
-- **utilities**: small reusable helpers that do not encode a product concept.
+- **studio**: Director Studio, launch, operations, intake, appearance editor,
+  navigation composer, board taxonomy, and director workflow rooms.
 - **legacy-ledger**: selectors that still need markup work, component
   extraction, or Chirp adoption. The ledger should shrink over time.
+
+Responsive overrides live in the same layer as the selector they adapt. Do not
+add a catch-all responsive file unless it is a short-lived migration staging
+step that is immediately drained back to owner layers.
 
 ## Chirp Adoption Rule
 

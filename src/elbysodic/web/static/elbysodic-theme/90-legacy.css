@@ -5,10 +5,9 @@
  * with the current change.
  *
  * Current follow-up classes:
- * - Move responsive overrides from 50-page-compositions.css into their owning
- *   shell, page, or PBP component layers as those sections settle.
- * - Review studio/editor form selectors for Chirp field tone and appearance
- *   adoption.
+ * - Audit 40-pbp-components.css by product family and extract large repeated
+ *   face, board, thread, wanted, claim, reserve, and network sublayers when
+ *   each slice has stable ownership.
  * - Continue replacing generic card/panel surfaces with Chirp surface/card
  *   axes while keeping wanted, face, thread, claim, reserve, and staff queue
  *   wrappers Elbysodic-owned.
