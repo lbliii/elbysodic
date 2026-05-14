@@ -534,6 +534,51 @@ class ApplicationsDesk:
     can_review: bool
 
 
+type WriterActivationStage = Literal[
+    "needs_face",
+    "application_draft",
+    "application_submitted",
+    "application_revision",
+    "accepted_no_scene",
+    "wanted_interest",
+    "plotting",
+    "active_scene",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class WriterActivation:
+    stage: WriterActivationStage
+    headline: str
+    summary: str
+    primary_label: str
+    primary_href: str
+    secondary_label: str = ""
+    secondary_href: str = ""
+    roster_count: int = 0
+    accepted_face_count: int = 0
+    open_application_count: int = 0
+    active_scene_count: int = 0
+    wanted_interest_count: int = 0
+    plotting_room_count: int = 0
+
+    @property
+    def needs_first_face(self) -> bool:
+        return self.stage == "needs_face"
+
+    @property
+    def has_application_work(self) -> bool:
+        return self.stage in {
+            "application_draft",
+            "application_submitted",
+            "application_revision",
+        }
+
+    @property
+    def has_playable_scene(self) -> bool:
+        return self.stage == "active_scene"
+
+
 @dataclass(frozen=True, slots=True)
 class ApplicationOnboarding:
     facets: list[FacetTag]

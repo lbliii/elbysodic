@@ -202,6 +202,7 @@ from elbysodic.services.read_models import (
     POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
     ActivityItem,
+    ApplicationCharacterView,
     ApplicationClaimCheck,
     ApplicationOnboarding,
     ApplicationReviewRoom,
@@ -257,12 +258,14 @@ from elbysodic.services.read_models import (
     StudioNetworkProgramView,
     StudioNetworkThemePreview,
     ThreadNavigationItem,
+    ThreadObligationItem,
     ThreadSummary,
     ThreadView,
     WantedAdDetail,
     WantedAdSummary,
     WantedBoard,
     WorldHub,
+    WriterActivation,
 )
 from elbysodic.services.read_models import (
     POSTING_MODES as POSTING_MODES,
@@ -1594,6 +1597,93 @@ class AppServices:
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
         return _applications_desk(self.repo, viewer)
+
+    def writer_activation(
+        self,
+        *,
+        queue: MyThreadsDashboard | None = None,
+        applications: ApplicationsDesk | None = None,
+        plotting: PlottingDesk | None = None,
+    ) -> WriterActivation:
+        viewer = self.viewer()
+        queue = queue if queue is not None else self.my_threads()
+        applications = applications if applications is not None else self.applications_desk()
+        plotting = plotting if plotting is not None else self.plotting_desk()
+        open_applications = _activation_open_applications(applications)
+        accepted_faces = [
+            character for character in viewer.roster if character.application_status == "accepted"
+        ]
+        wanted_interests = _activation_wanted_interests(self.repo, viewer)
+        counts = {
+            "roster_count": len(viewer.roster),
+            "accepted_face_count": len(accepted_faces),
+            "open_application_count": len(open_applications),
+            "active_scene_count": len(queue.participated),
+            "wanted_interest_count": len(wanted_interests),
+            "plotting_room_count": len(plotting.rooms),
+        }
+        if not accepted_faces:
+            if open_applications:
+                return _application_activation(open_applications[0], **counts)
+            return WriterActivation(
+                stage="needs_face",
+                headline="Start with a first face",
+                summary=(
+                    "Create or apply with a posting face before reply queues, "
+                    "plotting rooms, and scene lanes can form."
+                ),
+                primary_label="Start application",
+                primary_href="/applications/new",
+                secondary_label="Read application guide",
+                secondary_href=_first_application_material_href(applications),
+                **counts,
+            )
+        if queue.participated:
+            next_item = queue.needs_reply[0] if queue.needs_reply else queue.participated[0]
+            return WriterActivation(
+                stage="active_scene",
+                headline="Your first scene path is active",
+                summary="Open the next scene attached to your roster.",
+                primary_label="Open scene",
+                primary_href=_activation_thread_href(next_item),
+                secondary_label="Open queue",
+                secondary_href="/my/threads",
+                **counts,
+            )
+        if plotting.rooms:
+            room = plotting.rooms[0]
+            return WriterActivation(
+                stage="plotting",
+                headline="A plotting room is waiting",
+                summary="Finish the handoff and turn the plan into a scene when it is ready.",
+                primary_label="Open plotting room",
+                primary_href=f"/plotting/{room.room.id}",
+                secondary_label="Open plotting",
+                secondary_href="/plotting",
+                **counts,
+            )
+        if wanted_interests:
+            wanted_ad = wanted_interests[0]
+            return WriterActivation(
+                stage="wanted_interest",
+                headline="Your raised hand is in backstage",
+                summary="Watch the wanted hook for owner or staff movement into plotting.",
+                primary_label="Open wanted hook",
+                primary_href=f"/wanted/{wanted_ad.slug}",
+                secondary_label="Open plotting",
+                secondary_href="/plotting",
+                **counts,
+            )
+        return WriterActivation(
+            stage="accepted_no_scene",
+            headline="Find the first playable opening",
+            summary="Use wanted hooks, discovery, or starter scene hubs to get your face into play.",
+            primary_label="Browse wanted hooks",
+            primary_href="/wanted",
+            secondary_label="Open discovery",
+            secondary_href="/discover",
+            **counts,
+        )
 
     def application_onboarding(self) -> ApplicationOnboarding:
         viewer = self.viewer()
@@ -4340,6 +4430,86 @@ def _apply_post_style_preset(
         preset["post_title_style"],
         preset["post_density"],
     )
+
+
+def _activation_open_applications(
+    applications: ApplicationsDesk,
+) -> list[ApplicationCharacterView]:
+    priority = {"revision_requested": 0, "draft": 1, "submitted": 2}
+    return sorted(
+        (
+            item
+            for item in applications.my_applications
+            if item.character.application_status in priority
+        ),
+        key=lambda item: (
+            priority[item.character.application_status],
+            item.character.name,
+            item.character.id,
+        ),
+    )
+
+
+def _application_activation(
+    application: ApplicationCharacterView,
+    **counts: int,
+) -> WriterActivation:
+    href = f"/applications/{application.character.slug}"
+    status = application.character.application_status
+    if status == "submitted":
+        return WriterActivation(
+            stage="application_submitted",
+            headline=f"{application.character.name} is in review",
+            summary="Watch the application room for director notes or approval.",
+            primary_label="Open application",
+            primary_href=href,
+            secondary_label="Open applications",
+            secondary_href="/applications",
+            **counts,
+        )
+    if status == "revision_requested":
+        return WriterActivation(
+            stage="application_revision",
+            headline=f"{application.character.name} needs revision",
+            summary="Update the requested face work before this application can move forward.",
+            primary_label="Revise application",
+            primary_href=href,
+            secondary_label="Open applications",
+            secondary_href="/applications",
+            **counts,
+        )
+    return WriterActivation(
+        stage="application_draft",
+        headline=f"Finish {application.character.name}",
+        summary="Complete the draft and submit this face for director review.",
+        primary_label="Continue application",
+        primary_href=href,
+        secondary_label="Open applications",
+        secondary_href="/applications",
+        **counts,
+    )
+
+
+def _first_application_material_href(applications: ApplicationsDesk) -> str:
+    if applications.application_materials:
+        return f"/world/{applications.application_materials[0].material.slug}"
+    return "/applications"
+
+
+def _activation_wanted_interests(repo: ForumRepository, viewer: ForumView) -> list[WantedAd]:
+    wanted_ads: list[WantedAd] = []
+    for wanted_ad in repo.list_wanted_ads(viewer.community.id, status=None):
+        if wanted_ad.status == "archived":
+            continue
+        interests = repo.list_wanted_ad_interests(viewer.community.id, wanted_ad.id)
+        if any(interest.membership_id == viewer.membership.id for interest in interests):
+            wanted_ads.append(wanted_ad)
+    return wanted_ads
+
+
+def _activation_thread_href(item: ThreadObligationItem) -> str:
+    anchor = f"#{item.jump_post.anchor}" if item.jump_post else ""
+    return f"/boards/{item.board.slug}/threads/{item.thread.slug}{anchor}"
 
 
 def _unique_character_slug(

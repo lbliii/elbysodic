@@ -2200,6 +2200,45 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
     asyncio.run(run())
 
 
+def test_writer_activation_read_model_tracks_first_face_states() -> None:
+    services = _faceless_services(create_services(path=":memory:"), prefix="activation")
+
+    no_face = services.writer_activation()
+    assert no_face.stage == "needs_face"
+    assert no_face.primary_href == "/applications/new"
+    assert no_face.needs_first_face
+
+    draft = services.repo.create_character(
+        services.seed.community.id,
+        services.seed.membership.id,
+        "activation-face",
+        "Activation Face",
+        application_status="draft",
+    )
+    services.repo.ensure_character_application(services.seed.community.id, draft.id)
+    services._invalidate_viewer()
+    draft_state = services.writer_activation()
+    assert draft_state.stage == "application_draft"
+    assert draft_state.primary_href == "/applications/activation-face"
+    assert draft_state.open_application_count == 1
+
+    accepted = services.repo.update_character_application_status(
+        services.seed.community.id,
+        draft.id,
+        "accepted",
+    )
+    services.repo.set_default_character(
+        services.seed.community.id,
+        services.seed.membership.id,
+        accepted.id,
+    )
+    services._invalidate_viewer()
+    accepted_state = services.writer_activation()
+    assert accepted_state.stage == "accepted_no_scene"
+    assert accepted_state.primary_href == "/wanted"
+    assert accepted_state.accepted_face_count == 1
+
+
 def test_director_studio_surfaces_community_production_work() -> None:
     async def run() -> None:
         app = _app()
