@@ -9,7 +9,7 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.db.migrations import CURRENT_SCHEMA_VERSION
-from elbysodic.services import AppServices
+from elbysodic.services import AppServices, policies
 from elbysodic.services.read_models import (
     ApplicationCharacterView,
     CastingDesk,
@@ -258,7 +258,7 @@ def _writer_activation_card(
         if not membership.is_active:
             continue
         role = services.repo.get_role(viewer.community.id, membership.role_id)
-        if role.is_admin:
+        if policies.can_manage_applications(membership, role):
             continue
         accepted_faces = [
             character
@@ -275,7 +275,9 @@ def _writer_activation_card(
     if active_applications:
         activation_items.append(f"{len(active_applications)} draft/review face(s)")
     if casting.wanted_with_interest:
-        activation_items.append(f"{len(casting.wanted_with_interest)} wanted hook(s) with raised hands")
+        activation_items.append(
+            f"{len(casting.wanted_with_interest)} wanted hook(s) with raised hands"
+        )
     if plotting.wanted_ready_interests:
         activation_items.append(f"{len(plotting.wanted_ready_interests)} ready scene handoff(s)")
     if not activation_items:

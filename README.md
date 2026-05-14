@@ -252,6 +252,13 @@ rapid htmx navigation settlement:
 uv run poe latest-click-wins-qa
 ```
 
+The first-writer activation browser harness covers invite acceptance, the
+first-face application handoff, wanted browsing, and plotting entrypoints:
+
+```bash
+uv run poe writer-activation-qa
+```
+
 Stop local servers with `Ctrl-C`/`SIGINT` or `SIGTERM` so Elbysodic can close
 its app services and SQLite connection. Debug-mode `serve` and `dev preview`
 also treat `SIGHUP` as a local shutdown signal. Deleting or archiving a live

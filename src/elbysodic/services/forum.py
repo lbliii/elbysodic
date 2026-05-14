@@ -4570,7 +4570,9 @@ def _activation_claim_counts(
         character for character in viewer.roster if character.application_status == "accepted"
     ]
     required_claim_types = [
-        claim_type for claim_type in repo.list_claim_types(viewer.community.id) if claim_type.is_required
+        claim_type
+        for claim_type in repo.list_claim_types(viewer.community.id)
+        if claim_type.is_required
     ]
     claimed_by_character: dict[int, set[int]] = {}
     for claim in repo.list_character_claims(viewer.community.id, status="claimed"):

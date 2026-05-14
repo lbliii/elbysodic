@@ -2265,8 +2265,9 @@ def test_writer_activation_read_model_tracks_first_face_states() -> None:
     services._invalidate_viewer()
     accepted_state = services.writer_activation()
     assert accepted_state.stage == "accepted_no_scene"
-    assert accepted_state.primary_href == "/wanted"
+    assert accepted_state.primary_href == "/claims"
     assert accepted_state.accepted_face_count == 1
+    assert accepted_state.claim_gap_count >= 1
 
 
 def test_first_playable_openings_hide_closed_and_private_candidates() -> None:

@@ -175,6 +175,7 @@ browser-qa = { cmd = "python scripts/browser_qa.py", help = "Run Playwright visu
 browser-qa-deep = { cmd = "python scripts/browser_qa.py --profile deep", help = "Run expanded Playwright visual QA against seeded routes" }
 rapid-click-qa = { cmd = "python scripts/rapid_click_qa.py --iterations 1", help = "Run rapid identity/navigation protocol smoke QA" }
 latest-click-wins-qa = { cmd = "python scripts/latest_click_wins_qa.py", help = "Run browser QA that rapid htmx navigation settles on the latest click" }
+writer-activation-qa = { cmd = "python scripts/writer_activation_qa.py", help = "Run browser QA for invite, first-face, wanted, and plotting activation" }
 preview-prod-devtools = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path='var/elbysodic-preview.sqlite3', dev_tools=True, seed_demo=True).run(host='127.0.0.1', port=8001)\"", help = "Run production-like local preview with dev tools and timing harness" }
 
 ty = { cmd = "ty check src/elbysodic/ tests/", help = "Run ty type checker" }
