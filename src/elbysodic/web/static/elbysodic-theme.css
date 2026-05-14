@@ -6,5 +6,6 @@
 
 @import url("./elbysodic-theme/00-tokens.css");
 @import url("./elbysodic-theme/10-chirp-primitives.css");
+@import url("./elbysodic-theme/20-shell.css");
 @import url("./elbysodic-theme/40-pbp-components.css");
 @import url("./elbysodic-theme/90-legacy.css");
