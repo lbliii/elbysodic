@@ -1,0 +1,288 @@
+/* Elbysodic app theme.
+ *
+ * Chirp-UI owns component structure and the pre-paint data-theme script.
+ * This file supplies Elbysodic's product tokens for light, dark, and system.
+ */
+
+:root {
+    color-scheme: dark;
+
+    --elbysodic-key-dark: #05090f;
+    --elbysodic-key-dark-1: #0a1119;
+    --elbysodic-key-dark-2: #101a25;
+    --elbysodic-key-dark-3: #172739;
+    --elbysodic-key-light: #f8fbff;
+    --elbysodic-key-light-1: #eef6fb;
+    --elbysodic-key-light-2: #ffffff;
+    --elbysodic-key-light-3: #dbe9f3;
+    --elbysodic-identity-dye: #ff4fc8;
+    --elbysodic-identity-dye-hover: #ff79d5;
+    --elbysodic-identity-dye-dim: #8e2e73;
+    --elbysodic-atmosphere-dye: #20d7ff;
+    --elbysodic-state-needs-reply: #ffd35a;
+    --elbysodic-state-waiting: #7d86ff;
+    --elbysodic-state-caught-up: #35d392;
+    --elbysodic-state-watching: #20d7ff;
+    --elbysodic-state-private: #6f8396;
+    --elbysodic-state-staff: #aab8c5;
+    --elbysodic-state-locked: #b5c2ce;
+    --elbysodic-state-archived: #7b8b9b;
+    --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
+    --elbysodic-state-error: #ff6b7a;
+    --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 34%, var(--chirpui-border));
+    --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-dark-1) 72%, transparent);
+    --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 22%, var(--chirpui-border));
+    --elbysodic-on-media-text: #f7fbff;
+    --elbysodic-on-media-muted: rgba(247, 251, 255, 0.76);
+    --elbysodic-on-media-chip-bg: rgba(5, 14, 22, 0.72);
+    --elbysodic-on-media-chip-border: rgba(247, 251, 255, 0.22);
+
+    --chirpui-font-xs: 0.75rem;
+    --chirpui-font-sm: 0.875rem;
+    --chirpui-font-base: 1rem;
+    --chirpui-font-lg: 1.125rem;
+    --chirpui-font-xl: 1.375rem;
+    --chirpui-font-2xl: 1.75rem;
+    --chirpui-prose-xs: var(--chirpui-font-xs);
+    --chirpui-prose-3xl: 2rem;
+    --chirpui-prose-4xl: 2.5rem;
+    --chirpui-display-letter-spacing: 0;
+
+    --chirpui-ui-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --chirpui-prose-font-family: var(--chirpui-ui-font-family);
+    --chirpui-code-font-family: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
+    --chirpui-mono-font-family: var(--chirpui-code-font-family);
+    --chirpui-font-family: var(--chirpui-prose-font-family);
+    --elbysodic-display-font-family: var(--chirpui-ui-font-family);
+    --elbysodic-program-texture: none;
+    --elbysodic-program-density: calm;
+    --elbysodic-motion-instant: 100ms ease-out;
+    --elbysodic-motion-feedback: 140ms ease-out;
+    --elbysodic-motion-reveal: 180ms ease-out;
+    --elbysodic-motion-dismiss: 140ms ease-in;
+    --elbysodic-motion-surface: 220ms ease-out;
+    --elbysodic-motion-attention: 420ms ease-out;
+    --chirpui-transition: var(--elbysodic-motion-feedback);
+    --elbysodic-ratio-billboard: 21 / 9;
+    --elbysodic-ratio-widescreen: 16 / 9;
+    --elbysodic-ratio-editorial: 7 / 4;
+    --elbysodic-ratio-card: 4 / 3;
+    --elbysodic-ratio-square: 1 / 1;
+    --elbysodic-ratio-portrait: 4 / 5;
+    --elbysodic-ratio-poster: 2 / 3;
+    --elbysodic-ratio-tall: 1 / 2;
+
+    --chirpui-bg: var(--elbysodic-key-dark);
+    --chirpui-bg-subtle: var(--elbysodic-key-dark-1);
+    --chirpui-surface: var(--elbysodic-key-dark-2);
+    --chirpui-surface-alt: #142333;
+    --chirpui-surface-elevated: var(--elbysodic-key-dark-3);
+    --chirpui-border: #24394d;
+    --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 64%, transparent);
+    --chirpui-text: #f4f7fb;
+    --chirpui-text-muted: #b2c0cc;
+    --chirpui-accent: var(--elbysodic-identity-dye);
+    --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
+    --chirpui-accent-dim: var(--elbysodic-identity-dye-dim);
+    --chirpui-accent-secondary: var(--elbysodic-atmosphere-dye);
+    --chirpui-link: color-mix(in srgb, var(--chirpui-accent) 58%, var(--chirpui-text));
+    --chirpui-link-hover: var(--chirpui-accent-hover);
+    --chirpui-link-visited: color-mix(in srgb, var(--chirpui-accent) 46%, var(--chirpui-text-muted));
+    --chirpui-primary: var(--chirpui-accent);
+    --chirpui-success: var(--elbysodic-state-caught-up);
+    --chirpui-warning: var(--elbysodic-state-needs-reply);
+    --chirpui-error: var(--elbysodic-state-error);
+    --chirpui-danger: var(--elbysodic-state-error);
+    --chirpui-info: var(--elbysodic-state-watching);
+    --chirpui-fg: var(--chirpui-text);
+    --chirpui-fg-muted: var(--chirpui-text-muted);
+    --chirpui-on-accent: var(--elbysodic-key-dark);
+    --chirpui-on-warning: var(--elbysodic-key-dark);
+    --chirpui-alert-info-bg: color-mix(in srgb, var(--elbysodic-state-watching) 12%, var(--chirpui-surface));
+    --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 46%, var(--chirpui-border));
+    --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 16%, var(--chirpui-surface));
+    --chirpui-muted: var(--chirpui-text-muted);
+    --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, transparent);
+    --chirpui-card-header-color: var(--chirpui-text);
+    --chirpui-card-hover-border: color-mix(in srgb, var(--chirpui-accent) 64%, var(--chirpui-border));
+    --chirpui-card-hover-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    --chirpui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --chirpui-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.28);
+    --chirpui-radius: 0.5rem;
+    --chirpui-radius-sm: 0.25rem;
+    --chirpui-radius-xs: 0.125rem;
+    --chirpui-radius-md: 0.75rem;
+    --chirpui-radius-full: 999rem;
+    --chirpui-spacing-2xs: 0.25rem;
+    --chirpui-space-xs: 0.5rem;
+    --chirpui-space-sm: 0.75rem;
+    --chirpui-control-block-size-sm: 2rem;
+    --chirpui-control-block-size: 2.5rem;
+    --chirpui-control-touch-target: 2.75rem;
+    --chirpui-action-control-block-size: var(--chirpui-control-block-size);
+    --chirpui-action-control-padding-block: 0.5rem;
+    --chirpui-action-control-padding-inline: 0.875rem;
+    --chirpui-z-sticky: 80;
+    --chirpui-z-dropdown: 1000;
+    --chirpui-z-popover: 1100;
+    --chirpui-z-tray: 1200;
+    --chirpui-z-modal: 1300;
+    --chirpui-z-toast: 1400;
+    --chirpui-z-command-palette: 1500;
+    --chirpui-z-celebration: 1600;
+}
+
+[data-theme="light"] {
+    color-scheme: light;
+
+    --elbysodic-identity-dye: #b91b82;
+    --elbysodic-identity-dye-hover: #8c1264;
+    --elbysodic-identity-dye-dim: #d760ad;
+    --elbysodic-atmosphere-dye: #007f9f;
+    --elbysodic-state-needs-reply: #9b6400;
+    --elbysodic-state-waiting: #5f67cc;
+    --elbysodic-state-caught-up: #067858;
+    --elbysodic-state-watching: #007f9f;
+    --elbysodic-state-private: #637688;
+    --elbysodic-state-staff: #3c4e60;
+    --elbysodic-state-locked: #506273;
+    --elbysodic-state-archived: #748190;
+    --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
+    --elbysodic-state-error: #b3263a;
+    --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, var(--chirpui-border));
+    --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 78%, transparent);
+    --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 20%, var(--chirpui-border));
+    --elbysodic-on-media-text: #f7fbff;
+    --elbysodic-on-media-muted: rgba(247, 251, 255, 0.78);
+    --elbysodic-on-media-chip-bg: rgba(5, 14, 22, 0.7);
+    --elbysodic-on-media-chip-border: rgba(247, 251, 255, 0.24);
+
+    --chirpui-bg: var(--elbysodic-key-light);
+    --chirpui-bg-subtle: var(--elbysodic-key-light-1);
+    --chirpui-surface: var(--elbysodic-key-light-2);
+    --chirpui-surface-alt: #edf7fc;
+    --chirpui-surface-elevated: #fbfdff;
+    --chirpui-border: #bfd2df;
+    --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+    --chirpui-text: #132231;
+    --chirpui-text-muted: #5d6e7f;
+    --chirpui-accent: var(--elbysodic-identity-dye);
+    --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
+    --chirpui-accent-dim: var(--elbysodic-identity-dye-dim);
+    --chirpui-accent-secondary: var(--elbysodic-atmosphere-dye);
+    --chirpui-link: color-mix(in srgb, var(--chirpui-accent) 72%, var(--chirpui-text));
+    --chirpui-link-hover: var(--chirpui-accent-hover);
+    --chirpui-link-visited: color-mix(in srgb, var(--chirpui-accent) 52%, var(--chirpui-text-muted));
+    --chirpui-primary: var(--chirpui-accent);
+    --chirpui-success: var(--elbysodic-state-caught-up);
+    --chirpui-warning: var(--elbysodic-state-needs-reply);
+    --chirpui-error: var(--elbysodic-state-error);
+    --chirpui-danger: var(--elbysodic-state-error);
+    --chirpui-info: var(--elbysodic-state-watching);
+    --chirpui-fg: var(--chirpui-text);
+    --chirpui-fg-muted: var(--chirpui-text-muted);
+    --chirpui-on-accent: var(--elbysodic-key-light-2);
+    --chirpui-on-warning: var(--elbysodic-key-light-2);
+    --chirpui-alert-info-bg: color-mix(in srgb, var(--elbysodic-state-watching) 10%, var(--chirpui-surface));
+    --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 34%, var(--chirpui-border));
+    --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
+    --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
+    --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
+    --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
+    --chirpui-shadow-md: 0 8px 22px rgba(31, 57, 78, 0.1);
+}
+
+[data-theme="system"] {
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: light) {
+    [data-theme="system"] {
+        --elbysodic-identity-dye: #b91b82;
+        --elbysodic-identity-dye-hover: #8c1264;
+        --elbysodic-identity-dye-dim: #d760ad;
+        --elbysodic-atmosphere-dye: #007f9f;
+        --elbysodic-state-needs-reply: #9b6400;
+        --elbysodic-state-waiting: #5f67cc;
+        --elbysodic-state-caught-up: #067858;
+        --elbysodic-state-watching: #007f9f;
+        --elbysodic-state-private: #637688;
+        --elbysodic-state-staff: #3c4e60;
+        --elbysodic-state-locked: #506273;
+        --elbysodic-state-archived: #748190;
+        --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
+        --elbysodic-state-error: #b3263a;
+        --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, var(--chirpui-border));
+        --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 78%, transparent);
+        --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 20%, var(--chirpui-border));
+        --elbysodic-on-media-text: #f7fbff;
+        --elbysodic-on-media-muted: rgba(247, 251, 255, 0.78);
+        --elbysodic-on-media-chip-bg: rgba(5, 14, 22, 0.7);
+        --elbysodic-on-media-chip-border: rgba(247, 251, 255, 0.24);
+
+        --chirpui-bg: var(--elbysodic-key-light);
+        --chirpui-bg-subtle: var(--elbysodic-key-light-1);
+        --chirpui-surface: var(--elbysodic-key-light-2);
+        --chirpui-surface-alt: #edf7fc;
+        --chirpui-surface-elevated: #fbfdff;
+        --chirpui-border: #bfd2df;
+        --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+        --chirpui-text: #132231;
+        --chirpui-text-muted: #5d6e7f;
+        --chirpui-accent: var(--elbysodic-identity-dye);
+        --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
+        --chirpui-accent-dim: var(--elbysodic-identity-dye-dim);
+        --chirpui-accent-secondary: var(--elbysodic-atmosphere-dye);
+        --chirpui-link: color-mix(in srgb, var(--chirpui-accent) 72%, var(--chirpui-text));
+        --chirpui-link-hover: var(--chirpui-accent-hover);
+        --chirpui-link-visited: color-mix(in srgb, var(--chirpui-accent) 52%, var(--chirpui-text-muted));
+        --chirpui-primary: var(--chirpui-accent);
+        --chirpui-success: var(--elbysodic-state-caught-up);
+        --chirpui-warning: var(--elbysodic-state-needs-reply);
+        --chirpui-error: var(--elbysodic-state-error);
+        --chirpui-danger: var(--elbysodic-state-error);
+        --chirpui-info: var(--elbysodic-state-watching);
+        --chirpui-fg: var(--chirpui-text);
+        --chirpui-fg-muted: var(--chirpui-text-muted);
+        --chirpui-on-accent: var(--elbysodic-key-light-2);
+        --chirpui-on-warning: var(--elbysodic-key-light-2);
+        --chirpui-alert-info-bg: color-mix(in srgb, var(--elbysodic-state-watching) 10%, var(--chirpui-surface));
+        --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 34%, var(--chirpui-border));
+        --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
+        --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
+        --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
+        --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
+        --chirpui-shadow-md: 0 8px 22px rgba(31, 57, 78, 0.1);
+    }
+}
+
+html,
+body {
+    background: var(--chirpui-bg);
+    background-image: var(--elbysodic-program-texture);
+    color: var(--chirpui-text);
+}
+
+body {
+    font-family: var(--chirpui-ui-font-family);
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-delay: 0ms !important;
+        transition-duration: 1ms !important;
+    }
+}
+
+::selection {
+    background: color-mix(in srgb, var(--chirpui-accent) 30%, transparent);
+}
