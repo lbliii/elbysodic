@@ -331,12 +331,13 @@ class AcceptedInvitation:
     session: LoginSession
     identity: RequestIdentityContext
     first_character: Character | None
+    activation: WriterActivation
 
     @property
     def next_path(self) -> str:
         if self.first_character is not None:
             return f"/c/{self.identity.community_slug}/desk"
-        return f"/c/{self.identity.community_slug}/applications/new"
+        return _tenant_activation_path(self.identity, self.activation.primary_href)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1035,12 +1036,24 @@ class AppServices:
             user_id=user.id,
             membership_id=membership.id,
         )
+        activation = self._activation_for_identity(identity)
         return AcceptedInvitation(
             invitation=accepted_invitation,
             session=session,
             identity=identity,
             first_character=character,
+            activation=activation,
         )
+
+    def _activation_for_identity(self, identity: RequestIdentityContext) -> WriterActivation:
+        return AppServices(
+            self.repo,
+            self._seed,
+            identity_context=identity,
+            allow_development_identity=self._allow_development_identity,
+            require_session=self._require_session,
+            owns_repo=False,
+        ).writer_activation()
 
     def _create_session_for_user(
         self,
@@ -4510,6 +4523,11 @@ def _activation_wanted_interests(repo: ForumRepository, viewer: ForumView) -> li
 def _activation_thread_href(item: ThreadObligationItem) -> str:
     anchor = f"#{item.jump_post.anchor}" if item.jump_post else ""
     return f"/boards/{item.board.slug}/threads/{item.thread.slug}{anchor}"
+
+
+def _tenant_activation_path(identity: RequestIdentityContext, href: str) -> str:
+    path = href if href.startswith("/") else f"/{href}"
+    return f"/c/{identity.community_slug}{path}"
 
 
 def _unique_character_slug(

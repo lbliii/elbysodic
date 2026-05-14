@@ -2738,6 +2738,27 @@ def test_invited_writer_without_first_face_continues_to_application_form() -> No
     asyncio.run(run())
 
 
+def test_invitation_acceptance_uses_writer_activation_handoff() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    staff_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    created = staff_services.create_writer_invitation("activation-invite@example.com")
+
+    accepted = staff_services.accept_invitation(
+        created.token,
+        username="activation-invite",
+        display_name="Activation Invite",
+        password="writer-" + "password",
+    )
+
+    assert accepted.activation.stage == "needs_face"
+    assert accepted.activation.primary_href == "/applications/new"
+    assert accepted.next_path == "/c/x-men-apocalypse/applications/new"
+
+
 def test_realm_launch_room_requires_director_membership() -> None:
     async def run() -> None:
         connection = connect(":memory:", check_same_thread=False)
