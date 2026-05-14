@@ -20,7 +20,7 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  <form class="elbysodic-access-panel" method="post" action="/invite/{{ invite_token }}" hx-boost="false">
+  <form class="elbysodic-access-panel" method="post" hx-boost="false">
     {{ csrf_field() }}
     <p class="elbysodic-section-kicker">Invite-only access</p>
     <h1>{{ community.name }}</h1>

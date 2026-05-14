@@ -95,7 +95,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
                 "navigation_order": str(form.get("navigation_order") or ""),
                 "show_in_navigation": form.get("show_in_navigation") == "on",
                 "sidebar_section": str(form.get("sidebar_section") or ""),
-                "is_private": form.get("is_private") == "on",
+                "access_restricted": form.get("is_private") == "on",
             },
         )
     return Redirect(f"/studio/boards/{board.slug}")
@@ -114,6 +114,7 @@ def _render_board_editor(
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
     values = form_values or _values_from_board(editor.board)
+    access_label = "Private/staff" if editor.board.is_private else "Public"
     return Page.mounted(
         "studio/boards/{board_slug}/page.html",
         current_path=request.url,
@@ -128,6 +129,7 @@ def _render_board_editor(
         sidebar_section_labels=BOARD_SIDEBAR_SECTION_LABELS,
         error=error,
         values=values,
+        access_label=access_label,
     )
 
 
@@ -147,7 +149,7 @@ def _values_from_board(board: Board) -> dict[str, object]:
         "navigation_order": str(board.navigation_order),
         "show_in_navigation": board.show_in_navigation,
         "sidebar_section": board.sidebar_section,
-        "is_private": board.is_private,
+        "access_restricted": board.is_private,
     }
 
 

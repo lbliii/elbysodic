@@ -10,6 +10,7 @@ from urllib.parse import urlencode, urljoin
 
 import pytest
 from chirp.app import App
+from chirp.http.request import RequestUrlScope
 from chirp.http.response import Response
 from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
@@ -21,7 +22,7 @@ from elbysodic.services import AppServices, create_services, default_database_pa
 from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
-from elbysodic.web.tenant import scope_response_urls
+from elbysodic.web.tenant import request_scoped_path, scope_response_urls
 from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -773,6 +774,22 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
     assert (
         'name="return_to" value="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"'
         in scoped.body
+    )
+
+
+def test_request_scoped_path_uses_chirp_url_scope() -> None:
+    request = SimpleNamespace(url_scope=RequestUrlScope("/c/x-men-apocalypse"))
+
+    def scoped_url(path: str) -> str:
+        return request.url_scope.apply(path)
+
+    request.scoped_url = scoped_url
+
+    assert request_scoped_path(request, "/mentionables/search") == (
+        "/c/x-men-apocalypse/mentionables/search"
+    )
+    assert request_scoped_path(request, "/c/x-men-apocalypse/world") == (
+        "/c/x-men-apocalypse/world"
     )
 
 
@@ -6040,6 +6057,60 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
     asyncio.run(run())
 
 
+def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_app = create_app(
+            debug=False,
+            services=AppServices(
+                repo,
+                DemoSeed(community, charlie_user, charlie_membership, xavier),
+            ),
+        )
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+            room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            stream = await charlie_client.sse(
+                f"/plotting/{room.id}/stream",
+                max_events=1,
+                timeout=1.0,
+            )
+
+        assert stream.status == 200
+        assert len(stream.events) == 1
+        event = stream.events[0]
+        assert event.event == "plotting-room-ready"
+        assert event.data == "connected"
+        assert "\r" not in event.event
+        assert "\n" not in event.event
+        assert "\x00" not in event.event
+
+    asyncio.run(run())
+
+
 def test_tenant_prefixed_plotting_room_id_does_not_leak_cross_realm_room() -> None:
     async def run() -> None:
         app = _app()
@@ -8279,7 +8350,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert 'aria-label="Quote"' in form.text
             assert 'aria-label="Link"' in form.text
             assert "Power-stealing brawler with a careful heart." in form.text
-            token = _input_value(form.text, "command_token")
+            key = _input_value(form.text, "idempotency_key")
 
             response = await client.post(
                 "/boards/danger-room/threads/new",
@@ -8294,7 +8365,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "summary": "Magneto tags Xavier into an unreasonable simulation.",
                         "posting_mode": "posting_order",
                         "body": "Magneto sets the simulation to unfair.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     },
                     doseq=True,
                 ).encode(),
@@ -8307,7 +8378,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "character_id": magneto.id,
                         "title": "Metal and Memory Duplicate",
                         "body": "This duplicate should not be posted.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     },
                     doseq=True,
                 ).encode(),
@@ -8344,7 +8415,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
     asyncio.run(run())
 
 
-def test_reply_command_token_prevents_duplicate_posts() -> None:
+def test_reply_idempotency_key_prevents_duplicate_posts() -> None:
     async def run() -> None:
         app = _app()
         services = get_services()
@@ -8362,14 +8433,14 @@ def test_reply_command_token_prevents_duplicate_posts() -> None:
             assert 'data-elbysodic-command-kind="reply"' in page.text
             assert 'data-elbysodic-actor-shape="explicit-character"' in page.text
             assert 'data-elbysodic-idempotency="command-token"' in page.text
-            token = _input_value(page.text, "command_token")
+            key = _input_value(page.text, "idempotency_key")
             first = await client.post(
                 "/boards/danger-room/threads/sentinel-drill",
                 body=urlencode(
                     {
                         "character_id": str(character.id),
                         "body": "Rogue checks the duplicate-submit guard.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     }
                 ).encode(),
                 headers=_FORM,
@@ -8380,7 +8451,7 @@ def test_reply_command_token_prevents_duplicate_posts() -> None:
                     {
                         "character_id": str(character.id),
                         "body": "This duplicate should not create another post.",
-                        "command_token": token,
+                        "idempotency_key": key,
                     }
                 ).encode(),
                 headers=_FORM,

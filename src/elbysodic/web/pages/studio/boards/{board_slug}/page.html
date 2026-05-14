@@ -215,7 +215,7 @@
         <label class="elbysodic-checkbox">
           <input type="checkbox"
                  name="is_private"
-                 {{ "checked" if values.is_private else "" }}>
+                 {{ "checked" if values.access_restricted else "" }}>
           <span>Staff/private board</span>
         </label>
       </div>
@@ -266,7 +266,7 @@
           </div>
           <div>
             <dt>Access</dt>
-            <dd>{{ "Private/staff" if editor.board.is_private else "Public" }}</dd>
+            <dd>{{ access_label }}</dd>
           </div>
           {% if editor.parent %}
           <div>

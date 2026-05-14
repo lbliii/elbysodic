@@ -85,7 +85,6 @@ def _render_invite(
         viewer=None,
         invitation=invitation,
         community=community,
-        invite_token=invite_token,
         form=form or InviteAcceptanceForm(),
         error=error,
         show_community_shell=False,

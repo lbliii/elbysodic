@@ -10,7 +10,7 @@ from elbysodic.domain import Character
 from elbysodic.services import Mentionable
 from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
 from elbysodic.services.threads import taggable_characters
-from elbysodic.web.commands import command_token
+from elbysodic.web.commands import idempotency_key
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path
@@ -31,13 +31,13 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
     summary = str(form.get("summary") or "")
     posting_mode = str(form.get("posting_mode") or "freeform")
     body = str(form.get("body") or "")
-    token = str(form.get("command_token") or "")
+    key = str(form.get("idempotency_key") or "")
     services = get_services(request)
     command_key = f"start-thread:{board_slug}"
-    existing_result = services.command_result(command_key, token)
+    existing_result = services.command_result(command_key, key)
     if existing_result is not None:
         return Redirect(existing_result)
-    if not services.reserve_command(command_key, token):
+    if not services.reserve_command(command_key, key):
         return Redirect(f"/boards/{board_slug}/threads/new")
 
     try:
@@ -72,7 +72,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
     result_path = (
         f"/boards/{board_slug}/threads/{created.thread.slug}#post-{created.post.post_number}"
     )
-    services.complete_command(command_key, token, result_path)
+    services.complete_command(command_key, key, result_path)
     return Redirect(result_path)
 
 
@@ -124,7 +124,7 @@ def _render_form(
             body=body,
             composer_config={},
             composer_config_id="thread-composer-config",
-            command_token=command_token(),
+            idempotency_key=idempotency_key(),
         )
     selected_character = _select_character(
         viewer.roster,
@@ -177,7 +177,7 @@ def _render_form(
             mention_endpoint=mention_endpoint,
         ),
         composer_config_id=config_id,
-        command_token=command_token(),
+        idempotency_key=idempotency_key(),
     )
 
 

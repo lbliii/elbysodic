@@ -68,6 +68,12 @@ attributes, SSE fragments, and JSON payloads that carry local `href` values.
 Query strings and hidden `next`, `redirect`, or `return_to` paths must remain
 intact after scoping.
 
+Tenant-prefixed requests attach Chirp's request URL scope before page handlers
+run. New generated route values should use request-aware URL helpers so local
+paths are born inside `/c/{community_slug}`. The response rewriter remains as a
+compatibility net for existing templates and redirects until all tenant-scoped
+surfaces generate scoped URLs directly.
+
 Malformed tenant-local paths such as `/c/{community_slug}//login` fail closed
 instead of wrapping platform/global routes inside a community prefix.
 
