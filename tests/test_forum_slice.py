@@ -65,11 +65,10 @@ async def _stylesheet_text_with_imports(
     response = await client.get(path)
     assert response.status == 200
     text = response.text
-    imported = []
-    for match in re.finditer(r'@import\s+url\("(?P<href>[^"]+)"\);', text):
-        imported.append(
-            await _stylesheet_text_with_imports(client, urljoin(path, match.group("href")), seen=seen)
-        )
+    imported = [
+        await _stylesheet_text_with_imports(client, urljoin(path, href), seen=seen)
+        for href in re.findall(r'@import\s+url\("([^"]+)"\);', text)
+    ]
     return text + "\n".join(imported)
 
 

@@ -725,8 +725,7 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
 }
 
-.elbysodic-production-room-card,
-.elbysodic-studio-room-card {
+.elbysodic-production-room-card {
     color: var(--chirpui-text);
     display: grid;
     gap: 0.35rem;
@@ -737,30 +736,24 @@
 }
 
 .elbysodic-production-room-card:hover,
-.elbysodic-production-room-card:focus-visible,
-.elbysodic-studio-room-card:hover,
-.elbysodic-studio-room-card:focus-visible {
+.elbysodic-production-room-card:focus-visible {
     border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 54%, var(--chirpui-border));
 }
 
-.elbysodic-production-room-card strong,
-.elbysodic-studio-room-card strong {
+.elbysodic-production-room-card strong {
     font-size: var(--chirpui-font-lg);
     line-height: 1.12;
     overflow-wrap: break-word;
 }
 
 .elbysodic-production-room-card em,
-.elbysodic-production-room-card small,
-.elbysodic-studio-room-card em,
-.elbysodic-studio-room-card small {
+.elbysodic-production-room-card small {
     color: var(--chirpui-text-muted);
     font-style: normal;
     line-height: 1.35;
 }
 
-.elbysodic-production-room-card span:not(.elbysodic-kicker),
-.elbysodic-studio-room-card span:not(.elbysodic-kicker) {
+.elbysodic-production-room-card span:not(.elbysodic-kicker) {
     align-self: end;
     color: color-mix(in srgb, var(--elbysodic-state-staff) 70%, var(--chirpui-text));
     font-weight: 900;
