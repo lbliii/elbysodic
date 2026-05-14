@@ -87,7 +87,10 @@ class TenantPrefixMiddleware:
                 detail=f"Community not found: {community_slug}",
             )
 
-        scoped_request = replace(request, path=local_path)
+        scoped_request = replace(
+            request.with_url_scope(f"{TENANT_PREFIX}/{community_slug}"),
+            path=local_path,
+        )
         scoped_request._cache[TENANT_SLUG_CACHE_KEY] = community_slug
         scoped_request._cache[ORIGINAL_PATH_CACHE_KEY] = request.path
         response = await call_next(scoped_request)
@@ -118,6 +121,9 @@ def request_tenant_slug(request: object | None) -> str | None:
 def request_scoped_path(request: object | None, path: str) -> str:
     """Scope a local community endpoint when the current request is prefixed."""
 
+    scoped_url = getattr(request, "scoped_url", None)
+    if callable(scoped_url):
+        return scoped_url(path)
     tenant_slug = request_tenant_slug(request)
     return scoped_path(tenant_slug, path) if tenant_slug is not None else path
 

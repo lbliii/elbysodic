@@ -10,6 +10,7 @@ from urllib.parse import urlencode, urljoin
 
 import pytest
 from chirp.app import App
+from chirp.http.request import RequestUrlScope
 from chirp.http.response import Response
 from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
@@ -21,7 +22,7 @@ from elbysodic.services import AppServices, create_services, default_database_pa
 from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
-from elbysodic.web.tenant import scope_response_urls
+from elbysodic.web.tenant import request_scoped_path, scope_response_urls
 from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -773,6 +774,22 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
     assert (
         'name="return_to" value="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"'
         in scoped.body
+    )
+
+
+def test_request_scoped_path_uses_chirp_url_scope() -> None:
+    request = SimpleNamespace(url_scope=RequestUrlScope("/c/x-men-apocalypse"))
+
+    def scoped_url(path: str) -> str:
+        return request.url_scope.apply(path)
+
+    request.scoped_url = scoped_url
+
+    assert request_scoped_path(request, "/mentionables/search") == (
+        "/c/x-men-apocalypse/mentionables/search"
+    )
+    assert request_scoped_path(request, "/c/x-men-apocalypse/world") == (
+        "/c/x-men-apocalypse/world"
     )
 
 
