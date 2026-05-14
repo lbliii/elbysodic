@@ -39,7 +39,11 @@ Use these layers when adding or moving CSS:
   `41-boards-places.css`, `42-threads-queues.css`,
   `43-faces-composer.css`, `44-claims-intake.css`,
   `45-posts-scenes.css`, `46-world-materials.css`, `47-network.css`,
-  `48-wanted-plotting.css`, and `49-composer.css`.
+  `47-network-catalog.css`, `48-wanted-plotting.css`, and `49-composer.css`.
+- **network**: public Network home, billboards, home rails, genre slices, and
+  signed-in return panels.
+- **network-catalog**: Network search, browse lanes, realm cards, catalog
+  editorial panels, and application entry/facet surfaces.
 - **composer**: writer input surfaces, formatting controls, body mention
   pickers, scene setup fields, draft status, and post style previews. Rendered
   post shells and scene cast displays stay in `45-posts-scenes.css`.
