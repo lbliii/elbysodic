@@ -82,6 +82,7 @@ from elbysodic.services.read_models import (
     WantedInterestInboxItem,
     WorldHub,
     WriterActivation,
+    WriterActivationOpening,
     WriterCollaborator,
 )
 
@@ -160,6 +161,7 @@ __all__ = [
     "WantedInterestInboxItem",
     "WorldHub",
     "WriterActivation",
+    "WriterActivationOpening",
     "WriterCollaborator",
     "create_services",
     "default_database_path",

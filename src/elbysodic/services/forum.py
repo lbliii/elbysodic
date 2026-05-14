@@ -60,7 +60,7 @@ from elbysodic.domain.models import (
     WantedAd,
     WantedAdInterest,
 )
-from elbysodic.domain.vocabulary import material_type_label
+from elbysodic.domain.vocabulary import material_type_label, wanted_type_label
 from elbysodic.services import policies
 from elbysodic.services.access import DefaultRequestIdentity, RequestIdentityResolver
 from elbysodic.services.applications import (
@@ -266,6 +266,7 @@ from elbysodic.services.read_models import (
     WantedBoard,
     WorldHub,
     WriterActivation,
+    WriterActivationOpening,
 )
 from elbysodic.services.read_models import (
     POSTING_MODES as POSTING_MODES,
@@ -1697,6 +1698,23 @@ class AppServices:
             secondary_href="/discover",
             **counts,
         )
+
+    def first_playable_openings(
+        self,
+        *,
+        applications: ApplicationsDesk | None = None,
+        plotting: PlottingDesk | None = None,
+        limit: int = 6,
+    ) -> list[WriterActivationOpening]:
+        viewer = self.viewer()
+        applications = applications if applications is not None else self.applications_desk()
+        plotting = plotting if plotting is not None else self.plotting_desk()
+        openings: list[WriterActivationOpening] = []
+        openings.extend(_activation_plotting_openings(plotting))
+        openings.extend(_activation_application_openings(applications))
+        openings.extend(_activation_wanted_openings(self.repo, viewer))
+        openings.extend(_activation_starter_thread_openings(self.repo, viewer))
+        return openings[:limit]
 
     def application_onboarding(self) -> ApplicationOnboarding:
         viewer = self.viewer()
@@ -4518,6 +4536,96 @@ def _activation_wanted_interests(repo: ForumRepository, viewer: ForumView) -> li
         if any(interest.membership_id == viewer.membership.id for interest in interests):
             wanted_ads.append(wanted_ad)
     return wanted_ads
+
+
+def _activation_plotting_openings(plotting: PlottingDesk) -> list[WriterActivationOpening]:
+    return [
+        WriterActivationOpening(
+            kind="plotting",
+            label=room.room.title,
+            href=f"/plotting/{room.room.id}",
+            summary=room.room.summary or "A plotting room is already waiting on this writer.",
+            detail=room.source_label,
+        )
+        for room in plotting.rooms
+    ]
+
+
+def _activation_application_openings(
+    applications: ApplicationsDesk,
+) -> list[WriterActivationOpening]:
+    openings = [
+        WriterActivationOpening(
+            kind="application",
+            label=application.character.name,
+            href=f"/applications/{application.character.slug}",
+            summary="Continue the face application already in progress.",
+            detail=application.status_label,
+        )
+        for application in _activation_open_applications(applications)
+    ]
+    openings.extend(
+        WriterActivationOpening(
+            kind="guide",
+            label=material.material.title,
+            href=f"/world/{material.material.slug}",
+            summary=material.material.summary or "Application guidance for this realm.",
+            detail=material.type_label,
+        )
+        for material in applications.application_materials[:2]
+    )
+    return openings
+
+
+def _activation_wanted_openings(
+    repo: ForumRepository,
+    viewer: ForumView,
+) -> list[WriterActivationOpening]:
+    active_interest_ids = {wanted_ad.id for wanted_ad in _activation_wanted_interests(repo, viewer)}
+    openings: list[WriterActivationOpening] = []
+    for wanted_ad in repo.list_wanted_ads(viewer.community.id):
+        if wanted_ad.creator_membership_id == viewer.membership.id:
+            continue
+        if wanted_ad.id in active_interest_ids:
+            continue
+        openings.append(
+            WriterActivationOpening(
+                kind="wanted",
+                label=wanted_ad.title,
+                href=f"/wanted/{wanted_ad.slug}",
+                summary=wanted_ad.summary or "Open wanted hook ready for interest.",
+                detail=wanted_type_label(wanted_ad.wanted_type),
+            )
+        )
+    return openings
+
+
+def _activation_starter_thread_openings(
+    repo: ForumRepository,
+    viewer: ForumView,
+) -> list[WriterActivationOpening]:
+    visible_boards = {
+        board.id: board
+        for board in repo.list_boards(viewer.community.id)
+        if policies.can_view_board(viewer.membership, board, viewer.role)
+    }
+    openings: list[WriterActivationOpening] = []
+    for thread in repo.list_threads(viewer.community.id):
+        if thread.status != "open":
+            continue
+        board = visible_boards.get(thread.board_id)
+        if board is None:
+            continue
+        openings.append(
+            WriterActivationOpening(
+                kind="thread",
+                label=thread.title,
+                href=f"/boards/{board.slug}/threads/{thread.slug}",
+                summary=thread.summary or "Open scene ready for another face.",
+                detail=board.name,
+            )
+        )
+    return openings
 
 
 def _activation_thread_href(item: ThreadObligationItem) -> str:

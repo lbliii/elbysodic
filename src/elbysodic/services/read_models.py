@@ -547,6 +547,15 @@ type WriterActivationStage = Literal[
 
 
 @dataclass(frozen=True, slots=True)
+class WriterActivationOpening:
+    kind: str
+    label: str
+    href: str
+    summary: str
+    detail: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class WriterActivation:
     stage: WriterActivationStage
     headline: str

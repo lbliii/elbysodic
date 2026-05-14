@@ -2239,6 +2239,45 @@ def test_writer_activation_read_model_tracks_first_face_states() -> None:
     assert accepted_state.accepted_face_count == 1
 
 
+def test_first_playable_openings_hide_closed_and_private_candidates() -> None:
+    services, _ = _outsider_services(create_services(path=":memory:"), prefix="opening")
+    community = services.seed.community
+    repo = services.repo
+    repo.create_material(
+        community.id,
+        "draft-application-only",
+        "Draft Application Only",
+        material_type="application",
+        summary="Draft-only intake note.",
+        body="Draft-only intake note.",
+        status="draft",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        services.seed.membership.id,
+        "my-own-hook",
+        "My Own Hook",
+        status="open",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        services.seed.membership.id,
+        "closed-hook",
+        "Closed Hook",
+        status="archived",
+    )
+
+    openings = services.first_playable_openings(limit=20)
+    hrefs = {item.href for item in openings}
+    labels = {item.label for item in openings}
+
+    assert "/world/draft-application-only" not in hrefs
+    assert "/wanted/my-own-hook" not in hrefs
+    assert "/wanted/closed-hook" not in hrefs
+    assert any(item.kind == "wanted" for item in openings)
+    assert "Draft Application Only" not in labels
+
+
 def test_director_studio_surfaces_community_production_work() -> None:
     async def run() -> None:
         app = _app()
