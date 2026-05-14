@@ -143,12 +143,14 @@ from elbysodic.services.markup import post_snippet
 from elbysodic.services.materials import (
     current_event_for_facet_ids as _current_event_for_facet_ids,
 )
-from elbysodic.services.materials import material_detail as _material_detail
 from elbysodic.services.materials import material_summary as _material_summary
-from elbysodic.services.materials import public_material_detail as _public_material_detail
+from elbysodic.services.materials import public_read_material as _public_read_material
+from elbysodic.services.materials import public_world_hub as _public_world_hub
+from elbysodic.services.materials import read_material as _read_material
 from elbysodic.services.materials import (
     update_material_production_state as _update_material_production_state,
 )
+from elbysodic.services.materials import world_hub as _world_hub
 from elbysodic.services.network import network_explore as _network_explore
 from elbysodic.services.network import network_home as _network_home
 from elbysodic.services.network import public_catalog_cards as _public_catalog_cards
@@ -1155,36 +1157,14 @@ class AppServices:
 
     def public_world_hub(self, community_slug: str) -> WorldHub:
         community = self._public_preview_community(community_slug)
-        materials = [
-            _material_summary(self.repo, community.id, material)
-            for material in self.repo.list_materials(community.id)
-        ]
-        additional_materials = [item for item in materials if not item.material.is_featured]
-        return WorldHub(
-            featured=[item for item in materials if item.material.is_featured],
-            guides=[
-                item
-                for item in additional_materials
-                if item.material.material_type in {"premise", "guide", "factions"}
-            ],
-            events=[item for item in materials if item.material.material_type == "event"],
-            application_materials=[
-                item
-                for item in additional_materials
-                if item.material.material_type == "application"
-            ],
-            can_manage=False,
-        )
+        return _public_world_hub(self.repo, community.id)
 
     def public_read_material(self, community_slug: str, material_slug: str) -> MaterialDetail:
         community = self._public_preview_community(community_slug)
-        material = self.repo.get_material_by_slug(community.id, material_slug)
-        if material.status != "published":
-            raise LookupError(f"material not found in community {community.id}: {material_slug}")
-        return _public_material_detail(
+        return _public_read_material(
             self.repo,
             community.id,
-            material,
+            material_slug,
             wanted_summary_factory=lambda wanted_ad: _public_wanted_ad_summary(
                 self.repo,
                 community.id,
@@ -1727,27 +1707,7 @@ class AppServices:
         return _discover_plots(self.repo, self.viewer(), facet_slugs=facet_slugs)
 
     def world_hub(self) -> WorldHub:
-        viewer = self.viewer()
-        materials = [
-            _material_summary(self.repo, viewer.community.id, material)
-            for material in self.repo.list_materials(viewer.community.id)
-        ]
-        additional_materials = [item for item in materials if not item.material.is_featured]
-        return WorldHub(
-            featured=[item for item in materials if item.material.is_featured],
-            guides=[
-                item
-                for item in additional_materials
-                if item.material.material_type in {"premise", "guide", "factions"}
-            ],
-            events=[item for item in materials if item.material.material_type == "event"],
-            application_materials=[
-                item
-                for item in additional_materials
-                if item.material.material_type == "application"
-            ],
-            can_manage=policies.can_manage_world(viewer.membership, viewer.role),
-        )
+        return _world_hub(self.repo, self.viewer())
 
     def director_operations(
         self,
@@ -2244,18 +2204,10 @@ class AppServices:
 
     def read_material(self, material_slug: str) -> MaterialDetail:
         viewer = self.viewer()
-        material = self.repo.get_material_by_slug(viewer.community.id, material_slug)
-        if material.status != "published" and not policies.can_manage_world(
-            viewer.membership,
-            viewer.role,
-        ):
-            raise LookupError(
-                f"material not found in community {viewer.community.id}: {material_slug}"
-            )
-        return _material_detail(
+        return _read_material(
             self.repo,
             viewer,
-            material,
+            material_slug,
             board_summary_factory=_board_summary_factory(
                 self.repo,
                 viewer,

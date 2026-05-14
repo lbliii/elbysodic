@@ -31,6 +31,7 @@ from elbysodic.services.read_models import (
     MaterialDetail,
     MaterialSummary,
     WantedAdSummary,
+    WorldHub,
 )
 from elbysodic.services.timestamps import timestamp_key, timestamp_label
 
@@ -39,6 +40,8 @@ type WantedAdSummaryFactory = Callable[[WantedAd], WantedAdSummary]
 
 
 class MaterialSummaryRepository(FacetReadRepository, Protocol):
+    def list_materials(self, community_id: int, *, status: str | None = None) -> list[Material]: ...
+
     def list_material_facets(self, community_id: int, material_id: int) -> list[Facet]: ...
 
     def list_material_facets_for_materials(
@@ -136,6 +139,89 @@ def material_summary(
             community_id,
             repo.list_material_facets(community_id, material.id),
         ),
+    )
+
+
+def world_hub(repo: MaterialSummaryRepository, viewer: ForumView) -> WorldHub:
+    materials = [
+        material_summary(repo, viewer.community.id, material)
+        for material in repo.list_materials(viewer.community.id)
+    ]
+    return _world_hub_from_materials(
+        materials,
+        can_manage=policies.can_manage_world(viewer.membership, viewer.role),
+    )
+
+
+def public_world_hub(repo: MaterialSummaryRepository, community_id: int) -> WorldHub:
+    materials = [
+        material_summary(repo, community_id, material)
+        for material in repo.list_materials(community_id)
+    ]
+    return _world_hub_from_materials(materials, can_manage=False)
+
+
+def read_material(
+    repo: MaterialReadRepository,
+    viewer: ForumView,
+    material_slug: str,
+    *,
+    board_summary_factory: BoardSummaryFactory,
+    wanted_summary_factory: WantedAdSummaryFactory,
+) -> MaterialDetail:
+    material = repo.get_material_by_slug(viewer.community.id, material_slug)
+    if material.status != "published" and not policies.can_manage_world(
+        viewer.membership,
+        viewer.role,
+    ):
+        raise LookupError(
+            f"material not found in community {viewer.community.id}: {material_slug}"
+        )
+    return material_detail(
+        repo,
+        viewer,
+        material,
+        board_summary_factory=board_summary_factory,
+        wanted_summary_factory=wanted_summary_factory,
+    )
+
+
+def public_read_material(
+    repo: MaterialReadRepository,
+    community_id: int,
+    material_slug: str,
+    *,
+    wanted_summary_factory: WantedAdSummaryFactory,
+) -> MaterialDetail:
+    material = repo.get_material_by_slug(community_id, material_slug)
+    if material.status != "published":
+        raise LookupError(f"material not found in community {community_id}: {material_slug}")
+    return public_material_detail(
+        repo,
+        community_id,
+        material,
+        wanted_summary_factory=wanted_summary_factory,
+    )
+
+
+def _world_hub_from_materials(
+    materials: list[MaterialSummary],
+    *,
+    can_manage: bool,
+) -> WorldHub:
+    additional_materials = [item for item in materials if not item.material.is_featured]
+    return WorldHub(
+        featured=[item for item in materials if item.material.is_featured],
+        guides=[
+            item
+            for item in additional_materials
+            if item.material.material_type in {"premise", "guide", "factions"}
+        ],
+        events=[item for item in materials if item.material.material_type == "event"],
+        application_materials=[
+            item for item in additional_materials if item.material.material_type == "application"
+        ],
+        can_manage=can_manage,
     )
 
 
