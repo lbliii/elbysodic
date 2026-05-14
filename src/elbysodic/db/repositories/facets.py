@@ -295,6 +295,49 @@ class FacetRepositoryMixin(BoardRepositoryMixin):
             character_id,
         )
 
+    def list_character_facets_for_characters(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, list[Facet]]:
+        if not character_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                character_facets.character_id,
+                facets.id,
+                facets.community_id,
+                facets.facet_group_id,
+                facets.slug,
+                facets.name,
+                facets.description,
+                facets.accent_color,
+                facets.sort_order,
+                facets.created_at,
+                facets.updated_at
+            FROM character_facets
+            JOIN facets
+              ON facets.community_id = character_facets.community_id
+             AND facets.id = character_facets.facet_id
+            JOIN facet_groups
+              ON facet_groups.community_id = facets.community_id
+             AND facet_groups.id = facets.facet_group_id
+            WHERE character_facets.community_id = ?
+              AND character_facets.character_id IN (SELECT value FROM json_each(?))
+            ORDER BY character_facets.character_id,
+                     facet_groups.sort_order,
+                     facet_groups.name,
+                     facets.sort_order,
+                     facets.name
+            """,
+            (community_id, json.dumps(character_ids)),
+        ).fetchall()
+        facets_by_character: dict[int, list[Facet]] = defaultdict(list)
+        for row in rows:
+            facets_by_character[int(row["character_id"])].append(_facet_from_row(row))
+        return dict(facets_by_character)
+
     def list_board_facets(self, community_id: int, board_id: int) -> list[Facet]:
         self.get_board(community_id, board_id)
         return self._list_facets_for_assignment(

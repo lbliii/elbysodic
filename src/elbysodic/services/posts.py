@@ -16,7 +16,6 @@ from elbysodic.domain.models import (
     Role,
 )
 from elbysodic.services import policies
-from elbysodic.services.facets import resolve_character_accent
 from elbysodic.services.markup import MentionLink, post_snippet, render_post_body
 from elbysodic.services.read_models import PostRevisionView, PostView
 from elbysodic.services.timestamps import (
@@ -37,7 +36,25 @@ class PostViewRepository(Protocol):
         membership_id: int,
     ) -> CommunityMembership: ...
 
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]: ...
+
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]: ...
+
     def list_character_facets(self, community_id: int, character_id: int) -> list[Facet]: ...
+
+    def list_character_facets_for_characters(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, list[Facet]]: ...
 
     def list_community_characters(self, community_id: int) -> list[Character]: ...
 
@@ -66,16 +83,24 @@ class PostViewContextBuilder:
         community = self.community()
         author_ids = {post.author_character_id for post in posts}
         membership_ids = {post.author_membership_id for post in posts}
-        authors = {
-            character_id: self.repo.get_character(self.community_id, character_id)
-            for character_id in sorted(author_ids)
-        }
-        memberships = {
-            membership_id: self.repo.get_membership(self.community_id, membership_id)
-            for membership_id in sorted(membership_ids)
-        }
+        authors = self.repo.list_characters_by_ids(self.community_id, sorted(author_ids))
+        memberships = self.repo.list_memberships_by_ids(self.community_id, sorted(membership_ids))
+        inherited_accent_character_ids = [
+            character.id
+            for character in authors.values()
+            if not character.accent_color.strip()
+            and community.identity_accent_facet_group_id is not None
+        ]
+        facets_by_character = self.repo.list_character_facets_for_characters(
+            self.community_id,
+            inherited_accent_character_ids,
+        )
         accent_colors = {
-            character_id: resolve_character_accent(self.repo, community, character)
+            character_id: _resolve_character_accent_from_facets(
+                community,
+                character,
+                facets_by_character.get(character_id, []),
+            )
             for character_id, character in authors.items()
         }
         return PostViewContext(
@@ -180,6 +205,23 @@ def post_mention_links(repo: PostViewRepository, community_id: int) -> list[Ment
         )
         seen.add(membership.username.lower())
     return links
+
+
+def _resolve_character_accent_from_facets(
+    community: Community,
+    character: Character,
+    facets: list[Facet],
+) -> str:
+    character_accent = character.accent_color.strip()
+    if character_accent:
+        return character_accent
+    accent_group_id = community.identity_accent_facet_group_id
+    if accent_group_id is None:
+        return ""
+    for facet in facets:
+        if facet.facet_group_id == accent_group_id and facet.accent_color.strip():
+            return facet.accent_color.strip()
+    return ""
 
 
 def _character_mention_handles(character: Character) -> set[str]:

@@ -459,7 +459,7 @@ def test_scaled_board_page_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Scale Yard" in response.text
         assert "Scale Thread 29" in response.text
-        assert trace.count <= 180
+        assert trace.count <= 150
 
     asyncio.run(run())
 
@@ -498,7 +498,7 @@ def test_scaled_my_threads_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Scale Realm" in response.text
         assert "Scale Thread 0" in response.text
-        assert trace.count <= 130
+        assert trace.count <= 100
 
     asyncio.run(run())
 

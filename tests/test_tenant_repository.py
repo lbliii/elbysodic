@@ -1659,6 +1659,13 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
         "mutant",
         "x-men",
     ]
+    assert {
+        character_id: [facet.slug for facet in facets]
+        for character_id, facets in repo.list_character_facets_for_characters(
+            community.id,
+            [rogue.id],
+        ).items()
+    } == {rogue.id: ["mutant", "x-men"]}
     assert [facet.slug for facet in repo.list_board_facets(community.id, board.id)] == ["x-men"]
     assert {
         board_id: [facet.slug for facet in facets]
