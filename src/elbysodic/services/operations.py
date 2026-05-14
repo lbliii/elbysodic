@@ -292,9 +292,7 @@ def _writer_activation_card(
 ) -> OperationsCard | None:
     if not studio.can_manage:
         return None
-    pending_invites = [
-        item for item in writer_invitations if item.invitation.status == "pending"
-    ]
+    pending_invites = [item for item in writer_invitations if item.invitation.status == "pending"]
     active_applications = [
         character
         for character in repo.list_community_characters(viewer.community.id)

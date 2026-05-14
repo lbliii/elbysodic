@@ -137,11 +137,7 @@ def studio_network(
     facet_groups_by_community = repo.list_facet_groups_for_communities(community_ids)
     material_facets = repo.list_material_facets_for_materials(
         community_ids,
-        [
-            material.id
-            for materials in materials_by_community.values()
-            for material in materials
-        ],
+        [material.id for materials in materials_by_community.values() for material in materials],
     )
     counts_by_community = repo.network_program_counts(community_ids)
     counts_by_membership = repo.network_membership_counts(
@@ -225,11 +221,7 @@ def public_studio_network(repo: NetworkCatalogRepository) -> StudioNetworkDirect
     facet_groups_by_community = repo.list_facet_groups_for_communities(community_ids)
     material_facets = repo.list_material_facets_for_materials(
         community_ids,
-        [
-            material.id
-            for materials in materials_by_community.values()
-            for material in materials
-        ],
+        [material.id for materials in materials_by_community.values() for material in materials],
     )
     counts_by_community = repo.network_program_counts(community_ids)
     for community in communities:

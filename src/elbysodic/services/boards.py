@@ -127,14 +127,10 @@ def board_page(
     sibling_boards = sibling_board_summaries(repo, viewer, board) if is_location else []
     facet_ids = {tag.facet.id for tag in summary.facets}
     current_event = (
-        current_event_for_facet_ids(repo, viewer.community.id, facet_ids)
-        if is_location
-        else None
+        current_event_for_facet_ids(repo, viewer.community.id, facet_ids) if is_location else None
     )
     direct_thread_count = (
-        len(threads)
-        if filter_by == "all"
-        else repo.count_threads(viewer.community.id, board.id)
+        len(threads) if filter_by == "all" else repo.count_threads(viewer.community.id, board.id)
     )
     return BoardPage(
         board=board,

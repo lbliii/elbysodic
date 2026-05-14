@@ -174,9 +174,7 @@ def read_material(
         viewer.membership,
         viewer.role,
     ):
-        raise LookupError(
-            f"material not found in community {viewer.community.id}: {material_slug}"
-        )
+        raise LookupError(f"material not found in community {viewer.community.id}: {material_slug}")
     return material_detail(
         repo,
         viewer,
