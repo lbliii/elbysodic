@@ -2308,6 +2308,48 @@ def test_first_playable_openings_hide_closed_and_private_candidates() -> None:
     assert "Draft Application Only" not in labels
 
 
+def test_first_face_activation_surfaces_claim_and_reserve_work() -> None:
+    async def run() -> None:
+        services, character_id = _outsider_services(
+            create_services(path=":memory:"),
+            prefix="claimwork",
+        )
+        community = services.seed.community
+        repo = services.repo
+        repo.create_claim_type(
+            community.id,
+            "required-face-name",
+            "Required Face Name",
+            is_required=True,
+        )
+        repo.create_character_reserve(
+            community.id,
+            services.seed.membership.id,
+            character_id,
+            "Reserved wanted lane",
+            status="active",
+        )
+        app = create_app(debug=False, services=services)
+
+        activation = services.writer_activation()
+        openings = services.first_playable_openings(limit=4)
+        async with TestClient(app) as client:
+            desk = await client.get("/desk")
+
+        assert activation.stage == "accepted_no_scene"
+        assert activation.primary_href == "/claims"
+        assert activation.claim_gap_count >= 1
+        assert activation.reserve_count == 1
+        assert any(item.kind == "claims" and item.href == "/claims" for item in openings)
+        assert any(item.kind == "reserves" for item in openings)
+        assert desk.status == 200
+        assert "Settle first-face claims" in desk.text
+        assert "Required face claims" in desk.text
+        assert "Active reserves" in desk.text
+
+    asyncio.run(run())
+
+
 def test_director_studio_surfaces_community_production_work() -> None:
     async def run() -> None:
         app = _app()

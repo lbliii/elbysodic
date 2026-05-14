@@ -570,6 +570,9 @@ class WriterActivation:
     active_scene_count: int = 0
     wanted_interest_count: int = 0
     plotting_room_count: int = 0
+    claim_gap_count: int = 0
+    claim_conflict_count: int = 0
+    reserve_count: int = 0
 
     @property
     def needs_first_face(self) -> bool:

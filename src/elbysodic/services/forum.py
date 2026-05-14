@@ -1628,6 +1628,11 @@ class AppServices:
             character for character in viewer.roster if character.application_status == "accepted"
         ]
         wanted_interests = _activation_wanted_interests(self.repo, viewer)
+        claim_gap_count, claim_conflict_count, reserve_count = _activation_claim_counts(
+            self.repo,
+            viewer,
+            applications,
+        )
         counts = {
             "roster_count": len(viewer.roster),
             "accepted_face_count": len(accepted_faces),
@@ -1635,6 +1640,9 @@ class AppServices:
             "active_scene_count": len(queue.participated),
             "wanted_interest_count": len(wanted_interests),
             "plotting_room_count": len(plotting.rooms),
+            "claim_gap_count": claim_gap_count,
+            "claim_conflict_count": claim_conflict_count,
+            "reserve_count": reserve_count,
         }
         if not accepted_faces:
             if open_applications:
@@ -1688,6 +1696,20 @@ class AppServices:
                 secondary_href="/plotting",
                 **counts,
             )
+        if claim_gap_count or reserve_count:
+            return WriterActivation(
+                stage="accepted_no_scene",
+                headline="Settle first-face claims",
+                summary=(
+                    "Review required claims and active reserves before choosing the "
+                    "cleanest opening scene."
+                ),
+                primary_label="Open claims",
+                primary_href="/claims",
+                secondary_label="Browse wanted hooks",
+                secondary_href="/wanted",
+                **counts,
+            )
         return WriterActivation(
             stage="accepted_no_scene",
             headline="Find the first playable opening",
@@ -1710,6 +1732,7 @@ class AppServices:
         applications = applications if applications is not None else self.applications_desk()
         plotting = plotting if plotting is not None else self.plotting_desk()
         openings: list[WriterActivationOpening] = []
+        openings.extend(_activation_claim_openings(self.repo, viewer, applications))
         openings.extend(_activation_plotting_openings(plotting))
         openings.extend(_activation_application_openings(applications))
         openings.extend(_activation_wanted_openings(self.repo, viewer))
@@ -4536,6 +4559,84 @@ def _activation_wanted_interests(repo: ForumRepository, viewer: ForumView) -> li
         if any(interest.membership_id == viewer.membership.id for interest in interests):
             wanted_ads.append(wanted_ad)
     return wanted_ads
+
+
+def _activation_claim_counts(
+    repo: ForumRepository,
+    viewer: ForumView,
+    applications: ApplicationsDesk,
+) -> tuple[int, int, int]:
+    accepted_faces = [
+        character for character in viewer.roster if character.application_status == "accepted"
+    ]
+    required_claim_types = [
+        claim_type for claim_type in repo.list_claim_types(viewer.community.id) if claim_type.is_required
+    ]
+    claimed_by_character: dict[int, set[int]] = {}
+    for claim in repo.list_character_claims(viewer.community.id, status="claimed"):
+        if claim.character_id is None:
+            continue
+        claimed_by_character.setdefault(claim.character_id, set()).add(claim.claim_type_id)
+    claim_gap_count = sum(
+        1
+        for character in accepted_faces
+        for claim_type in required_claim_types
+        if claim_type.id not in claimed_by_character.get(character.id, set())
+    )
+    reserve_count = sum(
+        len(repo.list_character_reserves(viewer.community.id, character.id))
+        for character in accepted_faces
+    )
+    claim_conflict_count = sum(
+        item.claim_conflict_count
+        for item in applications.my_applications
+        if item.character.application_status in {"draft", "submitted", "revision_requested"}
+    )
+    return claim_gap_count, claim_conflict_count, reserve_count
+
+
+def _activation_claim_openings(
+    repo: ForumRepository,
+    viewer: ForumView,
+    applications: ApplicationsDesk,
+) -> list[WriterActivationOpening]:
+    claim_gap_count, claim_conflict_count, reserve_count = _activation_claim_counts(
+        repo,
+        viewer,
+        applications,
+    )
+    openings: list[WriterActivationOpening] = []
+    if claim_gap_count:
+        openings.append(
+            WriterActivationOpening(
+                kind="claims",
+                label="Required face claims",
+                href="/claims",
+                summary=f"{claim_gap_count} required claim slot(s) still need this roster.",
+                detail="Claims",
+            )
+        )
+    if reserve_count:
+        openings.append(
+            WriterActivationOpening(
+                kind="reserves",
+                label="Active reserves",
+                href="/claims?status=reserved",
+                summary=f"{reserve_count} reserve(s) should be checked before the first scene.",
+                detail="Reserves",
+            )
+        )
+    if claim_conflict_count:
+        openings.append(
+            WriterActivationOpening(
+                kind="claims",
+                label="Application claim conflicts",
+                href="/applications",
+                summary=f"{claim_conflict_count} claim conflict(s) need revision or staff review.",
+                detail="Claims",
+            )
+        )
+    return openings
 
 
 def _activation_plotting_openings(plotting: PlottingDesk) -> list[WriterActivationOpening]:
