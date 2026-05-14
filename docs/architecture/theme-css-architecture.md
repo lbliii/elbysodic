@@ -75,3 +75,22 @@ Moving CSS is not enough. Every touched selector should be classified as one of:
 
 This keeps the CSS split aligned with the product architecture instead of only
 making the file tree look cleaner.
+
+## Shared Pattern Ownership
+
+Use this table before adding a new card, row, poster, metric, or editor shell:
+
+| Pattern | Owner | Rule |
+|---|---|---|
+| Generic panel/card chrome | Chirp `surface` or `card` | Use Chirp appearance and tone classes; keep an Elbysodic class only for product semantics. |
+| Product card body/layout | Product-family CSS | Boards, threads, faces, wanted hooks, claims, world materials, Network, and plotting own their internal grids and PBP labels. |
+| Media poster/fallback/overlay | Product-family CSS until shared behavior repeats across three families | Board, thread, character, post, and Network posters currently have different content and interaction contracts. |
+| Metric/signal rows | `_components/vocabulary.html` plus product-family wrappers | Use `metric()` and Chirp badges/stats where possible; keep wrappers for needs reply, waiting, caught up, staff, and director signal language. |
+| Page command, pulse, preview, empty policy | `30-page-patterns.css` | These are route-level page vocabulary, not product-family cards. |
+| Form primitive | Chirp field classes | Product CSS may arrange fields, but labels/inputs/tone/appearance should come from Chirp. |
+| Responsive override | Owning CSS file | Put the media query after the base selector in the same family file. |
+
+If a selector only sets background, border, radius, padding, hover elevation, or
+form/control chrome, try Chirp first. If a selector encodes PBP state,
+identity, authorship, continuity, or staff visibility, keep an Elbysodic
+wrapper and compose Chirp underneath it.
