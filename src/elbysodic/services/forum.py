@@ -6,7 +6,6 @@ import os
 import re
 import secrets
 import sqlite3
-from collections.abc import Callable
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -33,7 +32,6 @@ from elbysodic.domain.boards import (
     BOARD_SIDEBAR_SECTION_GUIDANCE,
     BOARD_SIDEBAR_SECTION_LABELS,
     BoardKind,
-    is_community_board,
     is_community_sidebar_board,
     is_desk_sidebar_board,
     is_location_board,
@@ -88,6 +86,12 @@ from elbysodic.services.auth import (
     verify_password,
 )
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
+from elbysodic.services.boards import board_page as _board_page
+from elbysodic.services.boards import board_summary as _board_summary
+from elbysodic.services.boards import board_summary_factory as _board_summary_factory
+from elbysodic.services.boards import child_board_summaries as _child_board_summaries
+from elbysodic.services.boards import sibling_board_summaries as _sibling_board_summaries
+from elbysodic.services.boards import visible_board_summaries as _visible_board_summaries
 from elbysodic.services.casting import casting_desk as _casting_desk
 from elbysodic.services.casting import (
     create_reserve_for_wanted_interest as _create_reserve_for_wanted_interest,
@@ -195,7 +199,6 @@ from elbysodic.services.posting import search_mentionables as _search_mentionabl
 from elbysodic.services.posting import start_thread as _start_thread
 from elbysodic.services.posting import update_post as _update_post
 from elbysodic.services.posting import update_thread_scene as _update_thread_scene
-from elbysodic.services.posts import PostViewContextBuilder
 from elbysodic.services.posts import post_view as _post_view
 from elbysodic.services.read_models import (
     MATERIAL_STATUSES,
@@ -1201,46 +1204,16 @@ class AppServices:
         return _public_preview_community(self.repo, community_slug)
 
     def list_boards(self) -> list[BoardSummary]:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        visible_boards = [
-            board
-            for board in self.repo.list_boards(viewer.community.id)
-            if policies.can_view_board(viewer.membership, board, viewer.role)
-        ]
-        return _board_summaries(self.repo, viewer, visible_boards, current_facet_ids)
+        return _visible_board_summaries(self.repo, self.viewer())
 
     def child_board_summaries(self, board: Board) -> list[BoardSummary]:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        children = [
-            child
-            for child in self.repo.list_child_boards(viewer.community.id, board.id)
-            if policies.can_view_board(viewer.membership, child, viewer.role)
-        ]
-        return _board_summaries(self.repo, viewer, children, current_facet_ids)
+        return _child_board_summaries(self.repo, self.viewer(), board)
 
     def sibling_board_summaries(self, board: Board) -> list[BoardSummary]:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        siblings = self.repo.list_child_boards(viewer.community.id, board.parent_board_id)
-        visible_siblings = [
-            sibling
-            for sibling in siblings
-            if sibling.id != board.id
-            and is_location_board(sibling)
-            and policies.can_view_board(viewer.membership, sibling, viewer.role)
-        ]
-        return _board_summaries(self.repo, viewer, visible_siblings, current_facet_ids)
+        return _sibling_board_summaries(self.repo, self.viewer(), board)
 
     def board_summary(self, board: Board) -> BoardSummary:
-        viewer = self.viewer()
-        return _board_summaries(
-            self.repo,
-            viewer,
-            [board],
-            _current_character_facet_ids(self.repo, viewer),
-        )[0]
+        return _board_summary(self.repo, self.viewer(), board)
 
     def board_page(
         self,
@@ -1248,58 +1221,11 @@ class AppServices:
         *,
         filter_by: BoardThreadFilter = "all",
     ) -> BoardPage:
-        viewer = self.viewer()
-        current_facet_ids = _current_character_facet_ids(self.repo, viewer)
-        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
-        if not policies.can_view_board(viewer.membership, board, viewer.role):
-            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
-        threads = _board_thread_summaries(
+        return _board_page(
             self.repo,
-            viewer,
-            board,
+            self.viewer(),
+            board_slug,
             filter_by=filter_by,
-        )
-        summary = _board_summaries(self.repo, viewer, [board], current_facet_ids)[0]
-        parent = (
-            self.repo.get_board(viewer.community.id, board.parent_board_id)
-            if board.parent_board_id is not None
-            else None
-        )
-        if parent is not None and not policies.can_view_board(
-            viewer.membership,
-            parent,
-            viewer.role,
-        ):
-            parent = None
-        is_location = is_location_board(board)
-        is_community = is_community_board(board)
-        subboards = self.child_board_summaries(board) if is_location else []
-        sibling_boards = self.sibling_board_summaries(board) if is_location else []
-        facet_ids = {tag.facet.id for tag in summary.facets}
-        current_event = (
-            _current_event_for_facet_ids(self.repo, viewer.community.id, facet_ids)
-            if is_location
-            else None
-        )
-        direct_thread_count = (
-            len(threads)
-            if filter_by == "all"
-            else self.repo.count_threads(viewer.community.id, board.id)
-        )
-        return BoardPage(
-            board=board,
-            summary=summary,
-            parent_board=parent,
-            is_location_board=is_location,
-            is_community_board=is_community,
-            board_facets=summary.facets,
-            subboards=subboards,
-            sibling_boards=sibling_boards,
-            current_event=current_event,
-            threads=threads,
-            direct_thread_count=direct_thread_count,
-            next_unread_thread=_next_unread_thread(self.repo, viewer, board),
-            can_start_thread=policies.can_start_thread(viewer.membership, board, viewer.role),
         )
 
     def parent_board(self, board: Board) -> Board | None:
@@ -2103,7 +2029,6 @@ class AppServices:
             self.repo,
             viewer,
             board,
-            _current_character_facet_ids(self.repo, viewer),
         )
         parent = (
             self.repo.get_board(viewer.community.id, board.parent_board_id)
@@ -3286,200 +3211,6 @@ def _location_navigation_groups(
         )
         for parent in parents
     ]
-
-
-def _board_summary(
-    repo: ForumRepository,
-    viewer: ForumView,
-    board: Board,
-    current_facet_ids: set[int],
-) -> BoardSummary:
-    child_boards = [
-        child
-        for child in repo.list_child_boards(viewer.community.id, board.id)
-        if policies.can_view_board(viewer.membership, child, viewer.role)
-    ]
-    boards_for_activity = [board, *child_boards]
-    board_facets = _facet_tags(
-        repo,
-        viewer.community.id,
-        repo.list_board_facets(viewer.community.id, board.id),
-    )
-    threads_with_boards: list[tuple[Board, Thread]] = []
-    posts_by_thread: dict[int, list[Post]] = {}
-    for activity_board in boards_for_activity:
-        for thread in repo.list_threads(viewer.community.id, activity_board.id):
-            threads_with_boards.append((activity_board, thread))
-            posts_by_thread[thread.id] = repo.list_posts(viewer.community.id, thread.id)
-    latest_board: Board | None = None
-    latest_thread: Thread | None = None
-    if threads_with_boards:
-        latest_board, latest_thread = max(
-            threads_with_boards,
-            key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
-        )
-    latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
-    latest_post = (
-        _post_view(repo, viewer.community.id, latest_thread_posts[-1])
-        if latest_thread_posts
-        else None
-    )
-    threads = [thread for _, thread in threads_with_boards]
-    return BoardSummary(
-        board=board,
-        child_boards=child_boards,
-        thread_count=len(threads),
-        post_count=sum(len(posts) for posts in posts_by_thread.values()),
-        unread_thread_count=sum(
-            1
-            for thread in threads
-            if _is_unread(
-                repo,
-                viewer.community.id,
-                viewer.membership.id,
-                thread,
-            )
-        ),
-        latest_thread=latest_thread,
-        latest_board=latest_board,
-        latest_post=latest_post,
-        facets=board_facets,
-        is_relevant_to_current_face=bool(
-            current_facet_ids
-            and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
-        ),
-    )
-
-
-def _board_summaries(
-    repo: ForumRepository,
-    viewer: ForumView,
-    boards: list[Board],
-    current_facet_ids: set[int],
-) -> list[BoardSummary]:
-    if not boards:
-        return []
-    board_ids = [board.id for board in boards]
-    children_by_board = repo.list_child_boards_for_boards(viewer.community.id, board_ids)
-    visible_children_by_board = {
-        board_id: [
-            child
-            for child in children
-            if policies.can_view_board(viewer.membership, child, viewer.role)
-        ]
-        for board_id, children in children_by_board.items()
-    }
-    activity_boards_by_summary = {
-        board.id: [board, *visible_children_by_board.get(board.id, [])] for board in boards
-    }
-    activity_board_ids = list(
-        {
-            activity_board.id
-            for activity_boards in activity_boards_by_summary.values()
-            for activity_board in activity_boards
-        }
-    )
-    facets_by_board = repo.list_board_facets_for_boards(viewer.community.id, board_ids)
-    threads_by_board = repo.list_threads_for_boards(viewer.community.id, activity_board_ids)
-    all_thread_ids = [thread.id for threads in threads_by_board.values() for thread in threads]
-    posts_by_thread = repo.list_posts_for_threads(viewer.community.id, all_thread_ids)
-    thread_read_at = repo.thread_read_at_for_threads(
-        viewer.community.id,
-        all_thread_ids,
-        viewer.membership.id,
-    )
-    all_posts = [post for posts in posts_by_thread.values() for post in posts]
-    post_context = (
-        PostViewContextBuilder(repo, viewer.community.id).context(all_posts) if all_posts else None
-    )
-    summaries: list[BoardSummary] = []
-    for board in boards:
-        threads_with_boards = [
-            (activity_board, thread)
-            for activity_board in activity_boards_by_summary[board.id]
-            for thread in threads_by_board.get(activity_board.id, [])
-        ]
-        latest_board: Board | None = None
-        latest_thread: Thread | None = None
-        if threads_with_boards:
-            latest_board, latest_thread = max(
-                threads_with_boards,
-                key=lambda item: (_timestamp_key(item[1].updated_at), item[1].id),
-            )
-        latest_thread_posts = posts_by_thread.get(latest_thread.id, []) if latest_thread else []
-        latest_post = (
-            _post_view(
-                repo,
-                viewer.community.id,
-                latest_thread_posts[-1],
-                context=post_context,
-            )
-            if latest_thread_posts
-            else None
-        )
-        threads = [thread for _, thread in threads_with_boards]
-        board_facets = _facet_tags(
-            repo,
-            viewer.community.id,
-            facets_by_board.get(board.id, []),
-        )
-        summaries.append(
-            BoardSummary(
-                board=board,
-                child_boards=visible_children_by_board.get(board.id, []),
-                thread_count=len(threads),
-                post_count=sum(len(posts_by_thread.get(thread.id, [])) for thread in threads),
-                unread_thread_count=sum(
-                    1 for thread in threads if _is_unread_from_map(thread, thread_read_at)
-                ),
-                latest_thread=latest_thread,
-                latest_board=latest_board,
-                latest_post=latest_post,
-                facets=board_facets,
-                is_relevant_to_current_face=bool(
-                    current_facet_ids
-                    and {tag.facet.id for tag in board_facets}.intersection(current_facet_ids)
-                ),
-            )
-        )
-    return summaries
-
-
-def _board_summary_factory(
-    repo: ForumRepository,
-    viewer: ForumView,
-    current_facet_ids: set[int],
-) -> Callable[[Board], BoardSummary]:
-    summaries_by_id: dict[int, BoardSummary] | None = None
-
-    def factory(board: Board) -> BoardSummary:
-        nonlocal summaries_by_id
-        if summaries_by_id is None:
-            visible_boards = [
-                candidate
-                for candidate in repo.list_boards(viewer.community.id)
-                if policies.can_view_board(viewer.membership, candidate, viewer.role)
-            ]
-            summaries_by_id = {
-                summary.board.id: summary
-                for summary in _board_summaries(repo, viewer, visible_boards, current_facet_ids)
-            }
-        return summaries_by_id[board.id]
-
-    return factory
-
-
-def _is_unread_from_map(thread: Thread, read_at_by_thread: dict[int, str]) -> bool:
-    read_at = read_at_by_thread.get(thread.id)
-    if read_at is None:
-        return True
-    return _timestamp_key(read_at) < _timestamp_key(thread.updated_at)
-
-
-def _latest_thread(threads: list[Thread]) -> Thread | None:
-    if not threads:
-        return None
-    return max(threads, key=lambda thread: (_timestamp_key(thread.updated_at), thread.id))
 
 
 def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board | None:
