@@ -1753,9 +1753,6 @@
 
 .elbysodic-production-room-card,
 .elbysodic-studio-room-card {
-    background: color-mix(in srgb, var(--chirpui-surface) 48%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text);
     display: grid;
     gap: 0.35rem;
