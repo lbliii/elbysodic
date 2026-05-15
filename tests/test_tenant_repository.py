@@ -12,6 +12,7 @@ from elbysodic.db.migrations import (
     MIGRATIONS,
 )
 from elbysodic.db.repositories.base import TenantBoundaryError
+from elbysodic.db.repositories.discovery import DiscoveryTagInput
 
 
 @pytest.fixture
@@ -308,6 +309,184 @@ def test_schema_migrates_community_launch_status_from_version_15() -> None:
     assert columns["launch_status"]["notnull"] == 1
     assert repo.get_community(1).launch_status == "backstage"
     assert migration["name"] == "community-launch-status"
+
+
+def test_schema_migrates_community_discovery_profiles_from_version_16() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DROP INDEX IF EXISTS idx_community_discovery_tags_community")
+    connection.execute("DROP INDEX IF EXISTS idx_community_discovery_tags_key")
+    connection.execute("DROP TABLE IF EXISTS community_discovery_tags")
+    connection.execute("DROP TABLE IF EXISTS community_discovery_profiles")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (16, 'community-launch-status', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 16")
+    connection.commit()
+
+    create_schema(connection)
+
+    profile_columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_discovery_profiles)").fetchall()
+    }
+    tag_columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_discovery_tags)").fetchall()
+    }
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 17
+        """
+    ).fetchone()
+    indexes = _index_names(connection)
+
+    assert {
+        "community_id",
+        "premise_archetype",
+        "play_engine",
+        "lore_aperture",
+        "access_model",
+        "application_model",
+        "age_rating",
+        "content_rating",
+        "activity_pace",
+        "activity_expectation",
+        "forum_adjunct",
+        "roster_posture",
+        "catalog_pitch",
+        "onboarding_pitch",
+        "staff_pick_label",
+        "featured_event_material_id",
+    }.issubset(profile_columns)
+    assert {"community_id", "tag_type", "tag_key", "label", "search_text"}.issubset(
+        tag_columns
+    )
+    assert "idx_community_discovery_tags_community" in indexes
+    assert "idx_community_discovery_tags_key" in indexes
+    assert migration["name"] == "community-discovery-profiles"
+
+
+def test_discovery_profiles_and_tags_are_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("discovery-hosted", "Discovery Hosted")
+    default_event = repo.create_material(
+        default.id,
+        "current-chapter",
+        "Current Chapter",
+        material_type="event",
+    )
+    hosted_event = repo.create_material(
+        hosted.id,
+        "current-chapter",
+        "Current Chapter",
+        material_type="event",
+    )
+
+    default_profile = repo.upsert_discovery_profile(
+        default.id,
+        premise_archetype="weird-town-mystery",
+        play_engine="mystery-driven",
+        lore_aperture="open lore",
+        access_model="public preview",
+        application_model="profile app",
+        age_rating="21+",
+        activity_pace="relaxed",
+        catalog_pitch="A signal-haunted town with public rumors.",
+        featured_event_material_id=default_event.id,
+    )
+    hosted_profile = repo.upsert_discovery_profile(
+        hosted.id,
+        premise_archetype="weird-town-mystery",
+        play_engine="mystery-driven",
+        lore_aperture="open lore",
+        access_model="public preview",
+        application_model="profile app",
+        age_rating="21+",
+        activity_pace="relaxed",
+        catalog_pitch="A different realm can use the same archetype.",
+        featured_event_material_id=hosted_event.id,
+    )
+
+    repo.replace_discovery_tags(
+        default.id,
+        (
+            DiscoveryTagInput("premise", "weird-town", "Weird town", sort_order=20),
+            DiscoveryTagInput("tone", "haunted", "Haunted", search_text="ghosts cryptids"),
+        ),
+    )
+    repo.replace_discovery_tags(
+        hosted.id,
+        (
+            DiscoveryTagInput("premise", "weird-town", "Weird town", sort_order=10),
+            DiscoveryTagInput("tone", "sunny", "Sunny"),
+        ),
+    )
+
+    profiles = repo.list_discovery_profiles_for_communities([default.id])
+    tags = repo.list_discovery_tags_for_communities([default.id])
+
+    assert profiles == {default.id: default_profile}
+    assert hosted_profile.community_id == hosted.id
+    assert [tag.tag_key for tag in tags[default.id]] == ["weird-town", "haunted"]
+    assert {tag.community_id for tag in tags[default.id]} == {default.id}
+    assert repo.get_discovery_tag(hosted.id, "premise", "weird-town").label == "Weird town"
+
+
+def test_discovery_profile_rejects_cross_community_featured_event(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("discovery-cross-event", "Discovery Cross Event")
+    hosted_event = repo.create_material(
+        hosted.id,
+        "current-chapter",
+        "Current Chapter",
+        material_type="event",
+    )
+
+    with pytest.raises(LookupError, match="material not found"):
+        repo.upsert_discovery_profile(
+            default.id,
+            premise_archetype="small-town-social-web",
+            featured_event_material_id=hosted_event.id,
+        )
+
+
+def test_discovery_rows_cascade_with_community(repo: ForumRepository) -> None:
+    community = repo.create_community("discovery-cascade", "Discovery Cascade")
+    repo.upsert_discovery_profile(
+        community.id,
+        premise_archetype="strange-frontier",
+    )
+    repo.upsert_discovery_tag(
+        community.id,
+        DiscoveryTagInput("premise", "frontier", "Strange frontier"),
+    )
+
+    repo.connection.execute("DELETE FROM communities WHERE id = ?", (community.id,))
+    repo.connection.commit()
+
+    assert (
+        repo.connection.execute(
+            "SELECT COUNT(*) FROM community_discovery_profiles WHERE community_id = ?",
+            (community.id,),
+        ).fetchone()[0]
+        == 0
+    )
+    assert (
+        repo.connection.execute(
+            "SELECT COUNT(*) FROM community_discovery_tags WHERE community_id = ?",
+            (community.id,),
+        ).fetchone()[0]
+        == 0
+    )
 
 
 def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) -> None:

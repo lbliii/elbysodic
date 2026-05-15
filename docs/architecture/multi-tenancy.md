@@ -124,6 +124,12 @@ a published premise material and at least one public scene hub board, logged-out
 still reach their realm through their community-local membership and continue
 from `/studio/launch`.
 
+Public discovery metadata is tenant-scoped structured data. Discovery profiles
+use one row per community, and discovery tags are unique only within
+`(community_id, tag_type, tag_key)`. Public Explore/search services may use
+these rows only after the normal public-readiness gates pass; discovery rows on
+backstage or invite-only realms do not make those realms public or searchable.
+
 Public hosted community creation is separate future work. Until invitation,
 first-face onboarding, abuse posture, email delivery, and support boundaries
 are designed, the production path remains invite-style and director-led.

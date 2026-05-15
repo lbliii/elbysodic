@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 16
+CURRENT_SCHEMA_VERSION = 17
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -587,6 +587,61 @@ def _add_community_launch_status(connection: sqlite3.Connection) -> None:
         )
 
 
+def _add_community_discovery_profiles(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS community_discovery_profiles (
+            community_id INTEGER PRIMARY KEY REFERENCES communities(id) ON DELETE CASCADE,
+            premise_archetype TEXT NOT NULL DEFAULT '',
+            play_engine TEXT NOT NULL DEFAULT '',
+            lore_aperture TEXT NOT NULL DEFAULT '',
+            access_model TEXT NOT NULL DEFAULT '',
+            application_model TEXT NOT NULL DEFAULT '',
+            age_rating TEXT NOT NULL DEFAULT '',
+            content_rating TEXT NOT NULL DEFAULT '',
+            activity_pace TEXT NOT NULL DEFAULT '',
+            activity_expectation TEXT NOT NULL DEFAULT '',
+            forum_adjunct TEXT NOT NULL DEFAULT '',
+            roster_posture TEXT NOT NULL DEFAULT '',
+            catalog_pitch TEXT NOT NULL DEFAULT '',
+            onboarding_pitch TEXT NOT NULL DEFAULT '',
+            staff_pick_label TEXT NOT NULL DEFAULT '',
+            featured_event_material_id INTEGER REFERENCES materials(id) ON DELETE SET NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS community_discovery_tags (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            tag_type TEXT NOT NULL,
+            tag_key TEXT NOT NULL,
+            label TEXT NOT NULL,
+            search_text TEXT NOT NULL DEFAULT '',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, tag_type, tag_key)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_community_discovery_tags_community
+        ON community_discovery_tags(community_id, tag_type, sort_order, id)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_community_discovery_tags_key
+        ON community_discovery_tags(community_id, tag_key)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -607,6 +662,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(14, "command-submissions", _add_command_submissions),
     Migration(15, "community-invitations", _add_community_invitations),
     Migration(16, "community-launch-status", _add_community_launch_status),
+    Migration(17, "community-discovery-profiles", _add_community_discovery_profiles),
 )
 
 

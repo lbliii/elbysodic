@@ -83,6 +83,41 @@ class CommunityInvitation:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityDiscoveryProfile:
+    community_id: int
+    premise_archetype: str
+    play_engine: str
+    lore_aperture: str
+    access_model: str
+    application_model: str
+    age_rating: str
+    content_rating: str
+    activity_pace: str
+    activity_expectation: str
+    forum_adjunct: str
+    roster_posture: str
+    catalog_pitch: str
+    onboarding_pitch: str
+    staff_pick_label: str
+    featured_event_material_id: int | None
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class CommunityDiscoveryTag:
+    id: int
+    community_id: int
+    tag_type: str
+    tag_key: str
+    label: str
+    search_text: str
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class Role:
     id: int
     community_id: int
