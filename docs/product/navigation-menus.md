@@ -8,6 +8,12 @@ Use this guide when adding routes, changing the topbar, shaping the sidebar,
 choosing between tabs and filters, or deciding whether a set of links deserves
 a label, dropdown, disclosure, or admin-configurable collection.
 
+Use `docs/product/experience-direction.md` for the current reference
+translation. Navigation may borrow layered context from Slack-like products,
+but it must remain PBP-native: rooms, locations, scenes, wanted hooks, Desk,
+Studio, active face, and writer obligations instead of channels, workspaces,
+presence pressure, or generic dashboard shortcuts.
+
 ## Navigation Jobs
 
 Every navigation surface should have one clear job.

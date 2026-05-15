@@ -17,6 +17,8 @@ directors across these cultures.
 Use `docs/product/roleplay-research-outreach-leads.md` alongside this document
 for public writers, bloggers, platform builders, and community operators who
 could become research interview or alpha/beta feedback candidates.
+Use `docs/product/experience-direction.md` for the promoted product-experience
+synthesis that turns this research into current design and surface guidance.
 
 ## Founder Baseline And Delta To Research
 

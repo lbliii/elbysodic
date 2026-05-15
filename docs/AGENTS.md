@@ -8,6 +8,7 @@ Related docs:
 - root `AGENTS.md`
 - `README.md`
 - `docs/product/strategy-spine.md`
+- `docs/product/experience-direction.md`
 - `docs/architecture/*.md`
 - `docs/architecture/surface-contract-architecture.md`
 - `docs/product/*.md`
