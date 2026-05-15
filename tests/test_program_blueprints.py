@@ -636,16 +636,64 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         "jurassic-park-universe",
         "rl-nyc",
         "rl-small-town",
+        "harbor-society",
+        "signal-creek",
+        "nocturne-row",
     ]
-    assert wanted_count == 12
-    assert discovery_profile_count == 5
-    assert discovery_tag_count == 15
+    assert wanted_count == 27
+    assert discovery_profile_count == 8
+    assert discovery_tag_count == 24
     assert [(row["community_slug"], row["theme_slug"]) for row in themes] == [
         ("hp-universe", "glass-staircase"),
         ("jurassic-park-universe", "isla-nublar-operations"),
         ("rl-nyc", "rent-week"),
         ("rl-small-town", "founders-week"),
     ]
+
+
+def test_original_premise_seed_contract_covers_first_three_archetypes() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+
+    seed_demo_forum(repo)
+
+    rows = connection.execute(
+        """
+        SELECT
+            communities.slug,
+            community_discovery_profiles.premise_archetype,
+            COUNT(DISTINCT boards.id) AS board_count,
+            COUNT(DISTINCT materials.id) AS material_count,
+            COUNT(DISTINCT characters.id) AS character_count,
+            COUNT(DISTINCT wanted_ads.id) AS wanted_count,
+            COUNT(DISTINCT claim_types.id) AS claim_type_count
+        FROM communities
+        JOIN community_discovery_profiles
+            ON community_discovery_profiles.community_id = communities.id
+        LEFT JOIN boards ON boards.community_id = communities.id
+        LEFT JOIN materials ON materials.community_id = communities.id
+        LEFT JOIN characters ON characters.community_id = communities.id
+        LEFT JOIN wanted_ads ON wanted_ads.community_id = communities.id
+        LEFT JOIN claim_types ON claim_types.community_id = communities.id
+        WHERE communities.slug IN ('harbor-society', 'signal-creek', 'nocturne-row')
+        GROUP BY communities.id
+        ORDER BY communities.slug
+        """,
+    ).fetchall()
+    contract = {row["slug"]: dict(row) for row in rows}
+
+    assert set(contract) == set(seed_module.ORIGINAL_PREMISE_SEED_SLUGS)
+    assert {
+        slug: contract[slug]["premise_archetype"]
+        for slug in seed_module.ORIGINAL_PREMISE_SEED_SLUGS
+    } == seed_module.ORIGINAL_PREMISE_SEED_ARCHETYPES
+    for slug in seed_module.ORIGINAL_PREMISE_SEED_SLUGS:
+        assert contract[slug]["board_count"] >= 6
+        assert contract[slug]["material_count"] >= 5
+        assert contract[slug]["character_count"] >= 8
+        assert contract[slug]["wanted_count"] >= 5
+        assert contract[slug]["claim_type_count"] >= 4
 
 
 def test_program_blueprint_preview_fingerprint_changes_with_source() -> None:

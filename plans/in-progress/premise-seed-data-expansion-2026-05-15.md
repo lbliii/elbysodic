@@ -1,7 +1,7 @@
 # Premise Seed Data Expansion
 
-Status: active implementation plan; discovery profile foundation landed, original
-nine-community seed expansion not started
+Status: active implementation plan; discovery profile foundation and first three
+original premise communities landed
 Owner: Product research, storage/seed, Blueprint, service, web, tests, and docs stewardship
 Created: 2026-05-15
 Last updated: 2026-05-15
@@ -541,13 +541,14 @@ Implementation note:
 
 - The discovery profile/tag storage, seed helper, current five-realm profile
   seed, public read-model wiring, and rendered public search proof have landed.
-  The original nine-community slate is still the next seed expansion, not
-  completed by that foundation slice.
+  The first original premise communities are also seeded: `harbor-society`,
+  `signal-creek`, and `nocturne-row`. The remaining six archetypes are still
+  planned.
 
 ### Phase 2: Seed Definition Shape
 
-Status: partially landed for the current five seed realms; planned for the
-nine-community original slate.
+Status: landed for the current five compatibility realms and first three
+original premise realms; planned for the remaining six archetypes.
 
 - Introduce a premise seed definition structure inside the seed module or a
   seed-adjacent module.
@@ -570,7 +571,7 @@ Proof:
 
 ### Phase 3: Community Packets
 
-Status: planned for the nine-community original slate.
+Status: first three landed; remaining six archetypes planned.
 
 - Add the nine original community packets with materials, boards, starter
   characters, wanted hooks, and visual/theme placeholders.

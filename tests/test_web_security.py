@@ -461,6 +461,7 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
     explore = services.network_explore("wanted")
 
     assert home.featured is not None
+    assert home.featured.community.slug == "hp-universe"
     assert home.return_path is not None
     assert home.return_path.desk_href.startswith("/c/")
     assert explore.results
@@ -503,19 +504,19 @@ def test_public_network_search_uses_explicit_discovery_metadata() -> None:
         (
             DiscoveryTagInput(
                 "premise",
-                "coastal-status",
-                "Coastal status town",
-                search_text="club gossip social ladder",
+                "porch-ritual",
+                "Porch ritual town",
+                search_text="porch rituals ladder",
             ),
         ),
     )
 
-    results = services.network_explore("coastal-status").results
+    results = services.network_explore("porch-ritual").results
 
     assert [card.community.slug for card in results] == ["rl-small-town"]
     assert results[0].discovery_profile is not None
     assert results[0].discovery_profile.premise_archetype == "coastal-status-town"
-    assert [tag.tag_key for tag in results[0].discovery_tags] == ["coastal-status"]
+    assert [tag.tag_key for tag in results[0].discovery_tags] == ["porch-ritual"]
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:

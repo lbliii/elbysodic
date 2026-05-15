@@ -1773,6 +1773,9 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Jurassic Park Universe" in response.text
         assert "RL NYC" in response.text
         assert "RL Small Town" in response.text
+        assert "Harbor Society" in response.text
+        assert "Signal Creek" in response.text
+        assert "Nocturne Row" in response.text
         assert "current realm" not in response.text
         assert "Public preview" in response.text
         assert "Application guide ready" in response.text
@@ -1789,6 +1792,8 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "elbysodic-network-search__control" in response.text
         assert "premise, current chapter, roster energy" in response.text
         assert "urban supernatural" in response.text
+        assert "weird-town mystery" in response.text
+        assert "small-town social web" in response.text
         assert "face you want to wear next" not in response.text
         assert "elbysodic-network-card__mark" in response.text
         assert "XMA" in response.text
