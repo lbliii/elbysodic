@@ -70,22 +70,26 @@
   <div class="elbysodic-post__body">
     <header class="elbysodic-post__meta">
       <div class="elbysodic-post__meta-line">
+        <strong class="elbysodic-post__author-name">{{ item.author.name }}</strong>
+        <time datetime="{{ item.post.created_at }}" title="{{ item.created_at_label }}">
+          {{ item.created_at_relative_label }}
+        </time>
         <a class="chirpui-link" href="#{{ item.anchor }}" aria-label="Permalink to post {{ item.post.post_number }}">
           #{{ item.post.post_number }}
         </a>
-        <span>{{ item.created_at_label }}</span>
+      </div>
+      <div class="elbysodic-post__meta-actions">
         {% if item.is_edited %}
         {% if item.can_edit %}
         <a class="chirpui-link"
+           title="View revisions edited {{ item.updated_at_label }}"
            href="/boards/{{ board.slug }}/threads/{{ thread.slug }}/posts/{{ item.post.post_number }}/revisions">
-          edited {{ item.updated_at_label }}
+          edited {{ item.updated_at_relative_label }}
         </a>
         {% else %}
-        <span>edited {{ item.updated_at_label }}</span>
+        <span title="Edited {{ item.updated_at_label }}">edited {{ item.updated_at_relative_label }}</span>
         {% end %}
         {% end %}
-      </div>
-      <div class="elbysodic-post__meta-actions">
         {% if item.can_edit %}
         <a class="chirpui-link"
            href="/boards/{{ board.slug }}/threads/{{ thread.slug }}/posts/{{ item.post.post_number }}/edit">

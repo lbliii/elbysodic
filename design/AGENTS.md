@@ -9,9 +9,11 @@ Related docs:
 - root `AGENTS.md`
 - `design/README.md`
 - `design/art-direction-program.md`
+- `design/composition-bible.md`
 - `design/motion-design.md`
 - `design/technicolor-futurism.md`
 - `design/technicolor-futurism-research.md`
+- `docs/product/experience-direction.md`
 - `docs/product/appearance-studio.md`
 - `docs/product/information-hierarchy.md`
 - `docs/product/control-topology.md`

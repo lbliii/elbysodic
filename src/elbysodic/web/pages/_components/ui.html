@@ -229,3 +229,26 @@
   {{ badge("locked", variant="muted") if thread.is_locked else "" }}
 </div>
 {% end %}
+
+{% def scene_reader_context_strip(thread_view, scene_context=none) %}
+{% set viewer_needs_reply = thread_view | get('viewer_needs_reply', false) %}
+{% set needs_reply_since_label = thread_view | get('needs_reply_since_label', none) %}
+{% set is_watched_tv = thread_view | get('is_watched', false) %}
+{% set face_count = thread_view.participants | length %}
+{% if (viewer_needs_reply and needs_reply_since_label) or is_watched_tv or (face_count > 0) or (scene_context and scene_context.current_event) %}
+<div class="elbysodic-scene-reader-strip" aria-label="Scene state">
+  {% if viewer_needs_reply and needs_reply_since_label %}
+  <span class="elbysodic-reader-chip"><strong>Needs reply</strong> {{ "since " ~ needs_reply_since_label }}</span>
+  {% endif %}
+  {% if is_watched_tv %}
+  <span class="elbysodic-reader-chip">Watching</span>
+  {% endif %}
+  {% if face_count %}
+  <span class="elbysodic-reader-chip">{{ face_count }} {{ "face" if face_count == 1 else "faces" }} present</span>
+  {% endif %}
+  {% if scene_context and scene_context.current_event %}
+  <span class="elbysodic-reader-chip"><strong>Linked event</strong> {{ scene_context.current_event.material.title }}</span>
+  {% endif %}
+</div>
+{% end %}
+{% end %}

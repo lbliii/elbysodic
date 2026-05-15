@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from elbysodic.domain.boards import BOARD_SIDEBAR_SECTION_LABELS
 from elbysodic.domain.models import (
     ApplicationFieldValue,
     ApplicationTemplateField,
@@ -318,6 +319,103 @@ class ThreadSummary:
         if self.first_unread_post is not None:
             return "First unread"
         return "Jump to latest"
+
+
+def scene_location_lane_item_badges(
+    summary: ThreadSummary,
+    *,
+    is_current: bool,
+    is_watched: bool,
+    waiting_on_others: bool,
+) -> tuple[ThreadCardBadge, ...]:
+    """Template-visible badge tuples (Kida/Chirp read models omit `@property`)."""
+    badges: list[ThreadCardBadge] = []
+    if is_current:
+        badges.append(ThreadCardBadge("current scene", "success"))
+    badges.extend(summary.badges)
+    if waiting_on_others:
+        badges.append(ThreadCardBadge("waiting", "info"))
+    if is_watched:
+        badges.append(ThreadCardBadge("watching", "info"))
+    return tuple(badges)
+
+
+@dataclass(frozen=True, slots=True)
+class SceneLocationLaneItem:
+    summary: ThreadSummary
+    is_current: bool
+    is_watched: bool
+    waiting_on_others: bool
+    badges: tuple[ThreadCardBadge, ...]
+
+
+def _derive_scene_lane_placement(
+    board: Board, placement_path: tuple[Board, ...]
+) -> tuple[str, Board, tuple[Board, ...]]:
+    label = BOARD_SIDEBAR_SECTION_LABELS[board.sidebar_section]
+    placement_sidebar_eyebrow = f"In {label}"
+    place_headline_board = placement_path[0] if placement_path else board
+    placement_trail_boards = () if len(placement_path) <= 1 else placement_path[1:]
+    return placement_sidebar_eyebrow, place_headline_board, placement_trail_boards
+
+
+def _derive_scene_lane_item_slices(
+    items: list[SceneLocationLaneItem],
+) -> tuple[
+    tuple[SceneLocationLaneItem, ...],
+    tuple[SceneLocationLaneItem, ...],
+]:
+    attention_items = tuple(item for item in items if item.summary.needs_attention)
+    active_items = tuple(
+        item
+        for item in items
+        if not item.summary.needs_attention
+        and not item.waiting_on_others
+        and item.summary.thread.status in {"open", "active"}
+    )
+    return attention_items, active_items
+
+
+@dataclass(frozen=True, slots=True)
+class SceneLocationLane:
+    board: Board
+    parent_board: Board | None
+    placement_path: tuple[Board, ...]
+    sidebar_section_label: str
+    items: list[SceneLocationLaneItem]
+    placement_sidebar_eyebrow: str
+    place_headline_board: Board
+    placement_trail_boards: tuple[Board, ...]
+    attention_items: tuple[SceneLocationLaneItem, ...]
+    active_items: tuple[SceneLocationLaneItem, ...]
+    current_item: SceneLocationLaneItem | None
+
+    @classmethod
+    def assembled(
+        cls,
+        board: Board,
+        parent_board: Board | None,
+        placement_path: tuple[Board, ...],
+        items: list[SceneLocationLaneItem],
+        current_item: SceneLocationLaneItem | None = None,
+    ) -> SceneLocationLane:
+        placement_sidebar_eyebrow, place_headline_board, placement_trail_boards = (
+            _derive_scene_lane_placement(board, placement_path)
+        )
+        attention_items, active_items = _derive_scene_lane_item_slices(items)
+        return cls(
+            board=board,
+            parent_board=parent_board,
+            placement_path=placement_path,
+            sidebar_section_label=BOARD_SIDEBAR_SECTION_LABELS[board.sidebar_section],
+            items=items,
+            placement_sidebar_eyebrow=placement_sidebar_eyebrow,
+            place_headline_board=place_headline_board,
+            placement_trail_boards=placement_trail_boards,
+            attention_items=attention_items,
+            active_items=active_items,
+            current_item=current_item,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1493,6 +1591,48 @@ class ThreadNavigationItem:
 
 
 @dataclass(frozen=True, slots=True)
+class SceneGroundingFact:
+    label: str
+    value: str
+
+
+@dataclass(frozen=True, slots=True)
+class SceneGroundingPanel:
+    board: Board
+    parent_board: Board | None
+    participants: list[Character]
+    current_event: MaterialSummary | None
+    visibility_label: str
+    visibility_detail: str
+    active_face_label: str
+    active_face_variant: str
+    facts: tuple[SceneGroundingFact, ...]
+    can_manage_scene: bool
+    can_moderate_scene: bool
+    is_watched: bool
+
+
+@dataclass(frozen=True, slots=True)
+class SceneMediaBand:
+    source_board: Board
+    source_label: str
+    heading: str
+    summary: str
+    is_inherited: bool
+    current_event: MaterialSummary | None
+
+
+@dataclass(frozen=True, slots=True)
+class SceneContextView:
+    thread_view: ThreadView
+    parent_board: Board | None
+    location_lane: SceneLocationLane
+    grounding: SceneGroundingPanel
+    media_band: SceneMediaBand | None
+    current_event: MaterialSummary | None
+
+
+@dataclass(frozen=True, slots=True)
 class ThreadView:
     board: Board
     thread: Thread
@@ -1502,6 +1642,9 @@ class ThreadView:
     taggable_characters: list[Character]
     tagged_character_ids: set[int]
     posts: list[PostView]
+    first_unread_post: PostView | None
+    viewer_needs_reply: bool
+    needs_reply_since_label: str | None
     latest_post: PostView | None
     episode: EpisodeCredits
     reply_count: int

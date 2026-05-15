@@ -96,6 +96,13 @@ def create_app(
         wrap=True,
         optional=True,
     )
+    app.register_oob_region(
+        "sidebar_oob",
+        target_id="elbysodic-shell-sidebar-content",
+        swap="true",
+        wrap=False,
+        optional=True,
+    )
     app.template_global()(location_nav_tree_items)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)

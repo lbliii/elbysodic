@@ -1,0 +1,1581 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elbysodic Scene Context Prototype</title>
+  <link rel="stylesheet" href="../src/elbysodic/web/static/elbysodic-theme.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --topbar-height: 3.75rem;
+      --rail-width: 4.25rem;
+      --lane-width: 20rem;
+      --inspector-width: 22rem;
+      --canvas: #080f17;
+      --surface: #101a25;
+      --surface-2: #152433;
+      --surface-3: #1b2d3e;
+      --text: #f8fbff;
+      --muted: #9dacbb;
+      --quiet: #738292;
+      --border: rgb(255 255 255 / 0.13);
+      --border-strong: rgb(255 255 255 / 0.22);
+      --cyan: #68e8ff;
+      --green: #80f0b8;
+      --pink: #ff69cf;
+      --amber: #f9d86c;
+      --blue: #7aa8ff;
+      --shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.28);
+      --radius: 0.5rem;
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        linear-gradient(120deg, rgb(104 232 255 / 0.16), transparent 28rem),
+        linear-gradient(310deg, rgb(255 105 207 / 0.16), transparent 32rem),
+        linear-gradient(180deg, #07111b 0%, #0b1220 42%, #100d19 100%);
+      color: var(--text);
+    }
+
+    a,
+    button,
+    input,
+    textarea {
+      color: inherit;
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .prototype-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--rail-width) var(--lane-width) minmax(26rem, 1fr) var(--inspector-width);
+      grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+      background:
+        linear-gradient(90deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 4.75rem),
+        rgb(4 9 14 / 0.1);
+    }
+
+    .prototype-topbar {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(13rem, 19rem) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-width: 0;
+      padding: 0 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgb(8 15 23 / 0.88);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      min-width: 0;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: 1px solid rgb(104 232 255 / 0.46);
+      border-radius: 0.55rem;
+      background:
+        linear-gradient(140deg, rgb(104 232 255 / 0.18), transparent),
+        linear-gradient(320deg, rgb(255 105 207 / 0.16), transparent),
+        #111d28;
+      color: var(--cyan);
+      font-weight: 850;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title,
+    .scene-title,
+    .panel-title,
+    .lane-title {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .brand-title {
+      overflow: hidden;
+      font-size: 0.95rem;
+      font-weight: 820;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle,
+    .meta,
+    .eyebrow {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .search-field {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      min-width: 0;
+      max-width: 48rem;
+      height: 2.3rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0 0.85rem;
+      background: rgb(255 255 255 / 0.07);
+      color: var(--muted);
+    }
+
+    .search-field input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+    }
+
+    .identity-cluster {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    .face-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+      border: 1px solid rgb(128 240 184 / 0.32);
+      border-radius: 999px;
+      padding: 0.32rem 0.64rem 0.32rem 0.35rem;
+      background: rgb(128 240 184 / 0.09);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid rgb(255 255 255 / 0.18);
+      border-radius: 0.45rem;
+      background:
+        linear-gradient(135deg, rgb(104 232 255 / 0.24), transparent),
+        linear-gradient(315deg, rgb(255 105 207 / 0.24), transparent),
+        #23364b;
+      color: white;
+      font-weight: 850;
+    }
+
+    .avatar--small {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 0.4rem;
+      font-size: 0.78rem;
+    }
+
+    .face-name {
+      overflow: hidden;
+      max-width: 9rem;
+      font-size: 0.84rem;
+      font-weight: 760;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      display: inline-grid;
+      place-items: center;
+      width: 2.35rem;
+      height: 2.35rem;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: rgb(255 255 255 / 0.06);
+    }
+
+    .primary-rail {
+      grid-row: 2;
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+      padding: 1rem 0.65rem;
+      border-right: 1px solid var(--border);
+      background: rgb(7 14 21 / 0.78);
+    }
+
+    .rail-link {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 2.65rem;
+      height: 2.65rem;
+      border: 1px solid transparent;
+      border-radius: 0.6rem;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .rail-link[aria-current="page"] {
+      border-color: rgb(104 232 255 / 0.44);
+      background: rgb(104 232 255 / 0.13);
+      color: white;
+    }
+
+    .rail-link__badge {
+      position: absolute;
+      top: -0.25rem;
+      right: -0.35rem;
+      min-width: 1.25rem;
+      border: 1px solid rgb(255 255 255 / 0.22);
+      border-radius: 999px;
+      padding: 0.12rem 0.28rem;
+      background: var(--pink);
+      color: #170714;
+      font-size: 0.68rem;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .location-lane {
+      grid-row: 2;
+      grid-column: 2;
+      min-width: 0;
+      overflow: auto;
+      border-right: 1px solid var(--border);
+      background: rgb(14 24 34 / 0.88);
+    }
+
+    .lane-header {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgb(14 24 34 / 0.94);
+      backdrop-filter: blur(14px);
+    }
+
+    .lane-title {
+      margin-top: 0.15rem;
+      font-size: 1.15rem;
+      font-weight: 850;
+    }
+
+    .location-path {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.75rem;
+    }
+
+    .path-chip,
+    .status-chip,
+    .mini-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      min-height: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.18rem 0.5rem;
+      background: rgb(255 255 255 / 0.05);
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 680;
+      white-space: nowrap;
+    }
+
+    .status-chip--needs {
+      border-color: rgb(249 216 108 / 0.48);
+      background: rgb(249 216 108 / 0.12);
+      color: #ffe58e;
+    }
+
+    .status-chip--watching {
+      border-color: rgb(104 232 255 / 0.42);
+      background: rgb(104 232 255 / 0.1);
+      color: #a8f2ff;
+    }
+
+    .status-chip--safe {
+      border-color: rgb(128 240 184 / 0.42);
+      background: rgb(128 240 184 / 0.1);
+      color: #b3ffd5;
+    }
+
+    .lane-section {
+      padding: 0.75rem 0.6rem 1rem;
+    }
+
+    .lane-section + .lane-section {
+      border-top: 1px solid var(--border);
+    }
+
+    .lane-section-title {
+      margin: 0.5rem 0.5rem 0.55rem;
+      color: var(--quiet);
+      font-size: 0.72rem;
+      font-weight: 780;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .scene-row {
+      display: grid;
+      gap: 0.35rem;
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 0.55rem;
+      padding: 0.75rem;
+      background: transparent;
+      text-align: left;
+    }
+
+    .scene-row:hover,
+    .scene-row[aria-current="true"] {
+      border-color: rgb(104 232 255 / 0.34);
+      background: rgb(104 232 255 / 0.08);
+    }
+
+    .scene-row__topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    .scene-row__title {
+      overflow: hidden;
+      font-size: 0.93rem;
+      font-weight: 810;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .scene-row__snippet {
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .scene-row__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .scene-reader {
+      grid-row: 2;
+      grid-column: 3;
+      min-width: 0;
+      overflow: auto;
+      background:
+        linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 12rem),
+        rgb(245 249 252 / 0.97);
+      color: #16202a;
+    }
+
+    .reader-inner {
+      width: min(100%, 58rem);
+      margin: 0 auto;
+      padding: 1.25rem clamp(1rem, 3vw, 2rem) 2rem;
+    }
+
+    .reader-header {
+      display: grid;
+      gap: 0.9rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgb(20 30 40 / 0.12);
+    }
+
+    .scene-hero {
+      position: relative;
+      display: grid;
+      min-height: 15rem;
+      overflow: hidden;
+      border-radius: 0.75rem;
+      background: #101a25;
+      color: white;
+      box-shadow: 0 1rem 2rem rgb(13 24 34 / 0.18);
+      isolation: isolate;
+    }
+
+    .scene-hero img {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.08) contrast(1.06);
+    }
+
+    .scene-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgb(6 11 18 / 0.88), rgb(6 11 18 / 0.42) 54%, rgb(6 11 18 / 0.16)),
+        linear-gradient(0deg, rgb(6 11 18 / 0.66), transparent 58%);
+    }
+
+    .scene-hero__copy {
+      display: grid;
+      align-content: end;
+      gap: 0.65rem;
+      width: min(100%, 34rem);
+      padding: clamp(1rem, 3vw, 1.6rem);
+    }
+
+    .scene-hero__copy h3 {
+      margin: 0;
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+      line-height: 1.03;
+      letter-spacing: 0;
+    }
+
+    .scene-hero__copy p {
+      margin: 0;
+      color: rgb(255 255 255 / 0.78);
+      line-height: 1.45;
+    }
+
+    .scene-hero__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .scene-hero__meta .light-chip {
+      border-color: rgb(255 255 255 / 0.18);
+      background: rgb(255 255 255 / 0.1);
+      color: rgb(255 255 255 / 0.82);
+      backdrop-filter: blur(12px);
+    }
+
+    .scene-hero__meta .light-chip strong {
+      color: white;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      color: #536475;
+      font-size: 0.82rem;
+    }
+
+    .breadcrumbs a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .scene-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .scene-title {
+      font-size: clamp(1.65rem, 3.8vw, 2.75rem);
+      font-weight: 870;
+      line-height: 1.02;
+      color: #121922;
+    }
+
+    .scene-subline {
+      margin: 0.55rem 0 0;
+      color: #536475;
+      line-height: 1.45;
+    }
+
+    .reader-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      justify-content: flex-end;
+    }
+
+    .reader-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.38rem;
+      min-height: 2.15rem;
+      border: 1px solid rgb(18 25 34 / 0.16);
+      border-radius: 0.45rem;
+      padding: 0.4rem 0.65rem;
+      background: white;
+      color: #1b2836;
+      font-size: 0.82rem;
+      font-weight: 760;
+      text-decoration: none;
+      box-shadow: 0 0.35rem 1rem rgb(13 24 34 / 0.08);
+    }
+
+    .reader-button--primary {
+      border-color: rgb(13 110 130 / 0.25);
+      background: #0b6878;
+      color: white;
+    }
+
+    .reader-context-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .light-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      min-height: 1.65rem;
+      border: 1px solid rgb(18 25 34 / 0.12);
+      border-radius: 999px;
+      padding: 0.22rem 0.55rem;
+      background: white;
+      color: #435363;
+      font-size: 0.76rem;
+      font-weight: 720;
+    }
+
+    .light-chip strong {
+      color: #17212b;
+    }
+
+    .post-list {
+      display: grid;
+      gap: 1.4rem;
+      padding: 1.35rem 0 1rem;
+    }
+
+    .post {
+      display: flow-root;
+      padding: 2rem 0;
+    }
+
+    .post + .post {
+      margin-top: 0.5rem;
+    }
+
+    .post-author {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.42rem;
+    }
+
+    .post-author strong {
+      color: #121922;
+      font-size: 0.96rem;
+    }
+
+    .post-author span {
+      color: #6b7a88;
+      font-size: 0.78rem;
+    }
+
+    .post-link {
+      border: 1px solid rgb(18 25 34 / 0.12);
+      border-radius: 999px;
+      padding: 0.1rem 0.38rem;
+      background: rgb(255 255 255 / 0.64);
+      color: #435363;
+      font-size: 0.72rem;
+      font-weight: 760;
+      text-decoration: none;
+    }
+
+    .post-body {
+      color: #202b36;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.14rem, 1.8vw, 1.34rem);
+      line-height: 1.78;
+    }
+
+    .post-body p {
+      margin: 0 0 1rem;
+    }
+
+    .post-body p:first-child::first-letter {
+      float: left;
+      margin: 0.1rem 0.4rem 0 0;
+      color: color-mix(in srgb, var(--face-a, #0b6878) 72%, #121922);
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+      font-size: 3.45rem;
+      font-weight: 900;
+      line-height: 0.82;
+    }
+
+    .beat-note {
+      clear: both;
+      margin: 1.4rem 0;
+      border-left: 0.28rem solid color-mix(in srgb, var(--face-a, #0b6878) 72%, #121922);
+      padding: 0.75rem 1rem;
+      background: rgb(18 25 34 / 0.045);
+      color: #425363;
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+      font-size: 0.9rem;
+      font-weight: 720;
+      line-height: 1.45;
+    }
+
+    .character-card {
+      position: sticky;
+      top: 1rem;
+      float: left;
+      display: grid;
+      align-content: end;
+      width: clamp(13rem, 30%, 17rem);
+      aspect-ratio: var(--elbysodic-ratio-poster, 2 / 3);
+      min-height: 21rem;
+      margin: 0.15rem 1.35rem 0.8rem 0;
+      overflow: hidden;
+      border: 1px solid rgb(18 25 34 / 0.16);
+      border-radius: 0.65rem;
+      background:
+        linear-gradient(180deg, transparent, rgb(10 16 24 / 0.82)),
+        linear-gradient(135deg, var(--face-a, #68e8ff), transparent 52%),
+        linear-gradient(315deg, var(--face-b, #ff69cf), transparent 56%),
+        #172333;
+      box-shadow: 0 0.8rem 1.6rem rgb(13 24 34 / 0.12);
+    }
+
+    .post--reverse .character-card {
+      float: right;
+      margin: 0.15rem 0 0.8rem 1.35rem;
+    }
+
+    .character-card::before {
+      content: "";
+      position: absolute;
+      inset: 0.45rem;
+      border: 1px solid rgb(255 255 255 / 0.28);
+      border-radius: 0.45rem;
+      opacity: 0.55;
+    }
+
+    .character-card::after {
+      content: attr(data-initial);
+      position: absolute;
+      top: 0.55rem;
+      right: 0.65rem;
+      color: rgb(255 255 255 / 0.34);
+      font-size: 8.4rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .character-card__name {
+      position: relative;
+      z-index: 1;
+      padding: 0.75rem;
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 850;
+      line-height: 1.05;
+    }
+
+    .character-card__name::before {
+      content: "Poster focus";
+      display: block;
+      margin-bottom: 0.2rem;
+      color: rgb(255 255 255 / 0.64);
+      font-size: 0.62rem;
+      font-weight: 760;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .post--storm {
+      --face-a: #7aa8ff;
+      --face-b: #d8f7ff;
+    }
+
+    .post--beast {
+      --face-a: #4c6fff;
+      --face-b: #80f0b8;
+    }
+
+    .unread-divider {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.75rem;
+      color: #c01666;
+      font-size: 0.78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .unread-divider::before {
+      content: "";
+      height: 1px;
+      background: currentColor;
+      opacity: 0.48;
+    }
+
+    .composer {
+      position: sticky;
+      bottom: 1rem;
+      display: grid;
+      gap: 0.65rem;
+      border: 1px solid rgb(18 25 34 / 0.16);
+      border-radius: 0.6rem;
+      padding: 0.8rem;
+      background: rgb(255 255 255 / 0.96);
+      box-shadow: 0 1rem 2rem rgb(13 24 34 / 0.16);
+    }
+
+    .composer-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 5.5rem;
+      resize: vertical;
+      border: 1px solid rgb(18 25 34 / 0.14);
+      border-radius: 0.45rem;
+      padding: 0.7rem;
+      color: #17212b;
+      outline: 0;
+    }
+
+    .continue-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      border: 1px solid rgb(18 25 34 / 0.12);
+      border-radius: 0.65rem;
+      padding: 0.75rem;
+      background:
+        linear-gradient(90deg, rgb(11 104 120 / 0.08), transparent),
+        rgb(255 255 255 / 0.78);
+    }
+
+    .continue-strip__copy {
+      min-width: 0;
+    }
+
+    .continue-strip__copy strong,
+    .continue-strip__copy span {
+      display: block;
+    }
+
+    .continue-strip__copy strong {
+      color: #121922;
+      font-size: 0.9rem;
+    }
+
+    .continue-strip__copy span {
+      color: #5a6a79;
+      font-size: 0.78rem;
+    }
+
+    .inspector {
+      grid-row: 2;
+      grid-column: 4;
+      min-width: 0;
+      overflow: auto;
+      border-left: 1px solid var(--border);
+      background: rgb(11 18 27 / 0.92);
+      transition: margin-right 180ms ease, opacity 180ms ease;
+    }
+
+    .prototype-shell[data-inspector="closed"] {
+      grid-template-columns: var(--rail-width) var(--lane-width) minmax(26rem, 1fr) 0;
+    }
+
+    .prototype-shell[data-inspector="closed"] .inspector {
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .inspector-header {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgb(11 18 27 / 0.95);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 850;
+    }
+
+    .inspector-section {
+      display: grid;
+      gap: 0.7rem;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .inspector-section h3 {
+      margin: 0;
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--quiet);
+    }
+
+    .context-line {
+      display: grid;
+      gap: 0.16rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .context-line strong {
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .face-stack {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .face-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      min-width: 0;
+    }
+
+    .face-row__copy {
+      min-width: 0;
+    }
+
+    .face-row__copy strong,
+    .face-row__copy span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .face-row__copy span {
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .popover-demo {
+      position: relative;
+      display: inline-flex;
+      color: #005f73;
+      font-weight: 760;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 0.18em;
+    }
+
+    .popover-card {
+      position: absolute;
+      z-index: 20;
+      left: 0;
+      bottom: calc(100% + 0.55rem);
+      display: none;
+      width: min(18rem, 82vw);
+      border: 1px solid rgb(255 255 255 / 0.18);
+      border-radius: 0.55rem;
+      padding: 0.8rem;
+      background: #101a25;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .popover-demo:hover .popover-card,
+    .popover-demo:focus-within .popover-card {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .activity-drawer {
+      position: fixed;
+      z-index: 40;
+      top: var(--topbar-height);
+      left: var(--rail-width);
+      bottom: 0;
+      width: min(25rem, calc(100vw - var(--rail-width)));
+      border-right: 1px solid var(--border);
+      background: rgb(12 20 30 / 0.96);
+      box-shadow: var(--shadow);
+      transform: translateX(calc(-100% - var(--rail-width)));
+      transition: transform 180ms ease;
+    }
+
+    .activity-drawer[data-open="true"] {
+      transform: translateX(0);
+    }
+
+    .activity-drawer__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .activity-list {
+      display: grid;
+      gap: 0.2rem;
+      padding: 0.75rem;
+    }
+
+    .activity-item {
+      display: grid;
+      gap: 0.35rem;
+      border: 1px solid transparent;
+      border-radius: 0.55rem;
+      padding: 0.75rem;
+      background: rgb(255 255 255 / 0.04);
+    }
+
+    .activity-item strong {
+      font-size: 0.9rem;
+    }
+
+    .activity-item span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .mobile-context-toggle {
+      display: none;
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 30;
+      border: 1px solid rgb(104 232 255 / 0.42);
+      border-radius: 999px;
+      padding: 0.6rem 0.85rem;
+      background: #0b6878;
+      color: white;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+    }
+
+    .mobile-lane-toggle {
+      display: none;
+      position: fixed;
+      left: calc(var(--rail-width) + 1rem);
+      bottom: 1rem;
+      z-index: 30;
+      border: 1px solid rgb(255 255 255 / 0.2);
+      border-radius: 999px;
+      padding: 0.6rem 0.85rem;
+      background: #111d28;
+      color: white;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+    }
+
+    @media (max-width: 1180px) {
+      :root {
+        --lane-width: 17.5rem;
+        --inspector-width: 19rem;
+      }
+
+      .prototype-topbar {
+        grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) auto;
+      }
+    }
+
+    @media (max-width: 940px) {
+      .prototype-shell,
+      .prototype-shell[data-inspector="closed"] {
+        grid-template-columns: var(--rail-width) minmax(0, 1fr);
+        grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+      }
+
+      .prototype-topbar {
+        grid-template-columns: minmax(10rem, 1fr) auto;
+      }
+
+      .search-field {
+        display: none;
+      }
+
+      .identity-cluster .face-name {
+        display: none;
+      }
+
+      .location-lane {
+        position: fixed;
+        z-index: 34;
+        top: var(--topbar-height);
+        left: var(--rail-width);
+        bottom: 0;
+        width: min(23rem, calc(100vw - var(--rail-width)));
+        border-right: 1px solid var(--border);
+        border-bottom: 0;
+        box-shadow: var(--shadow);
+        transform: translateX(-102%);
+        transition: transform 180ms ease;
+      }
+
+      .prototype-shell[data-lane="open"] .location-lane {
+        transform: translateX(0);
+      }
+
+      .scene-reader {
+        grid-row: 2;
+        grid-column: 2;
+      }
+
+      .inspector {
+        position: fixed;
+        z-index: 35;
+        top: var(--topbar-height);
+        right: 0;
+        bottom: 0;
+        width: min(24rem, calc(100vw - var(--rail-width)));
+        border-left: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        transform: translateX(0);
+      }
+
+      .prototype-shell[data-inspector="closed"] .inspector {
+        transform: translateX(102%);
+        opacity: 1;
+      }
+
+      .mobile-context-toggle {
+        display: inline-flex;
+      }
+
+      .mobile-lane-toggle {
+        display: inline-flex;
+      }
+    }
+
+    @media (max-width: 650px) {
+      :root {
+        --rail-width: 3.5rem;
+      }
+
+      .prototype-shell,
+      .prototype-shell[data-inspector="closed"] {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+      }
+
+      .primary-rail {
+        display: none;
+      }
+
+      .location-lane,
+      .scene-reader {
+        grid-column: 1;
+      }
+
+      .reader-inner {
+        padding-bottom: 6.5rem;
+      }
+
+      .location-lane {
+        left: 0;
+        width: min(23rem, 100vw);
+      }
+
+      .brand-subtitle,
+      .reader-actions .reader-button:not(.reader-button--primary) {
+        display: none;
+      }
+
+      .scene-heading {
+        display: grid;
+      }
+
+      .reader-actions {
+        justify-content: flex-start;
+      }
+
+      .post {
+        padding: 1.25rem 0;
+      }
+
+      .character-card {
+        position: static;
+        width: clamp(6.2rem, 34vw, 8rem);
+        min-height: 9.3rem;
+        margin: 0.1rem 0.85rem 0.45rem 0;
+      }
+
+      .post--reverse .character-card {
+        margin: 0.1rem 0 0.45rem 0.85rem;
+      }
+
+      .character-card::after {
+        font-size: 4rem;
+      }
+
+      .character-card__name {
+        font-size: 0.72rem;
+      }
+
+      .character-card__name::before {
+        display: none;
+      }
+
+      .activity-drawer {
+        left: 0;
+        width: min(25rem, 100vw);
+        transform: translateX(-102%);
+      }
+
+      .composer {
+        position: static;
+        margin-top: 1.25rem;
+      }
+
+      .composer-topline {
+        align-items: flex-start;
+      }
+
+      .continue-strip {
+        display: grid;
+      }
+
+      .continue-strip .reader-actions {
+        justify-content: flex-start;
+      }
+
+      .mobile-lane-toggle {
+        left: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-shell" id="prototypeShell" data-inspector="closed" data-lane="closed">
+    <header class="prototype-topbar">
+      <a class="brand" href="#" aria-label="Go to community home">
+        <span class="brand-mark">E</span>
+        <span class="brand-copy">
+          <strong class="brand-title">The Nunnery</strong>
+          <span class="brand-subtitle">Realm Studio preview</span>
+        </span>
+      </a>
+      <label class="search-field">
+        <span aria-hidden="true">Search</span>
+        <input value="Find scene, face, wanted, location" aria-label="Search this community">
+      </label>
+      <div class="identity-cluster">
+        <button class="icon-button" type="button" id="activityButton" aria-controls="activityDrawer" aria-expanded="false" aria-label="Open writer activity">!</button>
+        <span class="face-pill">
+          <span class="avatar avatar--small">R</span>
+          <span class="face-name">Replying as Rogue</span>
+        </span>
+      </div>
+    </header>
+
+    <nav class="primary-rail" aria-label="Community rooms">
+      <a class="rail-link" href="#" aria-label="World home">⌂</a>
+      <a class="rail-link" href="#" aria-current="page" aria-label="Locations">⌖</a>
+      <a class="rail-link" href="#" aria-label="Wanted">☆</a>
+      <a class="rail-link" href="#" aria-label="Desk">◴<span class="rail-link__badge">3</span></a>
+      <a class="rail-link" href="#" aria-label="Studio">⚙</a>
+    </nav>
+
+    <aside class="location-lane" aria-label="Location scene lane">
+      <div class="lane-header">
+        <span class="eyebrow">In Locations</span>
+        <h1 class="lane-title">Xavier Institute</h1>
+        <div class="location-path" aria-label="Location path">
+          <span class="path-chip">Grounds</span>
+          <span class="path-chip">Med Bay</span>
+          <span class="path-chip">Cerebro</span>
+        </div>
+      </div>
+
+      <section class="lane-section" aria-labelledby="needs-reply-scenes">
+        <h2 class="lane-section-title" id="needs-reply-scenes">Needs Your Face</h2>
+        <button class="scene-row" type="button" aria-current="true">
+          <span class="scene-row__topline">
+            <span class="scene-row__title">After the Blackout</span>
+            <span class="meta">12m</span>
+          </span>
+          <span class="scene-row__snippet">Storm has the infirmary lights steady again, but the school is still too quiet.</span>
+          <span class="scene-row__meta">
+            <span class="status-chip status-chip--needs">Needs reply</span>
+            <span class="mini-chip">Rogue</span>
+          </span>
+        </button>
+      </section>
+
+      <section class="lane-section" aria-labelledby="active-scenes">
+        <h2 class="lane-section-title" id="active-scenes">Active Here</h2>
+        <button class="scene-row" type="button">
+          <span class="scene-row__topline">
+            <span class="scene-row__title">The West Hall Smells Like Rain</span>
+            <span class="meta">1h</span>
+          </span>
+          <span class="scene-row__snippet">Kitty and Jubilee are following the scorch marks toward the old classrooms.</span>
+          <span class="scene-row__meta">
+            <span class="status-chip status-chip--watching">Watching</span>
+            <span class="mini-chip">2 faces</span>
+          </span>
+        </button>
+        <button class="scene-row" type="button">
+          <span class="scene-row__topline">
+            <span class="scene-row__title">Breakfast Before Debrief</span>
+            <span class="meta">3h</span>
+          </span>
+          <span class="scene-row__snippet">Logan is refusing to call it a meeting. Jean has already brought folders.</span>
+          <span class="scene-row__meta">
+            <span class="mini-chip">Open scene</span>
+            <span class="mini-chip">4 faces</span>
+          </span>
+        </button>
+      </section>
+
+      <section class="lane-section" aria-labelledby="nearby-context">
+        <h2 class="lane-section-title" id="nearby-context">Grounding Context</h2>
+        <button class="scene-row" type="button">
+          <span class="scene-row__topline">
+            <span class="scene-row__title">Wanted: Night Watch</span>
+            <span class="meta">hook</span>
+          </span>
+          <span class="scene-row__snippet">Cyclops needs two volunteers for overnight perimeter scenes.</span>
+          <span class="scene-row__meta">
+            <span class="status-chip status-chip--safe">2 openings</span>
+          </span>
+        </button>
+      </section>
+    </aside>
+
+    <main class="scene-reader" aria-label="Selected scene reader">
+      <div class="reader-inner">
+        <header class="reader-header">
+          <nav class="breadcrumbs" aria-label="Scene breadcrumbs">
+            <a href="#">Locations</a>
+            <span>/</span>
+            <a href="#">Xavier Institute</a>
+            <span>/</span>
+            <a href="#">Med Bay</a>
+          </nav>
+          <div class="scene-heading">
+            <div>
+              <h2 class="scene-title">After the Blackout</h2>
+              <p class="scene-subline">An active scene in the Med Bay. Current turn pressure is on Rogue, with Storm and Beast waiting.</p>
+            </div>
+            <div class="reader-actions">
+              <button class="reader-button reader-button--primary" type="button">Reply as Rogue</button>
+              <button class="reader-button" type="button">Mark caught up</button>
+              <button class="reader-button" type="button" id="inspectorToggle">Show context</button>
+            </div>
+          </div>
+          <div class="reader-context-strip" aria-label="Scene state">
+            <span class="light-chip"><strong>Needs reply</strong> since 12m</span>
+            <span class="light-chip">Watching</span>
+            <span class="light-chip">3 faces present</span>
+            <span class="light-chip">Linked wanted hook</span>
+          </div>
+        </header>
+
+        <section class="post-list" aria-label="Scene posts">
+          <div class="scene-hero" aria-label="Optional scene image">
+            <img src="../src/elbysodic/web/static/seed-media/locations/xmen-xavier-institute.svg" alt="">
+            <div class="scene-hero__copy">
+              <span class="eyebrow">Optional scene image</span>
+              <h3>Emergency power in the Med Bay</h3>
+              <p>A cinematic place-setting band can carry location art, event mood, or director-approved scene media without taking over the post flow.</p>
+              <div class="scene-hero__meta">
+                <span class="light-chip"><strong>Med Bay</strong></span>
+                <span class="light-chip">House Lights event</span>
+                <span class="light-chip">Member-visible</span>
+              </div>
+            </div>
+          </div>
+
+          <article class="post post--storm">
+            <span class="character-card" data-initial="S" aria-hidden="true"><span class="character-card__name">Storm</span></span>
+            <div>
+              <div class="post-author">
+                <strong>Storm</strong>
+                <span>Yesterday at 11:42 PM</span>
+                <a class="post-link" href="#">#1</a>
+              </div>
+              <div class="post-body">
+                <p>The backup lights came alive in a patient blue line down the ceiling, one after another, until the infirmary looked less like a memory and more like a place that could hold.</p>
+                <p>"No one leaves alone," Ororo said. It was not loud. It did not need to be. "If the grounds are still shifting, we move in pairs."</p>
+                <p>Outside the tall windows, the last of the rain moved sideways across the glass. It broke against the panes in thin silver sheets, catching the emergency lights each time the building shuddered. The school had weathered storms before. It had weathered attacks, evacuations, impossible returns, and the kind of grief that made every hallway remember a different name. This felt stranger than any of those. This was not violence arriving from the outside. This was the house turning uncertain beneath their feet.</p>
+                <p>Ororo crossed to the central aisle between the beds and lifted one hand, palm open, not to command the room but to settle it. A younger student near the supply cabinet stopped whispering. Someone behind the partition let out a breath they had been holding too long. The hum of the backup generator deepened, then caught, then steadied again.</p>
+                <p>"We account for everyone twice," she continued. "Once by roster, once by sight. If someone is missing, we name them clearly and we do not chase after echoes."</p>
+                <p>That last word hung in the air longer than she liked. Echoes had been the shape of the evening so far: lights in rooms that were empty, footsteps in halls no one had entered, a voice over the intercom that sounded almost like Charles before dissolving into static. Ororo did not give those details to the younger ones. They had enough fear to carry. Staff could carry the rest.</p>
+                <p>She looked from Hank's tablet to the hall doors and then back to the students gathered by the beds. Her expression softened by a fraction when she saw Rogue standing near the curtain track, close enough to help, far enough to keep herself from brushing against anyone by accident. There were forms of courage people mistook for distance.</p>
+                <p>"Anna Marie," Ororo said, gentler now. "You were near the west stairwell when the first outage rolled through. I need what you remember before Hank's numbers decide to become poetry."</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="post post--beast post--reverse">
+            <span class="character-card" data-initial="B" aria-hidden="true"><span class="character-card__name">Beast</span></span>
+            <div>
+              <div class="post-author">
+                <strong>Beast</strong>
+                <span>Today at 12:08 AM</span>
+                <a class="post-link" href="#">#2</a>
+              </div>
+              <div class="post-body">
+                <p>Hank had a tablet in one hand and three more worries than he had hands to carry them. The readout kept flashing, recalculating, then flashing again.</p>
+                <p>"The west generators are reporting as active and absent, which is not a pairing I find intellectually generous."</p>
+                <p>He turned the tablet sideways, as though the orientation of the screen might shame the data into behaving. The floor plan pulsed in pale blue, then amber, then a warning red that had no bedside manner whatsoever. One moment the west wing was a neat stack of systems and sub-systems. The next, it became a blank rectangle with a polite little error code in the corner, as if half the mansion had excused itself from physics.</p>
+                <p>"To be precise," Hank said, because precision was a handhold and he needed one, "the generators are drawing fuel, producing heat, and sending a verification pulse every nine seconds. All wonderful signs of generatorhood. Unfortunately, the same sensors insist they are no longer located in the generator room."</p>
+                <p>His thumb moved too quickly over the display. Diagnostic layers slid over one another: thermal, electrical, structural, access control, old Cerebro maintenance traces that should not have been awake at all. The screen reflected in his glasses and made his eyes look briefly like tiny storm clouds. He did not care for the symbolism.</p>
+                <p>There were twelve injured students under observation, four faculty members triaging the minor cases, and at least one very determined first-year attempting to pretend that a sprained wrist did not count if it happened while helping someone else. Hank had already lost that argument twice and expected to lose it again before sunrise. He could manage panic if panic would kindly form a line.</p>
+                <p>"The good news," he continued, "is that the Med Bay is currently stable. The better news is that I am defining stable with the generous heart of a scientist who has slept perhaps ninety minutes since yesterday. The less delightful news is that the west hall cameras are now sending me footage timestamped tomorrow morning."</p>
+                <p>He paused, pinched the bridge of his nose, and looked at Ororo over the rim of the tablet. "I am aware that sounds theatrical. I assure everyone present that I would prefer a less dramatic genre."</p>
+                <p>The tablet chimed. Hank stared at it. The tablet chimed again, brighter this time, because apparently machines had learned escalation from teenagers. He tapped the alert open and watched the same hallway appear from three angles at once. In one feed, the corridor was empty. In another, a crash cart sat in the middle of the floor. In the third, the crash cart rolled backward out of frame without anyone touching it.</p>
+                <p>"Ah," he said. "Yes. That is worse."</p>
+                <p>He did not look toward the students when he said it. That would have been unfair. Instead he lowered his voice and angled the tablet toward Ororo and Rogue, keeping the screen close enough that the younger ones could not make out more than color and motion.</p>
+                <p>"Anna Marie, if there was a sensation before the outage, any sensation at all, I need you to be unreasonably specific. Temperature, pressure, smell, sound, emotional impression, whether your teeth hurt, whether the walls felt closer than they should. I am currently accepting evidence from every branch of reality with which we remain on speaking terms."</p>
+                <p>For half a second, his mouth twitched toward a smile. It did not quite arrive, but it left a trace of itself behind. Hank was frightened. He was also working, and for him the two states had learned to share a room.</p>
+                <p class="beat-note">Current beat: the west hall is producing contradictory footage. Beast needs Rogue's sensory memory before this becomes a staff escalation.</p>
+                <p>"And if anyone sees a generator wandering the halls," he added, louder, "please do not engage it in conversation. Bring it directly to me. I have questions and, depending on its answers, several sternly worded maintenance forms."</p>
+              </div>
+            </div>
+          </article>
+
+          <div class="unread-divider">Since you last read</div>
+
+          <article class="post post--storm">
+            <span class="character-card" data-initial="S" aria-hidden="true"><span class="character-card__name">Storm</span></span>
+            <div>
+              <div class="post-author">
+                <strong>Storm</strong>
+                <span>12 minutes ago</span>
+                <a class="post-link" href="#">#3</a>
+              </div>
+              <div class="post-body">
+                <p>Ororo looked toward <span class="popover-demo" tabindex="0">Rogue<span class="popover-card" role="tooltip"><strong>Rogue</strong><span class="meta">Active face. In 2 scenes, waiting in 1. Public relationship notes only.</span><span class="status-chip status-chip--needs">Needs reply here</span></span></span>, then to the curtained beds behind them. The storm outside had finally spent itself. The one under the floor had not.</p>
+                <p>"Anna Marie. You were closest when the lights failed. What did you feel before it happened?"</p>
+                <p>There were many ways to ask for the truth. Ororo had learned, over years of leading children and adults who had survived too much, that the wrong tone could make the truth flee. A command could turn memory into defense. A soft question could become permission to collapse. The moment needed something between them: steady enough to hold, kind enough not to bruise.</p>
+                <p>She stepped aside so Rogue had a clear path to the center of the room if she wanted it, and an equally clear path to remain where she was if she did not. Choice mattered in a room full of medical curtains and frightened witnesses. Choice mattered especially for someone whose skin had so often made the world treat her body like a warning sign.</p>
+                <p>"Take your time," Ororo said. "Begin with the first thing that felt wrong, even if it seems too small."</p>
+                <p>The building answered before Rogue could. Somewhere beyond the doors, metal groaned with the low, embarrassed sound of old pipes shifting in winter. The lights trembled. Not flickered. Trembled. Each blue panel gave a tiny visible shiver, as if the electricity had become nervous. A student near the far bed made a small sound and Beast turned at once, already moving before the fear had finished forming.</p>
+                <p>Ororo lifted her hand again. The air in the room cooled by a degree, just enough to freshen it, just enough to remind the storm that it belonged to her and not the other way around. Rain ticked once against the window, then stopped.</p>
+                <p>She thought of the old maps under the mansion. The tunnels, the retrofits, the sealed rooms that had been sealed for reasons no one remembered kindly. Schools were supposed to be places where the future became less frightening by being named. Xavier's had always been both school and shelter, but some nights it remembered being a fortress. Some nights it remembered being a target.</p>
+                <p>"Hank," she said without taking her eyes off Rogue, "if the west hall footage changes again, tell me whether it is moving forward, backward, or sideways."</p>
+                <p>It was a ridiculous sentence. It was also, apparently, a necessary one. Ororo allowed herself no visible reaction to that. Leaders did not always have to look fearless. They did have to look like fear had not been given the chair at the head of the table.</p>
+                <p>Her gaze returned fully to Rogue. "No one here is asking you to touch anything. No one is asking you to prove anything. Only to remember."</p>
+                <p>The room quieted around that. The younger students watched Rogue now with a kind of hope that was not fair but was real. They wanted someone older, someone known, someone who had survived stranger things, to put language around the impossible. Ororo wished she could spare Anna Marie that weight. She could not. She could only make sure it was handed over carefully.</p>
+                <p>"Tell us what the house felt like," she said. "Then we decide together what happens next."</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <form class="composer" aria-label="Scene reply composer">
+          <div class="composer-topline">
+            <span class="light-chip"><strong>Reply as Rogue</strong></span>
+            <span class="meta">Draft autosaved locally in this community</span>
+          </div>
+          <textarea aria-label="Write your scene reply" placeholder="Write Rogue's reply..."></textarea>
+          <div class="reader-actions">
+            <button class="reader-button" type="button">Preview</button>
+            <button class="reader-button reader-button--primary" type="button">Post reply</button>
+          </div>
+        </form>
+
+        <nav class="continue-strip" aria-label="Continue reading">
+          <span class="continue-strip__copy">
+            <strong>After this scene</strong>
+            <span>Continue through your Desk queue or return to active scenes in Med Bay.</span>
+          </span>
+          <span class="reader-actions">
+            <a class="reader-button" href="#">Next unread</a>
+            <a class="reader-button" href="#">Scenes here</a>
+          </span>
+        </nav>
+      </div>
+    </main>
+
+    <aside class="inspector" aria-label="Scene grounding context">
+      <header class="inspector-header">
+        <div>
+          <span class="eyebrow">Scene Context</span>
+          <h2 class="panel-title">Grounding</h2>
+        </div>
+        <button class="icon-button" type="button" id="inspectorClose" aria-label="Close context panel">×</button>
+      </header>
+
+      <section class="inspector-section">
+        <h3>Location</h3>
+        <div class="context-line">
+          <strong>Med Bay, Xavier Institute</strong>
+          <span>Quiet medical wing under emergency power. Director-pinned note: no public casualties confirmed yet.</span>
+        </div>
+        <div>
+          <span class="status-chip status-chip--watching">3 active scenes here</span>
+          <span class="status-chip status-chip--safe">Public location</span>
+        </div>
+      </section>
+
+      <section class="inspector-section">
+        <h3>Present Faces</h3>
+        <div class="face-stack">
+          <div class="face-row">
+            <span class="avatar avatar--small">R</span>
+            <span class="face-row__copy"><strong>Rogue</strong><span>Your active face; needs reply</span></span>
+          </div>
+          <div class="face-row">
+            <span class="avatar avatar--small">S</span>
+            <span class="face-row__copy"><strong>Storm</strong><span>Waiting on Rogue</span></span>
+          </div>
+          <div class="face-row">
+            <span class="avatar avatar--small">B</span>
+            <span class="face-row__copy"><strong>Beast</strong><span>Watching generator anomaly</span></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="inspector-section">
+        <h3>Linked Story Objects</h3>
+        <div class="context-line">
+          <strong>Wanted: Night Watch</strong>
+          <span>Two volunteer openings remain. This scene can satisfy one perimeter follow-up if Rogue joins the rotation.</span>
+        </div>
+        <div class="context-line">
+          <strong>Current Event: House Lights</strong>
+          <span>Event phase is staff-reviewed. Canon outcome not accepted yet.</span>
+        </div>
+      </section>
+
+      <section class="inspector-section">
+        <h3>Visibility</h3>
+        <div class="context-line">
+          <strong>Member-visible scene</strong>
+          <span>No staff-only notes are rendered in this reader. Context counts are resolved for this membership.</span>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <aside class="activity-drawer" id="activityDrawer" aria-label="Writer activity" data-open="false">
+    <header class="activity-drawer__header">
+      <div>
+        <span class="eyebrow">Writer Desk</span>
+        <h2 class="panel-title">What Needs You</h2>
+      </div>
+      <button class="icon-button" type="button" id="activityClose" aria-label="Close writer activity">×</button>
+    </header>
+    <div class="activity-list">
+      <div class="activity-item">
+        <strong>Needs reply: After the Blackout</strong>
+        <span>Rogue is up in Med Bay. Storm asked a direct question 12 minutes ago.</span>
+      </div>
+      <div class="activity-item">
+        <strong>Waiting: West Hall Smells Like Rain</strong>
+        <span>You are caught up. Kitty has the next beat.</span>
+      </div>
+      <div class="activity-item">
+        <strong>Reserve expiring: Remy LeBeau</strong>
+        <span>Claim reserve needs staff action in 2 days.</span>
+      </div>
+    </div>
+  </aside>
+
+  <button class="mobile-lane-toggle" type="button" id="mobileLaneToggle">Scenes here</button>
+  <button class="mobile-context-toggle" type="button" id="mobileContextToggle">Scene context</button>
+
+  <script>
+    const shell = document.getElementById("prototypeShell");
+    const inspectorToggle = document.getElementById("inspectorToggle");
+    const inspectorClose = document.getElementById("inspectorClose");
+    const mobileContextToggle = document.getElementById("mobileContextToggle");
+    const mobileLaneToggle = document.getElementById("mobileLaneToggle");
+    const activityButton = document.getElementById("activityButton");
+    const activityClose = document.getElementById("activityClose");
+    const activityDrawer = document.getElementById("activityDrawer");
+
+    function setInspector(open) {
+      shell.dataset.inspector = open ? "open" : "closed";
+      inspectorToggle.textContent = open ? "Hide context" : "Show context";
+    }
+
+    inspectorToggle.addEventListener("click", () => {
+      setInspector(shell.dataset.inspector !== "open");
+    });
+
+    inspectorClose.addEventListener("click", () => {
+      setInspector(false);
+    });
+
+    mobileContextToggle.addEventListener("click", () => {
+      setInspector(shell.dataset.inspector !== "open");
+    });
+
+    function setLane(open) {
+      shell.dataset.lane = open ? "open" : "closed";
+      mobileLaneToggle.textContent = open ? "Hide scenes" : "Scenes here";
+    }
+
+    mobileLaneToggle.addEventListener("click", () => {
+      setLane(shell.dataset.lane !== "open");
+    });
+
+    function setActivity(open) {
+      activityDrawer.dataset.open = open ? "true" : "false";
+      activityButton.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    activityButton.addEventListener("click", () => {
+      setActivity(activityDrawer.dataset.open !== "true");
+    });
+
+    activityClose.addEventListener("click", () => {
+      setActivity(false);
+    });
+  </script>
+</body>
+</html>

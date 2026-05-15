@@ -2,13 +2,19 @@
 
 Status: product doctrine
 Owner: Product and stewardship
-Last updated: 2026-05-10
+Last updated: 2026-05-15
 
 This document is the top-level product alignment spine for Elbysodic. It
 distills the mission, research synthesis, architecture contracts, and active
 roadmaps into one strategic shape. Use it when deciding whether a new plan,
 feature, steward finding, or implementation path strengthens the product or
 pulls it toward a generic forum, SaaS dashboard, or chat replacement.
+
+Use `docs/product/experience-direction.md` for the current product-experience
+synthesis: Jcink/forum PBP source-of-truth depth, Slack-like layered context,
+Netflix/Apple TV-like editorial discovery, RPHub-level modern polish, and
+technicolor futurism translated into Elbysodic's tenant, privacy, active-face,
+and PBP vocabulary constraints.
 
 ## Thesis
 
@@ -21,6 +27,13 @@ obligations, and completed scenes can mature into reviewed continuity.
 The forum remains the heart of play, but the product is larger than a forum.
 The strategic product is a roleplay-native studio layer for creating, running,
 discovering, writing in, and preserving living PBP realms.
+
+The experience direction is not a literal collage of references. Forum/PBP
+carries the cultural backbone, layered app patterns keep scene and obligation
+context close, editorial discovery helps writers choose realms and wants, and
+technicolor futurism gives Elbysodic a modern visual point of view. The product
+rejects Discord replacement framing, passive streaming behavior, nostalgic
+forum skinning, and generic SaaS chrome.
 
 ## Three Pillars
 

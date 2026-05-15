@@ -97,6 +97,15 @@
         z-index: var(--chirpui-z-sticky);
     }
 
+    .elbysodic-shell-sidebar-content {
+        display: flex;
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 100%;
+        min-width: 0;
+        position: relative;
+    }
+
     .chirpui-app-shell__sidebar .chirpui-sidebar,
     .elbysodic-sidebar {
         display: flex;
@@ -144,6 +153,12 @@
     }
 
     .elbysodic-app-shell--sidebar-hidden .chirpui-sidebar {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-0.5rem);
+    }
+
+    .elbysodic-app-shell--sidebar-hidden .elbysodic-thread-context-sidebar {
         opacity: 0;
         pointer-events: none;
         transform: translateX(-0.5rem);
@@ -618,15 +633,15 @@
 
 .elbysodic-identity-menu__summary {
     align-items: center;
-    background: color-mix(in srgb, var(--chirpui-surface) 88%, transparent);
-    border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius-sm);
+    background: color-mix(in srgb, var(--chirpui-surface) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 74%, transparent);
+    border-radius: 999px;
     cursor: pointer;
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     list-style: none;
-    min-block-size: 2.35rem;
-    padding: 0.22rem 0.55rem 0.22rem 0.35rem;
+    min-block-size: 2.05rem;
+    padding: 0.18rem 0.48rem 0.18rem 0.28rem;
 }
 
 .elbysodic-identity-menu__summary::-webkit-details-marker {
@@ -638,11 +653,11 @@
 }
 
 .elbysodic-identity-menu__summary::after {
-    border-left: 0.35rem solid transparent;
-    border-right: 0.35rem solid transparent;
-    border-top: 0.38rem solid var(--chirpui-text-muted);
+    border-left: 0.27rem solid transparent;
+    border-right: 0.27rem solid transparent;
+    border-top: 0.3rem solid var(--chirpui-text-muted);
     content: "";
-    margin-inline-start: 0.2rem;
+    margin-inline-start: 0.05rem;
 }
 
 .elbysodic-identity-menu[open] .elbysodic-identity-menu__summary,
@@ -654,8 +669,8 @@
 .elbysodic-identity-menu__avatar-stack {
     align-items: end;
     display: inline-grid;
-    grid-template-columns: 1.58rem 0.6rem;
-    grid-template-rows: 1.58rem 0.6rem;
+    grid-template-columns: 1.34rem 0.5rem;
+    grid-template-rows: 1.34rem 0.5rem;
 }
 
 .elbysodic-identity-menu__summary-badge {
@@ -696,17 +711,17 @@
     font-size: var(--chirpui-font-sm);
     grid-column: 1 / 3;
     grid-row: 1 / 3;
-    width: 1.95rem;
+    width: 1.64rem;
 }
 
 .elbysodic-identity-menu__face-avatar {
     background: color-mix(in srgb, var(--chirpui-accent) 24%, var(--chirpui-surface));
     border-color: var(--chirpui-bg-subtle);
     box-shadow: 0 0 0 1px var(--chirpui-border);
-    font-size: var(--chirpui-font-xs);
+    font-size: 0.6rem;
     grid-column: 2 / 4;
     grid-row: 2 / 4;
-    width: 1.02rem;
+    width: 0.88rem;
 }
 
 .elbysodic-identity-menu__face-avatar img {
@@ -717,8 +732,8 @@
 
 .elbysodic-identity-menu__copy {
     display: grid;
-    gap: 0.05rem;
-    min-width: 7.5rem;
+    gap: 0;
+    min-width: 0;
 }
 
 .elbysodic-identity-menu__label,
@@ -732,9 +747,13 @@
 
 .elbysodic-identity-menu__face {
     color: var(--chirpui-text);
-    font-size: var(--chirpui-font-sm);
+    font-size: var(--chirpui-font-xs);
     font-weight: 800;
     line-height: 1.1;
+    max-inline-size: 6.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .elbysodic-identity-menu__role {
@@ -749,17 +768,96 @@
     border-radius: var(--chirpui-radius-sm);
     box-shadow: var(--chirpui-shadow-lg);
     display: grid;
-    gap: 0.75rem;
+    gap: 0.65rem;
     max-height: min(36rem, calc(100vh - 5rem));
-    min-width: 18rem;
+    min-width: 19rem;
     overflow: auto;
     overscroll-behavior: contain;
-    padding: 0.85rem;
+    padding: 0.7rem;
     position: absolute;
     right: 0;
     top: calc(100% + 0.45rem);
     transform-origin: top right;
     z-index: var(--chirpui-z-dropdown);
+}
+
+.elbysodic-identity-menu__hero {
+    align-items: center;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--chirpui-accent) 11%, transparent), transparent 66%),
+        color-mix(in srgb, var(--chirpui-surface) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border-subtle) 82%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.65rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.65rem;
+}
+
+.elbysodic-identity-menu__hero-avatar {
+    align-items: center;
+    aspect-ratio: 1;
+    background:
+        radial-gradient(circle at 35% 24%, color-mix(in srgb, var(--chirpui-accent) 32%, transparent), transparent 44%),
+        var(--chirpui-surface-alt);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 78%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text);
+    display: inline-flex;
+    font-size: var(--chirpui-font-lg);
+    font-weight: 900;
+    inline-size: 2.55rem;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.elbysodic-identity-menu__hero-avatar img {
+    block-size: 100%;
+    inline-size: 100%;
+    object-fit: cover;
+}
+
+.elbysodic-identity-menu__hero-copy {
+    display: grid;
+    gap: 0.12rem;
+    min-width: 0;
+}
+
+.elbysodic-identity-menu__hero-copy strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-md);
+    line-height: 1.05;
+}
+
+.elbysodic-identity-menu__hero-copy small {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 780;
+    line-height: 1.25;
+}
+
+.elbysodic-identity-menu__quick-links {
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.elbysodic-identity-menu__quick-links a {
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 64%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border-subtle) 82%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 850;
+    padding: 0.42rem 0.48rem;
+    text-align: center;
+    text-decoration: none;
+}
+
+.elbysodic-identity-menu__quick-links a:hover,
+.elbysodic-identity-menu__quick-links a:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 36%, var(--chirpui-border));
 }
 
 @supports (backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px)) {

@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlencode, urljoin
 
 import pytest
@@ -16,6 +17,7 @@ from chirp.testing import TestClient
 from chirp_ui.alpine import check_alpine_runtime
 
 from elbysodic.db import ForumRepository, connect, create_schema
+from elbysodic.db.schema import SynchronizedConnection
 from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services, default_database_path
@@ -26,6 +28,8 @@ from elbysodic.web.tenant import request_scoped_path, scope_response_urls
 from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
+_SEEDED_TEMPLATE_CONNECTION: sqlite3.Connection | None = None
+_SEEDED_TEMPLATE_SEED: DemoSeed | None = None
 
 
 def _sidebar_board_count(html: str, board_slug: str) -> int:
@@ -126,6 +130,25 @@ def _oob_block(html: str, target_id: str) -> str:
     return match.group("body")
 
 
+def _oob_outer_block(html: str, target_id: str) -> str:
+    start = re.search(
+        rf'<div id="{re.escape(target_id)}"[^>]*hx-swap-oob="true"[^>]*>',
+        html,
+        re.DOTALL,
+    )
+    assert start is not None
+    body_start = start.end()
+    depth = 1
+    for match in re.finditer(r"</?div\b[^>]*>", html[body_start:], re.DOTALL):
+        if match.group(0).startswith("</"):
+            depth -= 1
+            if depth == 0:
+                return html[body_start : body_start + match.start()]
+        else:
+            depth += 1
+    raise AssertionError(f"OOB block {target_id!r} was not closed")
+
+
 def _input_value(html: str, name: str) -> str:
     match = re.search(
         rf'<input[^>]+name="{re.escape(name)}"[^>]+value="(?P<value>[^"]*)"',
@@ -142,8 +165,42 @@ def _page_content(html: str) -> str:
     return html[start:]
 
 
+def _raw_memory_connection() -> sqlite3.Connection:
+    connection = sqlite3.connect(":memory:", check_same_thread=False)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA busy_timeout = 5000")
+    return connection
+
+
+def _seeded_template() -> tuple[sqlite3.Connection, DemoSeed]:
+    global _SEEDED_TEMPLATE_CONNECTION, _SEEDED_TEMPLATE_SEED
+
+    if _SEEDED_TEMPLATE_CONNECTION is None or _SEEDED_TEMPLATE_SEED is None:
+        connection = _raw_memory_connection()
+        create_schema(connection)
+        repository = ForumRepository(_synchronized_connection(connection))
+        seed = seed_demo_forum(repository)
+        connection.commit()
+        _SEEDED_TEMPLATE_CONNECTION = connection
+        _SEEDED_TEMPLATE_SEED = seed
+
+    return _SEEDED_TEMPLATE_CONNECTION, _SEEDED_TEMPLATE_SEED
+
+
+def _seeded_services() -> AppServices:
+    template_connection, seed = _seeded_template()
+    connection = _raw_memory_connection()
+    template_connection.backup(connection)
+    return AppServices(ForumRepository(_synchronized_connection(connection)), seed)
+
+
+def _synchronized_connection(connection: sqlite3.Connection) -> sqlite3.Connection:
+    return cast(sqlite3.Connection, SynchronizedConnection(connection))
+
+
 def _app():
-    return create_app(debug=False, services=create_services(path=":memory:"))
+    return create_app(debug=False, services=_seeded_services())
 
 
 def _outsider_services(
@@ -753,6 +810,7 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
     response = Response(
         """
         <a href="/world">World</a>
+        <a href="/" data-elbysodic-global-link>Global home</a>
         <a href="/claims?status=claimed&amp;q=magneto">Filtered claims</a>
         <form action="/boards/danger-room/threads/new">
           <input name="title" value="/not-a-route">
@@ -767,6 +825,7 @@ def test_tenant_scoping_preserves_authored_form_values() -> None:
 
     assert isinstance(scoped.body, str)
     assert 'href="/c/x-men-apocalypse/world"' in scoped.body
+    assert 'href="/" data-elbysodic-global-link' in scoped.body
     assert 'href="/c/x-men-apocalypse/claims?status=claimed&amp;q=magneto"' in scoped.body
     assert 'action="/c/x-men-apocalypse/boards/danger-room/threads/new"' in scoped.body
     assert 'name="title" value="/not-a-route"' in scoped.body
@@ -1822,6 +1881,9 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Relevant to the active face:" in index.text
             assert "elbysodic-board-poster__face-signal-hint" in index.text
             assert "elbysodic-identity-menu" in index.text
+            assert '@click.outside="open = false"' in index.text
+            assert "elbysodic-identity-menu__hero" in index.text
+            assert "elbysodic-identity-menu__quick-links" in index.text
             assert "elbysodic-identity-menu__notification-link" in index.text
             assert "elbysodic-identity-menu__theme-row" in index.text
             assert "playing as Rogue" in index.text
@@ -1871,7 +1933,7 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "chirpui-thread-reader-layout" in thread.text
             assert "chirpui-breadcrumbs" in thread.text
             assert "Runtime" in thread.text
-            assert "Credits" in thread.text
+            assert "writers" in thread.text
             assert "min read" in thread.text
             assert "Drop your available characters here" in thread.text
             assert "Rogue" in thread.text
@@ -1956,6 +2018,11 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
                 in index.text
             )
             assert 'data-rail-tooltip="Built on Elbysodic"' in index.text
+            assert re.search(
+                r'<a class="elbysodic-primary-rail__link elbysodic-primary-rail__link--platform"\s+href="/"',
+                index.text,
+            )
+            assert "data-elbysodic-global-link" in index.text
             assert 'href="/c/x-men-apocalypse"' in index.text
             assert 'href="/c/x-men-apocalypse/desk"' in index.text
             assert 'aria-label="Primary community rooms"' in index.text
@@ -3818,7 +3885,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
             assert "elbysodic-theme.css?v=sidebar-reexpand-1" in world.text
             assert "elbysodic-shell.js?v=sidebar-cookie-2" in world.text
-            assert "elbysodic-composer.js?v=sidebar-cookie-1" in world.text
+            assert "elbysodic-composer.js?v=scene-context-inspector-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
             assert 'aria-label="Primary community rooms"' in world.text
             assert 'aria-label="Hide navigation"' in world.text
@@ -4105,7 +4172,15 @@ def test_parent_board_summaries_roll_up_child_activity_but_thread_lists_stay_dir
         "Active Face",
         make_default=True,
     )
-    parent = repo.create_board(community.id, "academy", "Academy", board_kind="location")
+    parent = repo.create_board(
+        community.id,
+        "academy",
+        "Academy",
+        description="A school under emergency power.",
+        board_kind="location",
+        image_url="https://example.test/academy.jpg",
+        image_alt="Academy under emergency lights",
+    )
     child = repo.create_board(
         community.id,
         "med-bay",
@@ -4147,6 +4222,643 @@ def test_parent_board_summaries_roll_up_child_activity_but_thread_lists_stay_dir
     assert summaries["academy"].has_children is True
     assert summaries["academy"].latest_thread == child_thread
     assert [item.thread.title for item in direct_threads] == ["Hallway Scene"]
+
+
+def test_scene_context_contract_wraps_thread_location_and_grounding_state() -> None:
+    connection = connect(check_same_thread=False)
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Scene Context Test")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("writer@example.com", "hash")
+    membership = repo.create_membership(community.id, user.id, role.id, "writer", "Writer")
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "active-face",
+        "Active Face",
+        make_default=True,
+    )
+    parent = repo.create_board(
+        community.id,
+        "academy",
+        "Academy",
+        description="A school under emergency power.",
+        board_kind="location",
+        image_url="https://example.test/academy.jpg",
+        image_alt="Academy under emergency lights",
+    )
+    child = repo.create_board(
+        community.id,
+        "med-bay",
+        "Med Bay",
+        parent_board_id=parent.id,
+        board_kind="sublocation",
+    )
+    current = repo.create_thread(
+        community.id,
+        child.id,
+        character.id,
+        "after-the-blackout",
+        "After the Blackout",
+        summary="Emergency power changes the room.",
+    )
+    repo.create_post(community.id, current.id, character.id, "The lights came back wrong.")
+    nearby = repo.create_thread(
+        community.id,
+        child.id,
+        character.id,
+        "breakfast-before-debrief",
+        "Breakfast Before Debrief",
+    )
+    repo.create_post(community.id, nearby.id, character.id, "Coffee waits by the door.")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            community=community,
+            user=user,
+            membership=repo.get_membership(community.id, membership.id),
+            default_character=character,
+        ),
+    )
+
+    scene_context = services.read_scene_context("med-bay", "after-the-blackout")
+
+    assert scene_context.thread_view.thread == current
+    assert scene_context.parent_board == parent
+    assert scene_context.current_event is None
+    assert scene_context.location_lane.board == child
+    assert scene_context.location_lane.parent_board == parent
+    assert scene_context.location_lane.placement_path == (parent, child)
+    assert scene_context.location_lane.place_headline_board == parent
+    assert scene_context.location_lane.placement_trail_boards == (child,)
+    assert scene_context.location_lane.sidebar_section_label == "Locations"
+    assert scene_context.location_lane.current_item is not None
+    assert scene_context.location_lane.current_item.summary.thread == current
+    assert not scene_context.location_lane.attention_items
+    assert not scene_context.location_lane.active_items
+    assert {item.summary.thread.title for item in scene_context.location_lane.items} == {
+        "Breakfast Before Debrief",
+    }
+    assert scene_context.location_lane.items[0].waiting_on_others
+    assert scene_context.grounding.board == child
+    assert scene_context.grounding.parent_board == parent
+    assert scene_context.grounding.participants == [character]
+    assert scene_context.grounding.visibility_label == "member-visible scene"
+    assert scene_context.grounding.current_event is None
+    assert scene_context.media_band is not None
+    assert scene_context.media_band.source_board == parent
+    assert scene_context.media_band.source_label == "Inherited location media"
+    assert scene_context.media_band.heading == "Med Bay scene atmosphere"
+    assert scene_context.media_band.summary == "A school under emergency power."
+    assert scene_context.media_band.is_inherited is True
+    assert repo.get_thread_read_at(community.id, current.id, membership.id) is not None
+
+
+def test_thread_page_renders_inherited_scene_media_as_hero_background() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "elbysodic-scene-media-band" not in content
+        assert "elbysodic-thread-stage--with-media" in content
+        assert "elbysodic-thread-stage__media" in content
+        assert "Sentinel drill after midnight" in content
+        assert "Inherited location media" not in content
+        assert "Danger Room scene atmosphere" not in content
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in content
+        assert 'alt="Snowbound academy windows under B-24 signal arcs"' in content
+        assert 'aria-label="Open scene actions and context"' in content
+
+    asyncio.run(run())
+
+
+def test_scene_media_band_respects_text_first_location_media() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "xavier-institute")
+        repo.update_board(
+            community.id,
+            board.id,
+            name=board.name,
+            description=board.description,
+            sort_order=board.sort_order,
+            parent_board_id=board.parent_board_id,
+            board_kind=board.board_kind,
+            sidebar_section=board.sidebar_section,
+            tagline=board.tagline,
+            image_url=board.image_url,
+            image_alt=board.image_alt,
+            image_treatment="text",
+            image_focal_point=board.image_focal_point,
+            image_overlay=board.image_overlay,
+            is_private=board.is_private,
+            navigation_order=board.navigation_order,
+            show_in_navigation=board.show_in_navigation,
+        )
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "elbysodic-scene-media-band" not in content
+        assert "elbysodic-thread-stage--with-media" not in content
+        assert "elbysodic-thread-stage__media" not in content
+
+    asyncio.run(run())
+
+
+def test_thread_page_renders_location_scene_lane() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "elbysodic-thread-context-sidebar" in page.text
+        sidebar_match = re.search(
+            r'<aside class="elbysodic-thread-context-sidebar"[\s\S]*?</aside>',
+            page.text,
+        )
+        assert sidebar_match is not None
+        sidebar_content = sidebar_match.group(0)
+        assert "elbysodic-scenes-here-drawer" in content
+        assert "Scenes here" in content
+        assert "Danger Room" in content
+        assert "Xavier Institute" in content
+        assert "Sentinel drill after midnight" not in sidebar_content
+        assert "Moonlight skirmish" not in sidebar_content
+        assert "No other soft beats queued in this lane." in sidebar_content
+        assert "Toolbar QA Works" not in sidebar_content
+        assert "Fastball special practice" not in content
+        assert 'aria-current="page"' not in sidebar_content
+        assert "current scene" not in sidebar_content
+        assert "watching" in content
+
+    asyncio.run(run())
+
+
+def test_boosted_thread_navigation_updates_contextual_sidebar_oob() -> None:
+    async def run() -> None:
+        app = _app()
+        headers = {
+            "HX-Request": "true",
+            "HX-Boosted": "true",
+            "HX-Target": "main",
+        }
+
+        async with TestClient(app) as client:
+            board_page = await client.get("/boards/danger-room", headers=headers)
+            thread_page = await client.get(
+                "/boards/danger-room/threads/sentinel-drill",
+                headers=headers,
+            )
+
+        assert board_page.status == 200
+        board_sidebar = _oob_outer_block(board_page.text, "elbysodic-shell-sidebar-content")
+        assert "elbysodic-thread-context-sidebar" not in board_sidebar
+        assert "Locations" in board_sidebar
+
+        assert thread_page.status == 200
+        thread_sidebar = _oob_outer_block(thread_page.text, "elbysodic-shell-sidebar-content")
+        assert "elbysodic-thread-context-sidebar" in thread_sidebar
+        assert "Open scenes" in thread_sidebar
+        assert "Sentinel drill after midnight" not in thread_sidebar
+        assert "Moonlight skirmish" not in thread_sidebar
+        assert "No other soft beats queued in this lane." in thread_sidebar
+        assert "Fastball special practice" not in thread_sidebar
+        thread_primary_content = _page_content(thread_page.text).split(
+            '<div id="elbysodic-shell-sidebar-content"',
+            maxsplit=1,
+        )[0]
+        assert "elbysodic-thread-context-sidebar" not in thread_primary_content
+
+    asyncio.run(run())
+
+
+def test_thread_page_renders_scene_grounding_for_owner() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "elbysodic-scene-context-layout__grounding" in content
+        assert "elbysodic-scene-context-drawer" in content
+        assert "Scene context" in content
+        assert "Grounding" in content
+        assert "Danger Room" in content
+        assert "Inside" in content
+        assert "Xavier Institute" in content
+        assert "Present faces" in content
+        assert "Rogue is waiting" in content
+        assert "Status" in content
+        assert "Active" in content
+        assert "Mode" in content
+        assert "Posting order" in content
+        assert "Visibility" in content
+        assert "member-visible scene" in content
+        assert "Visible to active members who can enter this location." in content
+        assert "Linked story objects" in content
+        assert "Staff controls" not in content
+
+    asyncio.run(run())
+
+
+def test_scene_context_shell_preserves_reader_landmarks_and_controls() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+            stylesheet_text = await _stylesheet_text_with_imports(client)
+
+        assert page.status == 200
+        html = page.text
+        assert 'aria-label="Scenes in this location"' in html
+        assert 'aria-label="Scene context"' in html or 'aria-label="Scene context panel"' in html
+        assert "elbysodic-scenes-here-trigger" in html
+        assert "elbysodic-scene-context-trigger" in html
+        assert 'id="elbysodic-scenes-here-drawer"' in html
+        assert 'id="elbysodic-scene-context-drawer"' in html
+        assert "Scenes here" in html
+        assert "Scene context" in html
+        assert "Needs your reply" in html
+        assert "Grounding context" in html
+        assert "After this scene" in html
+        assert "Continue through your Desk queue" in html
+        assert "elbysodic-thread-attention-nav__link--scenes" in html
+        assert 'aria-label="Open scene actions and context"' in html
+        assert "elbysodic-scene-actions-menu" in html
+        assert "elbysodic-scene-reply-anchor" not in html
+        assert "Take turns respecting the queued beat" not in html
+        assert "faces are tagged on the cast line" not in html
+        assert "Mark caught up" in html
+        assert "Since you last read" in html
+        assert "elbysodic-scene-reader-breadcrumbs" in html
+        assert "elbysodic-scene-context-inspector-toggle" in html
+        assert "In Locations" in html
+        assert "Place hierarchy for this lane" in html
+        assert 'href="/boards/xavier-institute"' in html
+        assert 'href="/boards/danger-room"' in html
+        assert "Next unread" in html
+        assert 'for="reply-character"' in html
+        assert "elbysodic-scene-composer-face-select" in html
+        assert re.search(r'<span>Reply as</span>\s*<select[^>]+id="reply-character"', html)
+        assert "Drafts autosave locally in this community." in html
+        assert "Write Rogue's reply..." in html
+        assert "elbysodic-scene-composer-tools" in html
+        assert html.index('id="reply-composer"') < html.index("After this scene")
+        assert 'name="intent" value="mark_caught_up"' in html
+        assert 'name="intent" value="reply"' in html
+        assert 'name="idempotency_key"' in html
+        assert 'hx-boost="false"' in html
+        assert (
+            ".elbysodic-scene-context-layout .elbysodic-scene-context-layout__grounding"
+            in stylesheet_text
+        )
+        assert ".elbysodic-thread-context-sidebar .elbysodic-scene-lane" in stylesheet_text
+        assert "grid-template-rows: auto minmax(0, 1fr);" in stylesheet_text
+        assert "max-height: none;" in stylesheet_text
+        assert ".elbysodic-thread-context-sidebar .elbysodic-scene-lane-row" in stylesheet_text
+        assert "padding: 0.48rem 0.5rem;" in stylesheet_text
+        assert ".elbysodic-scene-lane__path-chip:hover" in stylesheet_text
+        assert "text-decoration: none;" in stylesheet_text
+        assert "position: fixed;" in stylesheet_text
+        assert "transform: translateX(calc(100% + 1rem));" in stylesheet_text
+        assert "grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem);" not in stylesheet_text
+
+    asyncio.run(run())
+
+
+def test_scene_management_controls_live_in_grounding_tray() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        assert page.status == 200
+        content = _page_content(page.text)
+        reader_before_grounding = content.split(
+            'class="elbysodic-scene-context-layout__grounding',
+            maxsplit=1,
+        )[0]
+        assert "Scene management" not in reader_before_grounding
+        assert "Reader actions" not in reader_before_grounding
+        assert 'id="scene-management"' not in content
+        assert 'id="scene-context-docked-scene-management"' in content
+        assert 'id="scene-context-drawer-scene-management"' in content
+        assert "elbysodic-scene-grounding__section--reader-actions" in content
+        assert "elbysodic-scene-grounding__section--operations" in content
+        assert re.search(r"(?:Watch|Unwatch) thread", content)
+        assert "Read latest" in content
+        assert "Tag cast" in content
+
+    asyncio.run(run())
+
+
+def test_scene_reader_since_last_read_divider_when_membership_reads_behind_latest_post() -> None:
+    async def run() -> None:
+        connection = connect(check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.seed_default_community("Unread Divider Smoke")
+        role = repo.create_role(community.id, "member", "Member")
+        reader_user = repo.create_user("reader-divider@example.com", "hash")
+        reader_membership = repo.create_membership(
+            community.id,
+            reader_user.id,
+            role.id,
+            "reader-divider",
+            "Reader Divider",
+        )
+        reader_face = repo.create_character(
+            community.id,
+            reader_membership.id,
+            "reader-divider-face",
+            "Reader Divider Face",
+            make_default=True,
+        )
+        writer_user = repo.create_user("writer-divider@example.com", "hash")
+        writer_membership = repo.create_membership(
+            community.id,
+            writer_user.id,
+            role.id,
+            "writer-divider",
+            "Writer Divider",
+        )
+        writer_face = repo.create_character(
+            community.id,
+            writer_membership.id,
+            "writer-divider-face",
+            "Writer Divider Face",
+        )
+        board = repo.create_board(
+            community.id,
+            "divider-field",
+            "Divider Field",
+            board_kind="location",
+        )
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            writer_face.id,
+            "divider-thread",
+            "Divider Scene",
+            status="active",
+        )
+        _p1 = repo.create_post(community.id, thread.id, writer_face.id, "first beat")
+        _p2 = repo.create_post(community.id, thread.id, writer_face.id, "second beat")
+        _p3 = repo.create_post(
+            community.id,
+            thread.id,
+            writer_face.id,
+            "third beat awaiting reader",
+        )
+        repo.mark_thread_read(
+            community.id,
+            thread.id,
+            reader_membership.id,
+            read_at="1999-01-01T00:00:00+00:00",
+        )
+        reader_membership_row = repo.get_membership(community.id, reader_membership.id)
+        services = AppServices(
+            repo,
+            DemoSeed(
+                community=community,
+                user=reader_user,
+                membership=reader_membership_row,
+                default_character=reader_face,
+            ),
+        )
+        app = create_app(debug=False, services=services)
+        async with TestClient(app) as client:
+            page = await client.get("/boards/divider-field/threads/divider-thread")
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "Since you last read" in content
+
+    asyncio.run(run())
+
+
+def test_scene_grounding_for_ordinary_member_hides_staff_management_copy() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        outsider_services, _character_id = _outsider_services(services)
+        app = create_app(debug=False, services=outsider_services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "Scene context" in content
+        assert "Reading as Outsider Face" in content
+        assert "member-visible scene" in content
+        assert "staff-manageable member-visible scene" not in content
+        assert "Staff controls" not in content
+        assert "Scene management" not in content
+
+    asyncio.run(run())
+
+
+def test_scene_grounding_for_staff_uses_service_owned_visibility_copy() -> None:
+    async def run() -> None:
+        connection = connect(check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.seed_default_community("Grounding Staff Test")
+        staff_role = repo.create_role(community.id, "staff", "Staff", is_admin=True)
+        member_role = repo.create_role(community.id, "member", "Member")
+        staff_user = repo.create_user("staff-grounding@example.com", "hash")
+        staff_membership = repo.create_membership(
+            community.id,
+            staff_user.id,
+            staff_role.id,
+            "staff-grounding",
+            "Staff Grounding",
+        )
+        staff_character = repo.create_character(
+            community.id,
+            staff_membership.id,
+            "staff-face",
+            "Staff Face",
+            make_default=True,
+        )
+        writer_user = repo.create_user("writer-grounding@example.com", "hash")
+        writer_membership = repo.create_membership(
+            community.id,
+            writer_user.id,
+            member_role.id,
+            "writer-grounding",
+            "Writer Grounding",
+        )
+        writer_character = repo.create_character(
+            community.id,
+            writer_membership.id,
+            "writer-face",
+            "Writer Face",
+        )
+        board = repo.create_board(
+            community.id,
+            "staff-visible-location",
+            "Staff Visible Location",
+            board_kind="location",
+        )
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            writer_character.id,
+            "staff-visible-scene",
+            "Staff Visible Scene",
+        )
+        repo.create_post(community.id, thread.id, writer_character.id, "Staff can read this.")
+        services = AppServices(
+            repo,
+            DemoSeed(
+                community=community,
+                user=staff_user,
+                membership=repo.get_membership(community.id, staff_membership.id),
+                default_character=staff_character,
+            ),
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/staff-visible-location/threads/staff-visible-scene")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "Scene context" in content
+        assert "staff-manageable member-visible scene" in content
+        assert "Members can read this scene; staff controls remain in management panels." in content
+        assert "Staff controls" in content
+
+    asyncio.run(run())
+
+
+def test_scene_lane_keeps_private_board_threads_out_of_visible_scene_context() -> None:
+    async def run() -> None:
+        connection = connect(check_same_thread=False)
+        create_schema(connection)
+        repo = ForumRepository(connection)
+        community = repo.seed_default_community("Scene Lane Privacy Test")
+        role = repo.create_role(community.id, "member", "Member")
+        user = repo.create_user("reader@example.com", "hash")
+        membership = repo.create_membership(community.id, user.id, role.id, "reader", "Reader")
+        character = repo.create_character(
+            community.id,
+            membership.id,
+            "reader-face",
+            "Reader Face",
+            make_default=True,
+        )
+        public_board = repo.create_board(
+            community.id,
+            "public-med-bay",
+            "Public Med Bay",
+            board_kind="location",
+        )
+        private_board = repo.create_board(
+            community.id,
+            "staff-infirmary",
+            "Staff Infirmary",
+            board_kind="location",
+            is_private=True,
+        )
+        public_thread = repo.create_thread(
+            community.id,
+            public_board.id,
+            character.id,
+            "visible-checkup",
+            "Visible Checkup",
+        )
+        repo.create_post(community.id, public_thread.id, character.id, "A public scene opens.")
+        private_thread = repo.create_thread(
+            community.id,
+            private_board.id,
+            character.id,
+            "private-director-notes",
+            "Private Director Notes",
+        )
+        repo.create_post(
+            community.id,
+            private_thread.id,
+            character.id,
+            "Private scene context should not leak.",
+        )
+        services = AppServices(
+            repo,
+            DemoSeed(
+                community=community,
+                user=user,
+                membership=repo.get_membership(community.id, membership.id),
+                default_character=character,
+            ),
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/public-med-bay/threads/visible-checkup")
+            private_page = await client.get(
+                "/boards/staff-infirmary/threads/private-director-notes"
+            )
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "Visible Checkup" in content
+        assert "Private Director Notes" not in content
+        assert "Staff Infirmary" not in content
+        assert "Private scene context should not leak." not in content
+        assert "Scene context" in content
+        assert private_page.status == 403
+
+    asyncio.run(run())
+
+
+def test_scene_lane_watch_state_uses_batched_lookup() -> None:
+    services = _scale_board_services(thread_count=30)
+    board = services.repo.get_board_by_slug(services.seed.community.id, "scale-yard")
+    for thread in services.repo.list_threads(services.seed.community.id, board.id)[::2]:
+        services.repo.watch_thread(
+            services.seed.community.id,
+            thread.id,
+            services.seed.membership.id,
+        )
+
+    with trace_sql(services.repo.connection) as trace:
+        scene_context = services.read_scene_context("scale-yard", "scale-thread-0")
+
+    counts = trace.normalized_counts()
+    watched_batch_queries = [
+        count
+        for sql, count in counts.items()
+        if "FROM thread_watches" in sql and "json_each" in sql
+    ]
+    watched_scalar_queries = [
+        count
+        for sql, count in counts.items()
+        if "FROM thread_watches" in sql and "json_each" not in sql
+    ]
+    assert len(scene_context.location_lane.items) == 29
+    assert scene_context.location_lane.current_item is not None
+    assert scene_context.location_lane.current_item.summary.thread.slug == "scale-thread-0"
+    assert any(item.is_watched for item in scene_context.location_lane.items)
+    assert sum(watched_batch_queries) == 1
+    assert sum(watched_scalar_queries) == 1
 
 
 def test_discovery_defaults_to_active_face_lens_and_filters_facets() -> None:
@@ -4226,7 +4938,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
 
             scene = await client.get("/boards/frozen-midtown/threads/frozen-avenue-evacuation")
             assert scene.status == 200
-            assert "Current event shaping this scene" in scene.text
+            assert "Current event" in scene.text
             assert 'href="/world/b-24-winter"' in scene.text
 
             missing = await client.get("/world/not-a-material")
@@ -7071,13 +7783,11 @@ def test_thread_page_links_previous_next_and_next_unread_threads() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/navigation/threads/middle")
             assert page.status == 200
-            assert "Adjacent scenes" in page.text
+            assert "Scenes here" in page.text
             assert "Scene continuation" in page.text
-            assert "Previous scene" in page.text
             assert "Previous unreplied" in page.text
             assert "Newer thread" in page.text
             assert "/boards/navigation/threads/newer" in page.text
-            assert "Next scene" in page.text
             assert "Older thread" in page.text
             assert "Next unread" in page.text
             assert f"/boards/navigation/threads/older#post-{older_post.post_number}" in page.text
@@ -7596,6 +8306,57 @@ def test_post_shell_inherits_identity_accent_from_facet_group() -> None:
             assert profile.status == 200
             assert "Inherited accent" in profile.text
             assert "Affiliation: X-Men" in profile.text
+
+    asyncio.run(run())
+
+
+def test_thread_reader_uses_editorial_poster_wrap_without_losing_post_contracts() -> None:
+    async def run() -> None:
+        app = _app()
+
+        async with TestClient(app) as client:
+            thread = await client.get("/boards/danger-room/threads/moonlight-skirmish")
+            stylesheet_text = await _stylesheet_text_with_imports(client)
+
+        content = _page_content(thread.text)
+        assert thread.status == 200
+        assert "elbysodic-post-list--editorial-wrap" in content
+        assert 'data-elbysodic-post-reader-mode="poster-wrap"' in content
+        assert "elbysodic-post-profile--bio" in content
+        assert "elbysodic-post-profile--poster" in content
+        assert "elbysodic-post-profile--dock" in content
+        assert "elbysodic-post-density--dramatic" in content
+        assert "elbysodic-post-density--compact" in content
+        assert "elbysodic-post__author-name" in content
+        assert "<time datetime=" in content
+        assert 'aria-label="Permalink to post 1"' in content
+        assert 'href="/boards/danger-room/threads/moonlight-skirmish/posts/3/edit"' in content
+        assert 'writer <a class="chirpui-link" href="/members/' in content
+        assert 'style="--elbysodic-character-accent:' in content
+        assert ".elbysodic-post-list--editorial-wrap .elbysodic-post__poster" in stylesheet_text
+        assert (
+            ".elbysodic-post-list--editorial-wrap > .elbysodic-post-border--hairline"
+            in stylesheet_text
+        )
+        assert "outline-color: transparent;" in stylesheet_text
+        assert ".elbysodic-post-list--editorial-wrap > .chirpui-surface:hover" in stylesheet_text
+        assert "inline-size: min(100%, 54rem);" in stylesheet_text
+        assert "justify-self: center;" in stylesheet_text
+        assert "@media (min-width: 64rem)" in stylesheet_text
+        assert ".elbysodic-scene-composer-tools" in stylesheet_text
+        assert "min-height: 8.5rem;" in stylesheet_text
+        assert ".elbysodic-post__author-name" in stylesheet_text
+        assert ":where(time, .chirpui-link)" in stylesheet_text
+        assert (
+            ".elbysodic-post-list--editorial-wrap .elbysodic-post__meta-actions" in stylesheet_text
+        )
+        assert "opacity: 0;" in stylesheet_text
+        assert "pointer-events: none;" in stylesheet_text
+        assert "float: inline-start;" in stylesheet_text
+        assert "float: inline-end;" in stylesheet_text
+        assert "aspect-ratio: var(--elbysodic-ratio-poster);" in stylesheet_text
+        assert ".elbysodic-post-profile--poster:hover" in stylesheet_text
+        assert "position: absolute;" in stylesheet_text
 
     asyncio.run(run())
 
@@ -8188,6 +8949,8 @@ def test_staff_can_pin_and_lock_threads() -> None:
             page = await client.get("/boards/ic/threads/moderation-queue")
             assert page.status == 200
             assert "Staff controls" in page.text
+            assert 'id="thread-staff-controls"' not in page.text
+            assert 'id="scene-context-docked-thread-staff-controls"' in page.text
             assert "Pin thread" in page.text
             assert "Lock thread" in page.text
             assert "Move thread" in page.text
@@ -8396,7 +9159,8 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "Metal and Memory" in thread.text
             assert "Magneto sets the simulation to unfair." in thread.text
             assert "Magneto" in thread.text
-            assert "Last beat" in thread.text
+            assert "Post reply" in thread.text
+            assert "elbysodic-scene-composer-tools" in thread.text
             assert "open to join" in thread.text
             assert "Sublevel 3" in thread.text
             assert "Before breakfast" in thread.text
@@ -8554,7 +9318,7 @@ def test_open_thread_can_be_joined_as_active_face() -> None:
             joined_page = await client.get("/boards/plotting/threads/telepathy-office-hours")
             assert joined_page.status == 200
             assert "Join as Rogue" not in joined_page.text
-            assert 'aria-label="Rogue"' in joined_page.text
+            assert "2 faces present" in joined_page.text
             assert "watching" in joined_page.text
 
     asyncio.run(run())

@@ -1,0 +1,533 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/drawer.html" import drawer, drawer_trigger %}
+  {% from "_components/boards.html" import board_media_classes, board_media_image %}
+  {% from "_components/ui.html" import cast_faces, event_bridge %}
+{% end %}
+
+{% def scene_management_controls(thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, control_id_prefix="scene-context") %}
+{% if thread_view and (thread_view.can_manage_scene or thread_view.can_moderate) %}
+<section class="elbysodic-scene-grounding__section elbysodic-scene-grounding__section--operations"
+         aria-label="Scene operations">
+  <h3>Operations</h3>
+  <div class="elbysodic-scene-grounding__operations">
+    {% if thread_view.can_manage_scene %}
+    {% set scene_management_id = control_id_prefix ~ "-scene-management" %}
+    {% set scene_status_id = control_id_prefix ~ "-scene-status" %}
+    {% set scene_posting_mode_id = control_id_prefix ~ "-scene-posting-mode" %}
+    {% set scene_location_id = control_id_prefix ~ "-scene-location" %}
+    {% set scene_timeline_id = control_id_prefix ~ "-scene-timeline" %}
+    {% set scene_summary_id = control_id_prefix ~ "-scene-summary" %}
+    {% set scene_cast_search_id = control_id_prefix ~ "-scene-cast-search" %}
+    {% set scoped_cast_picker_config_id = control_id_prefix ~ "-" ~ cast_picker_config_id %}
+    <details class="elbysodic-management-disclosure">
+      <summary>
+        <span id="{{ scene_management_id }}">Scene management</span>
+        <small>Signal, cast, and scene brief</small>
+      </summary>
+      <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="{{ scene_management_id }}">
+        <p class="elbysodic-copy-helper">Update the scene signal and tag other writers into the cast.</p>
+        <form method="post"
+              hx-boost="false"
+              data-elbysodic-command-kind="update_scene_metadata"
+              data-elbysodic-actor-shape="staff-actor"
+              data-elbysodic-target-object="thread"
+              data-elbysodic-stale-behavior="service-validates-staff-and-thread-community"
+              data-elbysodic-idempotency="last-write-wins"
+              class="chirpui-stack chirpui-stack--md">
+          {{ csrf_field() }}
+          <input type="hidden" name="intent" value="scene">
+          <div class="elbysodic-scene-form-grid">
+            <div>
+              <label class="chirpui-field__label" for="{{ scene_status_id }}">Status</label>
+              <select id="{{ scene_status_id }}" name="status" class="chirpui-field__input">
+                {% for item_status in thread_statuses %}
+                <option value="{{ item_status }}" {{ "selected" if item_status == thread_view.thread.status else "" }}>
+                  {% if item_status == "open" %}Open to join{% elif item_status == "active" %}Active{% elif item_status == "paused" %}Paused{% elif item_status == "complete" %}Complete{% elif item_status == "private" %}Private scene{% else %}Archived{% end %}
+                </option>
+                {% end %}
+              </select>
+            </div>
+            <div>
+              <label class="chirpui-field__label" for="{{ scene_posting_mode_id }}">Posting mode</label>
+              <select id="{{ scene_posting_mode_id }}" name="posting_mode" class="chirpui-field__input">
+                {% for mode in posting_modes %}
+                <option value="{{ mode }}" {{ "selected" if mode == thread_view.thread.posting_mode else "" }}>
+                  {{ "Posting order" if mode == "posting_order" else "Freeform" }}
+                </option>
+                {% end %}
+              </select>
+            </div>
+            <div>
+              <label class="chirpui-field__label" for="{{ scene_location_id }}">Location</label>
+              <input id="{{ scene_location_id }}"
+                     class="chirpui-field__input"
+                     name="location"
+                     value="{{ thread_view.thread.location }}"
+                     autocomplete="off">
+            </div>
+            <div>
+              <label class="chirpui-field__label" for="{{ scene_timeline_id }}">Timeline</label>
+              <input id="{{ scene_timeline_id }}"
+                     class="chirpui-field__input"
+                     name="timeline"
+                     value="{{ thread_view.thread.timeline }}"
+                     autocomplete="off">
+            </div>
+          </div>
+          <div>
+            <label class="chirpui-field__label" for="{{ scene_summary_id }}">Scene summary</label>
+            <textarea id="{{ scene_summary_id }}"
+                      class="chirpui-field__input"
+                      name="summary"
+                      rows="3">{{ thread_view.thread.summary }}</textarea>
+          </div>
+          {{ alpine_json_config(scoped_cast_picker_config_id, cast_picker_config) }}
+          <div class="elbysodic-mention-picker"
+               x-data="elbysodicMentionPicker('{{ scoped_cast_picker_config_id }}')"
+               @click.outside="close()">
+            <label class="chirpui-field__label" for="{{ scene_cast_search_id }}">Tag cast</label>
+            <div class="elbysodic-mention-picker__control" @click="$refs.search.focus()">
+              <template x-for="item in selected" :key="item.kind + ':' + item.id">
+                <span class="elbysodic-mention-token">
+                  <input type="hidden" :name="config.hiddenName" :value="item.id">
+                  <span x-text="item.tag"></span>
+                  <button type="button" :aria-label="'Remove ' + item.label" @click.stop="remove(item)">&times;</button>
+                </span>
+              </template>
+              <input id="{{ scene_cast_search_id }}"
+                     x-ref="search"
+                     type="text"
+                     class="elbysodic-mention-picker__input"
+                     x-model="query"
+                     :placeholder="selected.length ? '@character' : config.placeholder"
+                     autocomplete="off"
+                     @input.debounce.150ms="search()"
+                     @focus="search()"
+                     @keydown.arrow-down.prevent="move(1)"
+                     @keydown.arrow-up.prevent="move(-1)"
+                     @keydown.enter.prevent="chooseHighlighted()"
+                     @keydown.escape.prevent="close()">
+            </div>
+            <div class="elbysodic-mention-picker__list"
+                 role="listbox"
+                 x-show="open"
+                 x-cloak>
+              <template x-for="(item, index) in results" :key="item.kind + ':' + item.id">
+                <button type="button"
+                        class="elbysodic-mention-picker__result"
+                        :class="{ 'is-active': index === highlightedIndex }"
+                        role="option"
+                        @click="select(item)">
+                  <span class="elbysodic-character-avatar" aria-hidden="true">
+                    <img x-show="item.avatar_url" :src="item.avatar_url" alt="" x-cloak>
+                    <span x-show="!item.avatar_url" x-text="item.initial"></span>
+                  </span>
+                  <span>
+                    <strong x-text="item.tag"></strong>
+                    <small x-text="item.detail"></small>
+                  </span>
+                </button>
+              </template>
+              <p class="elbysodic-copy-status" x-show="!loading && query.trim() && results.length === 0">No faces match that search.</p>
+            </div>
+          </div>
+          <div class="chirpui-cluster chirpui-cluster--end">
+            <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save scene</button>
+          </div>
+        </form>
+      </section>
+    </details>
+    {% end %}
+
+    {% if thread_view.can_moderate %}
+    {% set staff_controls_id = control_id_prefix ~ "-thread-staff-controls" %}
+    {% set target_board_id = control_id_prefix ~ "-target-board" %}
+    <details class="elbysodic-management-disclosure">
+      <summary>
+        <span id="{{ staff_controls_id }}">Staff controls</span>
+        <small>Pin, lock, or move thread</small>
+      </summary>
+      <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="{{ staff_controls_id }}">
+        <p class="elbysodic-copy-helper">Manage this thread's visibility in the community queue.</p>
+        <div class="elbysodic-staff-panel__controls">
+          <div class="chirpui-cluster chirpui-cluster--sm">
+            <form method="post"
+                  hx-boost="false"
+                  data-elbysodic-command-kind="toggle_thread_pin"
+                  data-elbysodic-actor-shape="staff-actor"
+                  data-elbysodic-target-object="thread"
+                  data-elbysodic-stale-behavior="service-validates-staff-and-thread-community"
+                  data-elbysodic-idempotency="idempotent-toggle-target">
+              {{ csrf_field() }}
+              <input type="hidden" name="intent" value="{{ "unpin" if thread_view.thread.is_pinned else "pin" }}">
+              <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+                {{ "Unpin thread" if thread_view.thread.is_pinned else "Pin thread" }}
+              </button>
+            </form>
+            <form method="post"
+                  hx-boost="false"
+                  data-elbysodic-command-kind="toggle_thread_lock"
+                  data-elbysodic-actor-shape="staff-actor"
+                  data-elbysodic-target-object="thread"
+                  data-elbysodic-stale-behavior="service-validates-staff-and-thread-community"
+                  data-elbysodic-idempotency="idempotent-toggle-target">
+              {{ csrf_field() }}
+              <input type="hidden" name="intent" value="{{ "unlock" if thread_view.thread.is_locked else "lock" }}">
+              <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+                {{ "Unlock thread" if thread_view.thread.is_locked else "Lock thread" }}
+              </button>
+            </form>
+          </div>
+          <form method="post"
+                hx-boost="false"
+                data-elbysodic-command-kind="move_thread"
+                data-elbysodic-actor-shape="staff-actor"
+                data-elbysodic-target-object="thread"
+                data-elbysodic-stale-behavior="service-validates-target-board-community"
+                data-elbysodic-idempotency="last-write-wins"
+                class="elbysodic-move-thread-form">
+            {{ csrf_field() }}
+            <input type="hidden" name="intent" value="move">
+            <label class="chirpui-field__label" for="{{ target_board_id }}">Move to</label>
+            <select id="{{ target_board_id }}" name="target_board_id" class="chirpui-field__input">
+              {% for board in thread_view.moderation_boards %}
+              <option value="{{ board.id }}" {{ "selected" if board.id == thread_view.board.id else "" }}>
+                {{ board.name }}
+              </option>
+              {% end %}
+            </select>
+            <button type="submit" class="chirpui-btn chirpui-btn--secondary">Move thread</button>
+          </form>
+        </div>
+      </section>
+    </details>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def scene_reader_actions(thread_view, selected_character=none, control_id_prefix="scene-context") %}
+{% if thread_view %}
+<section class="elbysodic-scene-grounding__section elbysodic-scene-grounding__section--reader-actions"
+         aria-label="Reader actions">
+  <h3>Reader actions</h3>
+  <div class="elbysodic-scene-grounding__reader-actions">
+    {% if thread_view.can_join_scene and selected_character %}
+    <form method="post"
+          hx-boost="false"
+          data-elbysodic-command-kind="join_scene"
+          data-elbysodic-actor-shape="current-face"
+          data-elbysodic-target-object="thread"
+          data-elbysodic-stale-behavior="service-validates-current-face-and-thread-state"
+          data-elbysodic-idempotency="service-duplicate-policy">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="join_scene">
+      <button type="submit" class="chirpui-btn chirpui-btn--primary">
+        <span class="chirpui-btn__icon" aria-hidden="true">{{ "add" | icon }}</span>
+        Join as {{ selected_character.name }}
+      </button>
+    </form>
+    {% end %}
+    <form method="post"
+          hx-boost="false"
+          data-elbysodic-command-kind="toggle_thread_watch"
+          data-elbysodic-actor-shape="membership-only"
+          data-elbysodic-target-object="thread"
+          data-elbysodic-stale-behavior="service-validates-thread-visibility"
+          data-elbysodic-idempotency="idempotent-toggle-target">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
+      <button type="submit" class="chirpui-btn chirpui-btn--secondary">
+        <span class="chirpui-btn__icon" aria-hidden="true">{{ "watch" | icon }}</span>
+        {{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}
+      </button>
+    </form>
+    <form method="post"
+          hx-boost="false"
+          data-elbysodic-command-kind="mark_thread_caught_up"
+          data-elbysodic-actor-shape="membership-only"
+          data-elbysodic-target-object="thread"
+          data-elbysodic-stale-behavior="service-validates-thread-visibility"
+          data-elbysodic-idempotency="idempotent-stamp-thread-read">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="mark_caught_up">
+      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Mark caught up</button>
+    </form>
+    {% if thread_view.latest_post %}
+    <a class="chirpui-btn chirpui-btn--secondary"
+       href="#{{ thread_view.latest_post.anchor }}">
+      <span class="chirpui-btn__icon" aria-hidden="true">{{ "arrow-down" | icon }}</span>
+      Read latest
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def scene_grounding_inspector(grounding, thread_view=none, thread_statuses=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none, inspector_close_btn=False, control_id_prefix="scene-context") %}
+<div class="elbysodic-scene-grounding">
+  <header class="elbysodic-scene-grounding__header">
+    <div class="elbysodic-scene-grounding__header-copy">
+      <p class="elbysodic-kicker">Scene context</p>
+      <h2>Grounding</h2>
+    </div>
+    <div class="elbysodic-scene-grounding__header-actions chirpui-cluster chirpui-cluster--sm">
+      {{ badge(grounding.active_face_label, variant=grounding.active_face_variant) }}
+      {% if inspector_close_btn %}
+      <button type="button"
+              class="chirpui-btn chirpui-btn--secondary elbysodic-scene-grounding__close-panel"
+              @click="closeInspector()"
+              aria-label="Close scene context panel">
+        <span class="elbysodic-scene-grounding__close-glyph" aria-hidden="true">×</span>
+      </button>
+      {% end %}
+    </div>
+  </header>
+
+  <section class="elbysodic-scene-grounding__location {{ board_media_classes(grounding.board) }}" aria-label="Location">
+    {{ board_media_image(grounding.board, "elbysodic-scene-grounding__media") }}
+    <div class="elbysodic-scene-grounding__location-copy">
+      <span>Location</span>
+      <h3>
+        <a class="chirpui-link" href="/boards/{{ grounding.board.slug }}">{{ grounding.board.name }}</a>
+      </h3>
+      {% if grounding.parent_board %}
+      <p>
+        Inside
+        <a class="chirpui-link" href="/boards/{{ grounding.parent_board.slug }}">{{ grounding.parent_board.name }}</a>
+      </p>
+      {% end %}
+      {% if grounding.board.description %}
+      <p>{{ grounding.board.description }}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <dl class="elbysodic-scene-grounding__facts">
+    {% for fact in grounding.facts %}
+    <div>
+      <dt>{{ fact.label }}</dt>
+      <dd>{{ fact.value }}</dd>
+    </div>
+    {% end %}
+  </dl>
+
+  {% if grounding.participants %}
+  <section class="elbysodic-scene-grounding__section" aria-label="Present faces">
+    <h3>Present faces</h3>
+    <div class="elbysodic-scene-grounding__faces">
+      {% for character in grounding.participants %}
+      <a class="elbysodic-scene-grounding-face" href="/characters/{{ character.slug }}">
+        <span class="elbysodic-character-avatar" aria-hidden="true">
+          {% if character.avatar_url %}
+          <img src="{{ character.avatar_url }}" alt="">
+          {% else %}
+          <span>{{ character.name[:1] }}</span>
+          {% end %}
+        </span>
+        <span>
+          <strong>{{ character.name }}</strong>
+          {% if character.tagline %}
+          <small>{{ character.tagline }}</small>
+          {% elif character.summary %}
+          <small>{{ character.summary }}</small>
+          {% else %}
+          <small>Scene participant</small>
+          {% end %}
+        </span>
+      </a>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+  {% if grounding.current_event %}
+  <section class="elbysodic-scene-grounding__section elbysodic-scene-grounding__event" aria-label="Current event">
+    {{ event_bridge(grounding.current_event, "Current event") }}
+  </section>
+  {% end %}
+
+  <section class="elbysodic-scene-grounding__section" aria-label="Visibility">
+    <h3>Visibility</h3>
+    <p class="elbysodic-scene-grounding__visibility">
+      <strong>{{ grounding.visibility_label }}</strong>
+      <span>{{ grounding.visibility_detail }}</span>
+    </p>
+  </section>
+
+  <section class="elbysodic-scene-grounding__section" aria-label="Linked story objects">
+    <h3>Linked story objects</h3>
+    <p class="elbysodic-copy-status">
+      Reviewed wanted hooks, plotters, and canon links will surface here once they are attached to this scene.
+    </p>
+  </section>
+
+  {{ scene_reader_actions(thread_view, selected_character, control_id_prefix) }}
+
+  {{ scene_management_controls(thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, control_id_prefix) }}
+</div>
+{% end %}
+
+{% def scene_lane_row_link(board, item) %}
+{% set summary = item.summary %}
+{% set row_badges = item | get('badges') %}
+<div class="elbysodic-scene-lane-row {{ "is-current" if item.is_current else "" }} {{ "is-unread" if summary.is_unread else "" }}">
+  <a class="elbysodic-scene-lane-row__primary chirpui-link"
+     href="/boards/{{ board.slug }}/threads/{{ summary.thread.slug }}{{ "#" ~ summary.jump_post.anchor if summary.jump_post else "" }}"
+     {% if item.is_current %}aria-current="page"{% end %}>
+    <span class="elbysodic-scene-lane-row__topline">
+      <strong>{{ summary.thread.title }}</strong>
+      {% if summary.latest_post %}
+      <time datetime="{{ summary.latest_post.post.updated_at }}">{{ summary.latest_post.updated_at_relative_label }}</time>
+      {% else %}
+      <time datetime="{{ summary.thread.updated_at }}">Opened</time>
+      {% end %}
+    </span>
+    {% if summary.thread.summary %}
+    <span class="elbysodic-scene-lane-row__summary">{{ summary.thread.summary }}</span>
+    {% elif summary.latest_post %}
+    <span class="elbysodic-scene-lane-row__summary">{{ summary.latest_post.snippet }}</span>
+    {% end %}
+    <span class="elbysodic-scene-lane-row__meta">
+      <span>{{ summary.reply_count }} {{ "reply" if summary.reply_count == 1 else "replies" }}</span>
+      <span>{{ summary.participants | length }} {{ "face" if summary.participants | length == 1 else "faces" }}</span>
+      {% if summary.episode %}
+      <span>{{ summary.episode.read_estimate_label }}</span>
+      {% end %}
+    </span>
+    {% if row_badges %}
+    <span class="elbysodic-scene-lane-row__badges">
+      {% for item_badge in row_badges %}
+      {{ badge(item_badge.label, variant=item_badge.variant) }}
+      {% end %}
+    </span>
+    {% end %}
+  </a>
+  <div class="elbysodic-scene-lane-row__cast">
+    {{ cast_faces(summary.participants, label="Cast") }}
+  </div>
+</div>
+{% end %}
+
+{% def location_scene_lane(lane) %}
+{% set lane_placement_eyebrow = lane | get('placement_sidebar_eyebrow', '') %}
+{% set lane_place_headline = lane | get('place_headline_board') %}
+{% if not lane_place_headline %}
+{% if lane.placement_path %}
+{% set lane_place_headline = lane.placement_path[0] %}
+{% else %}
+{% set lane_place_headline = lane.board %}
+{% end %}
+{% end %}
+{% set lane_place_trail_boards = lane | get('placement_trail_boards') %}
+{% if not lane_place_trail_boards %}
+{% set path_len = lane.placement_path | length %}
+{% if path_len > 1 %}
+{% set lane_place_trail_boards = lane.placement_path[1:] %}
+{% end %}
+{% end %}
+{% set lane_attention_items = lane | get('attention_items') %}
+{% set lane_active_items = lane | get('active_items') %}
+<div class="elbysodic-scene-lane">
+  <header class="elbysodic-scene-lane__header">
+    <div class="elbysodic-scene-lane__heading">
+      <p class="elbysodic-kicker">{{ lane_placement_eyebrow }}</p>
+      <h2 class="elbysodic-scene-lane__anchor">
+        <a class="chirpui-link" href="/boards/{{ lane_place_headline.slug }}">
+          {{ lane_place_headline.name }}
+        </a>
+      </h2>
+      {% if lane_place_trail_boards %}
+      <nav class="elbysodic-scene-lane__path" aria-label="Place hierarchy for this lane">
+        {% for board in lane_place_trail_boards %}
+        <a class="elbysodic-scene-lane__path-chip chirpui-link"
+           href="/boards/{{ board.slug }}"
+           {% if board.id == lane.board.id %}aria-current="location"{% end %}>
+          {{ board.name }}
+        </a>
+        {% end %}
+      </nav>
+      {% end %}
+    </div>
+  </header>
+  {% if lane.items %}
+  <div class="elbysodic-scene-lane__sections" aria-label="Scenes in {{ lane.board.name }}">
+    <section class="elbysodic-scene-lane-section" aria-labelledby="scene-lane-needs-face-{{ lane.board.slug }}">
+      <h3 class="elbysodic-scene-lane-section__title" id="scene-lane-needs-face-{{ lane.board.slug }}">
+        Needs your reply
+      </h3>
+      {% if lane_attention_items %}
+      <nav class="elbysodic-scene-lane__list" aria-label="Scenes that need attention from someone on your roster">
+        {% for item in lane_attention_items %}
+        {{ scene_lane_row_link(lane.board, item) }}
+        {% end %}
+      </nav>
+      {% else %}
+      <p class="elbysodic-scene-lane-empty elbysodic-copy-helper">
+        Nothing urgent for your roster inside this lane.
+      </p>
+      {% end %}
+    </section>
+
+    <section class="elbysodic-scene-lane-section" aria-labelledby="scene-lane-active-{{ lane.board.slug }}">
+      <h3 class="elbysodic-scene-lane-section__title" id="scene-lane-active-{{ lane.board.slug }}">
+        Open scenes
+      </h3>
+      {% if lane_active_items %}
+      <nav class="elbysodic-scene-lane__list" aria-label="Currently open scenes in this location">
+        {% for item in lane_active_items %}
+        {{ scene_lane_row_link(lane.board, item) }}
+        {% end %}
+      </nav>
+      {% else %}
+      <p class="elbysodic-scene-lane-empty elbysodic-copy-helper">
+        No other soft beats queued in this lane.
+      </p>
+      {% end %}
+    </section>
+
+    <section class="elbysodic-scene-lane-section elbysodic-scene-lane-section--context"
+             aria-labelledby="scene-lane-grounding-{{ lane.board.slug }}">
+      <h3 class="elbysodic-scene-lane-section__title" id="scene-lane-grounding-{{ lane.board.slug }}">
+        Grounding context
+      </h3>
+      <p class="elbysodic-scene-lane-context-hint elbysodic-copy-helper">
+        Wanted hooks and plotters will list here once they anchor to scenes in this room.
+      </p>
+    </section>
+  </div>
+  {% else %}
+  <p class="elbysodic-copy-status">No direct scenes are open here yet.</p>
+  {% end %}
+</div>
+{% end %}
+
+{% def scene_context_shell(scene_context, thread_view=none, thread_statuses=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none) %}
+<div class="elbysodic-scene-context-layout"
+     x-data="elbysodicSceneContextLayout()"
+     data-inspector-open="false"
+     x-bind:data-inspector-open="inspectorOpen ? 'true' : 'false'">
+  <div class="elbysodic-scene-context-layout__reader">
+    <div class="elbysodic-scene-context-mobile-actions">
+      {{ drawer_trigger("elbysodic-scenes-here-drawer", "Scenes here", cls="chirpui-btn chirpui-btn--secondary elbysodic-scenes-here-trigger") }}
+      {{ drawer_trigger("elbysodic-scene-context-drawer", "Scene context", cls="chirpui-btn chirpui-btn--secondary elbysodic-scene-context-trigger") }}
+    </div>
+    {% yield %}
+  </div>
+  <aside class="elbysodic-scene-context-layout__grounding elbysodic-scene-context-layout__grounding--docked"
+         aria-label="Scene context panel"
+         x-bind:aria-hidden="inspectorOpen ? 'false' : 'true'"
+         x-bind:inert="!inspectorOpen">
+    {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, inspector_close_btn=true, control_id_prefix="scene-context-docked") }}
+  </aside>
+  {% call drawer("elbysodic-scenes-here-drawer", title="Scenes here", side="left", cls="elbysodic-scenes-here-drawer") %}
+    {{ location_scene_lane(scene_context.location_lane) }}
+  {% end %}
+  {% call drawer("elbysodic-scene-context-drawer", title="Scene context", side="right", cls="elbysodic-scene-context-drawer") %}
+    {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, control_id_prefix="scene-context-drawer") }}
+  {% end %}
+</div>
+{% end %}

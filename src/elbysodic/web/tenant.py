@@ -58,6 +58,7 @@ _FORM_URL_VALUE_RE = re.compile(
     r'(?P<attr><input\b(?=[^>]*\bname=["\'](?:next|redirect|return_to)["\'])'
     r'[^>]*\bvalue=["\'])(?P<url>/[^"\']*)'
 )
+_GLOBAL_LINK_SCOPE_OPT_OUT = "data-elbysodic-global-link"
 
 
 class TenantPrefixMiddleware:
@@ -181,11 +182,21 @@ def _scoped_html_body(body: str | bytes, community_slug: str, content_type: str)
 
 def _scope_html_links(html: str, community_slug: str) -> str:
     def replace_match(match: re.Match[str]) -> str:
+        if _url_attr_opts_out_of_scoping(html, match.start("attr")):
+            return match.group(0)
         url = unescape(match.group("url"))
         scoped = escape(scoped_path(community_slug, url), quote=True)
         return f"{match.group('attr')}{scoped}"
 
     return _FORM_URL_VALUE_RE.sub(replace_match, _URL_ATTR_RE.sub(replace_match, html))
+
+
+def _url_attr_opts_out_of_scoping(html: str, attr_start: int) -> bool:
+    tag_start = html.rfind("<", 0, attr_start)
+    tag_end = html.find(">", attr_start)
+    if tag_start == -1 or tag_end == -1:
+        return False
+    return _GLOBAL_LINK_SCOPE_OPT_OUT in html[tag_start:tag_end]
 
 
 def _scope_query(community_slug: str, query: str) -> str:
