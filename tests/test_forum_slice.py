@@ -243,6 +243,48 @@ def _faceless_services(services: AppServices, *, prefix: str = "faceless") -> Ap
     return AppServices(repo, DemoSeed(community, user, membership, None))
 
 
+def _link_seed_plotting_room_to_sentinel(services: AppServices):
+    repo = services.repo
+    community = services.seed.community
+    membership = services.seed.membership
+    character = services.seed.default_character
+    assert character is not None
+    board = repo.get_board_by_slug(community.id, "danger-room")
+    thread = repo.get_thread_by_slug(community.id, board.id, "sentinel-drill")
+    wanted = repo.create_wanted_ad(
+        community.id,
+        membership.id,
+        "sentinel-drill-tactics-hook",
+        "Sentinel drill tactics handoff",
+        creator_character_id=character.id,
+        summary="Coordinate the danger room beat before the next reply.",
+    )
+    interest = repo.create_wanted_ad_interest(
+        community.id,
+        wanted.id,
+        membership.id,
+        character.id,
+        note="Rogue can carry this scene beat.",
+    )
+    room = repo.create_plotting_room(
+        community.id,
+        membership.id,
+        "Sentinel drill tactics table",
+        source_wanted_ad_id=wanted.id,
+        source_wanted_ad_interest_id=interest.id,
+        summary="Plan Rogue's next danger room beat before posting.",
+        status="ready",
+    )
+    repo.create_plotting_room_participant(
+        community.id,
+        room.id,
+        membership.id,
+        character_id=character.id,
+        participant_role="owner",
+    )
+    return repo.attach_plotting_room_thread(community.id, room.id, thread.id)
+
+
 def _scale_board_services(*, thread_count: int = 30) -> AppServices:
     connection = connect(check_same_thread=False)
     create_schema(connection)
@@ -4312,6 +4354,13 @@ def test_scene_context_contract_wraps_thread_location_and_grounding_state() -> N
     assert scene_context.media_band.heading == "Med Bay scene atmosphere"
     assert scene_context.media_band.summary == "A school under emergency power."
     assert scene_context.media_band.is_inherited is True
+    assert scene_context.writer_activity is not None
+    assert scene_context.writer_activity.selected_character == character
+    assert not scene_context.writer_activity.needs_reply
+    assert [item.thread.title for item in scene_context.writer_activity.waiting_on_others] == [
+        "Breakfast Before Debrief",
+    ]
+    assert scene_context.writer_activity.visible_count == 1
     assert repo.get_thread_read_at(community.id, current.id, membership.id) is not None
 
 
@@ -4477,6 +4526,59 @@ def test_thread_page_renders_scene_grounding_for_owner() -> None:
     asyncio.run(run())
 
 
+def test_scene_grounding_renders_visible_plotting_room_story_link() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        linked_room = _link_seed_plotting_room_to_sentinel(services)
+        scene_context = services.read_scene_context("danger-room", "sentinel-drill")
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert scene_context.grounding.story_links
+        assert scene_context.grounding.story_links[0].title == linked_room.title
+        assert scene_context.grounding.story_links[0].href == f"/plotting/{linked_room.id}"
+        assert page.status == 200
+        assert "Linked story objects" in content
+        assert "Reviewed wanted hooks, plotters, and canon links will surface here" not in content
+        assert "Sentinel drill tactics table" in content
+        assert "Plan Rogue&#39;s next danger room beat before posting." in content
+        assert f'href="/plotting/{linked_room.id}"' in content
+        assert "Threaded" in content
+        assert "Wanted hook source" in content
+        assert "Planning faces" in content
+        assert "Rogue" in content
+
+    asyncio.run(run())
+
+
+def test_scene_grounding_hides_plotting_room_from_non_participants() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        _link_seed_plotting_room_to_sentinel(services)
+        outsider_services, _character_id = _outsider_services(
+            services,
+            prefix="scene-plotting-outsider",
+        )
+        outsider_context = outsider_services.read_scene_context("danger-room", "sentinel-drill")
+        app = create_app(debug=False, services=outsider_services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert not outsider_context.grounding.story_links
+        assert page.status == 200
+        assert "Linked story objects" in content
+        assert "Sentinel drill tactics table" not in content
+        assert "Plan Rogue&#39;s next danger room beat before posting." not in content
+        assert "Reviewed wanted hooks, plotters, and canon links will surface here" in content
+
+    asyncio.run(run())
+
+
 def test_scene_context_shell_preserves_reader_landmarks_and_controls() -> None:
     async def run() -> None:
         app = _app()
@@ -4497,6 +4599,8 @@ def test_scene_context_shell_preserves_reader_landmarks_and_controls() -> None:
         assert "Scene context" in html
         assert "Needs your reply" in html
         assert "Grounding context" in html
+        assert "What needs you" in html
+        assert 'id="elbysodic-writer-activity-drawer"' in html
         assert "After this scene" in html
         assert "Continue through your Desk queue" in html
         assert "elbysodic-thread-attention-nav__link--scenes" in html
@@ -4566,6 +4670,102 @@ def test_scene_management_controls_live_in_grounding_tray() -> None:
         assert re.search(r"(?:Watch|Unwatch) thread", content)
         assert "Read latest" in content
         assert "Tag cast" in content
+
+    asyncio.run(run())
+
+
+def test_thread_page_renders_member_scoped_scene_writer_activity_drawer() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        other_community = repo.create_community("other-activity-realm", "Other Activity Realm")
+        other_role = repo.create_role(other_community.id, "member", "Member")
+        other_membership = repo.create_membership(
+            other_community.id,
+            services.seed.user.id,
+            other_role.id,
+            "other-activity",
+            "Other Activity",
+        )
+        other_face = repo.create_character(
+            other_community.id,
+            other_membership.id,
+            "other-activity-face",
+            "Other Activity Face",
+            make_default=True,
+        )
+        other_writer = repo.create_user("other-activity-writer@example.com", "hash")
+        other_writer_membership = repo.create_membership(
+            other_community.id,
+            other_writer.id,
+            other_role.id,
+            "other-activity-writer",
+            "Other Activity Writer",
+        )
+        other_writer_face = repo.create_character(
+            other_community.id,
+            other_writer_membership.id,
+            "other-activity-counterpart",
+            "Other Activity Counterpart",
+        )
+        other_board = repo.create_board(
+            other_community.id,
+            "other-activity-board",
+            "Other Activity Board",
+        )
+        other_thread = repo.create_thread(
+            other_community.id,
+            other_board.id,
+            other_face.id,
+            "other-activity-obligation",
+            "Other Realm Obligation",
+        )
+        repo.create_post(other_community.id, other_thread.id, other_face.id, "Cross-realm opener.")
+        repo.create_post(
+            other_community.id,
+            other_thread.id,
+            other_writer_face.id,
+            "This other realm reply should stay out of this scene drawer.",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "elbysodic-writer-activity-drawer" in content
+        assert "What needs you" in content
+        assert "Writing as Rogue" in content
+        assert "Current scene" in content
+        assert "Watching" in content
+        assert "New replies" in content or "Caught up" in content
+        assert "Needs reply" in content
+        assert "Waiting" in content
+        assert "Open Desk queue" in content
+        assert "/my/threads" in content
+        assert "Other Realm Obligation" not in content
+        assert "This other realm reply should stay out of this scene drawer." not in content
+        assert "Reserve expiring" not in content
+        assert "Claim reviewed" not in content
+
+    asyncio.run(run())
+
+
+def test_scene_writer_activity_drawer_hides_for_faceless_members() -> None:
+    async def run() -> None:
+        services = _faceless_services(create_services(path=":memory:"), prefix="scene-activity")
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        content = _page_content(page.text)
+        assert page.status == 200
+        assert "Create a character first" in content
+        assert "elbysodic-writer-activity-drawer" not in content
+        assert "What needs you" not in content
+        assert "Writing as" not in content
 
     asyncio.run(run())
 
@@ -4853,12 +5053,21 @@ def test_scene_lane_watch_state_uses_batched_lookup() -> None:
         for sql, count in counts.items()
         if "FROM thread_watches" in sql and "json_each" not in sql
     ]
+    post_batch_queries = [
+        count for sql, count in counts.items() if "FROM posts" in sql and "json_each" in sql
+    ]
+    post_scalar_queries = [
+        count for sql, count in counts.items() if "FROM posts" in sql and "json_each" not in sql
+    ]
     assert len(scene_context.location_lane.items) == 29
     assert scene_context.location_lane.current_item is not None
     assert scene_context.location_lane.current_item.summary.thread.slug == "scale-thread-0"
+    assert scene_context.writer_activity is not None
     assert any(item.is_watched for item in scene_context.location_lane.items)
     assert sum(watched_batch_queries) == 1
     assert sum(watched_scalar_queries) == 1
+    assert sum(post_batch_queries) <= 3
+    assert sum(post_scalar_queries) <= 2
 
 
 def test_discovery_defaults_to_active_face_lens_and_filters_facets() -> None:

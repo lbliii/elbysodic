@@ -360,9 +360,36 @@
 
   <section class="elbysodic-scene-grounding__section" aria-label="Linked story objects">
     <h3>Linked story objects</h3>
+    {% set story_links = grounding | get('story_links', ()) %}
+    {% if story_links %}
+    <div class="elbysodic-scene-story-links">
+      {% for link in story_links %}
+      <article class="elbysodic-scene-story-link elbysodic-scene-story-link--{{ link.kind }}">
+        <div class="elbysodic-scene-story-link__heading">
+          <p class="elbysodic-copy-eyebrow">{{ link.label }}</p>
+          <h4><a class="chirpui-link" href="{{ link.href }}">{{ link.title }}</a></h4>
+        </div>
+        {% if link.summary %}
+        <p>{{ link.summary }}</p>
+        {% endif %}
+        <div class="elbysodic-scene-story-link__meta">
+          {{ badge(link.status_label, variant="info") }}
+          <span>{{ link.source_label }}</span>
+        </div>
+        {% if link.participant_labels %}
+        <p class="elbysodic-scene-story-link__participants">
+          <span>Planning faces</span>
+          {{ link.participant_labels | join(", ") }}
+        </p>
+        {% endif %}
+      </article>
+      {% end %}
+    </div>
+    {% else %}
     <p class="elbysodic-copy-status">
       Reviewed wanted hooks, plotters, and canon links will surface here once they are attached to this scene.
     </p>
+    {% endif %}
   </section>
 
   {{ scene_reader_actions(thread_view, selected_character, control_id_prefix) }}
@@ -409,6 +436,87 @@
   <div class="elbysodic-scene-lane-row__cast">
     {{ cast_faces(summary.participants, label="Cast") }}
   </div>
+</div>
+{% end %}
+
+{% def scene_writer_activity_trigger(activity, cls="chirpui-btn chirpui-btn--secondary elbysodic-scene-writer-activity-trigger") %}
+{% if activity %}
+  {{ drawer_trigger("elbysodic-writer-activity-drawer", "What needs you", cls=cls) }}
+{% end %}
+{% end %}
+
+{% def scene_writer_activity_row(item, label, variant) %}
+<a class="elbysodic-scene-activity-row elbysodic-scene-activity-row--{{ variant }} chirpui-link"
+   href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}{{ "#" ~ item.jump_post.anchor if item.jump_post else "" }}">
+  <span class="elbysodic-scene-activity-row__topline">
+    <strong>{{ item.thread.title }}</strong>
+    <span>{{ label }}</span>
+  </span>
+  <span class="elbysodic-scene-activity-row__meta">
+    <span>{{ item.board.name }}</span>
+    {% if item.latest_post %}
+    <span>{{ item.latest_post.updated_at_relative_label }}</span>
+    {% endif %}
+  </span>
+  {% if item.latest_post %}
+  <span class="elbysodic-scene-activity-row__snippet">{{ item.latest_post.snippet }}</span>
+  {% endif %}
+</a>
+{% end %}
+
+{% def scene_writer_activity_drawer(activity) %}
+<div class="elbysodic-scene-writer-activity chirpui-stack chirpui-stack--md">
+  <header class="elbysodic-scene-writer-activity__header">
+    <p class="elbysodic-copy-eyebrow">Writing as {{ activity.selected_character.name }}</p>
+    <h3>What needs you</h3>
+  </header>
+
+  <section class="elbysodic-scene-writer-activity__section" aria-label="Current scene state">
+    <h4>Current scene</h4>
+    <div class="elbysodic-scene-activity-statuses">
+      {% if activity.is_watching_current_scene %}
+      {{ badge("Watching", variant="info") }}
+      {% endif %}
+      {% if activity.is_caught_up_current_scene %}
+      {{ badge("Caught up", variant="success") }}
+      {% else %}
+      {{ badge("New replies", variant="warning") }}
+      {% endif %}
+    </div>
+  </section>
+
+  {% if activity.needs_reply %}
+  <section class="elbysodic-scene-writer-activity__section" aria-label="Needs reply">
+    <h4>Needs reply</h4>
+    <div class="elbysodic-scene-activity-list">
+      {% for item in activity.needs_reply %}
+      {{ scene_writer_activity_row(item, "Needs reply", "needs") }}
+      {% end %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if activity.waiting_on_others %}
+  <section class="elbysodic-scene-writer-activity__section" aria-label="Waiting">
+    <h4>Waiting</h4>
+    <div class="elbysodic-scene-activity-list">
+      {% for item in activity.waiting_on_others %}
+      {{ scene_writer_activity_row(item, "Waiting", "waiting") }}
+      {% end %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not activity.has_queue_items %}
+  <section class="elbysodic-scene-writer-activity__section" aria-label="Queue clear">
+    <h4>Queue clear</h4>
+    <p class="elbysodic-copy-status">
+      No other active scenes are asking for {{ activity.selected_character.name }} right now.
+    </p>
+  </section>
+  {% endif %}
+
+  <a class="chirpui-btn chirpui-btn--secondary" href="/my/threads">Open Desk queue</a>
 </div>
 {% end %}
 
@@ -506,6 +614,7 @@
 {% end %}
 
 {% def scene_context_shell(scene_context, thread_view=none, thread_statuses=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none) %}
+{% set writer_activity = scene_context | get('writer_activity', none) %}
 <div class="elbysodic-scene-context-layout"
      x-data="elbysodicSceneContextLayout()"
      data-inspector-open="false"
@@ -514,6 +623,7 @@
     <div class="elbysodic-scene-context-mobile-actions">
       {{ drawer_trigger("elbysodic-scenes-here-drawer", "Scenes here", cls="chirpui-btn chirpui-btn--secondary elbysodic-scenes-here-trigger") }}
       {{ drawer_trigger("elbysodic-scene-context-drawer", "Scene context", cls="chirpui-btn chirpui-btn--secondary elbysodic-scene-context-trigger") }}
+      {{ scene_writer_activity_trigger(writer_activity) }}
     </div>
     {% yield %}
   </div>
@@ -528,6 +638,11 @@
   {% end %}
   {% call drawer("elbysodic-scene-context-drawer", title="Scene context", side="right", cls="elbysodic-scene-context-drawer") %}
     {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, control_id_prefix="scene-context-drawer") }}
+  {% end %}
+  {% if writer_activity %}
+  {% call drawer("elbysodic-writer-activity-drawer", title="What needs you", side="right", cls="elbysodic-writer-activity-drawer") %}
+    {{ scene_writer_activity_drawer(writer_activity) }}
+  {% end %}
   {% end %}
 </div>
 {% end %}

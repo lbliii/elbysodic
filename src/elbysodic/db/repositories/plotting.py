@@ -304,6 +304,46 @@ class PlottingRepositoryMixin(PlotHookRepositoryMixin):
         ).fetchall()
         return [_plotting_room_from_row(row) for row in rows]
 
+    def list_plotting_rooms_for_thread(
+        self,
+        community_id: int,
+        thread_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[PlottingRoom]:
+        self.get_thread(community_id, thread_id)
+        where = "WHERE community_id = ? AND target_thread_id = ?"
+        params: tuple[object, ...] = (community_id, thread_id)
+        if status is not None:
+            where = f"{where} AND status = ?"
+            params = (*params, status)
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                id,
+                community_id,
+                owner_membership_id,
+                source_plot_hook_id,
+                source_plot_hook_interest_id,
+                source_wanted_ad_id,
+                source_wanted_ad_interest_id,
+                title,
+                summary,
+                notes,
+                next_step,
+                target_board_id,
+                target_thread_id,
+                status,
+                created_at,
+                updated_at
+            FROM plotting_rooms
+            {where}
+            ORDER BY updated_at DESC, id DESC
+            """,
+            params,
+        ).fetchall()
+        return [_plotting_room_from_row(row) for row in rows]
+
     def list_plotting_rooms_for_membership(
         self,
         community_id: int,

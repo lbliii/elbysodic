@@ -191,3 +191,57 @@ Deferred:
 - Thread-specific scene media fields remain a Phase B schema decision.
 - Event-specific media remains deferred; current events only provide contextual
   chip text when already present.
+
+## Scene Writer Activity Drawer QA
+
+Date: 2026-05-15
+
+Scope: browser smoke for the `What needs you` drawer on the seeded route
+`/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill`.
+
+Verified:
+
+- Desktop and mobile expose a `What needs you` trigger for an active-face
+  member.
+- Opening the drawer shows the active face, current scene state, reply/waiting
+  obligations, and the Desk queue link.
+- Desktop and mobile widths avoid horizontal overflow while the drawer is
+  open.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-scene-activity-smoke/desktop.png`
+- `/private/tmp/elbysodic-scene-activity-smoke/mobile.png`
+
+Deferred:
+
+- Reserve and claim rows remain deferred until they are backed by an explicit
+  notification or deadline service contract.
+
+## Scene Plotting Grounding QA
+
+Date: 2026-05-15
+
+Scope: browser smoke for a scene context panel with a real plotting-room story
+link on `/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill`.
+
+Verified:
+
+- Desktop and mobile scene context expose the plotting-room link card when a
+  room is explicitly attached to the current scene.
+- The card shows the plotting-room title, source label, status, and planning
+  faces.
+- Desktop and mobile widths avoid horizontal overflow while the scene context
+  panel/drawer is open.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-scene-grounding-smoke/desktop.png`
+- `/private/tmp/elbysodic-scene-grounding-smoke/mobile.png`
+
+Deferred:
+
+- Generic wanted hook links remain deferred until wanted-to-thread
+  relationships are explicit outside plotting-room source data.
+- Canon/source grounding remains deferred until Continuity Graph provenance and
+  review workflows exist.

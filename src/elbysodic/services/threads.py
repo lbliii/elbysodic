@@ -10,6 +10,8 @@ from elbysodic.domain.models import (
     CommunityMembership,
     Facet,
     FacetGroup,
+    PlottingRoom,
+    PlottingRoomParticipant,
     Post,
     Thread,
 )
@@ -40,6 +42,8 @@ from elbysodic.services.read_models import (
     SceneLocationLane,
     SceneLocationLaneItem,
     SceneMediaBand,
+    SceneStoryLink,
+    SceneWriterActivity,
     ThreadNavigationItem,
     ThreadObligationItem,
     ThreadStatus,
@@ -119,6 +123,20 @@ class ThreadReadRepository(
     ) -> dict[int, list[Character]]: ...
 
     def list_thread_participant_ids(self, community_id: int, thread_id: int) -> set[int]: ...
+
+    def list_plotting_rooms_for_thread(
+        self,
+        community_id: int,
+        thread_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[PlottingRoom]: ...
+
+    def list_plotting_room_participants(
+        self,
+        community_id: int,
+        plotting_room_id: int,
+    ) -> list[PlottingRoomParticipant]: ...
 
     def list_facet_groups(self, community_id: int) -> list[FacetGroup]: ...
 
@@ -561,6 +579,7 @@ def read_scene_context(
         can_manage_scene=thread_view.can_manage_scene,
         can_moderate_scene=thread_view.can_moderate,
         is_watched=thread_view.is_watched,
+        story_links=scene_story_links(repo, viewer, thread),
     )
     return SceneContextView(
         thread_view=thread_view,
@@ -569,7 +588,100 @@ def read_scene_context(
         grounding=grounding,
         media_band=scene_media_band(board, parent_board, current_event),
         current_event=current_event,
+        writer_activity=scene_writer_activity(repo, viewer, thread_view),
     )
+
+
+def scene_writer_activity(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    thread_view: ThreadView,
+) -> SceneWriterActivity | None:
+    if viewer.current_character is None:
+        return None
+    sorted_items = thread_obligations(repo, viewer, {viewer.current_character.id})
+    current_thread_id = thread_view.thread.id
+    return SceneWriterActivity(
+        selected_character=viewer.current_character,
+        needs_reply=[
+            item
+            for item in sorted_items
+            if item.needs_reply and item.thread.id != current_thread_id
+        ][:3],
+        waiting_on_others=[
+            item
+            for item in sorted_items
+            if item.waiting_on_others and item.thread.id != current_thread_id
+        ][:3],
+        is_watching_current_scene=thread_view.is_watched,
+        is_caught_up_current_scene=not thread_view.is_unread,
+    )
+
+
+def scene_story_links(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    thread: Thread,
+) -> tuple[SceneStoryLink, ...]:
+    links: list[SceneStoryLink] = []
+    for room in repo.list_plotting_rooms_for_thread(viewer.community.id, thread.id):
+        participants = repo.list_plotting_room_participants(viewer.community.id, room.id)
+        participant_membership_ids = {participant.membership_id for participant in participants}
+        if not can_view_scene_plotting_room(viewer, room, participant_membership_ids):
+            continue
+        participant_labels = tuple(
+            scene_plotting_participant_label(repo, viewer.community.id, participant)
+            for participant in participants[:4]
+        )
+        links.append(
+            SceneStoryLink(
+                kind="plotting_room",
+                label="Plotting room",
+                title=room.title,
+                summary=room.summary or room.next_step,
+                href=f"/plotting/{room.id}",
+                status_label=scene_plotting_status_label(room.status),
+                source_label=scene_plotting_source_label(room),
+                participant_labels=participant_labels,
+            )
+        )
+    return tuple(links)
+
+
+def can_view_scene_plotting_room(
+    viewer: ForumView,
+    room: PlottingRoom,
+    participant_membership_ids: set[int],
+) -> bool:
+    return (
+        viewer.membership.id == room.owner_membership_id
+        or viewer.membership.id in participant_membership_ids
+        or policies.can_manage_casting(viewer.membership, viewer.role)
+    )
+
+
+def scene_plotting_participant_label(
+    repo: ThreadReadRepository,
+    community_id: int,
+    participant: PlottingRoomParticipant,
+) -> str:
+    if participant.character_id is not None:
+        return repo.get_character(community_id, participant.character_id).name
+    if participant.prospective_character_name:
+        return participant.prospective_character_name
+    return repo.get_membership(community_id, participant.membership_id).display_name
+
+
+def scene_plotting_source_label(room: PlottingRoom) -> str:
+    if room.source_plot_hook_id is not None:
+        return "Plot hook source"
+    if room.source_wanted_ad_id is not None:
+        return "Wanted hook source"
+    return "Planning source"
+
+
+def scene_plotting_status_label(status: str) -> str:
+    return status.replace("_", " ").title()
 
 
 def scene_media_band(
