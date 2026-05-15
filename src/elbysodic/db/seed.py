@@ -18,6 +18,7 @@ from elbysodic.blueprints import (
     blueprint_theme_tokens,
     ensure_valid_program_blueprints,
 )
+from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.db.repository import ForumRepository
 from elbysodic.domain.models import (
     Board,
@@ -107,6 +108,35 @@ class BoardMediaSeed:
     image_treatment: str = "poster"
     image_focal_point: str = "center"
     image_overlay: str = "medium"
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryTagSeed:
+    tag_type: str
+    tag_key: str
+    label: str
+    search_text: str = ""
+    sort_order: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileSeed:
+    premise_archetype: str
+    play_engine: str
+    lore_aperture: str
+    access_model: str
+    application_model: str
+    age_rating: str
+    content_rating: str
+    activity_pace: str
+    activity_expectation: str
+    forum_adjunct: str
+    roster_posture: str
+    catalog_pitch: str
+    onboarding_pitch: str
+    tags: tuple[DiscoveryTagSeed, ...]
+    staff_pick_label: str = ""
+    featured_event_material_slug: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -275,6 +305,121 @@ STUDIO_PROGRAM_BOARD_MEDIA: dict[str, dict[str, BoardMediaSeed]] = {
             "County fairgrounds with tents and founders week lights",
         ),
     },
+}
+
+
+DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
+    "x-men-apocalypse": DiscoveryProfileSeed(
+        premise_archetype="urban-supernatural-pressure-cooker",
+        play_engine="event-driven",
+        lore_aperture="canon-divergent",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/3/3",
+        activity_pace="weekly",
+        activity_expectation="scene replies, missions, and wanted hooks",
+        forum_adjunct="forum-first",
+        roster_posture="canons and original faces",
+        catalog_pitch="A public mutant crisis realm with school life, factions, and B-24 pressure.",
+        onboarding_pitch="Start with the crisis, a faction tie, a wanted hook, or a first face.",
+        featured_event_material_slug="b-24-winter",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "urban-supernatural",
+                "Urban supernatural pressure",
+                "superhero crisis mutants factions current chapter",
+                10,
+            ),
+            DiscoveryTagSeed("entry_path", "wanted", "Open wanted hooks", "wanted casting", 20),
+            DiscoveryTagSeed("format", "forum-first", "Forum-first", sort_order=30),
+        ),
+    ),
+    "hp-universe": DiscoveryProfileSeed(
+        premise_archetype="original-canon-adjacent-au",
+        play_engine="institution-driven",
+        lore_aperture="canon-divergent",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/3/3",
+        activity_pace="relaxed",
+        activity_expectation="no word count, scene-driven school and village plots",
+        forum_adjunct="forum-first",
+        roster_posture="canons, staff, students, and original faces",
+        catalog_pitch="A magic-school AU with institution politics, haunted corridors, and village pressure.",
+        onboarding_pitch="Start with a corridor scene, current event, canon tie, or wanted hook.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed("premise", "canon-adjacent-au", "Canon-adjacent AU", "magic school fantasy", 10),
+            DiscoveryTagSeed("genre", "magic-school", "Magic school", "magic fantasy castle", 20),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
+        ),
+    ),
+    "jurassic-park-universe": DiscoveryProfileSeed(
+        premise_archetype="strange-frontier",
+        play_engine="survival-driven",
+        lore_aperture="canon-divergent",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/3/3",
+        activity_pace="weekly",
+        activity_expectation="event pressure, operations scenes, and survival threads",
+        forum_adjunct="forum-first",
+        roster_posture="staff, scientists, handlers, and original faces",
+        catalog_pitch="A storm-hit island operations realm where survival and containment keep colliding.",
+        onboarding_pitch="Start with the current incident, an operations role, or a paddock thread.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed("premise", "strange-frontier", "Strange frontier", "survival sci-fi science island", 10),
+            DiscoveryTagSeed("pressure", "survival", "Survival pressure", "storm containment", 20),
+            DiscoveryTagSeed("format", "forum-first", "Forum-first", sort_order=30),
+        ),
+    ),
+    "rl-nyc": DiscoveryProfileSeed(
+        premise_archetype="fame-and-industry-drama",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="2/2/2",
+        activity_pace="relaxed",
+        activity_expectation="slice-of-life scenes, work ties, and city events",
+        forum_adjunct="forum-first",
+        roster_posture="original faces and workplace connections",
+        catalog_pitch="An urban real-life realm built around rent week, night shifts, and creative pressure.",
+        onboarding_pitch="Start with a shift, roommate tie, wanted hook, or public event.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed("premise", "fame-industry", "Fame and industry drama", "urban real life city", 10),
+            DiscoveryTagSeed("tone", "city-social-web", "City social web", "workplace roommate", 20),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
+        ),
+    ),
+    "rl-small-town": DiscoveryProfileSeed(
+        premise_archetype="small-town-social-web",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="2/2/2",
+        activity_pace="relaxed",
+        activity_expectation="no word count, family ties, local rituals, and slow-burn scenes",
+        forum_adjunct="forum-first",
+        roster_posture="original faces, families, and town roles",
+        catalog_pitch="A small-town social web built around founders week, family ties, and public rituals.",
+        onboarding_pitch="Start with the festival, a family tie, a workplace, or a wanted hook.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed("premise", "small-town-social-web", "Small-town social web", "small town found family slow burn", 10),
+            DiscoveryTagSeed("tone", "coastal-status", "Coastal status town", "club gossip social ladder", 20),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
+        ),
+    ),
 }
 
 
@@ -2368,6 +2513,11 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     _assign_board_facets(repo, community.id, archive.id, facets, ["history"])
     _assign_board_facets(repo, community.id, staff_room.id, facets, ["staff"])
     _seed_materials(repo, community.id, facets)
+    _seed_discovery_profile(
+        repo,
+        community.id,
+        DISCOVERY_PROFILE_SEEDS.get("x-men-apocalypse"),
+    )
     _seed_realm_interactions(repo, community.id, DEFAULT_REALM_INTERACTIONS)
     _seed_intake_claims(
         repo,
@@ -3327,6 +3477,7 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             claim_types=STUDIO_CLAIM_TYPES.get(program.slug, ()),
             application_fields=STUDIO_APPLICATION_FIELDS.get(program.slug, ()),
         )
+        _seed_discovery_profile(repo, community.id, DISCOVERY_PROFILE_SEEDS.get(program.slug))
 
 
 def _ensure_studio_program_community(
@@ -3536,6 +3687,55 @@ def _ensure_material(
             sort_order=sort_order,
             is_featured=is_featured,
         )
+
+
+def _seed_discovery_profile(
+    repo: ForumRepository,
+    community_id: int,
+    seed: DiscoveryProfileSeed | None,
+) -> None:
+    if seed is None:
+        return
+    featured_event_material_id = None
+    if seed.featured_event_material_slug is not None:
+        try:
+            featured_event_material_id = repo.get_material_by_slug(
+                community_id,
+                seed.featured_event_material_slug,
+            ).id
+        except LookupError:
+            featured_event_material_id = None
+    repo.upsert_discovery_profile(
+        community_id,
+        premise_archetype=seed.premise_archetype,
+        play_engine=seed.play_engine,
+        lore_aperture=seed.lore_aperture,
+        access_model=seed.access_model,
+        application_model=seed.application_model,
+        age_rating=seed.age_rating,
+        content_rating=seed.content_rating,
+        activity_pace=seed.activity_pace,
+        activity_expectation=seed.activity_expectation,
+        forum_adjunct=seed.forum_adjunct,
+        roster_posture=seed.roster_posture,
+        catalog_pitch=seed.catalog_pitch,
+        onboarding_pitch=seed.onboarding_pitch,
+        staff_pick_label=seed.staff_pick_label,
+        featured_event_material_id=featured_event_material_id,
+    )
+    repo.replace_discovery_tags(
+        community_id,
+        tuple(
+            DiscoveryTagInput(
+                tag.tag_type,
+                tag.tag_key,
+                tag.label,
+                search_text=tag.search_text,
+                sort_order=tag.sort_order,
+            )
+            for tag in seed.tags
+        ),
+    )
 
 
 def _seed_realm_interactions(

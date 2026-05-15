@@ -37,18 +37,21 @@ def get(request: Request) -> Page:
     tenant_slug = request_tenant_slug(request)
     if tenant_slug is None:
         services, viewer = _network_services(request)
-        network = (
-            services.studio_network() if viewer is not None else services.public_studio_network()
-        )
+        network_home = services.network_home()
         return Page.mounted(
             "network/page.html",
             current_path=request.url,
             page_title="Elbysodic",
             network_mode="home",
             network_search_query="",
-            explore_programs=network.programs,
+            browse_facets=network_home.browse_facets,
+            featured=network_home.featured,
+            home_slices=network_home.slices,
+            network_has_programs=network_home.featured is not None,
+            relationship_lanes=[],
+            return_path=network_home.return_path,
+            explore_programs=[],
             viewer=viewer,
-            network=network,
             show_community_shell=False,
         )
 

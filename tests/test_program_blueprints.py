@@ -615,6 +615,12 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         "SELECT slug FROM communities ORDER BY id",
     ).fetchall()
     wanted_count = connection.execute("SELECT COUNT(*) FROM wanted_ads").fetchone()[0]
+    discovery_profile_count = connection.execute(
+        "SELECT COUNT(*) FROM community_discovery_profiles",
+    ).fetchone()[0]
+    discovery_tag_count = connection.execute(
+        "SELECT COUNT(*) FROM community_discovery_tags",
+    ).fetchone()[0]
     themes = connection.execute(
         """
         SELECT communities.slug AS community_slug, themes.slug AS theme_slug
@@ -632,6 +638,8 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         "rl-small-town",
     ]
     assert wanted_count == 12
+    assert discovery_profile_count == 5
+    assert discovery_tag_count == 15
     assert [(row["community_slug"], row["theme_slug"]) for row in themes] == [
         ("hp-universe", "glass-staircase"),
         ("jurassic-park-universe", "isla-nublar-operations"),

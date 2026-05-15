@@ -1766,39 +1766,34 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Find realms by mood, hook, face, or story pressure." in response.text
         assert "Public-preview realm catalog." in response.text
         assert "Start with a wanted hook" in response.text
-        assert "Start with current events" in response.text
+        assert "Start with a current chapter" in response.text
         assert "Home hub" not in response.text
         assert "X-Men Apocalypse" in response.text
         assert "HP Universe" in response.text
         assert "Jurassic Park Universe" in response.text
         assert "RL NYC" in response.text
         assert "RL Small Town" in response.text
-        assert "current realm" in response.text
+        assert "current realm" not in response.text
         assert "Public preview" in response.text
         assert "Application guide ready" in response.text
         assert "Claims configured" in response.text
-        assert "playing as Rogue" in response.text
-        assert response.text.count('name="intent" value="switch_membership"') >= 4
-        assert 'name="next" value="/c/hp-universe"' in response.text
         assert "/applications/new" not in response.text
         assert "Start application" not in response.text
-        assert 'name="next" value="/c/jurassic-park-universe"' in response.text
         assert 'class="elbysodic-network-card__realm-link"' in response.text
-        assert 'aria-label="Enter Jurassic Park Universe"' in response.text
+        assert 'aria-label="Preview Jurassic Park Universe"' in response.text
         assert 'class="elbysodic-network-card__icon-action' in response.text
         assert 'aria-label="Current event"' in response.text
         assert 'aria-label="Wanted hooks"' in response.text
         assert "elbysodic-network-card__tooltip" in response.text
         assert 'title="Wanted hooks"' not in response.text
         assert "elbysodic-network-search__control" in response.text
-        assert "connected tags, wanted hooks, roster signals" in response.text
-        assert "superhero crisis" in response.text
+        assert "premise, current chapter, roster energy" in response.text
+        assert "urban supernatural" in response.text
         assert "face you want to wear next" not in response.text
         assert "elbysodic-network-card__mark" in response.text
         assert "XMA" in response.text
         assert 'href="/c/jurassic-park-universe/characters" aria-label="3 faces"' in response.text
         assert 'href="/c/jurassic-park-universe/wanted" aria-label="2 wanted"' in response.text
-        assert 'href="/c/jurassic-park-universe/plotting" aria-label="0 rooms"' in response.text
         assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' in response.text
 
     asyncio.run(run())
@@ -1983,10 +1978,10 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
         assert "Studio Network" in root.text
         assert "Featured realm" in root.text
-        assert "Trending realms" in root.text
-        assert "Superhero crisis" in root.text
-        assert "Magic, survival, and small towns" in root.text
-        assert "Search realms, hooks, faces, and moods." in root.text
+        assert "Premise engines" in root.text
+        assert "Small-town social webs" in root.text
+        assert "Mystery and current chapters" in root.text
+        assert "Search realms by premise, pace, hooks, and current chapters." in root.text
         assert "Your desk is one click away." in root.text
         assert "What can move next." not in root.text
         assert "Memberships on this account." not in root.text
@@ -1996,8 +1991,8 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
         assert 'href="/c/x-men-apocalypse"' in root.text
         assert 'href="/c/x-men-apocalypse/desk"' in root.text
-        assert "/elbysodic-static/seed-media/xmen-mark.svg" in root.text
-        assert "/elbysodic-static/seed-media/xmen-hero.svg" in root.text
+        assert "/elbysodic-static/seed-media/hp-mark.svg" in root.text
+        assert "/elbysodic-static/seed-media/hp-hero.svg" in root.text
 
     asyncio.run(run())
 

@@ -51,9 +51,7 @@ A studio program ready for scenes, casting, and writer movement.
 {% def program_metric_links(program) %}
 {{ metric_item(program.roster_count, "faces", href=program.entry_href ~ "/characters") }}
 {{ metric_item(program.open_wanted_count, "wanted", href=program.entry_href ~ "/wanted") }}
-{% if program.is_authenticated %}
-{{ metric_item(program.plotting_room_count, "rooms", href=program.entry_href ~ "/plotting") }}
-{% end %}
+{{ metric_item(program.claim_type_count, "claims", href=program.entry_href ~ "/claims") }}
 {% end %}
 
 {% def network_billboard(program) %}
@@ -241,10 +239,10 @@ A studio program ready for scenes, casting, and writer movement.
 {% end %}
 
 {% def program_card(program) %}
-<article class="elbysodic-network-card{{ " elbysodic-network-card--current" if program.is_current else "" }}{{ " elbysodic-network-card--no-hero" if not program.community.world_hero_image_url else "" }}"
+<article class="elbysodic-network-card{{ " elbysodic-network-card--no-hero" if not program.community.world_hero_image_url else "" }}"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
-  <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Enter {{ program.community.name }}">
-    <span class="chirpui-visually-hidden">Enter {{ program.community.name }}</span>
+  <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
+    <span class="chirpui-visually-hidden">Preview {{ program.community.name }}</span>
   </a>
   <a class="elbysodic-network-card__poster" href="{{ program.entry_href }}">
     {% if program.community.world_hero_image_url %}
@@ -259,40 +257,38 @@ A studio program ready for scenes, casting, and writer movement.
       <div>
         <p class="elbysodic-section-kicker">
           {% if program.current_event %}
-          Current event
+          Current chapter
           {% elif program.premise %}
           World premise
           {% else %}
-          {{ program.role.name if program.role else "Public realm" }}
+          Public realm
           {% end %}
         </p>
         <h2>{{ program.community.name }}</h2>
       </div>
       <div class="elbysodic-network-card__badges">
-        {% if program.is_current %}
-        {{ badge("current realm", variant="success") }}
-        {% end %}
-        {% if program.is_authenticated and program.unread_notification_count %}
-        {{ badge(program.unread_notification_count ~ " unread", variant="info") }}
-        {% end %}
         {{ badge(program.invite_posture_label, variant="info") }}
+        {% if program.discovery_profile and program.discovery_profile.activity_pace %}
+        {{ badge(program.discovery_profile.activity_pace, variant="info") }}
+        {% end %}
       </div>
     </header>
     <p class="elbysodic-copy-summary">{{ program_summary(program) }}</p>
     <p class="elbysodic-copy-meta">
       {{ program.application_posture_label }} · {{ program.claims_posture_label }}
     </p>
-    {% if program.is_authenticated %}
+    {% if program.discovery_profile %}
     <p class="elbysodic-copy-meta">
-      {{ program.membership.display_name or program.membership.username }}
-      {% if program.current_character %}
-      · active face selected
-      {% else %}
-      · no active face
+      {{ program.discovery_profile.premise_archetype or "Premise-led realm" }}
+      {% if program.discovery_profile.lore_aperture %}
+      · {{ program.discovery_profile.lore_aperture }}
+      {% end %}
+      {% if program.discovery_profile.forum_adjunct %}
+      · {{ program.discovery_profile.forum_adjunct }}
       {% end %}
     </p>
     {% else %}
-    <p class="elbysodic-copy-meta">Public preview · log in to enter queues, claims, and face controls.</p>
+    <p class="elbysodic-copy-meta">Public preview · check premise, roster, wanted hooks, and first-face paths.</p>
     {% end %}
     <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
       {{ program_metric_links(program) }}
@@ -317,47 +313,38 @@ A studio program ready for scenes, casting, and writer movement.
 {% block page_content %}
 {% call container(max_width="84rem") %}
 {% call stack(gap="lg") %}
-  {% if network.programs %}
-  {% set featured = network.programs[0] %}
+{% if network_has_programs %}
   {% if network_mode != "home" %}
   <section class="elbysodic-network-explore-command" aria-labelledby="network-heading">
     <div>
       <p class="elbysodic-section-kicker">Explore</p>
       <h1 id="network-heading">Find realms by mood, hook, face, or story pressure.</h1>
-      <p>Search the network, then move through connected tags, wanted hooks, roster signals, and public-preview realms.</p>
+      <p>Search by premise, current chapter, roster energy, wanted hooks, pace, and public-preview realms.</p>
     </div>
     <form class="elbysodic-network-search" action="/network" method="get" role="search">
-      <label for="network-search">Search the studio network</label>
+      <label for="network-search">Search story fit</label>
       <div class="elbysodic-network-search__control">
         <span class="elbysodic-network-search__scope">Realms</span>
         <input id="network-search"
                name="q"
                type="search"
                value="{{ network_search_query }}"
-               placeholder="superhero crisis, magic school, wanted, Rogue">
+               placeholder="weird-town mystery, relaxed, forum-first, wanted">
         <button class="elbysodic-network-search__submit" type="submit">Search</button>
       </div>
     </form>
   </section>
 
   <section class="elbysodic-network-explore-map" aria-label="Explore by tag relationship">
-    {{ explore_tag("superhero crisis", "/network?q=superhero", "hot") }}
-    {{ explore_tag("magic school", "/network?q=magic") }}
-    {{ explore_tag("survival sci-fi", "/network?q=survival") }}
-    {{ explore_tag("small town", "/network?q=town") }}
-    {{ explore_tag("urban real life", "/network?q=nyc") }}
-    {{ explore_tag("wanted hooks", "/network?q=wanted", "hot") }}
-    {{ explore_tag("current events", "/network?q=event") }}
-    {{ explore_tag("plotting rooms", "/network?q=plotting") }}
-    {{ explore_tag("claims", "/network?q=claims") }}
-    {{ explore_tag("reserves", "/network?q=reserves") }}
+    {% for facet in browse_facets %}
+    {{ explore_tag(facet.label, facet.href, facet.tone) }}
+    {% end %}
   </section>
 
   <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
-    {{ explore_lane("Start with a wanted hook", "Open roles, rivals, factions, and face requests.", "/network?q=wanted", "casting") }}
-    {{ explore_lane("Start with a mood", "Magic, crisis, survival, town, or urban play.", "/network?q=magic", "tags") }}
-    {{ explore_lane("Start with an active roster", "Find realms with visible faces already in motion.", "/network?q=faces", "roster") }}
-    {{ explore_lane("Start with current events", "World-state pressure and scenes already moving.", "/network?q=event", "story") }}
+    {% for lane in relationship_lanes %}
+    {{ explore_lane(lane.title, lane.summary, lane.href, lane.metric_label) }}
+    {% end %}
   </section>
 
   <section class="elbysodic-network-rail" aria-labelledby="explore-results-heading">
@@ -367,7 +354,7 @@ A studio program ready for scenes, casting, and writer movement.
           {% if network_search_query %}
           Search results
           {% else %}
-          Catalog
+          Story-fit catalog
           {% end %}
         </p>
         <h2 id="explore-results-heading">
@@ -386,7 +373,7 @@ A studio program ready for scenes, casting, and writer movement.
       {% end %}
     </div>
     {% if explore_programs %}
-    <div class="elbysodic-network-grid" aria-label="Matching studio programs">
+    <div class="elbysodic-network-grid" aria-label="Matching public realms">
       {% for program in explore_programs %}
       {{ program_card(program) }}
       {% end %}
@@ -404,7 +391,7 @@ A studio program ready for scenes, casting, and writer movement.
       <p class="elbysodic-section-kicker">Casting index</p>
       <h2>Open roles and story pressure across the network.</h2>
       <div class="elbysodic-network-casting-list">
-        {% for program in network.programs %}
+        {% for program in explore_programs %}
         {% if program.open_wanted_count %}
         <a href="{{ program.entry_href }}/wanted">
           <strong>{{ program.community.name }}</strong>
@@ -418,27 +405,13 @@ A studio program ready for scenes, casting, and writer movement.
 
     {% call surface(variant="elevated") %}
     <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">{{ "Your lanes" if viewer else "Ways in" }}</p>
-      {% if viewer %}
-      <h2>Memberships and face defaults that can shape discovery.</h2>
-      {% else %}
-      <h2>Public previews before you choose an account.</h2>
-      {% end %}
+      <p class="elbysodic-section-kicker">Ways in</p>
+      <h2>Public previews before you choose a face.</h2>
       <div class="elbysodic-network-casting-list">
-        {% for program in network.programs %}
+        {% for program in explore_programs %}
         <a href="{{ program.entry_href }}">
           <strong>{{ program.community.name }}</strong>
-          <span>
-            {% if viewer %}
-            {% if program.current_character %}
-            active face selected
-            {% else %}
-            no active face
-            {% end %}
-            {% else %}
-            log in to enter this realm
-            {% end %}
-          </span>
+          <span>{{ program.application_posture_label }} · {{ program.invite_posture_label }}</span>
         </a>
         {% end %}
       </div>
@@ -454,35 +427,33 @@ A studio program ready for scenes, casting, and writer movement.
       <h2>Play-by-post realms with faces, scenes, wanted hooks, and continuity.</h2>
     </div>
     <div class="elbysodic-network-strip__metrics">
-      {{ metric_item(network.programs | length, "realms") }}
+      {{ metric_item(home_slices[0].programs | length, "realms") }}
     </div>
   </section>
 
-  {{ home_portrait_slice("Trending realms", "/network", network.programs) }}
-  {{ home_slice("Superhero crisis", "/network?q=superhero", network.programs) }}
-  {{ home_slice("Magic, survival, and small towns", "/network?q=magic", network.programs) }}
+  {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}
+  {% for slice in home_slices[1:] %}
+  {{ home_slice(slice.title, slice.href, slice.programs) }}
+  {% end %}
 
   <section class="elbysodic-network-home-genres" aria-label="Genre slices">
-    <a href="/network?q=superhero">superhero crisis</a>
-    <a href="/network?q=magic">magic school</a>
-    <a href="/network?q=survival">survival sci-fi</a>
-    <a href="/network?q=town">small town</a>
-    <a href="/network?q=nyc">urban real life</a>
-    <a href="/network?q=wanted">wanted hooks</a>
+    {% for facet in browse_facets %}
+    <a href="{{ facet.href }}">{{ facet.label }}</a>
+    {% end %}
   </section>
 
-  {% if viewer %}
+  {% if return_path %}
   <section class="elbysodic-network-home-return" aria-label="Signed-in return">
     <div>
       <p class="elbysodic-section-kicker">Return path</p>
       <h2>Your desk is one click away.</h2>
     </div>
     <div class="elbysodic-network-home-return__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}/desk">Open Writer Desk</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/notifications">
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ return_path.desk_href }}">Open Writer Desk</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ return_path.notification_href }}">
         Notifications
-        {% if viewer.unread_notification_count %}
-        · {{ viewer.unread_notification_count }}
+        {% if return_path.unread_notification_count %}
+        · {{ return_path.unread_notification_count }}
         {% end %}
       </a>
     </div>
@@ -493,18 +464,18 @@ A studio program ready for scenes, casting, and writer movement.
     <div class="elbysodic-network-rail__header">
       <div>
         <p class="elbysodic-section-kicker">Explore</p>
-        <h2 id="home-explore-heading">Search realms, hooks, faces, and moods.</h2>
+        <h2 id="home-explore-heading">Search realms by premise, pace, hooks, and current chapters.</h2>
       </div>
       <a class="chirpui-btn chirpui-btn--secondary" href="/network">Open Network</a>
     </div>
     <form class="elbysodic-network-search" action="/network" method="get" role="search">
-      <label for="network-home-search">Search the studio network</label>
+      <label for="network-home-search">Search story fit</label>
       <div class="elbysodic-network-search__control">
         <span class="elbysodic-network-search__scope">Realms</span>
         <input id="network-home-search"
                name="q"
                type="search"
-               placeholder="magic school, survival, wanted, Rogue">
+               placeholder="weird-town mystery, relaxed, forum-first, wanted">
         <button class="elbysodic-network-search__submit" type="submit">Search</button>
       </div>
     </form>
