@@ -28,10 +28,74 @@
     --elbysodic-composer-field-bg: color-mix(in srgb, var(--chirpui-surface) 88%, var(--chirpui-bg));
 }
 
+.elbysodic-scene-reply-surface.chirpui-surface {
+    background: color-mix(in srgb, var(--chirpui-surface) 94%, transparent);
+    border-color: color-mix(in srgb, var(--chirpui-border-subtle) 82%, transparent);
+    border-radius: var(--chirpui-radius);
+    box-shadow: 0 1rem 2rem color-mix(in srgb, var(--chirpui-shadow) 14%, transparent);
+}
+
+.elbysodic-scene-composer-stick {
+    background: transparent;
+    display: grid;
+    gap: 0.65rem;
+    padding-block: 0;
+}
+
 .elbysodic-composer h2,
 .elbysodic-composer h3,
 .elbysodic-composer p {
     margin-block: 0;
+}
+
+.elbysodic-scene-composer-topline {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: space-between;
+}
+
+.elbysodic-scene-composer-identity {
+    align-items: center;
+    display: flex;
+    flex: 1 1 18rem;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.elbysodic-scene-composer-face {
+    cursor: pointer;
+    gap: 0.28rem;
+    padding-inline-end: 0.35rem;
+}
+
+.elbysodic-scene-composer-face-select {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--chirpui-text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 820;
+    margin: 0;
+    max-inline-size: 9rem;
+    min-inline-size: 0;
+    outline: 0;
+    padding: 0 0.9rem 0 0;
+}
+
+.elbysodic-scene-composer-face::after {
+    border-block-start: 0.32rem solid currentColor;
+    border-inline: 0.26rem solid transparent;
+    content: "";
+    opacity: 0.62;
+}
+
+.elbysodic-scene-composer-face:focus-within {
+    border-color: color-mix(in srgb, var(--chirpui-focus-ring) 62%, var(--chirpui-border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--chirpui-focus-ring) 20%, transparent);
 }
 
 .elbysodic-composer-heading h2 {
@@ -88,18 +152,12 @@
 }
 
 .elbysodic-composer-panel {
-    background:
-        linear-gradient(
-            180deg,
-            color-mix(in srgb, var(--chirpui-accent) 2.5%, transparent),
-            transparent 7rem
-        ),
-        var(--elbysodic-composer-field-bg);
+    background: var(--elbysodic-composer-field-bg);
     border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius);
+    border-radius: var(--chirpui-radius-sm);
     display: grid;
-    gap: 1rem;
-    padding: 1rem;
+    gap: 0.55rem;
+    padding: 0.55rem;
 }
 
 .elbysodic-composer-panel__header,
@@ -136,7 +194,7 @@
 .elbysodic-composer-toggle {
     align-items: center;
     border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius);
+    border-radius: var(--chirpui-radius-sm);
     color: var(--chirpui-text-muted);
     display: inline-flex;
     gap: 0.25rem;
@@ -157,7 +215,7 @@
     border-radius: var(--chirpui-radius-sm);
     display: block;
     font-size: var(--chirpui-font-sm);
-    padding: 0.35rem 0.65rem;
+    padding: 0.25rem 0.55rem;
 }
 
 .elbysodic-composer-toggle input:focus-visible + span {
@@ -172,14 +230,24 @@
 
 .elbysodic-composer-toolbar {
     align-items: center;
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 72%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin: 0.5rem 0;
-    padding: 0.35rem;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+}
+
+.elbysodic-scene-composer-tools {
+    align-items: center;
+    border-bottom: 1px solid var(--chirpui-border-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: space-between;
+    padding-bottom: 0.45rem;
 }
 
 .elbysodic-composer-tool {
@@ -192,12 +260,12 @@
     cursor: pointer;
     display: inline-flex;
     font-family: var(--chirpui-ui-font-family);
-    font-size: var(--chirpui-font-sm);
+    font-size: var(--chirpui-font-xs);
     font-weight: 700;
     justify-content: center;
     line-height: 1;
-    min-width: 2rem;
-    padding: 0.35rem;
+    min-width: 1.75rem;
+    padding: 0.28rem;
 }
 
 .elbysodic-composer-tool:hover {
@@ -227,7 +295,7 @@
     background: color-mix(in srgb, var(--chirpui-surface) 88%, var(--chirpui-bg));
     font-size: 1.0625rem;
     line-height: 1.72;
-    min-height: 16rem;
+    min-height: 9rem;
 }
 
 .elbysodic-composer-body textarea:focus {
@@ -236,7 +304,7 @@
 }
 
 .elbysodic-composer--reply .elbysodic-composer-body textarea {
-    min-height: 14rem;
+    min-height: 8.5rem;
 }
 
 .elbysodic-body-mention-list {
@@ -278,6 +346,18 @@
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
     margin: 0;
+}
+
+.elbysodic-scene-composer-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: flex-end;
+}
+
+.elbysodic-scene-composer-actions .elbysodic-draft-status {
+    flex: 1 1 12rem;
 }
 
 .elbysodic-post-style-preview {

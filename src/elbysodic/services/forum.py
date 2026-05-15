@@ -257,6 +257,7 @@ from elbysodic.services.read_models import (
     RealmInteractionHub,
     RealmLaunchChecklistItem,
     RealmLaunchReadiness,
+    SceneContextView,
     StudioBoardEditor,
     StudioIdentityOption,
     StudioNetworkDirectory,
@@ -294,6 +295,7 @@ from elbysodic.services.threads import (
 from elbysodic.services.threads import is_live_queue_thread as _is_live_queue_thread
 from elbysodic.services.threads import is_unread as _is_unread
 from elbysodic.services.threads import next_unread_thread as _next_unread_thread
+from elbysodic.services.threads import read_scene_context as _read_scene_context
 from elbysodic.services.threads import read_thread_view as _read_thread_view
 from elbysodic.services.threads import thread_needs_attention as _thread_needs_attention
 from elbysodic.services.threads import thread_obligations as _thread_obligations
@@ -1690,6 +1692,24 @@ class AppServices:
         self._invalidate_viewer()
         return thread_view
 
+    def read_scene_context(self, board_slug: str, thread_slug: str) -> SceneContextView:
+        viewer = self.viewer()
+        board = self.repo.get_board_by_slug(viewer.community.id, board_slug)
+        if not policies.can_view_board(viewer.membership, board, viewer.role):
+            raise PermissionError(f"membership {viewer.membership.id} cannot view board {board.id}")
+        thread = self.repo.get_thread_by_slug(viewer.community.id, board.id, thread_slug)
+        scene_context = _read_scene_context(
+            self.repo,
+            viewer,
+            board,
+            thread,
+            parent_board=self.parent_board(board),
+            current_event=self.current_event_for_thread(thread, board),
+        )
+        self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+        self._invalidate_viewer()
+        return scene_context
+
     def watch_thread(self, board_slug: str, thread_slug: str) -> None:
         viewer = self.viewer()
         _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
@@ -1699,6 +1719,12 @@ class AppServices:
         viewer = self.viewer()
         _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
         self.repo.unwatch_thread(viewer.community.id, thread.id, viewer.membership.id)
+
+    def mark_thread_caught_up(self, board_slug: str, thread_slug: str) -> None:
+        viewer = self.viewer()
+        _board, thread = self._visible_thread(viewer, board_slug, thread_slug)
+        self.repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+        self._invalidate_viewer()
 
     def join_thread_as_current_character(self, board_slug: str, thread_slug: str) -> None:
         _join_thread(self.repo, self.viewer(), board_slug, thread_slug)

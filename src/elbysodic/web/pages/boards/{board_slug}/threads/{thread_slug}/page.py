@@ -51,6 +51,15 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             raise HTTPError(status=403, detail=str(exc)) from exc
         return Redirect(request.path)
 
+    if intent == "mark_caught_up":
+        try:
+            services.mark_thread_caught_up(board_slug, thread_slug)
+        except LookupError as exc:
+            raise HTTPError(status=404, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        return Redirect(request.path)
+
     if intent == "join_scene":
         try:
             services.join_thread_as_current_character(board_slug, thread_slug)
@@ -133,7 +142,8 @@ def _render_thread(
     selected_character_id: int | None = None,
 ) -> Page:
     services = get_services(request)
-    thread_view = services.read_thread(board_slug, thread_slug)
+    scene_context = services.read_scene_context(board_slug, thread_slug)
+    thread_view = scene_context.thread_view
     viewer = services.viewer()
     selected_cast = _character_mentionables(
         [
@@ -155,12 +165,12 @@ def _render_thread(
             current_path=request.url,
             viewer=viewer,
             selected_character=None,
+            scene_context=scene_context,
             thread_view=thread_view,
-            parent_board=services.parent_board(thread_view.board),
-            current_event=services.current_event_for_thread(
-                thread_view.thread,
-                thread_view.board,
-            ),
+            board=thread_view.board,
+            current_board_section=thread_view.board.sidebar_section,
+            parent_board=scene_context.parent_board,
+            current_event=scene_context.current_event,
             error=error,
             body=body,
             composer_config={},
@@ -181,12 +191,12 @@ def _render_thread(
         current_path=request.url,
         viewer=viewer,
         selected_character=selected_character,
+        scene_context=scene_context,
         thread_view=thread_view,
-        parent_board=services.parent_board(thread_view.board),
-        current_event=services.current_event_for_thread(
-            thread_view.thread,
-            thread_view.board,
-        ),
+        board=thread_view.board,
+        current_board_section=thread_view.board.sidebar_section,
+        parent_board=scene_context.parent_board,
+        current_event=scene_context.current_event,
         error=error,
         body=body,
         composer_config=composer_config(

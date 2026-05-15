@@ -56,3 +56,138 @@ The expanded route pass is available through `uv run poe browser-qa-deep`.
 
 - Any public Appearance Studio image-ratio controls.
 - Schema, Blueprint, import/export, or runtime dependency changes.
+
+## Scene Context Reader QA
+
+Date: 2026-05-15
+
+Scope: browser smoke for the scene-context reader shell on the seeded route
+`/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill`.
+
+Verified:
+
+- Desktop renders the location-aware scene lane in the shell's second rail,
+  with no duplicate lane content in the reader body.
+- Desktop keeps grounded scene context tucked behind a reader action until the
+  inspector is opened beside the transcript.
+- Tablet at 820px keeps the reader primary and moves scene/context rails into
+  drawers.
+- Mobile at 390px keeps the reader primary, exposes `Scenes here` and
+  `Scene context` drawer triggers, and avoids horizontal overflow.
+- Drawer contents were opened and verified for the current scene lane and
+  grounding inspector.
+- A 1920px screenshot verified the corrected shell rail and confirmed
+  `#page-content` does not contain leaked primary rail or scene-lane markup.
+- Boosted board-to-thread navigation swaps the shell second rail out of band,
+  so the location nav updates to the thread's `Open scenes` lane without a
+  hard refresh and without leaking lane markup below the reader.
+- The threaded rail lists currently open scenes in the active location and
+  excludes paused scenes from that lane.
+- Scene management and staff controls render inside the right grounding tray
+  instead of occupying reader-body space before the transcript.
+- Reader utility actions are consolidated into the grounding tray, leaving the
+  reader hero with a single scene-actions icon and no top reply shortcut.
+- The desktop grounding tray slides in as a right-edge overlay instead of
+  adding a layout column, so opening scene context no longer pushes posts
+  inward.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-scene-context-smoke/desktop.png`
+- `/private/tmp/elbysodic-scene-context-smoke/tablet.png`
+- `/private/tmp/elbysodic-scene-context-smoke/mobile.png`
+- `/private/tmp/xmen-scene-reader-after-2.png`
+- `/private/tmp/sidebar-oob-route-update.png`
+
+Deferred:
+
+- Broader screenshot artifact capture for every seeded thread style.
+- Any schema-backed scene hero media controls.
+
+## Editorial Post Reader QA
+
+Date: 2026-05-15
+
+Scope: browser smoke for the editorial post reader mode on the seeded route
+`/c/x-men-apocalypse/boards/danger-room/threads/moonlight-skirmish`.
+
+Verified:
+
+- Desktop at 1440px renders post portrait rails as prose-wrapping editorial
+  poster art with alternating sides.
+- Character post media uses the shared `2:3` poster ratio token in the
+  editorial reader mode.
+- Tablet at 820px and mobile at 390px keep post rails non-floating and avoid
+  horizontal overflow.
+- Existing post customization variants remain present in the rendered thread:
+  `bio`, `poster`, `dock`, calm/compact/dramatic density, post permalinks,
+  writer links, and edit links where allowed.
+- Editorial post shells suppress always-on character borders by default and
+  reveal a soft post affordance on hover/focus, keeping customization from
+  breaking the continuous reading flow.
+- Editorial post lists use a tightened, centered reading measure under the
+  wider scene hero so prose keeps a literary cadence while character posters
+  remain prominent.
+- Editorial post metadata leaves only the author visible by default; relative
+  time, permalink, edit, and revision controls stay available on hover/focus
+  instead of competing with the prose.
+- The reply composer and after-scene continuation strip share that tightened
+  measure, with a compact WYSIWYG toolbar and slimmer sticky editor modeled on
+  the prototype's reply card.
+- The after-scene continuation strip now sits after the reply composer and
+  keeps a `Scenes here` return path beside any queue continuation links.
+- The shell's scene lane fills the full secondary sidebar height and omits the
+  current thread from its nearby-scene lists while preserving current-scene
+  state for reader labels.
+- Shell scene-lane rows use a compact sidebar density, and `Open scenes`
+  excludes scenes where the current roster already has the last word.
+- Editorial poster-style character cards keep their profile card as a
+  hover/focus overlay instead of rendering the profile panel underneath by
+  default.
+- The reply composer folds face switching into the `Reply as` chip, removing
+  the duplicate standalone character dropdown from the composer topline.
+- The shell identity menu now uses a thinner active-face pill, a compact
+  face/writer dropdown, and local click-away/Escape behavior.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-editorial-post-smoke/desktop.png`
+- `/private/tmp/elbysodic-editorial-post-smoke/tablet.png`
+- `/private/tmp/elbysodic-editorial-post-smoke/mobile.png`
+
+Deferred:
+
+- Drop caps and beat notes remain theme/post-style polish, not global defaults.
+- Automatic dialogue bolding remains deferred; writer-authored markup stays
+  authoritative.
+
+## Inherited Scene Hero Media QA
+
+Date: 2026-05-15
+
+Scope: browser smoke for the no-schema scene hero media on the seeded route
+`/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill`.
+
+Verified:
+
+- The scene hero inherits the visible parent location image from Xavier
+  Institute for the Danger Room scene.
+- The inherited media keeps the stored image alt text.
+- The hero renders the thread title, summary, state chips, facets, and
+  scene-actions button over the image instead of introducing a second media
+  block with boilerplate atmosphere copy.
+- Desktop, tablet, and mobile widths avoid horizontal overflow.
+- Text-first board media treatment suppresses inherited scene hero media in rendered
+  tests.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-scene-media-smoke/desktop.png`
+- `/private/tmp/elbysodic-scene-media-smoke/tablet.png`
+- `/private/tmp/elbysodic-scene-media-smoke/mobile.png`
+
+Deferred:
+
+- Thread-specific scene media fields remain a Phase B schema decision.
+- Event-specific media remains deferred; current events only provide contextual
+  chip text when already present.

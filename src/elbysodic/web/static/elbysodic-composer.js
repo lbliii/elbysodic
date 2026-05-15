@@ -663,4 +663,33 @@
       },
     };
   });
+
+  register("elbysodicSceneContextLayout", function () {
+    var key = "elbysodic-scene-context-inspector";
+    function readStoredOpen() {
+      if (typeof localStorage === "undefined") {
+        return false;
+      }
+      return localStorage.getItem(key) === "open";
+    }
+    return {
+      inspectorOpen: readStoredOpen(),
+      toggleInspector() {
+        this.inspectorOpen = !this.inspectorOpen;
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem(key, this.inspectorOpen ? "open" : "closed");
+        }
+      },
+      closeInspector() {
+        if (!this.inspectorOpen) {
+          return;
+        }
+        this.inspectorOpen = false;
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem(key, "closed");
+        }
+      },
+    };
+  });
+
 })();

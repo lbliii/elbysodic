@@ -32,12 +32,20 @@ from elbysodic.services.read_models import (
     THREAD_STATUSES,
     BoardThreadFilter,
     ForumView,
+    MaterialSummary,
     PostingMode,
+    SceneContextView,
+    SceneGroundingFact,
+    SceneGroundingPanel,
+    SceneLocationLane,
+    SceneLocationLaneItem,
+    SceneMediaBand,
     ThreadNavigationItem,
     ThreadObligationItem,
     ThreadStatus,
     ThreadSummary,
     ThreadView,
+    scene_location_lane_item_badges,
 )
 from elbysodic.services.timestamps import timestamp_key
 
@@ -134,6 +142,13 @@ class ThreadReadRepository(
         thread_id: int,
         membership_id: int,
     ) -> bool: ...
+
+    def watched_thread_ids(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+        membership_id: int,
+    ) -> set[int]: ...
 
 
 def board_thread_summaries(
@@ -355,6 +370,10 @@ def read_thread_view(
         thread,
     )
     unread = is_unread(repo, viewer.community.id, viewer.membership.id, thread)
+    raw_posts = repo.list_posts(viewer.community.id, thread.id)
+    first_unread_domain = first_unread_post(
+        repo, viewer.community.id, viewer.membership.id, thread, raw_posts
+    )
     posts = [
         post_view(
             repo,
@@ -363,8 +382,20 @@ def read_thread_view(
             viewer_membership=viewer.membership,
             viewer_role=viewer.role,
         )
-        for post in repo.list_posts(viewer.community.id, thread.id)
+        for post in raw_posts
     ]
+    first_unread_post_view = (
+        next((pv for pv in posts if pv.post.id == first_unread_domain.id), None)
+        if first_unread_domain is not None
+        else None
+    )
+    latest_domain = raw_posts[-1] if raw_posts else None
+    viewer_needs_reply = latest_domain is not None and thread_needs_reply(
+        thread, latest_domain, roster_character_ids
+    )
+    needs_reply_since_label = (
+        posts[-1].created_at_relative_label if viewer_needs_reply and posts else None
+    )
     can_moderate = policies.can_moderate_thread(
         viewer.membership,
         thread,
@@ -400,6 +431,9 @@ def read_thread_view(
         - posted_character_ids
         - {thread.author_character_id},
         posts=posts,
+        first_unread_post=first_unread_post_view,
+        viewer_needs_reply=viewer_needs_reply,
+        needs_reply_since_label=needs_reply_since_label,
         latest_post=posts[-1] if posts else None,
         episode=episode_credits(
             repo,
@@ -437,6 +471,130 @@ def read_thread_view(
             viewer.membership.id,
         ),
     )
+
+
+def board_placement_path(
+    repo: ThreadReadRepository,
+    community_id: int,
+    leaf: Board,
+    *,
+    max_depth: int = 32,
+) -> tuple[Board, ...]:
+    """Walk boards from `leaf` to its root ancestor; return root-first path."""
+    chain_rev: list[Board] = []
+    current: Board | None = leaf
+    visited: set[int] = set()
+    depth = 0
+    while current is not None and depth < max_depth:
+        if current.id in visited:
+            break
+        visited.add(current.id)
+        chain_rev.append(current)
+        if current.parent_board_id is None:
+            break
+        current = repo.get_board(community_id, current.parent_board_id)
+        depth += 1
+    return tuple(reversed(chain_rev))
+
+
+def read_scene_context(
+    repo: ThreadReadRepository,
+    viewer: ForumView,
+    board: Board,
+    thread: Thread,
+    *,
+    parent_board: Board | None = None,
+    current_event: MaterialSummary | None = None,
+) -> SceneContextView:
+    thread_view = read_thread_view(repo, viewer, board, thread)
+    lane_summaries = board_thread_summaries(repo, viewer, board)
+    lane_thread_ids = [summary.thread.id for summary in lane_summaries]
+    watched_thread_ids = repo.watched_thread_ids(
+        viewer.community.id,
+        lane_thread_ids,
+        viewer.membership.id,
+    )
+    roster_character_ids = {character.id for character in viewer.roster}
+    lane_items: list[SceneLocationLaneItem] = []
+    current_item: SceneLocationLaneItem | None = None
+    for summary in lane_summaries:
+        is_current = summary.thread.id == thread.id
+        is_watched = summary.thread.id in watched_thread_ids
+        waiting_on_others = (
+            summary.latest_post is not None
+            and summary.latest_post.author.id in roster_character_ids
+            and is_reply_obligation_thread(summary.thread)
+        )
+        lane_item = SceneLocationLaneItem(
+            summary=summary,
+            is_current=is_current,
+            is_watched=is_watched,
+            waiting_on_others=waiting_on_others,
+            badges=scene_location_lane_item_badges(
+                summary,
+                is_current=is_current,
+                is_watched=is_watched,
+                waiting_on_others=waiting_on_others,
+            ),
+        )
+        if is_current:
+            current_item = lane_item
+        else:
+            lane_items.append(lane_item)
+    location_lane = SceneLocationLane.assembled(
+        board=board,
+        parent_board=parent_board,
+        placement_path=board_placement_path(repo, viewer.community.id, board),
+        items=lane_items,
+        current_item=current_item,
+    )
+    grounding = SceneGroundingPanel(
+        board=board,
+        parent_board=parent_board,
+        participants=thread_view.participants,
+        current_event=current_event,
+        visibility_label=scene_visibility_label(board, thread, thread_view.can_moderate),
+        visibility_detail=scene_visibility_detail(board, thread, thread_view.can_moderate),
+        active_face_label=scene_active_face_label(viewer, location_lane.current_item),
+        active_face_variant=scene_active_face_variant(viewer, location_lane.current_item),
+        facts=scene_grounding_facts(thread_view),
+        can_manage_scene=thread_view.can_manage_scene,
+        can_moderate_scene=thread_view.can_moderate,
+        is_watched=thread_view.is_watched,
+    )
+    return SceneContextView(
+        thread_view=thread_view,
+        parent_board=parent_board,
+        location_lane=location_lane,
+        grounding=grounding,
+        media_band=scene_media_band(board, parent_board, current_event),
+        current_event=current_event,
+    )
+
+
+def scene_media_band(
+    board: Board,
+    parent_board: Board | None,
+    current_event: MaterialSummary | None,
+) -> SceneMediaBand | None:
+    for source_board, is_inherited in ((board, False), (parent_board, True)):
+        if (
+            source_board is not None
+            and source_board.image_url
+            and source_board.image_treatment != "text"
+        ):
+            heading = f"{board.name} scene atmosphere"
+            return SceneMediaBand(
+                source_board=source_board,
+                source_label=(
+                    "Scene location media" if not is_inherited else "Inherited location media"
+                ),
+                heading=heading,
+                summary=source_board.description or source_board.tagline,
+                is_inherited=is_inherited,
+                current_event=current_event,
+            )
+    return None
 
 
 def thread_obligations(
@@ -552,6 +710,94 @@ def thread_obligations(
     )
 
 
+def scene_visibility_label(board: Board, thread: Thread, can_moderate: bool = False) -> str:
+    if board.is_private or thread.status == "private":
+        return "private scene"
+    if can_moderate:
+        return "staff-manageable member-visible scene"
+    return "member-visible scene"
+
+
+def scene_visibility_detail(board: Board, thread: Thread, can_moderate: bool = False) -> str:
+    if board.is_private:
+        return "This location is visible only to staff with world access."
+    if thread.status == "private":
+        return "This scene is marked private inside a visible location."
+    if can_moderate:
+        return "Members can read this scene; staff controls remain in management panels."
+    return "Visible to active members who can enter this location."
+
+
+def scene_active_face_label(
+    viewer: ForumView,
+    current_item: SceneLocationLaneItem | None,
+) -> str:
+    if viewer.current_character is None:
+        return "No active face selected"
+    if current_item is None:
+        return "Reading"
+    if current_item.summary.is_mine and current_item.summary.needs_attention:
+        return f"{viewer.current_character.name} needs reply"
+    if current_item.waiting_on_others:
+        return f"{viewer.current_character.name} is waiting"
+    if current_item.summary.is_mine:
+        return f"{viewer.current_character.name} is present"
+    return f"Reading as {viewer.current_character.name}"
+
+
+def scene_active_face_variant(
+    viewer: ForumView,
+    current_item: SceneLocationLaneItem | None,
+) -> str:
+    if viewer.current_character is None or current_item is None:
+        return "muted"
+    if current_item.summary.is_mine and current_item.summary.needs_attention:
+        return "warning"
+    if current_item.waiting_on_others:
+        return "info"
+    if current_item.summary.is_mine:
+        return "success"
+    return "muted"
+
+
+def scene_grounding_facts(thread_view: ThreadView) -> tuple[SceneGroundingFact, ...]:
+    facts = [
+        SceneGroundingFact("Status", scene_status_label(thread_view.thread.status)),
+        SceneGroundingFact("Runtime", thread_view.episode.read_estimate_label),
+        SceneGroundingFact("Replies", str(thread_view.reply_count)),
+        SceneGroundingFact("Faces", str(len(thread_view.participants))),
+    ]
+    if thread_view.thread.posting_mode == "posting_order":
+        facts.insert(
+            1, SceneGroundingFact("Mode", posting_mode_label(thread_view.thread.posting_mode))
+        )
+    return tuple(facts)
+
+
+def scene_status_label(status: str) -> str:
+    match status:
+        case "open":
+            return "Open to join"
+        case "active":
+            return "Active"
+        case "paused":
+            return "Paused"
+        case "complete":
+            return "Complete"
+        case "private":
+            return "Private scene"
+        case "archived":
+            return "Archived"
+        case _:
+            return status.replace("_", " ").title()
+
+
+def posting_mode_label(posting_mode: str) -> str:
+    if posting_mode == "posting_order":
+        return "Posting order"
+    return "Freeform"
+
+
 def is_unread(
     repo: ThreadReadRepository,
     community_id: int,
@@ -578,21 +824,25 @@ def first_unread_post(
 
 
 def first_unread_post_from_read_at(
-    thread: Thread,
+    _thread: Thread,
     posts: list[Post],
     read_at: str | None,
 ) -> Post | None:
+    """Return the earliest transcript post strictly after ``read_at``.
+
+    Seconds-resolution timestamps intentionally use strict inequality—when several posts share an
+    ISO timestamp, callers should widen the stamp rather than the read model guessing which beat was
+    skimmed mid-burst.
+    """
     if not posts:
         return None
     if read_at is None:
         return posts[0]
     read_stamp = timestamp_key(read_at)
-    if read_stamp >= timestamp_key(thread.updated_at):
-        return None
     for post in posts:
         if timestamp_key(post.created_at) > read_stamp:
             return post
-    return posts[-1]
+    return None
 
 
 def _read_at_for_thread(

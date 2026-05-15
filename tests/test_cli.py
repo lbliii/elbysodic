@@ -462,6 +462,7 @@ def test_create_app_closes_internally_created_services_on_shutdown(monkeypatch) 
 
 
 @pytest.mark.parametrize("stop_signal", [signal.SIGTERM, signal.SIGINT])
+@pytest.mark.process
 def test_cli_serve_exits_cleanly_on_stop_signal(tmp_path, stop_signal: signal.Signals) -> None:
     port = _unused_port()
     db_path = tmp_path / "serve.sqlite3"
@@ -489,60 +490,66 @@ def test_cli_serve_exits_cleanly_on_stop_signal(tmp_path, stop_signal: signal.Si
     _assert_database_writable(db_path)
 
 
-def test_dev_preview_exits_cleanly_on_sigterm(tmp_path) -> None:
-    port = _unused_port()
+def test_dev_preview_initializes_seeded_database_and_delegates_to_server(
+    monkeypatch, tmp_path, capsys
+) -> None:
     db_path = tmp_path / "preview.sqlite3"
-    process = _start_cli_subprocess(
+    calls: dict[str, object] = {}
+
+    def fake_run_server(
+        *,
+        debug: bool,
+        db_path: Path,
+        seed_demo: bool,
+        host: str,
+        port: int,
+        stop_on_sighup: bool,
+    ) -> None:
+        calls["debug"] = debug
+        calls["db_path"] = db_path
+        calls["seed_demo"] = seed_demo
+        calls["host"] = host
+        calls["port"] = port
+        calls["stop_on_sighup"] = stop_on_sighup
+
+    monkeypatch.setattr(cli, "_run_server", fake_run_server)
+
+    cli.main(
         [
             "dev",
             "preview",
             "--host",
             LOCAL_HOST,
             "--port",
-            str(port),
+            "8123",
             "--db-path",
             str(db_path),
         ]
     )
-    try:
-        _wait_for_health(port, process)
-        output = _stop_process_cleanly(process, signal.SIGTERM)
-    finally:
-        if process.poll() is None:
-            process.kill()
-            process.wait(timeout=10)
 
+    output = capsys.readouterr().out
     assert "preview database ready" in output
-    _assert_port_reusable(port)
+    assert "serving local preview at http://127.0.0.1:8123/" in output
+    assert calls == {
+        "debug": True,
+        "db_path": db_path,
+        "seed_demo": False,
+        "host": LOCAL_HOST,
+        "port": 8123,
+        "stop_on_sighup": True,
+    }
     _assert_database_writable(db_path)
 
 
 @pytest.mark.skipif(not hasattr(signal, "SIGHUP"), reason="SIGHUP is POSIX-only")
-def test_dev_preview_debug_exits_cleanly_on_sighup(tmp_path) -> None:
-    port = _unused_port()
-    db_path = tmp_path / "preview.sqlite3"
-    process = _start_cli_subprocess(
-        [
-            "dev",
-            "preview",
-            "--host",
-            LOCAL_HOST,
-            "--port",
-            str(port),
-            "--db-path",
-            str(db_path),
-        ]
-    )
+def test_debug_sighup_handler_converts_to_keyboard_interrupt() -> None:
+    previous_handler = signal.getsignal(signal.SIGHUP)
     try:
-        _wait_for_health(port, process)
-        _stop_process_cleanly(process, signal.SIGHUP)
+        with pytest.raises(KeyboardInterrupt), cli._sighup_as_keyboard_interrupt(enabled=True):
+            signal.raise_signal(signal.SIGHUP)
+        assert signal.getsignal(signal.SIGHUP) == previous_handler
     finally:
-        if process.poll() is None:
-            process.kill()
-            process.wait(timeout=10)
-
-    _assert_port_reusable(port)
-    _assert_database_writable(db_path)
+        signal.signal(signal.SIGHUP, previous_handler)
 
 
 def test_cli_init_db_creates_schema_without_demo_seed_by_default(monkeypatch, tmp_path) -> None:

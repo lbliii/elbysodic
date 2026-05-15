@@ -738,6 +738,26 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         ).fetchone()
         return row is not None
 
+    def watched_thread_ids(
+        self,
+        community_id: int,
+        thread_ids: list[int],
+        membership_id: int,
+    ) -> set[int]:
+        if not thread_ids:
+            return set()
+        rows = self.connection.execute(
+            """
+            SELECT thread_id
+            FROM thread_watches
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND thread_id IN (SELECT value FROM json_each(?))
+            """,
+            (community_id, membership_id, json.dumps(thread_ids)),
+        ).fetchall()
+        return {int(row["thread_id"]) for row in rows}
+
     def list_thread_watch_membership_ids(self, community_id: int, thread_id: int) -> list[int]:
         self.get_thread(community_id, thread_id)
         rows = self.connection.execute(

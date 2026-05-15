@@ -59,12 +59,10 @@ pretend a behavior exists until code, tests, or product docs support it.
   exploration settles into a production direction.
 - `component-inventory.md`: current shared component map, surface-intensity
   budgets, token roles, and QA matrix for visual implementation.
-- `composition-bible.md`: living composition doctrine for atmosphere-first
-  Elbysodic surfaces, including portal, console, bento, and reader patterns.
+- `composition-bible.md`: living composition doctrine for page rhythm, surface
+  ladder, layered chrome, media use, mobile layout, and bad patterns.
 - `circle-terminals-token-map.md`: accepted token roles for translating the
   Circle Terminals mark into default theme color and state language.
-- `../docs/product/experience-direction.md`: concise product-experience
-  synthesis for the current Slack/Netflix/JCINK-inspired direction.
 - `image-dimensions.md`: aspect-ratio map for Midjourney-style image
   generation and product media surfaces.
 - `motion-design.md`: animation and transition guidance for technicolor
@@ -73,10 +71,20 @@ pretend a behavior exists until code, tests, or product docs support it.
   deferred visual risks.
 - `sidebar-icon-vocabulary.md`: canonical SVG icon set and route mapping for
   sidebar destinations, compact rail behavior, and Studio/Desk route cleanup.
-- `static-community-landing-v2-mock.html`: static V2 prototype for the
-  atmosphere-first public community gateway.
-- `static-community-landing-v2-notes.md`: research, critique, and translation
-  notes for the community landing V2 mock.
+- `../docs/product/experience-direction.md`: concise product-experience
+  synthesis for the current Jcink/PBP, Slack-like layered context,
+  Netflix/Apple TV editorial discovery, RPHub polish, and technicolor futurism
+  direction.
+- `static-community-landing-v2-mock.html`: static V2 prototype for a public
+  realm gateway at `/c/x-men-apocalypse`.
+- `static-community-landing-v2-notes.md`: research, design rationale, accepted
+  moves, read-model implications, and proof needed for the community landing
+  V2 prototype.
+- `static-scene-context-mock.html`: static prototype for a scene-in-location
+  reader with a minified location lane, grounding inspector, PBP hovercard, and
+  writer activity drawer.
+- `static-scene-context-mock-notes.md`: product-design notes for the scene
+  context prototype and its Slack/Discord pattern boundaries.
 - `static-shell-mock.html`: static layered shell mock for the accepted icon rail
   plus inner-shell model.
 - `static-shell-mock-notes.md`: review notes for the static shell mock and

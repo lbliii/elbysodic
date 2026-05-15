@@ -121,6 +121,7 @@ python_functions = ["test_*"]
 addopts = ["-ra", "-q", "--strict-markers", "--import-mode=importlib"]
 markers = [
     "integration: integration tests requiring full app setup",
+    "process: process-level subprocess or server lifecycle tests that run serially",
 ]
 
 # =============================================================================
@@ -170,6 +171,9 @@ dev = [
 [tool.poe.tasks]
 test = { cmd = "pytest", help = "Run the test suite" }
 test-fast = { cmd = "pytest tests/ -x -q --timeout=10", help = "Fast feedback loop" }
+test-parallel-safe = { cmd = "pytest -n auto -m 'not process' -q --tb=short", help = "Run parallel-safe tests with pytest-xdist" }
+test-process = { cmd = "pytest -m process -q --tb=short", help = "Run process-level tests serially" }
+test-parallel = { sequence = ["test-parallel-safe", "test-process"], help = "Run the suite with parallel-safe tests first, then process tests serially" }
 test-cov = { cmd = "pytest tests/ --cov=elbysodic --cov-report=term-missing", help = "Run tests with coverage" }
 browser-qa = { cmd = "python scripts/browser_qa.py", help = "Run Playwright visual smoke QA against the local app" }
 browser-qa-deep = { cmd = "python scripts/browser_qa.py --profile deep", help = "Run expanded Playwright visual QA against seeded routes" }
