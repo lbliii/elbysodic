@@ -1,0 +1,1432 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X-Men Apocalypse Community Landing V2 Mock</title>
+  <link rel="stylesheet" href="../src/elbysodic/web/static/elbysodic-theme.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --mock-bg: #07121f;
+      --mock-panel: color-mix(in srgb, var(--chirpui-surface, #102032) 88%, transparent);
+      --mock-panel-strong: color-mix(in srgb, var(--chirpui-surface-elevated, #17283d) 94%, transparent);
+      --mock-border: color-mix(in srgb, var(--chirpui-border, #50657a) 70%, transparent);
+      --mock-text: var(--chirpui-text, #f7fbff);
+      --mock-muted: var(--chirpui-muted, #a9b7c7);
+      --mock-accent: var(--chirpui-accent, #79f3ff);
+      --mock-dye: var(--elbysodic-atmosphere-dye, #ff6bd5);
+      --mock-warm: #f6d270;
+      --mock-danger: #ff7a8e;
+      --mock-good: #82efc6;
+      --rail-width: 4.5rem;
+      --inner-width: 18rem;
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+      line-height: 1.5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--mock-dye) 20%, transparent), transparent 26rem),
+        radial-gradient(circle at 88% 3%, color-mix(in srgb, var(--mock-accent) 16%, transparent), transparent 28rem),
+        linear-gradient(135deg, #07121f 0%, #101c2c 47%, #191428 100%);
+      color: var(--mock-text);
+    }
+
+    body[data-media="off"] .media-frame img,
+    body[data-media="off"] .hero-art img {
+      display: none;
+    }
+
+    body[data-media="off"] .media-frame,
+    body[data-media="off"] .hero-art {
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mock-accent) 18%, transparent), color-mix(in srgb, var(--mock-dye) 16%, transparent)),
+        repeating-linear-gradient(90deg, color-mix(in srgb, #fff 7%, transparent) 0 1px, transparent 1px 3.2rem),
+        color-mix(in srgb, var(--mock-panel-strong) 92%, transparent);
+    }
+
+    body:not([data-event-state="single"]) .event-single,
+    body:not([data-event-state="none"]) .event-none,
+    body:not([data-event-state="multi"]) .event-multi {
+      display: none !important;
+    }
+
+    a,
+    button {
+      color: inherit;
+      font: inherit;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .mock-switcher {
+      position: sticky;
+      z-index: 100;
+      top: 0;
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: none;
+      gap: 0.4rem;
+      justify-content: center;
+      padding: 0.45rem;
+      border: 0;
+      border-bottom: 1px solid var(--mock-border);
+      border-radius: 0;
+      background: color-mix(in srgb, #050d18 92%, transparent);
+      box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.34);
+      backdrop-filter: blur(16px);
+    }
+
+    .mock-switcher__group {
+      display: flex;
+      gap: 0.3rem;
+      padding-inline: 0.15rem;
+    }
+
+    .mock-switcher__group + .mock-switcher__group {
+      border-left: 1px solid var(--mock-border);
+      padding-left: 0.6rem;
+    }
+
+    .mock-switcher button {
+      min-height: 2rem;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      background: transparent;
+      color: var(--mock-muted);
+      font-size: 0.85rem;
+    }
+
+    .mock-switcher button[aria-pressed="true"] {
+      border-color: color-mix(in srgb, var(--mock-accent) 46%, transparent);
+      background: color-mix(in srgb, var(--mock-accent) 14%, transparent);
+      color: var(--mock-text);
+    }
+
+    .mock-switcher + .app {
+      min-height: calc(100vh - 3rem);
+    }
+
+    .app {
+      min-height: calc(100vh - 3rem);
+      display: grid;
+      grid-template-columns: var(--rail-width) var(--inner-width) minmax(0, 1fr);
+    }
+
+    .rail {
+      position: sticky;
+      top: 3rem;
+      height: calc(100vh - 3rem);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 1rem;
+      padding: 0.9rem 0.65rem;
+      border-right: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #06101d 90%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 34%, transparent);
+      border-radius: 0.75rem;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mock-accent) 20%, transparent), color-mix(in srgb, var(--mock-dye) 18%, transparent)),
+        color-mix(in srgb, var(--mock-panel) 86%, transparent);
+      box-shadow: 0 0 1.25rem color-mix(in srgb, var(--mock-accent) 15%, transparent);
+    }
+
+    .mark img {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .rail nav {
+      display: grid;
+      gap: 0.5rem;
+      align-content: start;
+    }
+
+    .rail-link {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      min-height: 3rem;
+      border: 1px solid transparent;
+      border-radius: 0.85rem;
+      color: var(--mock-muted);
+      font-weight: 800;
+    }
+
+    .rail-link[aria-current="page"],
+    .rail-link:hover,
+    .rail-link:focus-visible {
+      border-color: color-mix(in srgb, var(--mock-accent) 36%, transparent);
+      background: color-mix(in srgb, var(--mock-accent) 12%, transparent);
+      color: var(--mock-text);
+    }
+
+    .rail-link span {
+      position: absolute;
+      left: calc(100% + 0.6rem);
+      top: 50%;
+      z-index: 10;
+      min-width: max-content;
+      border: 1px solid var(--mock-border);
+      border-radius: 0.55rem;
+      padding: 0.32rem 0.5rem;
+      background: #07101c;
+      color: var(--mock-text);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) translateX(-0.25rem);
+      transition: opacity 140ms ease, transform 140ms ease;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .rail-link:hover span,
+    .rail-link:focus-visible span {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    .inner {
+      min-height: 100vh;
+      border-right: 1px solid var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 84%, transparent);
+    }
+
+    .inner__head {
+      padding: 1.35rem 1rem 1rem;
+      border-bottom: 1px solid var(--mock-border);
+    }
+
+    .kicker {
+      margin: 0 0 0.45rem;
+      color: color-mix(in srgb, var(--mock-accent) 82%, var(--mock-muted));
+      font-size: 0.73rem;
+      font-weight: 820;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .inner h2,
+    .page h1,
+    .section-head h2,
+    .card strong,
+    .row strong {
+      margin: 0;
+      letter-spacing: 0;
+      line-height: 1.05;
+    }
+
+    .inner h2 {
+      font-size: 1.28rem;
+    }
+
+    .inner p,
+    .section-head p,
+    .hero-copy p,
+    .card span,
+    .row span,
+    .note {
+      color: var(--mock-muted);
+    }
+
+    .inner p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .inner__list {
+      display: grid;
+      gap: 0.45rem;
+      padding: 0.9rem;
+    }
+
+    .inner-row {
+      display: grid;
+      gap: 0.15rem;
+      border: 1px solid transparent;
+      border-radius: 0.7rem;
+      padding: 0.65rem 0.7rem;
+      color: var(--mock-muted);
+    }
+
+    .inner-row[aria-current="page"],
+    .inner-row:hover,
+    .inner-row:focus-visible {
+      border-color: color-mix(in srgb, var(--mock-accent) 26%, transparent);
+      background: color-mix(in srgb, var(--mock-accent) 9%, transparent);
+      color: var(--mock-text);
+    }
+
+    .inner-row strong {
+      font-size: 0.9rem;
+    }
+
+    .inner-row span {
+      font-size: 0.78rem;
+    }
+
+    body:not([data-audience="visitor"]) .visitor-only,
+    body:not([data-audience="member"]) .member-only,
+    body:not([data-audience="applicant"]) .applicant-only {
+      display: none !important;
+    }
+
+    .main {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      min-height: 4rem;
+      padding: 0.75rem clamp(1rem, 3vw, 2rem);
+      border-bottom: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #07101c 82%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .brandline {
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .brandline strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brandline span {
+      display: block;
+      color: var(--mock-muted);
+      font-size: 0.82rem;
+    }
+
+    .brandline .event-single,
+    .brandline .event-none,
+    .brandline .event-multi {
+      display: inline;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.35rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 32%, transparent);
+      border-radius: 0.6rem;
+      padding: 0.48rem 0.72rem;
+      background: color-mix(in srgb, var(--mock-accent) 12%, var(--mock-panel));
+      color: var(--mock-text);
+      font-weight: 780;
+      font-size: 0.9rem;
+    }
+
+    .btn--quiet {
+      border-color: var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 76%, transparent);
+      color: var(--mock-muted);
+    }
+
+    .page {
+      display: grid;
+      gap: clamp(1.2rem, 2vw, 1.7rem);
+      width: min(100%, 82rem);
+      margin: 0 auto;
+      padding: clamp(1rem, 3vw, 2rem);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.72fr);
+      gap: clamp(1rem, 3vw, 2rem);
+      min-height: min(42rem, calc(100vh - 8rem));
+      align-items: stretch;
+      overflow: clip;
+      border: 1px solid color-mix(in srgb, var(--mock-border) 80%, transparent);
+      border-radius: 1.15rem;
+      padding: clamp(0.8rem, 2vw, 1.3rem);
+      background:
+        linear-gradient(110deg, color-mix(in srgb, #030914 88%, transparent) 0%, color-mix(in srgb, #071220 58%, transparent) 48%, color-mix(in srgb, #12102a 52%, transparent) 100%),
+        radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--mock-accent) 23%, transparent), transparent 25rem),
+        radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--mock-dye) 23%, transparent), transparent 26rem),
+        color-mix(in srgb, var(--mock-panel-strong) 88%, transparent);
+      box-shadow:
+        0 2rem 5rem rgb(0 0 0 / 0.3),
+        inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero::before {
+      background:
+        linear-gradient(120deg, transparent 0 38%, color-mix(in srgb, var(--mock-accent) 11%, transparent) 47%, transparent 56%),
+        repeating-linear-gradient(90deg, color-mix(in srgb, #fff 5%, transparent) 0 1px, transparent 1px 5.5rem),
+        repeating-linear-gradient(0deg, color-mix(in srgb, #fff 3%, transparent) 0 1px, transparent 1px 4rem);
+      opacity: 0.44;
+      mix-blend-mode: screen;
+      animation: signal-drift 18s ease-in-out infinite alternate;
+    }
+
+    .hero::after {
+      background:
+        radial-gradient(circle at 50% 108%, color-mix(in srgb, #fff 13%, transparent), transparent 22rem),
+        linear-gradient(180deg, transparent 0%, color-mix(in srgb, #020813 60%, transparent) 100%);
+    }
+
+    @keyframes signal-drift {
+      from {
+        transform: translate3d(-0.35rem, -0.2rem, 0);
+      }
+
+      to {
+        transform: translate3d(0.35rem, 0.25rem, 0);
+      }
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-content: end;
+      gap: 1rem;
+      min-height: 31rem;
+      min-width: 0;
+      padding: clamp(1rem, 3.4vw, 2.2rem);
+      border: 0;
+      border-radius: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, transparent 0%, color-mix(in srgb, #06101c 64%, transparent) 76%),
+        radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--mock-accent) 16%, transparent), transparent 22rem);
+    }
+
+    .hero-copy::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(120deg, transparent 0 42%, color-mix(in srgb, #fff 6%, transparent) 50%, transparent 58%),
+        repeating-linear-gradient(90deg, color-mix(in srgb, #fff 4%, transparent) 0 1px, transparent 1px 5rem);
+      opacity: 0.5;
+    }
+
+    .hero h1 {
+      max-width: 10ch;
+      font-size: clamp(3rem, 6.2vw, 6.2rem);
+      line-height: 0.9;
+      overflow-wrap: anywhere;
+    }
+
+    .hero-copy .lead {
+      max-width: 34rem;
+      margin: 0;
+      color: color-mix(in srgb, var(--mock-text) 88%, var(--mock-muted));
+      font-size: clamp(1rem, 1.9vw, 1.35rem);
+    }
+
+    .hero-copy .lead strong {
+      color: var(--mock-text);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .status-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.65rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 30%, transparent);
+      border-radius: 999px;
+      padding: 0.25rem 0.55rem;
+      background: color-mix(in srgb, var(--mock-accent) 10%, transparent);
+      color: color-mix(in srgb, var(--mock-accent) 82%, white);
+      font-size: 0.75rem;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .badge--warm {
+      border-color: color-mix(in srgb, var(--mock-warm) 44%, transparent);
+      background: color-mix(in srgb, var(--mock-warm) 12%, transparent);
+      color: color-mix(in srgb, var(--mock-warm) 88%, white);
+    }
+
+    .badge--danger {
+      border-color: color-mix(in srgb, var(--mock-danger) 42%, transparent);
+      background: color-mix(in srgb, var(--mock-danger) 12%, transparent);
+      color: color-mix(in srgb, var(--mock-danger) 88%, white);
+    }
+
+    .hero-side {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-rows: minmax(16rem, 1fr) auto auto;
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .hero-art {
+      position: relative;
+      min-height: 18rem;
+      border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+      border-radius: 0.95rem;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--mock-panel-strong) 92%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mock-accent) 10%, transparent);
+    }
+
+    .hero-art img,
+    .media-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hero-art__caption {
+      position: absolute;
+      inset: auto 1rem 1rem;
+      display: grid;
+      gap: 0.35rem;
+      border: 1px solid color-mix(in srgb, #fff 13%, transparent);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      background: color-mix(in srgb, #06101c 78%, transparent);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-art__caption strong,
+    .hero-art__caption span {
+      display: block;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .metric {
+      border: 1px solid var(--mock-border);
+      border-radius: 0.8rem;
+      padding: 0.75rem;
+      background: color-mix(in srgb, var(--mock-panel) 78%, transparent);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--mock-muted);
+      font-size: 0.78rem;
+      margin-top: 0.28rem;
+    }
+
+    .atmosphere-feed {
+      display: grid;
+      gap: 0.45rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 24%, transparent);
+      border-radius: 0.85rem;
+      padding: 0.8rem;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--mock-accent) 9%, transparent), transparent 62%),
+        color-mix(in srgb, var(--mock-panel) 72%, transparent);
+    }
+
+    .atmosphere-feed strong,
+    .atmosphere-feed span {
+      display: block;
+    }
+
+    .atmosphere-feed strong {
+      font-size: 0.95rem;
+      line-height: 1.15;
+    }
+
+    .atmosphere-feed span {
+      color: var(--mock-muted);
+      font-size: 0.82rem;
+    }
+
+    .section {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .section-head {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      align-items: end;
+    }
+
+    .section-head h2 {
+      font-size: clamp(1.45rem, 2.5vw, 2.35rem);
+    }
+
+    .section-head p {
+      max-width: 40rem;
+      margin: 0.35rem 0 0;
+    }
+
+    .section-head a {
+      color: color-mix(in srgb, var(--mock-accent) 84%, white);
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+      gap: 0.85rem;
+    }
+
+    .card,
+    .row,
+    .lane,
+    .panel {
+      border: 1px solid var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 80%, transparent);
+    }
+
+    .card {
+      display: grid;
+      min-width: 0;
+      border-radius: 0.85rem;
+      overflow: hidden;
+    }
+
+    .card__body {
+      display: grid;
+      gap: 0.5rem;
+      padding: 0.9rem;
+    }
+
+    .card strong {
+      font-size: 1.08rem;
+    }
+
+    .card span {
+      font-size: 0.88rem;
+    }
+
+    .feature-card {
+      grid-template-columns: minmax(10rem, 0.56fr) minmax(0, 1fr);
+      min-height: 16rem;
+    }
+
+    .media-frame {
+      min-height: 11rem;
+      background: color-mix(in srgb, var(--mock-panel-strong) 90%, transparent);
+    }
+
+    .mini-stack {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+      border-radius: 0.75rem;
+      padding: 0.72rem;
+    }
+
+    .row__icon {
+      display: grid;
+      place-items: center;
+      width: 2.4rem;
+      height: 2.4rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 28%, transparent);
+      border-radius: 0.65rem;
+      background: color-mix(in srgb, var(--mock-accent) 10%, transparent);
+      color: color-mix(in srgb, var(--mock-accent) 82%, white);
+      font-weight: 820;
+    }
+
+    .row strong,
+    .row span {
+      display: block;
+    }
+
+    .row span {
+      font-size: 0.84rem;
+    }
+
+    .row__meta {
+      color: var(--mock-muted);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .location-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-auto-flow: dense;
+      gap: 0.85rem;
+    }
+
+    .location-card .media-frame {
+      aspect-ratio: 16 / 9;
+      min-height: auto;
+    }
+
+    .location-card:first-child {
+      grid-column: span 4;
+      grid-row: span 2;
+      min-height: 100%;
+    }
+
+    .location-card:first-child .media-frame {
+      aspect-ratio: 2 / 1;
+    }
+
+    .location-card:nth-child(2) {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+
+    .location-card:nth-child(n + 3) {
+      grid-column: span 2;
+    }
+
+    .location-card--hot {
+      position: relative;
+      border-color: color-mix(in srgb, var(--mock-warm) 42%, var(--mock-border));
+      background:
+        radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--mock-warm) 14%, transparent), transparent 12rem),
+        color-mix(in srgb, var(--mock-panel) 82%, transparent);
+    }
+
+    .location-card--hot::after {
+      content: "hot now";
+      position: absolute;
+      top: 0.7rem;
+      left: 0.7rem;
+      z-index: 2;
+      border: 1px solid color-mix(in srgb, var(--mock-warm) 55%, transparent);
+      border-radius: 999px;
+      padding: 0.22rem 0.5rem;
+      background: color-mix(in srgb, #07101c 78%, transparent);
+      color: color-mix(in srgb, var(--mock-warm) 88%, white);
+      font-size: 0.72rem;
+      font-weight: 820;
+      text-transform: uppercase;
+    }
+
+    .location-card--arc {
+      border-color: color-mix(in srgb, var(--mock-dye) 34%, var(--mock-border));
+    }
+
+    .wanted-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .wanted-card {
+      min-height: 13rem;
+      background:
+        radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--mock-dye) 18%, transparent), transparent 11rem),
+        color-mix(in srgb, var(--mock-panel) 82%, transparent);
+    }
+
+    .wanted-card strong {
+      font-size: 1.2rem;
+    }
+
+    .panel {
+      display: grid;
+      gap: 0.8rem;
+      border-radius: 0.9rem;
+      padding: 1rem;
+    }
+
+    .continue-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+      gap: 0.85rem;
+    }
+
+    .low-note {
+      border-left: 3px solid color-mix(in srgb, var(--mock-accent) 70%, transparent);
+      padding-left: 0.8rem;
+      color: var(--mock-muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .rail,
+      .inner {
+        display: none;
+      }
+
+      .topbar {
+        position: sticky;
+      }
+
+      .hero,
+      .guide-grid,
+      .continue-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 0.8rem;
+      }
+
+      .hero-copy {
+        min-height: 25rem;
+      }
+
+      .location-grid,
+      .wanted-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .location-card:first-child,
+      .location-card:nth-child(2),
+      .location-card:nth-child(n + 3) {
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .feature-card {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        display: grid;
+        align-items: start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .top-actions {
+        justify-content: start;
+      }
+
+      .hero h1 {
+        font-size: clamp(3rem, 16vw, 4.8rem);
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .mock-switcher {
+        justify-content: start;
+        overflow-x: auto;
+      }
+
+      .mock-switcher__group {
+        flex: 0 0 auto;
+      }
+
+      .mock-switcher button {
+        white-space: nowrap;
+      }
+
+      .row {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .row__meta {
+        grid-column: 2;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body data-audience="visitor" data-media="on" data-event-state="single">
+  <div class="mock-switcher" aria-label="Mock controls">
+    <div class="mock-switcher__group" aria-label="Audience">
+      <button type="button" data-audience="visitor" aria-pressed="true">Visitor</button>
+      <button type="button" data-audience="applicant" aria-pressed="false">Applicant</button>
+      <button type="button" data-audience="member" aria-pressed="false">Member</button>
+    </div>
+    <div class="mock-switcher__group" aria-label="Media">
+      <button type="button" data-media="on" aria-pressed="true">Media</button>
+      <button type="button" data-media="off" aria-pressed="false">No media</button>
+    </div>
+    <div class="mock-switcher__group" aria-label="Event state">
+      <button type="button" data-event-state="single" aria-pressed="true">One event</button>
+      <button type="button" data-event-state="none" aria-pressed="false">No event</button>
+      <button type="button" data-event-state="multi" aria-pressed="false">Multiple</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="rail" aria-label="Primary rooms">
+      <a class="mark" href="#" aria-label="X-Men Apocalypse home">
+        <img src="../src/elbysodic/web/static/seed-media/xmen-mark.svg" alt="">
+      </a>
+      <nav>
+        <a class="rail-link" href="#" aria-current="page" aria-label="World Home">W<span>World Home</span></a>
+        <a class="rail-link" href="#" aria-label="Locations">L<span>Locations</span></a>
+        <a class="rail-link" href="#" aria-label="Wanted">H<span>Wanted</span></a>
+        <a class="rail-link member-only" href="#" aria-label="Desk">D<span>Desk</span></a>
+        <a class="rail-link member-only" href="#" aria-label="Studio">S<span>Studio</span></a>
+      </nav>
+      <a class="rail-link" href="#" aria-label="Search">?<span>Search realm</span></a>
+    </aside>
+
+    <aside class="inner" aria-label="World Home">
+      <div class="inner__head">
+        <p class="kicker">World Home</p>
+        <h2>
+          <span class="event-single">B-24 Winter</span>
+          <span class="event-none">Open Season</span>
+          <span class="event-multi">Two Live Arcs</span>
+        </h2>
+        <p>
+          <span class="event-single">Premise, current crisis, playable doors, and entry points into the realm.</span>
+          <span class="event-none">Premise, standing play lanes, wanted hooks, and entry points into the realm.</span>
+          <span class="event-multi">Premise, live arcs, playable doors, and entry points into the realm.</span>
+        </p>
+      </div>
+      <nav class="inner__list" aria-label="World Home sections">
+        <a class="inner-row" href="#" aria-current="page">
+          <strong>Start Here</strong>
+          <span>Premise, rules, application guide</span>
+        </a>
+        <a class="inner-row" href="#">
+          <strong>Playable Now</strong>
+          <span>Open scenes and public crisis lanes</span>
+        </a>
+        <a class="inner-row" href="#">
+          <strong>Wanted Hooks</strong>
+          <span>4 open story invitations</span>
+        </a>
+        <a class="inner-row" href="#">
+          <strong>Locations</strong>
+          <span>6 public scene hubs</span>
+        </a>
+        <a class="inner-row visitor-only applicant-only" href="#">
+          <strong>Entry</strong>
+          <span>Request access, apply, reserve</span>
+        </a>
+        <a class="inner-row member-only" href="#">
+          <strong>Continue</strong>
+          <span>Needs reply, waiting, watched</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <a class="brandline" href="#">
+          <span class="mark" aria-hidden="true">
+            <img src="../src/elbysodic/web/static/seed-media/xmen-mark.svg" alt="">
+          </span>
+          <span>
+            <strong>X-Men Apocalypse</strong>
+            <span>
+              Public realm preview
+              <span class="event-single">&middot; B-24 Winter</span>
+              <span class="event-none">&middot; Open play</span>
+              <span class="event-multi">&middot; Two live arcs</span>
+            </span>
+          </span>
+        </a>
+        <div class="top-actions">
+          <a class="btn btn--quiet" href="#">Open guidebook</a>
+          <a class="btn visitor-only" href="#">Request access</a>
+          <a class="btn applicant-only" href="#">Continue application</a>
+          <a class="btn member-only" href="#">Open Desk</a>
+        </div>
+      </header>
+
+      <div class="page">
+        <section class="hero" aria-labelledby="realm-title">
+          <div class="hero-copy">
+            <div class="status-strip">
+              <span class="badge">Public preview</span>
+              <span class="badge badge--danger event-single">Current event</span>
+              <span class="badge event-none">Evergreen play</span>
+              <span class="badge badge--danger event-multi">2 live events</span>
+              <span class="badge badge--warm">4 wanted hooks</span>
+              <span class="badge member-only">Reply pressure: 3</span>
+              <span class="badge applicant-only">Application in review</span>
+            </div>
+            <div>
+              <p class="kicker">Realm Gateway</p>
+              <h1 id="realm-title">X-Men Apocalypse</h1>
+            </div>
+            <p class="lead">
+              <span class="event-single">
+                <strong>B-24 was supposed to predict mutant escalation.</strong>
+                Now Iceman is infected, New York is freezing, and every public
+                rescue has become evidence in someone else's containment plan.
+              </span>
+              <span class="event-none">
+                <strong>The school is open under fragile public scrutiny.</strong>
+                Writers can enter through school life, faction politics,
+                rescue work, old loyalties, and the quiet cost of being seen.
+              </span>
+              <span class="event-multi">
+                <strong>Two pressures are splitting the realm at once.</strong>
+                B-24 is freezing New York while Genosha broadcasts sanctuary,
+                leverage, and a warning no government can ignore.
+              </span>
+            </p>
+            <div class="hero-actions">
+              <a class="btn visitor-only" href="#">Request access</a>
+              <a class="btn visitor-only" href="#">Browse wanted</a>
+              <a class="btn applicant-only" href="#">Finish application</a>
+              <a class="btn applicant-only btn--quiet" href="#">Review claims</a>
+              <a class="btn member-only" href="#">Reply as Rogue</a>
+              <a class="btn member-only btn--quiet" href="#">Scenes here</a>
+              <a class="btn btn--quiet" href="#">Read premise</a>
+            </div>
+          </div>
+
+          <div class="hero-side">
+            <figure class="hero-art">
+              <img src="../src/elbysodic/web/static/seed-media/xmen-hero.svg" alt="Snow-lit academy and B-24 signal lines">
+              <figcaption class="hero-art__caption">
+                <strong>
+                  <span class="event-single">Current Event: B-24 Winter</span>
+                  <span class="event-none">Realm Atmosphere: Rebuilt School Under Watch</span>
+                  <span class="event-multi">Live Arcs: B-24 Winter / Genosha Signal</span>
+                </strong>
+                <span class="event-single">Rescue routes, frozen infrastructure, school triage, media panic, and back-channel diplomacy.</span>
+                <span class="event-none">Everyday school life, faction pressure, public scrutiny, and the work of making sanctuary last.</span>
+                <span class="event-multi">One arc freezes New York. One arc turns sanctuary into broadcast politics.</span>
+              </figcaption>
+            </figure>
+            <div class="atmosphere-feed" aria-label="Realm atmosphere">
+              <strong>
+                <span class="event-single">Crisis feed: hour six</span>
+                <span class="event-none">Realm pulse: school lights on</span>
+                <span class="event-multi">Arc feed: winter plus broadcast</span>
+              </strong>
+              <span class="event-single">Evacuation routes open. Containment disputed. Xavier Institute is taking refugees.</span>
+              <span class="event-none">Open scenes favor academy pressure, old loyalties, faction choices, and new arrivals.</span>
+              <span class="event-multi">B-24 drives rescue play; Genosha drives political and defection hooks.</span>
+            </div>
+            <div class="metrics" aria-label="Realm pulse">
+              <div class="metric">
+                <strong>8</strong>
+                <span>faces in play</span>
+              </div>
+              <div class="metric">
+                <strong>6</strong>
+                <span>
+                  <span class="event-single">scene hubs under pressure</span>
+                  <span class="event-none">scene hubs ready</span>
+                  <span class="event-multi">scene hubs across arcs</span>
+                </span>
+              </div>
+              <div class="metric">
+                <strong>4</strong>
+                <span>wanted hooks open</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section member-only" aria-labelledby="continue-title">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Continue Writing</p>
+              <h2 id="continue-title">Rogue has work waiting</h2>
+              <p>Signed-in members should resume play without turning the public gateway into a dashboard.</p>
+            </div>
+            <a href="#">Open Desk</a>
+          </div>
+          <div class="continue-grid">
+            <div class="panel">
+              <a class="row" href="#">
+                <span class="row__icon">R</span>
+                <span>
+                  <strong>Sentinel drill after midnight</strong>
+                  <span>Danger Room &middot; needs reply &middot; posting order</span>
+                </span>
+                <span class="row__meta">Reply as Rogue</span>
+              </a>
+              <a class="row" href="#">
+                <span class="row__icon">W</span>
+                <span>
+                  <strong>Brotherhood rival from Rogue's past</strong>
+                  <span>Wanted hook &middot; raised interest</span>
+                </span>
+                <span class="row__meta">Plotting</span>
+              </a>
+            </div>
+            <div class="panel">
+              <p class="kicker">Active face</p>
+              <h3>Rogue</h3>
+              <p class="note">Member in X-Men Apocalypse. Commitment controls use this face until changed.</p>
+              <div class="status-strip">
+                <span class="badge">Mission-ready</span>
+                <span class="badge">X-Men</span>
+                <span class="badge badge--warm">Watching 2</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="start-title">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Start Here</p>
+              <h2 id="start-title">Read the board before you pick a door</h2>
+              <p>Guidebook material should orient a visitor without sending them into a wall of threads.</p>
+            </div>
+            <a href="#">Open guidebook</a>
+          </div>
+          <div class="guide-grid">
+            <a class="card feature-card" href="#">
+              <span class="media-frame">
+                <img src="../src/elbysodic/web/static/seed-media/xmen-hero.svg" alt="">
+              </span>
+              <span class="card__body">
+                <span class="badge">Premise</span>
+                <strong>Human institutions are turning AGI into a mutant-control weapon.</strong>
+                <span>School life under surveillance, human politics, mutant solidarity, rival factions, and the ethics of building a future while everyone is already preparing for war.</span>
+              </span>
+            </a>
+            <div class="mini-stack">
+              <a class="row" href="#">
+                <span class="row__icon">R</span>
+                <span>
+                  <strong>Rules</strong>
+                  <span>Consent-forward play, honest facets, and careful escalation.</span>
+                </span>
+                <span class="row__meta">Guide</span>
+              </a>
+              <a class="row" href="#">
+                <span class="row__icon">F</span>
+                <span>
+                  <strong>Factions</strong>
+                  <span>X-Men, Brotherhood, United Nations, and Evil Lab pressure.</span>
+                </span>
+                <span class="row__meta">Lore</span>
+              </a>
+              <a class="row" href="#">
+                <span class="row__icon">A</span>
+                <span>
+                  <strong>Application Guide</strong>
+                  <span>Identity, faction fit, boundaries, claims, and playable hooks.</span>
+                </span>
+                <span class="row__meta">Entry</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="playable-title">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Playable Now</p>
+              <h2 id="playable-title">
+                <span class="event-single">The crisis has open scenes</span>
+                <span class="event-none">The realm has open doors</span>
+                <span class="event-multi">The arcs have open scenes</span>
+              </h2>
+              <p>
+                <span class="event-single">Public preview should show story motion without exposing private queues, staff rooms, or active-face state.</span>
+                <span class="event-none">When no event is running, the gateway still needs atmosphere through standing tensions, places, and wanted pressure.</span>
+                <span class="event-multi">When several events are live, the gateway should clarify each arc without making visitors decode a schedule.</span>
+              </p>
+            </div>
+            <a href="#">Browse scenes</a>
+          </div>
+          <div class="panel">
+            <a class="row" href="#">
+              <span class="row__icon">S</span>
+              <span>
+                <strong>Frozen avenue evacuation</strong>
+                <span>Midtown evacuation route &middot; B-24 winter, hour six &middot; Cyclops coordinates street-level rescue.</span>
+              </span>
+              <span class="row__meta">Open scene</span>
+            </a>
+            <a class="row" href="#">
+              <span class="row__icon">M</span>
+              <span>
+                <strong>Med Bay triage</strong>
+                <span>Moira opens the school infirmary while students and refugees arrive from the cold.</span>
+              </span>
+              <span class="row__meta">Open scene</span>
+            </a>
+            <a class="row" href="#">
+              <span class="row__icon">9</span>
+              <span>
+                <strong>Station Nine signal</strong>
+                <span>A safehouse asks whether the X-Men are coming to rescue them or recruit them.</span>
+              </span>
+              <span class="row__meta">Posting order</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="wanted-title">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Wanted Hooks</p>
+              <h2 id="wanted-title">Open roles with story pressure</h2>
+              <p>Wanted should feel like casting into play, not a static ad archive.</p>
+            </div>
+            <a href="#">Browse wanted</a>
+          </div>
+          <div class="wanted-grid">
+            <a class="card wanted-card" href="#">
+              <span class="card__body">
+                <span class="badge">Rival</span>
+                <strong>Brotherhood rival from Rogue's past</strong>
+                <span>A Brotherhood-aligned foil who knew Rogue before the school became home.</span>
+                <span>Enters through: Rogue history, faction argument, school pressure.</span>
+              </span>
+            </a>
+            <a class="card wanted-card" href="#">
+              <span class="card__body">
+                <span class="badge">Faction need</span>
+                <strong>Human UN liaison for B-24 talks</strong>
+                <span>A diplomat or analyst caught between public safety and mutant trust.</span>
+                <span>Enters through: UN talks, public safety, containment audit.</span>
+              </span>
+            </a>
+            <a class="card wanted-card" href="#">
+              <span class="card__body">
+                <span class="badge">Event role</span>
+                <strong>Evil Lab handler for the B-24 failure</strong>
+                <span>A scientist, contractor, or handler who knows the winter was not an accident.</span>
+                <span>Enters through: B-24 Facilities, whistleblowing, cover-up.</span>
+              </span>
+            </a>
+            <a class="card wanted-card" href="#">
+              <span class="card__body">
+                <span class="badge">Plot role</span>
+                <strong>Iceman winter rescue specialist</strong>
+                <span>A mission-ready character for rescue routes, triage, and frozen infrastructure.</span>
+                <span>Enters through: Frozen Midtown, Med Bay, evacuation routes.</span>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="locations-title">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Locations</p>
+              <h2 id="locations-title">Choose where the next scene happens</h2>
+              <p>One location can carry the hottest pressure while the rest stay clear doors into different kinds of play.</p>
+            </div>
+            <a href="#">Open locations</a>
+          </div>
+          <div class="location-grid">
+            <a class="card location-card location-card--hot" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/xmen-xavier-institute.svg" alt=""></span>
+              <span class="card__body">
+                <strong>Xavier Institute</strong>
+                <span>The heart of the rebuilt school. Med Bay triage, new arrivals, and staff pressure converge here.</span>
+                <span class="badge badge--warm">3 open scenes</span>
+              </span>
+            </a>
+            <a class="card location-card location-card--hot" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/xmen-new-york-city.svg" alt=""></span>
+              <span class="card__body">
+                <strong>New York City</strong>
+                <span>The crisis everyone can see. Frozen avenues, rescue routes, and cameras turn powers into evidence.</span>
+                <span class="badge badge--danger">event pressure</span>
+              </span>
+            </a>
+            <a class="card location-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/xmen-mutant-underground.svg" alt=""></span>
+              <span class="card__body">
+                <strong>Mutant Underground</strong>
+                <span>The people between factions.</span>
+              </span>
+            </a>
+            <a class="card location-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/xmen-trask-b24-facilities.svg" alt=""></span>
+              <span class="card__body">
+                <strong>Trask / B-24 Facilities</strong>
+                <span>The machine room behind the winter.</span>
+              </span>
+            </a>
+            <a class="card location-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/xmen-united-nations.svg" alt=""></span>
+              <span class="card__body">
+                <strong>United Nations</strong>
+                <span>Where fear becomes policy.</span>
+              </span>
+            </a>
+            <a class="card location-card location-card--arc" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/xmen-genosha.svg" alt=""></span>
+              <span class="card__body">
+                <strong>Genosha</strong>
+                <span>Sanctuary, threat, or both.</span>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section visitor-only applicant-only" aria-labelledby="entry-title">
+          <div class="section-head">
+            <div>
+              <p class="kicker">First Writing Path</p>
+              <h2 id="entry-title">Know the fit before you apply</h2>
+              <p>Applicants need atmosphere, story pressure, claims/reserves posture, and public rules before they commit.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <a class="row" href="#">
+              <span class="row__icon">1</span>
+              <span>
+                <strong>Read the premise and rules</strong>
+                <span>Confirm the board's consent, escalation, and faction expectations.</span>
+              </span>
+              <span class="row__meta">Guidebook</span>
+            </a>
+            <a class="row" href="#">
+              <span class="row__icon">2</span>
+              <span>
+                <strong>Check wanted hooks and claims</strong>
+                <span>Pick a face, role, or relationship with a clear path into play.</span>
+              </span>
+              <span class="row__meta">Casting</span>
+            </a>
+            <a class="row" href="#">
+              <span class="row__icon">3</span>
+              <span>
+                <strong>Request access or continue application</strong>
+                <span>Staff sees application state; public visitors do not see staff workload.</span>
+              </span>
+              <span class="row__meta">Entry</span>
+            </a>
+          </div>
+        </section>
+
+        <p class="low-note">
+          Mock boundary: this V2 uses actual X-Men seed content and public-safe
+          concepts, but the layout is a static design artifact. Public catalog
+          slices, scene rows, wanted previews, and applicant/member continuation
+          would need service-owned read models before implementation.
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const body = document.body;
+
+    document.querySelectorAll(".mock-switcher button[data-audience]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const value = button.getAttribute("data-audience");
+        body.setAttribute("data-audience", value);
+        document.querySelectorAll(".mock-switcher button[data-audience]").forEach((candidate) => {
+          candidate.setAttribute("aria-pressed", String(candidate === button));
+        });
+      });
+    });
+
+    document.querySelectorAll(".mock-switcher button[data-media]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const value = button.getAttribute("data-media");
+        body.setAttribute("data-media", value);
+        document.querySelectorAll(".mock-switcher button[data-media]").forEach((candidate) => {
+          candidate.setAttribute("aria-pressed", String(candidate === button));
+        });
+      });
+    });
+
+    document.querySelectorAll(".mock-switcher button[data-event-state]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const value = button.getAttribute("data-event-state");
+        body.setAttribute("data-event-state", value);
+        document.querySelectorAll(".mock-switcher button[data-event-state]").forEach((candidate) => {
+          candidate.setAttribute("aria-pressed", String(candidate === button));
+        });
+      });
+    });
+  </script>
+</body>
+</html>

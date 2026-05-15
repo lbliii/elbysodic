@@ -14,6 +14,12 @@ Use this guide before adding theme controls, visual variants, community media,
 skin-like settings, guidebook layouts, postbit options, or program blueprint
 appearance fields.
 
+Use `docs/product/experience-direction.md` first when the visual decision needs
+the current reference synthesis. Appearance Studio should preserve Jcink/forum
+aesthetic sovereignty, meet modern RP-platform polish expectations, support
+cinematic/editorial ritual surfaces, and keep Slack-like context or activity
+patterns subordinate to PBP prose, active-face safety, and privacy.
+
 ## Modern Design Bar
 
 Elbysodic must not look like preserved 2014 forum software with a nicer coat of

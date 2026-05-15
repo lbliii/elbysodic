@@ -59,8 +59,12 @@ pretend a behavior exists until code, tests, or product docs support it.
   exploration settles into a production direction.
 - `component-inventory.md`: current shared component map, surface-intensity
   budgets, token roles, and QA matrix for visual implementation.
+- `composition-bible.md`: living composition doctrine for atmosphere-first
+  Elbysodic surfaces, including portal, console, bento, and reader patterns.
 - `circle-terminals-token-map.md`: accepted token roles for translating the
   Circle Terminals mark into default theme color and state language.
+- `../docs/product/experience-direction.md`: concise product-experience
+  synthesis for the current Slack/Netflix/JCINK-inspired direction.
 - `image-dimensions.md`: aspect-ratio map for Midjourney-style image
   generation and product media surfaces.
 - `motion-design.md`: animation and transition guidance for technicolor
@@ -69,6 +73,10 @@ pretend a behavior exists until code, tests, or product docs support it.
   deferred visual risks.
 - `sidebar-icon-vocabulary.md`: canonical SVG icon set and route mapping for
   sidebar destinations, compact rail behavior, and Studio/Desk route cleanup.
+- `static-community-landing-v2-mock.html`: static V2 prototype for the
+  atmosphere-first public community gateway.
+- `static-community-landing-v2-notes.md`: research, critique, and translation
+  notes for the community landing V2 mock.
 - `static-shell-mock.html`: static layered shell mock for the accepted icon rail
   plus inner-shell model.
 - `static-shell-mock-notes.md`: review notes for the static shell mock and
