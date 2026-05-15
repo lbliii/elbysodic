@@ -1,11 +1,19 @@
 # Premise Seed Data Expansion
 
 Status: active implementation plan; discovery profile foundation and nine
-original premise communities landed
+original premise communities landed; next-phase surface and seed-depth work is
+split into `plans/in-progress/premise-discovery-surface-and-seed-depth-2026-05-15.md`
 Owner: Product research, storage/seed, Blueprint, service, web, tests, and docs stewardship
 Created: 2026-05-15
 Last updated: 2026-05-15
 Review by: 2026-06-05
+
+Next plan:
+
+- `plans/in-progress/premise-discovery-surface-and-seed-depth-2026-05-15.md`
+  owns public discovery lanes and filters, Director Studio discovery editing,
+  original seed depth, demo posture, browser/persona QA, and model-extension
+  review after this foundation.
 
 ## Strategy Anchor
 
