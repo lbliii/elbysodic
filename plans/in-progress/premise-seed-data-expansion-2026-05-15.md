@@ -1,6 +1,6 @@
 # Premise Seed Data Expansion
 
-Status: active implementation plan; discovery profile foundation and first six
+Status: active implementation plan; discovery profile foundation and nine
 original premise communities landed
 Owner: Product research, storage/seed, Blueprint, service, web, tests, and docs stewardship
 Created: 2026-05-15
@@ -508,7 +508,7 @@ Stop-and-ask gate:
 
 Status: foundation landed in
 `plans/in-progress/network-catalog-metadata-slices-2026-05-13.md`; Director
-Studio editing and nine-community seed coverage remain planned.
+Studio editing remains planned.
 
 - Audit the current public catalog and Explore service behavior.
 - Implement the accepted `community_discovery_profiles` and
@@ -541,14 +541,14 @@ Implementation note:
 
 - The discovery profile/tag storage, seed helper, current five-realm profile
   seed, public read-model wiring, and rendered public search proof have landed.
-  The first six original premise communities are also seeded: `harbor-society`,
+  The nine original premise communities are also seeded: `harbor-society`,
   `signal-creek`, `nocturne-row`, `crownfall`, `afterlight-accord`, and
-  `brightline`. The remaining three archetypes are still planned.
+  `brightline`, `emberhouse`, `gaslight-ward`, and `wayfarer-station`.
 
 ### Phase 2: Seed Definition Shape
 
-Status: landed for the current five compatibility realms and first six
-original premise realms; planned for the remaining three archetypes.
+Status: landed for the current five compatibility realms and all nine original
+premise realms.
 
 - Introduce a premise seed definition structure inside the seed module or a
   seed-adjacent module.
@@ -571,7 +571,7 @@ Proof:
 
 ### Phase 3: Community Packets
 
-Status: first six landed; remaining three archetypes planned.
+Status: landed for all nine original premise realms.
 
 - Add the nine original community packets with materials, boards, starter
   characters, wanted hooks, and visual/theme placeholders.
@@ -587,7 +587,8 @@ Proof:
 
 ### Phase 4: Connections, Claims, And Plotting
 
-Status: planned for the nine-community original slate.
+Status: planned for richer connections, claims, and plotting beyond the seed
+minimums.
 
 - Add facet groups or claim types that make each archetype browseable and
   staff-operable.

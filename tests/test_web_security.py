@@ -531,6 +531,18 @@ def test_public_network_search_finds_middle_premise_seed_archetypes() -> None:
     assert [card.community.slug for card in brightline_results] == ["brightline"]
 
 
+def test_public_network_search_finds_final_premise_seed_archetypes() -> None:
+    services = create_services(path=":memory:")
+
+    trial_results = services.network_explore("consent-safe-trials").results
+    occult_results = services.network_explore("murder-inquiry").results
+    frontier_results = services.network_explore("station law").results
+
+    assert [card.community.slug for card in trial_results] == ["emberhouse"]
+    assert [card.community.slug for card in occult_results] == ["gaslight-ward"]
+    assert [card.community.slug for card in frontier_results] == ["wayfarer-station"]
+
+
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)

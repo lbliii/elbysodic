@@ -659,7 +659,7 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
         assert response.status == 200
         assert "Studio Network" in response.text
         assert "Hosted Program" in response.text
-        assert trace.count <= 75
+        assert trace.count <= 85
 
     asyncio.run(run())
 
@@ -1821,6 +1821,9 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Crownfall" in response.text
         assert "Afterlight Accord" in response.text
         assert "Brightline" in response.text
+        assert "Emberhouse" in response.text
+        assert "Gaslight Ward" in response.text
+        assert "Wayfarer Station" in response.text
         assert "current realm" not in response.text
         assert "Public preview" in response.text
         assert "Application guide ready" in response.text

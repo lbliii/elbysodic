@@ -642,10 +642,13 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         "crownfall",
         "afterlight-accord",
         "brightline",
+        "emberhouse",
+        "gaslight-ward",
+        "wayfarer-station",
     ]
-    assert wanted_count == 42
-    assert discovery_profile_count == 11
-    assert discovery_tag_count == 33
+    assert wanted_count == 57
+    assert discovery_profile_count == 14
+    assert discovery_tag_count == 42
     assert [(row["community_slug"], row["theme_slug"]) for row in themes] == [
         ("hp-universe", "glass-staircase"),
         ("jurassic-park-universe", "isla-nublar-operations"),
@@ -685,7 +688,10 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
             'nocturne-row',
             'crownfall',
             'afterlight-accord',
-            'brightline'
+            'brightline',
+            'emberhouse',
+            'gaslight-ward',
+            'wayfarer-station'
         )
         GROUP BY communities.id
         ORDER BY communities.slug
