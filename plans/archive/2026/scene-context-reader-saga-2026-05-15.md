@@ -1,8 +1,7 @@
 # Scene Context Reader Saga
 
-Status: active implementation plan; static prototype accepted, codebase
-analysis complete, Epics 1-5, Epic 6 Phase A, and mock-convergence pass
-implemented locally
+Status: completed through accepted no-schema reader scope; archived with gated
+follow-ups for remaining schema/relationship/provenance work
 Owner: Product design, web, service, privacy, and test stewardship
 Created: 2026-05-15
 Last updated: 2026-05-15
@@ -10,8 +9,8 @@ Review by: 2026-06-05
 Closure criteria: the static scene-context reader prototype is either
 implemented through merged PR-sized slices or superseded by a narrower reader
 plan; the live thread reader has a service-owned scene context contract,
-desktop split-pane and mobile drawer behavior, privacy-tested location/context
-rows, browser QA, and preserved post customization semantics.
+desktop context overlay and mobile drawer behavior, privacy-tested
+location/context rows, browser QA, and preserved post customization semantics.
 
 ## Strategy Anchor
 
@@ -444,20 +443,40 @@ core scene context shell is stable.
 
 Tasks:
 
-- [ ] Reuse `MyThreadsDashboard` / `ThreadObligationItem` rather than creating
+- [x] Reuse `MyThreadsDashboard` / `ThreadObligationItem` rather than creating
   a notification-like duplicate.
-- [ ] Render only a small set of current obligations:
+- [x] Render only a small set of current obligations:
   `Needs reply`, `Waiting`, `Watching`, `Caught up`, `Reserve expiring`, and
   `Claim reviewed` only when backed by real services.
-- [ ] Keep the drawer member-only and active-membership scoped.
-- [ ] Keep notifications in Desk as the canonical full history.
-- [ ] Add no drawer state to signed-out/public thread previews.
+- [x] Keep the drawer member-only and active-membership scoped.
+- [x] Keep notifications in Desk as the canonical full history.
+- [x] Add no drawer state to signed-out/public thread previews.
 
 Required proof:
 
 - Rendered privacy tests for signed-out, inactive, ordinary member, and
   same-user-different-community states.
 - Query-budget proof if obligation rows are assembled on every thread page.
+
+Local proof recorded 2026-05-15:
+
+- `uv run pytest tests/test_forum_slice.py -q --tb=short -k 'scene_context_contract or scene_context_shell_preserves_reader_landmarks_and_controls or scene_writer_activity or scene_lane_watch_state_uses_batched_lookup'`
+- Browser smoke against seeded local app route
+  `/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill`: desktop
+  and mobile opened the `What needs you` drawer, verified the active-face
+  activity content, and avoided horizontal overflow.
+
+Notes:
+
+- Phase A renders `Needs reply`, `Waiting`, `Watching`, and `Caught up` from
+  the active face's thread obligations plus current scene state.
+- `Reserve expiring` and `Claim reviewed` remain absent until a notification-
+  or deadline-backed service contract can provide those rows without making
+  the scene drawer a second inbox.
+- Faceless members receive no scene writer activity drawer; inactive
+  memberships remain blocked by request identity before rendering.
+- The full obligation history stays in Writer Desk via the `Open Desk queue`
+  link.
 
 Collateral:
 
@@ -471,13 +490,35 @@ the core reader is trusted.
 
 Tasks:
 
-- [ ] Add linked wanted hook and plotting room context only from explicit
-  relationships already enforced by services.
+- [x] Add linked plotting room context only from explicit relationships already
+  enforced by services.
+- [ ] Add linked wanted hook context only from explicit relationships already
+  enforced by services.
 - [ ] Add current event links when public/member visibility is proven.
 - [ ] Add canon/source context only after Continuity Graph manual provenance
   and review workflows exist.
 - [ ] Keep provenance labels visible: proposed, reviewed, staff-only, public,
   member-visible.
+
+Local proof recorded 2026-05-15:
+
+- `uv run pytest tests/test_forum_slice.py -q --tb=short -k 'plotting_room_story_link or scene_context_contract or thread_page_renders_scene_grounding_for_owner'`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"`
+- Browser smoke against a temp seeded database with a plotting room attached to
+  `/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill`: desktop and
+  mobile opened scene context, verified the plotting-room link card, and
+  avoided horizontal overflow.
+
+Notes:
+
+- Phase A adds service-owned `SceneStoryLink` rows for plotting rooms whose
+  `target_thread_id` matches the scene.
+- Plotting room links render only for room owners, participants, or casting
+  staff, matching the existing plotting-room visibility rule.
+- Generic wanted hook grounding stays deferred until wanted-to-thread
+  relationships are explicit outside plotting-room source data.
+- Canon/source grounding remains deferred until Continuity Graph provenance and
+  review workflows exist.
 - [ ] Avoid generated summaries until consent, provenance, privacy, and review
   gates are implemented.
 
@@ -544,7 +585,30 @@ check-in before implementation.
 
 ## Closure Notes
 
-When this saga closes, preserve:
+Archived: 2026-05-15
+
+Final disposition:
+
+- The accepted no-schema scene reader scope is implemented: service-owned scene
+  context contract, location lane, grounding inspector, desktop context
+  overlay, mobile drawers, editorial post reader polish, inherited scene media,
+  writer activity drawer, and participant-visible plotting-room grounding.
+- The static prototype's remaining ambitions are split into gated follow-up
+  plans rather than kept inside this active saga:
+  `plans/in-progress/thread-scene-media-contract-2026-05-15.md`,
+  `plans/in-progress/wanted-to-scene-relationship-contract-2026-05-15.md`,
+  and
+  `plans/in-progress/continuity-source-grounding-contract-2026-05-15.md`.
+- Reserve/claim activity rows remain deferred until a notification- or
+  deadline-backed service contract exists.
+- Direct wanted grounding remains deferred until wanted-to-thread relationships
+  are explicit outside plotting-room source data.
+- Canon/source grounding remains deferred until Continuity Graph provenance and
+  review workflows exist.
+- Thread-specific media remains deferred behind schema, editor, Blueprint,
+  privacy, and browser-QA gates.
+
+Preserve:
 
 - the final accepted reader contract
 - browser QA artifact paths
