@@ -387,7 +387,7 @@ def test_public_network_search_contract_stays_service_owned() -> None:
     services = create_services(path=":memory:")
 
     directory = services.public_studio_network()
-    magic_results = search_studio_network(directory, "magic")
+    magic_results = search_studio_network(directory, "glass staircase")
     wanted_results = search_studio_network(directory, "wanted")
 
     assert [program.community.slug for program in magic_results] == ["hp-universe"]
@@ -461,7 +461,7 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
     explore = services.network_explore("wanted")
 
     assert home.featured is not None
-    assert home.featured.community.slug == "hp-universe"
+    assert home.featured.community.slug == "afterlight-accord"
     assert home.return_path is not None
     assert home.return_path.desk_href.startswith("/c/")
     assert explore.results
@@ -517,6 +517,18 @@ def test_public_network_search_uses_explicit_discovery_metadata() -> None:
     assert results[0].discovery_profile is not None
     assert results[0].discovery_profile.premise_archetype == "coastal-status-town"
     assert [tag.tag_key for tag in results[0].discovery_tags] == ["porch-ritual"]
+
+
+def test_public_network_search_finds_middle_premise_seed_archetypes() -> None:
+    services = create_services(path=":memory:")
+
+    court_results = services.network_explore("succession-crisis").results
+    accord_results = services.network_explore("role-archetype").results
+    brightline_results = services.network_explore("spotlight city").results
+
+    assert [card.community.slug for card in court_results] == ["crownfall"]
+    assert [card.community.slug for card in accord_results] == ["afterlight-accord"]
+    assert [card.community.slug for card in brightline_results] == ["brightline"]
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:

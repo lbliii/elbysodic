@@ -639,10 +639,13 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
         "harbor-society",
         "signal-creek",
         "nocturne-row",
+        "crownfall",
+        "afterlight-accord",
+        "brightline",
     ]
-    assert wanted_count == 27
-    assert discovery_profile_count == 8
-    assert discovery_tag_count == 24
+    assert wanted_count == 42
+    assert discovery_profile_count == 11
+    assert discovery_tag_count == 33
     assert [(row["community_slug"], row["theme_slug"]) for row in themes] == [
         ("hp-universe", "glass-staircase"),
         ("jurassic-park-universe", "isla-nublar-operations"),
@@ -651,7 +654,7 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
     ]
 
 
-def test_original_premise_seed_contract_covers_first_three_archetypes() -> None:
+def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
     connection = connect()
     create_schema(connection)
     repo = ForumRepository(connection)
@@ -676,7 +679,14 @@ def test_original_premise_seed_contract_covers_first_three_archetypes() -> None:
         LEFT JOIN characters ON characters.community_id = communities.id
         LEFT JOIN wanted_ads ON wanted_ads.community_id = communities.id
         LEFT JOIN claim_types ON claim_types.community_id = communities.id
-        WHERE communities.slug IN ('harbor-society', 'signal-creek', 'nocturne-row')
+        WHERE communities.slug IN (
+            'harbor-society',
+            'signal-creek',
+            'nocturne-row',
+            'crownfall',
+            'afterlight-accord',
+            'brightline'
+        )
         GROUP BY communities.id
         ORDER BY communities.slug
         """,
