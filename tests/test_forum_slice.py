@@ -1842,6 +1842,15 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "urban supernatural" in response.text
         assert "weird-town mystery" in response.text
         assert "small-town social web" in response.text
+        assert "Explore by discovery profile" in response.text
+        assert "Premise engine" in response.text
+        assert "Play engine" in response.text
+        assert "Lore aperture" in response.text
+        assert "Ways in" in response.text
+        assert "Pace and touchpoints" in response.text
+        assert "Small Town Social Web" in response.text
+        assert "Weird Town Mystery" in response.text
+        assert "Court And Faction Fantasy" in response.text
         assert "court" in response.text
         assert "fame" in response.text
         assert "face you want to wear next" not in response.text

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import Protocol
+from urllib.parse import quote_plus
 
 from elbysodic.domain.context import RequestIdentityContext
 from elbysodic.domain.models import (
@@ -35,6 +36,7 @@ from elbysodic.services.read_models import (
     ForumView,
     MaterialSummary,
     NetworkBrowseFacet,
+    NetworkDiscoveryFilterGroup,
     NetworkExploreLane,
     NetworkExploreView,
     NetworkHomeView,
@@ -301,7 +303,8 @@ def network_home(cards: list[PublicCatalogCard], viewer: ForumView | None) -> Ne
                 _cards_matching_discovery(cards, "current-chapter"),
             ),
         ],
-        browse_facets=network_browse_facets(),
+        browse_facets=network_browse_facets(cards),
+        filter_groups=network_filter_groups(cards),
         return_path=return_path,
     )
 
@@ -309,8 +312,9 @@ def network_home(cards: list[PublicCatalogCard], viewer: ForumView | None) -> Ne
 def network_explore(cards: list[PublicCatalogCard], query: str = "") -> NetworkExploreView:
     return NetworkExploreView(
         query=query.strip(),
-        browse_facets=network_browse_facets(),
-        relationship_lanes=network_explore_lanes(),
+        browse_facets=network_browse_facets(cards),
+        filter_groups=network_filter_groups(cards),
+        relationship_lanes=network_explore_lanes(cards),
         results=search_public_catalog(cards, query),
     )
 
@@ -495,47 +499,167 @@ def public_catalog_card_from_program(
     )
 
 
-def network_browse_facets() -> list[NetworkBrowseFacet]:
+def network_browse_facets(cards: list[PublicCatalogCard]) -> list[NetworkBrowseFacet]:
+    def count(query: str) -> int:
+        return len(_cards_matching_discovery(cards, query))
+
     return [
-        NetworkBrowseFacet("small-town social web", "/network?q=small-town-social-web", "hot"),
-        NetworkBrowseFacet("weird-town mystery", "/network?q=weird-town-mystery"),
-        NetworkBrowseFacet("urban supernatural", "/network?q=urban-supernatural"),
-        NetworkBrowseFacet("court politics", "/network?q=court-and-faction"),
-        NetworkBrowseFacet("fame and industry", "/network?q=fame-industry"),
-        NetworkBrowseFacet("current chapters", "/network?q=current-chapter", "hot"),
-        NetworkBrowseFacet("open wanted hooks", "/network?q=wanted"),
-        NetworkBrowseFacet("relaxed activity", "/network?q=relaxed"),
-        NetworkBrowseFacet("forum-first", "/network?q=forum-first"),
+        NetworkBrowseFacet(
+            "small-town social web",
+            "/network?q=small-town-social-web",
+            "hot",
+            count("small-town-social-web"),
+        ),
+        NetworkBrowseFacet(
+            "weird-town mystery",
+            "/network?q=weird-town-mystery",
+            result_count=count("weird-town-mystery"),
+        ),
+        NetworkBrowseFacet(
+            "urban supernatural",
+            "/network?q=urban-supernatural",
+            result_count=count("urban-supernatural"),
+        ),
+        NetworkBrowseFacet(
+            "court politics",
+            "/network?q=court-and-faction",
+            result_count=count("court-and-faction"),
+        ),
+        NetworkBrowseFacet(
+            "fame and industry",
+            "/network?q=fame-industry",
+            result_count=count("fame-industry"),
+        ),
+        NetworkBrowseFacet(
+            "current chapters",
+            "/network?q=current-chapter",
+            "hot",
+            count("current-chapter"),
+        ),
+        NetworkBrowseFacet(
+            "open wanted hooks",
+            "/network?q=wanted",
+            result_count=count("wanted"),
+        ),
+        NetworkBrowseFacet(
+            "relaxed activity",
+            "/network?q=relaxed",
+            result_count=count("relaxed"),
+        ),
+        NetworkBrowseFacet(
+            "forum-first",
+            "/network?q=forum-first",
+            result_count=count("forum-first"),
+        ),
     ]
 
 
-def network_explore_lanes() -> list[NetworkExploreLane]:
+def network_filter_groups(cards: list[PublicCatalogCard]) -> list[NetworkDiscoveryFilterGroup]:
+    groups = [
+        NetworkDiscoveryFilterGroup(
+            "Premise engine",
+            _profile_filter_options(cards, "premise_archetype"),
+        ),
+        NetworkDiscoveryFilterGroup(
+            "Play engine",
+            _profile_filter_options(cards, "play_engine"),
+        ),
+        NetworkDiscoveryFilterGroup(
+            "Lore aperture",
+            _profile_filter_options(cards, "lore_aperture"),
+        ),
+        NetworkDiscoveryFilterGroup(
+            "Ways in",
+            _profile_filter_options(cards, "access_model")
+            + _profile_filter_options(cards, "application_model"),
+        ),
+        NetworkDiscoveryFilterGroup(
+            "Pace and touchpoints",
+            _profile_filter_options(cards, "activity_pace")
+            + _profile_filter_options(cards, "forum_adjunct"),
+        ),
+        NetworkDiscoveryFilterGroup(
+            "Roster posture",
+            _profile_filter_options(cards, "roster_posture", limit=6),
+        ),
+    ]
+    return [group for group in groups if group.options]
+
+
+def network_explore_lanes(cards: list[PublicCatalogCard]) -> list[NetworkExploreLane]:
     return [
         NetworkExploreLane(
             "Start with a premise",
             "Find the story engine before choosing a face.",
             "/network",
             "premise",
+            len(cards),
         ),
         NetworkExploreLane(
             "Start with a current chapter",
             "World-state pressure and scenes already moving.",
             "/network?q=current-chapter",
             "story",
+            len(_cards_matching_discovery(cards, "current-chapter")),
         ),
         NetworkExploreLane(
             "Start with roster energy",
             "Find realms with visible faces, canons, and claims in motion.",
             "/network?q=faces",
             "roster",
+            len(_cards_matching_discovery(cards, "faces")),
         ),
         NetworkExploreLane(
             "Start with a wanted hook",
             "Open roles, rivals, factions, and face requests.",
             "/network?q=wanted",
             "wanted",
+            len(_cards_matching_discovery(cards, "wanted")),
         ),
     ]
+
+
+def _profile_filter_options(
+    cards: list[PublicCatalogCard],
+    field_name: str,
+    *,
+    limit: int | None = None,
+) -> list[NetworkBrowseFacet]:
+    counts: dict[str, int] = {}
+    labels: dict[str, str] = {}
+    for card in cards:
+        profile = card.discovery_profile
+        if profile is None:
+            continue
+        raw_value = str(getattr(profile, field_name, "") or "").strip()
+        if not raw_value:
+            continue
+        key = raw_value.lower()
+        counts[key] = counts.get(key, 0) + 1
+        labels.setdefault(key, _discovery_filter_label(raw_value))
+    options = [
+        NetworkBrowseFacet(
+            labels[key],
+            f"/network?q={quote_plus(key)}",
+            "hot" if field_name == "premise_archetype" else "neutral",
+            counts[key],
+        )
+        for key in sorted(counts, key=lambda value: (-counts[value], labels[value]))
+    ]
+    if limit is not None:
+        return options[:limit]
+    return options
+
+
+def _discovery_filter_label(value: str) -> str:
+    normalized = " ".join(value.replace("_", " ").replace("-", " ").split())
+    if not normalized:
+        return value
+    compact_upper = {"AU", "OC", "OCs", "IP"}
+    return " ".join(
+        word.upper() if word.upper() in compact_upper else word.capitalize()
+        for word in normalized.split()
+    )
 
 
 def network_theme_preview(theme: object | None) -> StudioNetworkThemePreview:

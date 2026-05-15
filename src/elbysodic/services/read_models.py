@@ -1891,6 +1891,13 @@ class NetworkBrowseFacet:
     label: str
     href: str
     tone: str = "neutral"
+    result_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkDiscoveryFilterGroup:
+    title: str
+    options: list[NetworkBrowseFacet]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1899,6 +1906,7 @@ class NetworkExploreLane:
     summary: str
     href: str
     metric_label: str
+    result_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -1913,6 +1921,7 @@ class NetworkHomeView:
     featured: PublicCatalogCard | None
     slices: list[NetworkSlice]
     browse_facets: list[NetworkBrowseFacet]
+    filter_groups: list[NetworkDiscoveryFilterGroup]
     return_path: NetworkReturnPath | None
 
 
@@ -1920,6 +1929,7 @@ class NetworkHomeView:
 class NetworkExploreView:
     query: str
     browse_facets: list[NetworkBrowseFacet]
+    filter_groups: list[NetworkDiscoveryFilterGroup]
     relationship_lanes: list[NetworkExploreLane]
     results: list[PublicCatalogCard]
 

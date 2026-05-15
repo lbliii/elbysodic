@@ -45,6 +45,7 @@ def get(request: Request) -> Page:
             network_mode="home",
             network_search_query="",
             browse_facets=network_home.browse_facets,
+            filter_groups=network_home.filter_groups,
             featured=network_home.featured,
             home_slices=network_home.slices,
             network_has_programs=network_home.featured is not None,

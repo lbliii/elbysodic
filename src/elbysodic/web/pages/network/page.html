@@ -228,6 +228,22 @@ A studio program ready for scenes, casting, and writer movement.
 </a>
 {% end %}
 
+{% def explore_filter_group(group) %}
+<section class="elbysodic-network-filter-group" aria-label="{{ group.title }}">
+  <h2>{{ group.title }}</h2>
+  <div class="elbysodic-network-filter-group__options">
+    {% for option in group.options %}
+    <a class="elbysodic-network-explore-tag elbysodic-network-explore-tag--{{ option.tone }}" href="{{ option.href }}">
+      <span>{{ option.label }}</span>
+      {% if option.result_count %}
+      <em>{{ option.result_count }}</em>
+      {% end %}
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+
 {% def explore_lane(title, copy, href, metric) %}
 <a class="elbysodic-network-explore-lane" href="{{ href }}">
   <span>
@@ -337,13 +353,21 @@ A studio program ready for scenes, casting, and writer movement.
 
   <section class="elbysodic-network-explore-map" aria-label="Explore by tag relationship">
     {% for facet in browse_facets %}
-    {{ explore_tag(facet.label, facet.href, facet.tone) }}
+    {{ explore_tag(facet.label ~ (" (" ~ facet.result_count ~ ")" if facet.result_count else ""), facet.href, facet.tone) }}
     {% end %}
   </section>
 
+  {% if filter_groups %}
+  <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
+    {% for group in filter_groups %}
+    {{ explore_filter_group(group) }}
+    {% end %}
+  </section>
+  {% end %}
+
   <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
     {% for lane in relationship_lanes %}
-    {{ explore_lane(lane.title, lane.summary, lane.href, lane.metric_label) }}
+    {{ explore_lane(lane.title, lane.summary, lane.href, lane.result_count ~ " " ~ lane.metric_label) }}
     {% end %}
   </section>
 
@@ -438,9 +462,17 @@ A studio program ready for scenes, casting, and writer movement.
 
   <section class="elbysodic-network-home-genres" aria-label="Genre slices">
     {% for facet in browse_facets %}
-    <a href="{{ facet.href }}">{{ facet.label }}</a>
+    <a href="{{ facet.href }}">{{ facet.label }}{% if facet.result_count %} · {{ facet.result_count }}{% end %}</a>
     {% end %}
   </section>
+
+  {% if filter_groups %}
+  <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
+    {% for group in filter_groups %}
+    {{ explore_filter_group(group) }}
+    {% end %}
+  </section>
+  {% end %}
 
   {% if return_path %}
   <section class="elbysodic-network-home-return" aria-label="Signed-in return">
