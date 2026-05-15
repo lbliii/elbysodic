@@ -352,7 +352,9 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         onboarding_pitch="Start with a corridor scene, current event, canon tie, or wanted hook.",
         featured_event_material_slug="current-event",
         tags=(
-            DiscoveryTagSeed("premise", "canon-adjacent-au", "Canon-adjacent AU", "magic school fantasy", 10),
+            DiscoveryTagSeed(
+                "premise", "canon-adjacent-au", "Canon-adjacent AU", "magic school fantasy", 10
+            ),
             DiscoveryTagSeed("genre", "magic-school", "Magic school", "magic fantasy castle", 20),
             DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
         ),
@@ -373,7 +375,13 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         onboarding_pitch="Start with the current incident, an operations role, or a paddock thread.",
         featured_event_material_slug="current-event",
         tags=(
-            DiscoveryTagSeed("premise", "strange-frontier", "Strange frontier", "survival sci-fi science island", 10),
+            DiscoveryTagSeed(
+                "premise",
+                "strange-frontier",
+                "Strange frontier",
+                "survival sci-fi science island",
+                10,
+            ),
             DiscoveryTagSeed("pressure", "survival", "Survival pressure", "storm containment", 20),
             DiscoveryTagSeed("format", "forum-first", "Forum-first", sort_order=30),
         ),
@@ -394,8 +402,12 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         onboarding_pitch="Start with a shift, roommate tie, wanted hook, or public event.",
         featured_event_material_slug="current-event",
         tags=(
-            DiscoveryTagSeed("premise", "fame-industry", "Fame and industry drama", "urban real life city", 10),
-            DiscoveryTagSeed("tone", "city-social-web", "City social web", "workplace roommate", 20),
+            DiscoveryTagSeed(
+                "premise", "fame-industry", "Fame and industry drama", "urban real life city", 10
+            ),
+            DiscoveryTagSeed(
+                "tone", "city-social-web", "City social web", "workplace roommate", 20
+            ),
             DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
         ),
     ),
@@ -415,8 +427,16 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         onboarding_pitch="Start with the festival, a family tie, a workplace, or a wanted hook.",
         featured_event_material_slug="current-event",
         tags=(
-            DiscoveryTagSeed("premise", "small-town-social-web", "Small-town social web", "small town found family slow burn", 10),
-            DiscoveryTagSeed("tone", "coastal-status", "Coastal status town", "club gossip social ladder", 20),
+            DiscoveryTagSeed(
+                "premise",
+                "small-town-social-web",
+                "Small-town social web",
+                "small town found family slow burn",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "tone", "coastal-status", "Coastal status town", "club gossip social ladder", 20
+            ),
             DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
         ),
     ),

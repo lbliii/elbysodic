@@ -349,7 +349,10 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         assert "The first realm is still backstage." in director_network.text
         assert "Starter Director" in director_network.text
         assert "Director in Starter Realm" in director_network.text
-        assert 'class="elbysodic-network-card__realm-link" href="/c/starter-realm"' not in director_network.text
+        assert (
+            'class="elbysodic-network-card__realm-link" href="/c/starter-realm"'
+            not in director_network.text
+        )
 
     asyncio.run(run())
 

@@ -365,9 +365,7 @@ def test_schema_migrates_community_discovery_profiles_from_version_16() -> None:
         "staff_pick_label",
         "featured_event_material_id",
     }.issubset(profile_columns)
-    assert {"community_id", "tag_type", "tag_key", "label", "search_text"}.issubset(
-        tag_columns
-    )
+    assert {"community_id", "tag_type", "tag_key", "label", "search_text"}.issubset(tag_columns)
     assert "idx_community_discovery_tags_community" in indexes
     assert "idx_community_discovery_tags_key" in indexes
     assert migration["name"] == "community-discovery-profiles"
