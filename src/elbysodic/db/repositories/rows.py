@@ -25,6 +25,8 @@ from elbysodic.domain.models import (
     CharacterReserve,
     ClaimType,
     Community,
+    CommunityDiscoveryProfile,
+    CommunityDiscoveryTag,
     CommunityInvitation,
     CommunityMembership,
     CommunityTheme,
@@ -141,6 +143,43 @@ def _role_from_row(row: sqlite3.Row) -> Role:
         slug=row["slug"],
         name=row["name"],
         is_admin=bool(row["is_admin"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _community_discovery_profile_from_row(row: sqlite3.Row) -> CommunityDiscoveryProfile:
+    return CommunityDiscoveryProfile(
+        community_id=row["community_id"],
+        premise_archetype=row["premise_archetype"],
+        play_engine=row["play_engine"],
+        lore_aperture=row["lore_aperture"],
+        access_model=row["access_model"],
+        application_model=row["application_model"],
+        age_rating=row["age_rating"],
+        content_rating=row["content_rating"],
+        activity_pace=row["activity_pace"],
+        activity_expectation=row["activity_expectation"],
+        forum_adjunct=row["forum_adjunct"],
+        roster_posture=row["roster_posture"],
+        catalog_pitch=row["catalog_pitch"],
+        onboarding_pitch=row["onboarding_pitch"],
+        staff_pick_label=row["staff_pick_label"],
+        featured_event_material_id=row["featured_event_material_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _community_discovery_tag_from_row(row: sqlite3.Row) -> CommunityDiscoveryTag:
+    return CommunityDiscoveryTag(
+        id=row["id"],
+        community_id=row["community_id"],
+        tag_type=row["tag_type"],
+        tag_key=row["tag_key"],
+        label=row["label"],
+        search_text=row["search_text"],
+        sort_order=row["sort_order"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

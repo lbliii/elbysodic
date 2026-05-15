@@ -1152,7 +1152,7 @@ class AppServices:
         return _network_explore(cards, query)
 
     def _public_catalog_cards(self) -> list[PublicCatalogCard]:
-        return _public_catalog_cards(self.public_studio_network())
+        return _public_catalog_cards(self.repo)
 
     def public_studio_program(self, community_slug: str) -> StudioNetworkProgramView:
         return _public_studio_program(self.repo, community_slug)

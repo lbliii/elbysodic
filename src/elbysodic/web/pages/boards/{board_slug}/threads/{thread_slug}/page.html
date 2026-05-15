@@ -7,7 +7,7 @@
   {% from "_components/composer.html" import composer_toolbar, composer_view_toggle %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/posts.html" import post_frame %}
-  {% from "_components/scene_context.html" import scene_context_shell %}
+  {% from "_components/scene_context.html" import scene_context_shell, scene_writer_activity_trigger %}
   {% from "_components/ui.html" import scene_reader_context_strip, scene_state_badges %}
 {% end %}
 
@@ -119,6 +119,7 @@
     </div>
     <aside class="elbysodic-thread-stage__aside">
       <div class="elbysodic-thread-stage__actions">
+        {{ scene_writer_activity_trigger(scene_context | get('writer_activity', none), cls="chirpui-btn chirpui-btn--secondary elbysodic-scene-writer-activity-trigger elbysodic-scene-writer-activity-trigger--stage") }}
         <button type="button"
                 class="chirpui-btn chirpui-btn--secondary elbysodic-scene-context-inspector-toggle elbysodic-scene-actions-menu"
                 aria-label="Open scene actions and context"

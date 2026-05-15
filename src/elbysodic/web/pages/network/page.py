@@ -6,15 +6,14 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.services.forum import AppServices
-from elbysodic.services.network import search_studio_network
 from elbysodic.services.read_models import ForumView
 from elbysodic.web.state import get_services
 
 
 def get(request: Request) -> Page:
     services, viewer = _network_services(request)
-    network = services.studio_network() if viewer is not None else services.public_studio_network()
     query = str(request.query.get("q") or "").strip()
+    network_explore = services.network_explore(query)
     mode = "search" if query else "explore"
     return Page.mounted(
         "network/page.html",
@@ -22,9 +21,14 @@ def get(request: Request) -> Page:
         page_title="Explore · Elbysodic",
         network_mode=mode,
         network_search_query=query,
+        browse_facets=network_explore.browse_facets,
+        featured=None,
+        home_slices=[],
+        network_has_programs=bool(network_explore.results) or bool(query),
+        relationship_lanes=network_explore.relationship_lanes,
+        return_path=None,
         viewer=viewer,
-        network=network,
-        explore_programs=search_studio_network(network, query),
+        explore_programs=network_explore.results,
         show_community_shell=False,
     )
 

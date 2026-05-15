@@ -1,0 +1,1 @@
+Scene readers now include a face-scoped `What needs you` drawer that surfaces nearby reply obligations, waiting scenes, watched state, and caught-up state without replacing the full Writer Desk queue.

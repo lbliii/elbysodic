@@ -19,6 +19,8 @@ from elbysodic.domain.models import (
     CharacterReserve,
     ClaimType,
     Community,
+    CommunityDiscoveryProfile,
+    CommunityDiscoveryTag,
     CommunityMembership,
     Facet,
     FacetGroup,
@@ -1597,6 +1599,18 @@ class SceneGroundingFact:
 
 
 @dataclass(frozen=True, slots=True)
+class SceneStoryLink:
+    kind: str
+    label: str
+    title: str
+    summary: str
+    href: str
+    status_label: str
+    source_label: str
+    participant_labels: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class SceneGroundingPanel:
     board: Board
     parent_board: Board | None
@@ -1610,6 +1624,7 @@ class SceneGroundingPanel:
     can_manage_scene: bool
     can_moderate_scene: bool
     is_watched: bool
+    story_links: tuple[SceneStoryLink, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1623,6 +1638,23 @@ class SceneMediaBand:
 
 
 @dataclass(frozen=True, slots=True)
+class SceneWriterActivity:
+    selected_character: Character
+    needs_reply: list[ThreadObligationItem]
+    waiting_on_others: list[ThreadObligationItem]
+    is_watching_current_scene: bool
+    is_caught_up_current_scene: bool
+
+    @property
+    def has_queue_items(self) -> bool:
+        return bool(self.needs_reply or self.waiting_on_others)
+
+    @property
+    def visible_count(self) -> int:
+        return len(self.needs_reply) + len(self.waiting_on_others)
+
+
+@dataclass(frozen=True, slots=True)
 class SceneContextView:
     thread_view: ThreadView
     parent_board: Board | None
@@ -1630,6 +1662,7 @@ class SceneContextView:
     grounding: SceneGroundingPanel
     media_band: SceneMediaBand | None
     current_event: MaterialSummary | None
+    writer_activity: SceneWriterActivity | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1790,6 +1823,8 @@ class PublicCatalogCard:
     community: Community
     premise: MaterialSummary | None
     current_event: MaterialSummary | None
+    discovery_profile: CommunityDiscoveryProfile | None
+    discovery_tags: tuple[CommunityDiscoveryTag, ...]
     roster_count: int
     open_wanted_count: int
     application_material_count: int

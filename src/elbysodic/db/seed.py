@@ -18,6 +18,7 @@ from elbysodic.blueprints import (
     blueprint_theme_tokens,
     ensure_valid_program_blueprints,
 )
+from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.db.repository import ForumRepository
 from elbysodic.domain.models import (
     Board,
@@ -110,6 +111,35 @@ class BoardMediaSeed:
 
 
 @dataclass(frozen=True, slots=True)
+class DiscoveryTagSeed:
+    tag_type: str
+    tag_key: str
+    label: str
+    search_text: str = ""
+    sort_order: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileSeed:
+    premise_archetype: str
+    play_engine: str
+    lore_aperture: str
+    access_model: str
+    application_model: str
+    age_rating: str
+    content_rating: str
+    activity_pace: str
+    activity_expectation: str
+    forum_adjunct: str
+    roster_posture: str
+    catalog_pitch: str
+    onboarding_pitch: str
+    tags: tuple[DiscoveryTagSeed, ...]
+    staff_pick_label: str = ""
+    featured_event_material_slug: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ClaimSeed:
     claim_type_slug: str
     character_slug: str
@@ -180,6 +210,14 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
         mark_alt="RL Small Town founders week mark",
         hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
         hero_alt="Town square noticeboard and storefront lights",
+        hero_treatment="poster",
+        hero_focal_point="bottom",
+    ),
+    "harbor-society": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/smalltown-mark.svg",
+        mark_alt="Harbor Society shoreline club mark",
+        hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
+        hero_alt="Coastal town square lights before a gala",
         hero_treatment="poster",
         hero_focal_point="bottom",
     ),
@@ -275,6 +313,442 @@ STUDIO_PROGRAM_BOARD_MEDIA: dict[str, dict[str, BoardMediaSeed]] = {
             "County fairgrounds with tents and founders week lights",
         ),
     },
+}
+
+
+DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
+    "x-men-apocalypse": DiscoveryProfileSeed(
+        premise_archetype="urban-supernatural-pressure-cooker",
+        play_engine="event-driven",
+        lore_aperture="canon-divergent",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/3/3",
+        activity_pace="weekly",
+        activity_expectation="scene replies, missions, and wanted hooks",
+        forum_adjunct="forum-first",
+        roster_posture="canons and original faces",
+        catalog_pitch="A public mutant crisis realm with school life, factions, and B-24 pressure.",
+        onboarding_pitch="Start with the crisis, a faction tie, a wanted hook, or a first face.",
+        featured_event_material_slug="b-24-winter",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "urban-supernatural",
+                "Urban supernatural pressure",
+                "superhero crisis mutants factions current chapter",
+                10,
+            ),
+            DiscoveryTagSeed("entry_path", "wanted", "Open wanted hooks", "wanted casting", 20),
+            DiscoveryTagSeed("format", "forum-first", "Forum-first", sort_order=30),
+        ),
+    ),
+    "hp-universe": DiscoveryProfileSeed(
+        premise_archetype="original-canon-adjacent-au",
+        play_engine="institution-driven",
+        lore_aperture="canon-divergent",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/3/3",
+        activity_pace="relaxed",
+        activity_expectation="no word count, scene-driven school and village plots",
+        forum_adjunct="forum-first",
+        roster_posture="canons, staff, students, and original faces",
+        catalog_pitch="A magic-school AU with institution politics, haunted corridors, and village pressure.",
+        onboarding_pitch="Start with a corridor scene, current event, canon tie, or wanted hook.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed(
+                "premise", "canon-adjacent-au", "Canon-adjacent AU", "magic school fantasy", 10
+            ),
+            DiscoveryTagSeed("genre", "magic-school", "Magic school", "magic fantasy castle", 20),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
+        ),
+    ),
+    "jurassic-park-universe": DiscoveryProfileSeed(
+        premise_archetype="strange-frontier",
+        play_engine="survival-driven",
+        lore_aperture="canon-divergent",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/3/3",
+        activity_pace="weekly",
+        activity_expectation="event pressure, operations scenes, and survival threads",
+        forum_adjunct="forum-first",
+        roster_posture="staff, scientists, handlers, and original faces",
+        catalog_pitch="A storm-hit island operations realm where survival and containment keep colliding.",
+        onboarding_pitch="Start with the current incident, an operations role, or a paddock thread.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "strange-frontier",
+                "Strange frontier",
+                "survival sci-fi science island",
+                10,
+            ),
+            DiscoveryTagSeed("pressure", "survival", "Survival pressure", "storm containment", 20),
+            DiscoveryTagSeed("format", "forum-first", "Forum-first", sort_order=30),
+        ),
+    ),
+    "rl-nyc": DiscoveryProfileSeed(
+        premise_archetype="fame-and-industry-drama",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="2/2/2",
+        activity_pace="relaxed",
+        activity_expectation="slice-of-life scenes, work ties, and city events",
+        forum_adjunct="forum-first",
+        roster_posture="original faces and workplace connections",
+        catalog_pitch="An urban real-life realm built around rent week, night shifts, and creative pressure.",
+        onboarding_pitch="Start with a shift, roommate tie, wanted hook, or public event.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed(
+                "premise", "fame-industry", "Fame and industry drama", "urban real life city", 10
+            ),
+            DiscoveryTagSeed(
+                "tone", "city-social-web", "City social web", "workplace roommate", 20
+            ),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
+        ),
+    ),
+    "rl-small-town": DiscoveryProfileSeed(
+        premise_archetype="small-town-social-web",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="2/2/2",
+        activity_pace="relaxed",
+        activity_expectation="no word count, family ties, local rituals, and slow-burn scenes",
+        forum_adjunct="forum-first",
+        roster_posture="original faces, families, and town roles",
+        catalog_pitch="A small-town social web built around founders week, family ties, and public rituals.",
+        onboarding_pitch="Start with the festival, a family tie, a workplace, or a wanted hook.",
+        featured_event_material_slug="current-event",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "small-town-social-web",
+                "Small-town social web",
+                "small town found family slow burn",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "tone", "coastal-status", "Coastal status town", "club gossip social ladder", 20
+            ),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", sort_order=30),
+        ),
+    ),
+    "harbor-society": DiscoveryProfileSeed(
+        premise_archetype="small-town-social-web",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="2/2/2",
+        activity_pace="relaxed",
+        activity_expectation="no word count, weekly scenes, town events, and wanted ties",
+        forum_adjunct="forum-first",
+        roster_posture="original faces, families, civic roles, and local businesses",
+        catalog_pitch="A coastal status town where club politics, family favors, and public rituals make every secret useful.",
+        onboarding_pitch="Start with the gala vote, a family tie, a workplace, or a wanted hook.",
+        featured_event_material_slug="founders-gala",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "small-town-social-web",
+                "Small-town social web",
+                "coastal town family gossip civic status",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "tone", "coastal-status", "Coastal status town", "club gala old families", 20
+            ),
+            DiscoveryTagSeed(
+                "entry_path", "wanted", "Open wanted hooks", "families workplaces rivals", 30
+            ),
+        ),
+    ),
+    "signal-creek": DiscoveryProfileSeed(
+        premise_archetype="weird-town-mystery",
+        play_engine="mystery-driven",
+        lore_aperture="open-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/2/3",
+        activity_pace="weekly",
+        activity_expectation="chapter prompts, encounter scenes, and character-led clues",
+        forum_adjunct="forum-first",
+        roster_posture="locals, researchers, officials, skeptics, believers, and strange-touched faces",
+        catalog_pitch="A mountain town keeps recording impossible signals after a vanished-year mystery.",
+        onboarding_pitch="Start with the midnight signal, a rumor, a research role, or a town tie.",
+        featured_event_material_slug="midnight-signal",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "weird-town-mystery",
+                "Weird-town mystery",
+                "haunted town signal rumors",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "pressure", "current-chapter", "Current chapter", "meteor shower missing hiker", 20
+            ),
+            DiscoveryTagSeed("lore", "open-lore", "Open lore", "phenomena encounters", 30),
+        ),
+    ),
+    "nocturne-row": DiscoveryProfileSeed(
+        premise_archetype="urban-supernatural-pressure-cooker",
+        play_engine="faction-driven",
+        lore_aperture="open-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="3/3/3",
+        activity_pace="weekly",
+        activity_expectation="faction scenes, treaty fallout, wanted roles, and mature city plots",
+        forum_adjunct="forum-first",
+        roster_posture="species, factions, hunters, humans, officials, and original faces",
+        catalog_pitch="A visible-supernatural city where a treaty breach turns nightlife, law, and old covenants hostile.",
+        onboarding_pitch="Start with a faction tie, the treaty breach, a species claim, or a wanted role.",
+        featured_event_material_slug="treaty-breach",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "urban-supernatural",
+                "Urban supernatural pressure",
+                "vampires witches hunters law city",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "pressure", "faction-treaty", "Faction treaty crisis", "treaty breach council", 20
+            ),
+            DiscoveryTagSeed("content", "mature", "Mature themes", "21 plus 333", 30),
+        ),
+    ),
+    "crownfall": DiscoveryProfileSeed(
+        premise_archetype="court-and-faction-fantasy",
+        play_engine="faction-driven",
+        lore_aperture="original-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/2/3",
+        activity_pace="weekly",
+        activity_expectation="court scenes, faction moves, border pressure, and event turns",
+        forum_adjunct="forum-first",
+        roster_posture="houses, factions, rank claims, magic roles, and original faces",
+        catalog_pitch="A succession crisis realm where houses, mages, merchants, rebels, and clergy contest legitimacy.",
+        onboarding_pitch="Start with a house tie, faction pressure, the interrupted coronation, or a wanted role.",
+        featured_event_material_slug="broken-coronation",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "court-and-faction-fantasy",
+                "Court and faction fantasy",
+                "succession houses court politics fantasy",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "pressure",
+                "succession-crisis",
+                "Succession crisis",
+                "coronation omen border raid",
+                20,
+            ),
+            DiscoveryTagSeed(
+                "roster", "faction-claims", "Faction claims", "houses mages clergy rebels", 30
+            ),
+        ),
+    ),
+    "afterlight-accord": DiscoveryProfileSeed(
+        premise_archetype="original-canon-adjacent-au",
+        play_engine="canon-adjacent",
+        lore_aperture="semi-open-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/2/3",
+        activity_pace="weekly",
+        activity_expectation="role-archetype scenes, accord politics, rebel pressure, and wanted ties",
+        forum_adjunct="forum-first",
+        roster_posture="role archetypes, heirs, exiles, monsters, archivists, and original faces",
+        catalog_pitch="An original branch-point realm where inherited story roles survived but the old ending broke.",
+        onboarding_pitch="Start with a role archetype, the failing Accord seal, a faction tie, or a wanted hook.",
+        featured_event_material_slug="accord-seal-fails",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "canon-adjacent-au",
+                "Original canon-adjacent AU",
+                "branch point archetypes heirs exiles",
+                10,
+            ),
+            DiscoveryTagSeed("lore", "semi-open-lore", "Semi-open lore", "original lore roles", 20),
+            DiscoveryTagSeed(
+                "entry_path", "role-archetype", "Role archetypes", "heirs monsters archivists", 30
+            ),
+        ),
+    ),
+    "brightline": DiscoveryProfileSeed(
+        premise_archetype="fame-and-industry-drama",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="2/2/2",
+        activity_pace="relaxed",
+        activity_expectation="industry scenes, scandals, public events, and career pressure",
+        forum_adjunct="forum-first",
+        roster_posture="performers, fixers, patrons, press, lawyers, assistants, and original faces",
+        catalog_pitch="A spotlight city where studios, clubs, magazines, patrons, and gossip turn image into leverage.",
+        onboarding_pitch="Start with awards-night sabotage, a career tie, a scandal, or a wanted hook.",
+        featured_event_material_slug="awards-night-sabotage",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "fame-industry",
+                "Fame and industry drama",
+                "spotlight city celebrity industry scandal",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "tone", "public-image", "Public image pressure", "gossip press patrons", 20
+            ),
+            DiscoveryTagSeed("pace", "relaxed", "Relaxed activity", "career scenes slow burn", 30),
+        ),
+    ),
+    "emberhouse": DiscoveryProfileSeed(
+        premise_archetype="survival-trials",
+        play_engine="institution-driven",
+        lore_aperture="original-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/2/3",
+        activity_pace="weekly",
+        activity_expectation="trial prompts, house politics, scarcity scenes, and consent-safe pressure",
+        forum_adjunct="forum-first",
+        roster_posture="houses, candidates, instructors, medics, sponsors, and original faces",
+        catalog_pitch="A trial academy where rank, scarcity, sponsors, and adult agendas decide who gets protected.",
+        onboarding_pitch="Start with trial selection, a house tie, a sabotage witness, or a wanted role.",
+        featured_event_material_slug="tampered-selection",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "survival-trials",
+                "Survival and trials",
+                "academy trials clans scarcity rank",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "pressure",
+                "institution-pressure",
+                "Institution pressure",
+                "house system selection",
+                20,
+            ),
+            DiscoveryTagSeed(
+                "content", "consent-safe-trials", "Consent-safe trials", "safety guide", 30
+            ),
+        ),
+    ),
+    "gaslight-ward": DiscoveryProfileSeed(
+        premise_archetype="occult-historical-pressure",
+        play_engine="mystery-driven",
+        lore_aperture="original-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="21+",
+        content_rating="3/2/3",
+        activity_pace="weekly",
+        activity_expectation="inquiry scenes, society pressure, class conflict, and occult consequences",
+        forum_adjunct="forum-first",
+        roster_posture="investigators, socialites, criminals, reformers, mediums, workers, and original faces",
+        catalog_pitch="A period city where class, crime, etiquette, newspapers, police power, and occult bargains collide.",
+        onboarding_pitch="Start with the impossible murder, a social season tie, a newspaper lead, or an occult debt.",
+        featured_event_material_slug="impossible-murder",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "occult-historical",
+                "Occult historical pressure",
+                "period city occult class crime",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "pressure", "murder-inquiry", "Murder inquiry", "impossible murder season", 20
+            ),
+            DiscoveryTagSeed(
+                "tone", "respectability", "Respectability pressure", "society etiquette", 30
+            ),
+        ),
+    ),
+    "wayfarer-station": DiscoveryProfileSeed(
+        premise_archetype="strange-frontier",
+        play_engine="survival-driven",
+        lore_aperture="original-lore",
+        access_model="public-preview",
+        application_model="profile-app",
+        age_rating="18+",
+        content_rating="3/2/3",
+        activity_pace="weekly",
+        activity_expectation="station scenes, scarcity pressure, frontier law, and signal mysteries",
+        forum_adjunct="forum-first",
+        roster_posture="crew, smugglers, medics, engineers, envoys, archivists, and original faces",
+        catalog_pitch="An isolated station at the edge of known space where law is fragile and one signal can change every bargain.",
+        onboarding_pitch="Start with the missing convoy, a station role, a supply debt, or a signal lead.",
+        featured_event_material_slug="missing-convoy",
+        tags=(
+            DiscoveryTagSeed(
+                "premise",
+                "strange-frontier",
+                "Strange frontier",
+                "space station frontier signal scarcity",
+                10,
+            ),
+            DiscoveryTagSeed(
+                "pressure", "scarcity", "Scarcity pressure", "supplies convoy station law", 20
+            ),
+            DiscoveryTagSeed("genre", "soft-sci-fi", "Soft sci-fi", "frontier station", 30),
+        ),
+    ),
+}
+
+ORIGINAL_PREMISE_SEED_SLUGS: tuple[str, ...] = (
+    "harbor-society",
+    "signal-creek",
+    "nocturne-row",
+    "crownfall",
+    "afterlight-accord",
+    "brightline",
+    "emberhouse",
+    "gaslight-ward",
+    "wayfarer-station",
+)
+
+ORIGINAL_PREMISE_SEED_ARCHETYPES: dict[str, str] = {
+    "harbor-society": "small-town-social-web",
+    "signal-creek": "weird-town-mystery",
+    "nocturne-row": "urban-supernatural-pressure-cooker",
+    "crownfall": "court-and-faction-fantasy",
+    "afterlight-accord": "original-canon-adjacent-au",
+    "brightline": "fame-and-industry-drama",
+    "emberhouse": "survival-trials",
+    "gaslight-ward": "occult-historical-pressure",
+    "wayfarer-station": "strange-frontier",
 }
 
 
@@ -1113,6 +1587,1692 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
         ),
     ),
+    ProgramBlueprint(
+        slug="harbor-society",
+        name="Harbor Society",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "maris-vale",
+                "Maris Vale",
+                "Fallen club darling returning with a charity ledger nobody wants opened.",
+                "A smile is a weapon if the room taught you how.",
+            ),
+            BlueprintCharacter(
+                "celia-fairbourne",
+                "Celia Fairbourne",
+                "Old-family gatekeeper who treats the Shoreline Club like civic infrastructure.",
+                "Standards keep the town from sinking.",
+            ),
+            BlueprintCharacter(
+                "august-reed",
+                "August Reed",
+                "Harbor Ledger reporter with a source in every committee and one burned friendship.",
+                "Print the polite version first.",
+            ),
+            BlueprintCharacter(
+                "talia-cross",
+                "Talia Cross",
+                "Marina hotel manager who knows which guests arrive under the wrong name.",
+                "Check-in is only the first secret.",
+            ),
+            BlueprintCharacter(
+                "grant-keller",
+                "Grant Keller",
+                "Golden-child football coach trying to keep school donors and old debts apart.",
+                "Everybody loves a winner until the bill arrives.",
+            ),
+            BlueprintCharacter(
+                "sloane-devereux",
+                "Sloane Devereux",
+                "Club membership chair whose guest list can raise money or end a marriage.",
+                "Access is an art.",
+            ),
+            BlueprintCharacter(
+                "nora-bell",
+                "Nora Bell",
+                "Diner owner and town memory keeper who hears confessions over pie.",
+                "Coffee first, consequences after.",
+            ),
+            BlueprintCharacter(
+                "owen-vale",
+                "Owen Vale",
+                "Deputy mayor balancing family loyalty, gala optics, and a missing donation trail.",
+                "Public service is private damage control.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "shoreline-club",
+                "Shoreline Club",
+                "location",
+                "White jackets, old money, new grudges, and a membership vote nobody can avoid.",
+                "Club politics, social climbing, charitable pressure, private conversations, and public exits.",
+                image_url="/elbysodic-static/seed-media/smalltown-hero.svg",
+                image_alt="Coastal club terrace under warm evening light",
+                image_treatment="background",
+            ),
+            BlueprintBoard(
+                "main-street",
+                "Main Street",
+                "location",
+                "Boutiques, gossip windows, campaign flyers, and errands that become alliances.",
+                "Everyday town scenes for work ties, rivals, returns, and public reputation.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.svg",
+                image_alt="Small-town main street with string lights",
+                image_treatment="background",
+            ),
+            BlueprintBoard(
+                "marina-hotel",
+                "Marina Hotel",
+                "location",
+                "Guest books, quiet bars, conference rooms, and people hiding in plain sight.",
+                "Hotel, tourism, visiting family, investor, and illicit-meeting scenes.",
+            ),
+            BlueprintBoard(
+                "town-hall",
+                "Town Hall",
+                "location",
+                "Minutes, permits, donor plaques, and civic kindness with sharp edges.",
+                "Council scenes, public hearings, campaign pressure, and old-family bargaining.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.svg",
+                image_alt="Town hall with a festival banner",
+                image_treatment="background",
+            ),
+            BlueprintBoard(
+                "harbor-ledger",
+                "Harbor Ledger",
+                "location",
+                "A weekly paper with a printer that overheats whenever the town gets interesting.",
+                "Reporter scenes, anonymous tips, editorials, public scandals, and local history.",
+            ),
+            BlueprintBoard(
+                "back-veranda",
+                "Back Veranda",
+                "desk",
+                "Family ties, committee warfare, club votes, rivals, and slow-burn scene calls.",
+                "A plotting lane for social pressure, civic rituals, and relationship hooks.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: The Shoreline Vote",
+                "premise",
+                "A coastal town where club access, civic ritual, and family history make every favor public.",
+                (
+                    "Harbor Society is built around a town that looks effortless because hundreds "
+                    "of people keep performing it correctly: club memberships, school boosters, "
+                    "hotel openings, marina permits, campaign breakfasts, and family names that "
+                    "still decide who gets forgiven.\n\n"
+                    "The play engine is social pressure. Characters enter through old families, "
+                    "new money, public service, town jobs, returning-home arcs, and the kind of "
+                    "romance or rivalry that has to survive being discussed at breakfast."
+                ),
+            ),
+            BlueprintMaterial(
+                "founders-gala",
+                "Current Chapter: Founders Gala",
+                "event",
+                "A Shoreline Club membership vote collides with a charity-accounting scandal.",
+                (
+                    "The opening chapter begins three days before the Founders Gala. The club is "
+                    "voting on a controversial new member while a reporter receives a ledger page "
+                    "suggesting last year's charity auction quietly covered a private debt.\n\n"
+                    "Playable lanes include committee sabotage, donor pressure, hotel guests with "
+                    "old ties, school boosters picking sides, family damage control, and a gala "
+                    "night where every table setting is a threat."
+                ),
+            ),
+            BlueprintMaterial(
+                "social-ladder",
+                "Social Ladder",
+                "guide",
+                "Status in Harbor Society is public, practical, and never as stable as it looks.",
+                (
+                    "Useful roles include old families, club staff, hotel workers, teachers, "
+                    "boosters, reporters, marina workers, seasonal returnees, local officials, "
+                    "artists, donors, service workers, and people who married into the wrong story."
+                ),
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should bring a public tie, a private pressure, and one playable opening.",
+                (
+                    "A strong first face names where the town knows them, who benefits if they "
+                    "stay quiet, and what they need during the Founders Gala week. No one starts "
+                    "alone: attach a family, job, rivalry, debt, committee, or wanted hook."
+                ),
+            ),
+            BlueprintMaterial(
+                "town-calendar",
+                "Town Calendar",
+                "guide",
+                "Recurring rituals keep the social web moving after the gala.",
+                (
+                    "Use club lunches, marina markets, football boosters, school fundraisers, "
+                    "paper deadlines, hotel soft openings, council hearings, and Sunday diner "
+                    "crowds as low-friction scene starters."
+                ),
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "rival-committee-chair",
+                "Rival committee chair",
+                "rival",
+                "A polished antagonist for seating charts, donor calls, and old resentment.",
+                "Bring someone who can make a gala centerpiece feel like a declaration of war.",
+                related_material_slug="founders-gala",
+            ),
+            BlueprintWanted(
+                "secret-donor-with-conditions",
+                "Secret donor with conditions",
+                "plot_role",
+                "A benefactor whose money solves one public problem and creates three private ones.",
+                "Ideal for a patron, ex-spouse, parent, hotel investor, or political operator.",
+                related_material_slug="founders-gala",
+            ),
+            BlueprintWanted(
+                "reporter-source-at-the-club",
+                "Reporter source at the club",
+                "connection",
+                "A staffer, guest, or committee member feeding August just enough truth to hurt people.",
+                "This hook should create scenes across the club, paper, hotel, and town hall.",
+                related_material_slug="founders-gala",
+            ),
+            BlueprintWanted(
+                "returning-ex-with-town-leverage",
+                "Returning ex with town leverage",
+                "relationship",
+                "A former love or friend whose return turns old intimacy into public strategy.",
+                "Use this for slow-burn, betrayal, family history, or business pressure.",
+                related_material_slug="premise",
+            ),
+            BlueprintWanted(
+                "school-booster-with-receipts",
+                "School booster with receipts",
+                "event_role",
+                "A connective local who knows how charity money, sports donors, and club votes overlap.",
+                "This role can pull parents, teachers, coaches, donors, and town officials into one mess.",
+                related_material_slug="founders-gala",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="signal-creek",
+        name="Signal Creek",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "ira-bell",
+                "Ira Bell",
+                "Observatory technician who heard the first impossible broadcast.",
+                "Tune slowly.",
+            ),
+            BlueprintCharacter(
+                "mae-kincaid",
+                "Sheriff Mae Kincaid",
+                "Skeptical sheriff trying to keep panic from becoming policy.",
+                "Evidence before folklore.",
+            ),
+            BlueprintCharacter(
+                "lena-ortiz",
+                "Lena Ortiz",
+                "Archivist whose family records disagree with town memory.",
+                "The filing cabinet remembers better.",
+            ),
+            BlueprintCharacter(
+                "cal-rivera",
+                "Cal Rivera",
+                "Teen witness who insists the missing hiker came back wrong.",
+                "Nobody listens until the woods answer.",
+            ),
+            BlueprintCharacter(
+                "vera-snow",
+                "Vera Snow",
+                "Occult shop owner with a practical approach to impossible things.",
+                "Candles are tools, not decoration.",
+            ),
+            BlueprintCharacter(
+                "sam-wyatt",
+                "Sam Wyatt",
+                "Returning sibling of a woman who vanished during the blank year.",
+                "Grief keeps a map.",
+            ),
+            BlueprintCharacter(
+                "dr-niko-page",
+                "Dr. Niko Page",
+                "Clinic doctor tracking shared symptoms after the meteor shower.",
+                "Vitals do not lie, but patients do.",
+            ),
+            BlueprintCharacter(
+                "hollis-vale",
+                "Hollis Vale",
+                "County emergency manager sent to make the story smaller.",
+                "Containment starts with vocabulary.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "blackridge-observatory",
+                "Blackridge Observatory",
+                "location",
+                "Receivers, static, meteor logs, and a signal that knows names.",
+                "Research scenes, midnight calls, staff prompts, and technical clues.",
+            ),
+            BlueprintBoard(
+                "creekside-diner",
+                "Creekside Diner",
+                "location",
+                "Pie, bad coffee, rumor chains, and locals pretending they are not scared.",
+                "Low-friction social scenes, gossip, family ties, and public reactions.",
+            ),
+            BlueprintBoard(
+                "mirror-lake",
+                "Mirror Lake",
+                "location",
+                "Still water, trailheads, missing-person flyers, and reflections that lag.",
+                "Search scenes, witness confrontations, teen dares, and phenomena encounters.",
+            ),
+            BlueprintBoard(
+                "sheriff-station",
+                "Sheriff Station",
+                "location",
+                "Incident boards, volunteer maps, official denials, and exhausted deputies.",
+                "Law, search parties, interviews, and town-safety pressure.",
+            ),
+            BlueprintBoard(
+                "relay-site-seven",
+                "Relay Site Seven",
+                "location",
+                "A fenced hilltop installation that should have been decommissioned in 1989.",
+                "Trespass, government pressure, hidden records, and strange signal escalation.",
+            ),
+            BlueprintBoard(
+                "static-room",
+                "Static Room",
+                "desk",
+                "Rumors, encounters, clue calls, chapter prompts, and strange-touched plotting.",
+                "A writer lane for mystery pressure without making staff solve every scene.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: The Blank Year",
+                "premise",
+                "Signal Creek is a mountain town where an impossible broadcast keeps reopening an old disappearance.",
+                (
+                    "In 1998, Signal Creek lost a year. Records skip. Families remember different "
+                    "weather. One woman vanished from a search party nobody agrees happened. Now "
+                    "the observatory is receiving a repeating broadcast from that missing year, "
+                    "and the voice on the tape sometimes answers questions asked in the room.\n\n"
+                    "The board supports approachable town scenes with a mystery engine: locals, "
+                    "researchers, skeptics, believers, officials, teens, doctors, archivists, and "
+                    "people touched by phenomena trying to decide what truth costs."
+                ),
+            ),
+            BlueprintMaterial(
+                "midnight-signal",
+                "Current Chapter: Midnight Signal",
+                "event",
+                "During a meteor shower, the observatory receives a live broadcast from a hiker missing for twelve hours.",
+                (
+                    "The opening chapter begins when a missing hiker's voice cuts through the "
+                    "observatory feed at 12:03 a.m. She describes town landmarks as they looked "
+                    "twenty-eight years ago, then says someone is standing behind the listeners.\n\n"
+                    "Playable lanes include search parties, clinic symptoms, sheriff interviews, "
+                    "archive contradictions, occult experiments, teen witnesses, and county "
+                    "officials trying to seal the wrong door."
+                ),
+            ),
+            BlueprintMaterial(
+                "public-rumors",
+                "Public Rumors",
+                "guide",
+                "A rumor board for clues that any writer can pick up without staff permission.",
+                "Use signal bursts, repeating numbers, missing trail markers, wrong reflections, lost hours, sleepwalking, and old photographs as open scene fuel.",
+            ),
+            BlueprintMaterial(
+                "encounter-rules",
+                "Encounter Rules",
+                "guide",
+                "The mystery should invite play without forcing outcomes or secret staff answers.",
+                "Writers may introduce small phenomena in public scenes. Major answers, disappearances, identity changes, and town-wide consequences need staff coordination.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name a town tie, a belief posture, and a reason to touch the signal.",
+                "Useful entries include locals, returnees, researchers, first responders, skeptics, believers, officials, doctors, students, and people whose memories do not match the record.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "field-technician-at-relay-seven",
+                "Field technician at Relay Site Seven",
+                "event_role",
+                "A practical operator who knows the old hardware should not be powered.",
+                "This role connects the observatory, county officials, and trespass scenes.",
+                related_material_slug="midnight-signal",
+            ),
+            BlueprintWanted(
+                "cult-survivor-who-remembers-1998",
+                "Cult survivor who remembers 1998",
+                "plot_role",
+                "A person with a dangerous partial memory of the blank year.",
+                "They do not need answers. They need scenes where memory becomes leverage.",
+                related_material_slug="premise",
+            ),
+            BlueprintWanted(
+                "government-observer-with-a-soft-cover",
+                "Government observer with a soft cover",
+                "faction_need",
+                "An outsider officially here for emergency logistics and unofficially here for the signal.",
+                "Good for pressure, mistrust, records requests, and uneasy alliances.",
+                related_material_slug="midnight-signal",
+            ),
+            BlueprintWanted(
+                "local-rival-for-the-archives",
+                "Local rival for the archives",
+                "rival",
+                "Someone who thinks Lena is hiding the wrong family history.",
+                "This can be family, professional, academic, or deeply personal.",
+                related_material_slug="public-rumors",
+            ),
+            BlueprintWanted(
+                "person-who-remembers-the-vanished-year",
+                "Person who remembers the vanished year differently",
+                "connection",
+                "A character whose memories contradict everyone else's record.",
+                "Use this to start scenes with questions, fear, and unreliable certainty.",
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="nocturne-row",
+        name="Nocturne Row",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "marcel-voss",
+                "Marcel Voss",
+                "Vampire negotiator trying to keep old houses from treating the treaty as theater.",
+                "Peace is a performance until blood proves otherwise.",
+            ),
+            BlueprintCharacter(
+                "eliana-crowe",
+                "Eliana Crowe",
+                "Witch barrister arguing supernatural cases in a courthouse built on older law.",
+                "Contracts remember intent.",
+            ),
+            BlueprintCharacter(
+                "ren-maddox",
+                "Ren Maddox",
+                "Werewolf organizer turning clinic access and housing rights into faction leverage.",
+                "Care is political.",
+            ),
+            BlueprintCharacter(
+                "jules-hart",
+                "Jules Hart",
+                "Hunter defector whose safehouse map is already out of date.",
+                "Survival starts after betrayal.",
+            ),
+            BlueprintCharacter(
+                "mara-quinn",
+                "Mara Quinn",
+                "Human journalist chasing the public attack before the city edits the footage.",
+                "The first draft is evidence.",
+            ),
+            BlueprintCharacter(
+                "dr-silas-wren",
+                "Dr. Silas Wren",
+                "Coroner who knows which bodies stop obeying biology.",
+                "Death keeps paperwork.",
+            ),
+            BlueprintCharacter(
+                "nyx-bell",
+                "Nyx Bell",
+                "Nightclub owner whose back rooms host deals the council cannot admit exist.",
+                "Every door has a price.",
+            ),
+            BlueprintCharacter(
+                "tamsin-vale",
+                "Tamsin Vale",
+                "Council heir inheriting a treaty nobody her age believes in.",
+                "Legacy is not consent.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "emberline-district",
+                "Emberline District",
+                "location",
+                "Neon, sirens, late-night deals, and monsters trying to look ordinary.",
+                "Nightlife, witness scenes, faction meetings, and street-level consequences.",
+            ),
+            BlueprintBoard(
+                "covenant-hall",
+                "Covenant Hall",
+                "location",
+                "A council chamber where old families call survival tradition.",
+                "Council politics, treaty disputes, species law, and public-facing rituals.",
+            ),
+            BlueprintBoard(
+                "hunter-safehouse",
+                "Hunter Safehouse",
+                "location",
+                "A basement clinic, weapons lockers, burned contacts, and no clean exits.",
+                "Hunter, defector, rescue, protection, and moral-compromise scenes.",
+            ),
+            BlueprintBoard(
+                "saint-brigid-hospital",
+                "Saint Brigid Hospital",
+                "location",
+                "Blood bank rumors, impossible charts, frightened residents, and missing evidence.",
+                "Medical pressure, coroner scenes, whistleblowers, and species secrecy.",
+            ),
+            BlueprintBoard(
+                "press-room",
+                "Press Room",
+                "location",
+                "Screens, police statements, edited footage, and reporters who know too much.",
+                "Media pressure, leaks, public opinion, and human-side entry points.",
+            ),
+            BlueprintBoard(
+                "night-market",
+                "Night Market",
+                "desk",
+                "Faction ties, species claims, treaty fallout, mature plots, and city-wide wanted hooks.",
+                "A plotting lane for supernatural pressure without hiding the public premise.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Treaty City",
+                "premise",
+                "Nocturne Row is a city where supernatural visibility, law, nightlife, and old covenants are failing at once.",
+                (
+                    "The public knows enough to be afraid and not enough to be accurate. Vampires, "
+                    "witches, werewolves, hunters, humans, officials, and old families have lived "
+                    "under the Meridian Treaty for twelve years. It promised peace, registration, "
+                    "limited disclosure, and emergency courts. It did not promise trust.\n\n"
+                    "Play centers on faction pressure, mature city scenes, forbidden ties, public "
+                    "image, legal compromise, species boundaries, and characters choosing whether "
+                    "order is worth preserving."
+                ),
+            ),
+            BlueprintMaterial(
+                "treaty-breach",
+                "Current Chapter: Treaty Breach",
+                "event",
+                "A public attack outside a nightclub leaves a council elder missing and every faction blaming the wrong witness.",
+                (
+                    "The first chapter begins after a phone video shows something inhuman outside "
+                    "the Emberline District. The footage goes public, the elder responsible for "
+                    "nightlife security disappears, and the council invokes emergency treaty powers.\n\n"
+                    "Playable lanes include witness protection, blood-bank pressure, hunter "
+                    "retaliation, witch-law arguments, nightlife coverups, press leaks, and faction "
+                    "leaders trying to decide which truth can survive daylight."
+                ),
+            ),
+            BlueprintMaterial(
+                "species-limits",
+                "Species Limits",
+                "guide",
+                "Species lore is playable pressure, not an encyclopedia contest.",
+                "Keep powers legible, costs visible, and consent central. Major bloodline, curse, domination, resurrection, or city-wide magic claims need staff review.",
+            ),
+            BlueprintMaterial(
+                "city-law",
+                "City Law",
+                "guide",
+                "The Meridian Treaty creates public systems that characters can use, resist, or exploit.",
+                "Use emergency courts, registration hearings, blood-bank rules, safehouse maps, and council warrants as scene starters.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name a species or human lane, a faction pressure, and one boundary.",
+                "Strong entries connect to the treaty breach, a public job, a private faction tie, a wanted role, or a relationship that makes politics personal.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "hostile-witness-from-emberline",
+                "Hostile witness from Emberline",
+                "event_role",
+                "A human, hunter, or supernatural witness whose statement could start a faction war.",
+                "This hook creates immediate scenes with press, police, council, and protection details.",
+                related_material_slug="treaty-breach",
+            ),
+            BlueprintWanted(
+                "coven-rival-in-court",
+                "Coven rival in court",
+                "rival",
+                "A legal or magical opponent who believes Eliana is saving the wrong treaty.",
+                "Good for courtroom scenes, old debts, and public-private magical pressure.",
+                related_material_slug="city-law",
+            ),
+            BlueprintWanted(
+                "hunter-handler-left-behind",
+                "Hunter handler left behind",
+                "connection",
+                "Someone from Jules's past who still thinks defection can be reversed.",
+                "Use this for trust, danger, found family, and ideological conflict.",
+                related_material_slug="premise",
+            ),
+            BlueprintWanted(
+                "blood-bank-whistleblower",
+                "Blood-bank whistleblower",
+                "plot_role",
+                "A hospital worker with records that make both the council and hunters dangerous.",
+                "This role connects medical scenes to faction politics and public fear.",
+                related_material_slug="treaty-breach",
+            ),
+            BlueprintWanted(
+                "forbidden-romance-across-the-treaty",
+                "Forbidden romance across the treaty",
+                "relationship",
+                "A relationship hook that makes law, species, and public safety personal.",
+                "Romance is optional; the core is loyalty under public pressure.",
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="crownfall",
+        name="Crownfall",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "seren-vale",
+                "Seren Vale",
+                "Disputed heir whose claim depends on an omen no one trusts.",
+                "A crown is a question with soldiers.",
+            ),
+            BlueprintCharacter(
+                "maelor-cairn",
+                "Maelor Cairn",
+                "Spymaster keeping three houses loyal by telling each one a different truth.",
+                "Secrets are cheaper than armies.",
+            ),
+            BlueprintCharacter(
+                "ivra-senn",
+                "Ivra Senn",
+                "Mage scholar with proof the coronation omen was not divine.",
+                "Magic leaves a receipt.",
+            ),
+            BlueprintCharacter(
+                "torren-ash",
+                "Torren Ash",
+                "Border commander whose troops are tired of dying for court poetry.",
+                "Hold the line, then ask why.",
+            ),
+            BlueprintCharacter(
+                "eluned-ro",
+                "Eluned Ro",
+                "Merchant diplomat turning grain ships into political pressure.",
+                "Markets crown the patient.",
+            ),
+            BlueprintCharacter(
+                "sava-morn",
+                "Sava Morn",
+                "Temple advocate deciding whether legitimacy belongs to blood or survival.",
+                "Faith also keeps ledgers.",
+            ),
+            BlueprintCharacter(
+                "kael-riven",
+                "Kael Riven",
+                "Hostage noble with two family names and one impossible escape route.",
+                "Politeness is captivity.",
+            ),
+            BlueprintCharacter(
+                "mira-thorne",
+                "Mira Thorne",
+                "Royal bastard courted by rebels, priests, and people who need a symbol.",
+                "Every rumor wants a face.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "opal-court",
+                "Opal Court",
+                "location",
+                "Silk, steel, succession law, and every smile counted by witnesses.",
+                "Court scenes, petitions, noble pressure, ceremonies, and private bargains.",
+            ),
+            BlueprintBoard(
+                "border-watch",
+                "Border Watch",
+                "location",
+                "Mud roads, burned signal towers, and soldiers asking whose crown feeds them.",
+                "Military scenes, raids, refugees, field medicine, and hard loyalties.",
+            ),
+            BlueprintBoard(
+                "mage-archive",
+                "Mage Archive",
+                "location",
+                "Sealed stacks, failed prophecies, and spell records that contradict the temple.",
+                "Research, magic rules, scholar rivalries, and dangerous evidence.",
+            ),
+            BlueprintBoard(
+                "market-docks",
+                "Market Docks",
+                "location",
+                "Grain ships, bribes, sailors, foreign coins, and news before the court hears it.",
+                "Trade, rumors, smuggling, diplomacy, and working-class pressure.",
+            ),
+            BlueprintBoard(
+                "high-temple",
+                "High Temple",
+                "location",
+                "Bells, oaths, disputed doctrine, and priests who know crowns are made.",
+                "Faith, legitimacy, confession, reform, and public ritual scenes.",
+            ),
+            BlueprintBoard(
+                "war-room",
+                "War Room",
+                "desk",
+                "House claims, faction moves, wanted roles, and succession plotting.",
+                "A planning lane for court pressure, faction openings, and event turns.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: A Crown Without Witness",
+                "premise",
+                "A monarch dies before naming an heir, and every institution claims the right to finish the sentence.",
+                "Crownfall is an original court-and-faction fantasy realm built for succession pressure. Houses, mages, clergy, merchants, rebels, soldiers, hostages, and servants all have reasons to care who becomes legitimate, and none of them can win without making scenes with the others.",
+            ),
+            BlueprintMaterial(
+                "broken-coronation",
+                "Current Chapter: Broken Coronation",
+                "event",
+                "The coronation is interrupted by a magical omen and a border raid timed too well to be chance.",
+                "The opening chapter starts when the crown flame turns black during Seren's public oath. Before the court can decide whether it means rejection, a border tower falls and the first survivor names a noble house as traitor. Playable lanes include court accusations, temple inquiry, mage evidence, hostage leverage, refugee arrivals, and merchants deciding which claimant gets grain.",
+            ),
+            BlueprintMaterial(
+                "houses-and-factions",
+                "Houses And Factions",
+                "factions",
+                "A quick guide to the houses, temple, mage archive, border command, merchant compact, and rebels.",
+                "Use factions as scene engines, not homework. A face should know what their institution wants, what it fears, and what private tie might make them betray the clean faction line.",
+            ),
+            BlueprintMaterial(
+                "magic-limits",
+                "Magic Limits",
+                "guide",
+                "Magic is political evidence with cost, witnesses, and institutional control.",
+                "Public magic leaves trace, prophecy is disputed, and major spellwork needs staff coordination. Keep magic useful in scenes without making power scale the point of play.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should bring a faction pressure, a public role, and one private loyalty.",
+                "Strong first faces can be nobles, servants, soldiers, priests, mages, merchants, rebels, hostages, healers, spies, or foreign observers. Tie them to the broken coronation or border raid.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "secret-claimant-with-proof",
+                "Secret claimant with proof",
+                "plot_role",
+                "A person whose blood, document, or magical trace could reorder the succession.",
+                "This hook creates immediate pressure across court, temple, archive, and rebels.",
+                related_material_slug="broken-coronation",
+            ),
+            BlueprintWanted(
+                "oath-bound-guard",
+                "Oath-bound guard",
+                "connection",
+                "A guard sworn to the old monarch and now pulled between rival claimants.",
+                "Good for loyalty, protection, betrayal, and close court scenes.",
+                related_material_slug="premise",
+            ),
+            BlueprintWanted(
+                "foreign-ambassador",
+                "Foreign ambassador with a grain fleet",
+                "faction_need",
+                "An envoy whose recognition can feed the city or starve the wrong claimant.",
+                "Use for diplomacy, trade threats, and public legitimacy scenes.",
+                related_material_slug="houses-and-factions",
+            ),
+            BlueprintWanted(
+                "black-market-mage",
+                "Black-market mage with omen residue",
+                "event_role",
+                "A spellworker who knows the coronation omen was altered.",
+                "Ideal for archive scenes, criminal ties, and dangerous evidence.",
+                related_material_slug="broken-coronation",
+            ),
+            BlueprintWanted(
+                "lost-sibling-at-the-border",
+                "Lost sibling at the border",
+                "relationship",
+                "A personal tie caught in the raid that makes the succession crisis intimate.",
+                "Attach this to soldiers, nobles, rebels, or refugees who need the war to matter personally.",
+                related_material_slug="broken-coronation",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="afterlight-accord",
+        name="Afterlight Accord",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "orin-vale",
+                "Orin Vale",
+                "Heir of a vanished order whose role survived better than the order did.",
+                "Inheritance is a locked door.",
+            ),
+            BlueprintCharacter(
+                "maia-renn",
+                "Maia Renn",
+                "Exile captain hired to escort people the Accord would rather forget.",
+                "The map is a promise until it burns.",
+            ),
+            BlueprintCharacter(
+                "sel-archa",
+                "Sel Archa",
+                "Archivist tracking which old stories changed after the catastrophe.",
+                "Version control for myth.",
+            ),
+            BlueprintCharacter(
+                "kesh-morrow",
+                "Kesh Morrow",
+                "Converted monster trying to prove personhood before the council votes.",
+                "Mercy is policy when it has witnesses.",
+            ),
+            BlueprintCharacter(
+                "lira-sun",
+                "Lira Sun",
+                "Reformer who believes the old roles should be elected, not inherited.",
+                "No more crowns made of memory.",
+            ),
+            BlueprintCharacter(
+                "tovan-grey",
+                "Tovan Grey",
+                "Border runner moving people through transit gates that should be sealed.",
+                "Every gate wants a toll.",
+            ),
+            BlueprintCharacter(
+                "nesa-wild",
+                "Nesa Wild",
+                "Reluctant prophet whose visions quote endings that never happened.",
+                "The future plagiarizes badly.",
+            ),
+            BlueprintCharacter(
+                "vail-ix",
+                "Vail IX",
+                "Traitor to the old ending with one useful secret and no safe allies.",
+                "Regret is not redemption yet.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "accord-town",
+                "Accord Town",
+                "location",
+                "A treaty settlement built where old enemies were told to become neighbors.",
+                "Public politics, uneasy daily life, council scenes, and faction contact.",
+            ),
+            BlueprintBoard(
+                "old-academy",
+                "Old Academy",
+                "location",
+                "Dormant halls, broken role tests, and students inheriting duties nobody explained.",
+                "Training, legacy pressure, role archetypes, and first-face entry scenes.",
+            ),
+            BlueprintBoard(
+                "memory-archive",
+                "Memory Archive",
+                "location",
+                "Records of the old ending, sealed branches, and stories that keep rewriting themselves.",
+                "Research, archive disputes, lore reveals, and provenance questions.",
+            ),
+            BlueprintBoard(
+                "rebel-safehouse",
+                "Rebel Safehouse",
+                "location",
+                "Maps, false papers, stolen keys, and arguments about what freedom costs.",
+                "Rebel scenes, rescue plans, fugitives, and moral compromise.",
+            ),
+            BlueprintBoard(
+                "transit-gate",
+                "Transit Gate",
+                "location",
+                "A damaged gate network that still opens for names it recognizes.",
+                "Travel, border pressure, missing mentors, contraband, and strange arrivals.",
+            ),
+            BlueprintBoard(
+                "branch-room",
+                "Branch Room",
+                "desk",
+                "Role archetypes, branch-point lore, accord pressure, and wanted hooks.",
+                "A plotting lane for canon-adjacent structures without protected IP dependence.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: The Old Ending Broke",
+                "premise",
+                "Afterlight Accord is an original branch-point realm where legendary roles survived a catastrophe but the old story failed.",
+                "Characters inherit duties, symbols, rivalries, powers, debts, and expectations from a world that no longer agrees on what happened. The premise gives writers familiar story gravity without using protected names, places, or plots.",
+            ),
+            BlueprintMaterial(
+                "accord-seal-fails",
+                "Current Chapter: The Seal Fails",
+                "event",
+                "The Accord seal breaks during a remembrance ceremony and frees one prisoner history says died.",
+                "The opening chapter creates public panic, council hearings, rebel movement, archive contradictions, and role-archetype pressure. Writers can enter as heirs, exiles, monsters, archivists, reformers, runners, officials, or people whose inherited story no longer fits.",
+            ),
+            BlueprintMaterial(
+                "branch-point",
+                "Branch Point",
+                "guide",
+                "The old ending failed at the moment victory became occupation.",
+                "Use this guide to anchor tone: people remember the world through roles and consequences, not through lifted IP. Every archetype should be translated into original obligations, not copied names.",
+            ),
+            BlueprintMaterial(
+                "role-archetypes",
+                "Role Archetypes",
+                "guide",
+                "Heirs, exiles, converted monsters, archivists, rebels, prophets, traitors, and border runners are playable lanes.",
+                "A role archetype is an invitation to plot, not a cage. Writers should bring a pressure, a tie, and a reason the Accord makes their face's life harder now.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name an inherited role, a faction pressure, and one branch-point wound.",
+                "Keep concepts original. Avoid protected names, renamed canon characters, or direct plot lifts. The best applications translate mechanics into new social, political, or emotional obligations.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "missing-mentor-from-the-old-ending",
+                "Missing mentor from the old ending",
+                "relationship",
+                "A mentor figure whose return complicates the Accord's official history.",
+                "Good for heirs, archivists, rebels, and anyone who built a life around a lie.",
+                related_material_slug="accord-seal-fails",
+            ),
+            BlueprintWanted(
+                "oath-sibling-with-a-broken-role",
+                "Oath sibling with a broken role",
+                "connection",
+                "Someone bound to a role that no longer matches what the world needs.",
+                "This hook gives instant history and conflict without copying canon.",
+                related_material_slug="role-archetypes",
+            ),
+            BlueprintWanted(
+                "archive-thief",
+                "Archive thief with a sealed branch",
+                "plot_role",
+                "A thief who stole the record of one possible ending.",
+                "Use for archive scenes, rebel deals, transit-gate chases, and council pressure.",
+                related_material_slug="accord-seal-fails",
+            ),
+            BlueprintWanted(
+                "forbidden-envoy",
+                "Forbidden envoy from beyond the gate",
+                "faction_need",
+                "An envoy whose existence proves the Accord map is incomplete.",
+                "Good for diplomacy, suspicion, travel, and lore expansion through scenes.",
+                related_material_slug="branch-point",
+            ),
+            BlueprintWanted(
+                "reformed-antagonist",
+                "Reformed antagonist nobody wants pardoned",
+                "rival",
+                "A former enemy whose survival forces the community to define justice.",
+                "This hook is about accountability, trust, and whether reform counts when victims are still present.",
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="brightline",
+        name="Brightline",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "viv-marlowe",
+                "Viv Marlowe",
+                "Rising performer whose contract leak makes her useful to everyone but herself.",
+                "Applause is leverage.",
+            ),
+            BlueprintCharacter(
+                "rex-arden",
+                "Rex Arden",
+                "PR fixer who can bury a scandal if nobody asks what else goes underground.",
+                "Optics first, truth second.",
+            ),
+            BlueprintCharacter(
+                "dahlia-voss",
+                "Dahlia Voss",
+                "Old-money patron funding careers with conditions hidden in compliments.",
+                "Taste is power with better lighting.",
+            ),
+            BlueprintCharacter(
+                "kit-valentine",
+                "Kit Valentine",
+                "Gossip columnist whose sources keep becoming friends at the worst time.",
+                "Print it before they deny it.",
+            ),
+            BlueprintCharacter(
+                "milo-cade",
+                "Milo Cade",
+                "Producer trying to keep awards season from exposing how the deal was made.",
+                "Every hit has paperwork.",
+            ),
+            BlueprintCharacter(
+                "june-park",
+                "June Park",
+                "Venue owner who knows who can still sing after midnight and who cannot pay rent.",
+                "Backstage tells the truth.",
+            ),
+            BlueprintCharacter(
+                "lena-sable",
+                "Lena Sable",
+                "Fallen idol staging a comeback through one last dangerous favor.",
+                "The spotlight remembers.",
+            ),
+            BlueprintCharacter(
+                "ari-cho",
+                "Ari Cho",
+                "Assistant with receipts, calendar access, and no reason to stay loyal.",
+                "Scheduling is surveillance.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "studio-lot",
+                "Studio Lot",
+                "location",
+                "Soundstages, contracts, trailers, and people smiling through sabotage.",
+                "Industry work scenes, auditions, producer pressure, and career bargaining.",
+            ),
+            BlueprintBoard(
+                "blue-room",
+                "Blue Room",
+                "location",
+                "A live club where careers begin, end, and get overheard from the bar.",
+                "Performances, rivals, nightlife, found family, and late-night consequences.",
+            ),
+            BlueprintBoard(
+                "gloss-office",
+                "Gloss Office",
+                "location",
+                "Magazine deadlines, anonymous tips, photo selects, and legal threats.",
+                "Press, gossip, image work, interviews, and source scenes.",
+            ),
+            BlueprintBoard(
+                "charity-circuit",
+                "Charity Circuit",
+                "location",
+                "Patrons, galas, photographers, old money, and favors dressed as generosity.",
+                "Public image, fundraising, status, and social warfare.",
+            ),
+            BlueprintBoard(
+                "courthouse-steps",
+                "Courthouse Steps",
+                "location",
+                "Contract filings, defamation threats, paparazzi, and public statements.",
+                "Legal pressure, scandal escalation, and career stakes.",
+            ),
+            BlueprintBoard(
+                "green-room",
+                "Green Room",
+                "desk",
+                "Career ties, scandal boards, wanted hooks, rivals, patrons, and slow-burn plotting.",
+                "A planning lane for fame, industry, and public/private performance pressure.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Image Has Teeth",
+                "premise",
+                "Brightline is a fame and industry drama where public image, creative work, and private compromise become leverage.",
+                "Studios, clubs, magazines, patrons, lawyers, stylists, assistants, performers, producers, and gossip writers all move through the same city circuit. The play engine is career pressure: who gets seen, who gets protected, and who pays for the version of the story that sells.",
+            ),
+            BlueprintMaterial(
+                "awards-night-sabotage",
+                "Current Chapter: Awards Night Sabotage",
+                "event",
+                "An awards-night performance is sabotaged minutes before a leaked contract hits the press.",
+                "The opening chapter starts with a failed spotlight, a missing backing track, and a contract leak that suggests a career-making deal was rigged. Playable lanes include backstage accusations, crisis PR, patron pressure, legal threats, magazine deadlines, and exes deciding whether to protect each other.",
+            ),
+            BlueprintMaterial(
+                "career-ladder",
+                "Career Ladder",
+                "guide",
+                "Fame is not only celebrity; it is access, labor, debt, patronage, and public narrative.",
+                "Useful roles include performers, stylists, assistants, venue workers, publicists, critics, photographers, lawyers, producers, patrons, influencers, crew, and people living near the spotlight without being protected by it.",
+            ),
+            BlueprintMaterial(
+                "scandal-board",
+                "Scandal Board",
+                "guide",
+                "Scandals should create playable pressure rather than punish writers for having messy faces.",
+                "Use leaks, contracts, feuds, sponsorships, reviews, bad photos, public apologies, and private favors as scene starters. Consent and boundaries decide how far a scandal reaches.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name a public image, a private pressure, and one industry tie.",
+                "A first face should have a career lane, a person who can help or hurt them, and a scene starter tied to awards week, the Blue Room, Gloss, court filings, or the charity circuit.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "rival-performer-with-the-same-song",
+                "Rival performer with the same song",
+                "rival",
+                "A performer whose set list turns sabotage into personal history.",
+                "Good for rivalry, romance, creative theft, and career comparison scenes.",
+                related_material_slug="awards-night-sabotage",
+            ),
+            BlueprintWanted(
+                "crisis-photographer",
+                "Crisis photographer with the wrong image",
+                "event_role",
+                "A photographer who captured what PR needs buried.",
+                "This hook connects press, legal, backstage, and public-image pressure.",
+                related_material_slug="awards-night-sabotage",
+            ),
+            BlueprintWanted(
+                "patron-with-conditions",
+                "Patron with conditions",
+                "faction_need",
+                "A benefactor whose money can open doors or own the room.",
+                "Use for charity circuit, career debt, and status scenes.",
+                related_material_slug="career-ladder",
+            ),
+            BlueprintWanted(
+                "ex-manager-with-files",
+                "Ex-manager with files",
+                "connection",
+                "A former manager, assistant, or handler holding documents nobody wants surfaced.",
+                "Good for old trust, threats, legal leverage, and comeback arcs.",
+                related_material_slug="scandal-board",
+            ),
+            BlueprintWanted(
+                "secret-spouse-or-contract-clause",
+                "Secret spouse or contract clause",
+                "relationship",
+                "A relationship hook that makes public image and private loyalty collide.",
+                "Romance is optional; the pressure is what the public version of the relationship costs.",
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="emberhouse",
+        name="Emberhouse",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "nara-vale",
+                "Nara Vale",
+                "Reluctant champion whose selection score should have been impossible.",
+                "Win quietly or burn loudly.",
+            ),
+            BlueprintCharacter(
+                "cassian-rook",
+                "Cassian Rook",
+                "Ambitious rival from a house that treats mercy like bad strategy.",
+                "Second place is a warning.",
+            ),
+            BlueprintCharacter(
+                "maeve-torr",
+                "Maeve Torr",
+                "Instructor trying to keep trials useful without letting sponsors turn them cruel.",
+                "Pressure is not permission.",
+            ),
+            BlueprintCharacter(
+                "ion-bell",
+                "Ion Bell",
+                "Medic who sees which injuries the academy calls character-building.",
+                "Survival has aftercare.",
+            ),
+            BlueprintCharacter(
+                "sena-quill",
+                "Sena Quill",
+                "House heir expected to win cleanly while everyone else cheats for her.",
+                "Legacy is a crowded room.",
+            ),
+            BlueprintCharacter(
+                "tavi-moss",
+                "Tavi Moss",
+                "Outsider scholarship student who knows scarcity before the academy simulates it.",
+                "Resourcefulness is not romance.",
+            ),
+            BlueprintCharacter(
+                "bram-hale",
+                "Bram Hale",
+                "Quartermaster whose supply ledgers can expose who tampered with selection.",
+                "Nothing disappears. It gets requisitioned.",
+            ),
+            BlueprintCharacter(
+                "elix-ward",
+                "Elix Ward",
+                "Council observer deciding whether the house system protects candidates or brands them.",
+                "Oversight has teeth if anyone lets it bite.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "ember-hall",
+                "Ember Hall",
+                "location",
+                "House banners, rank boards, sponsor balconies, and candidates learning who is watched.",
+                "Dormitory and common-hall scenes for house politics, alliances, and public pressure.",
+            ),
+            BlueprintBoard(
+                "trial-grounds",
+                "Trial Grounds",
+                "location",
+                "Obstacle fields, signal flares, and rules everyone quotes before bending them.",
+                "Trial prompts, team pressure, training scenes, and controlled danger.",
+            ),
+            BlueprintBoard(
+                "council-chamber",
+                "Council Chamber",
+                "location",
+                "Adults arguing about safety with candidates sitting outside the door.",
+                "Policy, sponsors, appeals, rank disputes, and institutional stakes.",
+            ),
+            BlueprintBoard(
+                "infirmary",
+                "Infirmary",
+                "location",
+                "Clean sheets, hidden bruises, consent check-ins, and records sponsors cannot edit.",
+                "Aftercare, medical scenes, injury fallout, and quiet truth-telling.",
+            ),
+            BlueprintBoard(
+                "supply-depot",
+                "Supply Depot",
+                "location",
+                "Ration tags, missing gear, locked crates, and someone always counting wrong.",
+                "Scarcity scenes, quartermaster pressure, sabotage clues, and practical alliances.",
+            ),
+            BlueprintBoard(
+                "trial-table",
+                "Trial Table",
+                "desk",
+                "House ties, safety limits, rank claims, trial prompts, and wanted roles.",
+                "A plotting lane for institution pressure without turning trials into consent failures.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Trial Season",
+                "premise",
+                "Emberhouse is a trial academy where rank, scarcity, loyalty, and adult agendas decide who gets protected.",
+                "Candidates train inside a house system that claims trials build leadership. The real story is messier: sponsors, rank boards, scarce supplies, old house debts, safety limits, instructors with competing ethics, and candidates deciding what winning should cost.",
+            ),
+            BlueprintMaterial(
+                "tampered-selection",
+                "Current Chapter: Tampered Selection",
+                "event",
+                "The first trial roster is altered before dawn, moving three candidates into the wrong danger tier.",
+                "Opening scenes can start in the house hall, supply depot, infirmary, council chamber, or trial grounds. The question is not only who cheated. It is who benefits when the academy calls the result tradition.",
+            ),
+            BlueprintMaterial(
+                "house-guide",
+                "House Guide",
+                "factions",
+                "The house system gives characters identity, rivals, resources, and expectations.",
+                "Use houses as pressure lanes rather than sorting labels. Every house should offer allies, blind spots, and a reason a candidate might break rank.",
+            ),
+            BlueprintMaterial(
+                "trial-rules",
+                "Trial Rules And Safety",
+                "guide",
+                "Trials should create dramatic pressure while preserving writer consent and character agency.",
+                "Major injuries, coercion, elimination, captivity, or public humiliation require coordination. The academy can be harsh without making writers fight for basic boundaries.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name a house tie, trial pressure, and safety boundary.",
+                "Useful concepts include candidates, instructors, medics, quartermasters, house heirs, scholarship students, council observers, sponsors, and family members outside the academy.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "secret-sponsor",
+                "Secret sponsor with a hidden candidate",
+                "faction_need",
+                "A patron whose support explains why a candidate keeps surviving bad odds.",
+                "Use this for house pressure, favoritism, and uncomfortable protection.",
+                related_material_slug="tampered-selection",
+            ),
+            BlueprintWanted(
+                "sibling-competitor",
+                "Sibling competitor in another house",
+                "relationship",
+                "A family tie split across house loyalty and public ranking.",
+                "Good for rivalry, protection, resentment, and impossible team scenes.",
+                related_material_slug="house-guide",
+            ),
+            BlueprintWanted(
+                "rule-enforcer",
+                "Rule enforcer everyone underestimates",
+                "event_role",
+                "A staff or senior candidate responsible for making trial law visible.",
+                "This role can complicate cheating, appeals, and safety boundaries.",
+                related_material_slug="trial-rules",
+            ),
+            BlueprintWanted(
+                "injured-favorite",
+                "Injured favorite with a missing supply tag",
+                "plot_role",
+                "A high-ranked candidate whose injury exposes the tampered selection.",
+                "Attach this to infirmary, depot, and council scenes.",
+                related_material_slug="tampered-selection",
+            ),
+            BlueprintWanted(
+                "black-market-supplier",
+                "Black-market supplier inside the depot",
+                "connection",
+                "Someone moving gear through the academy before scarcity becomes scandal.",
+                "Useful for bargains, favors, and practical moral compromise.",
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="gaslight-ward",
+        name="Gaslight Ward",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "ada-vale",
+                "Ada Vale",
+                "Investigator whose murder inquiry keeps crossing society drawing rooms.",
+                "Ask softly. Listen for the lie.",
+            ),
+            BlueprintCharacter(
+                "lucien-rowe",
+                "Lucien Rowe",
+                "Crime-family heir trying to make respectability pay better than fear.",
+                "Bloodlines are balance sheets.",
+            ),
+            BlueprintCharacter(
+                "mira-bell",
+                "Mira Bell",
+                "Medium with clients in every class and debts in every shadow.",
+                "The dead are not discreet.",
+            ),
+            BlueprintCharacter(
+                "edwin-frost",
+                "Edwin Frost",
+                "Newspaper editor who knows the city sells papers faster when it panics.",
+                "Ink before alibi.",
+            ),
+            BlueprintCharacter(
+                "celeste-ward",
+                "Celeste Ward",
+                "Society hostess whose season rooms hide reform money and occult favors.",
+                "Manners are a locked drawer.",
+            ),
+            BlueprintCharacter(
+                "jonas-pike",
+                "Jonas Pike",
+                "Factory organizer with a witness nobody important wants heard.",
+                "Respectability rarely pays rent.",
+            ),
+            BlueprintCharacter(
+                "thea-morne",
+                "Thea Morne",
+                "Stage performer whose patron vanished after the impossible murder.",
+                "Curtain calls are evidence.",
+            ),
+            BlueprintCharacter(
+                "dr-silas-gray",
+                "Dr. Silas Gray",
+                "Surgeon asked to sign a death certificate that anatomy refuses.",
+                "The body objects.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "newspaper-office",
+                "Newspaper Office",
+                "location",
+                "Hot type, anonymous letters, libel threats, and reporters who work past midnight.",
+                "Press scenes, public panic, sources, editorials, and clue circulation.",
+            ),
+            BlueprintBoard(
+                "police-court",
+                "Police Court",
+                "location",
+                "Witness benches, corrupt clerks, public charges, and private bargains.",
+                "Investigation, testimony, arrests, and institutional pressure.",
+            ),
+            BlueprintBoard(
+                "season-rooms",
+                "Season Rooms",
+                "location",
+                "Etiquette, introductions, whispers, and old debts under gaslight.",
+                "Society scenes, class pressure, patronage, and public respectability.",
+            ),
+            BlueprintBoard(
+                "dock-factory",
+                "Docks And Factory",
+                "location",
+                "Fog, shift bells, union talk, smuggling, and people society only notices when useful.",
+                "Worker scenes, crime pressure, witnesses, and reform politics.",
+            ),
+            BlueprintBoard(
+                "occult-society",
+                "Occult Society",
+                "location",
+                "Velvet curtains, sealed ledgers, borrowed names, and bargains older than the city.",
+                "Mediums, occult debt, rituals, and hidden institutions.",
+            ),
+            BlueprintBoard(
+                "ward-room",
+                "Ward Room",
+                "desk",
+                "Inquiry leads, class ties, occult rules, wanted hooks, and period-pressure plotting.",
+                "A planning lane for historical scenes without losing privacy or safety boundaries.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Respectability And Rot",
+                "premise",
+                "Gaslight Ward is a period city where class, crime, reform, newspapers, etiquette, and occult societies collide.",
+                "The city runs on public respectability and private bargains. Every institution has a front room and a cellar: society houses, newspapers, police courts, factories, theaters, hospitals, and occult circles all trade favors while pretending not to know one another.",
+            ),
+            BlueprintMaterial(
+                "impossible-murder",
+                "Current Chapter: Impossible Murder",
+                "event",
+                "A society-season debut is interrupted by a murder that happened in a locked room full of witnesses.",
+                "Opening scenes can begin with witness statements, newspaper panic, society damage control, factory rumors, occult debts, medical contradictions, or police pressure. The mystery is playable because every class saw a different version of the room.",
+            ),
+            BlueprintMaterial(
+                "city-institutions",
+                "City Institutions",
+                "guide",
+                "The Ward is built from institutions that create scene pressure.",
+                "Use newspapers, police courts, factories, theaters, hospitals, season rooms, crime families, and occult societies as playable systems with public rules and private exceptions.",
+            ),
+            BlueprintMaterial(
+                "occult-rules",
+                "Occult Rules",
+                "guide",
+                "Occult power works through debt, witness, ritual, and consequence.",
+                "Keep magic costly and social. Major possession, resurrection, mind control, or public supernatural proof requires staff coordination.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name class pressure, public respectability, and one secret bargain.",
+                "Useful entries include investigators, socialites, workers, criminals, doctors, reporters, mediums, reformers, performers, servants, and people trapped between institutions.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "masked-patron",
+                "Masked patron from the season rooms",
+                "plot_role",
+                "A patron tied to the impossible murder and the occult society ledger.",
+                "Good for society scenes, blackmail, and class pressure.",
+                related_material_slug="impossible-murder",
+            ),
+            BlueprintWanted(
+                "police-informant",
+                "Police informant on the docks",
+                "connection",
+                "A witness who knows enough to be useful and frightened.",
+                "This hook pulls factory, crime, and police-court scenes together.",
+                related_material_slug="city-institutions",
+            ),
+            BlueprintWanted(
+                "rival-medium",
+                "Rival medium with the wrong ghost",
+                "rival",
+                "An occult rival whose testimony can ruin Mira or solve the case.",
+                "Use for seances, fraud accusations, debt, and supernatural ambiguity.",
+                related_material_slug="occult-rules",
+            ),
+            BlueprintWanted(
+                "factory-witness",
+                "Factory witness at the debut",
+                "event_role",
+                "A worker who should not have been in the locked room but saw the key moment.",
+                "Ideal for class pressure, protection, press, and reform scenes.",
+                related_material_slug="impossible-murder",
+            ),
+            BlueprintWanted(
+                "disgraced-fiance",
+                "Disgraced fiance with a broken alibi",
+                "relationship",
+                "A social tie whose public fall makes the murder personal.",
+                "Romance optional; reputation damage required.",
+                related_material_slug="premise",
+            ),
+        ),
+    ),
+    ProgramBlueprint(
+        slug="wayfarer-station",
+        name="Wayfarer Station",
+        role_slug="director",
+        role_name="Director",
+        is_admin=True,
+        characters=(
+            BlueprintCharacter(
+                "mara-voss",
+                "Mara Voss",
+                "Station marshal enforcing laws nobody funded and everyone needs.",
+                "Authority is a thin wall.",
+            ),
+            BlueprintCharacter(
+                "jace-ren",
+                "Jace Ren",
+                "Smuggler with a cargo hold full of favors and one missing convoy marker.",
+                "Every route has a ghost.",
+            ),
+            BlueprintCharacter(
+                "sol-kade",
+                "Sol Kade",
+                "Engineer keeping life support honest while admin sells optimism.",
+                "Bolts before speeches.",
+            ),
+            BlueprintCharacter(
+                "nima-cho",
+                "Nima Cho",
+                "Medic triaging scarcity, radiation sickness, and people who lie about exposure.",
+                "Vitals are negotiations.",
+            ),
+            BlueprintCharacter(
+                "oren-hale",
+                "Oren Hale",
+                "Corporate envoy sent to audit losses before rescue costs money.",
+                "Accountability travels first class.",
+            ),
+            BlueprintCharacter(
+                "talia-ix",
+                "Talia IX",
+                "Archivist born station-side who knows which levels were erased from maps.",
+                "Memory needs maintenance.",
+            ),
+            BlueprintCharacter(
+                "vesper-lune",
+                "Vesper Lune",
+                "Performer whose market-deck stage hears every faction's private version.",
+                "Songs travel farther than orders.",
+            ),
+            BlueprintCharacter(
+                "rio-vale",
+                "Rio Vale",
+                "Quartermaster rationing air filters, medicine, and the truth.",
+                "Supply is a language.",
+            ),
+        ),
+        boards=(
+            BlueprintBoard(
+                "docking-ring",
+                "Docking Ring",
+                "location",
+                "Airlocks, customs booths, missing convoy flags, and ships that arrive too quiet.",
+                "Arrival scenes, smuggling, rescue pressure, and frontier law.",
+            ),
+            BlueprintBoard(
+                "med-bay",
+                "Med Bay",
+                "location",
+                "Crowded cots, exposure monitors, rationed medicine, and secrets under gloves.",
+                "Medical pressure, triage, quarantine, and vulnerable alliances.",
+            ),
+            BlueprintBoard(
+                "market-deck",
+                "Market Deck",
+                "location",
+                "Stalls, performers, repair brokers, debt holders, and rumors traded by the cup.",
+                "Social scenes, barter, found family, and public pressure.",
+            ),
+            BlueprintBoard(
+                "admin-control",
+                "Admin Control",
+                "location",
+                "Status boards, supply math, corporate calls, and people editing the crisis language.",
+                "Authority, logistics, audits, public statements, and station politics.",
+            ),
+            BlueprintBoard(
+                "archive-level",
+                "Archive Level",
+                "location",
+                "Old maps, sealed memory banks, forbidden levels, and files that know the signal.",
+                "Research, history, hidden routes, and strange-frontier mysteries.",
+            ),
+            BlueprintBoard(
+                "chart-table",
+                "Chart Table",
+                "desk",
+                "Station roles, scarcity ledgers, signal leads, wanted hooks, and frontier plotting.",
+                "A planning lane for survival, law, and isolated-community pressure.",
+            ),
+        ),
+        materials=(
+            BlueprintMaterial(
+                "premise",
+                "Premise: Edge Of The Chart",
+                "premise",
+                "Wayfarer Station survives at the edge of known space, where fragile law, limited supplies, and contested memory shape every bargain.",
+                "The station is too remote to be comfortable and too useful to abandon. Crew, smugglers, medics, engineers, envoys, archivists, performers, quartermasters, station-born guides, and travelers all depend on systems that were never meant to hold this many secrets.",
+            ),
+            BlueprintMaterial(
+                "missing-convoy",
+                "Current Chapter: Missing Convoy",
+                "event",
+                "A supply convoy vanishes after transmitting an encrypted signal from outside the chart.",
+                "The opening chapter brings docking delays, ration math, corporate audits, rescue arguments, archived maps, medical exposure risks, and one signal that may be a distress call or an invitation.",
+            ),
+            BlueprintMaterial(
+                "station-law",
+                "Station Law",
+                "guide",
+                "Law on Wayfarer is practical, fragile, and always under supply pressure.",
+                "Use customs, ration rules, quarantine orders, salvage claims, debt contracts, and marshal warrants as scene starters. Authority should create choices, not shut scenes down.",
+            ),
+            BlueprintMaterial(
+                "scarcity-ledger",
+                "Scarcity Ledger",
+                "guide",
+                "Supplies are a story engine, not bookkeeping homework.",
+                "Air filters, medicine, coolant, fuel, data access, berth space, and safe passage can all create relationships, favors, resentment, and public choices.",
+            ),
+            BlueprintMaterial(
+                "application-guide",
+                "Application Guide",
+                "application",
+                "Applications should name a station role, one scarcity pressure, and a reason the signal matters.",
+                "Useful entries include crew, smugglers, medics, engineers, corporate envoys, archivists, performers, quartermasters, station-born locals, debt holders, and convoy survivors.",
+            ),
+        ),
+        wanted=(
+            BlueprintWanted(
+                "debt-holder",
+                "Debt holder with an air-filter contract",
+                "faction_need",
+                "Someone whose legal claim becomes dangerous when supplies run low.",
+                "Use for station law, market-deck scenes, and moral compromise.",
+                related_material_slug="scarcity-ledger",
+            ),
+            BlueprintWanted(
+                "corporate-auditor",
+                "Corporate auditor who arrived before rescue",
+                "event_role",
+                "An envoy measuring losses while people still hope for survivors.",
+                "Good for admin-control pressure, public anger, and accountability scenes.",
+                related_material_slug="missing-convoy",
+            ),
+            BlueprintWanted(
+                "missing-pilot",
+                "Missing pilot's partner on the docking ring",
+                "relationship",
+                "A personal tie to the convoy that turns logistics into grief.",
+                "Use for rescue pressure, marshal scenes, and impossible choices.",
+                related_material_slug="missing-convoy",
+            ),
+            BlueprintWanted(
+                "forbidden-level-witness",
+                "Forbidden-level witness",
+                "plot_role",
+                "A station-born face who saw the signal route on a sealed archive map.",
+                "This hook connects archive, market, admin, and signal mystery scenes.",
+                related_material_slug="premise",
+            ),
+            BlueprintWanted(
+                "alien-signal-translator",
+                "Signal translator with an old war debt",
+                "connection",
+                "A specialist who can read part of the transmission but not safely alone.",
+                "Good for research scenes, trust, pressure, and frontier weirdness.",
+                related_material_slug="missing-convoy",
+            ),
+        ),
+    ),
 )
 
 
@@ -1455,6 +3615,247 @@ STUDIO_CLAIM_TYPES: dict[str, tuple[ClaimTypeSeed, ...]] = {
             "business", "Business Claim", "occupation", "Shop, service, civic office, or workplace."
         ),
     ),
+    "harbor-society": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "family",
+            "Family Claim",
+            "relationship",
+            "Old family, newcomer tie, or married-in pressure.",
+        ),
+        ClaimTypeSeed(
+            "club_role",
+            "Club Role Claim",
+            "access",
+            "Member, staff, guest, donor, or applicant posture.",
+        ),
+        ClaimTypeSeed(
+            "business",
+            "Business Claim",
+            "occupation",
+            "Public workplace, civic office, or service lane.",
+        ),
+    ),
+    "signal-creek": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "town_tie",
+            "Town Tie Claim",
+            "relationship",
+            "Local, returnee, outsider, official, or researcher lane.",
+        ),
+        ClaimTypeSeed(
+            "belief",
+            "Belief Claim",
+            "faction",
+            "Skeptic, believer, touched, coverup, or undecided posture.",
+        ),
+        ClaimTypeSeed(
+            "phenomenon",
+            "Phenomenon Claim",
+            "power",
+            "Optional strange effect, symptom, or memory anomaly.",
+        ),
+    ),
+    "nocturne-row": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "species",
+            "Species Claim",
+            "species",
+            "Human, vampire, witch, werewolf, hunter, or other approved lane.",
+        ),
+        ClaimTypeSeed(
+            "faction",
+            "Faction Claim",
+            "faction",
+            "Council, coven, pack, hunter cell, press, hospital, or unaffiliated.",
+        ),
+        ClaimTypeSeed(
+            "boundary",
+            "Boundary Claim",
+            "content",
+            "Power, consent, or mature-content boundary directors should honor.",
+        ),
+    ),
+    "crownfall": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "house",
+            "House Claim",
+            "faction",
+            "Noble house, temple, archive, border, merchant, or rebel tie.",
+        ),
+        ClaimTypeSeed(
+            "rank",
+            "Rank Claim",
+            "rank",
+            "Public office, military rank, court role, or social station.",
+        ),
+        ClaimTypeSeed(
+            "magic",
+            "Magic Claim",
+            "power",
+            "Optional magical discipline, omen tie, or anti-magic posture.",
+        ),
+    ),
+    "afterlight-accord": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "role_archetype",
+            "Role Archetype Claim",
+            "role",
+            "Heir, exile, monster, archivist, reformer, runner, prophet, or traitor lane.",
+        ),
+        ClaimTypeSeed(
+            "faction",
+            "Faction Claim",
+            "faction",
+            "Accord council, academy, archive, rebels, gate runners, or unaffiliated.",
+        ),
+        ClaimTypeSeed(
+            "branch_wound",
+            "Branch Wound Claim",
+            "relationship",
+            "The old-ending pressure this face carries into play.",
+        ),
+    ),
+    "brightline": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "career",
+            "Career Claim",
+            "occupation",
+            "Performer, fixer, patron, press, producer, venue, legal, or crew lane.",
+        ),
+        ClaimTypeSeed(
+            "image", "Image Claim", "reputation", "How the public thinks they know this face."
+        ),
+        ClaimTypeSeed(
+            "industry_tie",
+            "Industry Tie Claim",
+            "relationship",
+            "Studio, club, magazine, charity, court, or patron connection.",
+        ),
+    ),
+    "emberhouse": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed("house", "House Claim", "faction", "Academy house, clan, or sponsor lane."),
+        ClaimTypeSeed(
+            "rank", "Rank Claim", "rank", "Candidate rank, instructor role, or council authority."
+        ),
+        ClaimTypeSeed(
+            "trial_boundary",
+            "Trial Boundary Claim",
+            "content",
+            "Safety, consent, or pressure limit directors should honor.",
+        ),
+    ),
+    "gaslight-ward": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "class_posture",
+            "Class Posture Claim",
+            "class",
+            "Society, worker, criminal, professional, or liminal status.",
+        ),
+        ClaimTypeSeed(
+            "institution",
+            "Institution Claim",
+            "faction",
+            "Newspaper, police court, factory, society, hospital, or occult tie.",
+        ),
+        ClaimTypeSeed(
+            "secret_bargain",
+            "Secret Bargain Claim",
+            "relationship",
+            "Occult debt, patronage, blackmail, or private obligation.",
+        ),
+    ),
+    "wayfarer-station": (
+        ClaimTypeSeed(
+            "face",
+            "Face Claim",
+            "face",
+            "Public visual reference.",
+            is_required=True,
+            is_exclusive=True,
+        ),
+        ClaimTypeSeed(
+            "station_role",
+            "Station Role Claim",
+            "occupation",
+            "Crew, smuggler, medic, engineer, envoy, archivist, performer, or quartermaster.",
+        ),
+        ClaimTypeSeed(
+            "scarcity",
+            "Scarcity Claim",
+            "resource",
+            "Supply, access, debt, route, or exposure pressure.",
+        ),
+        ClaimTypeSeed(
+            "signal_tie",
+            "Signal Tie Claim",
+            "mystery",
+            "How this face touches the missing convoy or encrypted signal.",
+        ),
+    ),
 }
 
 
@@ -1577,6 +3978,247 @@ STUDIO_APPLICATION_FIELDS: dict[str, tuple[ApplicationFieldSeed, ...]] = {
             "A workplace, shop, church committee, volunteer role, or office.",
             placeholder="Diner owner, council aide, mechanic",
             maps_to_claim_type_slug="business",
+        ),
+    ),
+    "harbor-society": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "family_claim",
+            "Family or town tie",
+            "text",
+            "Where the town places this face socially.",
+            placeholder="Old family, married-in, newcomer, returnee",
+            maps_to_claim_type_slug="family",
+        ),
+        ApplicationFieldSeed(
+            "club_role_claim",
+            "Club posture",
+            "select",
+            "How they touch the Shoreline Club and Founders Gala.",
+            options=("Member", "Staff", "Guest", "Donor", "Applicant", "Critic"),
+            maps_to_claim_type_slug="club_role",
+        ),
+    ),
+    "signal-creek": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "town_tie_claim",
+            "Town tie",
+            "select",
+            "How this face enters the mystery.",
+            options=("Local", "Returnee", "Researcher", "Official", "Skeptic", "Believer"),
+            maps_to_claim_type_slug="town_tie",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "belief_claim",
+            "Belief posture",
+            "text",
+            "What they think is happening before the signal proves otherwise.",
+            maps_to_claim_type_slug="belief",
+        ),
+    ),
+    "nocturne-row": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "species_claim",
+            "Species or human lane",
+            "select",
+            "The public roster lane directors should review.",
+            options=("Human", "Vampire", "Witch", "Werewolf", "Hunter", "Other approved"),
+            maps_to_claim_type_slug="species",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "faction_claim",
+            "Faction pressure",
+            "text",
+            "Council, coven, pack, hunter cell, press, hospital, or unaffiliated pressure.",
+            maps_to_claim_type_slug="faction",
+        ),
+    ),
+    "crownfall": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "house_claim",
+            "House or faction",
+            "text",
+            "The institution that creates immediate pressure for this face.",
+            maps_to_claim_type_slug="house",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "rank_claim",
+            "Rank or role",
+            "text",
+            "Their public role in the succession crisis.",
+            maps_to_claim_type_slug="rank",
+        ),
+    ),
+    "afterlight-accord": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "role_archetype_claim",
+            "Role archetype",
+            "select",
+            "The inherited story pressure this face translates into original play.",
+            options=(
+                "Heir",
+                "Exile",
+                "Converted monster",
+                "Archivist",
+                "Reformer",
+                "Runner",
+                "Prophet",
+                "Traitor",
+            ),
+            maps_to_claim_type_slug="role_archetype",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "faction_claim",
+            "Faction pressure",
+            "text",
+            "Accord, academy, archive, rebel, gate, or unaffiliated pressure.",
+            maps_to_claim_type_slug="faction",
+        ),
+    ),
+    "brightline": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "career_claim",
+            "Career lane",
+            "text",
+            "How the industry knows this face.",
+            placeholder="Performer, publicist, producer, critic, lawyer, assistant",
+            maps_to_claim_type_slug="career",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "image_claim",
+            "Public image",
+            "text",
+            "The story people think they know about this face.",
+            maps_to_claim_type_slug="image",
+        ),
+    ),
+    "emberhouse": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "house_claim",
+            "House or sponsor lane",
+            "text",
+            "Where the academy places this face before the trial starts.",
+            maps_to_claim_type_slug="house",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "trial_boundary_claim",
+            "Trial boundary",
+            "text",
+            "A safety, consent, or pressure note directors should honor.",
+            maps_to_claim_type_slug="trial_boundary",
+        ),
+    ),
+    "gaslight-ward": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "class_posture_claim",
+            "Class posture",
+            "select",
+            "The public respectability lane this face moves through.",
+            options=("Society", "Worker", "Criminal", "Professional", "Occult", "Liminal"),
+            maps_to_claim_type_slug="class_posture",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "institution_claim",
+            "Institution tie",
+            "text",
+            "Newspaper, court, factory, society, hospital, occult, or theater pressure.",
+            maps_to_claim_type_slug="institution",
+        ),
+    ),
+    "wayfarer-station": (
+        ApplicationFieldSeed(
+            "face_claim",
+            "Face claim",
+            "text",
+            "The visual reference you want directors to reserve.",
+            maps_to_claim_type_slug="face",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "station_role_claim",
+            "Station role",
+            "text",
+            "The work, access, or public lane that makes this face necessary.",
+            placeholder="Marshal, smuggler, engineer, medic, envoy, archivist",
+            maps_to_claim_type_slug="station_role",
+            is_required=True,
+        ),
+        ApplicationFieldSeed(
+            "scarcity_claim",
+            "Scarcity pressure",
+            "text",
+            "The supply, access, debt, route, or exposure issue touching this face.",
+            maps_to_claim_type_slug="scarcity",
         ),
     ),
 }
@@ -2368,6 +5010,11 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     _assign_board_facets(repo, community.id, archive.id, facets, ["history"])
     _assign_board_facets(repo, community.id, staff_room.id, facets, ["staff"])
     _seed_materials(repo, community.id, facets)
+    _seed_discovery_profile(
+        repo,
+        community.id,
+        DISCOVERY_PROFILE_SEEDS.get("x-men-apocalypse"),
+    )
     _seed_realm_interactions(repo, community.id, DEFAULT_REALM_INTERACTIONS)
     _seed_intake_claims(
         repo,
@@ -3327,6 +5974,7 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             claim_types=STUDIO_CLAIM_TYPES.get(program.slug, ()),
             application_fields=STUDIO_APPLICATION_FIELDS.get(program.slug, ()),
         )
+        _seed_discovery_profile(repo, community.id, DISCOVERY_PROFILE_SEEDS.get(program.slug))
 
 
 def _ensure_studio_program_community(
@@ -3536,6 +6184,55 @@ def _ensure_material(
             sort_order=sort_order,
             is_featured=is_featured,
         )
+
+
+def _seed_discovery_profile(
+    repo: ForumRepository,
+    community_id: int,
+    seed: DiscoveryProfileSeed | None,
+) -> None:
+    if seed is None:
+        return
+    featured_event_material_id = None
+    if seed.featured_event_material_slug is not None:
+        try:
+            featured_event_material_id = repo.get_material_by_slug(
+                community_id,
+                seed.featured_event_material_slug,
+            ).id
+        except LookupError:
+            featured_event_material_id = None
+    repo.upsert_discovery_profile(
+        community_id,
+        premise_archetype=seed.premise_archetype,
+        play_engine=seed.play_engine,
+        lore_aperture=seed.lore_aperture,
+        access_model=seed.access_model,
+        application_model=seed.application_model,
+        age_rating=seed.age_rating,
+        content_rating=seed.content_rating,
+        activity_pace=seed.activity_pace,
+        activity_expectation=seed.activity_expectation,
+        forum_adjunct=seed.forum_adjunct,
+        roster_posture=seed.roster_posture,
+        catalog_pitch=seed.catalog_pitch,
+        onboarding_pitch=seed.onboarding_pitch,
+        staff_pick_label=seed.staff_pick_label,
+        featured_event_material_id=featured_event_material_id,
+    )
+    repo.replace_discovery_tags(
+        community_id,
+        tuple(
+            DiscoveryTagInput(
+                tag.tag_type,
+                tag.tag_key,
+                tag.label,
+                search_text=tag.search_text,
+                sort_order=tag.sort_order,
+            )
+            for tag in seed.tags
+        ),
+    )
 
 
 def _seed_realm_interactions(

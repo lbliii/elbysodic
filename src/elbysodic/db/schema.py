@@ -112,6 +112,46 @@ CREATE TABLE IF NOT EXISTS community_invitations (
     revoked_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS community_discovery_profiles (
+    community_id INTEGER PRIMARY KEY REFERENCES communities(id) ON DELETE CASCADE,
+    premise_archetype TEXT NOT NULL DEFAULT '',
+    play_engine TEXT NOT NULL DEFAULT '',
+    lore_aperture TEXT NOT NULL DEFAULT '',
+    access_model TEXT NOT NULL DEFAULT '',
+    application_model TEXT NOT NULL DEFAULT '',
+    age_rating TEXT NOT NULL DEFAULT '',
+    content_rating TEXT NOT NULL DEFAULT '',
+    activity_pace TEXT NOT NULL DEFAULT '',
+    activity_expectation TEXT NOT NULL DEFAULT '',
+    forum_adjunct TEXT NOT NULL DEFAULT '',
+    roster_posture TEXT NOT NULL DEFAULT '',
+    catalog_pitch TEXT NOT NULL DEFAULT '',
+    onboarding_pitch TEXT NOT NULL DEFAULT '',
+    staff_pick_label TEXT NOT NULL DEFAULT '',
+    featured_event_material_id INTEGER REFERENCES materials(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS community_discovery_tags (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    tag_type TEXT NOT NULL,
+    tag_key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    search_text TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, tag_type, tag_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_discovery_tags_community
+ON community_discovery_tags(community_id, tag_type, sort_order, id);
+
+CREATE INDEX IF NOT EXISTS idx_community_discovery_tags_key
+ON community_discovery_tags(community_id, tag_key);
+
 CREATE TABLE IF NOT EXISTS characters (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
