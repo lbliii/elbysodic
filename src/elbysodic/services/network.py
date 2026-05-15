@@ -11,6 +11,8 @@ from elbysodic.domain.models import (
     Character,
     ClaimType,
     Community,
+    CommunityDiscoveryProfile,
+    CommunityDiscoveryTag,
     CommunityMembership,
     CommunityTheme,
     Facet,
@@ -73,6 +75,16 @@ class NetworkCatalogRepository(
     def list_claim_types(self, community_id: int) -> list[ClaimType]: ...
 
     def list_communities(self) -> list[Community]: ...
+
+    def list_discovery_profiles_for_communities(
+        self,
+        community_ids: Sequence[int],
+    ) -> dict[int, CommunityDiscoveryProfile]: ...
+
+    def list_discovery_tags_for_communities(
+        self,
+        community_ids: Sequence[int],
+    ) -> dict[int, list[CommunityDiscoveryTag]]: ...
 
     def list_community_characters(self, community_id: int) -> list[Character]: ...
 
@@ -277,9 +289,17 @@ def network_home(cards: list[PublicCatalogCard], viewer: ForumView | None) -> Ne
     return NetworkHomeView(
         featured=cards[0] if cards else None,
         slices=[
-            NetworkSlice("Trending realms", "/network", cards),
-            NetworkSlice("Superhero crisis", "/network?q=superhero", cards),
-            NetworkSlice("Magic, survival, and small towns", "/network?q=magic", cards),
+            NetworkSlice("Premise engines", "/network", cards),
+            NetworkSlice(
+                "Small-town social webs",
+                "/network?q=small-town-social-web",
+                _cards_matching_discovery(cards, "small-town-social-web"),
+            ),
+            NetworkSlice(
+                "Mystery and current chapters",
+                "/network?q=current-chapter",
+                _cards_matching_discovery(cards, "current-chapter"),
+            ),
         ],
         browse_facets=network_browse_facets(),
         return_path=return_path,
@@ -295,8 +315,19 @@ def network_explore(cards: list[PublicCatalogCard], query: str = "") -> NetworkE
     )
 
 
-def public_catalog_cards(directory: StudioNetworkDirectory) -> list[PublicCatalogCard]:
-    return [public_catalog_card_from_program(program) for program in directory.programs]
+def public_catalog_cards(repo: NetworkCatalogRepository) -> list[PublicCatalogCard]:
+    directory = public_studio_network(repo)
+    community_ids = [program.community.id for program in directory.programs]
+    profiles_by_community = repo.list_discovery_profiles_for_communities(community_ids)
+    tags_by_community = repo.list_discovery_tags_for_communities(community_ids)
+    return [
+        public_catalog_card_from_program(
+            program,
+            profiles_by_community.get(program.community.id),
+            tuple(tags_by_community.get(program.community.id, ())),
+        )
+        for program in directory.programs
+    ]
 
 
 def public_studio_program(
@@ -370,6 +401,16 @@ def search_public_catalog(
     return [card for card in cards if normalized_query in _public_catalog_search_text(card)]
 
 
+def _cards_matching_discovery(
+    cards: list[PublicCatalogCard],
+    query: str,
+) -> list[PublicCatalogCard]:
+    normalized_query = query.strip().lower()
+    if not normalized_query:
+        return list(cards)
+    return [card for card in cards if normalized_query in _public_catalog_search_text(card)]
+
+
 def is_public_network_ready(
     repo: NetworkCatalogRepository,
     community: Community,
@@ -435,11 +476,17 @@ def first_material_summary_from_batch(
     return None
 
 
-def public_catalog_card_from_program(program: StudioNetworkProgramView) -> PublicCatalogCard:
+def public_catalog_card_from_program(
+    program: StudioNetworkProgramView,
+    discovery_profile: CommunityDiscoveryProfile | None = None,
+    discovery_tags: tuple[CommunityDiscoveryTag, ...] = (),
+) -> PublicCatalogCard:
     return PublicCatalogCard(
         community=program.community,
         premise=program.premise,
         current_event=program.current_event,
+        discovery_profile=discovery_profile,
+        discovery_tags=discovery_tags,
         roster_count=program.roster_count,
         open_wanted_count=program.open_wanted_count,
         application_material_count=program.application_material_count,
@@ -450,44 +497,43 @@ def public_catalog_card_from_program(program: StudioNetworkProgramView) -> Publi
 
 def network_browse_facets() -> list[NetworkBrowseFacet]:
     return [
-        NetworkBrowseFacet("superhero crisis", "/network?q=superhero", "hot"),
-        NetworkBrowseFacet("magic school", "/network?q=magic"),
-        NetworkBrowseFacet("survival sci-fi", "/network?q=survival"),
-        NetworkBrowseFacet("small town", "/network?q=town"),
-        NetworkBrowseFacet("urban real life", "/network?q=nyc"),
-        NetworkBrowseFacet("wanted hooks", "/network?q=wanted", "hot"),
-        NetworkBrowseFacet("current events", "/network?q=event"),
-        NetworkBrowseFacet("plotting rooms", "/network?q=plotting"),
-        NetworkBrowseFacet("claims", "/network?q=claims"),
-        NetworkBrowseFacet("reserves", "/network?q=reserves"),
+        NetworkBrowseFacet("small-town social web", "/network?q=small-town-social-web", "hot"),
+        NetworkBrowseFacet("weird-town mystery", "/network?q=weird-town-mystery"),
+        NetworkBrowseFacet("urban supernatural", "/network?q=urban-supernatural"),
+        NetworkBrowseFacet("court politics", "/network?q=court-and-faction"),
+        NetworkBrowseFacet("fame and industry", "/network?q=fame-industry"),
+        NetworkBrowseFacet("current chapters", "/network?q=current-chapter", "hot"),
+        NetworkBrowseFacet("open wanted hooks", "/network?q=wanted"),
+        NetworkBrowseFacet("relaxed activity", "/network?q=relaxed"),
+        NetworkBrowseFacet("forum-first", "/network?q=forum-first"),
     ]
 
 
 def network_explore_lanes() -> list[NetworkExploreLane]:
     return [
         NetworkExploreLane(
-            "Start with a wanted hook",
-            "Open roles, rivals, factions, and face requests.",
-            "/network?q=wanted",
-            "casting",
+            "Start with a premise",
+            "Find the story engine before choosing a face.",
+            "/network",
+            "premise",
         ),
         NetworkExploreLane(
-            "Start with a mood",
-            "Magic, crisis, survival, town, or urban play.",
-            "/network?q=magic",
-            "tags",
+            "Start with a current chapter",
+            "World-state pressure and scenes already moving.",
+            "/network?q=current-chapter",
+            "story",
         ),
         NetworkExploreLane(
-            "Start with an active roster",
-            "Find realms with visible faces already in motion.",
+            "Start with roster energy",
+            "Find realms with visible faces, canons, and claims in motion.",
             "/network?q=faces",
             "roster",
         ),
         NetworkExploreLane(
-            "Start with current events",
-            "World-state pressure and scenes already moving.",
-            "/network?q=event",
-            "story",
+            "Start with a wanted hook",
+            "Open roles, rivals, factions, and face requests.",
+            "/network?q=wanted",
+            "wanted",
         ),
     ]
 
@@ -548,17 +594,29 @@ def _public_catalog_search_text(card: PublicCatalogCard) -> str:
     if card.application_material_count:
         catalog_keywords.append("application applications first face")
     if card.current_event:
-        catalog_keywords.append("event current event")
-    if "hp" in card.community.slug or "magic" in card.community.name.lower():
-        catalog_keywords.append("magic school fantasy")
-    if "jurassic" in card.community.slug:
-        catalog_keywords.append("survival sci-fi science island")
-    if "x-men" in card.community.slug or "mutant" in card.community.name.lower():
-        catalog_keywords.append("superhero crisis mutants")
-    if "small-town" in card.community.slug:
-        catalog_keywords.append("small town found family slow burn")
-    if "nyc" in card.community.slug:
-        catalog_keywords.append("urban real life city")
+        catalog_keywords.append("event current event current chapter")
+    profile = card.discovery_profile
+    if profile is not None:
+        catalog_keywords.extend(
+            [
+                profile.premise_archetype,
+                profile.play_engine,
+                profile.lore_aperture,
+                profile.access_model,
+                profile.application_model,
+                profile.age_rating,
+                profile.content_rating,
+                profile.activity_pace,
+                profile.activity_expectation,
+                profile.forum_adjunct,
+                profile.roster_posture,
+                profile.catalog_pitch,
+                profile.onboarding_pitch,
+                profile.staff_pick_label,
+            ]
+        )
+    for tag in card.discovery_tags:
+        catalog_keywords.extend([tag.tag_type, tag.tag_key, tag.label, tag.search_text])
     haystack_parts = [
         card.community.name,
         card.premise.material.title if card.premise else "",

@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 import pytest
 from chirp.testing import TestClient
 
+from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.services import create_services
 from elbysodic.services.network import search_studio_network
 from elbysodic.web import create_app
@@ -459,13 +460,14 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
     assert home.return_path.desk_href.startswith("/c/")
     assert explore.results
     assert {facet.label for facet in explore.browse_facets} >= {
-        "wanted hooks",
-        "superhero crisis",
-        "magic school",
+        "open wanted hooks",
+        "small-town social web",
+        "weird-town mystery",
     }
     assert {lane.title for lane in explore.relationship_lanes} >= {
+        "Start with a premise",
         "Start with a wanted hook",
-        "Start with current events",
+        "Start with a current chapter",
     }
 
     for card in [home.featured, *explore.results]:
@@ -476,6 +478,39 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         assert not hasattr(card, "unread_notification_count")
         assert not hasattr(card, "plotting_room_count")
         assert card.invite_posture_label == "Public preview"
+
+
+def test_public_network_search_uses_explicit_discovery_metadata() -> None:
+    services = create_services(path=":memory:")
+    community = services.repo.get_community_by_slug("rl-small-town")
+    services.repo.upsert_discovery_profile(
+        community.id,
+        premise_archetype="coastal-status-town",
+        play_engine="character-driven",
+        lore_aperture="low-lore-real-life",
+        access_model="public-preview",
+        application_model="profile-app",
+        activity_pace="relaxed",
+        catalog_pitch="A coastal social web around rituals, status, and returning faces.",
+    )
+    services.repo.replace_discovery_tags(
+        community.id,
+        (
+            DiscoveryTagInput(
+                "premise",
+                "coastal-status",
+                "Coastal status town",
+                search_text="club gossip social ladder",
+            ),
+        ),
+    )
+
+    results = services.network_explore("coastal-status").results
+
+    assert [card.community.slug for card in results] == ["rl-small-town"]
+    assert results[0].discovery_profile is not None
+    assert results[0].discovery_profile.premise_archetype == "coastal-status-town"
+    assert [tag.tag_key for tag in results[0].discovery_tags] == ["coastal-status"]
 
 
 def test_production_login_preserves_tenant_prefixed_destination(monkeypatch) -> None:

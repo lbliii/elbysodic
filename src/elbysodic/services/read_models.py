@@ -19,6 +19,8 @@ from elbysodic.domain.models import (
     CharacterReserve,
     ClaimType,
     Community,
+    CommunityDiscoveryProfile,
+    CommunityDiscoveryTag,
     CommunityMembership,
     Facet,
     FacetGroup,
@@ -1790,6 +1792,8 @@ class PublicCatalogCard:
     community: Community
     premise: MaterialSummary | None
     current_event: MaterialSummary | None
+    discovery_profile: CommunityDiscoveryProfile | None
+    discovery_tags: tuple[CommunityDiscoveryTag, ...]
     roster_count: int
     open_wanted_count: int
     application_material_count: int
