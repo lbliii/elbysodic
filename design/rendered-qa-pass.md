@@ -245,3 +245,34 @@ Deferred:
   relationships are explicit outside plotting-room source data.
 - Canon/source grounding remains deferred until Continuity Graph provenance and
   review workflows exist.
+
+## Premise Discovery QA
+
+Date: 2026-05-15
+
+Scope: route and browser-profile proof for the public premise discovery catalog
+and director-only Studio discovery editor.
+
+Verified:
+
+- `/network` renders public discovery filters with premise, play engine, lore
+  aperture, ways in, and pace/touchpoint groups.
+- `/network?q=weird-town mystery` finds Signal Creek without exposing active
+  face, writer queue, private room, or staff state.
+- Original-premise director personas for Harbor Society, Signal Creek, and
+  Wayfarer Station can open `/studio/discovery` and see their own premise
+  archetype labels.
+- `scripts/browser_qa.py --profile premise` defines a desktop/mobile pass
+  covering public catalog queries, original-premise realm hubs, and the Studio
+  discovery editor after switching to `harbor_director` through dev personas.
+
+Artifacts:
+
+- `research/uat/simulated/2026-05-15-premise-discovery-simulated-uat.md`
+- `tests/test_forum_slice.py::test_original_premise_discovery_routes_support_persona_qa`
+- `uv run python scripts/browser_qa.py --profile premise --base-url http://127.0.0.1:8003`
+
+Deferred:
+
+- Real hook-hunter and new-face applicant UAT against the expanded seed catalog.
+- A Studio-side preview of the public catalog card.

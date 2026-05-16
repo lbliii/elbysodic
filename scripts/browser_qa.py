@@ -41,6 +41,19 @@ STATIC_ROUTES = (
     Route("jp-isla-nublar", "/c/jurassic-park-universe/boards/isla-nublar"),
 )
 
+PREMISE_DISCOVERY_ROUTES = (
+    Route("home", "/"),
+    Route("network", "/network"),
+    Route("network-small-town-social-web", "/network?q=small-town+social+web"),
+    Route("network-weird-town-mystery", "/network?q=weird-town+mystery"),
+    Route("network-court-faction", "/network?q=court+faction"),
+    Route("network-strange-frontier", "/network?q=strange+frontier"),
+    Route("harbor-society", "/c/harbor-society"),
+    Route("signal-creek", "/c/signal-creek"),
+    Route("wayfarer-station", "/c/wayfarer-station"),
+    Route("studio-discovery", "/studio/discovery"),
+)
+
 DEEP_SEED_ROUTES = (
     Route("home", "/"),
     Route("network", "/network"),
@@ -256,6 +269,22 @@ async def _hide_debug_overlays(page: Page) -> None:
     )
 
 
+async def _switch_dev_persona(
+    page: Page,
+    base_url: str,
+    *,
+    persona_key: str,
+    next_path: str,
+) -> str | None:
+    response = await page.request.post(
+        urljoin(base_url, "/dev/personas"),
+        form={"persona_key": persona_key, "next": next_path},
+    )
+    if response.status >= 400:
+        return f"dev persona switch failed: HTTP {response.status} for {persona_key}"
+    return None
+
+
 async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
     artifact_dir.mkdir(parents=True, exist_ok=True)
     failures: list[str] = []
@@ -273,6 +302,8 @@ async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
         )
         if profile == "deep":
             routes = await _discover_deep_routes(page, base_url)
+        elif profile == "premise":
+            routes = list(PREMISE_DISCOVERY_ROUTES)
         else:
             routes = [*STATIC_ROUTES, *(await _discover_routes(page, base_url))]
         await page.close()
@@ -296,6 +327,17 @@ async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
                     console_errors.append(message.text) if message.type == "error" else None
                 ),
             )
+            if profile == "premise":
+                switch_error = await _switch_dev_persona(
+                    page,
+                    base_url,
+                    persona_key="harbor_director",
+                    next_path="/studio/discovery",
+                )
+                if switch_error:
+                    failures.append(f"{viewport.name}: {switch_error}")
+                    await context.close()
+                    continue
             for route in unique_routes:
                 url = urljoin(base_url, route.path)
                 response = await page.goto(url, wait_until="domcontentloaded")
@@ -341,7 +383,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run Elbysodic browser visual smoke QA.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8003")
     parser.add_argument("--artifact-dir", default="tests/browser/artifacts")
-    parser.add_argument("--profile", choices=("smoke", "deep"), default="smoke")
+    parser.add_argument("--profile", choices=("smoke", "deep", "premise"), default="smoke")
     args = parser.parse_args()
     return asyncio.run(_run(args.base_url, Path(args.artifact_dir), args.profile))
 

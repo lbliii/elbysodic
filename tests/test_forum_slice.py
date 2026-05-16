@@ -1895,6 +1895,53 @@ def test_network_explore_search_filters_programs() -> None:
     asyncio.run(run())
 
 
+def test_original_premise_discovery_routes_support_persona_qa() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        public_app = create_app(debug=False, services=services, dev_tools=True)
+        async with TestClient(public_app) as client:
+            network = await client.get("/network?q=weird-town mystery")
+
+        assert network.status == 200
+        assert "Signal Creek" in network.text
+        assert "Weird Town Mystery" in network.text
+        assert "face you want to wear next" not in network.text
+
+        persona_expectations = (
+            ("harbor_director", "Harbor Society", "Small Town Social Web"),
+            ("signal_director", "Signal Creek", "Weird Town Mystery"),
+            ("wayfarer_director", "Wayfarer Station", "Strange Frontier"),
+        )
+        for persona_key, community_name, archetype_label in persona_expectations:
+            persona = resolve_seed_persona(services.repo, persona_key)
+            persona_app = create_app(
+                debug=False,
+                services=AppServices(
+                    services.repo,
+                    DemoSeed(
+                        persona.community,
+                        persona.user,
+                        persona.membership,
+                        persona.character,
+                    ),
+                ),
+                dev_tools=True,
+            )
+            async with TestClient(persona_app) as client:
+                studio = await client.get("/studio/discovery")
+                realm = await client.get(f"/c/{persona.community.slug}")
+
+            assert persona.persona.default_path == "/studio/discovery"
+            assert studio.status == 200
+            assert "Discovery profile" in studio.text
+            assert community_name in studio.text
+            assert archetype_label in studio.text
+            assert realm.status == 200
+            assert community_name in realm.text
+
+    asyncio.run(run())
+
+
 def test_network_directory_enter_realm_sets_identity_cookie() -> None:
     async def run() -> None:
         app = _app()
