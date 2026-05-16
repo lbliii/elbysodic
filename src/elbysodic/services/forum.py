@@ -3594,7 +3594,7 @@ def _realm_gateway_entry_paths(
             RealmGatewayEntryPath(
                 "Browse open calls",
                 "Relationships, roles, rivals, and scenario requests already want a writer.",
-                "/wanted",
+                _community_href(program, "/wanted"),
                 "open wanted",
                 program.open_wanted_count,
             )
@@ -3605,7 +3605,7 @@ def _realm_gateway_entry_paths(
             RealmGatewayEntryPath(
                 "Check the application guide",
                 material.rendered_summary,
-                f"/world/{material.material.slug}",
+                _community_href(program, f"/world/{material.material.slug}"),
                 "guide",
             )
         )
@@ -3613,7 +3613,7 @@ def _realm_gateway_entry_paths(
         RealmGatewayEntryPath(
             "Request access",
             "Ask to enter when the premise, roster, and open calls feel like a fit.",
-            "/request-access",
+            _community_href(program, "/request-access"),
             "entry",
         )
     )

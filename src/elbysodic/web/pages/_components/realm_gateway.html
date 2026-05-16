@@ -1,0 +1,186 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+{% end %}
+
+{% def gateway_action(action, variant="primary") %}
+{% if action %}
+<a class="chirpui-btn chirpui-btn--{{ variant }}"
+   href="{{ action.href }}"
+   {{ 'hx-boost="false"' if not action.is_hx_boost_safe else "" }}>
+  {{ action.label }}
+</a>
+{% end %}
+{% end %}
+
+{% def gateway_section_header(kicker, title, summary="") %}
+<header class="elbysodic-home-section-header">
+  <p class="elbysodic-section-kicker">{{ kicker }}</p>
+  <h2>{{ title }}</h2>
+  {% if summary %}
+  <p>{{ summary }}</p>
+  {% end %}
+</header>
+{% end %}
+
+{% def gateway_hero(gateway) %}
+<section class="elbysodic-realm-gateway-hero" aria-labelledby="realm-gateway-title">
+  <div class="elbysodic-realm-gateway-hero__copy">
+    <div class="elbysodic-realm-gateway-hero__signals" aria-label="Realm status">
+      {{ badge(gateway.program.invite_posture_label, variant="info") }}
+      {{ badge(gateway.atmosphere.label, variant="info") }}
+      {% if gateway.program.open_wanted_count %}
+      {{ badge(gateway.program.open_wanted_count ~ " wanted hooks", variant="warning") }}
+      {% end %}
+    </div>
+    <p class="elbysodic-section-kicker">{{ gateway.hero.kicker }}</p>
+    <h1 id="realm-gateway-title">{{ gateway.hero.title }}</h1>
+    <p class="elbysodic-copy-lead">{{ gateway.hero.lead }}</p>
+    <div class="elbysodic-realm-gateway-now" aria-label="Now playing">
+      <strong>Now playing</strong>
+      <span>{{ gateway.hero.now_playing_label }}: {{ gateway.hero.now_playing_copy }}</span>
+    </div>
+    <p class="elbysodic-realm-gateway-first-face">
+      <strong>First face path</strong>
+      <span>{{ gateway.hero.first_face_path }}</span>
+    </p>
+    <div class="chirpui-cluster elbysodic-realm-gateway-hero__actions">
+      {{ gateway_action(gateway.hero.primary_action) }}
+      {{ gateway_action(gateway.hero.secondary_action, "secondary") }}
+    </div>
+  </div>
+  <figure class="elbysodic-realm-gateway-hero__media">
+    {% if gateway.program.community.world_hero_image_url %}
+    <img src="{{ gateway.program.community.world_hero_image_url }}"
+         alt="{{ gateway.program.community.world_hero_image_alt }}">
+    {% else %}
+    <span class="elbysodic-realm-gateway-hero__fallback" aria-hidden="true">
+      {{ gateway.program.monogram }}
+    </span>
+    {% end %}
+    <figcaption>
+      <strong>{{ gateway.atmosphere.title }}</strong>
+      <span>{{ gateway.atmosphere.copy }}</span>
+    </figcaption>
+  </figure>
+</section>
+{% end %}
+
+{% def gateway_signal_band(gateway) %}
+{% if gateway.signals %}
+<section class="elbysodic-realm-signal-band" aria-label="Play readiness">
+  {% for signal in gateway.signals %}
+  <article class="elbysodic-realm-signal">
+    {% if signal.value %}
+    <span class="elbysodic-realm-signal__value">{{ signal.value }}</span>
+    {% end %}
+    <strong>{{ signal.title }}</strong>
+    <span>{{ signal.summary }}</span>
+  </article>
+  {% end %}
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_scene_hubs(gateway) %}
+{% if gateway.scene_hubs %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scene-hubs-title">
+  {{ gateway_section_header("Scene hubs", "Playable doors into the premise", "Public places, institutions, and social rooms where threads can start.") }}
+  <div class="elbysodic-realm-hub-grid">
+    {% for hub in gateway.scene_hubs %}
+    <a class="elbysodic-realm-hub-card elbysodic-realm-hub-card--{{ hub.emphasis }}" href="{{ hub.href }}">
+      {% if hub.image_url %}
+      <span class="elbysodic-realm-hub-card__media elbysodic-board-media-treatment--{{ hub.image_treatment }}">
+        <img src="{{ hub.image_url }}" alt="{{ hub.image_alt }}">
+      </span>
+      {% end %}
+      <span class="elbysodic-realm-hub-card__body">
+        <span class="elbysodic-material-card__type">{{ hub.eyebrow }}</span>
+        <strong>{{ hub.board.name }}</strong>
+        <span>{{ hub.display_summary }}</span>
+        {% if hub.public_thread_count %}
+        <em>{{ hub.public_thread_count }} public threads</em>
+        {% else %}
+        <em>Ready for first scenes</em>
+        {% end %}
+      </span>
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_entry_paths(gateway) %}
+{% if gateway.entry_paths %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-entry-title">
+  {{ gateway_section_header("First writing path", "Ways in before a writer has a face here", "Public-safe entry paths for reading, fitting, and requesting access.") }}
+  <div class="elbysodic-realm-entry-list">
+    {% for path in gateway.entry_paths %}
+    <a class="elbysodic-realm-entry-row"
+       href="{{ path.href }}"
+       {{ 'hx-boost="false"' if path.href.endswith("/request-access") else "" }}>
+      <span>
+        <strong>{{ path.title }}</strong>
+        <small>{{ path.summary }}</small>
+      </span>
+      <em>
+        {% if path.metric_value is not none %}
+        {{ path.metric_value }} {{ path.metric_label }}
+        {% else %}
+        {{ path.metric_label }}
+        {% end %}
+      </em>
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_guidebook(gateway) %}
+{% if gateway.guidebook.featured or gateway.guidebook.events %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-guide-title">
+  {{ gateway_section_header("Start here", "Premise, current chapters, and public guidebook", "Director-published material that can ground a first face.") }}
+  <div class="elbysodic-material-grid">
+    {% for item in gateway.guidebook.featured %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
+      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+    {% for item in gateway.guidebook.events[:2] %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
+      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_wanted(gateway) %}
+{% if gateway.program.open_wanted_count %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-wanted-title">
+  {{ gateway_section_header("Wanted hooks", "Open roles with story pressure", "Open calls that can become a first relationship, role, rival, or scene lane.") }}
+  <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">
+    Browse {{ gateway.program.open_wanted_count }} wanted hooks
+  </a>
+</section>
+{% end %}
+{% end %}
+
+{% def realm_gateway_home(gateway, viewer=None) %}
+<div class="elbysodic-realm-gateway">
+  {{ gateway_hero(gateway) }}
+  {{ gateway_signal_band(gateway) }}
+  {{ gateway_scene_hubs(gateway) }}
+  {% if not viewer %}
+  {{ gateway_entry_paths(gateway) }}
+  {{ gateway_guidebook(gateway) }}
+  {{ gateway_wanted(gateway) }}
+  {% end %}
+</div>
+{% end %}

@@ -2089,6 +2089,10 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             "Browse open calls",
             "Request access",
         }
+        assert {path.href for path in gateway.entry_paths} >= {
+            f"/c/{community_slug}/wanted",
+            f"/c/{community_slug}/request-access",
+        }
         assert all(not hub.board.is_private for hub in gateway.scene_hubs)
 
     async def run() -> None:
@@ -2103,13 +2107,19 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 content = _page_content(response.text)
 
                 assert response.status == 200
-                assert "Premise and pressure" in content
+                assert "Now playing" in content
+                assert "First face path" in content
+                assert "Play readiness" in content
                 assert premise_label in content
                 assert onboarding_pitch in content
-                assert "Scene hubs" in content
+                assert "Playable doors into the premise" in content
                 assert scene_hub in content
+                assert f"/c/{community_slug}/wanted" in content
+                assert "Faces" not in content
+                assert "Guides" not in content
                 assert "application review" not in content.lower()
                 assert "staff controls" not in content.lower()
+                assert "active face" not in content.lower()
 
     asyncio.run(run())
 
