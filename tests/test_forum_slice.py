@@ -1289,9 +1289,19 @@ def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
     xmen_writer = resolve_seed_persona(services.repo, "xmen_writer")
     hp_director = resolve_seed_persona(services.repo, "hp_director")
     nyc_writer = resolve_seed_persona(services.repo, "nyc_writer")
+    harbor_director = resolve_seed_persona(services.repo, "harbor_director")
+    signal_director = resolve_seed_persona(services.repo, "signal_director")
+    wayfarer_director = resolve_seed_persona(services.repo, "wayfarer_director")
     inactive = resolve_seed_persona(services.repo, "xmen_inactive")
 
-    assert xmen_writer.user.id == hp_director.user.id == nyc_writer.user.id
+    assert (
+        xmen_writer.user.id
+        == hp_director.user.id
+        == nyc_writer.user.id
+        == harbor_director.user.id
+        == signal_director.user.id
+        == wayfarer_director.user.id
+    )
     assert xmen_writer.community.slug == "x-men-apocalypse"
     assert xmen_writer.role.name == "Member"
     assert not xmen_writer.role.is_admin
@@ -1301,6 +1311,14 @@ def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
     assert nyc_writer.community.slug == "rl-nyc"
     assert nyc_writer.role.name == "Member"
     assert not nyc_writer.role.is_admin
+    assert harbor_director.community.slug == "harbor-society"
+    assert harbor_director.role.name == "Director"
+    assert harbor_director.character is not None
+    assert harbor_director.character.name == "Maris Vale"
+    assert signal_director.community.slug == "signal-creek"
+    assert signal_director.role.is_admin
+    assert wayfarer_director.community.slug == "wayfarer-station"
+    assert wayfarer_director.persona.default_path == "/studio/discovery"
     assert inactive.membership.username == "sleepingstar"
     assert not inactive.membership.is_active
     assert inactive.character is not None

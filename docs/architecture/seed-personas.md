@@ -9,6 +9,11 @@ Use `src/elbysodic/db/seed.py` as the source of truth. The `SEED_PERSONAS`
 catalog gives each persona a semantic key, account email, community,
 membership username, default face, default route, and QA purpose.
 
+The public demo posture is shifting toward original premise communities. The
+literal-IP coded personas remain compatibility fixtures for older route,
+identity, and privacy tests; new discovery and seed-depth QA should prefer the
+original-premise personas below.
+
 Tests should use `resolve_seed_persona(repo, "<key>")` when they need a seeded
 identity by purpose instead of hard-coding a username and hoping the role is
 obvious.
@@ -28,6 +33,15 @@ obvious.
 | `jp_director` | `writer@example.com` | Jurassic Park Universe | `starlane` | Director | Dr. Lena Marquez | visual/theme and director controls in another genre |
 | `nyc_writer` | `writer@example.com` | RL NYC | `starlane` | Member | Lena Park | same account without staff power in another community |
 | `smalltown_writer` | `writer@example.com` | RL Small Town | `starlane` | Member | June Calloway | low-stakes ensemble writer checks |
+| `harbor_director` | `writer@example.com` | Harbor Society | `starlane` | Director | Maris Vale | original small-town social web, public discovery, and seed-depth QA |
+| `signal_director` | `writer@example.com` | Signal Creek | `starlane` | Director | Ira Bell | original weird-town mystery, current chapter, and open-lore QA |
+| `nocturne_director` | `writer@example.com` | Nocturne Row | `starlane` | Director | Marcel Voss | original urban supernatural, faction, rating, and species-pressure QA |
+| `crownfall_director` | `writer@example.com` | Crownfall | `starlane` | Director | Seren Vale | original court-and-faction fantasy, claims, houses, and succession QA |
+| `afterlight_director` | `writer@example.com` | Afterlight Accord | `starlane` | Director | Orin Vale | original canon-adjacent AU, role-archetype, and IP-hygiene QA |
+| `brightline_director` | `writer@example.com` | Brightline | `starlane` | Director | Viv Marlowe | original fame and industry, public-image, and career-pressure QA |
+| `emberhouse_director` | `writer@example.com` | Emberhouse | `starlane` | Director | Nara Vale | original survival trials, institution pressure, and consent-safe QA |
+| `gaslight_director` | `writer@example.com` | Gaslight Ward | `starlane` | Director | Ada Vale | original occult historical, class, inquiry, and respectability QA |
+| `wayfarer_director` | `writer@example.com` | Wayfarer Station | `starlane` | Director | Mara Voss | original strange frontier, scarcity, station law, and signal QA |
 
 ## Browser QA
 
@@ -41,8 +55,9 @@ power through the selected community membership and role.
 
 ## Boundaries
 
-- Staff power is never global. `writer@example.com` is a Director in HP and
-  Jurassic Park, but only a Member in X-Men, RL NYC, and RL Small Town.
+- Staff power is never global. `writer@example.com` is a Director in HP,
+  Jurassic Park, and the original-premise communities, but only a Member in
+  X-Men, RL NYC, and RL Small Town.
 - Characters remain community-local and membership-owned.
 - Inactive personas should be visible for QA, but not switchable into an active
   viewer.
