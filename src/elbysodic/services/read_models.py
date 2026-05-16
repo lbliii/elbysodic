@@ -1819,6 +1819,25 @@ class StudioNetworkProgramView:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayAction:
+    label: str
+    href: str
+    is_hx_boost_safe: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayHero:
+    kicker: str
+    title: str
+    lead: str
+    now_playing_label: str
+    now_playing_copy: str
+    first_face_path: str
+    primary_action: RealmGatewayAction
+    secondary_action: RealmGatewayAction | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayPremise:
     discovery_profile: CommunityDiscoveryProfile | None
     catalog_pitch: str
@@ -1842,6 +1861,12 @@ class RealmGatewayAtmosphere:
 class RealmGatewaySceneHub:
     board: Board
     public_thread_count: int
+    emphasis: str = "normal"
+    eyebrow: str = "Scene hub"
+    summary: str = ""
+    image_url: str | None = None
+    image_alt: str = ""
+    image_treatment: str = "standard"
 
     @property
     def href(self) -> str:
@@ -1849,7 +1874,7 @@ class RealmGatewaySceneHub:
 
     @property
     def display_summary(self) -> str:
-        return self.board.tagline or self.board.description or self.board.board_kind
+        return self.summary or self.board.tagline or self.board.description or self.board.board_kind
 
 
 @dataclass(frozen=True, slots=True)
@@ -1862,11 +1887,20 @@ class RealmGatewayEntryPath:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewaySignalItem:
+    title: str
+    summary: str
+    value: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayView:
     program: StudioNetworkProgramView
     guidebook: WorldHub
+    hero: RealmGatewayHero
     premise: RealmGatewayPremise
     atmosphere: RealmGatewayAtmosphere
+    signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
 

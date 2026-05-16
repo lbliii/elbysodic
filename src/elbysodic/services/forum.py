@@ -263,10 +263,13 @@ from elbysodic.services.read_models import (
     PostRevisionHistory,
     PostStylePolicy,
     PublicCatalogCard,
+    RealmGatewayAction,
     RealmGatewayAtmosphere,
     RealmGatewayEntryPath,
+    RealmGatewayHero,
     RealmGatewayPremise,
     RealmGatewaySceneHub,
+    RealmGatewaySignalItem,
     RealmGatewayView,
     RealmInteractionDetail,
     RealmInteractionHub,
@@ -3326,13 +3329,19 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
     profile = None
     with suppress(LookupError):
         profile = repo.get_discovery_profile(community.id)
+    premise = _realm_gateway_premise(program, profile)
+    atmosphere = _realm_gateway_atmosphere(program, guidebook)
+    scene_hubs = _realm_gateway_scene_hubs(repo, community.id)
+    entry_paths = _realm_gateway_entry_paths(program, guidebook)
     return RealmGatewayView(
         program=program,
         guidebook=guidebook,
-        premise=_realm_gateway_premise(program, profile),
-        atmosphere=_realm_gateway_atmosphere(program, guidebook),
-        scene_hubs=_realm_gateway_scene_hubs(repo, community.id),
-        entry_paths=_realm_gateway_entry_paths(program, guidebook),
+        hero=_realm_gateway_hero(program, premise, atmosphere),
+        premise=premise,
+        atmosphere=atmosphere,
+        signals=_realm_gateway_signals(program, guidebook, scene_hubs),
+        scene_hubs=scene_hubs,
+        entry_paths=entry_paths,
     )
 
 
@@ -3406,6 +3415,97 @@ def _realm_gateway_atmosphere(
     )
 
 
+def _realm_gateway_hero(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+) -> RealmGatewayHero:
+    secondary_action = _realm_gateway_reading_action(program)
+    primary_action = _realm_gateway_primary_action(program, secondary_action)
+    return RealmGatewayHero(
+        kicker=f"{premise.premise_label} - {program.invite_posture_label}",
+        title=program.community.name,
+        lead=premise.catalog_pitch,
+        now_playing_label=atmosphere.label,
+        now_playing_copy=f"{atmosphere.title}: {atmosphere.copy}",
+        first_face_path=premise.onboarding_pitch,
+        primary_action=primary_action,
+        secondary_action=secondary_action
+        if secondary_action.href != primary_action.href
+        else None,
+    )
+
+
+def _realm_gateway_primary_action(
+    program: StudioNetworkProgramView,
+    fallback_action: RealmGatewayAction,
+) -> RealmGatewayAction:
+    if program.open_wanted_count:
+        return RealmGatewayAction(
+            label="Browse open calls",
+            href=_community_href(program, "/wanted"),
+        )
+    if program.community.launch_status == "public-preview":
+        return RealmGatewayAction(
+            label="Request access",
+            href=_community_href(program, "/request-access"),
+            is_hx_boost_safe=False,
+        )
+    return fallback_action
+
+
+def _realm_gateway_reading_action(program: StudioNetworkProgramView) -> RealmGatewayAction:
+    if program.premise_href is not None:
+        return RealmGatewayAction(label="Read premise", href=program.premise_href)
+    return RealmGatewayAction(label="Open guidebook", href=_community_href(program, "/world"))
+
+
+def _realm_gateway_signals(
+    program: StudioNetworkProgramView,
+    guidebook: WorldHub,
+    scene_hubs: tuple[RealmGatewaySceneHub, ...],
+) -> tuple[RealmGatewaySignalItem, ...]:
+    signals = [
+        RealmGatewaySignalItem(
+            title=program.invite_posture_label,
+            summary="Public preview copy is safe to read before a writer has a face here.",
+        )
+    ]
+    if program.open_wanted_count:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Open calls",
+                summary="Wanted hooks can become a first relationship, role, rival, or scene lane.",
+                value=str(program.open_wanted_count),
+            )
+        )
+    else:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="First face path",
+                summary="Start from the public premise, claims, guidebook, or access request.",
+            )
+        )
+    if scene_hubs:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Scene hubs ready",
+                summary="Public places, institutions, and social rooms have visible doors into play.",
+                value=str(len(scene_hubs)),
+            )
+        )
+    public_material_count = len(guidebook.featured) + len(guidebook.guides) + len(guidebook.events)
+    if public_material_count:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Guidebook path",
+                summary="Published premise, event, or guide material can ground an application.",
+                value=str(public_material_count),
+            )
+        )
+    return tuple(signals[:4])
+
+
 def _realm_gateway_scene_hubs(
     repo: ForumRepository,
     community_id: int,
@@ -3420,16 +3520,59 @@ def _realm_gateway_scene_hubs(
         and not board.is_private
     ]
     threads_by_board = repo.list_threads_for_boards(community_id, [board.id for board in boards])
-    hubs = [
-        RealmGatewaySceneHub(
-            board=board,
-            public_thread_count=sum(
-                1 for thread in threads_by_board.get(board.id, []) if thread.status != "private"
-            ),
-        )
+    thread_counts = {
+        board.id: sum(1 for thread in threads_by_board.get(board.id, []) if thread.status != "private")
         for board in boards
-    ]
+    }
+    most_active_board_id = max(thread_counts, key=thread_counts.get, default=None)
+    hubs = []
+    for board in boards:
+        public_thread_count = thread_counts[board.id]
+        emphasis = _realm_gateway_hub_emphasis(
+            board,
+            public_thread_count,
+            is_most_active=board.id == most_active_board_id,
+        )
+        hubs.append(
+            RealmGatewaySceneHub(
+                board=board,
+                public_thread_count=public_thread_count,
+                emphasis=emphasis,
+                eyebrow=_realm_gateway_hub_eyebrow(board, emphasis),
+                summary=board.tagline or board.description or board.board_kind,
+                image_url=board.image_url,
+                image_alt=board.image_alt,
+                image_treatment=board.image_treatment or "standard",
+            )
+        )
     return tuple(hubs[:limit])
+
+
+def _realm_gateway_hub_emphasis(
+    board: Board,
+    public_thread_count: int,
+    *,
+    is_most_active: bool,
+) -> str:
+    if public_thread_count >= 3:
+        return "hot"
+    if public_thread_count and is_most_active:
+        return "high_activity"
+    if board.image_url:
+        return "featured"
+    return "normal"
+
+
+def _realm_gateway_hub_eyebrow(board: Board, emphasis: str) -> str:
+    if emphasis == "hot":
+        return "Hot scene hub"
+    if emphasis == "high_activity":
+        return "Active scene hub"
+    if emphasis == "featured":
+        return "Featured scene hub"
+    if board.board_kind == "community":
+        return "Social room"
+    return "Scene hub"
 
 
 def _realm_gateway_entry_paths(
@@ -3475,6 +3618,12 @@ def _realm_gateway_entry_paths(
         )
     )
     return tuple(paths)
+
+
+def _community_href(program: StudioNetworkProgramView, path: str) -> str:
+    if path == "/":
+        return f"/c/{program.community.slug}"
+    return f"/c/{program.community.slug}{path}"
 
 
 def _display_label(value: str) -> str:

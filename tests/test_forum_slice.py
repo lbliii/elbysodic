@@ -2067,9 +2067,23 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
     ) in gateway_expectations.items():
         gateway = services.public_realm_gateway(community_slug)
 
+        assert gateway.hero.title == gateway.program.community.name
+        assert gateway.hero.kicker == f"{premise_label} - Public preview"
+        assert gateway.hero.lead == gateway.premise.catalog_pitch
+        assert gateway.hero.now_playing_label in {"Current chapter", "Standing premise"}
+        assert gateway.hero.first_face_path == onboarding_pitch
+        assert gateway.hero.primary_action.label == "Browse open calls"
+        assert gateway.hero.primary_action.href == f"/c/{community_slug}/wanted"
+        assert gateway.hero.secondary_action is not None
+        assert gateway.hero.secondary_action.href.startswith(f"/c/{community_slug}/world")
         assert gateway.premise.onboarding_pitch == onboarding_pitch
         assert gateway.premise.premise_label == premise_label
+        assert gateway.signals
+        assert "Open calls" in {signal.title for signal in gateway.signals}
+        assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
+        assert all(hub.eyebrow for hub in gateway.scene_hubs)
+        assert all(hub.emphasis in {"normal", "featured", "hot", "high_activity"} for hub in gateway.scene_hubs)
         assert {path.title for path in gateway.entry_paths} >= {
             "Read the premise",
             "Browse open calls",
@@ -2098,6 +2112,54 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "staff controls" not in content.lower()
 
     asyncio.run(run())
+
+
+def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    public_community = repo.create_community("quiet-harbor", "Quiet Harbor")
+    repo.create_material(
+        public_community.id,
+        "quiet-harbor-premise",
+        "Quiet Harbor Premise",
+        material_type="premise",
+        summary="A quiet realm where the public premise and one scene hub are enough to begin.",
+    )
+    repo.create_board(
+        public_community.id,
+        "main-street",
+        "Main Street",
+        tagline="Errands, porch conversations, and first faces.",
+    )
+    repo.update_community_launch_status(public_community.id, "public-preview")
+
+    gateway = services.public_realm_gateway(public_community.slug)
+
+    assert gateway.premise.premise_label == "Premise-led realm"
+    assert gateway.atmosphere.label == "Standing premise"
+    assert gateway.hero.primary_action.label == "Request access"
+    assert gateway.hero.primary_action.href == "/c/quiet-harbor/request-access"
+    assert gateway.hero.primary_action.is_hx_boost_safe is False
+    assert gateway.hero.secondary_action is not None
+    assert gateway.hero.secondary_action.label == "Read premise"
+    assert {signal.title for signal in gateway.signals} >= {
+        "Public preview",
+        "First face path",
+        "Scene hubs ready",
+    }
+
+    backstage = repo.create_community("backstage-realm", "Backstage Realm")
+    repo.create_material(
+        backstage.id,
+        "backstage-premise",
+        "Backstage Premise",
+        material_type="premise",
+        summary="This should not be enough without public-preview launch status.",
+    )
+    repo.create_board(backstage.id, "backstage-yard", "Backstage Yard")
+
+    with pytest.raises(LookupError):
+        services.public_realm_gateway(backstage.slug)
 
 
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
