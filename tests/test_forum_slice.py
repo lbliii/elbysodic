@@ -2047,16 +2047,19 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             "The gala vote, family ties, town jobs, and quiet debts are already in motion.",
             "Shoreline Club",
             "Small Town Social Web",
+            "reporter-source-at-the-club",
         ),
         "signal-creek": (
             "The midnight signal gives newcomers a reason to ask questions before town memory closes ranks.",
             "Blackridge Observatory",
             "Weird Town Mystery",
+            "cult-survivor-who-remembers-1998",
         ),
         "wayfarer-station": (
             "The missing convoy has already tightened supplies, stirred old debts, and made the station listen.",
             "Docking Ring",
             "Strange Frontier",
+            "corporate-auditor",
         ),
     }
 
@@ -2064,6 +2067,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         onboarding_pitch,
         scene_hub,
         premise_label,
+        wanted_slug,
     ) in gateway_expectations.items():
         gateway = services.public_realm_gateway(community_slug)
 
@@ -2093,15 +2097,22 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             f"/c/{community_slug}/wanted",
             f"/c/{community_slug}/request-access",
         }
+        assert gateway.wanted_previews
+        assert any(
+            preview.href == f"/c/{community_slug}/wanted/{wanted_slug}"
+            for preview in gateway.wanted_previews
+        )
+        assert all(preview.summary for preview in gateway.wanted_previews)
         assert all(not hub.board.is_private for hub in gateway.scene_hubs)
 
     async def run() -> None:
-        app = _app()
+        app = create_app(debug=False, services=AppServices(services.repo, None))
         async with TestClient(app) as client:
             for community_slug, (
                 onboarding_pitch,
                 scene_hub,
                 premise_label,
+                wanted_slug,
             ) in gateway_expectations.items():
                 response = await client.get(f"/c/{community_slug}")
                 content = _page_content(response.text)
@@ -2115,6 +2126,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Playable doors into the premise" in content
                 assert scene_hub in content
                 assert f"/c/{community_slug}/wanted" in content
+                assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
+                assert "Open roles with story pressure" in content
                 assert "Faces" not in content
                 assert "Guides" not in content
                 assert "application review" not in content.lower()
@@ -2152,6 +2165,7 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
     assert gateway.hero.primary_action.is_hx_boost_safe is False
     assert gateway.hero.secondary_action is not None
     assert gateway.hero.secondary_action.label == "Read premise"
+    assert gateway.wanted_previews == ()
     assert {signal.title for signal in gateway.signals} >= {
         "Public preview",
         "First face path",

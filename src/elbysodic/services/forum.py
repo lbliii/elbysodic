@@ -271,6 +271,7 @@ from elbysodic.services.read_models import (
     RealmGatewaySceneHub,
     RealmGatewaySignalItem,
     RealmGatewayView,
+    RealmGatewayWantedPreview,
     RealmInteractionDetail,
     RealmInteractionHub,
     RealmLaunchChecklistItem,
@@ -3333,6 +3334,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
     atmosphere = _realm_gateway_atmosphere(program, guidebook)
     scene_hubs = _realm_gateway_scene_hubs(repo, community.id)
     entry_paths = _realm_gateway_entry_paths(program, guidebook)
+    wanted_previews = _realm_gateway_wanted_previews(repo, program)
     return RealmGatewayView(
         program=program,
         guidebook=guidebook,
@@ -3342,6 +3344,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         signals=_realm_gateway_signals(program, guidebook, scene_hubs),
         scene_hubs=scene_hubs,
         entry_paths=entry_paths,
+        wanted_previews=wanted_previews,
     )
 
 
@@ -3618,6 +3621,30 @@ def _realm_gateway_entry_paths(
         )
     )
     return tuple(paths)
+
+
+def _realm_gateway_wanted_previews(
+    repo: ForumRepository,
+    program: StudioNetworkProgramView,
+    *,
+    limit: int = 3,
+) -> tuple[RealmGatewayWantedPreview, ...]:
+    wanted_ads = repo.list_wanted_ads(program.community.id, status="open")
+    previews = []
+    for wanted_ad in wanted_ads[:limit]:
+        summary = _public_wanted_ad_summary(repo, program.community.id, wanted_ad)
+        previews.append(
+            RealmGatewayWantedPreview(
+                title=summary.wanted_ad.title,
+                summary=summary.wanted_ad.summary,
+                href=_community_href(program, f"/wanted/{summary.wanted_ad.slug}"),
+                type_label=summary.type_label,
+                related_label=(
+                    summary.related_material.title if summary.related_material is not None else None
+                ),
+            )
+        )
+    return tuple(previews)
 
 
 def _community_href(program: StudioNetworkProgramView, path: str) -> str:

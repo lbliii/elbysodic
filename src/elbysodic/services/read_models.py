@@ -1894,6 +1894,15 @@ class RealmGatewaySignalItem:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayWantedPreview:
+    title: str
+    summary: str
+    href: str
+    type_label: str
+    related_label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayView:
     program: StudioNetworkProgramView
     guidebook: WorldHub
@@ -1903,6 +1912,7 @@ class RealmGatewayView:
     signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...]
 
 
 @dataclass(frozen=True, slots=True)

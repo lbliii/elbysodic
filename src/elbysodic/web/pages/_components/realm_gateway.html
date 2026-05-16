@@ -165,9 +165,27 @@
 {% if gateway.program.open_wanted_count %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-wanted-title">
   {{ gateway_section_header("Wanted hooks", "Open roles with story pressure", "Open calls that can become a first relationship, role, rival, or scene lane.") }}
-  <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">
-    Browse {{ gateway.program.open_wanted_count }} wanted hooks
-  </a>
+  {% if gateway.wanted_previews %}
+  <div class="elbysodic-realm-wanted-grid">
+    {% for wanted in gateway.wanted_previews %}
+    <a class="elbysodic-realm-wanted-card" href="{{ wanted.href }}">
+      <span class="elbysodic-material-card__type">{{ wanted.type_label }}</span>
+      <strong>{{ wanted.title }}</strong>
+      <span>{{ wanted.summary }}</span>
+      {% if wanted.related_label %}
+      <em>{{ wanted.related_label }}</em>
+      {% else %}
+      <em>First-face hook</em>
+      {% end %}
+    </a>
+    {% end %}
+  </div>
+  {% end %}
+  <div>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">
+      Browse {{ gateway.program.open_wanted_count }} wanted hooks
+    </a>
+  </div>
 </section>
 {% end %}
 {% end %}
