@@ -1819,6 +1819,59 @@ class StudioNetworkProgramView:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayPremise:
+    discovery_profile: CommunityDiscoveryProfile | None
+    catalog_pitch: str
+    onboarding_pitch: str
+    premise_label: str
+    play_label: str
+    lore_label: str
+    roster_posture: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayAtmosphere:
+    title: str
+    label: str
+    copy: str
+    href: str | None
+    source_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewaySceneHub:
+    board: Board
+    public_thread_count: int
+
+    @property
+    def href(self) -> str:
+        return f"/boards/{self.board.slug}"
+
+    @property
+    def display_summary(self) -> str:
+        return self.board.tagline or self.board.description or self.board.board_kind
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayEntryPath:
+    title: str
+    summary: str
+    href: str
+    metric_label: str
+    metric_value: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayView:
+    program: StudioNetworkProgramView
+    guidebook: WorldHub
+    premise: RealmGatewayPremise
+    atmosphere: RealmGatewayAtmosphere
+    scene_hubs: tuple[RealmGatewaySceneHub, ...]
+    entry_paths: tuple[RealmGatewayEntryPath, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class PublicCatalogCard:
     community: Community
     premise: MaterialSummary | None

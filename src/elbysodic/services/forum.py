@@ -47,6 +47,7 @@ from elbysodic.domain.models import (
     Character,
     CharacterReserve,
     Community,
+    CommunityDiscoveryProfile,
     CommunityInvitation,
     CommunityMembership,
     Material,
@@ -262,6 +263,11 @@ from elbysodic.services.read_models import (
     PostRevisionHistory,
     PostStylePolicy,
     PublicCatalogCard,
+    RealmGatewayAtmosphere,
+    RealmGatewayEntryPath,
+    RealmGatewayPremise,
+    RealmGatewaySceneHub,
+    RealmGatewayView,
     RealmInteractionDetail,
     RealmInteractionHub,
     RealmLaunchChecklistItem,
@@ -1165,6 +1171,10 @@ class AppServices:
 
     def public_studio_program(self, community_slug: str) -> StudioNetworkProgramView:
         return _public_studio_program(self.repo, community_slug)
+
+    def public_realm_gateway(self, community_slug: str) -> RealmGatewayView:
+        community = self._public_preview_community(community_slug)
+        return _public_realm_gateway(self.repo, community)
 
     def discovery_profile_editor(self) -> DiscoveryProfileEditor:
         viewer = self.viewer()
@@ -3308,6 +3318,167 @@ def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board |
         ),
         None,
     )
+
+
+def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmGatewayView:
+    program = _public_studio_program(repo, community.slug)
+    guidebook = _public_world_hub(repo, community.id)
+    profile = None
+    with suppress(LookupError):
+        profile = repo.get_discovery_profile(community.id)
+    return RealmGatewayView(
+        program=program,
+        guidebook=guidebook,
+        premise=_realm_gateway_premise(program, profile),
+        atmosphere=_realm_gateway_atmosphere(program, guidebook),
+        scene_hubs=_realm_gateway_scene_hubs(repo, community.id),
+        entry_paths=_realm_gateway_entry_paths(program, guidebook),
+    )
+
+
+def _realm_gateway_premise(
+    program: StudioNetworkProgramView,
+    profile: CommunityDiscoveryProfile | None,
+) -> RealmGatewayPremise:
+    catalog_pitch = ""
+    onboarding_pitch = ""
+    premise_label = "Premise-led realm"
+    play_label = "Scene-driven"
+    lore_label = "Guidebook ready"
+    roster_posture = "Visible roster"
+    if profile is not None:
+        catalog_pitch = profile.catalog_pitch or catalog_pitch
+        onboarding_pitch = profile.onboarding_pitch or onboarding_pitch
+        premise_label = _display_label(profile.premise_archetype) or premise_label
+        play_label = _display_label(profile.play_engine) or play_label
+        lore_label = _display_label(profile.lore_aperture) or lore_label
+        roster_posture = profile.roster_posture or roster_posture
+    if not catalog_pitch and program.premise is not None:
+        catalog_pitch = program.premise.rendered_summary
+    if not onboarding_pitch:
+        onboarding_pitch = "Read the public premise, browse open calls, then request access."
+    return RealmGatewayPremise(
+        discovery_profile=profile,
+        catalog_pitch=catalog_pitch,
+        onboarding_pitch=onboarding_pitch,
+        premise_label=premise_label,
+        play_label=play_label,
+        lore_label=lore_label,
+        roster_posture=roster_posture,
+    )
+
+
+def _realm_gateway_atmosphere(
+    program: StudioNetworkProgramView,
+    guidebook: WorldHub,
+) -> RealmGatewayAtmosphere:
+    if program.current_event is not None:
+        return RealmGatewayAtmosphere(
+            title=program.current_event.material.title,
+            label="Current chapter",
+            copy=program.current_event.rendered_summary,
+            href=program.current_event_href,
+            source_type="event",
+        )
+    if program.premise is not None:
+        return RealmGatewayAtmosphere(
+            title=program.premise.material.title,
+            label="Standing premise",
+            copy=program.premise.rendered_summary,
+            href=program.premise_href,
+            source_type="premise",
+        )
+    featured = guidebook.featured[0] if guidebook.featured else None
+    if featured is not None:
+        return RealmGatewayAtmosphere(
+            title=featured.material.title,
+            label=featured.type_label,
+            copy=featured.rendered_summary,
+            href=f"/world/{featured.material.slug}",
+            source_type=featured.material.material_type,
+        )
+    return RealmGatewayAtmosphere(
+        title="Open doors",
+        label="Getting started",
+        copy="The public guidebook and open calls show where a new face can enter.",
+        href="/world",
+        source_type="fallback",
+    )
+
+
+def _realm_gateway_scene_hubs(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    limit: int = 4,
+) -> tuple[RealmGatewaySceneHub, ...]:
+    boards = [
+        board
+        for board in repo.list_boards(community_id)
+        if board.parent_board_id is None
+        and board.board_kind in {"location", "community"}
+        and not board.is_private
+    ]
+    threads_by_board = repo.list_threads_for_boards(community_id, [board.id for board in boards])
+    hubs = [
+        RealmGatewaySceneHub(
+            board=board,
+            public_thread_count=sum(
+                1 for thread in threads_by_board.get(board.id, []) if thread.status != "private"
+            ),
+        )
+        for board in boards
+    ]
+    return tuple(hubs[:limit])
+
+
+def _realm_gateway_entry_paths(
+    program: StudioNetworkProgramView,
+    guidebook: WorldHub,
+) -> tuple[RealmGatewayEntryPath, ...]:
+    paths: list[RealmGatewayEntryPath] = []
+    if program.premise is not None and program.premise_href is not None:
+        paths.append(
+            RealmGatewayEntryPath(
+                "Read the premise",
+                "Start with the public story promise before choosing a face.",
+                program.premise_href,
+                "premise",
+            )
+        )
+    if program.open_wanted_count:
+        paths.append(
+            RealmGatewayEntryPath(
+                "Browse open calls",
+                "Relationships, roles, rivals, and scenario requests already want a writer.",
+                "/wanted",
+                "open wanted",
+                program.open_wanted_count,
+            )
+        )
+    if guidebook.application_materials:
+        material = guidebook.application_materials[0]
+        paths.append(
+            RealmGatewayEntryPath(
+                "Check the application guide",
+                material.rendered_summary,
+                f"/world/{material.material.slug}",
+                "guide",
+            )
+        )
+    paths.append(
+        RealmGatewayEntryPath(
+            "Request access",
+            "Ask to enter when the premise, roster, and open calls feel like a fit.",
+            "/request-access",
+            "entry",
+        )
+    )
+    return tuple(paths)
+
+
+def _display_label(value: str) -> str:
+    return " ".join(part for part in value.replace("_", "-").split("-") if part).title()
 
 
 def _first_material_of_type(

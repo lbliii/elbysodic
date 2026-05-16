@@ -276,12 +276,16 @@ Verified:
   faceless members.
 - `scripts/browser_qa.py --profile premise` now visits all nine original realm
   hubs plus representative wanted details and first-face forms.
+- `/c/{community_slug}` now has route proof for the premise-and-pressure
+  gateway across Harbor Society, Signal Creek, and Wayfarer Station, including
+  scene hubs and public-safe entry paths.
 
 Artifacts:
 
 - `research/uat/simulated/2026-05-15-premise-discovery-simulated-uat.md`
 - `tests/test_forum_slice.py::test_original_premise_discovery_routes_support_persona_qa`
 - `tests/test_forum_slice.py::test_original_premise_entry_paths_support_first_face_and_wanted_browsing`
+- `tests/test_forum_slice.py::test_original_premise_gateways_surface_premise_entry_and_scene_hubs`
 - `uv run python scripts/browser_qa.py --profile premise --base-url http://127.0.0.1:8003`
 
 Deferred:

@@ -2039,6 +2039,67 @@ def test_network_directory_enter_realm_sets_identity_cookie() -> None:
     asyncio.run(run())
 
 
+def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> None:
+    services = _seeded_services()
+
+    gateway_expectations = {
+        "harbor-society": (
+            "The gala vote, family ties, town jobs, and quiet debts are already in motion.",
+            "Shoreline Club",
+            "Small Town Social Web",
+        ),
+        "signal-creek": (
+            "The midnight signal gives newcomers a reason to ask questions before town memory closes ranks.",
+            "Blackridge Observatory",
+            "Weird Town Mystery",
+        ),
+        "wayfarer-station": (
+            "The missing convoy has already tightened supplies, stirred old debts, and made the station listen.",
+            "Docking Ring",
+            "Strange Frontier",
+        ),
+    }
+
+    for community_slug, (
+        onboarding_pitch,
+        scene_hub,
+        premise_label,
+    ) in gateway_expectations.items():
+        gateway = services.public_realm_gateway(community_slug)
+
+        assert gateway.premise.onboarding_pitch == onboarding_pitch
+        assert gateway.premise.premise_label == premise_label
+        assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
+        assert {path.title for path in gateway.entry_paths} >= {
+            "Read the premise",
+            "Browse open calls",
+            "Request access",
+        }
+        assert all(not hub.board.is_private for hub in gateway.scene_hubs)
+
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            for community_slug, (
+                onboarding_pitch,
+                scene_hub,
+                premise_label,
+            ) in gateway_expectations.items():
+                response = await client.get(f"/c/{community_slug}")
+                content = _page_content(response.text)
+
+                assert response.status == 200
+                assert "Premise and pressure" in content
+                assert premise_label in content
+                assert onboarding_pitch in content
+                assert "Scene hubs" in content
+                assert scene_hub in content
+                assert "application review" not in content.lower()
+                assert "staff controls" not in content.lower()
+
+    asyncio.run(run())
+
+
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
     async def run() -> None:
         app = _app()
