@@ -673,7 +673,10 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
             COUNT(DISTINCT materials.id) AS material_count,
             COUNT(DISTINCT characters.id) AS character_count,
             COUNT(DISTINCT wanted_ads.id) AS wanted_count,
-            COUNT(DISTINCT claim_types.id) AS claim_type_count
+            COUNT(DISTINCT claim_types.id) AS claim_type_count,
+            COUNT(DISTINCT character_claims.id) AS character_claim_count,
+            COUNT(DISTINCT threads.id) AS thread_count,
+            COUNT(DISTINCT posts.id) AS post_count
         FROM communities
         JOIN community_discovery_profiles
             ON community_discovery_profiles.community_id = communities.id
@@ -682,6 +685,9 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
         LEFT JOIN characters ON characters.community_id = communities.id
         LEFT JOIN wanted_ads ON wanted_ads.community_id = communities.id
         LEFT JOIN claim_types ON claim_types.community_id = communities.id
+        LEFT JOIN character_claims ON character_claims.community_id = communities.id
+        LEFT JOIN threads ON threads.community_id = communities.id
+        LEFT JOIN posts ON posts.community_id = communities.id
         WHERE communities.slug IN (
             'harbor-society',
             'signal-creek',
@@ -710,6 +716,9 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
         assert contract[slug]["character_count"] >= 8
         assert contract[slug]["wanted_count"] >= 5
         assert contract[slug]["claim_type_count"] >= 4
+        assert contract[slug]["character_claim_count"] >= 6
+        assert contract[slug]["thread_count"] >= 2
+        assert contract[slug]["post_count"] >= 4
 
 
 def test_program_blueprint_preview_fingerprint_changes_with_source() -> None:

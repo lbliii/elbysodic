@@ -5975,6 +5975,8 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             application_fields=STUDIO_APPLICATION_FIELDS.get(program.slug, ()),
         )
         _seed_discovery_profile(repo, community.id, DISCOVERY_PROFILE_SEEDS.get(program.slug))
+        if program.slug in ORIGINAL_PREMISE_SEED_SLUGS:
+            _seed_original_premise_depth(repo, community, program, membership)
 
 
 def _ensure_studio_program_community(
@@ -6041,6 +6043,135 @@ def _ensure_community_media_defaults(
         world_hero_overlay=hero_overlay,
         world_hero_height=hero_height,
     )
+
+
+def _seed_original_premise_depth(
+    repo: ForumRepository,
+    community: Community,
+    program: ProgramBlueprint,
+    membership: CommunityMembership,
+) -> None:
+    characters = [
+        repo.get_character_by_slug(community.id, character_seed.slug)
+        for character_seed in program.characters[:4]
+    ]
+    boards = [
+        repo.get_board_by_slug(community.id, board_seed.slug)
+        for board_seed in program.boards
+        if board_seed.board_kind in {"location", "community"}
+    ][:3]
+    if len(characters) < 3 or len(boards) < 2:
+        return
+
+    opening = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, boards[0].id, "opening-pressure"),
+        lambda: repo.create_thread(
+            community.id,
+            boards[0].id,
+            characters[0].id,
+            "opening-pressure",
+            "Opening pressure",
+            summary=(
+                f"{characters[0].name} pulls the first public thread into "
+                f"{community.name}'s current premise."
+            ),
+            location=boards[0].name,
+            timeline="Current chapter",
+        ),
+    )
+    repo.set_thread_participants(
+        community.id,
+        opening.id,
+        [characters[0].id, characters[1].id, characters[2].id],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        opening.id,
+        characters[0].id,
+        (
+            f"{characters[0].name} arrived at {boards[0].name} with the public "
+            f"pressure of {community.name} already waiting in the room."
+        ),
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        opening.id,
+        characters[1].id,
+        (
+            f"{characters[1].name} answered with a practical offer, a private "
+            "reservation, and one question that could turn into a scene."
+        ),
+    )
+
+    followup = _get_or_create(
+        lambda: repo.get_thread_by_slug(community.id, boards[1].id, "wanted-thread-start"),
+        lambda: repo.create_thread(
+            community.id,
+            boards[1].id,
+            characters[1].id,
+            "wanted-thread-start",
+            "Wanted thread start",
+            summary=(
+                f"A wanted-hook style opener tests how {community.name} moves "
+                "a new face from premise fit into active play."
+            ),
+            location=boards[1].name,
+            timeline="Current chapter",
+        ),
+    )
+    repo.set_thread_participants(
+        community.id,
+        followup.id,
+        [characters[1].id, characters[2].id, characters[3].id],
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        followup.id,
+        characters[1].id,
+        (
+            f"{characters[1].name} left a note at {boards[1].name}: a clear "
+            "opening for rivals, allies, witnesses, or relatives to answer."
+        ),
+    )
+    _ensure_post(
+        repo,
+        community.id,
+        followup.id,
+        characters[2].id,
+        (
+            f"{characters[2].name} took the hook seriously enough to make it "
+            "someone else's problem before the next scene could settle."
+        ),
+    )
+    repo.watch_thread(community.id, followup.id, membership.id)
+    repo.mark_thread_read(community.id, opening.id, membership.id)
+
+    _seed_original_premise_character_claims(repo, community.id, program)
+
+
+def _seed_original_premise_character_claims(
+    repo: ForumRepository,
+    community_id: int,
+    program: ProgramBlueprint,
+) -> None:
+    claim_types = STUDIO_CLAIM_TYPES.get(program.slug, ())[:2]
+    if not claim_types:
+        return
+    claims: list[ClaimSeed] = []
+    for character_seed in program.characters[:3]:
+        claims.extend(
+            ClaimSeed(
+                claim_type_seed.slug,
+                character_seed.slug,
+                f"{character_seed.slug}-{claim_type_seed.claim_kind}",
+                f"{character_seed.name} {claim_type_seed.name}",
+            )
+            for claim_type_seed in claim_types
+        )
+    _seed_character_claims(repo, community_id, tuple(claims))
 
 
 def _ensure_character_identity(
