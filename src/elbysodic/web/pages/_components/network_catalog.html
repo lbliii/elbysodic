@@ -1,0 +1,101 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/tooltip.html" import tooltip %}
+  {% from "_components/vocabulary.html" import metric_item %}
+{% end %}
+
+{% def program_summary(program) %}
+{% if program.current_event %}
+{{ program.current_event.material.summary }}
+{% elif program.premise %}
+{{ program.premise.material.summary }}
+{% else %}
+A studio program ready for scenes, casting, and writer movement.
+{% end %}
+{% end %}
+
+{% def compact_link_action(href, label, icon) %}
+{% if href %}
+{% call tooltip(label, position="left", cls="elbysodic-network-card__tooltip") %}
+  <a class="elbysodic-network-card__icon-action" href="{{ href }}" aria-label="{{ label }}">
+    <span aria-hidden="true">{{ icon | icon }}</span>
+    <span class="chirpui-visually-hidden">{{ label }}</span>
+  </a>
+{% end %}
+{% end %}
+{% end %}
+
+{% def program_metric_links(program) %}
+{{ metric_item(program.roster_count, "faces", href=program.entry_href ~ "/characters") }}
+{{ metric_item(program.open_wanted_count, "wanted", href=program.entry_href ~ "/wanted") }}
+{{ metric_item(program.claim_type_count, "claims", href=program.entry_href ~ "/claims") }}
+{% end %}
+
+{% def program_card(program) %}
+<article class="elbysodic-network-card{{ " elbysodic-network-card--no-hero" if not program.community.world_hero_image_url else "" }}"
+         style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
+  <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
+    <span class="chirpui-visually-hidden">Preview {{ program.community.name }}</span>
+  </a>
+  <a class="elbysodic-network-card__poster" href="{{ program.entry_href }}">
+    {% if program.community.world_hero_image_url %}
+    <img src="{{ program.community.world_hero_image_url }}" alt="{{ program.community.world_hero_image_alt }}">
+    {% else %}
+    <span class="elbysodic-network-card__poster-fallback" aria-hidden="true">{{ program.monogram }}</span>
+    {% end %}
+    <em class="elbysodic-network-card__mark" aria-hidden="true">{{ program.monogram }}</em>
+  </a>
+  <div class="elbysodic-network-card__main">
+    <header class="elbysodic-network-card__header">
+      <div>
+        <p class="elbysodic-section-kicker">
+          {% if program.current_event %}
+          Current chapter
+          {% elif program.premise %}
+          World premise
+          {% else %}
+          Public realm
+          {% end %}
+        </p>
+        <h2>{{ program.community.name }}</h2>
+      </div>
+      <div class="elbysodic-network-card__badges">
+        {{ badge(program.invite_posture_label, variant="info") }}
+        {% if program.discovery_profile and program.discovery_profile.activity_pace %}
+        {{ badge(program.discovery_profile.activity_pace, variant="info") }}
+        {% end %}
+      </div>
+    </header>
+    <p class="elbysodic-copy-summary">{{ program_summary(program) }}</p>
+    <p class="elbysodic-copy-meta">
+      {{ program.application_posture_label }} · {{ program.claims_posture_label }}
+    </p>
+    {% if program.discovery_profile %}
+    <p class="elbysodic-copy-meta">
+      {{ program.discovery_profile.premise_archetype or "Premise-led realm" }}
+      {% if program.discovery_profile.lore_aperture %}
+      · {{ program.discovery_profile.lore_aperture }}
+      {% end %}
+      {% if program.discovery_profile.forum_adjunct %}
+      · {{ program.discovery_profile.forum_adjunct }}
+      {% end %}
+    </p>
+    {% else %}
+    <p class="elbysodic-copy-meta">Public preview · check premise, roster, wanted hooks, and first-face paths.</p>
+    {% end %}
+    <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
+      {{ program_metric_links(program) }}
+    </div>
+  </div>
+  <div class="elbysodic-network-card__actions">
+    {% if program.current_event %}
+    {{ compact_link_action(program.current_event_href, "Current event", "bolt") }}
+    {% elif program.premise %}
+    {{ compact_link_action(program.premise_href, "Premise", "list") }}
+    {% end %}
+    {% if program.open_wanted_count %}
+    {{ compact_link_action(program.entry_href ~ "/wanted", "Wanted hooks", "star") }}
+    {% end %}
+  </div>
+</article>
+{% end %}

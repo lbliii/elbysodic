@@ -245,3 +245,49 @@ Deferred:
   relationships are explicit outside plotting-room source data.
 - Canon/source grounding remains deferred until Continuity Graph provenance and
   review workflows exist.
+
+## Premise Discovery QA
+
+Date: 2026-05-15
+
+Scope: route and browser-profile proof for the public premise discovery catalog
+and director-only Studio discovery editor.
+
+Verified:
+
+- `/network` renders public discovery filters with premise, play engine, lore
+  aperture, ways in, and pace/touchpoint groups.
+- `/network?q=weird-town mystery` finds Signal Creek without exposing active
+  face, writer queue, private room, or staff state.
+- Original-premise director personas for Harbor Society, Signal Creek, and
+  Wayfarer Station can open `/studio/discovery` and see their own premise
+  archetype labels.
+- `scripts/browser_qa.py --profile premise` defines a desktop/mobile pass
+  covering public catalog queries, original-premise realm hubs, and the Studio
+  discovery editor after switching to `harbor_director` through dev personas.
+- Studio discovery now renders the same public Network card component used by
+  Explore, so directors can inspect the actual catalog card shape while
+  maintaining the profile.
+- Original-premise seeds now distribute each eight-face roster across
+  `starlane`, `junipergray`, `milesnorth`, `cassmarlow`, and `lenawren`, so demo
+  activity no longer reads as one writer owning every face.
+- Route proof now covers all nine original-premise realm hubs, wanted boards,
+  wanted detail pages, application hubs, and first-face application forms for
+  faceless members.
+- `scripts/browser_qa.py --profile premise` now visits all nine original realm
+  hubs plus representative wanted details and first-face forms.
+- `/c/{community_slug}` now has route proof for the premise-and-pressure
+  gateway across Harbor Society, Signal Creek, and Wayfarer Station, including
+  scene hubs and public-safe entry paths.
+
+Artifacts:
+
+- `research/uat/simulated/2026-05-15-premise-discovery-simulated-uat.md`
+- `tests/test_forum_slice.py::test_original_premise_discovery_routes_support_persona_qa`
+- `tests/test_forum_slice.py::test_original_premise_entry_paths_support_first_face_and_wanted_browsing`
+- `tests/test_forum_slice.py::test_original_premise_gateways_surface_premise_entry_and_scene_hubs`
+- `uv run python scripts/browser_qa.py --profile premise --base-url http://127.0.0.1:8003`
+
+Deferred:
+
+- Real hook-hunter and new-face applicant UAT against the expanded seed catalog.

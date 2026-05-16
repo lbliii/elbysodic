@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
+
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.templating.returns import Page
@@ -45,6 +47,7 @@ def get(request: Request) -> Page:
             network_mode="home",
             network_search_query="",
             browse_facets=network_home.browse_facets,
+            filter_groups=network_home.filter_groups,
             featured=network_home.featured,
             home_slices=network_home.slices,
             network_has_programs=network_home.featured is not None,
@@ -61,30 +64,33 @@ def get(request: Request) -> Page:
     except LookupError, PermissionError:
         services = get_services()
         try:
-            program = services.public_studio_program(tenant_slug)
-            hub = services.public_world_hub(tenant_slug)
+            gateway = services.public_realm_gateway(tenant_slug)
         except LookupError as exc:
             raise HTTPError(status=404, detail=str(exc)) from exc
-        world_status_label, world_status_copy = _home_world_status(hub)
         return Page.mounted(
             "page.html",
             current_path=request.url,
-            page_title=program.community.name,
+            page_title=gateway.program.community.name,
             viewer=None,
-            public_program=program,
-            community=program.community,
-            world_status_label=world_status_label,
-            world_status_copy=world_status_copy,
-            guidebook=hub,
+            realm_gateway=gateway,
+            public_program=gateway.program,
+            community=gateway.program.community,
+            world_status_label=gateway.atmosphere.title,
+            world_status_copy=gateway.atmosphere.copy,
+            guidebook=gateway.guidebook,
             show_community_shell=False,
         )
     boards = services.list_boards()
     hub = services.world_hub()
     world_status_label, world_status_copy = _home_world_status(hub)
+    realm_gateway = None
+    with suppress(LookupError):
+        realm_gateway = services.public_realm_gateway(viewer.community.slug)
     return Page.mounted(
         "page.html",
         current_path=request.url,
         viewer=viewer,
+        realm_gateway=realm_gateway,
         world_status_label=world_status_label,
         world_status_copy=world_status_copy,
         boards=boards,

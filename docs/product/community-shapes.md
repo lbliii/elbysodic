@@ -65,13 +65,66 @@ and repository methods, not by templates or slug/name heuristics.
 | `onboarding_pitch` | Where should a new face start? | Accepted |
 | discovery tags | Which story-fit lenses should browse/search expose? | Accepted as public catalog signals, not generic tags |
 | featured event material | What current chapter is moving right now? | Accepted as a pointer to a published event material |
+| Director Studio editor | Can directors intentionally position this realm for Writer Network discovery? | Accepted for discovery profiles and public discovery tags |
 
 Deferred:
 
-- Director-editable Studio form for discovery profiles.
 - Program Blueprint import for discovery metadata.
 - Persisted editorial collections beyond profile/tag-backed slices.
 - Continuity Graph-derived recommendations.
+
+## Model Extension Review
+
+Date: 2026-05-15
+
+Decision: do not add more schema in this pass. The implemented public catalog,
+Director Studio editor, original-premise seed depth, and browser QA profile put
+enough pressure on the model to confirm that the current
+`community_discovery_profiles` and `community_discovery_tags` tables cover the
+first product surface.
+
+Accepted durable fields:
+
+- `premise_archetype`, `play_engine`, `lore_aperture`, `access_model`,
+  `application_model`, `age_rating`, `content_rating`, `activity_pace`, and
+  `forum_adjunct` stay allowlisted discovery profile choices.
+- `roster_posture`, `catalog_pitch`, `onboarding_pitch`, and
+  `activity_expectation` stay short director-authored public catalog copy.
+- `featured_event_material_id` stays the current-chapter pointer and should
+  point only to a published event material in the same community.
+- Discovery tags stay public browse/search signals, separate from
+  director-defined in-world facets.
+
+Derived instead of stored:
+
+- Public scene/activity counts should come from existing threads, posts,
+  wanted hooks, claims, materials, and publication state through service read
+  models.
+- Public freshness labels should wait until the service can distinguish alive,
+  quiet, waiting, and paused without exposing private writer obligations.
+- First-face routes and review cadence should come from application/intake
+  contracts once those flows settle, not from free-form discovery fields.
+
+Deferred:
+
+- Program Blueprint import/export for discovery profiles.
+- More precise onboarding route fields after first-face onboarding and intake
+  surfaces are stable.
+- Real UAT before treating any additional field as a broad market need.
+
+Accepted follow-up:
+
+- Studio discovery should render the same public catalog card component used by
+  Network Explore so directors are not editing against an approximate preview.
+- Original-premise QA should include first-face application, wanted board, and
+  wanted detail entry paths, not only public catalog cards.
+
+Not-now:
+
+- Cinematic reference skeleton fields.
+- TV Tropes taxonomy fields.
+- Automatic premise classification or marketplace ranking fields.
+- Public categories for sanctuary sandboxes or wanted-hook-first communities.
 
 ## Public Touchpoint Rule
 

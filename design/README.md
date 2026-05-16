@@ -63,6 +63,9 @@ pretend a behavior exists until code, tests, or product docs support it.
   ladder, layered chrome, media use, mobile layout, and bad patterns.
 - `circle-terminals-token-map.md`: accepted token roles for translating the
   Circle Terminals mark into default theme color and state language.
+- `community-landing-archetype-stress-pass.md`: V2.1 stress pass that applies
+  premise-archetype research to the public community landing mock before
+  production translation.
 - `image-dimensions.md`: aspect-ratio map for Midjourney-style image
   generation and product media surfaces.
 - `motion-design.md`: animation and transition guidance for technicolor
@@ -80,6 +83,9 @@ pretend a behavior exists until code, tests, or product docs support it.
 - `static-community-landing-v2-notes.md`: research, design rationale, accepted
   moves, read-model implications, and proof needed for the community landing
   V2 prototype.
+- `static-community-landing-v2-archetype-mock.html`: static V2.1 archetype
+  stress mock with switchable no-event social, gated mystery, and institution
+  pressure gateway states.
 - `static-scene-context-mock.html`: static prototype for a scene-in-location
   reader with a minified location lane, grounding inspector, PBP hovercard, and
   writer activity drawer.

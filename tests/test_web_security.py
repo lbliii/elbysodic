@@ -470,11 +470,35 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         "small-town social web",
         "weird-town mystery",
     }
+    assert {group.title for group in explore.filter_groups} >= {
+        "Premise engine",
+        "Play engine",
+        "Lore aperture",
+        "Ways in",
+        "Pace and touchpoints",
+        "Roster posture",
+    }
+    premise_group = next(
+        group for group in explore.filter_groups if group.title == "Premise engine"
+    )
+    assert {option.label for option in premise_group.options} >= {
+        "Small Town Social Web",
+        "Weird Town Mystery",
+        "Urban Supernatural Pressure Cooker",
+        "Court And Faction Fantasy",
+        "Strange Frontier",
+    }
+    assert all(option.result_count > 0 for option in premise_group.options)
     assert {lane.title for lane in explore.relationship_lanes} >= {
         "Start with a premise",
         "Start with a wanted hook",
         "Start with a current chapter",
     }
+    lanes_by_title = {lane.title: lane for lane in explore.relationship_lanes}
+    assert lanes_by_title["Start with a premise"].result_count == len(
+        services.network_explore().results
+    )
+    assert lanes_by_title["Start with a wanted hook"].result_count == len(explore.results)
 
     for card in [home.featured, *explore.results]:
         assert card is not None

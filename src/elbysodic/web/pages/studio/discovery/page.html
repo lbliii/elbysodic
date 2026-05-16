@@ -1,0 +1,133 @@
+{% imports %}
+  {% from "chirpui/layout.html" import container, stack %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/network_catalog.html" import program_card %}
+{% end %}
+
+{% def select_field(group, editor) %}
+<label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+  <span class="chirpui-field__label">{{ group.label }}</span>
+  <select class="chirpui-field__input" name="{{ group.field_name }}" required>
+    {% for choice in group.choices %}
+    <option value="{{ choice.value }}" {% if editor.value_for(group.field_name) == choice.value %}selected{% end %}>{{ choice.label }}</option>
+    {% end %}
+  </select>
+</label>
+{% end %}
+
+{% def preview_metric(label, value) %}
+<div class="elbysodic-director-signal">
+  <span>{{ label }}</span>
+  <strong>{{ value }}</strong>
+</div>
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="76rem") %}
+{% call stack(gap="lg") %}
+  <div class="elbysodic-place-toolbar">
+    <nav class="elbysodic-place-path" aria-label="Studio path">
+      <a href="/studio">Studio</a>
+      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
+      <span aria-current="page">Discovery profile</span>
+    </nav>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Preview Network</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview realm</a>
+    </div>
+  </div>
+
+  <section class="elbysodic-director-hero">
+    <div>
+      <p class="elbysodic-kicker">Writer Network</p>
+      <h1>Discovery profile</h1>
+      <p class="elbysodic-copy-lead">
+        Shape the public premise, fit, pace, roster posture, and first-face signals writers see before they join {{ viewer.community.name }}.
+      </p>
+    </div>
+    <aside class="elbysodic-director-hero__signals" aria-label="Discovery profile state">
+      {{ preview_metric("Tags", editor.tags | length) }}
+      {{ preview_metric("Faces", editor.preview_card.roster_count) }}
+      {{ preview_metric("Wanted", editor.preview_card.open_wanted_count) }}
+      {{ preview_metric("Claims", editor.preview_card.claim_type_count) }}
+    </aside>
+  </section>
+
+  {% if error %}
+  {% call surface(variant="elevated") %}
+  <p class="elbysodic-form-error">{{ error }}</p>
+  {% end %}
+  {% end %}
+
+  <section class="elbysodic-network-two-up" aria-label="Discovery editor">
+    {% call surface(variant="elevated") %}
+    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
+      {{ csrf_field() }}
+      <div>
+        <p class="elbysodic-kicker">Public catalog</p>
+        <h2>Profile fields</h2>
+        <p class="elbysodic-copy-section">
+          These values power premise filters, Explore search, homepage lanes, and public catalog cards.
+        </p>
+      </div>
+      <div class="elbysodic-theme-editor-grid">
+        {% for group in editor.choice_groups %}
+        {{ select_field(group, editor) }}
+        {% end %}
+      </div>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Activity expectation</span>
+        <input class="chirpui-field__input" name="activity_expectation" value="{{ editor.value_for('activity_expectation') }}" maxlength="180">
+      </label>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Roster posture</span>
+        <input class="chirpui-field__input" name="roster_posture" value="{{ editor.value_for('roster_posture') }}" maxlength="180">
+      </label>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Catalog pitch</span>
+        <textarea class="chirpui-field__input" name="catalog_pitch" rows="3" maxlength="240">{{ editor.value_for('catalog_pitch') }}</textarea>
+      </label>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Onboarding pitch</span>
+        <textarea class="chirpui-field__input" name="onboarding_pitch" rows="3" maxlength="240">{{ editor.value_for('onboarding_pitch') }}</textarea>
+      </label>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Staff pick label</span>
+        <input class="chirpui-field__input" name="staff_pick_label" value="{{ editor.value_for('staff_pick_label') }}" maxlength="80">
+      </label>
+      <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
+        <span class="chirpui-field__label">Discovery tags</span>
+        <textarea class="chirpui-field__input" name="discovery_tags" rows="8" spellcheck="false">{{ editor.tag_lines }}</textarea>
+      </label>
+      <p class="elbysodic-copy-helper">Format each tag as: tag_type | tag_key | label | search text.</p>
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">Save discovery profile</button>
+      </div>
+    </form>
+    {% end %}
+
+    <section class="chirpui-stack chirpui-stack--md" aria-label="Public catalog card preview">
+      <div>
+        <p class="elbysodic-kicker">Public card preview</p>
+        <h2>Network card</h2>
+        <p class="elbysodic-copy-section">This is the same public card component used by Network Explore.</p>
+      </div>
+      {{ program_card(editor.preview_card) }}
+      {% if editor.tags %}
+      <div class="elbysodic-network-discovery-band">
+        {% for tag in editor.tags %}
+        <a href="/network?q={{ tag.tag_key }}">{{ tag.label }}</a>
+        {% end %}
+      </div>
+      {% end %}
+    </section>
+  </section>
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

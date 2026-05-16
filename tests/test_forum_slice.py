@@ -1289,9 +1289,19 @@ def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
     xmen_writer = resolve_seed_persona(services.repo, "xmen_writer")
     hp_director = resolve_seed_persona(services.repo, "hp_director")
     nyc_writer = resolve_seed_persona(services.repo, "nyc_writer")
+    harbor_director = resolve_seed_persona(services.repo, "harbor_director")
+    signal_director = resolve_seed_persona(services.repo, "signal_director")
+    wayfarer_director = resolve_seed_persona(services.repo, "wayfarer_director")
     inactive = resolve_seed_persona(services.repo, "xmen_inactive")
 
-    assert xmen_writer.user.id == hp_director.user.id == nyc_writer.user.id
+    assert (
+        xmen_writer.user.id
+        == hp_director.user.id
+        == nyc_writer.user.id
+        == harbor_director.user.id
+        == signal_director.user.id
+        == wayfarer_director.user.id
+    )
     assert xmen_writer.community.slug == "x-men-apocalypse"
     assert xmen_writer.role.name == "Member"
     assert not xmen_writer.role.is_admin
@@ -1301,6 +1311,14 @@ def test_seed_persona_matrix_names_multi_community_role_differences() -> None:
     assert nyc_writer.community.slug == "rl-nyc"
     assert nyc_writer.role.name == "Member"
     assert not nyc_writer.role.is_admin
+    assert harbor_director.community.slug == "harbor-society"
+    assert harbor_director.role.name == "Director"
+    assert harbor_director.character is not None
+    assert harbor_director.character.name == "Maris Vale"
+    assert signal_director.community.slug == "signal-creek"
+    assert signal_director.role.is_admin
+    assert wayfarer_director.community.slug == "wayfarer-station"
+    assert wayfarer_director.persona.default_path == "/studio/discovery"
     assert inactive.membership.username == "sleepingstar"
     assert not inactive.membership.is_active
     assert inactive.character is not None
@@ -1842,6 +1860,15 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "urban supernatural" in response.text
         assert "weird-town mystery" in response.text
         assert "small-town social web" in response.text
+        assert "Explore by discovery profile" in response.text
+        assert "Premise engine" in response.text
+        assert "Play engine" in response.text
+        assert "Lore aperture" in response.text
+        assert "Ways in" in response.text
+        assert "Pace and touchpoints" in response.text
+        assert "Small Town Social Web" in response.text
+        assert "Weird Town Mystery" in response.text
+        assert "Court And Faction Fantasy" in response.text
         assert "court" in response.text
         assert "fame" in response.text
         assert "face you want to wear next" not in response.text
@@ -1864,6 +1891,122 @@ def test_network_explore_search_filters_programs() -> None:
         assert 'value="magic school"' in response.text
         assert "1</strong>\n  <span>realms found</span>" in response.text
         assert "HP Universe" in response.text
+
+    asyncio.run(run())
+
+
+def test_original_premise_discovery_routes_support_persona_qa() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        public_app = create_app(debug=False, services=services, dev_tools=True)
+        async with TestClient(public_app) as client:
+            network = await client.get("/network?q=weird-town mystery")
+
+        assert network.status == 200
+        assert "Signal Creek" in network.text
+        assert "Weird Town Mystery" in network.text
+        assert "face you want to wear next" not in network.text
+
+        persona_expectations = (
+            ("harbor_director", "Harbor Society", "Small Town Social Web"),
+            ("signal_director", "Signal Creek", "Weird Town Mystery"),
+            ("wayfarer_director", "Wayfarer Station", "Strange Frontier"),
+        )
+        for persona_key, community_name, archetype_label in persona_expectations:
+            persona = resolve_seed_persona(services.repo, persona_key)
+            persona_app = create_app(
+                debug=False,
+                services=AppServices(
+                    services.repo,
+                    DemoSeed(
+                        persona.community,
+                        persona.user,
+                        persona.membership,
+                        persona.character,
+                    ),
+                ),
+                dev_tools=True,
+            )
+            async with TestClient(persona_app) as client:
+                studio = await client.get("/studio/discovery")
+                realm = await client.get(f"/c/{persona.community.slug}")
+
+            assert persona.persona.default_path == "/studio/discovery"
+            assert studio.status == 200
+            assert "Discovery profile" in studio.text
+            assert community_name in studio.text
+            assert archetype_label in studio.text
+            assert realm.status == 200
+            assert community_name in realm.text
+
+    asyncio.run(run())
+
+
+def test_original_premise_entry_paths_support_first_face_and_wanted_browsing() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        route_expectations = (
+            ("harbor-society", "reporter-source-at-the-club", "Reporter source"),
+            ("signal-creek", "cult-survivor-who-remembers-1998", "Cult survivor"),
+            ("nocturne-row", "blood-bank-whistleblower", "Blood-bank whistleblower"),
+            ("crownfall", "black-market-mage", "Black-market mage"),
+            ("afterlight-accord", "archive-thief", "Archive thief"),
+            ("brightline", "crisis-photographer", "Crisis photographer"),
+            ("emberhouse", "black-market-supplier", "Black-market supplier"),
+            ("gaslight-ward", "disgraced-fiance", "Disgraced fiance"),
+            ("wayfarer-station", "corporate-auditor", "Corporate auditor"),
+        )
+        for community_slug, wanted_slug, wanted_title in route_expectations:
+            community = services.repo.get_community_by_slug(community_slug)
+            role = services.repo.get_role_by_slug(community.id, "member")
+            user = services.repo.create_user(f"{community.slug}-applicant@example.com", "hash")
+            membership = services.repo.create_membership(
+                community.id,
+                user.id,
+                role.id,
+                f"{community.slug}-applicant",
+                f"{community.name} Applicant",
+            )
+            app = create_app(
+                debug=False,
+                services=AppServices(
+                    services.repo,
+                    DemoSeed(community, user, membership, None),
+                ),
+            )
+            fields = services.repo.list_application_template_fields(community.id)
+
+            async with TestClient(app) as client:
+                hub = await client.get(f"/c/{community.slug}")
+                wanted_board = await client.get(f"/c/{community.slug}/wanted")
+                wanted_detail = await client.get(f"/c/{community.slug}/wanted/{wanted_slug}")
+                applications = await client.get(f"/c/{community.slug}/applications")
+                first_face = await client.get(f"/c/{community.slug}/applications/new")
+
+            assert hub.status == 200
+            assert community.name in hub.text
+            assert "Wanted" in hub.text
+
+            assert wanted_board.status == 200
+            assert wanted_title in wanted_board.text
+            assert f'href="/c/{community.slug}/wanted/{wanted_slug}"' in wanted_board.text
+
+            assert wanted_detail.status == 200
+            assert wanted_title in wanted_detail.text
+            assert 'name="prospective_character_name"' in wanted_detail.text
+            assert "Pitch a new face for this" in wanted_detail.text
+
+            assert applications.status == 200
+            assert "Start application" in applications.text
+            assert "Application Guide" in applications.text
+
+            assert first_face.status == 200
+            assert "Start Application" in first_face.text
+            assert "Face name" in first_face.text
+            assert f"This will become your first active face in {community.name}" in first_face.text
+            assert "Director fields" in first_face.text
+            assert fields
+            assert fields[0].label in first_face.text
 
     asyncio.run(run())
 
@@ -1892,6 +2035,67 @@ def test_network_directory_enter_realm_sets_identity_cookie() -> None:
         assert response.status == 302
         assert _response_header(response, "location") == "/c/hp-universe"
         assert "elbysodic_dev_identity=" in _response_header(response, "set-cookie")
+
+    asyncio.run(run())
+
+
+def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> None:
+    services = _seeded_services()
+
+    gateway_expectations = {
+        "harbor-society": (
+            "The gala vote, family ties, town jobs, and quiet debts are already in motion.",
+            "Shoreline Club",
+            "Small Town Social Web",
+        ),
+        "signal-creek": (
+            "The midnight signal gives newcomers a reason to ask questions before town memory closes ranks.",
+            "Blackridge Observatory",
+            "Weird Town Mystery",
+        ),
+        "wayfarer-station": (
+            "The missing convoy has already tightened supplies, stirred old debts, and made the station listen.",
+            "Docking Ring",
+            "Strange Frontier",
+        ),
+    }
+
+    for community_slug, (
+        onboarding_pitch,
+        scene_hub,
+        premise_label,
+    ) in gateway_expectations.items():
+        gateway = services.public_realm_gateway(community_slug)
+
+        assert gateway.premise.onboarding_pitch == onboarding_pitch
+        assert gateway.premise.premise_label == premise_label
+        assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
+        assert {path.title for path in gateway.entry_paths} >= {
+            "Read the premise",
+            "Browse open calls",
+            "Request access",
+        }
+        assert all(not hub.board.is_private for hub in gateway.scene_hubs)
+
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            for community_slug, (
+                onboarding_pitch,
+                scene_hub,
+                premise_label,
+            ) in gateway_expectations.items():
+                response = await client.get(f"/c/{community_slug}")
+                content = _page_content(response.text)
+
+                assert response.status == 200
+                assert "Premise and pressure" in content
+                assert premise_label in content
+                assert onboarding_pitch in content
+                assert "Scene hubs" in content
+                assert scene_hub in content
+                assert "application review" not in content.lower()
+                assert "staff controls" not in content.lower()
 
     asyncio.run(run())
 
@@ -2517,6 +2721,8 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Production cockpit" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
+            assert "Public discovery profile" not in studio.text
+            assert 'href="/studio/discovery"' not in studio.text
             assert "Studio rooms" not in studio.text
             assert 'id="chirp-shell-actions"' in studio.text
             assert 'href="/studio/operations"' not in _page_content(studio.text)
@@ -2743,6 +2949,108 @@ def test_guided_realm_builder_creates_minimum_opening_packet() -> None:
         assert application.material_type == "application"
         assert application.summary == "Bring a face, hooks, limits, and claims."
         assert repo.get_default_theme(community.id) is not None
+
+    asyncio.run(run())
+
+
+def test_director_can_update_discovery_profile_from_studio() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            editor = await client.get("/studio/discovery")
+            updated = await client.post(
+                "/studio/discovery",
+                body=urlencode(
+                    {
+                        "premise_archetype": "weird-town-mystery",
+                        "play_engine": "mystery-driven",
+                        "lore_aperture": "open-lore",
+                        "access_model": "public-preview",
+                        "application_model": "profile-app",
+                        "age_rating": "18+",
+                        "content_rating": "3/3/3",
+                        "activity_pace": "weekly",
+                        "activity_expectation": "weekly clue scenes and rumor prompts",
+                        "forum_adjunct": "forum-first",
+                        "roster_posture": "locals, skeptics, staff, and original faces",
+                        "catalog_pitch": "A testable mystery posture for public catalog cards.",
+                        "onboarding_pitch": "Start with a rumor, a clue, or a wanted hook.",
+                        "staff_pick_label": "Mystery test pick",
+                        "discovery_tags": (
+                            "premise|studio-mystery|Studio mystery|director edited mystery signal"
+                        ),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            restored = await client.get("/studio/discovery")
+
+        profile = services.repo.get_discovery_profile(staff.community.id)
+        tags = services.repo.list_discovery_tags_for_communities([staff.community.id])[
+            staff.community.id
+        ]
+        results = services.network_explore("studio-mystery").results
+
+        assert editor.status == 200
+        assert "Discovery profile" in editor.text
+        assert "X-Men Apocalypse" in editor.text
+        assert updated.status == 302
+        assert _response_header(updated, "location") == "/studio/discovery"
+        assert restored.status == 200
+        assert "This is the same public card component used by Network Explore." in restored.text
+        assert 'class="elbysodic-network-card' in restored.text
+        assert "A testable mystery posture for public catalog cards." in restored.text
+        assert profile.premise_archetype == "weird-town-mystery"
+        assert profile.featured_event_material_id is not None
+        assert [tag.tag_key for tag in tags] == ["studio-mystery"]
+        assert [card.community.slug for card in results] == ["x-men-apocalypse"]
+
+    asyncio.run(run())
+
+
+def test_discovery_profile_editor_requires_director_membership() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        writer = resolve_seed_persona(services.repo, "xmen_writer")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(writer.community, writer.user, writer.membership, writer.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            editor = await client.get("/studio/discovery")
+            updated = await client.post(
+                "/studio/discovery",
+                body=urlencode(
+                    {
+                        "premise_archetype": "weird-town-mystery",
+                        "play_engine": "mystery-driven",
+                        "lore_aperture": "open-lore",
+                        "access_model": "public-preview",
+                        "application_model": "profile-app",
+                        "age_rating": "18+",
+                        "content_rating": "3/3/3",
+                        "activity_pace": "weekly",
+                        "forum_adjunct": "forum-first",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert editor.status == 403
+        assert updated.status == 403
 
     asyncio.run(run())
 

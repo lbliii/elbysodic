@@ -1819,6 +1819,59 @@ class StudioNetworkProgramView:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayPremise:
+    discovery_profile: CommunityDiscoveryProfile | None
+    catalog_pitch: str
+    onboarding_pitch: str
+    premise_label: str
+    play_label: str
+    lore_label: str
+    roster_posture: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayAtmosphere:
+    title: str
+    label: str
+    copy: str
+    href: str | None
+    source_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewaySceneHub:
+    board: Board
+    public_thread_count: int
+
+    @property
+    def href(self) -> str:
+        return f"/boards/{self.board.slug}"
+
+    @property
+    def display_summary(self) -> str:
+        return self.board.tagline or self.board.description or self.board.board_kind
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayEntryPath:
+    title: str
+    summary: str
+    href: str
+    metric_label: str
+    metric_value: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayView:
+    program: StudioNetworkProgramView
+    guidebook: WorldHub
+    premise: RealmGatewayPremise
+    atmosphere: RealmGatewayAtmosphere
+    scene_hubs: tuple[RealmGatewaySceneHub, ...]
+    entry_paths: tuple[RealmGatewayEntryPath, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class PublicCatalogCard:
     community: Community
     premise: MaterialSummary | None
@@ -1891,6 +1944,13 @@ class NetworkBrowseFacet:
     label: str
     href: str
     tone: str = "neutral"
+    result_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class NetworkDiscoveryFilterGroup:
+    title: str
+    options: list[NetworkBrowseFacet]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1899,6 +1959,7 @@ class NetworkExploreLane:
     summary: str
     href: str
     metric_label: str
+    result_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -1913,6 +1974,7 @@ class NetworkHomeView:
     featured: PublicCatalogCard | None
     slices: list[NetworkSlice]
     browse_facets: list[NetworkBrowseFacet]
+    filter_groups: list[NetworkDiscoveryFilterGroup]
     return_path: NetworkReturnPath | None
 
 
@@ -1920,8 +1982,41 @@ class NetworkHomeView:
 class NetworkExploreView:
     query: str
     browse_facets: list[NetworkBrowseFacet]
+    filter_groups: list[NetworkDiscoveryFilterGroup]
     relationship_lanes: list[NetworkExploreLane]
     results: list[PublicCatalogCard]
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileChoice:
+    value: str
+    label: str
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileChoiceGroup:
+    field_name: str
+    label: str
+    choices: tuple[DiscoveryProfileChoice, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileEditor:
+    profile: CommunityDiscoveryProfile | None
+    tags: tuple[CommunityDiscoveryTag, ...]
+    preview_card: PublicCatalogCard
+    choice_groups: tuple[DiscoveryProfileChoiceGroup, ...]
+
+    @property
+    def tag_lines(self) -> str:
+        return "\n".join(
+            "|".join((tag.tag_type, tag.tag_key, tag.label, tag.search_text)) for tag in self.tags
+        )
+
+    def value_for(self, field_name: str) -> str:
+        if self.profile is None:
+            return ""
+        return str(getattr(self.profile, field_name, "") or "")
 
 
 def _program_href(program: StudioNetworkProgramView, path: str) -> str:

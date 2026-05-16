@@ -1730,6 +1730,52 @@ def test_characters_are_membership_owned_posting_identities(repo: ForumRepositor
         repo.set_default_character(default.id, default_membership.id, magneto.id)
 
 
+def test_character_transfer_repairs_membership_defaults(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "member", "Member")
+    first_user = repo.create_user("first-owner@example.com", "hash")
+    second_user = repo.create_user("second-owner@example.com", "hash")
+    first_membership = repo.create_membership(
+        community.id,
+        first_user.id,
+        role.id,
+        "first-owner",
+        "First Owner",
+    )
+    second_membership = repo.create_membership(
+        community.id,
+        second_user.id,
+        role.id,
+        "second-owner",
+        "Second Owner",
+    )
+    rogue = repo.create_character(
+        community.id,
+        first_membership.id,
+        "rogue",
+        "Rogue",
+        make_default=True,
+    )
+    storm = repo.create_character(community.id, first_membership.id, "storm", "Storm")
+
+    transferred = repo.transfer_character_membership(
+        community.id,
+        rogue.id,
+        second_membership.id,
+        make_default=True,
+    )
+
+    assert transferred.membership_id == second_membership.id
+    assert repo.get_membership(community.id, first_membership.id).default_character_id == storm.id
+    assert repo.get_membership(community.id, second_membership.id).default_character_id == rogue.id
+    assert [
+        character.slug for character in repo.list_characters(community.id, first_membership.id)
+    ] == ["storm"]
+    assert [
+        character.slug for character in repo.list_characters(community.id, second_membership.id)
+    ] == ["rogue"]
+
+
 def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")

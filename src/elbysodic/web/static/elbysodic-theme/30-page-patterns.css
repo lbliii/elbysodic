@@ -760,6 +760,78 @@
     padding: 1rem;
 }
 
+.elbysodic-realm-gateway,
+.elbysodic-realm-hub-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.elbysodic-realm-gateway-card,
+.elbysodic-realm-hub-card,
+.elbysodic-realm-entry-row {
+    background: color-mix(in srgb, var(--chirpui-surface) 68%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 64%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+}
+
+.elbysodic-realm-gateway-card,
+.elbysodic-realm-hub-card {
+    color: inherit;
+    display: grid;
+    gap: 0.45rem;
+    min-block-size: 11rem;
+    padding: 1rem;
+}
+
+.elbysodic-realm-gateway-card strong,
+.elbysodic-realm-hub-card strong,
+.elbysodic-realm-entry-row strong {
+    color: var(--chirpui-text);
+}
+
+.elbysodic-realm-gateway-card p,
+.elbysodic-realm-hub-card span,
+.elbysodic-realm-entry-row small {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.38;
+    margin: 0;
+}
+
+.elbysodic-realm-hub-card em,
+.elbysodic-realm-entry-row em {
+    color: var(--chirpui-text-subtle);
+    font-size: var(--chirpui-font-xs);
+    font-style: normal;
+    text-transform: uppercase;
+}
+
+.elbysodic-realm-entry-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.elbysodic-realm-entry-row {
+    align-items: center;
+    color: inherit;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+}
+
+.elbysodic-realm-entry-row span {
+    display: grid;
+    gap: 0.2rem;
+}
+
+@media (min-width: 46rem) {
+    .elbysodic-realm-gateway-card--premise {
+        grid-column: span 2;
+    }
+}
+
 .elbysodic-community-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 }

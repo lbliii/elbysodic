@@ -22,6 +22,7 @@ def get(request: Request) -> Page:
         network_mode=mode,
         network_search_query=query,
         browse_facets=network_explore.browse_facets,
+        filter_groups=network_explore.filter_groups,
         featured=None,
         home_slices=[],
         network_has_programs=bool(network_explore.results) or bool(query),
