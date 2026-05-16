@@ -1942,6 +1942,80 @@ def test_original_premise_discovery_routes_support_persona_qa() -> None:
     asyncio.run(run())
 
 
+def test_original_premise_entry_paths_support_first_face_and_wanted_browsing() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        route_expectations = (
+            ("harbor_director", "reporter-source-at-the-club", "Reporter source"),
+            ("signal_director", "cult-survivor-who-remembers-1998", "Cult survivor"),
+            ("wayfarer_director", "corporate-auditor", "Corporate auditor"),
+        )
+        for index, (persona_key, wanted_slug, wanted_title) in enumerate(route_expectations):
+            persona = resolve_seed_persona(services.repo, persona_key)
+            role = services.repo.create_role(
+                persona.community.id,
+                f"member-{index}",
+                "Member",
+            )
+            user = services.repo.create_user(
+                f"{persona.community.slug}-applicant@example.com", "hash"
+            )
+            membership = services.repo.create_membership(
+                persona.community.id,
+                user.id,
+                role.id,
+                f"{persona.community.slug}-applicant",
+                f"{persona.community.name} Applicant",
+            )
+            app = create_app(
+                debug=False,
+                services=AppServices(
+                    services.repo,
+                    DemoSeed(persona.community, user, membership, None),
+                ),
+            )
+            fields = services.repo.list_application_template_fields(persona.community.id)
+
+            async with TestClient(app) as client:
+                hub = await client.get(f"/c/{persona.community.slug}")
+                wanted_board = await client.get(f"/c/{persona.community.slug}/wanted")
+                wanted_detail = await client.get(
+                    f"/c/{persona.community.slug}/wanted/{wanted_slug}"
+                )
+                applications = await client.get(f"/c/{persona.community.slug}/applications")
+                first_face = await client.get(f"/c/{persona.community.slug}/applications/new")
+
+            assert hub.status == 200
+            assert persona.community.name in hub.text
+            assert "Wanted" in hub.text
+
+            assert wanted_board.status == 200
+            assert wanted_title in wanted_board.text
+            assert f'href="/c/{persona.community.slug}/wanted/{wanted_slug}"' in wanted_board.text
+
+            assert wanted_detail.status == 200
+            assert wanted_title in wanted_detail.text
+            assert 'name="prospective_character_name"' in wanted_detail.text
+            assert "Pitch a new face for this" in wanted_detail.text
+
+            assert applications.status == 200
+            assert "Start application" in applications.text
+            assert "Application Guide" in applications.text
+
+            assert first_face.status == 200
+            assert "Start Application" in first_face.text
+            assert "Face name" in first_face.text
+            assert (
+                f"This will become your first active face in {persona.community.name}"
+                in first_face.text
+            )
+            assert "Director fields" in first_face.text
+            assert fields
+            assert fields[0].label in first_face.text
+
+    asyncio.run(run())
+
+
 def test_network_directory_enter_realm_sets_identity_cookie() -> None:
     async def run() -> None:
         app = _app()
