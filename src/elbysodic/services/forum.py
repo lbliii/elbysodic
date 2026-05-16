@@ -270,6 +270,7 @@ from elbysodic.services.read_models import (
     RealmGatewayHero,
     RealmGatewayPremise,
     RealmGatewaySceneHub,
+    RealmGatewayScenePreview,
     RealmGatewaySignalItem,
     RealmGatewayView,
     RealmGatewayWantedPreview,
@@ -3339,6 +3340,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
     premise = _realm_gateway_premise(program, profile)
     atmosphere = _realm_gateway_atmosphere(program, guidebook)
     scene_hubs = _realm_gateway_scene_hubs(repo, community.id)
+    scene_previews = _realm_gateway_scene_previews(repo, program)
     entry_paths = _realm_gateway_entry_paths(program, guidebook)
     wanted_previews = _realm_gateway_wanted_previews(repo, program)
     return RealmGatewayView(
@@ -3349,6 +3351,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         atmosphere=atmosphere,
         signals=_realm_gateway_signals(program, guidebook, scene_hubs),
         scene_hubs=scene_hubs,
+        scene_previews=scene_previews,
         entry_paths=entry_paths,
         wanted_previews=wanted_previews,
     )
@@ -3584,6 +3587,56 @@ def _realm_gateway_hub_eyebrow(board: Board, emphasis: str) -> str:
     if board.board_kind == "community":
         return "Social room"
     return "Scene hub"
+
+
+def _realm_gateway_scene_previews(
+    repo: ForumRepository,
+    program: StudioNetworkProgramView,
+    *,
+    limit: int = 3,
+) -> tuple[RealmGatewayScenePreview, ...]:
+    boards = {
+        board.id: board
+        for board in repo.list_boards(program.community.id)
+        if not board.is_private
+        and board.sidebar_section == "locations"
+        and board.board_kind in {"location", "sublocation"}
+    }
+    if not boards:
+        return ()
+    previews = []
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        program.community.id,
+        [
+            thread.id
+            for thread in repo.list_threads(program.community.id)
+            if thread.board_id in boards and thread.status == "open" and not thread.is_locked
+        ],
+    )
+    for thread in repo.list_threads(program.community.id):
+        board = boards.get(thread.board_id)
+        if board is None or thread.status != "open" or thread.is_locked:
+            continue
+        try:
+            author = repo.get_character(program.community.id, thread.author_character_id)
+        except LookupError:
+            continue
+        if author.application_status != "accepted":
+            continue
+        cast_count = max(len(participants_by_thread.get(thread.id, ())), 1)
+        previews.append(
+            RealmGatewayScenePreview(
+                title=thread.title,
+                summary=thread.summary or board.tagline or board.description,
+                href=_community_href(program, f"/boards/{board.slug}/threads/{thread.slug}"),
+                board_label=board.name,
+                status_label="Open scene",
+                cast_label=f"{cast_count} face{'s' if cast_count != 1 else ''}",
+            )
+        )
+        if len(previews) >= limit:
+            break
+    return tuple(previews)
 
 
 def _realm_gateway_entry_paths(

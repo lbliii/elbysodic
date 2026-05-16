@@ -954,6 +954,55 @@
     gap: 0.65rem;
 }
 
+.elbysodic-realm-scene-list {
+    background: color-mix(in srgb, var(--chirpui-surface) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 62%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    overflow: hidden;
+}
+
+.elbysodic-realm-scene-row {
+    color: inherit;
+    display: grid;
+    gap: 0.65rem;
+    grid-template-columns: minmax(6rem, 0.45fr) minmax(0, 1.35fr) minmax(8rem, auto);
+    padding: 0.9rem 1rem;
+    text-decoration: none;
+}
+
+.elbysodic-realm-scene-row + .elbysodic-realm-scene-row {
+    border-block-start: 1px solid color-mix(in srgb, var(--chirpui-border) 52%, transparent);
+}
+
+.elbysodic-realm-scene-row:hover,
+.elbysodic-realm-scene-row:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 7%, transparent);
+}
+
+.elbysodic-realm-scene-row > span:not(.elbysodic-material-card__type) {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.elbysodic-realm-scene-row strong {
+    color: var(--chirpui-text);
+}
+
+.elbysodic-realm-scene-row small {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.38;
+}
+
+.elbysodic-realm-scene-row em {
+    color: var(--chirpui-text-subtle);
+    font-size: var(--chirpui-font-xs);
+    font-style: normal;
+    text-align: end;
+    text-transform: uppercase;
+}
+
 .elbysodic-realm-entry-row {
     align-items: center;
     color: inherit;
@@ -1116,6 +1165,14 @@
     .elbysodic-realm-entry-row {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .elbysodic-realm-scene-row {
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-realm-scene-row em {
+        text-align: start;
     }
 
     .elbysodic-realm-continuation {

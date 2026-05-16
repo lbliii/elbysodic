@@ -126,6 +126,26 @@
 {% end %}
 {% end %}
 
+{% def gateway_scene_previews(gateway) %}
+{% if gateway.scene_previews %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scenes-title">
+  {{ gateway_section_header("Playable now", "Open scenes carrying the premise", "Public scene previews show story motion without exposing private queues or member obligations.") }}
+  <div class="elbysodic-realm-scene-list">
+    {% for scene in gateway.scene_previews %}
+    <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
+      <span class="elbysodic-material-card__type">{{ scene.status_label }}</span>
+      <span>
+        <strong>{{ scene.title }}</strong>
+        <small>{{ scene.summary }}</small>
+      </span>
+      <em>{{ scene.board_label }} · {{ scene.cast_label }}</em>
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
 {% def gateway_entry_paths(gateway) %}
 {% if gateway.entry_paths %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-entry-title">
@@ -212,6 +232,7 @@
   {{ gateway_continuation(gateway) }}
   {{ gateway_signal_band(gateway) }}
   {{ gateway_scene_hubs(gateway) }}
+  {{ gateway_scene_previews(gateway) }}
   {% if not viewer %}
   {{ gateway_entry_paths(gateway) }}
   {{ gateway_guidebook(gateway) }}

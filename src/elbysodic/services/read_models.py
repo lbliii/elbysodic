@@ -1878,6 +1878,16 @@ class RealmGatewaySceneHub:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayScenePreview:
+    title: str
+    summary: str
+    href: str
+    board_label: str
+    status_label: str
+    cast_label: str
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayEntryPath:
     title: str
     summary: str
@@ -1921,6 +1931,7 @@ class RealmGatewayView:
     atmosphere: RealmGatewayAtmosphere
     signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
+    scene_previews: tuple[RealmGatewayScenePreview, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
     wanted_previews: tuple[RealmGatewayWantedPreview, ...]
     continuation: RealmGatewayContinuation | None = None

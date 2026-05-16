@@ -2189,6 +2189,54 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
         services.public_realm_gateway(backstage.slug)
 
 
+def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = services.seed.community
+    public_board = repo.get_board_by_slug(community.id, "danger-room")
+    private_board = repo.get_board_by_slug(community.id, "staff-room")
+    rogue = repo.get_character_by_slug(community.id, "rogue")
+    private_thread = repo.create_thread(
+        community.id,
+        private_board.id,
+        rogue.id,
+        "private-gateway-scene",
+        "Private gateway scene",
+        status="open",
+        summary="Private story motion that should not reach public previews.",
+    )
+    public_thread = repo.create_thread(
+        community.id,
+        public_board.id,
+        rogue.id,
+        "public-gateway-scene",
+        "Public gateway scene",
+        status="open",
+        summary="A public scene that can safely invite first-face readers.",
+    )
+
+    gateway = services.public_realm_gateway(community.slug)
+
+    assert any(preview.title == public_thread.title for preview in gateway.scene_previews)
+    assert all(preview.title != private_thread.title for preview in gateway.scene_previews)
+    assert all(preview.href.startswith(f"/c/{community.slug}/boards/") for preview in gateway.scene_previews)
+
+    async def run() -> None:
+        app = create_app(debug=False, services=AppServices(services.repo, None))
+        async with TestClient(app) as client:
+            response = await client.get(f"/c/{community.slug}")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert "Playable now" in content
+            assert "Open scenes carrying the premise" in content
+            assert "Public gateway scene" in content
+            assert "Private gateway scene" not in content
+            assert "Private story motion" not in content
+
+    asyncio.run(run())
+
+
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
     async def run() -> None:
         app = _app()
