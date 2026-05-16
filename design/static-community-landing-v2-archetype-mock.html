@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Community Landing V2.1 Archetype Stress Mock</title>
+  <link rel="stylesheet" href="../src/elbysodic/web/static/elbysodic-theme.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --mock-bg: #07121f;
+      --mock-panel: color-mix(in srgb, var(--chirpui-surface, #102032) 88%, transparent);
+      --mock-panel-strong: color-mix(in srgb, var(--chirpui-surface-elevated, #17283d) 94%, transparent);
+      --mock-border: color-mix(in srgb, var(--chirpui-border, #50657a) 70%, transparent);
+      --mock-text: var(--chirpui-text, #f7fbff);
+      --mock-muted: var(--chirpui-muted, #a9b7c7);
+      --mock-accent: #79f3ff;
+      --mock-dye: #ff6bd5;
+      --mock-warm: #f6d270;
+      --mock-good: #82efc6;
+      --mock-danger: #ff7a8e;
+      --rail-width: 4.5rem;
+      --inner-width: 17rem;
+      font-family: var(--chirpui-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+      line-height: 1.5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--mock-dye) 18%, transparent), transparent 26rem),
+        radial-gradient(circle at 88% 5%, color-mix(in srgb, var(--mock-accent) 14%, transparent), transparent 28rem),
+        linear-gradient(135deg, #07121f 0%, #101c2c 46%, #181429 100%);
+      color: var(--mock-text);
+    }
+
+    body[data-variant="social"] {
+      --mock-accent: #a8f0c6;
+      --mock-dye: #ffd36d;
+    }
+
+    body[data-variant="mystery"] {
+      --mock-accent: #86e7ff;
+      --mock-dye: #c986ff;
+    }
+
+    body[data-variant="institution"] {
+      --mock-accent: #ff8fb7;
+      --mock-dye: #f6d270;
+    }
+
+    a,
+    button {
+      color: inherit;
+      font: inherit;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .mock-switcher {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      align-items: center;
+      min-height: 3rem;
+      padding: .6rem 1rem .6rem calc(var(--rail-width) + 1rem);
+      border-bottom: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #07121f 88%, transparent);
+      backdrop-filter: blur(16px);
+    }
+
+    .mock-switcher strong {
+      margin-right: .5rem;
+      color: var(--mock-muted);
+      font-size: .72rem;
+      font-weight: 760;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .mock-switcher button {
+      min-height: 2rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 999px;
+      padding: .35rem .75rem;
+      background: color-mix(in srgb, var(--mock-panel) 74%, transparent);
+      color: var(--mock-muted);
+      font-size: .82rem;
+    }
+
+    .mock-switcher button[aria-pressed="true"] {
+      border-color: color-mix(in srgb, var(--mock-accent) 64%, white 8%);
+      background: color-mix(in srgb, var(--mock-accent) 22%, var(--mock-panel));
+      color: var(--mock-text);
+    }
+
+    .outer-rail {
+      position: fixed;
+      z-index: 30;
+      inset: 0 auto 0 0;
+      display: grid;
+      width: var(--rail-width);
+      border-right: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #050b13 88%, transparent);
+      place-items: start center;
+      padding-top: 1rem;
+    }
+
+    .rail-mark {
+      display: grid;
+      width: 2.45rem;
+      height: 2.45rem;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 60%, transparent);
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--mock-accent) 42%, transparent), transparent 62%),
+        color-mix(in srgb, var(--mock-panel) 86%, transparent);
+      color: var(--mock-text);
+      font-weight: 820;
+      place-items: center;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--inner-width) minmax(0, 1fr);
+      min-height: calc(100vh - 3rem);
+      margin-left: var(--rail-width);
+    }
+
+    .inner-shell {
+      position: sticky;
+      top: 3.2rem;
+      align-self: start;
+      min-height: calc(100vh - 3.2rem);
+      border-right: 1px solid var(--mock-border);
+      background: color-mix(in srgb, #0b1624 72%, transparent);
+      padding: 1.25rem;
+    }
+
+    .realm-lockup {
+      display: grid;
+      gap: .8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .realm-lockup img {
+      width: 3rem;
+      height: 3rem;
+      object-fit: contain;
+    }
+
+    .realm-lockup h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .realm-lockup p,
+    .nav-list span,
+    .sidebar-note p,
+    .kicker,
+    .card p,
+    .hero p,
+    .section-head p {
+      color: var(--mock-muted);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: .35rem;
+      margin: 0 0 1.25rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-list a {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 2.45rem;
+      border-radius: .65rem;
+      padding: .58rem .7rem;
+      color: var(--mock-muted);
+    }
+
+    .nav-list a[aria-current="page"],
+    .nav-list a:hover {
+      background: color-mix(in srgb, var(--mock-accent) 15%, transparent);
+      color: var(--mock-text);
+    }
+
+    .sidebar-note {
+      margin-top: 1.25rem;
+      border: 1px solid var(--mock-border);
+      border-radius: .9rem;
+      padding: .9rem;
+      background: color-mix(in srgb, var(--mock-panel) 82%, transparent);
+    }
+
+    .sidebar-note strong {
+      display: block;
+      margin-bottom: .25rem;
+    }
+
+    .page {
+      min-width: 0;
+      padding: 1.2rem clamp(1rem, 3vw, 2.6rem) 3rem;
+    }
+
+    .variant {
+      display: none;
+    }
+
+    body[data-variant="social"] #variant-social,
+    body[data-variant="mystery"] #variant-mystery,
+    body[data-variant="institution"] #variant-institution {
+      display: block;
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(20rem, .8fr);
+      gap: clamp(1rem, 3vw, 2rem);
+      min-height: 31rem;
+      overflow: hidden;
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 34%, var(--mock-border));
+      border-radius: 1.15rem;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mock-accent) 16%, transparent), transparent 45%),
+        linear-gradient(160deg, color-mix(in srgb, var(--mock-panel-strong) 96%, transparent), color-mix(in srgb, #050b13 82%, transparent));
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+    }
+
+    .hero::before {
+      position: absolute;
+      inset: -35% 35% auto auto;
+      width: 28rem;
+      height: 28rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, color-mix(in srgb, var(--mock-dye) 20%, transparent), transparent 68%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-content: center;
+      gap: 1.1rem;
+      max-width: 46rem;
+    }
+
+    .kicker {
+      margin: 0;
+      font-size: .76rem;
+      font-weight: 760;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2.3rem, 6vw, 5.3rem);
+      line-height: .94;
+      letter-spacing: 0;
+    }
+
+    .hero .lead {
+      max-width: 42rem;
+      margin: 0;
+      font-size: clamp(1.02rem, 1.5vw, 1.22rem);
+    }
+
+    .hero-actions,
+    .badge-row,
+    .section-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .65rem;
+      align-items: center;
+    }
+
+    .btn,
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.35rem;
+      border-radius: 999px;
+      padding: .48rem .85rem;
+      font-weight: 720;
+      line-height: 1.1;
+    }
+
+    .btn {
+      border: 1px solid color-mix(in srgb, var(--mock-accent) 60%, transparent);
+      background: color-mix(in srgb, var(--mock-accent) 24%, var(--mock-panel));
+    }
+
+    .btn--quiet {
+      border-color: var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 82%, transparent);
+      color: var(--mock-muted);
+    }
+
+    .badge {
+      min-height: 1.8rem;
+      border: 1px solid var(--mock-border);
+      background: color-mix(in srgb, var(--mock-panel) 78%, transparent);
+      color: var(--mock-muted);
+      font-size: .76rem;
+    }
+
+    .badge--hot {
+      border-color: color-mix(in srgb, var(--mock-dye) 55%, transparent);
+      color: color-mix(in srgb, var(--mock-dye) 82%, white 18%);
+    }
+
+    .badge--good {
+      border-color: color-mix(in srgb, var(--mock-good) 55%, transparent);
+      color: var(--mock-good);
+    }
+
+    .hero-media {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-content: end;
+      min-height: 25rem;
+      overflow: hidden;
+      border: 1px solid var(--mock-border);
+      border-radius: 1rem;
+      background: color-mix(in srgb, #07121f 84%, transparent);
+    }
+
+    .hero-media img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: .76;
+    }
+
+    .media-caption {
+      position: relative;
+      display: grid;
+      gap: .35rem;
+      margin: 1rem;
+      border: 1px solid color-mix(in srgb, white 18%, transparent);
+      border-radius: .85rem;
+      padding: .9rem;
+      background: color-mix(in srgb, #07121f 72%, transparent);
+      backdrop-filter: blur(16px);
+    }
+
+    .media-caption strong,
+    .card strong,
+    .entry-step strong {
+      font-size: .95rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .grid--three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid--two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .section {
+      margin-top: 1.2rem;
+      border: 1px solid var(--mock-border);
+      border-radius: 1rem;
+      background: color-mix(in srgb, var(--mock-panel) 78%, transparent);
+      padding: clamp(1rem, 2vw, 1.35rem);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(1.25rem, 2vw, 1.8rem);
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      max-width: 40rem;
+      margin: .25rem 0 0;
+    }
+
+    .card,
+    .entry-step {
+      display: grid;
+      gap: .55rem;
+      min-width: 0;
+      border: 1px solid var(--mock-border);
+      border-radius: .9rem;
+      background: color-mix(in srgb, var(--mock-panel-strong) 78%, transparent);
+      padding: .95rem;
+    }
+
+    .card p,
+    .entry-step p {
+      margin: 0;
+    }
+
+    .pulse-card {
+      min-height: 8rem;
+    }
+
+    .pulse-card .value {
+      font-size: 2rem;
+      font-weight: 840;
+      line-height: 1;
+    }
+
+    .scene-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-top: 1px solid var(--mock-border);
+      padding: .9rem 0;
+    }
+
+    .scene-row:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .scene-row:last-child {
+      padding-bottom: 0;
+    }
+
+    .scene-row h3 {
+      margin: 0 0 .2rem;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .scene-row p {
+      margin: 0;
+      color: var(--mock-muted);
+    }
+
+    .hub-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr .9fr;
+      grid-auto-rows: minmax(10rem, auto);
+      gap: 1rem;
+    }
+
+    .hub-card {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .hub-card:first-child {
+      grid-row: span 2;
+    }
+
+    .media-frame {
+      display: block;
+      min-height: 9rem;
+      background: color-mix(in srgb, var(--mock-accent) 12%, #07121f);
+    }
+
+    .hub-card:first-child .media-frame {
+      min-height: 17rem;
+    }
+
+    .media-frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: inherit;
+      object-fit: cover;
+      opacity: .78;
+    }
+
+    .hub-card__body {
+      display: grid;
+      gap: .55rem;
+      padding: .95rem;
+    }
+
+    .entry-path {
+      counter-reset: step;
+    }
+
+    .entry-step {
+      position: relative;
+      padding-left: 3rem;
+    }
+
+    .entry-step::before {
+      position: absolute;
+      top: .9rem;
+      left: .9rem;
+      display: grid;
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mock-accent) 24%, var(--mock-panel));
+      color: var(--mock-text);
+      content: counter(step);
+      counter-increment: step;
+      font-size: .78rem;
+      font-weight: 820;
+      place-items: center;
+    }
+
+    .callout {
+      border-color: color-mix(in srgb, var(--mock-accent) 42%, var(--mock-border));
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mock-accent) 14%, transparent), transparent 70%),
+        color-mix(in srgb, var(--mock-panel-strong) 82%, transparent);
+    }
+
+    .footnote {
+      margin: 1rem 0 0;
+      color: var(--mock-muted);
+      font-size: .86rem;
+    }
+
+    @media (max-width: 1050px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .inner-shell {
+        position: relative;
+        top: auto;
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--mock-border);
+      }
+
+      .nav-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .hero,
+      .grid--three,
+      .grid--two,
+      .hub-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hub-card:first-child {
+        grid-row: auto;
+      }
+    }
+
+    @media (max-width: 720px) {
+      :root {
+        --rail-width: 0rem;
+      }
+
+      .outer-rail {
+        display: none;
+      }
+
+      .mock-switcher {
+        padding-left: 1rem;
+      }
+
+      .app-shell {
+        margin-left: 0;
+      }
+
+      .nav-list {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: 0;
+      }
+
+      .hero-media {
+        min-height: 18rem;
+      }
+
+      .section-head,
+      .scene-row {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body data-variant="social">
+  <aside class="outer-rail" aria-label="Global">
+    <span class="rail-mark">E</span>
+  </aside>
+
+  <div class="mock-switcher" aria-label="Mock variants">
+    <strong>V2.1 premise stress pass</strong>
+    <button type="button" data-variant="social" aria-pressed="true">No-event social</button>
+    <button type="button" data-variant="mystery" aria-pressed="false">Gated mystery</button>
+    <button type="button" data-variant="institution" aria-pressed="false">Institution pressure</button>
+  </div>
+
+  <div class="app-shell">
+    <aside class="inner-shell" aria-label="Realm navigation">
+      <div class="realm-lockup">
+        <img src="../src/elbysodic/web/static/seed-media/smalltown-mark.svg" alt="">
+        <div>
+          <h2>Community Home</h2>
+          <p>This mock keeps the same gateway slots while changing the premise engine.</p>
+        </div>
+      </div>
+      <nav>
+        <ul class="nav-list">
+          <li><a aria-current="page" href="#">World Home <span>Gateway</span></a></li>
+          <li><a href="#">Guidebook <span>Premise</span></a></li>
+          <li><a href="#">Wanted <span>Hooks</span></a></li>
+          <li><a href="#">Claims <span>Openings</span></a></li>
+          <li><a href="#">Locations <span>Scenes</span></a></li>
+          <li><a href="#">Apply <span>First face</span></a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-note">
+        <strong>Design check</strong>
+        <p>The first viewport should make the premise engine and first-face path clear without relying on a current event.</p>
+      </div>
+    </aside>
+
+    <main class="page">
+      <article class="variant" id="variant-social" aria-labelledby="social-title">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="kicker">Small-town social web · low-lore entry · request access</p>
+            <h1 id="social-title">Harbor Society</h1>
+            <p class="lead">A coastal town where old families, new arrivals, gallery openings, council favors, second chances, and local gossip turn ordinary errands into playable scenes.</p>
+            <div class="badge-row">
+              <span class="badge badge--good">No current event required</span>
+              <span class="badge">Relaxed pace</span>
+              <span class="badge badge--hot">7 wanted ties</span>
+              <span class="badge">Profile app</span>
+            </div>
+            <div class="hero-actions">
+              <a class="btn" href="#">Browse wanted</a>
+              <a class="btn" href="#">Check claims</a>
+              <a class="btn btn--quiet" href="#">Read premise</a>
+            </div>
+          </div>
+          <figure class="hero-media">
+            <img src="../src/elbysodic/web/static/seed-media/smalltown-hero.svg" alt="A luminous coastal main street at dusk">
+            <figcaption class="media-caption">
+              <strong>Atmosphere source: Founders Week</strong>
+              <span>Open scenes cluster around the marina fundraiser, town hall hearing, and after-hours diner gossip.</span>
+            </figcaption>
+          </figure>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Public pulse</p>
+              <h2>What makes this playable now</h2>
+              <p>Public-safe readiness signals replace generic activity metrics.</p>
+            </div>
+          </div>
+          <div class="grid grid--three">
+            <div class="card pulse-card">
+              <span class="value">11</span>
+              <strong>open connection hooks</strong>
+              <p>Families, exes, coworkers, and neighbors that make a first face less lonely.</p>
+            </div>
+            <div class="card pulse-card">
+              <span class="value">5</span>
+              <strong>scene hubs ready</strong>
+              <p>Businesses, civic spaces, and waterfront places with easy first-thread premises.</p>
+            </div>
+            <div class="card pulse-card">
+              <span class="value">3</span>
+              <strong>claims worth checking</strong>
+              <p>Open businesses, family names, and local roles with story pressure.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Open scenes</p>
+              <h2>Social doors into the town</h2>
+            </div>
+            <a class="btn btn--quiet" href="#">Browse scenes</a>
+          </div>
+          <div>
+            <a class="scene-row" href="#">
+              <span>
+                <h3>The fundraiser loses power before the speeches</h3>
+                <p>Marina Hall · locals, donors, staff, and anyone with a reason to leave early.</p>
+              </span>
+              <span class="badge">open scene</span>
+            </a>
+            <a class="scene-row" href="#">
+              <span>
+                <h3>Town hall hears the harbor redevelopment appeal</h3>
+                <p>Civic Center · council aides, business owners, old families, and angry renters.</p>
+              </span>
+              <span class="badge">public hub</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Scene hubs</p>
+              <h2>Places where threads start</h2>
+              <p>For a social-web realm, location cards are businesses and civic rituals, not crisis zones.</p>
+            </div>
+          </div>
+          <div class="hub-grid">
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/smalltown-main-street.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Main Street</strong>
+                <span class="badge badge--hot">hot gossip</span>
+                <p>Retail shifts, coffee runs, public arguments, and awkward reunions.</p>
+              </span>
+            </a>
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/smalltown-county-fairgrounds.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Fairgrounds</strong>
+                <p>Seasonal ritual and public face-saving.</p>
+              </span>
+            </a>
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/smalltown-town-hall.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Town Hall</strong>
+                <p>Claims, favors, permits, and local power.</p>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section callout">
+          <div class="section-head">
+            <div>
+              <p class="kicker">First-face path</p>
+              <h2>Enter through a connection, not a lore test</h2>
+            </div>
+          </div>
+          <div class="grid grid--three entry-path">
+            <div class="entry-step">
+              <strong>Pick a social opening</strong>
+              <p>Wanted ties and claims tell you who already needs your face.</p>
+            </div>
+            <div class="entry-step">
+              <strong>Read the premise</strong>
+              <p>Five minutes of town context should be enough for a first draft.</p>
+            </div>
+            <div class="entry-step">
+              <strong>Request access</strong>
+              <p>Start with a profile app, then settle into public scene hubs.</p>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <article class="variant" id="variant-mystery" aria-labelledby="mystery-title">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="kicker">Weird-town mystery · open lore with private answers · request access</p>
+            <h1 id="mystery-title">Signal Creek</h1>
+            <p class="lead">A mountain town keeps hearing tomorrow's emergency broadcasts from a dead radio tower. Locals, newcomers, skeptics, researchers, and believers all have public reasons to listen.</p>
+            <div class="badge-row">
+              <span class="badge badge--hot">Current chapter: The second broadcast</span>
+              <span class="badge">Public rumors</span>
+              <span class="badge">Private answers gated</span>
+              <span class="badge badge--good">Multiple entry angles</span>
+            </div>
+            <div class="hero-actions">
+              <a class="btn" href="#">Read public premise</a>
+              <a class="btn" href="#">Choose an angle</a>
+              <a class="btn btn--quiet" href="#">Browse wanted</a>
+            </div>
+          </div>
+          <figure class="hero-media">
+            <img src="../src/elbysodic/web/static/seed-media/hp-hero.svg" alt="A strange illuminated corridor used as mystery atmosphere">
+            <figcaption class="media-caption">
+              <strong>Atmosphere source: Public rumor</strong>
+              <span>The tower named three streets before the landslide. Staff notes and answers stay private.</span>
+            </figcaption>
+          </figure>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Public pulse</p>
+              <h2>Intrigue without spoilers</h2>
+              <p>The gateway sells playable uncertainty without exposing staff truth.</p>
+            </div>
+          </div>
+          <div class="grid grid--three">
+            <div class="card pulse-card">
+              <span class="value">6</span>
+              <strong>public rumors</strong>
+              <p>Enough to write around, not enough to solve the mystery from the homepage.</p>
+            </div>
+            <div class="card pulse-card">
+              <span class="value">5</span>
+              <strong>entry angles</strong>
+              <p>Local, newcomer, researcher, skeptic, witness, or believer.</p>
+            </div>
+            <div class="card pulse-card">
+              <span class="value">2</span>
+              <strong>safety notes</strong>
+              <p>Content posture and consent boundaries are visible before application.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Open scenes</p>
+              <h2>Public incidents with private answers</h2>
+            </div>
+            <a class="btn btn--quiet" href="#">Browse scenes</a>
+          </div>
+          <div>
+            <a class="scene-row" href="#">
+              <span>
+                <h3>The radio names a road that does not exist</h3>
+                <p>Firewatch Ridge · public incident, local witnesses, researcher access.</p>
+              </span>
+              <span class="badge">open scene</span>
+            </a>
+            <a class="scene-row" href="#">
+              <span>
+                <h3>Students find wet footprints inside the closed observatory</h3>
+                <p>Old Observatory · public rumor, no staff answers visible.</p>
+              </span>
+              <span class="badge">mystery hook</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Scene hubs</p>
+              <h2>Where the phenomenon touches daily life</h2>
+            </div>
+          </div>
+          <div class="hub-grid">
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/smalltown-lake-road.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Lake Road</strong>
+                <span class="badge badge--hot">public rumor</span>
+                <p>Witness statements, missing time, tire tracks, and late-night dares.</p>
+              </span>
+            </a>
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/hp-restricted-stacks.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Town Archive</strong>
+                <p>Old maps, local records, and wrong dates.</p>
+              </span>
+            </a>
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/smalltown-town-hall.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Emergency Office</strong>
+                <p>Public notices, controlled panic, and official denials.</p>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section callout">
+          <div class="section-head">
+            <div>
+              <p class="kicker">First-face path</p>
+              <h2>Enter through a public angle</h2>
+            </div>
+          </div>
+          <div class="grid grid--three entry-path">
+            <div class="entry-step">
+              <strong>Choose your relationship to the mystery</strong>
+              <p>Local, outsider, skeptic, witness, researcher, or believer.</p>
+            </div>
+            <div class="entry-step">
+              <strong>Read only public lore</strong>
+              <p>The page shows what your face can know without staff spoilers.</p>
+            </div>
+            <div class="entry-step">
+              <strong>Request access</strong>
+              <p>Staff can reveal private guidance after the application boundary.</p>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <article class="variant" id="variant-institution" aria-labelledby="institution-title">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="kicker">Fame and institution pressure · reputation stakes · short app</p>
+            <h1 id="institution-title">Glasslight Circuit</h1>
+            <p class="lead">Performers, publicists, producers, critics, lawyers, assistants, and fixers survive a touring awards season where every private mistake can become a headline.</p>
+            <div class="badge-row">
+              <span class="badge badge--hot">Current pressure: contract leak</span>
+              <span class="badge">Career claims</span>
+              <span class="badge">Reputation hooks</span>
+              <span class="badge badge--good">Short app</span>
+            </div>
+            <div class="hero-actions">
+              <a class="btn" href="#">Choose a career lane</a>
+              <a class="btn" href="#">Browse wanted</a>
+              <a class="btn btn--quiet" href="#">Read image rules</a>
+            </div>
+          </div>
+          <figure class="hero-media">
+            <img src="../src/elbysodic/web/static/seed-media/nyc-hero.svg" alt="A luminous city skyline used as industry drama atmosphere">
+            <figcaption class="media-caption">
+              <strong>Atmosphere source: Institution pressure</strong>
+              <span>The tour needs a winner, the label needs silence, and the gossip desk needs a face to blame.</span>
+            </figcaption>
+          </figure>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Public pulse</p>
+              <h2>Status and role pressure</h2>
+              <p>This version proves the gateway can work without monsters, magic, or a combat crisis.</p>
+            </div>
+          </div>
+          <div class="grid grid--three">
+            <div class="card pulse-card">
+              <span class="value">8</span>
+              <strong>career openings</strong>
+              <p>Performers, producers, critics, assistants, lawyers, and crisis staff.</p>
+            </div>
+            <div class="card pulse-card">
+              <span class="value">4</span>
+              <strong>reputation hooks</strong>
+              <p>Wanted ties that put a first face under public/private pressure.</p>
+            </div>
+            <div class="card pulse-card">
+              <span class="value">3</span>
+              <strong>public venues</strong>
+              <p>Scenes start in studios, hotels, award rooms, and magazine offices.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Open scenes</p>
+              <h2>Institution pressure in motion</h2>
+            </div>
+            <a class="btn btn--quiet" href="#">Browse scenes</a>
+          </div>
+          <div>
+            <a class="scene-row" href="#">
+              <span>
+                <h3>The label calls everyone into a closed-door meeting</h3>
+                <p>Glasslight Tower · performers, publicists, legal, producers, assistants.</p>
+              </span>
+              <span class="badge">open scene</span>
+            </a>
+            <a class="scene-row" href="#">
+              <span>
+                <h3>A critic publishes the wrong blind item on purpose</h3>
+                <p>Magazine desk · public image, private leverage, and career damage.</p>
+              </span>
+              <span class="badge">status hook</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Scene hubs</p>
+              <h2>Institutions instead of locations only</h2>
+            </div>
+          </div>
+          <div class="hub-grid">
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/nyc-shift-work.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Glasslight Label</strong>
+                <span class="badge badge--hot">contract pressure</span>
+                <p>Power, money, NDAs, favoritism, and crisis containment.</p>
+              </span>
+            </a>
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/nyc-queens-night-market.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Afterparty Circuit</strong>
+                <p>Public smiles, private arguments, and leaked photos.</p>
+              </span>
+            </a>
+            <a class="card hub-card" href="#">
+              <span class="media-frame"><img src="../src/elbysodic/web/static/seed-media/locations/nyc-brooklyn.svg" alt=""></span>
+              <span class="hub-card__body">
+                <strong>Magazine Desk</strong>
+                <p>Critics, blind items, access, and reputation damage.</p>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section callout">
+          <div class="section-head">
+            <div>
+              <p class="kicker">First-face path</p>
+              <h2>Enter through role, reputation, or obligation</h2>
+            </div>
+          </div>
+          <div class="grid grid--three entry-path">
+            <div class="entry-step">
+              <strong>Choose a career lane</strong>
+              <p>Public role pressure replaces lore burden as the first decision.</p>
+            </div>
+            <div class="entry-step">
+              <strong>Check claims and image rules</strong>
+              <p>Know what roles, faces, contracts, and reputational lines are open.</p>
+            </div>
+            <div class="entry-step">
+              <strong>Apply with a pressure hook</strong>
+              <p>The first thread should start from a public obligation or wanted tie.</p>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <p class="footnote">Static design mock only. The production version should use service-owned read models, shared Chirp/Elbysodic components, and rendered privacy tests before template cutover.</p>
+    </main>
+  </div>
+
+  <script>
+    const body = document.body;
+    const buttons = document.querySelectorAll("[data-variant]");
+
+    buttons.forEach((button) => {
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+      button.addEventListener("click", () => {
+        const variant = button.dataset.variant;
+        if (!variant) {
+          return;
+        }
+        body.dataset.variant = variant;
+        buttons.forEach((candidate) => {
+          if (candidate instanceof HTMLButtonElement) {
+            candidate.setAttribute("aria-pressed", String(candidate.dataset.variant === variant));
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

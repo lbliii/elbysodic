@@ -5,6 +5,21 @@ Date: 2026-05-15
 Artifact: `design/static-community-landing-v2-mock.html`
 Concrete target: `/c/x-men-apocalypse`
 
+## V2.1 Archetype Addendum
+
+After the 2026-05-15 premise-archetype research was promoted to
+`docs/product/community-shapes.md`, this mock received a focused stress pass in
+`design/community-landing-archetype-stress-pass.md`.
+
+The static V2.1 composition artifact is
+`design/static-community-landing-v2-archetype-mock.html`.
+
+The accepted refinement is that `/c/{community_slug}` should be a **premise
+gateway with playable entry paths**. A current event is one strong atmosphere
+source, but the production translation must also work for no-event social
+realms, gated-lore mysteries, and institution/status/scarcity pressure realms.
+Do not implement this mock as an X-Men-specific or event-first template.
+
 ## Purpose
 
 This prototype explores a V2 community landing page as a public realm gateway.

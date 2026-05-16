@@ -15,11 +15,12 @@ superseded by a narrower gateway plan.
 
 Translate `design/static-community-landing-v2-mock.html` into the real
 Elbysodic design system and Chirp-UI layer without copying prototype CSS into
-production.
+production, after applying the premise-archetype stress pass in
+`design/community-landing-archetype-stress-pass.md`.
 
 The target route is `/c/{community_slug}`, with `/c/x-men-apocalypse` as the
-seed proof. The design goal is a public realm gateway with programmable
-atmosphere:
+seed proof. The design goal is a public premise gateway with playable entry
+paths and programmable atmosphere:
 
 - one active event
 - no active event
@@ -27,6 +28,8 @@ atmosphere:
 - media and no-media fallback
 - visitor, applicant, and member states
 - location bento emphasis for important or popular scene hubs
+- archetype-flexible variants for no-event social play, gated-lore mystery,
+  and institution/status/scarcity pressure
 
 This strengthens:
 
@@ -41,6 +44,8 @@ This strengthens:
 
 - Prototype:
   `design/static-community-landing-v2-mock.html`
+- Archetype stress mock:
+  `design/static-community-landing-v2-archetype-mock.html`
 - Prototype notes:
   `design/static-community-landing-v2-notes.md`
 - Composition doctrine:
@@ -60,17 +65,22 @@ This strengthens:
   `AppServices.public_studio_program()`,
   `AppServices.public_world_hub()`,
   `AppServices.public_wanted_ads()`
+- Archetype stress pass:
+  `design/community-landing-archetype-stress-pass.md`
+- Accepted premise-shape doctrine:
+  `docs/product/community-shapes.md`
 
 ## Product Decision
 
-`/c/{community_slug}` should become a realm gateway, not a forum index and not
-a duplicate of `/world`.
+`/c/{community_slug}` should become a premise gateway, not a forum index and
+not a duplicate of `/world`.
 
 The gateway owns:
 
-- realm identity and access posture
+- realm identity, premise engine, and access posture
 - current atmosphere source: active event, featured premise/material, season,
-  director pulse, or standing realm tension
+  director pulse, social pressure, public mystery, institution pressure,
+  scarcity, or standing realm tension
 - first writing path for visitors/applicants
 - public-safe playable scene/location/wanted previews
 - member continuation lane when signed in
@@ -88,6 +98,10 @@ and `Studio` remain scoped rooms in the shell.
   application-review, private board, private scene, or private wanted state.
 - B-24 is example seed content. The production design must support no event,
   one event, or multiple events without changing templates.
+- Event/crisis pressure is one valid atmosphere variant, not the base
+  organizing principle for every community shape.
+- Wanted hooks are entry paths inside premise communities, not top-level
+  community archetypes.
 - No route migration away from `/c/{community_slug}` in this plan.
 - No new runtime dependency.
 - No raw CSS, script, external font, or layout-builder controls for directors.
@@ -97,6 +111,7 @@ and `Studio` remain scoped rooms in the shell.
 Add route-facing models in `src/elbysodic/services/read_models.py`:
 
 - `RealmGatewayView`
+- `RealmGatewayPremise`
 - `RealmGatewayAtmosphere`
 - `RealmGatewayPulseItem`
 - `RealmGatewayGuideItem`
@@ -109,10 +124,12 @@ Add route-facing models in `src/elbysodic/services/read_models.py`:
 Suggested fields:
 
 - audience mode: `public`, `applicant`, `member`, `staff`
+- premise archetype, play engine, lore aperture, roster posture, catalog pitch,
+  and onboarding pitch from public discovery profile fields where available
 - access posture: public preview, request access, invite only, applications open
 - atmosphere mode: `none`, `single`, `multiple`
 - atmosphere source type: event, premise, material, season, director pulse,
-  location, or fallback
+  social pressure, mystery, institution, scarcity, location, or fallback
 - public-safe status labels and copy
 - location emphasis: normal, featured, hot now, event-linked, high activity,
   director-pinned
@@ -132,6 +149,7 @@ Promote these as Elbysodic components composed from Chirp primitives:
 | realm gateway hero | `realm_gateway_hero` | `_components/realm_gateway.html` | surface, button, badge, cluster |
 | status strip | `realm_signal_strip` | `_components/realm_gateway.html` or `_components/ui.html` | badge/chip |
 | realm pulse | `realm_pulse` | `_components/realm_gateway.html` | stat or metric vocabulary |
+| premise summary | `realm_premise_gateway` | `_components/realm_gateway.html` | surface, badge, description/list |
 | atmosphere feed | `realm_atmosphere_panel` | `_components/realm_gateway.html` | surface + description/list |
 | guide rows/cards | `realm_guide_preview` | `_components/realm_gateway.html` | surface/card + preview row |
 | playable scene row | `public_scene_preview_row` | `_components/thread_summary.html` or gateway component | preview row |
@@ -140,8 +158,10 @@ Promote these as Elbysodic components composed from Chirp primitives:
 | entry path | `realm_entry_path` | `_components/realm_gateway.html` | ordered rows/steps |
 | member continuation | `realm_continuation_lane` | `_components/realm_gateway.html` or vocabulary | lane preview |
 
-Avoid a large generic "bento" abstraction. The product concept is a location
-emphasis field for scene hubs, not arbitrary designer-controlled masonry.
+Avoid a large generic "bento" abstraction. The product concept is a scene-hub
+or location emphasis field, not arbitrary designer-controlled masonry. Some
+archetypes will express scene hubs as businesses, institutions, houses,
+factions, stations, studios, or courts rather than literal geographic places.
 
 ## CSS Translation
 
@@ -201,12 +221,17 @@ Work:
 - Add `AppServices.public_realm_gateway(community_slug)`.
 - Use existing materials, wanted hooks, boards, public scene summaries, and
   public preview community checks.
+- Pull public discovery profile fields into the gateway contract where they
+  answer premise engine, play engine, lore aperture, roster posture, catalog
+  pitch, and onboarding pitch.
 - Return audience-specific copy and CTA posture from services.
 - Keep current template behavior available until the new template is ready.
 
 Proof:
 
 - Service tests for no event, one event, and multiple events.
+- Service tests for at least three archetype variants: no-event social realm,
+  gated-lore mystery, and institution/status/scarcity pressure.
 - Service tests for visitor, applicant, member, staff boundaries.
 - Multi-community privacy tests.
 
@@ -228,9 +253,10 @@ Proof:
 - Rendered tests assert major semantic sections and CTAs by audience.
 - Snapshot-like assertions stay semantic, not pixel brittle.
 
-### Phase 3: Location Bento And Atmosphere
+### Phase 3: Premise Engine, Scene Hubs, And Atmosphere
 
-Goal: make atmosphere paramount while keeping it programmatic and safe.
+Goal: make premise engine and atmosphere visible while keeping them
+programmatic and safe.
 
 Work:
 
@@ -248,10 +274,15 @@ Work:
   - director-pinned deferred unless already modeled
 - Render a responsive bento field for desktop.
 - Collapse to one-column cards on mobile.
+- Ensure copy and layout work when the emphasized hub is a social place,
+  mystery location, faction/institution, industry venue, trial house, or
+  frontier station instead of an event battlefield.
 
 Proof:
 
 - Tests for emphasized location selection and private-board exclusion.
+- Rendered proof that current event is not required for the gateway to feel
+  playable.
 - Browser QA for desktop, tablet, mobile, media/no-media.
 
 ### Phase 4: Template Cutover
@@ -283,6 +314,9 @@ Work:
   - signed-out visitor
   - applicant
   - member with active face
+  - no-event social realm
+  - gated-lore mystery realm
+  - institution/status/scarcity pressure realm
   - no-media fallback
   - no active event
   - one active event
@@ -303,6 +337,7 @@ Proof:
 | Contract | API/CLI | Programmatic | Protocol/Routes | Schema/Types | Docs | Examples/Seeds | Tests | Changelog |
 |---|---|---|---|---|---|---|---|---|
 | Realm gateway read model | N/A | `RealmGatewayView` | `/c/{community_slug}` | typed service models first | design + product docs | X-Men + one other realm | service + rendered | yes when shipped |
+| Premise engine | N/A | `RealmGatewayPremise` or equivalent fields | `/c/{community_slug}` | reuse discovery profile first | community shapes + design stress pass | original-premise realms | archetype variants | yes if shipped |
 | Atmosphere state | N/A | `RealmGatewayAtmosphere` | page copy/sections | no schema first | Appearance/experience docs if promoted | no/one/multi event fixtures | service + rendered | yes if user-visible |
 | Location bento | N/A | `RealmGatewayLocationCard.emphasis` | community home | no schema first | composition/design notes | X-Men emphasized locations | privacy + browser | yes if shipped |
 | Public wanted/scene previews | N/A | public-safe preview rows | community home | existing wanted/thread models first | privacy docs if changed | open/private fixtures | negative leakage tests | yes |
@@ -313,6 +348,8 @@ Proof:
 - Prototype CSS overfit: copying static CSS would create layout debt and bypass
   Chirp.
 - Event overfit: B-24 must stay seed content, not a permanent product shape.
+- Archetype overfit: public UI should communicate the play promise without
+  turning the internal taxonomy into loud labels everywhere.
 - Public leakage: richer previews increase risk of private/staff/application
   side channels.
 - Bento overreach: arbitrary masonry controls could become a layout builder.
@@ -334,7 +371,9 @@ Recommended first PR:
 
 1. Add `RealmGatewayView` read models.
 2. Add public/member service methods using existing data.
-3. Add service and rendered privacy tests for `/c/x-men-apocalypse`.
-4. Do not change the visual template yet.
+3. Include premise-engine fields from the existing public discovery profile.
+4. Add service and rendered privacy tests for `/c/x-men-apocalypse` plus at
+   least one original-premise realm.
+5. Do not change the visual template yet.
 
 That creates the contract needed to translate the mock safely.
