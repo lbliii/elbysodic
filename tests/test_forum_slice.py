@@ -1946,52 +1946,50 @@ def test_original_premise_entry_paths_support_first_face_and_wanted_browsing() -
     async def run() -> None:
         services = create_services(path=":memory:")
         route_expectations = (
-            ("harbor_director", "reporter-source-at-the-club", "Reporter source"),
-            ("signal_director", "cult-survivor-who-remembers-1998", "Cult survivor"),
-            ("wayfarer_director", "corporate-auditor", "Corporate auditor"),
+            ("harbor-society", "reporter-source-at-the-club", "Reporter source"),
+            ("signal-creek", "cult-survivor-who-remembers-1998", "Cult survivor"),
+            ("nocturne-row", "blood-bank-whistleblower", "Blood-bank whistleblower"),
+            ("crownfall", "black-market-mage", "Black-market mage"),
+            ("afterlight-accord", "archive-thief", "Archive thief"),
+            ("brightline", "crisis-photographer", "Crisis photographer"),
+            ("emberhouse", "black-market-supplier", "Black-market supplier"),
+            ("gaslight-ward", "disgraced-fiance", "Disgraced fiance"),
+            ("wayfarer-station", "corporate-auditor", "Corporate auditor"),
         )
-        for index, (persona_key, wanted_slug, wanted_title) in enumerate(route_expectations):
-            persona = resolve_seed_persona(services.repo, persona_key)
-            role = services.repo.create_role(
-                persona.community.id,
-                f"member-{index}",
-                "Member",
-            )
-            user = services.repo.create_user(
-                f"{persona.community.slug}-applicant@example.com", "hash"
-            )
+        for community_slug, wanted_slug, wanted_title in route_expectations:
+            community = services.repo.get_community_by_slug(community_slug)
+            role = services.repo.get_role_by_slug(community.id, "member")
+            user = services.repo.create_user(f"{community.slug}-applicant@example.com", "hash")
             membership = services.repo.create_membership(
-                persona.community.id,
+                community.id,
                 user.id,
                 role.id,
-                f"{persona.community.slug}-applicant",
-                f"{persona.community.name} Applicant",
+                f"{community.slug}-applicant",
+                f"{community.name} Applicant",
             )
             app = create_app(
                 debug=False,
                 services=AppServices(
                     services.repo,
-                    DemoSeed(persona.community, user, membership, None),
+                    DemoSeed(community, user, membership, None),
                 ),
             )
-            fields = services.repo.list_application_template_fields(persona.community.id)
+            fields = services.repo.list_application_template_fields(community.id)
 
             async with TestClient(app) as client:
-                hub = await client.get(f"/c/{persona.community.slug}")
-                wanted_board = await client.get(f"/c/{persona.community.slug}/wanted")
-                wanted_detail = await client.get(
-                    f"/c/{persona.community.slug}/wanted/{wanted_slug}"
-                )
-                applications = await client.get(f"/c/{persona.community.slug}/applications")
-                first_face = await client.get(f"/c/{persona.community.slug}/applications/new")
+                hub = await client.get(f"/c/{community.slug}")
+                wanted_board = await client.get(f"/c/{community.slug}/wanted")
+                wanted_detail = await client.get(f"/c/{community.slug}/wanted/{wanted_slug}")
+                applications = await client.get(f"/c/{community.slug}/applications")
+                first_face = await client.get(f"/c/{community.slug}/applications/new")
 
             assert hub.status == 200
-            assert persona.community.name in hub.text
+            assert community.name in hub.text
             assert "Wanted" in hub.text
 
             assert wanted_board.status == 200
             assert wanted_title in wanted_board.text
-            assert f'href="/c/{persona.community.slug}/wanted/{wanted_slug}"' in wanted_board.text
+            assert f'href="/c/{community.slug}/wanted/{wanted_slug}"' in wanted_board.text
 
             assert wanted_detail.status == 200
             assert wanted_title in wanted_detail.text
@@ -2005,10 +2003,7 @@ def test_original_premise_entry_paths_support_first_face_and_wanted_browsing() -
             assert first_face.status == 200
             assert "Start Application" in first_face.text
             assert "Face name" in first_face.text
-            assert (
-                f"This will become your first active face in {persona.community.name}"
-                in first_face.text
-            )
+            assert f"This will become your first active face in {community.name}" in first_face.text
             assert "Director fields" in first_face.text
             assert fields
             assert fields[0].label in first_face.text
