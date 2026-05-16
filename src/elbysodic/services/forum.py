@@ -7,7 +7,7 @@ import re
 import secrets
 import sqlite3
 from contextlib import AbstractContextManager, suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -265,6 +265,7 @@ from elbysodic.services.read_models import (
     PublicCatalogCard,
     RealmGatewayAction,
     RealmGatewayAtmosphere,
+    RealmGatewayContinuation,
     RealmGatewayEntryPath,
     RealmGatewayHero,
     RealmGatewayPremise,
@@ -1179,6 +1180,11 @@ class AppServices:
     def public_realm_gateway(self, community_slug: str) -> RealmGatewayView:
         community = self._public_preview_community(community_slug)
         return _public_realm_gateway(self.repo, community)
+
+    def realm_gateway(self) -> RealmGatewayView:
+        viewer = self.viewer()
+        gateway = _public_realm_gateway(self.repo, viewer.community)
+        return replace(gateway, continuation=_realm_gateway_continuation(viewer))
 
     def discovery_profile_editor(self) -> DiscoveryProfileEditor:
         viewer = self.viewer()
@@ -3645,6 +3651,29 @@ def _realm_gateway_wanted_previews(
             )
         )
     return tuple(previews)
+
+
+def _realm_gateway_continuation(viewer: ForumView) -> RealmGatewayContinuation:
+    base = f"/c/{viewer.community.slug}"
+    if viewer.current_character is not None:
+        return RealmGatewayContinuation(
+            audience="member",
+            title=f"Continue writing as {viewer.current_character.name}",
+            summary="Return to Desk for reply pressure, watched scenes, and active-face work.",
+            primary_action=RealmGatewayAction("Open Desk", f"{base}/desk"),
+            secondary_action=RealmGatewayAction(
+                "View face",
+                f"{base}/characters/{viewer.current_character.slug}",
+            ),
+            active_face_label=viewer.current_character.name,
+        )
+    return RealmGatewayContinuation(
+        audience="applicant",
+        title="Start your first face",
+        summary="Create or continue an application before this membership can post in scenes.",
+        primary_action=RealmGatewayAction("Start application", f"{base}/applications/new"),
+        secondary_action=RealmGatewayAction("Review claims", f"{base}/claims"),
+    )
 
 
 def _community_href(program: StudioNetworkProgramView, path: str) -> str:

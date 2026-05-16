@@ -81,6 +81,22 @@
 {% end %}
 {% end %}
 
+{% def gateway_continuation(gateway) %}
+{% if gateway.continuation %}
+<section class="elbysodic-realm-continuation" aria-label="Continue writing">
+  <div>
+    <p class="elbysodic-section-kicker">Continue writing</p>
+    <h2>{{ gateway.continuation.title }}</h2>
+    <p>{{ gateway.continuation.summary }}</p>
+  </div>
+  <div class="chirpui-cluster">
+    {{ gateway_action(gateway.continuation.primary_action) }}
+    {{ gateway_action(gateway.continuation.secondary_action, "secondary") }}
+  </div>
+</section>
+{% end %}
+{% end %}
+
 {% def gateway_scene_hubs(gateway) %}
 {% if gateway.scene_hubs %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scene-hubs-title">
@@ -193,6 +209,7 @@
 {% def realm_gateway_home(gateway, viewer=None) %}
 <div class="elbysodic-realm-gateway">
   {{ gateway_hero(gateway) }}
+  {{ gateway_continuation(gateway) }}
   {{ gateway_signal_band(gateway) }}
   {{ gateway_scene_hubs(gateway) }}
   {% if not viewer %}

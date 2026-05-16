@@ -2215,6 +2215,9 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "Staff Room" not in index.text
             assert "Latest" in index.text
             assert "Recent activity" in index.text
+            assert "Continue writing as Rogue" in index.text
+            assert 'href="/c/x-men-apocalypse/desk"' in index.text
+            assert 'href="/c/x-men-apocalypse/characters/rogue"' in index.text
             assert "#post-" in index.text
             assert "/members/starlane" in index.text
             assert "Latest details:" in index.text

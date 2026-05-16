@@ -1903,6 +1903,16 @@ class RealmGatewayWantedPreview:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayContinuation:
+    audience: str
+    title: str
+    summary: str
+    primary_action: RealmGatewayAction
+    secondary_action: RealmGatewayAction | None = None
+    active_face_label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayView:
     program: StudioNetworkProgramView
     guidebook: WorldHub
@@ -1913,6 +1923,7 @@ class RealmGatewayView:
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
     wanted_previews: tuple[RealmGatewayWantedPreview, ...]
+    continuation: RealmGatewayContinuation | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -85,7 +85,7 @@ def get(request: Request) -> Page:
     world_status_label, world_status_copy = _home_world_status(hub)
     realm_gateway = None
     with suppress(LookupError):
-        realm_gateway = services.public_realm_gateway(viewer.community.slug)
+        realm_gateway = services.realm_gateway()
     return Page.mounted(
         "page.html",
         current_path=request.url,

@@ -883,6 +883,34 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
 }
 
+.elbysodic-realm-continuation {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 7%, var(--chirpui-surface));
+    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 22%, var(--chirpui-border));
+    border-radius: var(--chirpui-radius-sm);
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+.elbysodic-realm-continuation h2,
+.elbysodic-realm-continuation p {
+    margin: 0;
+}
+
+.elbysodic-realm-continuation h2 {
+    font-size: var(--chirpui-font-xl);
+    letter-spacing: 0;
+    line-height: 1.15;
+}
+
+.elbysodic-realm-continuation p:not(.elbysodic-section-kicker) {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.38;
+}
+
 .elbysodic-realm-signal,
 .elbysodic-realm-entry-row {
     background: color-mix(in srgb, var(--chirpui-surface) 74%, transparent);
@@ -1087,6 +1115,11 @@
 
     .elbysodic-realm-entry-row {
         align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .elbysodic-realm-continuation {
+        align-items: stretch;
         flex-direction: column;
     }
 
