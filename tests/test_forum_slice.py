@@ -2876,6 +2876,8 @@ def test_director_can_update_discovery_profile_from_studio() -> None:
         assert updated.status == 302
         assert _response_header(updated, "location") == "/studio/discovery"
         assert restored.status == 200
+        assert "This is the same public card component used by Network Explore." in restored.text
+        assert 'class="elbysodic-network-card' in restored.text
         assert "A testable mystery posture for public catalog cards." in restored.text
         assert profile.premise_archetype == "weird-town-mystery"
         assert profile.featured_event_material_id is not None

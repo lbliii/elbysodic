@@ -1,7 +1,7 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/layout.html" import container, stack %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/network_catalog.html" import program_card %}
 {% end %}
 
 {% def select_field(group, editor) %}
@@ -109,44 +109,13 @@
     </form>
     {% end %}
 
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--md" aria-label="Public catalog card preview">
+    <section class="chirpui-stack chirpui-stack--md" aria-label="Public catalog card preview">
       <div>
-        <p class="elbysodic-kicker">Preview</p>
-        <h2>{{ editor.preview_card.community.name }}</h2>
-        <p class="elbysodic-copy-summary">
-          {% if editor.profile and editor.profile.catalog_pitch %}
-          {{ editor.profile.catalog_pitch }}
-          {% elif editor.preview_card.current_event %}
-          {{ editor.preview_card.current_event.rendered_summary }}
-          {% elif editor.preview_card.premise %}
-          {{ editor.preview_card.premise.rendered_summary }}
-          {% else %}
-          Public realm preview.
-          {% end %}
-        </p>
+        <p class="elbysodic-kicker">Public card preview</p>
+        <h2>Network card</h2>
+        <p class="elbysodic-copy-section">This is the same public card component used by Network Explore.</p>
       </div>
-      <div class="elbysodic-claim-group__badges">
-        {{ badge(editor.preview_card.invite_posture_label, variant="info") }}
-        {% if editor.profile %}
-        {{ badge(editor.profile.premise_archetype, variant="info") }}
-        {{ badge(editor.profile.activity_pace, variant="muted") }}
-        {{ badge(editor.profile.forum_adjunct, variant="muted") }}
-        {% end %}
-      </div>
-      <p class="elbysodic-copy-meta">
-        {% if editor.profile %}
-        {{ editor.profile.application_model }} · {{ editor.profile.lore_aperture }} · {{ editor.profile.roster_posture }}
-        {% else %}
-        Discovery profile has not been saved yet.
-        {% end %}
-      </p>
-      <div class="elbysodic-director-hero__signals">
-        {{ preview_metric("Faces", editor.preview_card.roster_count) }}
-        {{ preview_metric("Wanted", editor.preview_card.open_wanted_count) }}
-        {{ preview_metric("App guides", editor.preview_card.application_material_count) }}
-        {{ preview_metric("Claims", editor.preview_card.claim_type_count) }}
-      </div>
+      {{ program_card(editor.preview_card) }}
       {% if editor.tags %}
       <div class="elbysodic-network-discovery-band">
         {% for tag in editor.tags %}
@@ -154,8 +123,7 @@
         {% end %}
       </div>
       {% end %}
-    </article>
-    {% end %}
+    </section>
   </section>
 {% end %}
 {% end %}
