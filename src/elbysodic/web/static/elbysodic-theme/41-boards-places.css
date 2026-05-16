@@ -4,6 +4,85 @@
     height: 100%;
 }
 
+.elbysodic-realm-hub-grid {
+    display: grid;
+    gap: 0.85rem;
+    grid-auto-flow: dense;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.elbysodic-realm-hub-card {
+    background: color-mix(in srgb, var(--chirpui-surface) 74%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 64%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    color: inherit;
+    display: grid;
+    min-block-size: 15rem;
+    overflow: hidden;
+    text-decoration: none;
+    transition:
+        border-color var(--elbysodic-motion-feedback),
+        box-shadow var(--elbysodic-motion-feedback),
+        transform var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-realm-hub-card:hover,
+.elbysodic-realm-hub-card:focus-visible {
+    border-color: color-mix(in srgb, var(--chirpui-accent) 52%, var(--chirpui-border));
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--chirpui-accent) 12%, transparent);
+    transform: translateY(-1px);
+}
+
+.elbysodic-realm-hub-card--hot,
+.elbysodic-realm-hub-card--high_activity {
+    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 44%, var(--chirpui-border));
+}
+
+.elbysodic-realm-hub-card--featured {
+    border-color: color-mix(in srgb, var(--elbysodic-identity-dye) 34%, var(--chirpui-border));
+}
+
+.elbysodic-realm-hub-card__media {
+    aspect-ratio: var(--elbysodic-ratio-card);
+    background:
+        radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 32%, transparent), transparent 32%),
+        linear-gradient(135deg, var(--chirpui-bg-subtle), var(--chirpui-surface));
+    display: block;
+    overflow: hidden;
+}
+
+.elbysodic-realm-hub-card__body {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.9rem;
+}
+
+.elbysodic-realm-hub-card strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-lg);
+    line-height: 1.15;
+}
+
+.elbysodic-realm-hub-card span:not(.elbysodic-material-card__type) {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.38;
+}
+
+.elbysodic-realm-hub-card em {
+    color: var(--chirpui-text-subtle);
+    font-size: var(--chirpui-font-xs);
+    font-style: normal;
+    text-transform: uppercase;
+}
+
+@media (min-width: 54rem) {
+    .elbysodic-realm-hub-card--hot,
+    .elbysodic-realm-hub-card--high_activity {
+        grid-column: span 2;
+    }
+}
+
 .elbysodic-empty-cta {
     align-items: center;
     border-block-start: 1px solid color-mix(in srgb, var(--chirpui-border) 54%, transparent);

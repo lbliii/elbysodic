@@ -20,7 +20,9 @@
 .elbysodic-board-stage__media img,
 .elbysodic-network-billboard__media img,
 .elbysodic-network-home-showcase__media img,
-.elbysodic-network-card__poster > img {
+.elbysodic-network-card__poster > img,
+.elbysodic-realm-gateway-hero__media img,
+.elbysodic-realm-hub-card__media img {
     display: block;
     height: 100%;
     object-fit: cover;

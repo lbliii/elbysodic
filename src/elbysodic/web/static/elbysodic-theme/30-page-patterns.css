@@ -760,51 +760,165 @@
     padding: 1rem;
 }
 
-.elbysodic-realm-gateway,
-.elbysodic-realm-hub-grid {
+.elbysodic-realm-gateway {
     display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1.4rem;
 }
 
-.elbysodic-realm-gateway-card,
-.elbysodic-realm-hub-card,
+.elbysodic-realm-gateway-hero {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--chirpui-accent) 13%, var(--chirpui-surface)), var(--chirpui-surface)),
+        var(--chirpui-surface);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 74%, transparent);
+    border-radius: var(--chirpui-radius-md);
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1.15fr) minmax(17rem, 0.85fr);
+    min-block-size: 30rem;
+    overflow: hidden;
+    padding: clamp(1.15rem, 3vw, 2rem);
+}
+
+.elbysodic-realm-gateway-hero__copy {
+    align-content: end;
+    display: grid;
+    gap: 0.9rem;
+    max-inline-size: 52rem;
+    min-inline-size: 0;
+}
+
+.elbysodic-realm-gateway-hero__signals,
+.elbysodic-realm-gateway-hero__actions {
+    align-items: center;
+}
+
+.elbysodic-realm-gateway-hero h1 {
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(2.5rem, 9vw, 5.4rem);
+    letter-spacing: 0;
+    line-height: 0.9;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.elbysodic-realm-gateway-hero .elbysodic-copy-lead {
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    line-height: 1.55;
+    margin: 0;
+    max-inline-size: 46rem;
+}
+
+.elbysodic-realm-gateway-now,
+.elbysodic-realm-gateway-first-face {
+    background: color-mix(in srgb, var(--chirpui-bg) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 58%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.75rem 0.85rem;
+}
+
+.elbysodic-realm-gateway-now strong,
+.elbysodic-realm-gateway-first-face strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.elbysodic-realm-gateway-now span,
+.elbysodic-realm-gateway-first-face span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.42;
+}
+
+.elbysodic-realm-gateway-hero__media {
+    align-self: stretch;
+    background:
+        radial-gradient(circle at 30% 16%, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 34%, transparent), transparent 32%),
+        linear-gradient(145deg, var(--chirpui-bg-subtle), var(--chirpui-surface));
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 62%, transparent);
+    border-radius: var(--chirpui-radius-md);
+    color: var(--elbysodic-on-media-text);
+    display: grid;
+    grid-template-rows: minmax(15rem, 1fr) auto;
+    margin: 0;
+    min-block-size: 100%;
+    overflow: hidden;
+}
+
+.elbysodic-realm-gateway-hero__fallback {
+    align-items: center;
+    color: color-mix(in srgb, var(--chirpui-accent) 56%, var(--chirpui-text));
+    display: flex;
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(4rem, 12vw, 8rem);
+    justify-content: center;
+    letter-spacing: 0;
+}
+
+.elbysodic-realm-gateway-hero__media figcaption {
+    background: rgba(8, 10, 12, 0.74);
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.85rem 1rem;
+}
+
+.elbysodic-realm-gateway-hero__media figcaption strong {
+    color: var(--elbysodic-on-media-text);
+    line-height: 1.2;
+}
+
+.elbysodic-realm-gateway-hero__media figcaption span {
+    color: var(--elbysodic-on-media-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.35;
+}
+
+.elbysodic-realm-signal-band {
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.elbysodic-realm-signal,
 .elbysodic-realm-entry-row {
-    background: color-mix(in srgb, var(--chirpui-surface) 68%, transparent);
+    background: color-mix(in srgb, var(--chirpui-surface) 74%, transparent);
     border: 1px solid color-mix(in srgb, var(--chirpui-border) 64%, transparent);
     border-radius: var(--chirpui-radius-sm);
 }
 
-.elbysodic-realm-gateway-card,
-.elbysodic-realm-hub-card {
-    color: inherit;
+.elbysodic-realm-signal {
     display: grid;
-    gap: 0.45rem;
-    min-block-size: 11rem;
-    padding: 1rem;
+    gap: 0.25rem;
+    min-block-size: 8rem;
+    padding: 0.85rem;
 }
 
-.elbysodic-realm-gateway-card strong,
-.elbysodic-realm-hub-card strong,
+.elbysodic-realm-signal__value {
+    color: color-mix(in srgb, var(--chirpui-accent) 76%, var(--chirpui-text));
+    font-family: var(--elbysodic-display-font-family);
+    font-size: var(--chirpui-font-2xl);
+    line-height: 1;
+}
+
+.elbysodic-realm-signal strong,
 .elbysodic-realm-entry-row strong {
     color: var(--chirpui-text);
 }
 
-.elbysodic-realm-gateway-card p,
-.elbysodic-realm-hub-card span,
+.elbysodic-realm-signal span:not(.elbysodic-realm-signal__value),
 .elbysodic-realm-entry-row small {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
     line-height: 1.38;
-    margin: 0;
 }
 
-.elbysodic-realm-hub-card em,
-.elbysodic-realm-entry-row em {
-    color: var(--chirpui-text-subtle);
-    font-size: var(--chirpui-font-xs);
-    font-style: normal;
-    text-transform: uppercase;
+.elbysodic-realm-gateway-section {
+    display: grid;
+    gap: 0.85rem;
 }
 
 .elbysodic-realm-entry-list {
@@ -821,15 +935,16 @@
     padding: 0.9rem 1rem;
 }
 
-.elbysodic-realm-entry-row span {
+.elbysodic-realm-entry-row > span {
     display: grid;
     gap: 0.2rem;
 }
 
-@media (min-width: 46rem) {
-    .elbysodic-realm-gateway-card--premise {
-        grid-column: span 2;
-    }
+.elbysodic-realm-entry-row em {
+    color: var(--chirpui-text-subtle);
+    font-size: var(--chirpui-font-xs);
+    font-style: normal;
+    text-transform: uppercase;
 }
 
 .elbysodic-community-grid {
@@ -951,6 +1066,30 @@
 }
 
 @media (max-width: 48rem) {
+    .elbysodic-realm-gateway {
+        gap: 1rem;
+    }
+
+    .elbysodic-realm-gateway-hero {
+        grid-template-columns: 1fr;
+        min-block-size: 0;
+        padding: 1rem;
+    }
+
+    .elbysodic-realm-gateway-hero h1 {
+        font-size: clamp(2.35rem, 16vw, 3.4rem);
+    }
+
+    .elbysodic-realm-gateway-hero__media {
+        grid-template-rows: minmax(12rem, 48vw) auto;
+        min-block-size: 0;
+    }
+
+    .elbysodic-realm-entry-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
     .elbysodic-world-hero {
         grid-template-columns: 1fr;
         padding-top: 1rem;
