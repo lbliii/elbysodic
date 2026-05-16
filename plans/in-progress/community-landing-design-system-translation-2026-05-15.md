@@ -30,18 +30,35 @@ Completed in task commits:
 - Added member/faceless continuation lanes from service-owned identity state.
 - Updated rendered QA notes, privacy matrix coverage, and changelog.
 
+Second wave:
+
+- Routed applicant continuation through writer activation, including existing
+  draft first-face applications.
+- Added public-safe open scene previews from existing public boards and
+  threads.
+- Ranked scene hubs by gateway emphasis and public thread activity before the
+  four-card limit.
+- Added rendered fallback proof for no-media/no-wanted public gateways.
+- Reran the premise browser profile with wave-two screenshots.
+
 Proof captured so far:
 
 - `uv run ruff check src/elbysodic/services/read_models.py src/elbysodic/services/forum.py src/elbysodic/web/pages/page.py tests/test_forum_slice.py`
 - `uv run pytest tests/test_forum_slice.py tests/test_web_security.py -q --tb=short -k 'original_premise_gateways or forum_pages_render_seeded_boards_and_thread or anonymous or public_realm_gateway_contract'`
+- `uv run pytest tests/test_forum_slice.py::test_writer_desk_keeps_first_face_application_active tests/test_forum_slice.py::test_public_realm_gateway_scene_previews_hide_private_threads tests/test_forum_slice.py::test_public_realm_gateway_ranks_active_scene_hubs_before_limit tests/test_forum_slice.py::test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage -q --tb=short`
 - `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
 - `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8003 --profile premise --artifact-dir /private/tmp/elbysodic-gateway-premise-qa`
+- `uv run python /private/tmp/run_elbysodic_gateway_qa.py`
+- `uv run ruff check .`
+- `uv run ruff format . --check`
+- `uv run ty check src/elbysodic/ tests/`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"`
+- `make changelog-check`
+- `uv run pytest -q --tb=short`
 
 Remaining before merge:
 
-- Run final broad gates after docs/changelog commit.
-- Decide whether applicant continuation should inspect an existing draft
-  application instead of only linking faceless members to the first-face form.
+- Review branch diff and open PR.
 
 ## Purpose
 

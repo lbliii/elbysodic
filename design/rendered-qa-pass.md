@@ -250,6 +250,37 @@ Deferred:
 - Full applicant-owned continuation for existing draft application state.
 - Curated public scene rows beyond service-derived scene hubs.
 
+## Realm Gateway Second-Wave QA
+
+Date: 2026-05-16
+
+Scope: browser and rendered-route proof for the second premise gateway wave on
+`/c/{community_slug}`.
+
+Verified:
+
+- Applicant continuation now uses writer activation state, so draft
+  first-face work resumes at the tenant-scoped draft application path.
+- Public scene previews render only open public scenes and exclude private
+  board/thread activity.
+- Scene hubs are ranked by emphasis and public thread activity before the
+  four-card gateway limit.
+- No-media and no-wanted public gateways render the monogram fallback, keep the
+  request-access path, and omit wanted sections instead of showing empty
+  hook chrome.
+- The premise browser profile passed across desktop and mobile with no
+  horizontal overflow, broken media, unusually tall topbar, or text/control
+  overflow.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-gateway-premise-qa-wave2`
+
+Deferred:
+
+- Curated or director-pinned public scene rows remain deferred until a real
+  curation contract exists.
+
 ## Scene Plotting Grounding QA
 
 Date: 2026-05-15

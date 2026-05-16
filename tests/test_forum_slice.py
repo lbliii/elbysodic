@@ -2238,7 +2238,10 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
 
     assert any(preview.title == public_thread.title for preview in gateway.scene_previews)
     assert all(preview.title != private_thread.title for preview in gateway.scene_previews)
-    assert all(preview.href.startswith(f"/c/{community.slug}/boards/") for preview in gateway.scene_previews)
+    assert all(
+        preview.href.startswith(f"/c/{community.slug}/boards/")
+        for preview in gateway.scene_previews
+    )
 
     async def run() -> None:
         app = create_app(debug=False, services=AppServices(services.repo, None))
@@ -2252,6 +2255,42 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
             assert "Public gateway scene" in content
             assert "Private gateway scene" not in content
             assert "Private story motion" not in content
+
+    asyncio.run(run())
+
+
+def test_realm_gateway_home_tolerates_missing_scene_previews(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_realm_gateway = AppServices.realm_gateway
+
+    def legacy_realm_gateway(self: AppServices) -> SimpleNamespace:
+        gateway = original_realm_gateway(self)
+        return SimpleNamespace(
+            program=gateway.program,
+            guidebook=gateway.guidebook,
+            hero=gateway.hero,
+            premise=gateway.premise,
+            atmosphere=gateway.atmosphere,
+            signals=gateway.signals,
+            scene_hubs=gateway.scene_hubs,
+            entry_paths=gateway.entry_paths,
+            wanted_previews=gateway.wanted_previews,
+            continuation=gateway.continuation,
+        )
+
+    monkeypatch.setattr(AppServices, "realm_gateway", legacy_realm_gateway)
+
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/c/x-men-apocalypse")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert "X-Men Apocalypse" in content
+            assert "Scene hubs" in content
+            assert "Playable now" not in content
 
     asyncio.run(run())
 

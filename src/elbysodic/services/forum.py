@@ -1185,7 +1185,13 @@ class AppServices:
     def realm_gateway(self) -> RealmGatewayView:
         viewer = self.viewer()
         gateway = _public_realm_gateway(self.repo, viewer.community)
-        return replace(gateway, continuation=_realm_gateway_continuation(viewer, self.writer_activation()))
+        activation = (
+            self.writer_activation()
+            if viewer.current_character is None
+            or viewer.current_character.application_status != "accepted"
+            else None
+        )
+        return replace(gateway, continuation=_realm_gateway_continuation(viewer, activation))
 
     def discovery_profile_editor(self) -> DiscoveryProfileEditor:
         viewer = self.viewer()
@@ -3731,10 +3737,10 @@ def _realm_gateway_wanted_previews(
 
 def _realm_gateway_continuation(
     viewer: ForumView,
-    activation: WriterActivation,
+    activation: WriterActivation | None,
 ) -> RealmGatewayContinuation:
     base = f"/c/{viewer.community.slug}"
-    if activation.has_application_work or activation.needs_first_face:
+    if activation is not None and (activation.has_application_work or activation.needs_first_face):
         return RealmGatewayContinuation(
             audience="applicant",
             title=activation.headline,
