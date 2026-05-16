@@ -1184,7 +1184,7 @@ class AppServices:
     def realm_gateway(self) -> RealmGatewayView:
         viewer = self.viewer()
         gateway = _public_realm_gateway(self.repo, viewer.community)
-        return replace(gateway, continuation=_realm_gateway_continuation(viewer))
+        return replace(gateway, continuation=_realm_gateway_continuation(viewer, self.writer_activation()))
 
     def discovery_profile_editor(self) -> DiscoveryProfileEditor:
         viewer = self.viewer()
@@ -3655,8 +3655,29 @@ def _realm_gateway_wanted_previews(
     return tuple(previews)
 
 
-def _realm_gateway_continuation(viewer: ForumView) -> RealmGatewayContinuation:
+def _realm_gateway_continuation(
+    viewer: ForumView,
+    activation: WriterActivation,
+) -> RealmGatewayContinuation:
     base = f"/c/{viewer.community.slug}"
+    if activation.has_application_work or activation.needs_first_face:
+        return RealmGatewayContinuation(
+            audience="applicant",
+            title=activation.headline,
+            summary=activation.summary,
+            primary_action=RealmGatewayAction(
+                activation.primary_label,
+                _community_path(base, activation.primary_href),
+            ),
+            secondary_action=(
+                RealmGatewayAction(
+                    activation.secondary_label,
+                    _community_path(base, activation.secondary_href),
+                )
+                if activation.secondary_label and activation.secondary_href
+                else None
+            ),
+        )
     if viewer.current_character is not None:
         return RealmGatewayContinuation(
             audience="member",
@@ -3676,6 +3697,14 @@ def _realm_gateway_continuation(viewer: ForumView) -> RealmGatewayContinuation:
         primary_action=RealmGatewayAction("Start application", f"{base}/applications/new"),
         secondary_action=RealmGatewayAction("Review claims", f"{base}/claims"),
     )
+
+
+def _community_path(base: str, href: str) -> str:
+    if href.startswith("/c/"):
+        return href
+    if href.startswith("/"):
+        return f"{base}{href}"
+    return f"{base}/{href}"
 
 
 def _community_href(program: StudioNetworkProgramView, path: str) -> str:

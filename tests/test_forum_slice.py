@@ -2667,6 +2667,7 @@ def test_writer_desk_keeps_first_face_application_active() -> None:
 
         async with TestClient(app) as client:
             desk = await client.get("/desk")
+            home = await client.get("/c/x-men-apocalypse")
 
         assert desk.status == 200
         assert "Finish Draft Face" in desk.text
@@ -2674,6 +2675,12 @@ def test_writer_desk_keeps_first_face_application_active() -> None:
         assert 'href="/applications/draft-face"' in desk.text
         assert "Your roster is caught up" not in desk.text
         assert "Caught up" not in desk.text
+
+        assert home.status == 200
+        assert "Finish Draft Face" in home.text
+        assert "Complete the draft and submit this face for director review." in home.text
+        assert 'href="/c/x-men-apocalypse/applications/draft-face"' in home.text
+        assert 'href="/c/x-men-apocalypse/applications"' in home.text
 
     asyncio.run(run())
 
