@@ -294,9 +294,15 @@ Next-phase follow-up completed:
 
 - Studio discovery now reuses the public Network card component as its preview
   instead of rendering an approximate local card.
+- Original-premise seed rosters now include `starlane` plus four ordinary
+  writer memberships, with accepted faces distributed across those memberships
+  instead of belonging to one account.
 - Original-premise QA now proves first-face application, wanted board, and
-  wanted detail entry paths across Harbor Society, Signal Creek, and Wayfarer
-  Station.
+  wanted detail entry paths across all nine landed archetypes.
+- Premise browser QA now visits all nine original realm hubs plus
+  representative wanted detail and first-face routes.
+- The model review still holds: this realism work required seed ownership and
+  route proof, not new schema fields.
 
 ## Steward Notes
 

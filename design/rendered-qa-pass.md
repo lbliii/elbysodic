@@ -268,9 +268,14 @@ Verified:
 - Studio discovery now renders the same public Network card component used by
   Explore, so directors can inspect the actual catalog card shape while
   maintaining the profile.
-- Harbor Society, Signal Creek, and Wayfarer Station route proof covers realm
-  hubs, wanted boards, wanted detail pages, application hubs, and first-face
-  application forms for faceless members.
+- Original-premise seeds now distribute each eight-face roster across
+  `starlane`, `inkdraft`, `moonrelay`, `plotanchor`, and `saltline`, so demo
+  activity no longer reads as one writer owning every face.
+- Route proof now covers all nine original-premise realm hubs, wanted boards,
+  wanted detail pages, application hubs, and first-face application forms for
+  faceless members.
+- `scripts/browser_qa.py --profile premise` now visits all nine original realm
+  hubs plus representative wanted details and first-face forms.
 
 Artifacts:
 

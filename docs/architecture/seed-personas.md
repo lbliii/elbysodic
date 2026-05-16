@@ -14,6 +14,15 @@ literal-IP coded personas remain compatibility fixtures for older route,
 identity, and privacy tests; new discovery and seed-depth QA should prefer the
 original-premise personas below.
 
+Original-premise communities also seed four shared ordinary writer accounts in
+addition to `starlane`: `inkdraft@example.com`, `moonrelay@example.com`,
+`plotanchor@example.com`, and `saltline@example.com`. Each original-premise
+realm has a `member` role for these writers, and its eight accepted faces are
+distributed across those memberships plus the `starlane` director membership.
+These accounts are not currently first-class dev persona switcher entries; they
+exist so rosters, posts, claims, and entry-path QA do not collapse into one
+writer wearing every face.
+
 Tests should use `resolve_seed_persona(repo, "<key>")` when they need a seeded
 identity by purpose instead of hard-coding a username and hoping the role is
 obvious.
@@ -59,6 +68,8 @@ power through the selected community membership and role.
   Jurassic Park, and the original-premise communities, but only a Member in
   X-Men, RL NYC, and RL Small Town.
 - Characters remain community-local and membership-owned.
+- Original-premise demo rosters should preserve multiple writer memberships;
+  avoid adding all accepted faces back to `starlane`.
 - Inactive personas should be visible for QA, but not switchable into an active
   viewer.
 - Dev persona switching is a local QA shortcut. Real flows should use login
