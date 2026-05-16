@@ -3559,7 +3559,28 @@ def _realm_gateway_scene_hubs(
                 image_treatment=board.image_treatment or "standard",
             )
         )
-    return tuple(hubs[:limit])
+    ranked_hubs = sorted(
+        hubs,
+        key=lambda hub: (
+            _realm_gateway_hub_rank(hub.emphasis),
+            hub.public_thread_count,
+            bool(hub.image_url),
+            -hub.board.sort_order,
+            -hub.board.id,
+        ),
+        reverse=True,
+    )
+    return tuple(ranked_hubs[:limit])
+
+
+def _realm_gateway_hub_rank(emphasis: str) -> int:
+    ranks = {
+        "hot": 4,
+        "high_activity": 3,
+        "featured": 2,
+        "normal": 1,
+    }
+    return ranks.get(emphasis, 0)
 
 
 def _realm_gateway_hub_emphasis(

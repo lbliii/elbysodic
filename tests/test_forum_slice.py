@@ -2237,6 +2237,61 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
     asyncio.run(run())
 
 
+def test_public_realm_gateway_ranks_active_scene_hubs_before_limit() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = repo.create_community("ranked-gateway", "Ranked Gateway")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("ranked-gateway@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "ranked-writer",
+        "Ranked Writer",
+    )
+    character = repo.create_character(community.id, membership.id, "ranked-face", "Ranked Face")
+    repo.create_material(
+        community.id,
+        "premise",
+        "Ranked Gateway Premise",
+        material_type="premise",
+        summary="A public premise for ranked scene hubs.",
+    )
+    for index in range(4):
+        repo.create_board(
+            community.id,
+            f"quiet-hub-{index}",
+            f"Quiet Hub {index}",
+            sort_order=index,
+            image_url=f"/quiet-{index}.svg",
+        )
+    hot_board = repo.create_board(
+        community.id,
+        "fifth-active-hub",
+        "Fifth Active Hub",
+        sort_order=99,
+    )
+    for index in range(3):
+        repo.create_thread(
+            community.id,
+            hot_board.id,
+            character.id,
+            f"active-hub-scene-{index}",
+            f"Active hub scene {index}",
+            status="open",
+        )
+    repo.update_community_launch_status(community.id, "public-preview")
+
+    gateway = services.public_realm_gateway(community.slug)
+
+    assert "Fifth Active Hub" in {hub.board.name for hub in gateway.scene_hubs}
+    active_hub = next(hub for hub in gateway.scene_hubs if hub.board.name == "Fifth Active Hub")
+    assert active_hub.emphasis == "hot"
+    assert active_hub.public_thread_count == 3
+    assert len(gateway.scene_hubs) == 4
+
+
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
     async def run() -> None:
         app = _app()
