@@ -2142,6 +2142,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
 
 def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> None:
     services = _seeded_services()
+    app = create_app(debug=False, services=services)
     repo = services.repo
     public_community = repo.create_community("quiet-harbor", "Quiet Harbor")
     repo.create_material(
@@ -2187,6 +2188,24 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
 
     with pytest.raises(LookupError):
         services.public_realm_gateway(backstage.slug)
+
+    async def run() -> None:
+        async with TestClient(app) as client:
+            response = await client.get("/c/quiet-harbor")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert "Quiet Harbor Premise" in content
+            assert "Main Street" in content
+            assert "Request access" in content
+            assert "/c/quiet-harbor/request-access" in response.text
+            assert "elbysodic-realm-gateway-hero__fallback" in response.text
+            assert "Wanted hooks" not in content
+            assert "Browse 0 wanted hooks" not in content
+            assert "active face" not in content.lower()
+            assert "staff controls" not in content.lower()
+
+    asyncio.run(run())
 
 
 def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
