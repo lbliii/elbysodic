@@ -13,6 +13,7 @@ from pathlib import Path
 
 from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.db import Database, ForumRepository, connect, create_schema
+from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.db.seed import (
     SEED_PERSONAS,
     DemoSeed,
@@ -151,6 +152,13 @@ from elbysodic.services.materials import (
     update_material_production_state as _update_material_production_state,
 )
 from elbysodic.services.materials import world_hub as _world_hub
+from elbysodic.services.network import (
+    DISCOVERY_PROFILE_CHOICE_VALUES,
+    DISCOVERY_TAG_TYPES,
+    discovery_profile_choice_groups,
+    network_theme_preview,
+    public_catalog_card_from_program,
+)
 from elbysodic.services.network import network_explore as _network_explore
 from elbysodic.services.network import network_home as _network_home
 from elbysodic.services.network import public_catalog_cards as _public_catalog_cards
@@ -230,6 +238,7 @@ from elbysodic.services.read_models import (
     CreatedThread,
     DevPersonaView,
     DirectorStudio,
+    DiscoveryProfileEditor,
     EditablePostView,
     FacetTag,
     FirstRealmSetupResult,
@@ -1156,6 +1165,105 @@ class AppServices:
 
     def public_studio_program(self, community_slug: str) -> StudioNetworkProgramView:
         return _public_studio_program(self.repo, community_slug)
+
+    def discovery_profile_editor(self) -> DiscoveryProfileEditor:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage discovery profile"
+            )
+        profile = None
+        with suppress(LookupError):
+            profile = self.repo.get_discovery_profile(viewer.community.id)
+        tags = tuple(
+            self.repo.list_discovery_tags_for_communities([viewer.community.id]).get(
+                viewer.community.id,
+                (),
+            )
+        )
+        preview_card = public_catalog_card_from_program(
+            _discovery_preview_program(self.repo, viewer.community),
+            profile,
+            tags,
+        )
+        return DiscoveryProfileEditor(
+            profile=profile,
+            tags=tags,
+            preview_card=preview_card,
+            choice_groups=discovery_profile_choice_groups(),
+        )
+
+    def update_discovery_profile(
+        self,
+        *,
+        premise_archetype: str,
+        play_engine: str,
+        lore_aperture: str,
+        access_model: str,
+        application_model: str,
+        age_rating: str,
+        content_rating: str,
+        activity_pace: str,
+        activity_expectation: str,
+        forum_adjunct: str,
+        roster_posture: str,
+        catalog_pitch: str,
+        onboarding_pitch: str,
+        staff_pick_label: str,
+        tag_lines: str,
+    ) -> None:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage discovery profile"
+            )
+        existing_profile = None
+        with suppress(LookupError):
+            existing_profile = self.repo.get_discovery_profile(viewer.community.id)
+        self.repo.upsert_discovery_profile(
+            viewer.community.id,
+            premise_archetype=_validated_discovery_choice(
+                "premise_archetype",
+                premise_archetype,
+            ),
+            play_engine=_validated_discovery_choice("play_engine", play_engine),
+            lore_aperture=_validated_discovery_choice("lore_aperture", lore_aperture),
+            access_model=_validated_discovery_choice("access_model", access_model),
+            application_model=_validated_discovery_choice(
+                "application_model",
+                application_model,
+            ),
+            age_rating=_validated_discovery_choice("age_rating", age_rating),
+            content_rating=_validated_discovery_choice("content_rating", content_rating),
+            activity_pace=_validated_discovery_choice("activity_pace", activity_pace),
+            activity_expectation=_limited_discovery_text(
+                activity_expectation,
+                "activity expectation",
+                180,
+            ),
+            forum_adjunct=_validated_discovery_choice("forum_adjunct", forum_adjunct),
+            roster_posture=_limited_discovery_text(roster_posture, "roster posture", 180),
+            catalog_pitch=_limited_discovery_text(catalog_pitch, "catalog pitch", 240),
+            onboarding_pitch=_limited_discovery_text(
+                onboarding_pitch,
+                "onboarding pitch",
+                240,
+            ),
+            staff_pick_label=_limited_discovery_text(
+                staff_pick_label,
+                "staff pick label",
+                80,
+            ),
+            featured_event_material_id=(
+                existing_profile.featured_event_material_id
+                if existing_profile is not None
+                else None
+            ),
+        )
+        self.repo.replace_discovery_tags(
+            viewer.community.id,
+            _discovery_tag_inputs(tag_lines),
+        )
 
     def public_world_hub(self, community_slug: str) -> WorldHub:
         community = self._public_preview_community(community_slug)
@@ -3766,6 +3874,96 @@ def _ensure_enabled_style_value(
         raise ValueError(f"{label} is not supported")
     if value not in enabled_values and value != current_value:
         raise ValueError(f"{label} is not available in this community")
+
+
+def _discovery_preview_program(
+    repo: ForumRepository,
+    community: Community,
+) -> StudioNetworkProgramView:
+    materials = repo.list_materials(community.id, status="published")
+    wanted_ads = repo.list_wanted_ads(community.id, status=None)
+    community_characters = repo.list_community_characters(community.id)
+    theme = community_theme_view(repo.get_default_theme(community.id))
+    return StudioNetworkProgramView(
+        community=community,
+        membership=None,
+        role=None,
+        current_character=None,
+        premise=_first_discovery_material_summary(repo, community.id, materials, "premise"),
+        current_event=_first_discovery_material_summary(repo, community.id, materials, "event"),
+        roster_count=len(community_characters),
+        open_wanted_count=sum(1 for wanted_ad in wanted_ads if wanted_ad.status == "open"),
+        application_material_count=sum(
+            1 for material in materials if material.material_type == "application"
+        ),
+        claim_type_count=len(repo.list_claim_types(community.id)),
+        application_count=0,
+        plotting_room_count=0,
+        unread_notification_count=0,
+        theme_preview=network_theme_preview(theme),
+        is_current=False,
+    )
+
+
+def _first_discovery_material_summary(
+    repo: ForumRepository,
+    community_id: int,
+    materials: list[Material],
+    material_type: str,
+) -> MaterialSummary | None:
+    for material in materials:
+        if material.material_type == material_type:
+            return _material_summary(repo, community_id, material)
+    return None
+
+
+def _validated_discovery_choice(field_name: str, raw_value: str) -> str:
+    value = raw_value.strip()
+    allowed_values = DISCOVERY_PROFILE_CHOICE_VALUES[field_name]
+    if value not in allowed_values:
+        label = field_name.replace("_", " ")
+        raise ValueError(f"choose a supported {label}")
+    return value
+
+
+def _limited_discovery_text(raw_value: str, label: str, limit: int) -> str:
+    value = " ".join(raw_value.strip().split())
+    if len(value) > limit:
+        raise ValueError(f"{label} must be {limit} characters or fewer")
+    return value
+
+
+def _discovery_tag_inputs(raw_lines: str) -> tuple[DiscoveryTagInput, ...]:
+    tags: list[DiscoveryTagInput] = []
+    for index, raw_line in enumerate(raw_lines.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        if len(parts) not in {3, 4}:
+            raise ValueError(
+                "discovery tags use: tag_type | tag_key | label | optional search text"
+            )
+        tag_type, tag_key, label = parts[:3]
+        search_text = parts[3] if len(parts) == 4 else ""
+        if tag_type not in DISCOVERY_TAG_TYPES:
+            raise ValueError(f"unsupported discovery tag type on line {index}: {tag_type}")
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", tag_key):
+            raise ValueError(f"discovery tag key on line {index} must be slug-like")
+        tags.append(
+            DiscoveryTagInput(
+                tag_type=tag_type,
+                tag_key=tag_key,
+                label=_limited_discovery_text(label, f"tag label on line {index}", 60),
+                search_text=_limited_discovery_text(
+                    search_text,
+                    f"tag search text on line {index}",
+                    180,
+                ),
+                sort_order=index * 10,
+            )
+        )
+    return tuple(tags)
 
 
 def _apply_post_style_preset(

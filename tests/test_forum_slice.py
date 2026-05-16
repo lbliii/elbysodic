@@ -2526,6 +2526,8 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Production cockpit" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
+            assert "Public discovery profile" not in studio.text
+            assert 'href="/studio/discovery"' not in studio.text
             assert "Studio rooms" not in studio.text
             assert 'id="chirp-shell-actions"' in studio.text
             assert 'href="/studio/operations"' not in _page_content(studio.text)
@@ -2752,6 +2754,106 @@ def test_guided_realm_builder_creates_minimum_opening_packet() -> None:
         assert application.material_type == "application"
         assert application.summary == "Bring a face, hooks, limits, and claims."
         assert repo.get_default_theme(community.id) is not None
+
+    asyncio.run(run())
+
+
+def test_director_can_update_discovery_profile_from_studio() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            editor = await client.get("/studio/discovery")
+            updated = await client.post(
+                "/studio/discovery",
+                body=urlencode(
+                    {
+                        "premise_archetype": "weird-town-mystery",
+                        "play_engine": "mystery-driven",
+                        "lore_aperture": "open-lore",
+                        "access_model": "public-preview",
+                        "application_model": "profile-app",
+                        "age_rating": "18+",
+                        "content_rating": "3/3/3",
+                        "activity_pace": "weekly",
+                        "activity_expectation": "weekly clue scenes and rumor prompts",
+                        "forum_adjunct": "forum-first",
+                        "roster_posture": "locals, skeptics, staff, and original faces",
+                        "catalog_pitch": "A testable mystery posture for public catalog cards.",
+                        "onboarding_pitch": "Start with a rumor, a clue, or a wanted hook.",
+                        "staff_pick_label": "Mystery test pick",
+                        "discovery_tags": (
+                            "premise|studio-mystery|Studio mystery|director edited mystery signal"
+                        ),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            restored = await client.get("/studio/discovery")
+
+        profile = services.repo.get_discovery_profile(staff.community.id)
+        tags = services.repo.list_discovery_tags_for_communities([staff.community.id])[
+            staff.community.id
+        ]
+        results = services.network_explore("studio-mystery").results
+
+        assert editor.status == 200
+        assert "Discovery profile" in editor.text
+        assert "X-Men Apocalypse" in editor.text
+        assert updated.status == 302
+        assert _response_header(updated, "location") == "/studio/discovery"
+        assert restored.status == 200
+        assert "A testable mystery posture for public catalog cards." in restored.text
+        assert profile.premise_archetype == "weird-town-mystery"
+        assert profile.featured_event_material_id is not None
+        assert [tag.tag_key for tag in tags] == ["studio-mystery"]
+        assert [card.community.slug for card in results] == ["x-men-apocalypse"]
+
+    asyncio.run(run())
+
+
+def test_discovery_profile_editor_requires_director_membership() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        writer = resolve_seed_persona(services.repo, "xmen_writer")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(writer.community, writer.user, writer.membership, writer.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            editor = await client.get("/studio/discovery")
+            updated = await client.post(
+                "/studio/discovery",
+                body=urlencode(
+                    {
+                        "premise_archetype": "weird-town-mystery",
+                        "play_engine": "mystery-driven",
+                        "lore_aperture": "open-lore",
+                        "access_model": "public-preview",
+                        "application_model": "profile-app",
+                        "age_rating": "18+",
+                        "content_rating": "3/3/3",
+                        "activity_pace": "weekly",
+                        "forum_adjunct": "forum-first",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert editor.status == 403
+        assert updated.status == 403
 
     asyncio.run(run())
 

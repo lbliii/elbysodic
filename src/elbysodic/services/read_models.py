@@ -1934,6 +1934,38 @@ class NetworkExploreView:
     results: list[PublicCatalogCard]
 
 
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileChoice:
+    value: str
+    label: str
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileChoiceGroup:
+    field_name: str
+    label: str
+    choices: tuple[DiscoveryProfileChoice, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryProfileEditor:
+    profile: CommunityDiscoveryProfile | None
+    tags: tuple[CommunityDiscoveryTag, ...]
+    preview_card: PublicCatalogCard
+    choice_groups: tuple[DiscoveryProfileChoiceGroup, ...]
+
+    @property
+    def tag_lines(self) -> str:
+        return "\n".join(
+            "|".join((tag.tag_type, tag.tag_key, tag.label, tag.search_text)) for tag in self.tags
+        )
+
+    def value_for(self, field_name: str) -> str:
+        if self.profile is None:
+            return ""
+        return str(getattr(self.profile, field_name, "") or "")
+
+
 def _program_href(program: StudioNetworkProgramView, path: str) -> str:
     if path == "/":
         return f"/c/{program.community.slug}"

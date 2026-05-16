@@ -33,6 +33,8 @@ from elbysodic.services.notifications import (
     visible_unread_notification_counts,
 )
 from elbysodic.services.read_models import (
+    DiscoveryProfileChoice,
+    DiscoveryProfileChoiceGroup,
     ForumView,
     MaterialSummary,
     NetworkBrowseFacet,
@@ -48,6 +50,85 @@ from elbysodic.services.read_models import (
     StudioNetworkThemePreview,
 )
 from elbysodic.services.themes import community_theme_view
+
+DISCOVERY_PROFILE_CHOICE_VALUES: dict[str, tuple[str, ...]] = {
+    "premise_archetype": (
+        "small-town-social-web",
+        "weird-town-mystery",
+        "urban-supernatural-pressure-cooker",
+        "court-and-faction-fantasy",
+        "original-canon-adjacent-au",
+        "fame-and-industry-drama",
+        "survival-trials",
+        "occult-historical-pressure",
+        "strange-frontier",
+    ),
+    "play_engine": (
+        "character-driven",
+        "event-driven",
+        "mystery-driven",
+        "faction-driven",
+        "institution-driven",
+        "canon-adjacent",
+        "survival-driven",
+    ),
+    "lore_aperture": (
+        "low-lore-real-life",
+        "open-lore",
+        "semi-open-lore",
+        "original-lore",
+        "canon-divergent",
+        "closed-canon",
+    ),
+    "access_model": (
+        "public-preview",
+        "invite-only",
+        "interest-form",
+        "request-access",
+    ),
+    "application_model": (
+        "profile-app",
+        "short-app",
+        "canon-app",
+        "member-app",
+        "interest-form",
+    ),
+    "age_rating": ("13+", "16+", "18+", "21+"),
+    "content_rating": ("1/1/1", "2/2/2", "3/3/3"),
+    "activity_pace": ("rapid", "weekly", "relaxed", "slow-burn"),
+    "forum_adjunct": (
+        "forum-first",
+        "discord-light",
+        "discord-for-plotting",
+        "discord-for-onboarding",
+    ),
+}
+
+DISCOVERY_TAG_TYPES: tuple[str, ...] = (
+    "genre",
+    "tone",
+    "premise",
+    "pressure",
+    "entry_path",
+    "pace",
+    "format",
+    "content",
+    "roster",
+    "access",
+    "lore",
+)
+
+DISCOVERY_PROFILE_CHOICE_LABELS: dict[str, str] = {
+    "premise_archetype": "Premise archetype",
+    "play_engine": "Play engine",
+    "lore_aperture": "Lore aperture",
+    "access_model": "Access model",
+    "application_model": "Application model",
+    "age_rating": "Age rating",
+    "content_rating": "Content rating",
+    "activity_pace": "Activity pace",
+    "forum_adjunct": "Forum adjunct",
+}
 
 
 class NetworkMembershipContext(Protocol):
@@ -584,6 +665,20 @@ def network_filter_groups(cards: list[PublicCatalogCard]) -> list[NetworkDiscove
         ),
     ]
     return [group for group in groups if group.options]
+
+
+def discovery_profile_choice_groups() -> tuple[DiscoveryProfileChoiceGroup, ...]:
+    return tuple(
+        DiscoveryProfileChoiceGroup(
+            field_name=field_name,
+            label=DISCOVERY_PROFILE_CHOICE_LABELS[field_name],
+            choices=tuple(
+                DiscoveryProfileChoice(value=value, label=_discovery_filter_label(value))
+                for value in values
+            ),
+        )
+        for field_name, values in DISCOVERY_PROFILE_CHOICE_VALUES.items()
+    )
 
 
 def network_explore_lanes(cards: list[PublicCatalogCard]) -> list[NetworkExploreLane]:

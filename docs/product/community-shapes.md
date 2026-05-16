@@ -65,10 +65,10 @@ and repository methods, not by templates or slug/name heuristics.
 | `onboarding_pitch` | Where should a new face start? | Accepted |
 | discovery tags | Which story-fit lenses should browse/search expose? | Accepted as public catalog signals, not generic tags |
 | featured event material | What current chapter is moving right now? | Accepted as a pointer to a published event material |
+| Director Studio editor | Can directors intentionally position this realm for Writer Network discovery? | Accepted for discovery profiles and public discovery tags |
 
 Deferred:
 
-- Director-editable Studio form for discovery profiles.
 - Program Blueprint import for discovery metadata.
 - Persisted editorial collections beyond profile/tag-backed slices.
 - Continuity Graph-derived recommendations.
