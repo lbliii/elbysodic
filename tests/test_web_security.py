@@ -242,7 +242,8 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
         assert tenant.status == 200
-        assert "Public realm preview" in tenant.text
+        assert "elbysodic-realm-gateway-hero" in tenant.text
+        assert "Now playing" in tenant.text
         assert "Current Event: B-24 Winter" in tenant.text
         assert "starlane" not in tenant.text
         assert "playing as Rogue" not in tenant.text

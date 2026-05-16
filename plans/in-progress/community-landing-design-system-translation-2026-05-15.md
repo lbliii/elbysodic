@@ -1,15 +1,47 @@
 # Community Landing Design-System Translation
 
-Status: draft implementation plan after static V2 prototype
+Status: implementation pass landed on `codex/community-gateway-plan`; final
+merge/review pending
 Owner: Product design, Chirp/web, service, privacy, tests, and docs stewardship
 Created: 2026-05-15
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 Review by: 2026-05-29
 Closure criteria: the community landing V2 prototype is translated into
 service-owned public/member/applicant read models, Chirp-composed Elbysodic
 components, theme-layer CSS, privacy-tested rendered routes, desktop/mobile
 browser QA, and docs/checklist updates; or the prototype is explicitly
 superseded by a narrower gateway plan.
+
+## 2026-05-16 Implementation Pass
+
+Branch: `codex/community-gateway-plan`
+
+Completed in task commits:
+
+- Hardened `RealmGatewayView` with hero, action, signal, scene-hub emphasis,
+  wanted preview, and continuation contracts.
+- Replaced the early card-grid community home with
+  `_components/realm_gateway.html` while keeping signed-in operational home
+  sections below the gateway.
+- Added tokenized theme CSS across page, media, board/place, and wanted layers
+  without copying prototype CSS.
+- Rendered open wanted hooks as public first-face previews from existing
+  public wanted data.
+- Added member/faceless continuation lanes from service-owned identity state.
+- Updated rendered QA notes, privacy matrix coverage, and changelog.
+
+Proof captured so far:
+
+- `uv run ruff check src/elbysodic/services/read_models.py src/elbysodic/services/forum.py src/elbysodic/web/pages/page.py tests/test_forum_slice.py`
+- `uv run pytest tests/test_forum_slice.py tests/test_web_security.py -q --tb=short -k 'original_premise_gateways or forum_pages_render_seeded_boards_and_thread or anonymous or public_realm_gateway_contract'`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
+- `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8003 --profile premise --artifact-dir /private/tmp/elbysodic-gateway-premise-qa`
+
+Remaining before merge:
+
+- Run final broad gates after docs/changelog commit.
+- Decide whether applicant continuation should inspect an existing draft
+  application instead of only linking faceless members to the first-face form.
 
 ## Purpose
 

@@ -2087,7 +2087,10 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
         assert all(hub.eyebrow for hub in gateway.scene_hubs)
-        assert all(hub.emphasis in {"normal", "featured", "hot", "high_activity"} for hub in gateway.scene_hubs)
+        assert all(
+            hub.emphasis in {"normal", "featured", "hot", "high_activity"}
+            for hub in gateway.scene_hubs
+        )
         assert {path.title for path in gateway.entry_paths} >= {
             "Read the premise",
             "Browse open calls",
@@ -2415,15 +2418,14 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
             hp_home = await client.get("/c/hp-universe", headers={"Cookie": cookie})
 
         assert xmen.status == 200
-        assert "elbysodic-world-hero--split" in xmen.text
+        assert "elbysodic-realm-gateway-hero" in xmen.text
         assert "/elbysodic-static/seed-media/xmen-hero.svg" in xmen.text
         assert 'alt="Snow-lit academy and B-24 signal lines"' in xmen.text
         assert "Current Event: B-24 Winter" in xmen.text
         assert "Iceman is infected with B-24" in xmen.text
 
         assert hp_home.status == 200
-        assert "elbysodic-world-hero--poster" in hp_home.text
-        assert "elbysodic-world-hero--focal-top" in hp_home.text
+        assert "elbysodic-realm-gateway-hero" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
         assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
@@ -9251,11 +9253,7 @@ def test_director_studio_updates_world_hero_media() -> None:
         assert updated.world_hero_overlay == "heavy"
         assert updated.world_hero_height == "immersive"
         assert home.status == 200
-        assert "elbysodic-world-hero--with-media" in home.text
-        assert "elbysodic-world-hero--background" in home.text
-        assert "elbysodic-world-hero--height-immersive" in home.text
-        assert "elbysodic-world-hero--overlay-heavy" in home.text
-        assert "elbysodic-world-hero--focal-top" in home.text
+        assert "elbysodic-realm-gateway-hero__media" in home.text
         assert 'src="https://example.test/world.jpg"' in home.text
         assert 'alt="A fog-covered academy at night"' in home.text
         assert studio.status == 200

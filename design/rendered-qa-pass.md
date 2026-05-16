@@ -218,6 +218,38 @@ Deferred:
 - Reserve and claim rows remain deferred until they are backed by an explicit
   notification or deadline service contract.
 
+## Community Premise Gateway QA
+
+Date: 2026-05-16
+
+Scope: browser smoke for the V2.1 premise gateway translation on original
+premise realm homes.
+
+Verified:
+
+- `/c/{community_slug}` renders through a service-owned `RealmGatewayView`
+  with hero, `Now playing`, first-face path, signal band, scene hubs, wanted
+  previews, entry paths, and member continuation.
+- Public gateway proof covers no-event/social, mystery, and frontier pressure
+  seeds through `harbor-society`, `signal-creek`, and `wayfarer-station`.
+- Public visitors see tenant-scoped wanted, guidebook, scene-hub, and request
+  access links without active-face, Desk, staff, application-review, unread, or
+  private-board signals.
+- Signed-in members keep the premise gateway orientation and gain a compact
+  continuation lane for the active face before the existing member home
+  sections.
+- Desktop and mobile premise browser QA passed with no horizontal overflow,
+  broken media, unusual topbar height, or text/control overflow.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-gateway-premise-qa`
+
+Deferred:
+
+- Full applicant-owned continuation for existing draft application state.
+- Curated public scene rows beyond service-derived scene hubs.
+
 ## Scene Plotting Grounding QA
 
 Date: 2026-05-15

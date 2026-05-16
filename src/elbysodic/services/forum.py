@@ -3439,9 +3439,7 @@ def _realm_gateway_hero(
         now_playing_copy=f"{atmosphere.title}: {atmosphere.copy}",
         first_face_path=premise.onboarding_pitch,
         primary_action=primary_action,
-        secondary_action=secondary_action
-        if secondary_action.href != primary_action.href
-        else None,
+        secondary_action=secondary_action if secondary_action.href != primary_action.href else None,
     )
 
 
@@ -3530,10 +3528,14 @@ def _realm_gateway_scene_hubs(
     ]
     threads_by_board = repo.list_threads_for_boards(community_id, [board.id for board in boards])
     thread_counts = {
-        board.id: sum(1 for thread in threads_by_board.get(board.id, []) if thread.status != "private")
+        board.id: sum(
+            1 for thread in threads_by_board.get(board.id, []) if thread.status != "private"
+        )
         for board in boards
     }
-    most_active_board_id = max(thread_counts, key=thread_counts.get, default=None)
+    most_active_board_id = (
+        max(thread_counts, key=lambda board_id: thread_counts[board_id]) if thread_counts else None
+    )
     hubs = []
     for board in boards:
         public_thread_count = thread_counts[board.id]
