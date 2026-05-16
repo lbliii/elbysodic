@@ -170,6 +170,13 @@ class SeedPersonaContext:
     character: Character | None
 
 
+@dataclass(frozen=True, slots=True)
+class OriginalPremiseWriterSeed:
+    email: str
+    username: str
+    display_name: str
+
+
 SEED_MEDIA_BASE = "/elbysodic-static/seed-media"
 LOCATION_MEDIA_BASE = f"{SEED_MEDIA_BASE}/locations"
 X_MEN_MEDIA = CommunityMediaSeed(
@@ -750,6 +757,13 @@ ORIGINAL_PREMISE_SEED_ARCHETYPES: dict[str, str] = {
     "gaslight-ward": "occult-historical-pressure",
     "wayfarer-station": "strange-frontier",
 }
+
+ORIGINAL_PREMISE_WRITER_SEEDS: tuple[OriginalPremiseWriterSeed, ...] = (
+    OriginalPremiseWriterSeed("inkdraft@example.com", "inkdraft", "Ink Draft"),
+    OriginalPremiseWriterSeed("moonrelay@example.com", "moonrelay", "Moon Relay"),
+    OriginalPremiseWriterSeed("plotanchor@example.com", "plotanchor", "Plot Anchor"),
+    OriginalPremiseWriterSeed("saltline@example.com", "saltline", "Salt Line"),
+)
 
 
 SEED_PERSONAS: tuple[SeedPersona, ...] = (
@@ -5961,8 +5975,20 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 "Lane",
             ),
         )
+        original_writer_memberships = (
+            _seed_original_premise_writer_memberships(repo, community, membership)
+            if program.slug in ORIGINAL_PREMISE_SEED_SLUGS
+            else {}
+        )
+        preferred_defaults: dict[int, int] = {}
         default_character: Character | None = None
         for index, character_seed in enumerate(program.characters):
+            character_membership = _original_premise_character_membership(
+                character_seed.slug,
+                index,
+                membership,
+                original_writer_memberships,
+            )
             character = _get_or_create(
                 lambda community=community, character_seed=character_seed: (
                     repo.get_character_by_slug(
@@ -5970,17 +5996,23 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                         character_seed.slug,
                     )
                 ),
-                lambda community=community, membership=membership, character_seed=character_seed, index=index: (
+                lambda community=community, character_membership=character_membership, character_seed=character_seed: (
                     repo.create_character(
                         community.id,
-                        membership.id,
+                        character_membership.id,
                         character_seed.slug,
                         character_seed.name,
                         summary=character_seed.summary,
                         tagline=character_seed.tagline,
-                        make_default=index == 0,
                     )
                 ),
+            )
+            preferred_defaults.setdefault(character_membership.id, character.id)
+            character = repo.transfer_character_membership(
+                community.id,
+                character.id,
+                character_membership.id,
+                make_default=index == 0,
             )
             character = _ensure_character_identity(
                 repo,
@@ -5994,6 +6026,10 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
         membership = repo.get_membership(community.id, membership.id)
         if membership.default_character_id is None and default_character is not None:
             repo.set_default_character(community.id, membership.id, default_character.id)
+        for membership_id, character_id in preferred_defaults.items():
+            assigned_membership = repo.get_membership(community.id, membership_id)
+            if assigned_membership.default_character_id is None:
+                repo.set_default_character(community.id, membership_id, character_id)
 
         for index, board_seed in enumerate(program.boards, start=1):
             board = _ensure_board(
@@ -6067,6 +6103,55 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
         _seed_discovery_profile(repo, community.id, DISCOVERY_PROFILE_SEEDS.get(program.slug))
         if program.slug in ORIGINAL_PREMISE_SEED_SLUGS:
             _seed_original_premise_depth(repo, community, program, membership)
+
+
+def _seed_original_premise_writer_memberships(
+    repo: ForumRepository,
+    community: Community,
+    director_membership: CommunityMembership,
+) -> dict[str, CommunityMembership]:
+    member_role = _get_or_create(
+        lambda: repo.get_role_by_slug(community.id, "member"),
+        lambda: repo.create_role(community.id, "member", "Member"),
+    )
+    memberships: dict[str, CommunityMembership] = {"director": director_membership}
+    for writer_seed in ORIGINAL_PREMISE_WRITER_SEEDS:
+        writer = _get_or_create(
+            lambda writer_seed=writer_seed: repo.get_user_by_email(writer_seed.email),
+            lambda writer_seed=writer_seed: repo.create_user(
+                writer_seed.email,
+                "dev-password-hash",
+            ),
+        )
+        memberships[writer_seed.username] = _get_or_create(
+            lambda community=community, writer=writer: repo.get_membership_for_user(
+                community.id,
+                writer.id,
+            ),
+            lambda community=community, writer=writer, writer_seed=writer_seed: (
+                repo.create_membership(
+                    community.id,
+                    writer.id,
+                    member_role.id,
+                    writer_seed.username,
+                    writer_seed.display_name,
+                )
+            ),
+        )
+    return memberships
+
+
+def _original_premise_character_membership(
+    _character_slug: str,
+    index: int,
+    director_membership: CommunityMembership,
+    writer_memberships: dict[str, CommunityMembership],
+) -> CommunityMembership:
+    if not writer_memberships or index == 0:
+        return director_membership
+    writer_keys = tuple(writer.username for writer in ORIGINAL_PREMISE_WRITER_SEEDS)
+    writer_key = writer_keys[(index - 1) % len(writer_keys)]
+    return writer_memberships[writer_key]
 
 
 def _ensure_studio_program_community(

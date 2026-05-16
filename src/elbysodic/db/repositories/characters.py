@@ -300,6 +300,68 @@ class CharacterRepositoryMixin(IdentityRepositoryMixin):
         self._commit()
         return self.get_character(community_id, character_id)
 
+    def transfer_character_membership(
+        self,
+        community_id: int,
+        character_id: int,
+        membership_id: int,
+        *,
+        make_default: bool = False,
+    ) -> Character:
+        character = self.get_character(community_id, character_id)
+        self.get_membership(community_id, membership_id)
+        old_membership = self.get_membership(community_id, character.membership_id)
+        if character.membership_id == membership_id:
+            if make_default and old_membership.default_character_id != character_id:
+                self.set_default_character(community_id, membership_id, character_id)
+            return self.get_character(community_id, character_id)
+
+        self.connection.execute(
+            """
+            UPDATE characters
+            SET membership_id = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (membership_id, _utc_now(), community_id, character_id),
+        )
+        if old_membership.default_character_id == character_id:
+            replacement = self.connection.execute(
+                """
+                SELECT id
+                FROM characters
+                WHERE community_id = ?
+                  AND membership_id = ?
+                  AND id != ?
+                ORDER BY name, id
+                LIMIT 1
+                """,
+                (community_id, old_membership.id, character_id),
+            ).fetchone()
+            self.connection.execute(
+                """
+                UPDATE community_memberships
+                SET default_character_id = ?
+                WHERE community_id = ? AND id = ?
+                """,
+                (
+                    replacement["id"] if replacement is not None else None,
+                    community_id,
+                    old_membership.id,
+                ),
+            )
+        new_membership = self.get_membership(community_id, membership_id)
+        if make_default or new_membership.default_character_id is None:
+            self.connection.execute(
+                """
+                UPDATE community_memberships
+                SET default_character_id = ?
+                WHERE community_id = ? AND id = ?
+                """,
+                (character_id, community_id, membership_id),
+            )
+        self._commit()
+        return self.get_character(community_id, character_id)
+
     def update_character_application_status(
         self,
         community_id: int,
