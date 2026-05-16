@@ -1,7 +1,6 @@
 # Premise Discovery Surface And Seed Depth
 
-Status: draft next-phase implementation plan after discovery profiles and nine
-original premise communities landed
+Status: implemented in PR-sized slices; pending review and follow-up planning
 Owner: Product research, Writer Network, Realm Studio, storage, service, web,
 tests, docs, and planning stewardship
 Created: 2026-05-15
@@ -67,6 +66,9 @@ Accepted:
 
 - Keep premise archetype as the primary public discovery lens.
 - Keep discovery profiles and tags explicit, tenant-scoped public catalog data.
+- Keep the existing discovery profile/tag schema for this phase; no additional
+  migration is needed until the expanded seed catalog and real UAT expose a
+  stable missing fact.
 - Keep public cards separate from member continuation, active-face obligations,
   staff state, private rooms, draft material, and backstage plotting data.
 - Keep reference skeletons internal to research and seed craft; do not render
@@ -249,6 +251,46 @@ Proof:
 - Seed depth work depends on stable seed helper ownership and idempotence.
 - Browser QA depends on a local runnable app and representative seeded data.
 
+## Slice Outcomes
+
+Completed in this branch:
+
+- Slice 1 added public discovery filters and service-owned counts for Network
+  discovery profile groups.
+- Slice 2 added the director-only Studio discovery profile editor for profile
+  fields and public discovery tags.
+- Slice 3 deepened each original premise seed with starter scenes, posts,
+  watches, read state, and character claims.
+- Slice 4 added original-premise seed personas and shifted demo QA guidance
+  toward premise-based communities.
+- Slice 5 added a premise browser QA profile, route proof, and simulated UAT
+  notes for public catalog and Studio discovery maintenance.
+- Slice 6 completed the model extension review without adding schema.
+
+Model extension decision:
+
+- Keep `featured_event_material_id` as the durable current-chapter pointer,
+  limited to a published event material for the same `community_id`.
+- Keep `roster_posture`, `catalog_pitch`, `onboarding_pitch`,
+  `activity_expectation`, and the profile choice fields in
+  `community_discovery_profiles`.
+- Keep public browse/search labels in discovery tags, not in director-defined
+  in-world facets.
+- Derive public scene/activity count labels from existing threads, posts,
+  wanted hooks, claims, and materials through service read models.
+- Do not add cinematic reference, TV Tropes, public ranking, or automatic
+  premise-classification fields.
+
+Deferred model candidates:
+
+- Studio-side public catalog card preview.
+- Program Blueprint import/export for discovery profiles.
+- Review cadence, first-face route, and onboarding funnel fields after
+  application/intake work creates a stronger contract.
+- Public activity freshness labels once there is enough seeded and live
+  activity to distinguish alive, quiet, waiting, and paused realms without
+  leaking private member behavior.
+
 ## Steward Notes
 
 Storage and migration:
@@ -296,35 +338,34 @@ Privacy and Security:
 
 ## Open Questions
 
-- Which original premise community should become the default demo target?
-- Should Director Studio discovery editing land before or after richer seed
-  activity?
-- Which Explore filters are essential for the first public surface, and which
-  should wait until there is enough catalog density?
-- Should featured current event be a discovery profile field, a material
-  relationship, or only a service-selected highlight?
-- How much seeded thread/post depth is enough before browser QA becomes useful?
+- Which original-premise realm should become the default public demo target
+  after product review?
+- Which Explore filters should stay visible once the catalog grows beyond the
+  nine archetype proofs?
+- How much public activity freshness can be exposed without leaking private
+  writer obligations?
+- Which Studio preview affordance gives directors enough confidence before
+  saving discovery profile changes?
 
 ## Implementation Order
 
-Preferred order:
+Implemented order:
 
 1. Public discovery lanes and filters.
-2. Demo posture and persona matrix.
+2. Director Studio discovery editing.
 3. Original seed depth pass.
-4. Browser and simulated persona QA.
-5. Director Studio discovery editing.
+4. Demo posture and persona matrix.
+5. Browser and simulated persona QA.
 6. Model extension review.
 
 Rationale:
 
-- Discovery lanes make the existing nine-community slate visible.
-- Persona and demo posture prevent new work from drifting back to literal-IP
-  fixtures.
-- Seed depth gives QA and Studio preview work realistic material.
-- Studio editing should follow at least one rendered discovery pass so the form
-  fields match proven public surfaces.
-- Model extensions should be decided after surfaces and seed depth create real
+- Discovery lanes made the existing nine-community slate visible.
+- Studio editing landed early because directors needed a real maintenance
+  surface before QA could inspect the profile contract.
+- Seed depth and persona docs then gave the QA pass realistic original-premise
+  routes.
+- Model extensions were reviewed after surfaces and seed depth created real
   pressure.
 
 ## Validation
