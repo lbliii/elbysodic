@@ -107,11 +107,17 @@ Derived instead of stored:
 
 Deferred:
 
-- Studio-side preview of the public catalog card.
 - Program Blueprint import/export for discovery profiles.
 - More precise onboarding route fields after first-face onboarding and intake
   surfaces are stable.
 - Real UAT before treating any additional field as a broad market need.
+
+Accepted follow-up:
+
+- Studio discovery should render the same public catalog card component used by
+  Network Explore so directors are not editing against an approximate preview.
+- Original-premise QA should include first-face application, wanted board, and
+  wanted detail entry paths, not only public catalog cards.
 
 Not-now:
 

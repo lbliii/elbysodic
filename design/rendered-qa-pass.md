@@ -265,14 +265,20 @@ Verified:
 - `scripts/browser_qa.py --profile premise` defines a desktop/mobile pass
   covering public catalog queries, original-premise realm hubs, and the Studio
   discovery editor after switching to `harbor_director` through dev personas.
+- Studio discovery now renders the same public Network card component used by
+  Explore, so directors can inspect the actual catalog card shape while
+  maintaining the profile.
+- Harbor Society, Signal Creek, and Wayfarer Station route proof covers realm
+  hubs, wanted boards, wanted detail pages, application hubs, and first-face
+  application forms for faceless members.
 
 Artifacts:
 
 - `research/uat/simulated/2026-05-15-premise-discovery-simulated-uat.md`
 - `tests/test_forum_slice.py::test_original_premise_discovery_routes_support_persona_qa`
+- `tests/test_forum_slice.py::test_original_premise_entry_paths_support_first_face_and_wanted_browsing`
 - `uv run python scripts/browser_qa.py --profile premise --base-url http://127.0.0.1:8003`
 
 Deferred:
 
 - Real hook-hunter and new-face applicant UAT against the expanded seed catalog.
-- A Studio-side preview of the public catalog card.

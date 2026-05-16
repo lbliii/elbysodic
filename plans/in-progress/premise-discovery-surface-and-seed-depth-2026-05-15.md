@@ -283,13 +283,20 @@ Model extension decision:
 
 Deferred model candidates:
 
-- Studio-side public catalog card preview.
 - Program Blueprint import/export for discovery profiles.
 - Review cadence, first-face route, and onboarding funnel fields after
   application/intake work creates a stronger contract.
 - Public activity freshness labels once there is enough seeded and live
   activity to distinguish alive, quiet, waiting, and paused realms without
   leaking private member behavior.
+
+Next-phase follow-up completed:
+
+- Studio discovery now reuses the public Network card component as its preview
+  instead of rendering an approximate local card.
+- Original-premise QA now proves first-face application, wanted board, and
+  wanted detail entry paths across Harbor Society, Signal Creek, and Wayfarer
+  Station.
 
 ## Steward Notes
 
