@@ -468,7 +468,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         forum_adjunct="forum-first",
         roster_posture="original faces, families, civic roles, and local businesses",
         catalog_pitch="A coastal status town where club politics, family favors, and public rituals make every secret useful.",
-        onboarding_pitch="Start with the gala vote, a family tie, a workplace, or a wanted hook.",
+        onboarding_pitch="The gala vote, family ties, town jobs, and quiet debts are already in motion.",
         featured_event_material_slug="founders-gala",
         tags=(
             DiscoveryTagSeed(
@@ -482,7 +482,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
                 "tone", "coastal-status", "Coastal status town", "club gala old families", 20
             ),
             DiscoveryTagSeed(
-                "entry_path", "wanted", "Open wanted hooks", "families workplaces rivals", 30
+                "entry_path", "wanted", "Open calls", "families workplaces rivals", 30
             ),
         ),
     ),
@@ -499,7 +499,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         forum_adjunct="forum-first",
         roster_posture="locals, researchers, officials, skeptics, believers, and strange-touched faces",
         catalog_pitch="A mountain town keeps recording impossible signals after a vanished-year mystery.",
-        onboarding_pitch="Start with the midnight signal, a rumor, a research role, or a town tie.",
+        onboarding_pitch="The midnight signal gives newcomers a reason to ask questions before town memory closes ranks.",
         featured_event_material_slug="midnight-signal",
         tags=(
             DiscoveryTagSeed(
@@ -524,11 +524,11 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         age_rating="21+",
         content_rating="3/3/3",
         activity_pace="weekly",
-        activity_expectation="faction scenes, treaty fallout, wanted roles, and mature city plots",
+        activity_expectation="faction scenes, treaty fallout, open calls, and mature city plots",
         forum_adjunct="forum-first",
         roster_posture="species, factions, hunters, humans, officials, and original faces",
         catalog_pitch="A visible-supernatural city where a treaty breach turns nightlife, law, and old covenants hostile.",
-        onboarding_pitch="Start with a faction tie, the treaty breach, a species claim, or a wanted role.",
+        onboarding_pitch="The treaty breach gives every faction, witness, and bystander a reason to move before daylight.",
         featured_event_material_slug="treaty-breach",
         tags=(
             DiscoveryTagSeed(
@@ -556,8 +556,8 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         activity_expectation="court scenes, faction moves, border pressure, and event turns",
         forum_adjunct="forum-first",
         roster_posture="houses, factions, rank claims, magic roles, and original faces",
-        catalog_pitch="A succession crisis realm where houses, mages, merchants, rebels, and clergy contest legitimacy.",
-        onboarding_pitch="Start with a house tie, faction pressure, the interrupted coronation, or a wanted role.",
+        catalog_pitch="A kingdom left without a clean heir, where houses, mages, merchants, rebels, and clergy turn legitimacy into a weapon.",
+        onboarding_pitch="The broken coronation gives nobles, servants, soldiers, priests, and spies immediate reasons to choose badly.",
         featured_event_material_slug="broken-coronation",
         tags=(
             DiscoveryTagSeed(
@@ -588,11 +588,11 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         age_rating="18+",
         content_rating="3/2/3",
         activity_pace="weekly",
-        activity_expectation="role-archetype scenes, accord politics, rebel pressure, and wanted ties",
+        activity_expectation="accord politics, inherited duties, rebel pressure, and dangerous old loyalties",
         forum_adjunct="forum-first",
-        roster_posture="role archetypes, heirs, exiles, monsters, archivists, and original faces",
-        catalog_pitch="An original branch-point realm where inherited story roles survived but the old ending broke.",
-        onboarding_pitch="Start with a role archetype, the failing Accord seal, a faction tie, or a wanted hook.",
+        roster_posture="heirs, exiles, monsters, archivists, rebels, officials, and original faces",
+        catalog_pitch="A broken treaty town where inherited duties survived the war better than the people did.",
+        onboarding_pitch="The failing Accord seal gives heirs, exiles, archivists, and fugitives a reason to come home.",
         featured_event_material_slug="accord-seal-fails",
         tags=(
             DiscoveryTagSeed(
@@ -604,7 +604,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
             ),
             DiscoveryTagSeed("lore", "semi-open-lore", "Semi-open lore", "original lore roles", 20),
             DiscoveryTagSeed(
-                "entry_path", "role-archetype", "Role archetypes", "heirs monsters archivists", 30
+                "entry_path", "role-archetype", "Inherited roles", "heirs monsters archivists", 30
             ),
         ),
     ),
@@ -621,7 +621,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         forum_adjunct="forum-first",
         roster_posture="performers, fixers, patrons, press, lawyers, assistants, and original faces",
         catalog_pitch="A spotlight city where studios, clubs, magazines, patrons, and gossip turn image into leverage.",
-        onboarding_pitch="Start with awards-night sabotage, a career tie, a scandal, or a wanted hook.",
+        onboarding_pitch="Awards night, contract leaks, old favors, and public apologies are ready to pull people together.",
         featured_event_material_slug="awards-night-sabotage",
         tags=(
             DiscoveryTagSeed(
@@ -650,7 +650,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         forum_adjunct="forum-first",
         roster_posture="houses, candidates, instructors, medics, sponsors, and original faces",
         catalog_pitch="A trial academy where rank, scarcity, sponsors, and adult agendas decide who gets protected.",
-        onboarding_pitch="Start with trial selection, a house tie, a sabotage witness, or a wanted role.",
+        onboarding_pitch="Trial selection has already gone wrong, and every house has someone to protect or blame.",
         featured_event_material_slug="tampered-selection",
         tags=(
             DiscoveryTagSeed(
@@ -685,7 +685,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         forum_adjunct="forum-first",
         roster_posture="investigators, socialites, criminals, reformers, mediums, workers, and original faces",
         catalog_pitch="A period city where class, crime, etiquette, newspapers, police power, and occult bargains collide.",
-        onboarding_pitch="Start with the impossible murder, a social season tie, a newspaper lead, or an occult debt.",
+        onboarding_pitch="The locked-room murder gives society, workers, reporters, police, and mediums a public reason to lie.",
         featured_event_material_slug="impossible-murder",
         tags=(
             DiscoveryTagSeed(
@@ -716,7 +716,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         forum_adjunct="forum-first",
         roster_posture="crew, smugglers, medics, engineers, envoys, archivists, and original faces",
         catalog_pitch="An isolated station at the edge of known space where law is fragile and one signal can change every bargain.",
-        onboarding_pitch="Start with the missing convoy, a station role, a supply debt, or a signal lead.",
+        onboarding_pitch="The missing convoy has already tightened supplies, stirred old debts, and made the station listen.",
         featured_event_material_slug="missing-convoy",
         tags=(
             DiscoveryTagSeed(
@@ -759,10 +759,10 @@ ORIGINAL_PREMISE_SEED_ARCHETYPES: dict[str, str] = {
 }
 
 ORIGINAL_PREMISE_WRITER_SEEDS: tuple[OriginalPremiseWriterSeed, ...] = (
-    OriginalPremiseWriterSeed("inkdraft@example.com", "inkdraft", "Ink Draft"),
-    OriginalPremiseWriterSeed("moonrelay@example.com", "moonrelay", "Moon Relay"),
-    OriginalPremiseWriterSeed("plotanchor@example.com", "plotanchor", "Plot Anchor"),
-    OriginalPremiseWriterSeed("saltline@example.com", "saltline", "Salt Line"),
+    OriginalPremiseWriterSeed("juniper.gray@example.com", "junipergray", "Juniper Gray"),
+    OriginalPremiseWriterSeed("miles.north@example.com", "milesnorth", "Miles North"),
+    OriginalPremiseWriterSeed("cass.marlow@example.com", "cassmarlow", "Cass Marlow"),
+    OriginalPremiseWriterSeed("lena.wren@example.com", "lenawren", "Lena Wren"),
 )
 
 
@@ -884,7 +884,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "harbor-society",
         "starlane",
         "maris-vale",
-        "Original small-town social web director for public discovery and seed-depth QA.",
+        "Director view for a coastal town where gala season turns favors into leverage.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -894,7 +894,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "signal-creek",
         "starlane",
         "ira-bell",
-        "Original weird-town mystery director for current chapter and open-lore QA.",
+        "Director view for a mountain town following a signal nobody can explain.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -904,7 +904,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "nocturne-row",
         "starlane",
         "marcel-voss",
-        "Original urban supernatural director for faction, rating, and species-pressure QA.",
+        "Director view for a city treaty fraying under public supernatural pressure.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -914,7 +914,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "crownfall",
         "starlane",
         "seren-vale",
-        "Original court-and-faction fantasy director for claims, houses, and succession QA.",
+        "Director view for a court deciding who can survive the crown's empty chair.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -924,7 +924,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "afterlight-accord",
         "starlane",
         "orin-vale",
-        "Original canon-adjacent AU director for role-archetype and IP-hygiene QA.",
+        "Director view for a broken accord where inherited duties outlive the old war.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -934,7 +934,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "brightline",
         "starlane",
         "viv-marlowe",
-        "Original fame and industry director for public-image and career-pressure QA.",
+        "Director view for awards week, contract leaks, and people selling a cleaner story.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -944,7 +944,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "emberhouse",
         "starlane",
         "nara-vale",
-        "Original survival trials director for institution pressure and consent-safe QA.",
+        "Director view for a trial academy where rank boards decide who gets protected.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -954,7 +954,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "gaslight-ward",
         "starlane",
         "ada-vale",
-        "Original occult historical director for class, inquiry, and respectability QA.",
+        "Director view for a gaslit city hiding murder behind manners.",
         "/studio/discovery",
     ),
     SeedPersona(
@@ -964,7 +964,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "wayfarer-station",
         "starlane",
         "mara-voss",
-        "Original strange frontier director for scarcity, station law, and signal QA.",
+        "Director view for a frontier station rationing air, law, and trust.",
         "/studio/discovery",
     ),
 )
@@ -1797,7 +1797,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Back Veranda",
                 "desk",
                 "Family ties, committee warfare, club votes, rivals, and slow-burn scene calls.",
-                "A plotting lane for social pressure, civic rituals, and relationship hooks.",
+                "Bring gala seating charts, grudges, favors, and the conversations people keep having off the record.",
             ),
         ),
         materials=(
@@ -1811,9 +1811,9 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                     "of people keep performing it correctly: club memberships, school boosters, "
                     "hotel openings, marina permits, campaign breakfasts, and family names that "
                     "still decide who gets forgiven.\n\n"
-                    "The play engine is social pressure. Characters enter through old families, "
-                    "new money, public service, town jobs, returning-home arcs, and the kind of "
-                    "romance or rivalry that has to survive being discussed at breakfast."
+                    "Everything worth keeping has witnesses: old families, new money, public "
+                    "service, town jobs, returning-home grudges, and the kind of romance or "
+                    "rivalry that has to survive being discussed at breakfast."
                 ),
             ),
             BlueprintMaterial(
@@ -1836,7 +1836,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "guide",
                 "Status in Harbor Society is public, practical, and never as stable as it looks.",
                 (
-                    "Useful roles include old families, club staff, hotel workers, teachers, "
+                    "The town always has room for old families, club staff, hotel workers, teachers, "
                     "boosters, reporters, marina workers, seasonal returnees, local officials, "
                     "artists, donors, service workers, and people who married into the wrong story."
                 ),
@@ -1845,11 +1845,11 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should bring a public tie, a private pressure, and one playable opening.",
+                "Tell us where the town knows them, what they are hiding, and who can make it worse.",
                 (
-                    "A strong first face names where the town knows them, who benefits if they "
-                    "stay quiet, and what they need during the Founders Gala week. No one starts "
-                    "alone: attach a family, job, rivalry, debt, committee, or wanted hook."
+                    "A strong application names who benefits if they stay quiet and what they need "
+                    "during Founders Gala week. No one starts alone: attach a family, job, rivalry, "
+                    "debt, committee, or open request."
                 ),
             ),
             BlueprintMaterial(
@@ -1870,7 +1870,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Rival committee chair",
                 "rival",
                 "A polished antagonist for seating charts, donor calls, and old resentment.",
-                "Bring someone who can make a gala centerpiece feel like a declaration of war.",
+                "Someone should be able to make a gala centerpiece feel like a declaration of war.",
                 related_material_slug="founders-gala",
             ),
             BlueprintWanted(
@@ -1886,7 +1886,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Reporter source at the club",
                 "connection",
                 "A staffer, guest, or committee member feeding August just enough truth to hurt people.",
-                "This hook should create scenes across the club, paper, hotel, and town hall.",
+                "They know which rooms August cannot enter and which names he should never print.",
                 related_material_slug="founders-gala",
             ),
             BlueprintWanted(
@@ -1894,7 +1894,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Returning ex with town leverage",
                 "relationship",
                 "A former love or friend whose return turns old intimacy into public strategy.",
-                "Use this for slow-burn, betrayal, family history, or business pressure.",
+                "Slow-burn, betrayal, family history, and business pressure can all live here.",
                 related_material_slug="premise",
             ),
             BlueprintWanted(
@@ -1902,7 +1902,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "School booster with receipts",
                 "event_role",
                 "A connective local who knows how charity money, sports donors, and club votes overlap.",
-                "This role can pull parents, teachers, coaches, donors, and town officials into one mess.",
+                "Parents, teachers, coaches, donors, and town officials all have reasons to answer their calls.",
                 related_material_slug="founders-gala",
             ),
         ),
@@ -2004,7 +2004,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Static Room",
                 "desk",
                 "Rumors, encounters, clue calls, chapter prompts, and strange-touched plotting.",
-                "A writer lane for mystery pressure without making staff solve every scene.",
+                "Drop sightings, half-remembered dates, missing hours, and the rumors people swear they heard themselves.",
             ),
         ),
         materials=(
@@ -2018,9 +2018,9 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                     "weather. One woman vanished from a search party nobody agrees happened. Now "
                     "the observatory is receiving a repeating broadcast from that missing year, "
                     "and the voice on the tape sometimes answers questions asked in the room.\n\n"
-                    "The board supports approachable town scenes with a mystery engine: locals, "
-                    "researchers, skeptics, believers, officials, teens, doctors, archivists, and "
-                    "people touched by phenomena trying to decide what truth costs."
+                    "Daily life keeps going anyway: locals, researchers, skeptics, believers, "
+                    "officials, teens, doctors, archivists, and people touched by phenomena all "
+                    "have to decide what truth costs."
                 ),
             ),
             BlueprintMaterial(
@@ -2055,8 +2055,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name a town tie, a belief posture, and a reason to touch the signal.",
-                "Useful entries include locals, returnees, researchers, first responders, skeptics, believers, officials, doctors, students, and people whose memories do not match the record.",
+                "Tell us who they know in town, what they believe, and why the signal will not leave them alone.",
+                "Locals, returnees, researchers, first responders, skeptics, believers, officials, doctors, students, and people with wrong memories all have a place here.",
             ),
         ),
         wanted=(
@@ -2073,7 +2073,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Cult survivor who remembers 1998",
                 "plot_role",
                 "A person with a dangerous partial memory of the blank year.",
-                "They do not need answers. They need scenes where memory becomes leverage.",
+                "They remember just enough to be useful and not enough to feel safe.",
                 related_material_slug="premise",
             ),
             BlueprintWanted(
@@ -2081,7 +2081,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Government observer with a soft cover",
                 "faction_need",
                 "An outsider officially here for emergency logistics and unofficially here for the signal.",
-                "Good for pressure, mistrust, records requests, and uneasy alliances.",
+                "Pressure, mistrust, records requests, and uneasy alliances will find them fast.",
                 related_material_slug="midnight-signal",
             ),
             BlueprintWanted(
@@ -2089,7 +2089,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Local rival for the archives",
                 "rival",
                 "Someone who thinks Lena is hiding the wrong family history.",
-                "This can be family, professional, academic, or deeply personal.",
+                "Family, professional, academic, and deeply personal grudges are all welcome.",
                 related_material_slug="public-rumors",
             ),
             BlueprintWanted(
@@ -2097,7 +2097,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Person who remembers the vanished year differently",
                 "connection",
                 "A character whose memories contradict everyone else's record.",
-                "Use this to start scenes with questions, fear, and unreliable certainty.",
+                "They are certain, frightened, and probably wrong in ways that matter.",
                 related_material_slug="premise",
             ),
         ),
@@ -2198,8 +2198,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "night-market",
                 "Night Market",
                 "desk",
-                "Faction ties, species claims, treaty fallout, mature plots, and city-wide wanted hooks.",
-                "A plotting lane for supernatural pressure without hiding the public premise.",
+                "Faction ties, species claims, treaty fallout, mature plots, and city-wide calls.",
+                "Bring the bargains, cover stories, witness problems, and debts nobody wants on the council floor.",
             ),
         ),
         materials=(
@@ -2250,8 +2250,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name a species or human lane, a faction pressure, and one boundary.",
-                "Strong entries connect to the treaty breach, a public job, a private faction tie, a wanted role, or a relationship that makes politics personal.",
+                "Tell us what the city thinks they are, who has a claim on them, and where their hard line is.",
+                "The treaty breach, a public job, a private faction tie, an open request, or a relationship can all make politics personal.",
             ),
         ),
         wanted=(
@@ -2260,7 +2260,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Hostile witness from Emberline",
                 "event_role",
                 "A human, hunter, or supernatural witness whose statement could start a faction war.",
-                "This hook creates immediate scenes with press, police, council, and protection details.",
+                "Press, police, council messengers, and protection details will all want them first.",
                 related_material_slug="treaty-breach",
             ),
             BlueprintWanted(
@@ -2268,7 +2268,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Coven rival in court",
                 "rival",
                 "A legal or magical opponent who believes Eliana is saving the wrong treaty.",
-                "Good for courtroom scenes, old debts, and public-private magical pressure.",
+                "Courtroom scenes, old debts, and public-private magical pressure fit naturally here.",
                 related_material_slug="city-law",
             ),
             BlueprintWanted(
@@ -2276,7 +2276,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Hunter handler left behind",
                 "connection",
                 "Someone from Jules's past who still thinks defection can be reversed.",
-                "Use this for trust, danger, found family, and ideological conflict.",
+                "Trust, danger, found family, and ideology all get sharper when they walk back in.",
                 related_material_slug="premise",
             ),
             BlueprintWanted(
@@ -2284,7 +2284,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Blood-bank whistleblower",
                 "plot_role",
                 "A hospital worker with records that make both the council and hunters dangerous.",
-                "This role connects medical scenes to faction politics and public fear.",
+                "Their records make hospital corridors feel as dangerous as council chambers.",
                 related_material_slug="treaty-breach",
             ),
             BlueprintWanted(
@@ -2292,7 +2292,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Forbidden romance across the treaty",
                 "relationship",
                 "A relationship hook that makes law, species, and public safety personal.",
-                "Romance is optional; the core is loyalty under public pressure.",
+                "Romance is optional; loyalty under public pressure is the point.",
                 related_material_slug="premise",
             ),
         ),
@@ -2393,8 +2393,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "war-room",
                 "War Room",
                 "desk",
-                "House claims, faction moves, wanted roles, and succession plotting.",
-                "A planning lane for court pressure, faction openings, and event turns.",
+                "House claims, faction moves, missing loyalties, and succession plotting.",
+                "Bring letters, orders, oaths, betrayals, border news, and the private reasons people choose a claimant.",
             ),
         ),
         materials=(
@@ -2403,7 +2403,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Premise: A Crown Without Witness",
                 "premise",
                 "A monarch dies before naming an heir, and every institution claims the right to finish the sentence.",
-                "Crownfall is an original court-and-faction fantasy realm built for succession pressure. Houses, mages, clergy, merchants, rebels, soldiers, hostages, and servants all have reasons to care who becomes legitimate, and none of them can win without making scenes with the others.",
+                "The capital is full of people who cannot wait for certainty: houses, mages, clergy, merchants, rebels, soldiers, hostages, and servants all have reasons to care who becomes legitimate, and none of them can win alone.",
             ),
             BlueprintMaterial(
                 "broken-coronation",
@@ -2430,8 +2430,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should bring a faction pressure, a public role, and one private loyalty.",
-                "Strong first faces can be nobles, servants, soldiers, priests, mages, merchants, rebels, hostages, healers, spies, or foreign observers. Tie them to the broken coronation or border raid.",
+                "Tell us who can command them in public and who could ruin them in private.",
+                "Nobles, servants, soldiers, priests, mages, merchants, rebels, hostages, healers, spies, and foreign observers all have reasons to be near the broken coronation or border raid.",
             ),
         ),
         wanted=(
@@ -2440,7 +2440,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Secret claimant with proof",
                 "plot_role",
                 "A person whose blood, document, or magical trace could reorder the succession.",
-                "This hook creates immediate pressure across court, temple, archive, and rebels.",
+                "Court, temple, archive, and rebels will all want to decide whether they are a person or a weapon.",
                 related_material_slug="broken-coronation",
             ),
             BlueprintWanted(
@@ -2448,7 +2448,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Oath-bound guard",
                 "connection",
                 "A guard sworn to the old monarch and now pulled between rival claimants.",
-                "Good for loyalty, protection, betrayal, and close court scenes.",
+                "Loyalty, protection, betrayal, and close court scenes all sit under the same oath.",
                 related_material_slug="premise",
             ),
             BlueprintWanted(
@@ -2456,7 +2456,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Foreign ambassador with a grain fleet",
                 "faction_need",
                 "An envoy whose recognition can feed the city or starve the wrong claimant.",
-                "Use for diplomacy, trade threats, and public legitimacy scenes.",
+                "Their diplomacy comes with trade threats, public recognition, and a fleet everyone needs.",
                 related_material_slug="houses-and-factions",
             ),
             BlueprintWanted(
@@ -2464,7 +2464,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Black-market mage with omen residue",
                 "event_role",
                 "A spellworker who knows the coronation omen was altered.",
-                "Ideal for archive scenes, criminal ties, and dangerous evidence.",
+                "Archive doors, criminal contacts, and dangerous evidence open around them.",
                 related_material_slug="broken-coronation",
             ),
             BlueprintWanted(
@@ -2472,7 +2472,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Lost sibling at the border",
                 "relationship",
                 "A personal tie caught in the raid that makes the succession crisis intimate.",
-                "Attach this to soldiers, nobles, rebels, or refugees who need the war to matter personally.",
+                "Soldiers, nobles, rebels, and refugees all understand a war differently when family is missing.",
                 related_material_slug="broken-coronation",
             ),
         ),
@@ -2545,8 +2545,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "old-academy",
                 "Old Academy",
                 "location",
-                "Dormant halls, broken role tests, and students inheriting duties nobody explained.",
-                "Training, legacy pressure, role archetypes, and first-face entry scenes.",
+                "Dormant halls, broken trials, and students inheriting duties nobody explained.",
+                "Training, legacy pressure, old vows, and early threads for characters still learning what their names cost.",
             ),
             BlueprintBoard(
                 "memory-archive",
@@ -2573,8 +2573,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "branch-room",
                 "Branch Room",
                 "desk",
-                "Role archetypes, branch-point lore, accord pressure, and wanted hooks.",
-                "A plotting lane for canon-adjacent structures without protected IP dependence.",
+                "Inherited duties, branch records, accord pressure, and open calls.",
+                "Bring old vows, missing mentors, sealed branches, broken gates, and the loyalties nobody can explain cleanly.",
             ),
         ),
         materials=(
@@ -2582,36 +2582,36 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "premise",
                 "Premise: The Old Ending Broke",
                 "premise",
-                "Afterlight Accord is an original branch-point realm where legendary roles survived a catastrophe but the old story failed.",
-                "Characters inherit duties, symbols, rivalries, powers, debts, and expectations from a world that no longer agrees on what happened. The premise gives writers familiar story gravity without using protected names, places, or plots.",
+                "The Accord survived the catastrophe, but nobody agrees what victory was supposed to cost.",
+                "People inherit duties, symbols, rivalries, powers, debts, and expectations from a world that no longer agrees on what happened. Some families call that honor. Some call it a sentence.",
             ),
             BlueprintMaterial(
                 "accord-seal-fails",
                 "Current Chapter: The Seal Fails",
                 "event",
                 "The Accord seal breaks during a remembrance ceremony and frees one prisoner history says died.",
-                "The opening chapter creates public panic, council hearings, rebel movement, archive contradictions, and role-archetype pressure. Writers can enter as heirs, exiles, monsters, archivists, reformers, runners, officials, or people whose inherited story no longer fits.",
+                "The opening chapter brings public panic, council hearings, rebel movement, archive contradictions, and old names returning to circulation. Heirs, exiles, monsters, archivists, reformers, runners, officials, and people whose inherited story no longer fits all have reasons to be there.",
             ),
             BlueprintMaterial(
                 "branch-point",
                 "Branch Point",
                 "guide",
                 "The old ending failed at the moment victory became occupation.",
-                "Use this guide to anchor tone: people remember the world through roles and consequences, not through lifted IP. Every archetype should be translated into original obligations, not copied names.",
+                "People remember the world through duties and consequences. Bring new names, new places, and obligations that belong to this setting.",
             ),
             BlueprintMaterial(
                 "role-archetypes",
-                "Role Archetypes",
+                "Inherited Roles",
                 "guide",
-                "Heirs, exiles, converted monsters, archivists, rebels, prophets, traitors, and border runners are playable lanes.",
-                "A role archetype is an invitation to plot, not a cage. Writers should bring a pressure, a tie, and a reason the Accord makes their face's life harder now.",
+                "Heirs, exiles, converted monsters, archivists, rebels, prophets, traitors, and border runners all have unfinished business.",
+                "An inherited role is not a cage. Bring a pressure, a tie, and a reason the Accord makes their life harder now.",
             ),
             BlueprintMaterial(
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name an inherited role, a faction pressure, and one branch-point wound.",
-                "Keep concepts original. Avoid protected names, renamed canon characters, or direct plot lifts. The best applications translate mechanics into new social, political, or emotional obligations.",
+                "Tell us what they inherited, who expects obedience, and what the old ending broke in them.",
+                "Bring concepts rooted in this setting: original names, original places, and obligations that create new social, political, or emotional trouble.",
             ),
         ),
         wanted=(
@@ -2620,7 +2620,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Missing mentor from the old ending",
                 "relationship",
                 "A mentor figure whose return complicates the Accord's official history.",
-                "Good for heirs, archivists, rebels, and anyone who built a life around a lie.",
+                "Heirs, archivists, rebels, and anyone who built a life around a lie will have reasons to answer them.",
                 related_material_slug="accord-seal-fails",
             ),
             BlueprintWanted(
@@ -2628,7 +2628,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Oath sibling with a broken role",
                 "connection",
                 "Someone bound to a role that no longer matches what the world needs.",
-                "This hook gives instant history and conflict without copying canon.",
+                "They arrive with instant history, a private promise, and a public problem.",
                 related_material_slug="role-archetypes",
             ),
             BlueprintWanted(
@@ -2636,7 +2636,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Archive thief with a sealed branch",
                 "plot_role",
                 "A thief who stole the record of one possible ending.",
-                "Use for archive scenes, rebel deals, transit-gate chases, and council pressure.",
+                "Archive scenes, rebel deals, transit-gate chases, and council pressure follow them naturally.",
                 related_material_slug="accord-seal-fails",
             ),
             BlueprintWanted(
@@ -2644,7 +2644,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Forbidden envoy from beyond the gate",
                 "faction_need",
                 "An envoy whose existence proves the Accord map is incomplete.",
-                "Good for diplomacy, suspicion, travel, and lore expansion through scenes.",
+                "Diplomacy, suspicion, travel, and new history all arrive with their papers.",
                 related_material_slug="branch-point",
             ),
             BlueprintWanted(
@@ -2652,7 +2652,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Reformed antagonist nobody wants pardoned",
                 "rival",
                 "A former enemy whose survival forces the community to define justice.",
-                "This hook is about accountability, trust, and whether reform counts when victims are still present.",
+                "Accountability, trust, and reform get harder when victims are still in the room.",
                 related_material_slug="premise",
             ),
         ),
@@ -2753,8 +2753,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "green-room",
                 "Green Room",
                 "desk",
-                "Career ties, scandal boards, wanted hooks, rivals, patrons, and slow-burn plotting.",
-                "A planning lane for fame, industry, and public/private performance pressure.",
+                "Career ties, scandal boards, open calls, rivals, patrons, and slow-burn plotting.",
+                "Bring contract trouble, comeback plans, crisis favors, fake smiles, and the messages sent after midnight.",
             ),
         ),
         materials=(
@@ -2763,7 +2763,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Premise: Image Has Teeth",
                 "premise",
                 "Brightline is a fame and industry drama where public image, creative work, and private compromise become leverage.",
-                "Studios, clubs, magazines, patrons, lawyers, stylists, assistants, performers, producers, and gossip writers all move through the same city circuit. The play engine is career pressure: who gets seen, who gets protected, and who pays for the version of the story that sells.",
+                "Studios, clubs, magazines, patrons, lawyers, stylists, assistants, performers, producers, and gossip writers all move through the same city circuit. Careers turn on who gets seen, who gets protected, and who pays for the version of the story that sells.",
             ),
             BlueprintMaterial(
                 "awards-night-sabotage",
@@ -2777,7 +2777,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Career Ladder",
                 "guide",
                 "Fame is not only celebrity; it is access, labor, debt, patronage, and public narrative.",
-                "Useful roles include performers, stylists, assistants, venue workers, publicists, critics, photographers, lawyers, producers, patrons, influencers, crew, and people living near the spotlight without being protected by it.",
+                "Performers, stylists, assistants, venue workers, publicists, critics, photographers, lawyers, producers, patrons, influencers, crew, and people living near the spotlight all have something at stake.",
             ),
             BlueprintMaterial(
                 "scandal-board",
@@ -2790,8 +2790,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name a public image, a private pressure, and one industry tie.",
-                "A first face should have a career lane, a person who can help or hurt them, and a scene starter tied to awards week, the Blue Room, Gloss, court filings, or the charity circuit.",
+                "Tell us what the public thinks they are, what it costs to maintain, and who can help or hurt them.",
+                "Tie them to awards week, the Blue Room, Gloss, court filings, the charity circuit, or a person whose favor is never free.",
             ),
         ),
         wanted=(
@@ -2800,7 +2800,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Rival performer with the same song",
                 "rival",
                 "A performer whose set list turns sabotage into personal history.",
-                "Good for rivalry, romance, creative theft, and career comparison scenes.",
+                "Rivalry, romance, creative theft, and career comparison can all share the same stage.",
                 related_material_slug="awards-night-sabotage",
             ),
             BlueprintWanted(
@@ -2808,7 +2808,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Crisis photographer with the wrong image",
                 "event_role",
                 "A photographer who captured what PR needs buried.",
-                "This hook connects press, legal, backstage, and public-image pressure.",
+                "Press, legal, backstage, and public-image pressure all want the same contact sheet.",
                 related_material_slug="awards-night-sabotage",
             ),
             BlueprintWanted(
@@ -2816,7 +2816,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Patron with conditions",
                 "faction_need",
                 "A benefactor whose money can open doors or own the room.",
-                "Use for charity circuit, career debt, and status scenes.",
+                "Charity circuit favors, career debt, and status scenes follow their invitations.",
                 related_material_slug="career-ladder",
             ),
             BlueprintWanted(
@@ -2824,7 +2824,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Ex-manager with files",
                 "connection",
                 "A former manager, assistant, or handler holding documents nobody wants surfaced.",
-                "Good for old trust, threats, legal leverage, and comeback arcs.",
+                "Old trust, threats, legal leverage, and comeback plans all sit in their inbox.",
                 related_material_slug="scandal-board",
             ),
             BlueprintWanted(
@@ -2933,8 +2933,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "trial-table",
                 "Trial Table",
                 "desk",
-                "House ties, safety limits, rank claims, trial prompts, and wanted roles.",
-                "A plotting lane for institution pressure without turning trials into consent failures.",
+                "House ties, safety limits, rank claims, trial prompts, and open roles.",
+                "Bring appeals, rivalries, aftercare needs, sponsor pressure, and the boundaries nobody gets to hand-wave.",
             ),
         ),
         materials=(
@@ -2970,8 +2970,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name a house tie, trial pressure, and safety boundary.",
-                "Useful concepts include candidates, instructors, medics, quartermasters, house heirs, scholarship students, council observers, sponsors, and family members outside the academy.",
+                "Tell us who the house system says they are, what pressure follows them, and what boundary matters.",
+                "Candidates, instructors, medics, quartermasters, house heirs, scholarship students, council observers, sponsors, and family outside the academy all have room here.",
             ),
         ),
         wanted=(
@@ -2980,7 +2980,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Secret sponsor with a hidden candidate",
                 "faction_need",
                 "A patron whose support explains why a candidate keeps surviving bad odds.",
-                "Use this for house pressure, favoritism, and uncomfortable protection.",
+                "House pressure, favoritism, and uncomfortable protection sit under every favor.",
                 related_material_slug="tampered-selection",
             ),
             BlueprintWanted(
@@ -2988,7 +2988,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Sibling competitor in another house",
                 "relationship",
                 "A family tie split across house loyalty and public ranking.",
-                "Good for rivalry, protection, resentment, and impossible team scenes.",
+                "Rivalry, protection, resentment, and impossible team scenes come with the name.",
                 related_material_slug="house-guide",
             ),
             BlueprintWanted(
@@ -2996,7 +2996,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Rule enforcer everyone underestimates",
                 "event_role",
                 "A staff or senior candidate responsible for making trial law visible.",
-                "This role can complicate cheating, appeals, and safety boundaries.",
+                "Cheating, appeals, and safety boundaries all get messier when they enter.",
                 related_material_slug="trial-rules",
             ),
             BlueprintWanted(
@@ -3012,7 +3012,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Black-market supplier inside the depot",
                 "connection",
                 "Someone moving gear through the academy before scarcity becomes scandal.",
-                "Useful for bargains, favors, and practical moral compromise.",
+                "Bargains, favors, and practical moral compromise come wrapped in supply tags.",
                 related_material_slug="premise",
             ),
         ),
@@ -3113,8 +3113,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "ward-room",
                 "Ward Room",
                 "desk",
-                "Inquiry leads, class ties, occult rules, wanted hooks, and period-pressure plotting.",
-                "A planning lane for historical scenes without losing privacy or safety boundaries.",
+                "Inquiry leads, class ties, occult rules, open calls, and period-pressure plotting.",
+                "Bring alibis, patrons, frightened witnesses, debts, invitations, and the secrets polite rooms keep warm.",
             ),
         ),
         materials=(
@@ -3137,7 +3137,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "City Institutions",
                 "guide",
                 "The Ward is built from institutions that create scene pressure.",
-                "Use newspapers, police courts, factories, theaters, hospitals, season rooms, crime families, and occult societies as playable systems with public rules and private exceptions.",
+                "Newspapers, police courts, factories, theaters, hospitals, season rooms, crime families, and occult societies all have public rules and private exceptions.",
             ),
             BlueprintMaterial(
                 "occult-rules",
@@ -3150,8 +3150,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name class pressure, public respectability, and one secret bargain.",
-                "Useful entries include investigators, socialites, workers, criminals, doctors, reporters, mediums, reformers, performers, servants, and people trapped between institutions.",
+                "Tell us what respectability demands of them and what bargain it cannot see.",
+                "Investigators, socialites, workers, criminals, doctors, reporters, mediums, reformers, performers, servants, and people trapped between institutions all have a place.",
             ),
         ),
         wanted=(
@@ -3160,7 +3160,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Masked patron from the season rooms",
                 "plot_role",
                 "A patron tied to the impossible murder and the occult society ledger.",
-                "Good for society scenes, blackmail, and class pressure.",
+                "Society scenes, blackmail, and class pressure follow their card across the room.",
                 related_material_slug="impossible-murder",
             ),
             BlueprintWanted(
@@ -3168,7 +3168,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Police informant on the docks",
                 "connection",
                 "A witness who knows enough to be useful and frightened.",
-                "This hook pulls factory, crime, and police-court scenes together.",
+                "Factory, crime, and police-court scenes all have reasons to protect or expose them.",
                 related_material_slug="city-institutions",
             ),
             BlueprintWanted(
@@ -3176,7 +3176,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Rival medium with the wrong ghost",
                 "rival",
                 "An occult rival whose testimony can ruin Mira or solve the case.",
-                "Use for seances, fraud accusations, debt, and supernatural ambiguity.",
+                "Seances, fraud accusations, debt, and supernatural ambiguity sit on the same table.",
                 related_material_slug="occult-rules",
             ),
             BlueprintWanted(
@@ -3184,7 +3184,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Factory witness at the debut",
                 "event_role",
                 "A worker who should not have been in the locked room but saw the key moment.",
-                "Ideal for class pressure, protection, press, and reform scenes.",
+                "Class pressure, protection, press, and reform politics will all find them.",
                 related_material_slug="impossible-murder",
             ),
             BlueprintWanted(
@@ -3293,8 +3293,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "chart-table",
                 "Chart Table",
                 "desk",
-                "Station roles, scarcity ledgers, signal leads, wanted hooks, and frontier plotting.",
-                "A planning lane for survival, law, and isolated-community pressure.",
+                "Station roles, scarcity ledgers, signal leads, open calls, and frontier plotting.",
+                "Bring ration math, route rumors, debt contracts, missing people, and the messages nobody wants admin to hear.",
             ),
         ),
         materials=(
@@ -3317,7 +3317,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Station Law",
                 "guide",
                 "Law on Wayfarer is practical, fragile, and always under supply pressure.",
-                "Use customs, ration rules, quarantine orders, salvage claims, debt contracts, and marshal warrants as scene starters. Authority should create choices, not shut scenes down.",
+                "Customs, ration rules, quarantine orders, salvage claims, debt contracts, and marshal warrants create choices before they create answers.",
             ),
             BlueprintMaterial(
                 "scarcity-ledger",
@@ -3330,8 +3330,8 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "application-guide",
                 "Application Guide",
                 "application",
-                "Applications should name a station role, one scarcity pressure, and a reason the signal matters.",
-                "Useful entries include crew, smugglers, medics, engineers, corporate envoys, archivists, performers, quartermasters, station-born locals, debt holders, and convoy survivors.",
+                "Tell us what keeps them useful on the station, what they owe, and why the signal matters.",
+                "Crew, smugglers, medics, engineers, corporate envoys, archivists, performers, quartermasters, station-born locals, debt holders, and convoy survivors all have room to move.",
             ),
         ),
         wanted=(
@@ -3340,7 +3340,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Debt holder with an air-filter contract",
                 "faction_need",
                 "Someone whose legal claim becomes dangerous when supplies run low.",
-                "Use for station law, market-deck scenes, and moral compromise.",
+                "Station law, market-deck favors, and moral compromise all tighten when supplies run low.",
                 related_material_slug="scarcity-ledger",
             ),
             BlueprintWanted(
@@ -3348,7 +3348,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Corporate auditor who arrived before rescue",
                 "event_role",
                 "An envoy measuring losses while people still hope for survivors.",
-                "Good for admin-control pressure, public anger, and accountability scenes.",
+                "Admin-control pressure, public anger, and accountability all follow their clipboard.",
                 related_material_slug="missing-convoy",
             ),
             BlueprintWanted(
@@ -3356,7 +3356,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Missing pilot's partner on the docking ring",
                 "relationship",
                 "A personal tie to the convoy that turns logistics into grief.",
-                "Use for rescue pressure, marshal scenes, and impossible choices.",
+                "Rescue pressure, marshal scenes, and impossible choices get personal fast.",
                 related_material_slug="missing-convoy",
             ),
             BlueprintWanted(
@@ -3364,7 +3364,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Forbidden-level witness",
                 "plot_role",
                 "A station-born face who saw the signal route on a sealed archive map.",
-                "This hook connects archive, market, admin, and signal mystery scenes.",
+                "Archive, market, admin, and signal trouble all lead back to what they saw.",
                 related_material_slug="premise",
             ),
             BlueprintWanted(
@@ -3372,7 +3372,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "Signal translator with an old war debt",
                 "connection",
                 "A specialist who can read part of the transmission but not safely alone.",
-                "Good for research scenes, trust, pressure, and frontier weirdness.",
+                "Research, trust, pressure, and frontier weirdness all need someone who can read the warning.",
                 related_material_slug="missing-convoy",
             ),
         ),
@@ -3842,7 +3842,7 @@ STUDIO_CLAIM_TYPES: dict[str, tuple[ClaimTypeSeed, ...]] = {
         ),
         ClaimTypeSeed(
             "role_archetype",
-            "Role Archetype Claim",
+            "Inherited Role Claim",
             "role",
             "Heir, exile, monster, archivist, reformer, runner, prophet, or traitor lane.",
         ),
@@ -4198,9 +4198,9 @@ STUDIO_APPLICATION_FIELDS: dict[str, tuple[ApplicationFieldSeed, ...]] = {
         ),
         ApplicationFieldSeed(
             "role_archetype_claim",
-            "Role archetype",
+            "Inherited role",
             "select",
-            "The inherited story pressure this face translates into original play.",
+            "The duty, reputation, or old promise this face carries.",
             options=(
                 "Heir",
                 "Exile",

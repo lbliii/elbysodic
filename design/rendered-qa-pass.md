@@ -269,7 +269,7 @@ Verified:
   Explore, so directors can inspect the actual catalog card shape while
   maintaining the profile.
 - Original-premise seeds now distribute each eight-face roster across
-  `starlane`, `inkdraft`, `moonrelay`, `plotanchor`, and `saltline`, so demo
+  `starlane`, `junipergray`, `milesnorth`, `cassmarlow`, and `lenawren`, so demo
   activity no longer reads as one writer owning every face.
 - Route proof now covers all nine original-premise realm hubs, wanted boards,
   wanted detail pages, application hubs, and first-face application forms for
