@@ -189,7 +189,287 @@ Token needs:
 These should be internal theme tokens first, not Appearance Studio public
 fields.
 
-## Implementation Phases
+## Real Build Plan: V2.1 Gateway Translation
+
+This is the concrete implementation plan for translating
+`design/static-community-landing-v2-archetype-mock.html` into the real
+server-rendered community home.
+
+Current code state:
+
+- `src/elbysodic/web/pages/page.py` already routes tenant-prefixed community
+  homes through `public_realm_gateway()` for signed-out viewers and tries to
+  attach `realm_gateway` for signed-in viewers.
+- `src/elbysodic/services/read_models.py` already has
+  `RealmGatewayView`, `RealmGatewayPremise`, `RealmGatewayAtmosphere`,
+  `RealmGatewaySceneHub`, and `RealmGatewayEntryPath`.
+- `src/elbysodic/services/forum.py` already builds a public gateway from
+  discovery profiles, public guidebook material, boards, and entry paths.
+- `src/elbysodic/web/pages/page.html` renders an early card-based gateway, but
+  it still reads closer to an operational card grid than the V2.1 editorial
+  threshold.
+- `tests/test_forum_slice.py` already proves three original-premise gateways
+  expose premise, entry, and scene hub signals without staff leakage.
+
+Implementation stance:
+
+- No schema changes in the first build. Use existing discovery profiles,
+  public materials, wanted counts, boards, and threads.
+- Do not copy static mock CSS. Translate the composition into named read-model
+  fields, shared template components, and tokenized theme CSS.
+- Build public/signed-out first, then member/applicant continuation. Public
+  privacy and tenant-prefixed links are the first gate.
+- Keep `/c/{community_slug}` as the route. `/world`, `/wanted`, `/locations`,
+  `/claims`, `/request-access`, and application links must resolve through
+  tenant-safe scoped paths.
+
+### PR 1: Gateway Contract Hardening
+
+Goal: make the service read model carry the V2.1 editorial decisions so the
+template does not infer hierarchy, safety, or CTA priority.
+
+Files:
+
+- `src/elbysodic/services/read_models.py`
+- `src/elbysodic/services/forum.py`
+- `tests/test_forum_slice.py`
+- `tests/test_web_security.py` if rendered privacy assertions are clearer
+  there
+
+Read-model additions:
+
+- `RealmGatewayHero` or equivalent fields on `RealmGatewayView`:
+  - `kicker`
+  - `title`
+  - `lead`
+  - `now_playing_label`
+  - `now_playing_copy`
+  - `first_face_path`
+  - `primary_action`
+  - `secondary_action`
+- `RealmGatewayAction`:
+  - `label`
+  - `href`
+  - `is_external_boost_safe` or a template-safe flag for `hx-boost`
+- `RealmGatewaySignalItem`:
+  - `title`
+  - `summary`
+  - optional public-safe `value`, but do not lead the UI with numeric metrics
+- Extend `RealmGatewaySceneHub`:
+  - `emphasis`: `normal`, `featured`, `hot`, `atmosphere`, or `high_activity`
+  - `eyebrow`
+  - `summary`
+  - optional `image_url`, `image_alt`, `image_treatment`
+- Optional `RealmGatewayWantedPreview` only if existing wanted summaries can be
+  reused safely without widening scope.
+
+Service behavior:
+
+- Build hero copy from `CommunityDiscoveryProfile` first:
+  `premise_archetype`, `play_engine`, `lore_aperture`, `catalog_pitch`,
+  `onboarding_pitch`, `roster_posture`, and `featured_event_material_id`.
+- Use `RealmGatewayAtmosphere` as the `Now playing` source:
+  current event first, then featured/premise/standing tension fallback.
+- Select one primary action per audience:
+  - public with wanted hooks: first wanted/entry action
+  - public with no wanted: request access or read premise
+  - applicant/member later: continuation action
+- Keep the secondary action quiet, usually `Read premise` or `Open guidebook`.
+- Build signal items as editorial play-readiness labels:
+  open connection hooks, scene hubs ready, claims worth checking, public
+  rumors, entry angles, safety notes, career openings, reputation hooks, public
+  venues, etc.
+- Keep all filtering service-owned: no private boards, private threads, staff
+  materials, application-review state, active-face state, unread state, or
+  notification state in public gateway data.
+
+Proof:
+
+- Service tests for at least:
+  - `harbor-society`: no-event social path, wanted/claims/social signals
+  - `signal-creek`: mystery path, public rumor/private-answer boundary
+  - `glasslight-circuit` or the closest industry/status seed: institution
+    pressure path
+  - fallback realm with no current event and minimal material
+  - non-public/backstage realm denial
+- Rendered privacy test proving public `/c/{slug}` omits staff/private,
+  active-face, Desk, application-review, unread, and notification terms.
+- Tenant-link test proving gateway links are tenant-scoped on `/c/{slug}`.
+
+### PR 2: Component And Template Translation
+
+Goal: replace the early card grid on `page.html` with a production
+`realm_gateway` component that follows the V2.1 hierarchy.
+
+Files:
+
+- `src/elbysodic/web/pages/page.html`
+- `src/elbysodic/web/pages/_components/realm_gateway.html` new
+- `src/elbysodic/web/pages/_components/boards.html` only if scene-hub media
+  helpers are shared
+- `src/elbysodic/web/pages/_components/wanted.html` only if wanted previews are
+  promoted
+
+Template behavior:
+
+- Public first viewport order:
+  1. realm-owned hero lockup
+  2. premise engine/kicker
+  3. realm title
+  4. lead/catalog pitch
+  5. `Now playing`
+  6. first-face path
+  7. one primary CTA and one quiet secondary CTA
+  8. media/caption if available
+- Replace `elbysodic-world-hero__stats` public metrics with a signal band.
+- Render scene hubs as playable doors, not a generic equal card grid.
+- Render entry path lower on the page as reinforcement, not as the first place
+  the visitor learns how to enter.
+- Keep member-only location/attention/activity sections behind the signed-in
+  branch until member continuation is explicitly designed.
+
+Proof:
+
+- Rendered tests assert semantic text for hero `Now playing`, first-face path,
+  primary CTA, signal band, and scene hubs.
+- Rendered tests assert absence of old public stat labels where they would
+  create dashboard feel.
+- App check.
+
+### PR 3: Theme CSS And Responsive Behavior
+
+Goal: translate the static mock's composition into tokenized production CSS
+without creating a second design system.
+
+Files:
+
+- `src/elbysodic/web/static/elbysodic-theme/30-page-patterns.css`
+- `src/elbysodic/web/static/elbysodic-theme/35-media-patterns.css` only if
+  reusable media/caption behavior is needed
+- `src/elbysodic/web/static/elbysodic-theme/41-boards-places.css` only if
+  scene-hub cards share board/location media behavior
+- `design/component-inventory.md` only if component roles change materially
+
+CSS behavior:
+
+- Use existing Chirp/Elbysodic tokens first.
+- Keep high surface intensity on the gateway, but avoid nested glass cards.
+- Replace big metric cards with compact editorial signal-band styling.
+- Mobile must show realm name, premise lead, `Now playing`, first-face path,
+  and primary CTA before route-directory weight.
+- Collapse local chrome/inner shell on mobile so navigation does not precede
+  the realm promise.
+- Preserve no-media fallback and long-title resilience.
+
+Proof:
+
+- Browser QA desktop and mobile for:
+  - public social/no-event gateway
+  - public mystery gateway
+  - public institution/status or frontier gateway
+  - no-media fallback
+  - long realm name and long wanted title fixture if available
+- `scripts/browser_qa.py --profile premise` should either cover this or be
+  extended to include these gateway checks.
+
+### PR 4: Public Wanted And Entry Previews
+
+Goal: make first-face entry feel story-native without leaking backstage or
+private interest state.
+
+Files:
+
+- `src/elbysodic/services/read_models.py`
+- `src/elbysodic/services/forum.py`
+- `src/elbysodic/web/pages/_components/realm_gateway.html`
+- `src/elbysodic/web/pages/_components/wanted.html` if shared card rendering is
+  appropriate
+- focused tests in `tests/test_forum_slice.py` and `tests/test_web_security.py`
+
+Behavior:
+
+- Add up to three public wanted/entry previews if existing public wanted data
+  supports it cleanly.
+- Prefer story invitations over counts:
+  "tenant organizer who knows everyone", "researcher who heard the first
+  signal", "publicist holding the contract leak".
+- Do not expose wanted interest notes, plotting rooms, private creator state,
+  applicant state, or staff handling state.
+- If wanted previews are thin for a realm, fall back to claims/application
+  guide/premise entry rows.
+
+Proof:
+
+- Public wanted preview tests for visible open hooks.
+- Negative tests for private/backstage wanted interest and plotting room data.
+- Rendered tests for realms with and without wanted hooks.
+
+### PR 5: Member And Applicant Continuation
+
+Goal: add audience-aware continuation after the public gateway works.
+
+Files:
+
+- `src/elbysodic/services/read_models.py`
+- `src/elbysodic/services/forum.py`
+- `src/elbysodic/web/pages/page.py`
+- `src/elbysodic/web/pages/_components/realm_gateway.html`
+- tests in `tests/test_forum_slice.py` and `tests/test_web_security.py`
+
+Behavior:
+
+- Member hero may show active-face continuation only after public gateway
+  privacy is stable.
+- Applicant state may show continue-application only to the owning applicant.
+- Staff/director continuation should remain Studio-oriented and not leak to
+  public mode.
+- Keep public premise/atmosphere visible even for signed-in users; continuation
+  should augment, not replace, realm orientation.
+
+Proof:
+
+- Member with active face sees safe continuation.
+- Faceless member sees first-face path, not active-face affordances.
+- Applicant sees only their own application continuation.
+- Cross-community user does not see another realm's member/applicant state.
+- Signed-out public remains unchanged.
+
+### PR 6: Final QA, Docs, And Cutover
+
+Goal: make the route production-ready and remove stale plan/mock drift.
+
+Files:
+
+- `design/rendered-qa-pass.md`
+- `docs/architecture/rendered-route-privacy-matrix.md` if new privacy rows are
+  needed
+- `docs/product/information-hierarchy.md` if the gateway hierarchy becomes
+  product doctrine
+- `plans/in-progress/community-landing-design-system-translation-2026-05-15.md`
+- `changelog.d/`
+
+Proof:
+
+- `uv run ruff check .`
+- `uv run ruff format . --check`
+- focused rendered/security tests from PRs 1-5
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"`
+- browser QA profile covering desktop/mobile gateway variants
+- broader `uv run pytest -q --tb=short` before merging the cutover
+
+Cutover criteria:
+
+- Public `/c/{slug}` is visually gateway-first and not a forum index.
+- A visitor can name the premise engine, why now matters, and where a first
+  face enters after the first viewport.
+- Public previews do not leak private/staff/member/applicant state.
+- Mobile does not force route chrome before the realm promise.
+- Original-premise seed communities, not only X-Men, prove the design.
+
+## Supporting Phase Sketch
+
+The original phase sketch below remains as supporting context. The PR plan
+above is the concrete build order.
 
 ### Phase 0: Baseline Privacy And Route Audit
 

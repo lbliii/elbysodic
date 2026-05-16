@@ -20,6 +20,18 @@ source, but the production translation must also work for no-event social
 realms, gated-lore mysteries, and institution/status/scarcity pressure realms.
 Do not implement this mock as an X-Men-specific or event-first template.
 
+Second-round designer critique pushed the V2.1 mock away from dashboard
+density and toward editorial threshold design:
+
+- put `Now playing` pressure in the hero, not only media captions
+- name the first-face path in the hero promise
+- use one primary first-entry CTA per archetype
+- replace big-number public pulse cards with compact play-readiness signal
+  bands
+- make the shell lockup realm-owned rather than a generic `Community Home`
+- keep mobile chrome compact so the realm promise appears before route
+  directory weight
+
 ## Purpose
 
 This prototype explores a V2 community landing page as a public realm gateway.
