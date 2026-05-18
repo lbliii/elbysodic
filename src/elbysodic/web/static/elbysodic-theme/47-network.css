@@ -215,8 +215,7 @@
     font-weight: 900;
 }
 
-.elbysodic-network-home-showcase__actions,
-.elbysodic-network-home-return__actions {
+.elbysodic-network-home-showcase__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -407,23 +406,6 @@
     color: var(--chirpui-accent);
 }
 
-.elbysodic-network-home-return {
-    align-items: center;
-    border-block-start: 1px solid var(--chirpui-border);
-    display: flex;
-    gap: 1rem;
-    justify-content: space-between;
-    padding-block-start: 1rem;
-}
-
-.elbysodic-network-home-return h2 {
-    color: var(--chirpui-text);
-    font-family: var(--elbysodic-display-font-family);
-    font-size: 1.4rem;
-    line-height: 1;
-    margin: 0;
-}
-
 .elbysodic-network-strip {
     align-items: end;
     border-block-end: 1px solid var(--chirpui-border);
@@ -523,8 +505,7 @@
             linear-gradient(90deg, rgba(5, 7, 9, 0.7), rgba(5, 7, 9, 0.16));
     }
 
-    .elbysodic-network-strip,
-    .elbysodic-network-home-return {
+    .elbysodic-network-strip {
         grid-template-columns: 1fr;
     }
 
@@ -538,11 +519,6 @@
 
     .elbysodic-network-home-showcase h1 {
         font-size: 3rem;
-    }
-
-    .elbysodic-network-home-return {
-        align-items: start;
-        display: grid;
     }
 
     .elbysodic-network-rail__header {

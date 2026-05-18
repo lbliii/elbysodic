@@ -544,6 +544,7 @@ def test_network_home_does_not_render_full_filter_matrix() -> None:
         assert 'class="elbysodic-network-home-genres"' in response.text
         assert "Top 10 realms" in response.text
         assert "Premise engines" not in response.text
+        assert "Your desk is one click away." not in response.text
         assert 'class="elbysodic-network-filter-panel"' not in response.text
 
     asyncio.run(run())

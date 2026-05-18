@@ -370,24 +370,6 @@
   {{ home_slice(slice.title, slice.href, slice.programs) }}
   {% end %}
 
-  {% if return_path %}
-  <section class="elbysodic-network-home-return" aria-label="Signed-in return">
-    <div>
-      <p class="elbysodic-section-kicker">Return path</p>
-      <h2>Your desk is one click away.</h2>
-    </div>
-    <div class="elbysodic-network-home-return__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ return_path.desk_href }}">Open Writer Desk</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ return_path.notification_href }}">
-        Notifications
-        {% if return_path.unread_notification_count %}
-        · {{ return_path.unread_notification_count }}
-        {% end %}
-      </a>
-    </div>
-  </section>
-  {% end %}
-
   <section class="elbysodic-network-explore-panel" aria-labelledby="home-explore-heading">
     <div class="elbysodic-network-rail__header">
       <div>

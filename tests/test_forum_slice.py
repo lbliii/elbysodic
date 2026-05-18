@@ -2947,7 +2947,8 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert 'class="elbysodic-network-home-tile__rank"' in root.text
         assert "Rank 1" in root.text
         assert "Search by premise, pace, hooks, and chapters in motion." in root.text
-        assert "Your desk is one click away." in root.text
+        assert "Your desk is one click away." not in root.text
+        assert "Open Writer Desk" not in root.text
         assert "What can move next." not in root.text
         assert "Memberships on this account." not in root.text
         assert "Choose the realm you are writing in." not in root.text
@@ -2955,7 +2956,7 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert 'aria-label="Community"' not in root.text
         assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
         assert 'href="/c/afterlight-accord"' in root.text
-        assert 'href="/c/x-men-apocalypse/desk"' in root.text
+        assert 'href="/c/x-men-apocalypse/desk"' not in root.text
         assert "Afterlight Accord" in root.text
 
     asyncio.run(run())
