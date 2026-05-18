@@ -2182,7 +2182,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
 
                 assert response.status == 200
                 assert "What it opens" in content
-                assert "First face path" in content
+                assert "Start here" in content
                 assert "Play readiness" not in content
                 assert "Public preview" in content
                 if community_slug == "harbor-society":
@@ -2191,9 +2191,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert onboarding_pitch in content
                 assert "Places" in content
                 assert "In play" in content
-                assert "Lore" in content
-                assert "What to know before a first face" in content
-                assert "Social lanes" in content
+                assert "Guidebook" in content
+                assert "Before you enter" in content
+                assert "Claims" in content
                 if community_slug == "harbor-society":
                     assert "Cast" in content
                     assert "Maris Vale" in content
@@ -2207,7 +2207,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Opening pressure" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
-                assert "Open roles with story pressure" in content
+                assert "Open roles and ties" in content
+                assert "Public scenes carrying the premise" not in content
+                assert "Ways in before a writer has a face here" not in content
+                assert "What to know before a first face" not in content
+                assert "Where a new face can attach" not in content
+                assert "Open roles with story pressure" not in content
                 assert not any(copy in content for copy in boilerplate_copy)
                 assert "Faces" not in content
                 assert "Guides" not in content
@@ -2250,7 +2255,7 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
     assert gateway.wanted_previews == ()
     assert {signal.title for signal in gateway.signals} >= {
         "Public preview",
-        "First face path",
+        "Start here",
         "Scene hubs ready",
     }
 
@@ -2328,8 +2333,8 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
             content = _page_content(response.text)
 
             assert response.status == 200
-            assert "Playable now" in content
-            assert "Public scenes carrying the premise" in content
+            assert "Scenes" in content
+            assert "In motion" in content
             assert "Public gateway scene" in content
             assert "Private gateway scene" not in content
             assert "Private story motion" not in content

@@ -3769,7 +3769,7 @@ def _realm_gateway_signals(
     else:
         signals.append(
             RealmGatewaySignalItem(
-                title="First face path",
+                title="Start here",
                 summary="Start from the public premise, claims, guidebook, or access request.",
             )
         )

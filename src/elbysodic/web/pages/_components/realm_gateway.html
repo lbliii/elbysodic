@@ -31,7 +31,7 @@
     <p class="elbysodic-realm-gateway-fit">{{ gateway.story_frame.fit_summary }}</p>
     <p class="elbysodic-realm-gateway-writing">{{ gateway.story_frame.writing_expectation }}</p>
     <p class="elbysodic-realm-gateway-first-face">
-      <strong>First face path</strong>
+      <strong>Start here</strong>
       <span>{{ gateway.hero.first_face_path }}</span>
     </p>
     <div class="chirpui-cluster elbysodic-realm-gateway-hero__actions">
@@ -132,7 +132,7 @@
 {% set scene_previews = gateway | get("scene_previews", ()) %}
 {% if scene_previews %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scenes-title">
-  {{ gateway_section_header("Playable now", "Public scenes carrying the premise") }}
+  {{ gateway_section_header("Scenes", "In motion") }}
   <div class="elbysodic-realm-scene-list">
     {% for scene in scene_previews %}
     <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
@@ -151,7 +151,7 @@
 {% def gateway_entry_paths(gateway) %}
 {% if gateway.entry_paths %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-entry-title">
-  {{ gateway_section_header("First writing path", "Ways in before a writer has a face here") }}
+  {{ gateway_section_header("Start here", "Choose your way in") }}
   <div class="elbysodic-realm-entry-list">
     {% for path in gateway.entry_paths %}
     <a class="elbysodic-realm-entry-row"
@@ -172,7 +172,7 @@
 {% set guidebook_previews = gateway | get("guidebook_previews", ()) %}
 {% if guidebook_previews %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-guide-title">
-  {{ gateway_section_header("Lore", "What to know before a first face") }}
+  {{ gateway_section_header("Guidebook", "Before you enter") }}
   <div class="elbysodic-material-grid">
     {% for item in guidebook_previews %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.material.slug }}">
@@ -184,7 +184,7 @@
 </section>
 {% elif gateway.guidebook.featured or gateway.guidebook.events %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-guide-title">
-  {{ gateway_section_header("Lore", "What to know before a first face") }}
+  {{ gateway_section_header("Guidebook", "Before you enter") }}
   <div class="elbysodic-material-grid">
     {% for item in gateway.guidebook.featured %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
@@ -231,7 +231,7 @@
 {% def gateway_social_lanes(gateway) %}
 {% if gateway.social_lanes %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-social-title">
-  {{ gateway_section_header("Social lanes", "Where a new face can attach") }}
+  {{ gateway_section_header("Claims", "Ways to belong") }}
   <div class="elbysodic-realm-lane-grid">
     {% for lane in gateway.social_lanes %}
     <article class="elbysodic-realm-lane-card">
@@ -247,7 +247,7 @@
 {% def gateway_wanted(gateway) %}
 {% if gateway.program.open_wanted_count %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-wanted-title">
-  {{ gateway_section_header("Wanted hooks", "Open roles with story pressure") }}
+  {{ gateway_section_header("Wanted", "Open roles and ties") }}
   {% if gateway.wanted_previews %}
   <div class="elbysodic-realm-wanted-grid">
     {% for wanted in gateway.wanted_previews %}
