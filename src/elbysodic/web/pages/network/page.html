@@ -322,20 +322,12 @@
   {% else %}
   {{ home_showcase(featured) }}
 
-  <section class="elbysodic-network-strip" aria-label="Studio network totals">
-    <div>
-      <p class="elbysodic-section-kicker">Elbysodic</p>
-      <h2>Play-by-post realms with faces, scenes, wanted hooks, and continuity.</h2>
-    </div>
-    <div class="elbysodic-network-strip__metrics">
-      {{ metric_item(home_slices[0].programs | length, "realms") }}
-    </div>
-  </section>
-
-  {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}
-  {% for slice in home_slices[1:] %}
-  {{ home_slice(slice.title, slice.href, slice.programs) }}
-  {% end %}
+  <div class="elbysodic-network-home-stack">
+    {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}
+    {% for slice in home_slices[1:] %}
+    {{ home_slice(slice.title, slice.href, slice.programs) }}
+    {% end %}
+  </div>
 
   {% end %}
   {% else %}
