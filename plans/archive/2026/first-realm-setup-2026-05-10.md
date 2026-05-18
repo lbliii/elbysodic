@@ -1,6 +1,6 @@
 # First Realm Setup Plan
 
-Status: implemented and merged; builder follow-up and persisted launch status landed
+Status: archived 2026-05-18; implemented and merged
 Owner: Service/auth, storage, web, tests, docs, and planning stewardship
 Created: 2026-05-10
 Last updated: 2026-05-12
@@ -9,6 +9,13 @@ Closure criteria: the no-realm to empty-configured-realm transition is
 implemented or superseded by a narrower bootstrap plan; accepted steward
 findings have proof/collateral, and remaining onboarding work is linked back
 to the community creator onboarding plan.
+
+## Archival Note
+
+Archived after the local full test gate passed on 2026-05-18 and the remaining
+onboarding work was confirmed as owned by `community-creator-onboarding` and
+production-readiness follow-ups. This plan is historical context for the
+bootstrap boundary.
 
 ## Implementation Update
 

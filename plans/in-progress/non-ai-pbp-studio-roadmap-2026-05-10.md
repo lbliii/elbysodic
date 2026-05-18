@@ -253,7 +253,7 @@ Deliverables:
 
 Existing plans:
 
-- `plans/in-progress/first-realm-setup-2026-05-10.md`
+- `plans/archive/2026/first-realm-setup-2026-05-10.md`
 - `plans/in-progress/community-creator-onboarding-2026-05-10.md`
 
 Proof:
@@ -311,7 +311,7 @@ Deliverables:
 Existing plans:
 
 - `plans/in-progress/studio-production-workflows-2026-05-02.md`
-- `plans/in-progress/wanted-backstage-handoff-2026-05-09.md`
+- `plans/archive/2026/wanted-backstage-handoff-2026-05-09.md`
 - `plans/in-progress/community-creator-onboarding-2026-05-10.md`
 
 Proof:

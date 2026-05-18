@@ -1,12 +1,18 @@
 # Location And Board Media Epic
 
-Status: implemented; archive candidate after final verification note
+Status: archived 2026-05-18; implemented
 Owner: Product/UI stewardship  
 Created: 2026-05-02  
 Last updated: 2026-05-09
 Review by: 2026-05-16
 Closure criteria: split into PRs for accessible board media rendering, seeded
 location art throughlines, Studio QA controls, and any later Blueprint alignment.
+
+## Archival Note
+
+Archived after the local full test gate passed on 2026-05-18. Remaining
+Blueprint/export alignment is tracked by Blueprint and production-readiness
+plans rather than this media epic.
 
 ## 2026-05-09 Verification Update
 
