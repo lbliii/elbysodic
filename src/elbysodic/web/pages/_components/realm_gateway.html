@@ -86,16 +86,16 @@
   <aside class="elbysodic-realm-stage__pressure" aria-label="Story pressure">
     <dl class="elbysodic-realm-stage__beats">
     {% if premise_evolution %}
-    <div class="elbysodic-realm-stage__beat">
+    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
       <dt>Already moving</dt>
       <dd>{{ premise_evolution.consequences }}</dd>
     </div>
-    <div class="elbysodic-realm-stage__beat">
+    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
       <dt>Ways in</dt>
       <dd>{{ premise_evolution.next_openings }}</dd>
     </div>
     {% else %}
-    <div class="elbysodic-realm-stage__beat">
+    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
       <dt>Ways in</dt>
       <dd>{{ gateway.premise_stage.playable_pressure }}</dd>
     </div>

@@ -2250,6 +2250,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert response.status == 200
                 assert "Already moving" in content
                 assert "Ways in" in content
+                assert response.text.count("elbysodic-realm-stage__beat-card") >= 2
                 assert "Start here" in content
                 assert content.count("Start here") == 1
                 assert "Play readiness" not in content
