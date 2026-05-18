@@ -6287,10 +6287,10 @@ def _seed_original_premise_depth(
             boards[1].id,
             characters[1].id,
             "wanted-thread-start",
-            "Wanted thread start",
+            f"{boards[1].name} first-scene ask",
             summary=(
-                f"A wanted-hook style opener tests how {community.name} moves "
-                "a new face from premise fit into active play."
+                f"A public ask at {boards[1].name} pulls {characters[2].name} "
+                f"and {characters[3].name} toward {community.name}'s current chapter."
             ),
             location=boards[1].name,
             timeline="Current chapter",

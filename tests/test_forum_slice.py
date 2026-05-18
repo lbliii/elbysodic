@@ -2055,6 +2055,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         "Public-safe entry paths for reading, fitting, and requesting access.",
         "Start with the public story promise before choosing a face.",
         "Relationships, roles, rivals, and scenario requests already want a writer.",
+        "Wanted thread start",
+        "wanted-hook style opener tests",
     )
 
     gateway_expectations = {
