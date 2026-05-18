@@ -3763,19 +3763,19 @@ STUDIO_CLAIM_TYPES: dict[str, tuple[ClaimTypeSeed, ...]] = {
             "family",
             "Family Claim",
             "relationship",
-            "Old family, newcomer tie, or married-in pressure.",
+            "Old names, newcomer ties, and marriages that still carry debt.",
         ),
         ClaimTypeSeed(
             "club_role",
             "Club Role Claim",
             "access",
-            "Member, staff, guest, donor, or applicant posture.",
+            "Members, guests, staff, donors, and applicants with something to prove.",
         ),
         ClaimTypeSeed(
             "business",
             "Business Claim",
             "occupation",
-            "Public workplace, civic office, or service lane.",
+            "Workplaces, civic offices, service counters, and favors traded in public.",
         ),
     ),
     "signal-creek": (

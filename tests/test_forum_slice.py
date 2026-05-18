@@ -2265,10 +2265,22 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Family" in content
                     assert "Club Role" in content
                     assert "Business" in content
+                    assert "Old names, newcomer ties, and marriages that still carry debt." in content
+                    assert (
+                        "Members, guests, staff, donors, and applicants with something to prove."
+                        in content
+                    )
+                    assert (
+                        "Workplaces, civic offices, service counters, and favors traded in public."
+                        in content
+                    )
                     assert "elbysodic-realm-lane-card--kinship" in response.text
                     assert "elbysodic-realm-lane-card--access" in response.text
                     assert "elbysodic-realm-lane-card--work" in response.text
                     assert "Family Claim" not in content
+                    assert "Old family, newcomer tie, or married-in pressure." not in content
+                    assert "Member, staff, guest, donor, or applicant posture." not in content
+                    assert "Public workplace, civic office, or service lane." not in content
                 assert scene_hub in content
                 if community_slug == "harbor-society":
                     assert "The Ledger Page Under Table Six" in content
