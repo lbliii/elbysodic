@@ -175,6 +175,19 @@
 </a>
 {% end %}
 
+{% def topbar_search(scope_label, query="") %}
+<form class="elbysodic-topbar-search" action="/search" method="get" role="search" hx-boost="false">
+  <label class="chirpui-visually-hidden" for="elbysodic-topbar-search-input">Search {{ scope_label }}</label>
+  <span class="elbysodic-topbar-search__scope">{{ scope_label }}</span>
+  <input id="elbysodic-topbar-search-input"
+         name="q"
+         type="search"
+         value="{{ query }}"
+         placeholder="Search">
+  <button type="submit" aria-label="Search {{ scope_label }}">Go</button>
+</form>
+{% end %}
+
 {% block topbar_center %}
 {% set topbar_board_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
 {% if board is defined %}
@@ -193,6 +206,10 @@
 <nav class="elbysodic-topnav elbysodic-topnav--global" aria-label="Global">
   {{ topnav_link("/network", "Explore", topbar_route.network_active) }}
 </nav>
+{% set topbar_search_viewer = viewer | default(none) %}
+{% set topbar_search_community = (topbar_search_viewer.community if shell_has_community and topbar_search_viewer else (community | default(none))) %}
+{% set topbar_search_query = search_query | default(network_search_query | default("")) %}
+{{ topbar_search(topbar_search_community.name if topbar_search_community else "All realms", topbar_search_query) }}
 {% if shell_has_community %}
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
   {% set drawer_board_section = topbar_board_section %}
@@ -225,29 +242,18 @@
            @keydown.escape.window="open = false">
     <summary class="elbysodic-identity-menu__summary"
              aria-label="Identity menu: {{ viewer.membership.username }}{% if viewer.current_character %} playing as {{ viewer.current_character.name }}{% end %}">
-      <span class="elbysodic-identity-menu__avatar-stack" aria-hidden="true">
-        <span class="elbysodic-identity-menu__writer-avatar">{{ (viewer.membership.display_name or viewer.membership.username)[:1] }}</span>
-        {% if viewer.current_character %}
-        <span class="elbysodic-identity-menu__face-avatar">
-          {% if viewer.current_character.avatar_url %}
-          <img src="{{ viewer.current_character.avatar_url }}" alt="">
-          {% else %}
-          {{ viewer.current_character.name[:1] }}
-          {% end %}
-        </span>
+      <span class="elbysodic-identity-menu__summary-avatar" aria-hidden="true">
+        {% if viewer.current_character and viewer.current_character.avatar_url %}
+        <img src="{{ viewer.current_character.avatar_url }}" alt="">
+        {% elif viewer.current_character %}
+        {{ viewer.current_character.name[:1] }}
+        {% else %}
+        {{ (viewer.membership.display_name or viewer.membership.username)[:1] }}
         {% end %}
       </span>
       {% if viewer.unread_notification_count %}
       <span class="elbysodic-identity-menu__summary-badge">{{ viewer.unread_notification_count }}</span>
       {% end %}
-      <span class="elbysodic-identity-menu__copy">
-        {% if viewer.current_character %}
-        <span class="elbysodic-identity-menu__face">{{ viewer.current_character.name }}</span>
-        {% else %}
-        <span class="elbysodic-identity-menu__face">No face</span>
-        {% end %}
-        <span class="elbysodic-identity-menu__label">@{{ viewer.membership.username }}</span>
-      </span>
     </summary>
     <div class="elbysodic-identity-menu__panel">
       <header class="elbysodic-identity-menu__hero">

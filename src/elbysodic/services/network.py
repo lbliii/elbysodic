@@ -372,22 +372,56 @@ def network_home(cards: list[PublicCatalogCard], viewer: ForumView | None) -> Ne
     return NetworkHomeView(
         featured=cards[0] if cards else None,
         slices=[
-            NetworkSlice("Premise engines", "/network", cards),
-            NetworkSlice(
-                "Small-town social webs",
-                "/network?q=small-town-social-web",
-                _cards_matching_discovery(cards, "small-town-social-web"),
-            ),
-            NetworkSlice(
-                "Mystery and current chapters",
-                "/network?q=current-chapter",
-                _cards_matching_discovery(cards, "current-chapter"),
-            ),
+            NetworkSlice("Top 10 realms", "/network", cards[:10]),
+            *_network_home_premise_slices(cards),
         ],
         browse_facets=network_browse_facets(cards),
         filter_groups=network_filter_groups(cards),
         return_path=return_path,
     )
+
+
+def _network_home_premise_slices(cards: list[PublicCatalogCard]) -> list[NetworkSlice]:
+    slices = []
+    for premise in DISCOVERY_PROFILE_CHOICE_VALUES["premise_archetype"]:
+        matching_cards = _cards_matching_profile(cards, "premise_archetype", premise)
+        if matching_cards:
+            slices.append(
+                NetworkSlice(
+                    _premise_slice_title(premise),
+                    f"/network?q={quote_plus(premise)}",
+                    matching_cards,
+                )
+            )
+    return slices
+
+
+def _cards_matching_profile(
+    cards: list[PublicCatalogCard],
+    field_name: str,
+    value: str,
+) -> list[PublicCatalogCard]:
+    return [
+        card
+        for card in cards
+        if card.discovery_profile is not None
+        and str(getattr(card.discovery_profile, field_name, "") or "").lower() == value
+    ]
+
+
+def _premise_slice_title(value: str) -> str:
+    titles = {
+        "small-town-social-web": "Small-town social webs",
+        "weird-town-mystery": "Weird-town mysteries",
+        "urban-supernatural-pressure-cooker": "Urban supernatural pressure cookers",
+        "court-and-faction-fantasy": "Court and faction fantasy",
+        "original-canon-adjacent-au": "Original canon-adjacent AUs",
+        "fame-and-industry-drama": "Fame and industry dramas",
+        "survival-trials": "Survival trials",
+        "occult-historical-pressure": "Occult historical pressure",
+        "strange-frontier": "Strange frontiers",
+    }
+    return titles.get(value, _discovery_filter_label(value))
 
 
 def network_explore(cards: list[PublicCatalogCard], query: str = "") -> NetworkExploreView:

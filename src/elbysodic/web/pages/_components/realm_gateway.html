@@ -237,7 +237,7 @@
 
 {% def gateway_cast(gateway) %}
 {% if gateway.cast_members %}
-{% call gateway_section("Cast", "Already in the room", heading_id="realm-cast-title") %}
+{% call gateway_section("Cast", "Featured faces", heading_id="realm-cast-title") %}
   <div class="elbysodic-realm-cast-grid">
     {% for member in gateway.cast_members %}
     <a class="elbysodic-realm-cast-card" href="{{ member.href }}">
@@ -261,7 +261,7 @@
 
 {% def gateway_social_lanes(gateway) %}
 {% if gateway.social_lanes %}
-{% call gateway_section("Claims", "Ways to belong", heading_id="realm-social-title", modifier="elbysodic-realm-gateway-section--social-map") %}
+{% call gateway_section("Claims", "Social map", heading_id="realm-social-title", modifier="elbysodic-realm-gateway-section--social-map") %}
   <div class="elbysodic-realm-lane-grid">
     {% for lane in gateway.social_lanes %}
     {{ gateway_social_lane_card(lane) }}

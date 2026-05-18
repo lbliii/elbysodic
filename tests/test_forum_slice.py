@@ -1901,6 +1901,39 @@ def test_network_explore_search_filters_programs() -> None:
     asyncio.run(run())
 
 
+def test_global_search_renders_public_realm_results() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/search?q=magic school")
+
+        assert response.status == 200
+        assert "Search All realms" in response.text
+        assert "elbysodic-search-section__header" in response.text
+        assert "HP Universe" in response.text
+        assert "2 wanted · 3 faces" in response.text
+        assert 'href="/c/hp-universe"' in response.text
+
+    asyncio.run(run())
+
+
+def test_community_search_scopes_to_public_realm_results() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/c/harbor-society/search?q=ledger")
+
+        assert response.status == 200
+        assert "Search Harbor Society" in response.text
+        assert 'action="/c/harbor-society/search"' in response.text
+        assert 'href="/search?q=ledger"' in response.text
+        assert "The Ledger Page Under Table Six" in response.text
+        assert "Scenes" in response.text
+        assert "Try a place, scene, face, hook, or guidebook title." not in response.text
+
+    asyncio.run(run())
+
+
 def test_original_premise_discovery_routes_support_persona_qa() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
@@ -2215,7 +2248,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             f"/c/{community_slug}/request-access",
         }
         assert gateway.wanted_previews
-        assert all("wanted" not in preview.type_label.lower() for preview in gateway.wanted_previews)
+        assert all(
+            "wanted" not in preview.type_label.lower() for preview in gateway.wanted_previews
+        )
         assert all(
             preview.related_label is None
             or not preview.related_label.lower().startswith(("current chapter:", "premise:"))
@@ -2264,10 +2299,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Guidebook" in content
                 assert "Before you enter" in content
                 assert "Claims" in content
+                assert "Social map" in content
                 assert 'aria-labelledby="realm-social-title"' in response.text
                 assert 'id="realm-social-title"' in response.text
                 if community_slug == "harbor-society":
                     assert "Cast" in content
+                    assert "Featured faces" in content
                     assert "Maris Vale" in content
                     assert "August Reed" in content
                     assert "Town Power Map" in content
@@ -2275,7 +2312,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Club Role" in content
                     assert "Influence Lane" in content
                     assert "Business" in content
-                    assert "Old names, newcomer ties, and marriages that still carry debt." in content
+                    assert (
+                        "Old names, newcomer ties, and marriages that still carry debt." in content
+                    )
                     assert (
                         "Members, guests, staff, donors, and applicants with something to prove."
                         in content
@@ -2337,6 +2376,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Open roles and ties" not in content
                 assert "Wanted hook" not in content
                 assert "Scene hub" not in content
+                assert "Already in the room" not in content
+                assert "Ways to belong" not in content
                 assert "Current Chapter:" not in content
                 assert "Premise:" not in content
                 assert not any(copy in content for copy in boilerplate_copy)
@@ -2939,19 +2980,35 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
         assert "Studio Network" in root.text
         assert "Featured realm" in root.text
-        assert "Premise engines" in root.text
+        assert "Top 10 realms" in root.text
+        assert "Premise engines" not in root.text
         assert "Small-town social webs" in root.text
-        assert "Mystery and current chapters" in root.text
-        assert "Search realms by premise, pace, hooks, and current chapters." in root.text
-        assert "Your desk is one click away." in root.text
+        assert "Weird-town mysteries" in root.text
+        assert "Mystery and current chapters" not in root.text
+        assert 'class="elbysodic-network-home-tile__rank"' in root.text
+        assert "Rank 1" in root.text
+        assert '<span>5 wanted · 8 faces</span>' in root.text
+        landscape_tiles = re.findall(
+            r'<article class="[^"]*elbysodic-network-home-tile--landscape[^"]*"[^>]*>.*?</article>',
+            root.text,
+            re.DOTALL,
+        )
+        assert landscape_tiles
+        assert not any("wanted ·" in tile or "faces</span>" in tile for tile in landscape_tiles)
+        assert "Search by premise, pace, hooks, and chapters in motion." not in root.text
+        assert "Search story fit" not in root.text
+        assert 'class="elbysodic-topbar-search" action="/search"' in root.text
+        assert "All realms" in root.text
+        assert "Your desk is one click away." not in root.text
+        assert "Open Writer Desk" not in root.text
         assert "What can move next." not in root.text
         assert "Memberships on this account." not in root.text
         assert "Choose the realm you are writing in." not in root.text
         assert "Explore Elbysodic" not in root.text
         assert 'aria-label="Community"' not in root.text
         assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
-        assert 'href="/c/x-men-apocalypse"' in root.text
-        assert 'href="/c/x-men-apocalypse/desk"' in root.text
+        assert 'href="/c/afterlight-accord"' in root.text
+        assert 'href="/c/x-men-apocalypse/desk"' not in root.text
         assert "Afterlight Accord" in root.text
 
     asyncio.run(run())
@@ -2982,6 +3039,18 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             assert 'href="/c/x-men-apocalypse/desk"' in index.text
             assert 'aria-label="Primary community rooms"' in index.text
             assert 'aria-label="Global"' in index.text
+            assert (
+                'class="elbysodic-topbar-search" action="/c/x-men-apocalypse/search"' in index.text
+            )
+            assert "Search X-Men Apocalypse" in index.text
+            identity_summary = re.search(
+                r'<summary class="elbysodic-identity-menu__summary"[^>]*>(?P<body>.*?)</summary>',
+                index.text,
+                re.S,
+            )
+            assert identity_summary is not None
+            assert "elbysodic-identity-menu__summary-avatar" in identity_summary.group("body")
+            assert "elbysodic-identity-menu__copy" not in identity_summary.group("body")
             assert 'class="elbysodic-primary-rail"' in index.text
             assert ">Home</a>" not in index.text
             assert re.search(

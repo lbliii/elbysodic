@@ -10,6 +10,7 @@ from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlencode
 
 from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.db import Database, ForumRepository, connect, create_schema
@@ -294,6 +295,9 @@ from elbysodic.services.read_models import (
     RealmLaunchChecklistItem,
     RealmLaunchReadiness,
     SceneContextView,
+    ScopedSearchResult,
+    ScopedSearchSection,
+    ScopedSearchView,
     StudioBoardEditor,
     StudioIdentityOption,
     StudioNetworkDirectory,
@@ -1186,6 +1190,13 @@ class AppServices:
     def network_explore(self, query: str = "") -> NetworkExploreView:
         cards = self._public_catalog_cards()
         return _network_explore(cards, query)
+
+    def global_search(self, query: str = "") -> ScopedSearchView:
+        return _global_search(self._public_catalog_cards(), query)
+
+    def community_search(self, community_slug: str, query: str = "") -> ScopedSearchView:
+        community = self._public_preview_community(community_slug)
+        return _community_search(self.repo, community, query)
 
     def _public_catalog_cards(self) -> list[PublicCatalogCard]:
         return _public_catalog_cards(self.repo)
@@ -3512,6 +3523,236 @@ def _gateway_curation_guidebook_materials(
     )
 
 
+def _global_search(cards: list[PublicCatalogCard], query: str) -> ScopedSearchView:
+    normalized_query = query.strip()
+    results = _network_explore(cards, normalized_query).results if normalized_query else []
+    return ScopedSearchView(
+        query=normalized_query,
+        scope_label="All realms",
+        scope_kind="global",
+        action_href="/search",
+        broaden_href=None,
+        sections=[
+            ScopedSearchSection(
+                title="Realms",
+                results=[
+                    ScopedSearchResult(
+                        title=card.community.name,
+                        summary=_catalog_card_summary(card),
+                        href=card.entry_href,
+                        meta=f"{card.open_wanted_count} wanted · {card.roster_count} faces",
+                    )
+                    for card in results
+                ],
+            )
+        ]
+        if normalized_query
+        else [],
+    )
+
+
+def _community_search(
+    repo: ForumRepository,
+    community: Community,
+    query: str,
+) -> ScopedSearchView:
+    normalized_query = query.strip()
+    gateway = _public_realm_gateway(repo, community)
+    sections: list[ScopedSearchSection] = []
+    if normalized_query:
+        sections = [
+            section
+            for section in (
+                _community_guidebook_search_section(gateway, normalized_query),
+                _community_places_search_section(gateway, normalized_query),
+                _community_scenes_search_section(gateway, normalized_query),
+                _community_wanted_search_section(gateway, normalized_query),
+                _community_cast_search_section(gateway, normalized_query),
+                _community_social_search_section(gateway, normalized_query),
+            )
+            if section.results
+        ]
+    return ScopedSearchView(
+        query=normalized_query,
+        scope_label=community.name,
+        scope_kind="community",
+        action_href="/search",
+        broaden_href=_query_href("/search", normalized_query),
+        sections=sections,
+    )
+
+
+def _community_guidebook_search_section(
+    gateway: RealmGatewayView,
+    query: str,
+) -> ScopedSearchSection:
+    materials = _unique_material_summaries(
+        [
+            *gateway.guidebook.featured,
+            *gateway.guidebook.events,
+            *gateway.guidebook.guides,
+            *gateway.guidebook.application_materials,
+        ]
+    )
+    return ScopedSearchSection(
+        title="Guidebook",
+        results=[
+            ScopedSearchResult(
+                title=summary.display_title,
+                summary=summary.rendered_summary,
+                href=f"/world/{summary.material.slug}",
+                meta=summary.type_label,
+            )
+            for summary in materials
+            if _search_matches(
+                query,
+                summary.display_title,
+                summary.rendered_summary,
+                summary.type_label,
+            )
+        ],
+    )
+
+
+def _community_places_search_section(
+    gateway: RealmGatewayView,
+    query: str,
+) -> ScopedSearchSection:
+    return ScopedSearchSection(
+        title="Places",
+        results=[
+            ScopedSearchResult(
+                title=hub.board.name,
+                summary=hub.display_summary,
+                href=hub.href,
+                meta=f"{hub.public_thread_count} threads" if hub.public_thread_count else "",
+            )
+            for hub in gateway.scene_hubs
+            if _search_matches(query, hub.board.name, hub.display_summary)
+        ],
+    )
+
+
+def _community_scenes_search_section(
+    gateway: RealmGatewayView,
+    query: str,
+) -> ScopedSearchSection:
+    return ScopedSearchSection(
+        title="Scenes",
+        results=[
+            ScopedSearchResult(
+                title=scene.title,
+                summary=scene.summary,
+                href=scene.href,
+                meta=scene.board_label,
+            )
+            for scene in gateway.scene_previews
+            if _search_matches(
+                query,
+                scene.title,
+                scene.summary,
+                scene.board_label,
+                scene.cast_label,
+            )
+        ],
+    )
+
+
+def _community_wanted_search_section(
+    gateway: RealmGatewayView,
+    query: str,
+) -> ScopedSearchSection:
+    return ScopedSearchSection(
+        title="Wanted hooks",
+        results=[
+            ScopedSearchResult(
+                title=wanted.title,
+                summary=wanted.summary,
+                href=wanted.href,
+                meta=wanted.related_label or wanted.type_label,
+            )
+            for wanted in gateway.wanted_previews
+            if _search_matches(
+                query,
+                wanted.title,
+                wanted.summary,
+                wanted.type_label,
+                wanted.related_label,
+            )
+        ],
+    )
+
+
+def _community_cast_search_section(
+    gateway: RealmGatewayView,
+    query: str,
+) -> ScopedSearchSection:
+    return ScopedSearchSection(
+        title="Cast",
+        results=[
+            ScopedSearchResult(
+                title=member.character.name,
+                summary=member.summary,
+                href=member.href,
+            )
+            for member in gateway.cast_members
+            if _search_matches(query, member.character.name, member.summary)
+        ],
+    )
+
+
+def _community_social_search_section(
+    gateway: RealmGatewayView,
+    query: str,
+) -> ScopedSearchSection:
+    return ScopedSearchSection(
+        title="Ways to belong",
+        results=[
+            ScopedSearchResult(
+                title=lane.title,
+                summary=lane.summary,
+                href="/",
+                meta=lane.tone,
+            )
+            for lane in gateway.social_lanes
+            if _search_matches(query, lane.title, lane.summary, lane.tone)
+        ],
+    )
+
+
+def _catalog_card_summary(card: PublicCatalogCard) -> str:
+    if card.current_event is not None:
+        return card.current_event.rendered_summary
+    if card.premise is not None:
+        return card.premise.rendered_summary
+    if card.discovery_profile is not None and card.discovery_profile.catalog_pitch:
+        return card.discovery_profile.catalog_pitch
+    return card.application_posture_label
+
+
+def _unique_material_summaries(materials: list[MaterialSummary]) -> list[MaterialSummary]:
+    seen: set[int] = set()
+    unique: list[MaterialSummary] = []
+    for summary in materials:
+        if summary.material.id in seen:
+            continue
+        seen.add(summary.material.id)
+        unique.append(summary)
+    return unique
+
+
+def _search_matches(query: str, *values: object) -> bool:
+    terms = [term for term in query.casefold().split() if term]
+    if not terms:
+        return False
+    haystack = " ".join(str(value or "") for value in values).casefold()
+    return all(term in haystack for term in terms)
+
+
+def _query_href(path: str, query: str) -> str:
+    return f"{path}?{urlencode({'q': query})}" if query else path
+
+
 def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmGatewayView:
     program = _public_studio_program(repo, community.slug)
     guidebook = _public_world_hub(repo, community.id)
@@ -3750,9 +3991,7 @@ def _realm_gateway_premise_evolution(
     current_pressure_title = atmosphere.title
     current_pressure_summary = atmosphere.copy
     inciting_incident = (
-        current_pressure_summary
-        if atmosphere.source_type == "event"
-        else premise_summary
+        current_pressure_summary if atmosphere.source_type == "event" else premise_summary
     )
     consequences = _realm_gateway_consequence_summary(
         current_pressure_title,

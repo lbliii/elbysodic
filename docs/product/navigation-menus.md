@@ -99,7 +99,8 @@ Topbar owns:
 - The community brand/title as the community home affordance.
 - Mobile navigation trigger for `World Home`, `Locations`, `Wanted`, `Desk`,
   and `Studio`.
-- Future global/community search entry.
+- Global/community search entry using the scope contract in
+  `docs/product/scoped-search.md`.
 - Future explore/browse communities entry from the LBSodic home.
 - Notifications indicator.
 - Writer account, membership, and active-face identity menu.

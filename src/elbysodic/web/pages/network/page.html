@@ -148,7 +148,7 @@
 </section>
 {% end %}
 
-{% def home_realm_tile(program, variant="landscape") %}
+{% def home_realm_tile(program, variant="landscape", rank=none) %}
 <article class="elbysodic-network-home-tile elbysodic-network-home-tile--{{ variant }}"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }};">
   <a href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
@@ -157,10 +157,15 @@
     {% else %}
     <span class="elbysodic-network-home-tile__fallback" aria-hidden="true">{{ program.monogram }}</span>
     {% end %}
+    {% if rank %}
+    <span class="elbysodic-network-home-tile__rank" aria-label="Rank {{ rank }}">{{ "%02d" % rank }}</span>
+    {% end %}
     <span class="elbysodic-network-home-tile__shade" aria-hidden="true"></span>
     <span class="elbysodic-network-home-tile__copy">
       <strong>{{ program.community.name }}</strong>
+      {% if variant == "portrait" %}
       <span>{{ program.open_wanted_count }} wanted · {{ program.roster_count }} faces</span>
+      {% endif %}
     </span>
   </a>
 </article>
@@ -188,15 +193,18 @@
   </div>
   <div class="elbysodic-network-home-rail elbysodic-network-home-rail--portrait">
     {% for program in programs %}
-    {{ home_realm_tile(program, "portrait") }}
+    {{ home_realm_tile(program, "portrait", loop.index) }}
     {% end %}
   </div>
 </section>
 {% end %}
 
-{% def explore_tag(label, href, tone="neutral") %}
+{% def explore_tag(label, href, tone="neutral", count=none) %}
 <a class="elbysodic-network-explore-tag elbysodic-network-explore-tag--{{ tone }}" href="{{ href }}">
   <span>{{ label }}</span>
+  {% if count %}
+  <em>{{ count }}</em>
+  {% end %}
 </a>
 {% end %}
 
@@ -205,12 +213,7 @@
   <h2>{{ group.title }}</h2>
   <div class="elbysodic-network-filter-group__options">
     {% for option in group.options %}
-    <a class="elbysodic-network-explore-tag elbysodic-network-explore-tag--{{ option.tone }}" href="{{ option.href }}">
-      <span>{{ option.label }}</span>
-      {% if option.result_count %}
-      <em>{{ option.result_count }}</em>
-      {% end %}
-    </a>
+    {{ explore_tag(option.label, option.href, option.tone, option.result_count) }}
     {% end %}
   </div>
 </section>
@@ -254,26 +257,6 @@
     </form>
   </section>
 
-  <section class="elbysodic-network-explore-map" aria-label="Explore by tag relationship">
-    {% for facet in browse_facets %}
-    {{ explore_tag(facet.label ~ (" (" ~ facet.result_count ~ ")" if facet.result_count else ""), facet.href, facet.tone) }}
-    {% end %}
-  </section>
-
-  {% if filter_groups %}
-  <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
-    {% for group in filter_groups %}
-    {{ explore_filter_group(group) }}
-    {% end %}
-  </section>
-  {% end %}
-
-  <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
-    {% for lane in relationship_lanes %}
-    {{ explore_lane(lane.title, lane.summary, lane.href, lane.result_count ~ " " ~ lane.metric_label) }}
-    {% end %}
-  </section>
-
   <section class="elbysodic-network-rail" aria-labelledby="explore-results-heading">
     <div class="elbysodic-network-rail__header">
       <div>
@@ -312,109 +295,40 @@
     {% end %}
   </section>
 
-  <section class="elbysodic-network-two-up" aria-label="Explore support lanes">
-    {% call surface(variant="elevated") %}
-    <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Wanted</p>
-      <h2>Open roles and ties across the network.</h2>
-      <div class="elbysodic-network-casting-list">
-        {% for program in explore_programs %}
-        {% if program.open_wanted_count %}
-        <a href="{{ program.entry_href }}/wanted">
-          <strong>{{ program.community.name }}</strong>
-          <span>{{ program.open_wanted_count }} wanted hooks</span>
-        </a>
-        {% end %}
+  {% if filter_groups %}
+  <details class="elbysodic-network-filter-drawer">
+    <summary>
+      <span>Browse by fit</span>
+      <em>{{ browse_facets | length + filter_groups | length }} ways</em>
+    </summary>
+    <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
+      <div class="elbysodic-network-filter-drawer__chips" aria-label="Popular fits">
+        {% for facet in browse_facets %}
+        {{ explore_tag(facet.label, facet.href, facet.tone, facet.result_count) }}
         {% end %}
       </div>
-    </div>
-    {% end %}
+      {% for group in filter_groups %}
+      {{ explore_filter_group(group) }}
+      {% end %}
+    </section>
+  </details>
+  {% end %}
 
-    {% call surface(variant="elevated") %}
-    <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Start here</p>
-      <h2>Realms you can read before you apply.</h2>
-      <div class="elbysodic-network-casting-list">
-        {% for program in explore_programs %}
-        <a href="{{ program.entry_href }}">
-          <strong>{{ program.community.name }}</strong>
-          <span>{{ program.application_posture_label }} · {{ program.invite_posture_label }}</span>
-        </a>
-        {% end %}
-      </div>
-    </div>
+  <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
+    {% for lane in relationship_lanes %}
+    {{ explore_lane(lane.title, lane.summary, lane.href, lane.result_count ~ " " ~ lane.metric_label) }}
     {% end %}
   </section>
   {% else %}
   {{ home_showcase(featured) }}
 
-  <section class="elbysodic-network-strip" aria-label="Studio network totals">
-    <div>
-      <p class="elbysodic-section-kicker">Elbysodic</p>
-      <h2>Play-by-post realms with faces, scenes, wanted hooks, and continuity.</h2>
-    </div>
-    <div class="elbysodic-network-strip__metrics">
-      {{ metric_item(home_slices[0].programs | length, "realms") }}
-    </div>
-  </section>
-
-  {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}
-  {% for slice in home_slices[1:] %}
-  {{ home_slice(slice.title, slice.href, slice.programs) }}
-  {% end %}
-
-  <section class="elbysodic-network-home-genres" aria-label="Genre slices">
-    {% for facet in browse_facets %}
-    <a href="{{ facet.href }}">{{ facet.label }}{% if facet.result_count %} · {{ facet.result_count }}{% end %}</a>
+  <div class="elbysodic-network-home-stack">
+    {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}
+    {% for slice in home_slices[1:] %}
+    {{ home_slice(slice.title, slice.href, slice.programs) }}
     {% end %}
-  </section>
+  </div>
 
-  {% if filter_groups %}
-  <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
-    {% for group in filter_groups %}
-    {{ explore_filter_group(group) }}
-    {% end %}
-  </section>
-  {% end %}
-
-  {% if return_path %}
-  <section class="elbysodic-network-home-return" aria-label="Signed-in return">
-    <div>
-      <p class="elbysodic-section-kicker">Return path</p>
-      <h2>Your desk is one click away.</h2>
-    </div>
-    <div class="elbysodic-network-home-return__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ return_path.desk_href }}">Open Writer Desk</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ return_path.notification_href }}">
-        Notifications
-        {% if return_path.unread_notification_count %}
-        · {{ return_path.unread_notification_count }}
-        {% end %}
-      </a>
-    </div>
-  </section>
-  {% end %}
-
-  <section class="elbysodic-network-explore-panel" aria-labelledby="home-explore-heading">
-    <div class="elbysodic-network-rail__header">
-      <div>
-        <p class="elbysodic-section-kicker">Explore</p>
-        <h2 id="home-explore-heading">Search by premise, pace, hooks, and chapters in motion.</h2>
-      </div>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Open Network</a>
-    </div>
-    <form class="elbysodic-network-search" action="/network" method="get" role="search">
-      <label for="network-home-search">Search story fit</label>
-      <div class="elbysodic-network-search__control">
-        <span class="elbysodic-network-search__scope">Realms</span>
-        <input id="network-home-search"
-               name="q"
-               type="search"
-               placeholder="weird-town mystery, relaxed, forum-first, wanted">
-        <button class="elbysodic-network-search__submit" type="submit">Search</button>
-      </div>
-    </form>
-  </section>
   {% end %}
   {% else %}
   {% call section_header("Studio Network") %}

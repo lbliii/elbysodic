@@ -2193,6 +2193,34 @@ class NetworkExploreView:
 
 
 @dataclass(frozen=True, slots=True)
+class ScopedSearchResult:
+    title: str
+    summary: str
+    href: str
+    meta: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class ScopedSearchSection:
+    title: str
+    results: list[ScopedSearchResult]
+
+
+@dataclass(frozen=True, slots=True)
+class ScopedSearchView:
+    query: str
+    scope_label: str
+    scope_kind: str
+    action_href: str
+    broaden_href: str | None
+    sections: list[ScopedSearchSection]
+
+    @property
+    def result_count(self) -> int:
+        return sum(len(section.results) for section in self.sections)
+
+
+@dataclass(frozen=True, slots=True)
 class DiscoveryProfileChoice:
     value: str
     label: str

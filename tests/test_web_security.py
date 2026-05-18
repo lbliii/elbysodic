@@ -216,7 +216,8 @@ def test_production_routes_require_session(monkeypatch) -> None:
 
         assert health.status == 200
         assert root.status == 200
-        assert "Play-by-post realms with faces, scenes, wanted hooks, and continuity." in root.text
+        assert "Top 10 realms" in root.text
+        assert "Play-by-post realms with faces, scenes, wanted hooks, and continuity." not in root.text
         assert "starlane" not in root.text
         assert "playing as Rogue" not in root.text
         assert "elbysodic-identity-menu" not in root.text
@@ -243,7 +244,8 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert dict(studio.headers)["location"] == "/login?next=/studio"
         assert tenant.status == 200
         assert "elbysodic-realm-gateway-hero" in tenant.text
-        assert "What it opens" in tenant.text
+        assert "Already moving" in tenant.text
+        assert "Ways in" in tenant.text
         assert "Current Event: B-24 Winter" in tenant.text
         assert "starlane" not in tenant.text
         assert "playing as Rogue" not in tenant.text
@@ -465,6 +467,12 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
     assert home.featured.community.slug == "afterlight-accord"
     assert home.return_path is not None
     assert home.return_path.desk_href.startswith("/c/")
+    assert home.slices[0].title == "Top 10 realms"
+    assert len(home.slices[0].programs) == 10
+    assert {home_slice.title for home_slice in home.slices[1:]} >= {
+        "Small-town social webs",
+        "Weird-town mysteries",
+    }
     assert explore.results
     assert {facet.label for facet in explore.browse_facets} >= {
         "open wanted hooks",
@@ -509,6 +517,41 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         assert not hasattr(card, "unread_notification_count")
         assert not hasattr(card, "plotting_room_count")
         assert card.invite_posture_label == "Public preview"
+
+
+def test_public_network_explore_keeps_filters_below_results() -> None:
+    async def run() -> None:
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        async with TestClient(app) as client:
+            response = await client.get("/network")
+
+        assert response.status == 200
+        assert 'class="elbysodic-network-filter-drawer"' in response.text
+        assert "elbysodic-network-explore-map" not in response.text
+        assert "elbysodic-network-two-up" not in response.text
+        assert "Browse by fit" in response.text
+        assert response.text.index("explore-results-heading") < response.text.index(
+            "elbysodic-network-filter-drawer"
+        )
+
+    asyncio.run(run())
+
+
+def test_network_home_does_not_render_full_filter_matrix() -> None:
+    async def run() -> None:
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        async with TestClient(app) as client:
+            response = await client.get("/")
+
+        assert response.status == 200
+        assert "Search by premise, pace, hooks, and chapters in motion." not in response.text
+        assert 'class="elbysodic-network-home-genres"' not in response.text
+        assert "Top 10 realms" in response.text
+        assert "Premise engines" not in response.text
+        assert "Your desk is one click away." not in response.text
+        assert 'class="elbysodic-network-filter-panel"' not in response.text
+
+    asyncio.run(run())
 
 
 def test_public_network_search_uses_explicit_discovery_metadata() -> None:
