@@ -282,6 +282,20 @@ Existing data can support the next hub:
 - activity: public threads/posts
 - director curation: `community_gateway_slots`
 
+Initial Harbor Society seed audit on 2026-05-18:
+
+- 8 accepted characters are available for a public cast shelf.
+- 5 published materials cover premise, current chapter, social lore,
+  application guidance, and town calendar.
+- 4 claim types cover face, family, club role, and business lanes.
+- 4 scene hubs render through the gateway.
+- 3 wanted previews render through the gateway.
+- 0 scene previews currently render because the seeded starter scenes are
+  `active` while the current gateway preview helper only admits `open` public
+  threads. Task 6 should resolve this deliberately by either seeding preview
+  candidates with the accepted public-open state or broadening the read model
+  after a product decision about `active` versus `open` public scenes.
+
 Schema review is deferred until at least Task 2 or Task 3 proves a stable
 missing concept. Candidate future fields:
 
