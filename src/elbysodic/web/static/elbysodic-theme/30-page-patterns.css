@@ -1054,24 +1054,26 @@
 }
 
 .elbysodic-realm-lane-grid {
+    align-items: start;
     display: grid;
-    gap: var(--chirpui-space-4);
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: clamp(1rem, 2vw, 1.4rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 }
 
 .elbysodic-realm-lane-card {
     --elbysodic-lane-accent: var(--chirpui-accent);
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-lane-accent) 13%, var(--chirpui-surface)), var(--chirpui-surface));
+        radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--elbysodic-lane-accent) 20%, transparent), transparent 42%),
+        color-mix(in srgb, var(--chirpui-surface) 94%, var(--elbysodic-lane-accent));
     align-content: start;
-    align-items: stretch;
-    border: 1px solid color-mix(in srgb, var(--elbysodic-lane-accent) 36%, var(--chirpui-border));
+    border: 1px solid color-mix(in srgb, var(--elbysodic-lane-accent) 28%, var(--chirpui-border));
     border-radius: var(--chirpui-radius-sm);
     display: grid;
-    gap: var(--chirpui-space-3);
+    column-gap: 0.65rem;
     grid-template-columns: auto minmax(0, 1fr);
-    min-block-size: 6.4rem;
-    padding: var(--chirpui-space-4);
+    min-block-size: 7rem;
+    padding: clamp(var(--chirpui-space-4), 2vw, var(--chirpui-space-5));
+    row-gap: 0.45rem;
 }
 
 .elbysodic-realm-lane-card--access {
@@ -1103,27 +1105,29 @@
 }
 
 .elbysodic-realm-lane-card__mark {
+    align-self: center;
     background: var(--elbysodic-lane-accent);
-    border-radius: var(--chirpui-radius-sm);
-    inline-size: 0.3rem;
+    border-radius: 999px;
+    block-size: 0.72rem;
+    box-shadow: 0 0 0 0.28rem color-mix(in srgb, var(--elbysodic-lane-accent) 16%, transparent);
+    inline-size: 0.72rem;
 }
 
-.elbysodic-realm-lane-card__copy {
-    align-content: start;
-    display: grid;
-    gap: var(--chirpui-space-2);
-    min-inline-size: 0;
-}
-
-.elbysodic-realm-lane-card strong {
+.elbysodic-realm-lane-card h3 {
+    align-self: center;
     color: var(--chirpui-text);
-    line-height: 1.18;
+    font-size: var(--chirpui-font-lg);
+    letter-spacing: 0;
+    line-height: 1.15;
+    margin: 0;
 }
 
-.elbysodic-realm-lane-card__copy > span {
+.elbysodic-realm-lane-card p {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
-    line-height: 1.5;
+    grid-column: 1 / -1;
+    line-height: 1.45;
+    margin: 0;
 }
 
 .elbysodic-realm-cast-grid {

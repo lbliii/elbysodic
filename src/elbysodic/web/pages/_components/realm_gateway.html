@@ -254,10 +254,8 @@
     {% for lane in gateway.social_lanes %}
     <article class="elbysodic-realm-lane-card elbysodic-realm-lane-card--{{ lane.tone }}">
       <span class="elbysodic-realm-lane-card__mark" aria-hidden="true"></span>
-      <span class="elbysodic-realm-lane-card__copy">
-        <strong>{{ lane.title }}</strong>
-        <span>{{ lane.summary }}</span>
-      </span>
+      <h3>{{ lane.title }}</h3>
+      <p>{{ lane.summary }}</p>
     </article>
     {% end %}
   </div>
