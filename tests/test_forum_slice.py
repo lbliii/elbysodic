@@ -4945,7 +4945,12 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
 
             community = await client.get("/community")
             assert community.status == 200
+            assert "elbysodic-world-hero--poster" in community.text
+            assert "/elbysodic-static/seed-media/xmen-hero.svg" in community.text
+            assert 'alt="Snow-lit academy and B-24 signal lines"' in community.text
             assert "Writer room and record" in community.text
+            assert "Current Event: B-24 Winter" in community.text
+            assert "Iceman is infected with B-24" in community.text
             assert "Community table" in community.text
             assert "Announcements" in community.text
             assert "Playable world map" not in community.text
