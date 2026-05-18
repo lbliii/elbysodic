@@ -527,6 +527,20 @@ def test_public_network_explore_keeps_filters_below_results() -> None:
     asyncio.run(run())
 
 
+def test_network_home_does_not_render_full_filter_matrix() -> None:
+    async def run() -> None:
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        async with TestClient(app) as client:
+            response = await client.get("/")
+
+        assert response.status == 200
+        assert "Search by premise, pace, hooks, and chapters in motion." in response.text
+        assert 'class="elbysodic-network-home-genres"' in response.text
+        assert 'class="elbysodic-network-filter-panel"' not in response.text
+
+    asyncio.run(run())
+
+
 def test_public_network_search_uses_explicit_discovery_metadata() -> None:
     services = create_services(path=":memory:")
     community = services.repo.get_community_by_slug("rl-small-town")

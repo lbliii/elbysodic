@@ -367,20 +367,6 @@
   {{ home_slice(slice.title, slice.href, slice.programs) }}
   {% end %}
 
-  <section class="elbysodic-network-home-genres" aria-label="Genre slices">
-    {% for facet in browse_facets %}
-    <a href="{{ facet.href }}">{{ facet.label }}{% if facet.result_count %} · {{ facet.result_count }}{% end %}</a>
-    {% end %}
-  </section>
-
-  {% if filter_groups %}
-  <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
-    {% for group in filter_groups %}
-    {{ explore_filter_group(group) }}
-    {% end %}
-  </section>
-  {% end %}
-
   {% if return_path %}
   <section class="elbysodic-network-home-return" aria-label="Signed-in return">
     <div>
@@ -418,6 +404,11 @@
         <button class="elbysodic-network-search__submit" type="submit">Search</button>
       </div>
     </form>
+    <div class="elbysodic-network-home-genres" aria-label="Genre slices">
+      {% for facet in browse_facets %}
+      <a href="{{ facet.href }}">{{ facet.label }}{% if facet.result_count %}<span>{{ facet.result_count }}</span>{% end %}</a>
+      {% end %}
+    </div>
   </section>
   {% end %}
   {% else %}
