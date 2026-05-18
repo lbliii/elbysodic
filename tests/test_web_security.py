@@ -540,8 +540,8 @@ def test_network_home_does_not_render_full_filter_matrix() -> None:
             response = await client.get("/")
 
         assert response.status == 200
-        assert "Search by premise, pace, hooks, and chapters in motion." in response.text
-        assert 'class="elbysodic-network-home-genres"' in response.text
+        assert "Search by premise, pace, hooks, and chapters in motion." not in response.text
+        assert 'class="elbysodic-network-home-genres"' not in response.text
         assert "Top 10 realms" in response.text
         assert "Premise engines" not in response.text
         assert "Your desk is one click away." not in response.text

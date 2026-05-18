@@ -370,31 +370,6 @@
   {{ home_slice(slice.title, slice.href, slice.programs) }}
   {% end %}
 
-  <section class="elbysodic-network-explore-panel" aria-labelledby="home-explore-heading">
-    <div class="elbysodic-network-rail__header">
-      <div>
-        <p class="elbysodic-section-kicker">Explore</p>
-        <h2 id="home-explore-heading">Search by premise, pace, hooks, and chapters in motion.</h2>
-      </div>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Open Network</a>
-    </div>
-    <form class="elbysodic-network-search" action="/network" method="get" role="search">
-      <label for="network-home-search">Search story fit</label>
-      <div class="elbysodic-network-search__control">
-        <span class="elbysodic-network-search__scope">Realms</span>
-        <input id="network-home-search"
-               name="q"
-               type="search"
-               placeholder="weird-town mystery, relaxed, forum-first, wanted">
-        <button class="elbysodic-network-search__submit" type="submit">Search</button>
-      </div>
-    </form>
-    <div class="elbysodic-network-home-genres" aria-label="Genre slices">
-      {% for facet in browse_facets %}
-      <a href="{{ facet.href }}">{{ facet.label }}{% if facet.result_count %}<span>{{ facet.result_count }}</span>{% end %}</a>
-      {% end %}
-    </div>
-  </section>
   {% end %}
   {% else %}
   {% call section_header("Studio Network") %}

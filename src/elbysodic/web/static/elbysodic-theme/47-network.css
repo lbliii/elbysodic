@@ -221,11 +221,6 @@
     gap: 0.5rem;
 }
 
-.elbysodic-network-explore-panel {
-    display: grid;
-    gap: 0.9rem;
-}
-
 .elbysodic-network-home-slice {
     display: grid;
     gap: 0.8rem;
@@ -238,8 +233,7 @@
     justify-content: space-between;
 }
 
-.elbysodic-network-home-slice__header h2,
-.elbysodic-network-explore-panel h2 {
+.elbysodic-network-home-slice__header h2 {
     color: var(--chirpui-text);
     font-family: var(--elbysodic-display-font-family);
     font-size: 1.8rem;
@@ -370,40 +364,6 @@
     color: var(--elbysodic-on-media-muted);
     font-size: var(--chirpui-font-sm);
     font-weight: 750;
-}
-
-.elbysodic-network-home-genres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-}
-
-.elbysodic-network-home-genres a {
-    align-items: center;
-    background: color-mix(in srgb, var(--chirpui-surface) 88%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chirpui-border) 78%, transparent);
-    border-radius: 999px;
-    color: var(--chirpui-text);
-    display: inline-flex;
-    font-size: var(--chirpui-font-sm);
-    font-weight: 750;
-    gap: 0.35rem;
-    line-height: 1.1;
-    min-block-size: 2.25rem;
-    padding: 0.45rem 0.65rem;
-    text-decoration: none;
-}
-
-.elbysodic-network-home-genres a span {
-    color: var(--chirpui-text-muted);
-    font-size: var(--chirpui-font-xs);
-    font-weight: 850;
-}
-
-.elbysodic-network-home-genres a:hover,
-.elbysodic-network-home-genres a:focus-visible {
-    border-color: var(--chirpui-accent);
-    color: var(--chirpui-accent);
 }
 
 .elbysodic-network-strip {
