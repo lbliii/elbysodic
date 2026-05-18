@@ -152,6 +152,23 @@ ON community_discovery_tags(community_id, tag_type, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_community_discovery_tags_key
 ON community_discovery_tags(community_id, tag_key);
 
+CREATE TABLE IF NOT EXISTS community_gateway_slots (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    slot_type TEXT NOT NULL CHECK (
+        slot_type IN ('scene_hub', 'wanted_hook', 'guidebook_material')
+    ),
+    target_id INTEGER NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    label TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, slot_type, target_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_gateway_slots_order
+ON community_gateway_slots(community_id, slot_type, position, id);
+
 CREATE TABLE IF NOT EXISTS characters (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,

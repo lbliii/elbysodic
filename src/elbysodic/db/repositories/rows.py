@@ -27,6 +27,7 @@ from elbysodic.domain.models import (
     Community,
     CommunityDiscoveryProfile,
     CommunityDiscoveryTag,
+    CommunityGatewaySlot,
     CommunityInvitation,
     CommunityMembership,
     CommunityTheme,
@@ -180,6 +181,19 @@ def _community_discovery_tag_from_row(row: sqlite3.Row) -> CommunityDiscoveryTag
         label=row["label"],
         search_text=row["search_text"],
         sort_order=row["sort_order"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _community_gateway_slot_from_row(row: sqlite3.Row) -> CommunityGatewaySlot:
+    return CommunityGatewaySlot(
+        id=row["id"],
+        community_id=row["community_id"],
+        slot_type=row["slot_type"],
+        target_id=row["target_id"],
+        position=row["position"],
+        label=row["label"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

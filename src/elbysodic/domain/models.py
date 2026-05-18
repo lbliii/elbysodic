@@ -118,6 +118,18 @@ class CommunityDiscoveryTag:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityGatewaySlot:
+    id: int
+    community_id: int
+    slot_type: str
+    target_id: int
+    position: int
+    label: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class Role:
     id: int
     community_id: int
