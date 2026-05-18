@@ -70,8 +70,10 @@ def theme_custom_property_errors(
         text = path.read_text(encoding="utf-8")
         definitions.update(_CUSTOM_PROPERTY_DEFINITION_RE.findall(text))
         for line_number, line in enumerate(text.splitlines(), start=1):
-            for match in _CUSTOM_PROPERTY_REFERENCE_RE.finditer(line):
-                references.append((path, line_number, match.group(1), bool(match.group(2))))
+            references.extend(
+                (path, line_number, match.group(1), bool(match.group(2)))
+                for match in _CUSTOM_PROPERTY_REFERENCE_RE.finditer(line)
+            )
 
     allowed = definitions | EXTERNALLY_PROVIDED_PROPERTIES
     return [
