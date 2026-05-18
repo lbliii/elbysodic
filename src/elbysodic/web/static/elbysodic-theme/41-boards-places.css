@@ -5,6 +5,7 @@
 }
 
 .elbysodic-realm-hub-grid {
+    align-items: start;
     display: grid;
     gap: 0.85rem;
     grid-auto-flow: dense;
@@ -52,6 +53,7 @@
 }
 
 .elbysodic-realm-hub-card__body {
+    align-content: start;
     display: grid;
     gap: 0.4rem;
     padding: 0.9rem;
