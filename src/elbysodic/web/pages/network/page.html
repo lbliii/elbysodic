@@ -44,7 +44,7 @@
       {% if program.community.community_mark_url %}
       <img src="{{ program.community.community_mark_url }}" alt="{{ program.community.community_mark_alt }}">
       {% end %}
-      <span>{{ program.role.name if program.role else "Public realm" }}</span>
+      <span>{{ program.role.name if program.role else "Open realm" }}</span>
     </div>
     <h1 id="network-heading">{{ program.community.name }}</h1>
     <p class="elbysodic-network-billboard__summary">{{ program_summary(program) }}</p>
@@ -63,12 +63,12 @@
     <div class="elbysodic-network-billboard__actions">
       {{ program_action(program, program.entry_href, "Enter realm") }}
       {% if program.current_event %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.current_event_href }}">Current event</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.current_event_href }}">Read chapter</a>
       {% elif program.premise %}
       <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.premise_href }}">Premise</a>
       {% end %}
       {% if program.open_wanted_count %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.entry_href }}/wanted">Wanted hooks</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.entry_href }}/wanted">Open calls</a>
       {% end %}
     </div>
   </div>
@@ -135,11 +135,11 @@
     <h1 id="network-heading">{{ program.community.name }}</h1>
     <p>{{ program_summary(program) }}</p>
     <div class="elbysodic-network-home-showcase__actions">
-      <a class="chirpui-btn chirpui-btn--primary" href="{{ program.entry_href }}">Preview realm</a>
+      <a class="chirpui-btn chirpui-btn--primary" href="{{ program.entry_href }}">Open realm</a>
       {% if program.open_wanted_count %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.entry_href }}/wanted">Wanted hooks</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.entry_href }}/wanted">Open calls</a>
       {% elif program.current_event %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.current_event_href }}">Current event</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.current_event_href }}">Read chapter</a>
       {% elif program.premise %}
       <a class="chirpui-btn chirpui-btn--secondary" href="{{ program.premise_href }}">Premise</a>
       {% end %}
@@ -237,8 +237,8 @@
   <section class="elbysodic-network-explore-command" aria-labelledby="network-heading">
     <div>
       <p class="elbysodic-section-kicker">Explore</p>
-      <h1 id="network-heading">Find realms by mood, hook, face, or story pressure.</h1>
-      <p>Search by premise, current chapter, roster energy, wanted hooks, pace, and public-preview realms.</p>
+      <h1 id="network-heading">Find a realm that fits the story you want to write.</h1>
+      <p>Search by premise, pace, hooks, roster shape, and the chapter in motion.</p>
     </div>
     <form class="elbysodic-network-search" action="/network" method="get" role="search">
       <label for="network-search">Search story fit</label>
@@ -281,14 +281,14 @@
           {% if network_search_query %}
           Search results
           {% else %}
-          Story-fit catalog
+          Realms
           {% end %}
         </p>
         <h2 id="explore-results-heading">
           {% if network_search_query %}
           Realms matching "{{ network_search_query }}"
           {% else %}
-          Public-preview realm catalog.
+          Open for browsing
           {% end %}
         </h2>
       </div>
@@ -315,8 +315,8 @@
   <section class="elbysodic-network-two-up" aria-label="Explore support lanes">
     {% call surface(variant="elevated") %}
     <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Casting index</p>
-      <h2>Open roles and story pressure across the network.</h2>
+      <p class="elbysodic-section-kicker">Wanted</p>
+      <h2>Open roles and ties across the network.</h2>
       <div class="elbysodic-network-casting-list">
         {% for program in explore_programs %}
         {% if program.open_wanted_count %}
@@ -332,8 +332,8 @@
 
     {% call surface(variant="elevated") %}
     <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Ways in</p>
-      <h2>Public previews before you choose a face.</h2>
+      <p class="elbysodic-section-kicker">Start here</p>
+      <h2>Realms you can read before you apply.</h2>
       <div class="elbysodic-network-casting-list">
         {% for program in explore_programs %}
         <a href="{{ program.entry_href }}">
@@ -399,7 +399,7 @@
     <div class="elbysodic-network-rail__header">
       <div>
         <p class="elbysodic-section-kicker">Explore</p>
-        <h2 id="home-explore-heading">Search realms by premise, pace, hooks, and current chapters.</h2>
+        <h2 id="home-explore-heading">Search by premise, pace, hooks, and chapters in motion.</h2>
       </div>
       <a class="chirpui-btn chirpui-btn--secondary" href="/network">Open Network</a>
     </div>
@@ -422,8 +422,8 @@
   {% end %}
   {% call surface(variant="elevated") %}
   <div class="elbysodic-network-empty">
-    <p class="elbysodic-section-kicker">Launch state</p>
-    <h2>The first realm is still backstage.</h2>
+    <p class="elbysodic-section-kicker">Opening soon</p>
+    <h2>The first realm is still preparing to open.</h2>
     <p class="elbysodic-empty-state">
       Once a director opens a realm, this studio network will show public worlds,
       wanted hooks, faces, scenes, and current events here.

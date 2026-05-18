@@ -81,7 +81,7 @@ def _render_invite(
     return Page.mounted(
         "invite/{invite_token}/page.html",
         current_path=request.url,
-        page_title=f"Accept Invitation · {community.name}",
+        page_title=f"Accept invitation · {community.name}",
         viewer=None,
         invitation=invitation,
         community=community,

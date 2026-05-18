@@ -1054,7 +1054,7 @@ def test_tenant_prefixed_identity_and_casting_routes_scope_rendered_links() -> N
         )
 
         assert application.status == 200
-        assert "Start Application" in application.text
+        assert "Start a face" in application.text
         assert "Create draft face" in application.text
         assert 'data-elbysodic-submit-label="Creating draft face..."' in application.text
         assert f'href="/c/{community_slug}/applications"' in application.text
@@ -1829,8 +1829,8 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
             response = await client.get("/network")
 
         assert response.status == 200
-        assert "Find realms by mood, hook, face, or story pressure." in response.text
-        assert "Public-preview realm catalog." in response.text
+        assert "Find a realm that fits the story you want to write." in response.text
+        assert "Open for browsing" in response.text
         assert "Start with a wanted hook" in response.text
         assert "Start with a current chapter" in response.text
         assert "Home hub" not in response.text
@@ -1857,12 +1857,12 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert 'class="elbysodic-network-card__realm-link"' in response.text
         assert 'aria-label="Preview Jurassic Park Universe"' in response.text
         assert 'class="elbysodic-network-card__icon-action' in response.text
-        assert 'aria-label="Current event"' in response.text
-        assert 'aria-label="Wanted hooks"' in response.text
+        assert 'aria-label="Read chapter"' in response.text
+        assert 'aria-label="Open calls"' in response.text
         assert "elbysodic-network-card__tooltip" in response.text
-        assert 'title="Wanted hooks"' not in response.text
+        assert 'title="Open calls"' not in response.text
         assert "elbysodic-network-search__control" in response.text
-        assert "premise, current chapter, roster energy" in response.text
+        assert "premise, pace, hooks, roster shape" in response.text
         assert "urban supernatural" in response.text
         assert "weird-town mystery" in response.text
         assert "small-town social web" in response.text
@@ -1870,7 +1870,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Premise engine" in response.text
         assert "Play engine" in response.text
         assert "Lore aperture" in response.text
-        assert "Ways in" in response.text
+        assert "Start here" in response.text
         assert "Pace and touchpoints" in response.text
         assert "Small Town Social Web" in response.text
         assert "Weird Town Mystery" in response.text
@@ -2007,7 +2007,7 @@ def test_original_premise_entry_paths_support_first_face_and_wanted_browsing() -
             assert "Application Guide" in applications.text
 
             assert first_face.status == 200
-            assert "Start Application" in first_face.text
+            assert "Start a face" in first_face.text
             assert "Face name" in first_face.text
             assert f"This will become your first active face in {community.name}" in first_face.text
             assert "Director fields" in first_face.text
@@ -3876,7 +3876,7 @@ def test_invited_writer_without_first_face_continues_to_application_form() -> No
         assert _response_header(accepted, "location") == "/c/x-men-apocalypse/applications/new"
         assert membership.default_character_id is None
         assert application.status == 200
-        assert "Start Application" in application.text
+        assert "Start a face" in application.text
         assert "Face name" in application.text
         assert "This will become your first active face in X-Men Apocalypse" in application.text
         assert desk.status == 200
@@ -5955,7 +5955,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
         async with TestClient(app) as client:
             world = await client.get("/world")
             assert world.status == 200
-            assert "World studio" in world.text
+            assert "World guide" in world.text
             assert "Premise" in world.text
             assert "Application Guide" in world.text
             assert "Current Event: B-24 Winter" in world.text
