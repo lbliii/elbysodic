@@ -14,6 +14,7 @@ Related docs:
 - `design/technicolor-futurism.md`
 - `design/technicolor-futurism-research.md`
 - `docs/product/experience-direction.md`
+- `docs/product/surface-quality-bar.md`
 - `docs/product/appearance-studio.md`
 - `docs/product/information-hierarchy.md`
 - `docs/product/control-topology.md`
@@ -67,6 +68,9 @@ clarity.
 - Label discipline: eyebrows, badges, counts, helper lines, and footers add a
   new distinction; they do not repeat the section title, route, object type, or
   same fact elsewhere in the module.
+- Surface quality: substantial UI changes have an intent brief, density budget,
+  anti-CRM check, progressive-disclosure plan, and rendered screenshot QA when
+  composition or responsive behavior matters.
 - Tokens: colors, type, spacing, radius, density, shadows, and texture use
   Chirp-UI or Elbysodic theme tokens; new tokens are named by product meaning.
 - Components: repeated PBP UI shapes are promoted or aligned with
@@ -97,6 +101,9 @@ clarity.
   labels.
 - Keep the product's prestige cues in typography, spacing, hierarchy, and
   restraint before adding more decoration.
+- Require stronger surface briefs when implementation starts from structured
+  data, because database completeness is not the same thing as user-facing
+  clarity.
 
 ## Serve Peers
 

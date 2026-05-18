@@ -20,6 +20,8 @@ community media slots, or presentation variants for ritual surfaces.
 Use `docs/product/experience-direction.md` when deciding how much of the
 current Jcink/PBP, layered-context, editorial-discovery, and technicolor
 futurism synthesis should shape a surface.
+Use `docs/product/surface-quality-bar.md` before turning product data into
+visible cards, badges, metrics, helper copy, or public/editorial page sections.
 Use `design/composition-bible.md` when deciding whether the surface should be
 open layout, compact rows, story-object cards, or an elevated command panel.
 

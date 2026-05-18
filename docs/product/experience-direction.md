@@ -2,15 +2,16 @@
 
 Status: product and design doctrine
 Owner: Product, design, web, research, and steward coordination
-Last updated: 2026-05-15
+Last updated: 2026-05-18
 
 This is the short synthesis for Elbysodic's current product experience
 direction. Use it with `docs/product/strategy-spine.md`,
 `docs/product/appearance-studio.md`, `docs/product/navigation-menus.md`,
-`docs/product/information-hierarchy.md`, and
-`design/technicolor-futurism.md`. Use `design/composition-bible.md` when the
-question is page rhythm, surface choice, chrome layering, media placement,
-mobile composition, or bad layout patterns.
+`docs/product/information-hierarchy.md`,
+`docs/product/surface-quality-bar.md`, and `design/technicolor-futurism.md`.
+Use `design/composition-bible.md` when the question is page rhythm, surface
+choice, chrome layering, media placement, mobile composition, or bad layout
+patterns.
 
 It distills the latest research, static mocks, user-panel synthesis, and
 implementation direction into one decision rule:
@@ -181,3 +182,6 @@ Reject:
 - Has the decision been promoted to the right durable place: product docs,
   design docs, service read model, shared component, tests, plan, or not-now
   item?
+- Does the surface pass the Surface Quality Bar: intent brief, density budget,
+  anti-CRM rules, label discipline, and screenshot QA when rendered composition
+  matters?

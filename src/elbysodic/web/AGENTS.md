@@ -8,6 +8,7 @@ Related docs:
 
 - root `AGENTS.md`
 - `docs/product/information-hierarchy.md`
+- `docs/product/surface-quality-bar.md`
 - `docs/product/control-topology.md`
 - `docs/product/navigation-menus.md`
 - `docs/product/paragraph-rhythm.md`
@@ -48,6 +49,9 @@ face-aware browsing, staff workflows, and community atmosphere.
 - Label audit: page, section, card, row, badge, metric, and helper labels are
   non-duplicative; metadata and counts add decision value instead of restating
   parent context.
+- Surface quality: substantial rendered surfaces have a brief for audience,
+  first-five-second read, primary object, primary action, dominant reference,
+  negative reference, density budget, and progressive disclosure.
 - Static assets: CSS/JS changes preserve theme tokens, composer behavior, and
   shell navigation.
 - Markup: preview and final render parity stays safe.
@@ -56,7 +60,8 @@ face-aware browsing, staff workflows, and community atmosphere.
 - Tests: rendered page, markup, security, and forum slice tests cover the
   visible workflow.
 - Browser QA: run on port 8001 for substantial layout, navigation, or
-  interaction changes.
+  interaction changes, and inspect desktop/mobile screenshots against the
+  Surface Quality Bar.
 - Changelog: add a fragment for user-visible UI behavior.
 
 ## Advocate

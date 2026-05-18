@@ -2,7 +2,7 @@
 
 Status: living design doctrine
 Owner: Product design, web, docs, and surface-contract stewardship
-Last updated: 2026-05-15
+Last updated: 2026-05-18
 
 This guide answers: what should an Elbysodic screen feel like, and how should
 it be arranged?
@@ -10,7 +10,8 @@ it be arranged?
 Use it before adding or reshaping heroes, rails, cards, rows, dashboards,
 drawers, page headers, media bands, command panels, or dense production rooms.
 It does not replace `docs/product/experience-direction.md`,
-`design/technicolor-futurism.md`, `docs/product/information-hierarchy.md`, or
+`docs/product/surface-quality-bar.md`, `design/technicolor-futurism.md`,
+`docs/product/information-hierarchy.md`, or
 `docs/product/control-topology.md`; it makes their composition rules easier to
 apply.
 
@@ -232,14 +233,22 @@ Mobile is not collapsed desktop.
 
 ## Acceptance Questions
 
+- What is the Surface Intent Brief: audience, first-five-second read, primary
+  object, primary decision, dominant reference job, negative reference, and
+  progressive disclosure plan?
 - What is the primary object: realm, place, scene, face, wanted hook, desk
   obligation, application, claim, reserve, material, event, or Studio room?
 - Which ladder level does this surface need: open layout, row, story-object
   card, or command panel?
+- Does the density budget hold, or did structured data turn into visible
+  clutter?
 - Does the page journey clearly move from orient to read/compare to act to
   continue?
 - Which context belongs in chrome, which belongs in the page, and which belongs
   in a drawer?
+- Does the surface avoid CRM/dashboard failure modes: equal-weight cards,
+  metrics everywhere, repeated labels, route-directory panels, and generic
+  admin language?
 - Does media clarify identity or atmosphere without hiding controls?
 - Can a writer read or write for a long session here?
 - Are active face, authorship, privacy, and staff boundaries visible before the
