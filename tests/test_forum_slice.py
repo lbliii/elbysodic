@@ -10824,6 +10824,40 @@ def test_start_thread_rolls_back_when_late_write_fails(monkeypatch) -> None:
     assert "rollback-drill" not in after
 
 
+def test_repository_transaction_rolls_back_nested_mixin_writes() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.viewer().community
+
+    def fail_nested_transaction() -> None:
+        with repo.transaction():
+            repo.create_material(
+                community.id,
+                "nested-rollback-guide",
+                "Nested Rollback Guide",
+                material_type="guide",
+                summary="This guide should roll back with the outer transaction.",
+            )
+            with repo.transaction():
+                repo.create_board(
+                    community.id,
+                    "nested-rollback-board",
+                    "Nested Rollback Board",
+                    board_kind="community",
+                    description="This board should not survive the failed transaction.",
+                )
+            raise RuntimeError("simulated nested transaction failure")
+
+    with pytest.raises(RuntimeError, match="simulated nested transaction failure"):
+        fail_nested_transaction()
+
+    assert not repo.connection.in_transaction
+    with pytest.raises(LookupError):
+        repo.get_material_by_slug(community.id, "nested-rollback-guide")
+    with pytest.raises(LookupError):
+        repo.get_board_by_slug(community.id, "nested-rollback-board")
+
+
 def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: Path) -> None:
     db_path = tmp_path / "elbysodic.sqlite3"
     services = create_services(path=db_path)
