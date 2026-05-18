@@ -35,6 +35,7 @@ _SCOPED_PATH_PREFIXES = (
     "/my",
     "/notifications",
     "/plotting",
+    "/search",
     "/studio",
     "/wanted",
     "/world",

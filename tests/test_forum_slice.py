@@ -1901,6 +1901,37 @@ def test_network_explore_search_filters_programs() -> None:
     asyncio.run(run())
 
 
+def test_global_search_renders_public_realm_results() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/search?q=magic school")
+
+        assert response.status == 200
+        assert "Search All realms" in response.text
+        assert "HP Universe" in response.text
+        assert "2 wanted · 3 faces" in response.text
+        assert 'href="/c/hp-universe"' in response.text
+
+    asyncio.run(run())
+
+
+def test_community_search_scopes_to_public_realm_results() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/c/harbor-society/search?q=ledger")
+
+        assert response.status == 200
+        assert "Search Harbor Society" in response.text
+        assert 'action="/c/harbor-society/search"' in response.text
+        assert 'href="/search?q=ledger"' in response.text
+        assert "The Ledger Page Under Table Six" in response.text
+        assert "Scenes" in response.text
+
+    asyncio.run(run())
+
+
 def test_original_premise_discovery_routes_support_persona_qa() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
@@ -2215,7 +2246,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             f"/c/{community_slug}/request-access",
         }
         assert gateway.wanted_previews
-        assert all("wanted" not in preview.type_label.lower() for preview in gateway.wanted_previews)
+        assert all(
+            "wanted" not in preview.type_label.lower() for preview in gateway.wanted_previews
+        )
         assert all(
             preview.related_label is None
             or not preview.related_label.lower().startswith(("current chapter:", "premise:"))
@@ -2275,7 +2308,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Club Role" in content
                     assert "Influence Lane" in content
                     assert "Business" in content
-                    assert "Old names, newcomer ties, and marriages that still carry debt." in content
+                    assert (
+                        "Old names, newcomer ties, and marriages that still carry debt." in content
+                    )
                     assert (
                         "Members, guests, staff, donors, and applicants with something to prove."
                         in content
