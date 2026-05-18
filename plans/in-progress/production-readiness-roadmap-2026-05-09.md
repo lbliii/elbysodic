@@ -1,10 +1,10 @@
 # Production Readiness Roadmap
 
-Status: active production gate
+Status: active production gate; local auth, tenant, privacy, and full test gates pass
 Owner: Cross-steward production readiness
 Created: 2026-05-09
-Last updated: 2026-05-12
-Review by: 2026-05-16
+Last updated: 2026-05-18
+Review by: 2026-06-01
 Closure criteria: Railway smoke is recorded, schema/seed persistence risks are
 resolved or explicitly deferred, S-tier core user flows have rendered and
 browser proof, and follow-up work is split into PR-sized implementation plans.
@@ -22,6 +22,22 @@ This roadmap is the trust foundation for the product strategy spine in
 Graph all depend on boringly correct tenant routing, sessions, persistence,
 rendered privacy, transaction boundaries, and recovery before their product
 surfaces expand.
+
+## 2026-05-18 Status Refresh
+
+Local proof is stronger than the stale review date implied. The full test suite
+passes after the account-visitor public-preview slice; app contract check passes
+with warnings as errors; `ruff check`, `ty`, and `git diff --check` pass. The
+current remaining production blockers are operational rather than conceptual:
+approve and execute production bootstrap, run the invite-only alpha runbook
+against the live environment, record restart persistence, and decide the
+invitation delivery/resend contract.
+
+The next implementation work should stay focused on production trust and alpha
+entry: account-visitor public route coverage, first-face onboarding polish,
+public catalog access posture, Studio Operations attention lanes, transaction
+proof for the next high-risk workflow, and Blueprint preflight without enabling
+mutating apply.
 
 The theme for this roadmap is production trust:
 

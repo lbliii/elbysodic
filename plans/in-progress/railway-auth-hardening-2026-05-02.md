@@ -1,10 +1,24 @@
 # Railway Auth Hardening Plan
 
 Created: 2026-05-02
-Last updated: 2026-05-09
-Review by: 2026-05-16
+Last updated: 2026-05-18
+Review by: 2026-06-01
 Owner: Auth, service, web, and deployment stewardship
-Status: local contract implemented; live Railway smoke still blocks closure
+Status: local contract implemented and locally verified; live Railway smoke still blocks closure
+
+## 2026-05-18 Status Refresh
+
+Local auth hardening remains valid. Production mode ignores development
+identity, normal routes require a valid session, public tenant previews stay
+GET-only, CSRF protects mutating forms, and selected community/membership
+state is session-backed. The latest local gate adds account-visitor proof so a
+signed-in account without membership no longer looks logged out while still
+avoiding community shell, active face, Desk, unread counts, and staff controls.
+
+Closure still requires live Railway smoke: `/health`, login, logout, member
+view, staff view, membership switch, tenant-prefixed preview, one CSRF-protected
+write, seed media, attached-volume restart persistence, and one-replica SQLite
+posture.
 
 ## 2026-05-09 Verification Update
 

@@ -1,10 +1,18 @@
 # Tenant Routing And Shell Release Plan
 
 Created: 2026-05-02
-Last updated: 2026-05-09
-Review by: 2026-05-16
+Last updated: 2026-05-18
+Review by: 2026-06-01
 Owner: Web, service, storage, domain, and Chirp integration stewardship
-Status: implemented locally; production smoke and global entry polish remain
+Status: implemented locally and locally verified; production smoke remains
+
+## 2026-05-18 Status Refresh
+
+Tenant-prefix routing, scoped link generation, boosted shell behavior, login
+redirect recovery, membership switching, public scoped search, tenant
+request-access, and account-aware public previews are covered locally. The
+latest local full test gate passes. Keep this plan active only for live
+shared-host smoke and any global-entry polish discovered there.
 
 ## 2026-05-09 Verification Update
 

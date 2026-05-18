@@ -1,10 +1,10 @@
 # Post-PR31 Priority Roadmap
 
-Status: active sequencing snapshot
+Status: active sequencing snapshot; first priorities mostly merged or superseded
 Owner: Product, operations, web, service, storage, and test stewardship
 Created: 2026-05-10
-Last updated: 2026-05-12
-Review by: 2026-05-24
+Last updated: 2026-05-18
+Review by: 2026-06-01
 Closure criteria: The first five priorities are merged or superseded by more
 specific implementation plans, and remaining items are linked into the
 production-readiness roadmap, Studio roadmap, or archived as not-now.
@@ -19,6 +19,16 @@ bootstrap, and SQLite inspection docs.
 This plan captures the next work queue after that merge. It is not a feature
 spec. It exists so future agents have a current, ranked sequence for turning
 Elbysodic from a production-like demo into a real, supportable PBP studio.
+
+## 2026-05-18 Status Refresh
+
+The original top priorities have mostly moved into narrower plans or landed:
+first realm setup is archived as implemented, wanted backstage is archived as
+implemented, public discovery and realm previews have advanced, and signed-in
+non-member previews now have an explicit account-visitor boundary. Keep this
+roadmap active only as a short sequencing bridge until the remaining items are
+absorbed by production-readiness, community creator onboarding, Studio
+Operations, and public catalog plans.
 
 ## 2026-05-12 Project State
 
