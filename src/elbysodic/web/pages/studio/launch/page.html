@@ -10,14 +10,14 @@
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("Realm Launch") %}
-  Director setup for opening {{ viewer.community.name }}.
+  {% call section_header("Open realm") %}
+  Director prep for opening {{ viewer.community.name }}.
   {% end %}
 
   {% call surface(variant="elevated") %}
   <section class="elbysodic-director-hero" aria-labelledby="launch-heading">
     <div>
-      <p class="elbysodic-section-kicker">Backstage setup</p>
+      <p class="elbysodic-section-kicker">Before opening</p>
       <h1 id="launch-heading">Open the realm with the writing surface intact.</h1>
       <p>
         Scene hubs, director materials, intake, claims, appearance, and wanted hooks should be legible before writers arrive.
@@ -33,7 +33,7 @@
         <strong>{{ launch.missing_required_count }}</strong>
       </div>
       <div class="elbysodic-director-signal">
-        <span>Status</span>
+        <span>Opening</span>
         <strong>{{ viewer.community.launch_status }}</strong>
       </div>
     </aside>
@@ -47,7 +47,7 @@
       {{ csrf_field() }}
       <input type="hidden" name="intent" value="launch_status">
       <label class="chirpui-field">
-        <span>Launch status</span>
+        <span>Opening</span>
         <select class="chirpui-field__input" name="launch_status">
           <option value="backstage" {{ "selected" if viewer.community.launch_status == "backstage" else "" }}>Backstage</option>
           <option value="invite-only" {{ "selected" if viewer.community.launch_status == "invite-only" else "" }}>Invite-only</option>
@@ -55,7 +55,7 @@
         </select>
       </label>
       <div class="elbysodic-network-card__actions">
-        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save launch status</button>
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Save opening</button>
       </div>
     </form>
   </section>
@@ -65,7 +65,7 @@
   <section class="elbysodic-operations-panel" aria-labelledby="launch-checklist-heading">
     <div class="elbysodic-director-lane__header">
       <div>
-        <p class="elbysodic-section-kicker">Launch checklist</p>
+        <p class="elbysodic-section-kicker">Opening checklist</p>
         <h2 id="launch-checklist-heading">{{ launch.status_label }}</h2>
       </div>
       {{ badge(launch.completed_required_count ~ "/" ~ launch.required_count ~ " required", variant="success" if launch.is_ready else "warning") }}
@@ -89,7 +89,7 @@
 
   {% call surface(variant="elevated") %}
   <section class="elbysodic-operations-panel" aria-labelledby="builder-heading">
-    <p class="elbysodic-section-kicker">Realm Builder</p>
+    <p class="elbysodic-section-kicker">Opening packet</p>
     <h2 id="builder-heading">Create the minimum opening packet.</h2>
     {% if builder_error %}
     <p class="elbysodic-form-error" role="alert">{{ builder_error }}</p>
@@ -124,10 +124,10 @@
     <p class="elbysodic-section-kicker">Opening boundary</p>
     <h2 id="launch-boundary-heading">Invite-only before public self-serve.</h2>
     <p class="elbysodic-copy-section">
-      This room tracks whether a director has shaped the realm enough for invite-only opening. Public self-serve creator onboarding, billing, custom domains, and Blueprint Apply stay gated behind their own contracts.
+      This room tracks whether a director has shaped the realm enough for invite-only opening. Public self-serve creator onboarding, billing, custom domains, and Blueprint Apply remain future work.
     </p>
     <div class="elbysodic-network-card__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake#program-blueprint-preview">Preview Program Blueprint</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake#program-blueprint-preview">Preview blueprint</a>
     </div>
   </section>
   {% end %}

@@ -331,7 +331,7 @@ def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
             StudioCockpitLane(
                 "Launch",
                 "Opening checklist",
-                "Required realm setup lanes still backstage before invite-only opening.",
+                "Required opening lanes still backstage before invite-only opening.",
                 "/studio/launch",
                 "Open launch room",
                 len(missing_launch_items),

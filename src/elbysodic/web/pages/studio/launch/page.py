@@ -65,7 +65,7 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
             return _render_launch(request, launch_status_error=str(exc))
         return _render_launch(
             request,
-            launch_status_message=f"Launch status changed to {updated.launch_status}.",
+            launch_status_message=f"Opening changed to {updated.launch_status}.",
         )
     if form.intent != "create_invite":
         raise HTTPError(status=400, detail="unsupported launch action")

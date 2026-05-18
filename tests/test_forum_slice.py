@@ -3258,7 +3258,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
-            assert "Production cockpit" in studio.text
+            assert "Director attention" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
             assert "Public discovery profile" not in studio.text
@@ -3312,9 +3312,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/world/b-24-winter"' in studio.text
             assert 'href="/applications"' in studio.text
             assert 'href="/wanted"' in studio.text
-            assert "Current Event" in studio.text
+            assert "Current event" in studio.text
             assert operations.status == 200
-            assert "Director Operations" in operations.text
+            assert "Director desk" in operations.text
             assert "What needs a director?" in operations.text
             assert "No director operations need attention right now." in operations.text
             assert "Operations clear" in operations.text
@@ -3329,7 +3329,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Dry-run intake" not in operations.text
             assert "Release smoke" not in operations.text
             assert "Community builder checklist" not in operations.text
-            assert "Application Triage" not in operations.text
+            assert "Ready to review" not in operations.text
 
         services = create_services(path=":memory:")
         staff = resolve_seed_persona(services.repo, "xmen_staff")
@@ -3344,9 +3344,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             launch = await staff_client.get("/studio/launch")
 
         assert launch.status == 200
-        assert "Realm Launch" in launch.text
+        assert "Open realm" in launch.text
         assert "Open the realm with the writing surface intact." in launch.text
-        assert "Launch checklist" in launch.text
+        assert "Opening checklist" in launch.text
         assert "Realm identity" in launch.text
         assert "Scene hubs" in launch.text
         assert "Director materials" in launch.text
@@ -3477,7 +3477,7 @@ def test_guided_realm_builder_creates_minimum_opening_packet() -> None:
 
         assert response.status == 200
         assert (
-            "Realm Builder added scene hub, premise material, application guide." in response.text
+            "Opening packet added scene hub, premise material, application guide." in response.text
         )
         assert "Ready for invite-only opening" in launch.text
         assert board.community_id == community.id
@@ -3546,7 +3546,7 @@ def test_director_can_update_discovery_profile_from_studio() -> None:
         assert updated.status == 302
         assert _response_header(updated, "location") == "/studio/discovery"
         assert restored.status == 200
-        assert "This is the same public card component used by Network Explore." in restored.text
+        assert "This is how the realm appears in Network Explore." in restored.text
         assert 'class="elbysodic-network-card' in restored.text
         assert "A testable mystery posture for public catalog cards." in restored.text
         assert profile.premise_archetype == "weird-town-mystery"
@@ -3632,13 +3632,13 @@ def test_director_can_update_realm_launch_status() -> None:
             )
 
         assert updated.status == 200
-        assert "Launch status changed to invite-only." in updated.text
+        assert "Opening changed to invite-only." in updated.text
         assert invite_only.launch_status == "invite-only"
         assert all(
             program.community.id != staff.community.id for program in public_directory.programs
         )
         assert restored.status == 200
-        assert "Launch status changed to public-preview." in restored.text
+        assert "Opening changed to public-preview." in restored.text
         assert services.repo.get_community(staff.community.id).launch_status == "public-preview"
 
     asyncio.run(run())
@@ -3940,7 +3940,7 @@ def test_realm_launch_room_requires_director_membership() -> None:
 
         assert launch.status == 403
         assert "Open the realm with the writing surface intact." not in launch.text
-        assert "Launch checklist" not in launch.text
+        assert "Opening checklist" not in launch.text
 
     asyncio.run(run())
 
@@ -4007,16 +4007,16 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Privacy Queue Face" not in member_operations.text
         assert "Private application body should not leak" not in member_operations.text
         assert "0 ready apps" in member_operations.text
-        assert "Hosted inspection" not in member_operations.text
+        assert "Live check" not in member_operations.text
         assert "Database path" not in member_operations.text
         assert staff_operations.status == 200
         assert "Privacy Queue Face - ready" in staff_operations.text
         assert "ready apps" in staff_operations.text
-        assert "Hosted inspection" in staff_operations.text
+        assert "Live check" in staff_operations.text
         assert "Runtime and persistence" in staff_operations.text
         assert "Database path" in staff_operations.text
         assert "Schema" in staff_operations.text
-        assert "Launch status" in staff_operations.text
+        assert "Opening" in staff_operations.text
 
     asyncio.run(run())
 

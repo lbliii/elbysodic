@@ -391,8 +391,8 @@ class GuidedRealmBuilderResult:
     @property
     def status_message(self) -> str:
         if not self.created_labels:
-            return "Realm Builder found the minimum launch pieces already in place."
-        return f"Realm Builder added {', '.join(self.created_labels)}."
+            return "Opening packet already has the minimum pieces in place."
+        return f"Opening packet added {', '.join(self.created_labels)}."
 
 
 @dataclass(frozen=True, slots=True)
@@ -4402,8 +4402,8 @@ def _realm_launch_readiness(
                 is_complete=not theme_warnings,
             ),
             RealmLaunchChecklistItem(
-                label="Launch checklist",
-                summary="Public preview can open after required setup lanes are complete.",
+                label="Opening checklist",
+                summary="Public preview can open after required opening lanes are complete.",
                 href="/studio/launch",
                 cta="Open checklist",
                 is_complete=bool(public_scene_hubs)

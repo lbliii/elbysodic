@@ -156,7 +156,7 @@
       <p class="elbysodic-kicker">Director Studio</p>
       <h1>Shape {{ viewer.community.name }}</h1>
       <p class="elbysodic-copy-lead">
-        A production cockpit for the canon, locations, applications, and hooks that
+        A director room for the canon, locations, applications, and hooks that
         need director attention now.
       </p>
     </div>
@@ -168,9 +168,9 @@
     </aside>
   </section>
 
-  <section class="chirpui-stack chirpui-stack--md" aria-label="Production cockpit">
-    {% call section_header("Production cockpit") %}
-    Queues and setup risks that need director movement before writers feel them.
+  <section class="chirpui-stack chirpui-stack--md" aria-label="Director attention">
+    {% call section_header("Director attention") %}
+    Queues and opening risks that need movement before writers feel them.
     {% end %}
     {% if cockpit_lanes %}
     <div class="elbysodic-director-grid" aria-label="Studio attention lanes">
@@ -859,7 +859,7 @@
 
   <section id="continuity-events" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="continuity-events-heading">
   {{ room_header("Continuity and events", "Canon pressure and director queue", "Track the guidebook, drafts, current event pressure, and map coverage that keep play moving.", "continuity-events-heading") }}
-  {% call section_header("Director Queue") %}
+  {% call section_header("Director queue") %}
   The most useful next places to look before opening an editor.
   {% end %}
 
@@ -978,7 +978,7 @@
   </section>
 
   {% if studio.current_event %}
-  {% call section_header("Current Event") %}
+  {% call section_header("Current event") %}
   The active canon pressure Studio should keep feeding into scenes, wants, and location copy.
   {% end %}
   {% call surface(variant="elevated") %}
