@@ -3956,7 +3956,6 @@ def _realm_gateway_scene_hubs(
                 board=board,
                 public_thread_count=public_thread_count,
                 emphasis=emphasis,
-                eyebrow=_realm_gateway_hub_eyebrow(board, emphasis),
                 summary=board.tagline or board.description or board.board_kind,
                 image_url=board.image_url,
                 image_alt=board.image_alt,
@@ -4036,18 +4035,6 @@ def _realm_gateway_hub_emphasis(
     return "normal"
 
 
-def _realm_gateway_hub_eyebrow(board: Board, emphasis: str) -> str:
-    if emphasis == "hot":
-        return "Hot scene hub"
-    if emphasis == "high_activity":
-        return "Active scene hub"
-    if emphasis == "featured":
-        return "Featured scene hub"
-    if board.board_kind == "community":
-        return "Social room"
-    return "Scene hub"
-
-
 def _realm_gateway_scene_previews(
     repo: ForumRepository,
     program: StudioNetworkProgramView,
@@ -4089,7 +4076,6 @@ def _realm_gateway_scene_previews(
                 summary=thread.summary or board.tagline or board.description,
                 href=_community_href(program, f"/boards/{board.slug}/threads/{thread.slug}"),
                 board_label=board.name,
-                status_label="Scene",
                 cast_label=f"{cast_count} face{'s' if cast_count != 1 else ''}",
             )
         )

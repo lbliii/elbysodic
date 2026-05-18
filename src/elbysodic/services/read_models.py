@@ -1969,7 +1969,6 @@ class RealmGatewaySceneHub:
     board: Board
     public_thread_count: int
     emphasis: str = "normal"
-    eyebrow: str = "Scene hub"
     summary: str = ""
     image_url: str | None = None
     image_alt: str = ""
@@ -1990,7 +1989,6 @@ class RealmGatewayScenePreview:
     summary: str
     href: str
     board_label: str
-    status_label: str
     cast_label: str
 
 

@@ -2174,7 +2174,6 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             assert "Breakfast Before The Vote" in gateway.premise_evolution.consequences
             assert "Reporter source at the club" in gateway.premise_evolution.next_openings
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
-        assert all(hub.eyebrow for hub in gateway.scene_hubs)
         assert all(
             hub.emphasis in {"normal", "featured", "hot", "high_activity"}
             for hub in gateway.scene_hubs
