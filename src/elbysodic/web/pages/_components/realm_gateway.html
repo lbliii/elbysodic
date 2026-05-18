@@ -57,6 +57,7 @@
 {% end %}
 
 {% def gateway_premise_stage(gateway) %}
+{% set premise_evolution = gateway | get("premise_evolution", none) %}
 <section class="elbysodic-realm-stage" aria-labelledby="realm-stage-title">
   <div>
     <p class="elbysodic-section-kicker">{{ gateway.premise_stage.label }}</p>
@@ -64,8 +65,21 @@
     <p>{{ gateway.premise_stage.summary }}</p>
   </div>
   <div class="elbysodic-realm-stage__pressure">
-    <strong>What it opens</strong>
-    <span>{{ gateway.premise_stage.playable_pressure }}</span>
+    {% if premise_evolution %}
+    <div>
+      <strong>What changed</strong>
+      <span>{{ premise_evolution.consequences }}</span>
+    </div>
+    <div>
+      <strong>Openings</strong>
+      <span>{{ premise_evolution.next_openings }}</span>
+    </div>
+    {% else %}
+    <div>
+      <strong>Openings</strong>
+      <span>{{ gateway.premise_stage.playable_pressure }}</span>
+    </div>
+    {% end %}
     {% if gateway.premise_stage.action %}
     {{ gateway_action(gateway.premise_stage.action, "secondary") }}
     {% end %}

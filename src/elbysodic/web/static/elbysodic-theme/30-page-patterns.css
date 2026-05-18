@@ -894,12 +894,18 @@
 .elbysodic-realm-stage__pressure {
     border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-border), transparent 20%);
     display: grid;
-    gap: var(--chirpui-space-2);
+    gap: var(--chirpui-space-3);
     padding-inline-start: var(--chirpui-space-4);
+}
+
+.elbysodic-realm-stage__pressure > div {
+    display: grid;
+    gap: 0.35rem;
 }
 
 .elbysodic-realm-stage__pressure strong {
     color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
 }
 
 .elbysodic-realm-stage__pressure span {

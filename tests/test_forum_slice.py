@@ -2215,7 +2215,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 content = _page_content(response.text)
 
                 assert response.status == 200
-                assert "What it opens" in content
+                assert "What changed" in content
+                assert "Openings" in content
                 assert "Start here" in content
                 assert "Play readiness" not in content
                 assert "Public preview" in content
@@ -2239,6 +2240,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert scene_hub in content
                 if community_slug == "harbor-society":
                     assert "Opening pressure" in content
+                    assert "Reporter source at the club" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
                 assert "Open roles and ties" in content
