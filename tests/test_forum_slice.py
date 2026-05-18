@@ -2983,6 +2983,7 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "Mystery and current chapters" not in root.text
         assert 'class="elbysodic-network-home-tile__rank"' in root.text
         assert "Rank 1" in root.text
+        assert '<span>5 wanted · 8 faces</span>' in root.text
         assert "Search by premise, pace, hooks, and chapters in motion." not in root.text
         assert "Search story fit" not in root.text
         assert 'class="elbysodic-topbar-search" action="/search"' in root.text

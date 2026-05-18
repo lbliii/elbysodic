@@ -163,7 +163,9 @@
     <span class="elbysodic-network-home-tile__shade" aria-hidden="true"></span>
     <span class="elbysodic-network-home-tile__copy">
       <strong>{{ program.community.name }}</strong>
+      {% if variant == "portrait" %}
       <span>{{ program.open_wanted_count }} wanted · {{ program.roster_count }} faces</span>
+      {% endif %}
     </span>
   </a>
 </article>
