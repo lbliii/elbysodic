@@ -142,6 +142,22 @@
 {% end %}
 {% end %}
 
+{% def gateway_account_status(gateway, account_visitor) %}
+{% if account_visitor %}
+<section class="elbysodic-realm-account-status" aria-label="Account access">
+  <div>
+    <p class="elbysodic-section-kicker">Signed in</p>
+    <h2>Not a member of {{ gateway.program.community.name }} yet</h2>
+    <p>{{ account_visitor.display_label }} can browse the public preview, then request access when this realm fits.</p>
+  </div>
+  <div class="chirpui-cluster">
+    <a class="chirpui-btn chirpui-btn--primary" href="{{ gateway.program.entry_href }}/request-access" hx-boost="false">Request access</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/network" data-elbysodic-global-link>Browse your realms</a>
+  </div>
+</section>
+{% end %}
+{% end %}
+
 {% def gateway_scene_hubs(gateway) %}
 {% if gateway.scene_hubs %}
 {% call gateway_section("Places", "In play", heading_id="realm-scene-hubs-title") %}
@@ -297,9 +313,10 @@
 {% end %}
 {% end %}
 
-{% def realm_gateway_home(gateway, viewer=None) %}
+{% def realm_gateway_home(gateway, viewer=None, account_visitor=None) %}
 <div class="elbysodic-realm-gateway">
   {{ gateway_hero(gateway) }}
+  {{ gateway_account_status(gateway, account_visitor) }}
   {{ gateway_continuation(gateway) }}
   {{ gateway_premise_stage(gateway) }}
   {{ gateway_scene_hubs(gateway) }}

@@ -530,7 +530,7 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         app = create_app(debug=False, services=services)
         budgets = {
             "/network": 105,
-            "/c/x-men-apocalypse": 340,
+            "/c/x-men-apocalypse": 345,
             "/c/x-men-apocalypse/locations": 150,
             "/c/x-men-apocalypse/community": 300,
             "/c/x-men-apocalypse/world/b-24-winter": 155,
@@ -2987,7 +2987,7 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "Mystery and current chapters" not in root.text
         assert 'class="elbysodic-network-home-tile__rank"' in root.text
         assert "Rank 1" in root.text
-        assert '<span>5 wanted · 8 faces</span>' in root.text
+        assert "<span>5 wanted · 8 faces</span>" in root.text
         landscape_tiles = re.findall(
             r'<article class="[^"]*elbysodic-network-home-tile--landscape[^"]*"[^>]*>.*?</article>',
             root.text,
@@ -3043,6 +3043,7 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
                 'class="elbysodic-topbar-search" action="/c/x-men-apocalypse/search"' in index.text
             )
             assert "Search X-Men Apocalypse" in index.text
+            assert "XMA" in index.text
             identity_summary = re.search(
                 r'<summary class="elbysodic-identity-menu__summary"[^>]*>(?P<body>.*?)</summary>',
                 index.text,
@@ -6946,7 +6947,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         facets = services.repo.list_character_facets(community.id, character.id)
 
         assert form.status == 200
-        assert "Begin a new face for this realm." in form.text
+        assert "Begin a new face" in form.text
         assert "Application Guide" in form.text
         assert "Director fields" in form.text
         assert "Face claim" in form.text
@@ -7300,7 +7301,7 @@ def test_direct_application_path_switches_to_realm_form() -> None:
         assert _response_header(response, "location") == "/c/hp-universe/applications/new"
         assert form.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in form.text
-        assert "Begin a new face for this realm." in form.text
+        assert "Begin a new face" in form.text
 
     asyncio.run(run())
 

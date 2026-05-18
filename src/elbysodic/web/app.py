@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -111,6 +112,7 @@ def create_app(
     app.template_global()(primary_nav_items)
     app.template_global()(shell_navigation)
     app.template_global()(shell_route_state)
+    app.template_global()(community_initials)
     if not security.production:
         app.template_global("csrf_field")(_empty_csrf_field)
         app.template_global("csrf_token")(_empty_csrf_token)
@@ -172,6 +174,13 @@ def _empty_csrf_field() -> str:
 
 def _empty_csrf_token() -> str:
     return ""
+
+
+def community_initials(name: object) -> str:
+    words = [word for word in re.split(r"[^A-Za-z0-9]+", str(name)) if word]
+    if not words:
+        return ""
+    return "".join(word[0] for word in words[:3]).upper()
 
 
 class RequestServicesCleanupMiddleware:

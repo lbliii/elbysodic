@@ -63,12 +63,13 @@ Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
 Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
-- `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`,
-  `/invite/{token}`, and static assets are public
+- `/health`, `/login`, `/logout`, `/`, `/network`, `/search`,
+  `/request-access`, `/invite/{token}`, and static assets are public
 - signed-out shared-host tenant preview routes are public for `GET`/`HEAD` only:
   `/c/{community}/`, `/c/{community}/world`,
-  `/c/{community}/world/{material_slug}`, `/c/{community}/wanted`, and
-  `/c/{community}/wanted/{wanted_slug}`
+  `/c/{community}/world/{material_slug}`, `/c/{community}/wanted`,
+  `/c/{community}/wanted/{wanted_slug}`, `/c/{community}/search`, and
+  `/c/{community}/request-access`
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
@@ -87,6 +88,12 @@ private or raw scene/thread activity, wanted interest notes, reserves, plotting
 room links, lifecycle controls, identity menus, unread counts, or any mutating
 forms. Raising interest, reserving, applying, replying, watching, and staff
 workflow actions still require a valid session and community-local membership.
+
+A signed-in account without a membership in the current community keeps the
+same public-safe preview boundary. The shell may identify the global account
+and offer request-access or network-return actions, but it must not render the
+community shell, Desk, active face, unread counts, private continuation, or
+staff controls.
 
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global

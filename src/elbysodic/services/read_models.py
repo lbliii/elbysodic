@@ -1762,6 +1762,21 @@ class StudioIdentityOption:
 
 
 @dataclass(frozen=True, slots=True)
+class AccountVisitorView:
+    user: User
+    current_community: Community | None
+    identity_options: list[StudioIdentityOption]
+
+    @property
+    def display_label(self) -> str:
+        return self.user.email
+
+    @property
+    def avatar_label(self) -> str:
+        return self.display_label[:1].upper()
+
+
+@dataclass(frozen=True, slots=True)
 class DevPersonaView:
     key: str
     label: str

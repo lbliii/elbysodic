@@ -16,7 +16,11 @@
     <span class="elbysodic-product-identity__name">Elbysodic</span>
   </div>
   {% call section_header("Request access") %}
+  {% if community is defined and community %}
+  {{ community.name }} is invite-only while its director controls first entry.
+  {% else %}
   Elbysodic is invite-only while the first realm opens.
+  {% end %}
   {% end %}
 
   {% call surface(variant="elevated") %}
@@ -28,7 +32,11 @@
       names, roles, roster ownership, and first faces start in the right realm.
     </p>
     <div class="elbysodic-access-panel__actions">
+      {% if account_visitor | default(none) %}
+      <a class="chirpui-btn chirpui-btn--primary" href="/network" data-elbysodic-global-link>Browse your realms</a>
+      {% else %}
       <a class="chirpui-btn chirpui-btn--primary" href="/login?next=/">Log in</a>
+      {% end %}
       <a class="chirpui-btn chirpui-btn--secondary" href="/network">Explore realms</a>
     </div>
   </div>

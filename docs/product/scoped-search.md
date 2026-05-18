@@ -35,6 +35,9 @@ surface's primary job.
 ## Visual Contract
 
 - Use one visible scope chip or label at the start of the control.
+- The full realm name is the primary scope label on roomy layouts. Compact
+  topbar layouts may show the realm monogram or initials such as `AA`, but the
+  accessible label and search results heading must still name the full realm.
 - Use a placeholder for examples, not instructions.
 - Keep the submit affordance compact; icon-only is acceptable once an
   accessible name is present.

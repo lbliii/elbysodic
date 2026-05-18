@@ -86,6 +86,7 @@ from elbysodic.services.applications import (
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
 from elbysodic.services.auth import (
+    SESSION_COOKIE,
     SESSION_TTL,
     LoginSession,
     create_login_session,
@@ -227,6 +228,7 @@ from elbysodic.services.read_models import (
     POST_PROFILE_VARIANTS,
     POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
+    AccountVisitorView,
     ActivityItem,
     ApplicationClaimCheck,
     ApplicationOnboarding,
@@ -595,8 +597,21 @@ class AppServices:
         self._membership_contexts_by_user.clear()
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
-        options: list[StudioIdentityOption] = []
         contexts = self._membership_contexts_for_user(identity.user_id)
+        return self._identity_options_for_contexts(
+            contexts,
+            current_community_id=identity.community_id,
+            current_membership_id=identity.membership_id,
+        )
+
+    def _identity_options_for_contexts(
+        self,
+        contexts: list[_MembershipContext],
+        *,
+        current_community_id: int | None,
+        current_membership_id: int | None,
+    ) -> list[StudioIdentityOption]:
+        options: list[StudioIdentityOption] = []
         unread_counts = _visible_unread_notification_counts(
             self.repo,
             [(context.community.id, context.membership, context.role) for context in contexts],
@@ -613,8 +628,8 @@ class AppServices:
                     current_character=context.current_character,
                     unread_notification_count=unread_counts.get(membership.id, 0),
                     is_current=(
-                        community.id == identity.community_id
-                        and membership.id == identity.membership_id
+                        community.id == current_community_id
+                        and membership.id == current_membership_id
                     ),
                 )
             )
@@ -625,6 +640,36 @@ class AppServices:
                 option.community.name,
                 option.membership.display_name,
                 option.membership.id,
+            ),
+        )
+
+    def account_visitor(
+        self,
+        request: object | None,
+        *,
+        current_community: Community | None = None,
+    ) -> AccountVisitorView | None:
+        """Return signed-in account posture without requiring a local membership."""
+
+        cookies = getattr(request, "cookies", None)
+        getter = getattr(cookies, "get", None)
+        if getter is None:
+            return None
+        token = getter(SESSION_COOKIE)
+        if token is None:
+            return None
+        session = session_for_session_token(self.repo, str(token))
+        if session is None:
+            return None
+        user = self.repo.get_user(session.user_id)
+        contexts = self._membership_contexts_for_user(user.id)
+        return AccountVisitorView(
+            user=user,
+            current_community=current_community,
+            identity_options=self._identity_options_for_contexts(
+                contexts,
+                current_community_id=session.selected_community_id,
+                current_membership_id=session.selected_membership_id,
             ),
         )
 
