@@ -302,8 +302,28 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
                 "/c/afterlight-accord",
                 headers={"Cookie": _cookie_header(cookies)},
             )
+            world = await client.get(
+                "/c/afterlight-accord/world",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            material = await client.get(
+                "/c/afterlight-accord/world/accord-seal-fails",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            wanted = await client.get(
+                "/c/afterlight-accord/wanted",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            wanted_detail = await client.get(
+                "/c/afterlight-accord/wanted/archive-thief",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
             search = await client.get(
                 "/c/afterlight-accord/search?q=seal",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            request_access = await client.get(
+                "/c/afterlight-accord/request-access",
                 headers={"Cookie": _cookie_header(cookies)},
             )
 
@@ -318,12 +338,21 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
         assert 'href="/c/afterlight-accord/desk"' not in response.text
         assert "playing as Orin Vale" not in response.text
 
+        for public_route in (world, material, wanted, wanted_detail, search, request_access):
+            assert public_route.status == 200
+            assert "Account menu: signed in as moira@example.com" in public_route.text
+            assert "Not a member of Afterlight Accord yet" in public_route.text
+            assert "elbysodic-anonymous-actions" not in public_route.text
+            assert "Log in to raise interest" not in public_route.text
+            assert 'href="/c/afterlight-accord/desk"' not in public_route.text
+            assert "playing as Orin Vale" not in public_route.text
+
         assert search.status == 200
         assert "Search Afterlight Accord" in search.text
-        assert "Account menu: signed in as moira@example.com" in search.text
         assert 'action="/c/afterlight-accord/search"' in search.text
         assert 'href="/search?q=seal"' in search.text
-        assert "playing as Orin Vale" not in search.text
+        assert "Archive thief with a sealed branch" in wanted_detail.text
+        assert "Access opens through a director invitation." in request_access.text
 
     asyncio.run(run())
 

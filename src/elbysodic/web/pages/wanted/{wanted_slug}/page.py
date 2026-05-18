@@ -137,6 +137,11 @@ def _render_wanted(request: Request, wanted_slug: str) -> Page:
         "wanted/{wanted_slug}/page.html",
         current_path=request.url,
         viewer=viewer,
+        account_visitor=(
+            None
+            if viewer is not None
+            else services.account_visitor(request, current_community=community)
+        ),
         community=community,
         wanted=wanted,
         show_community_shell=viewer is not None,
