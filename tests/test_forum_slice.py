@@ -2376,6 +2376,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Open roles and ties" not in content
                 assert "Wanted hook" not in content
                 assert "Scene hub" not in content
+                assert "Already in the room" not in content
+                assert "Ways to belong" not in content
                 assert "Current Chapter:" not in content
                 assert "Premise:" not in content
                 assert not any(copy in content for copy in boilerplate_copy)
@@ -2986,6 +2988,13 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert 'class="elbysodic-network-home-tile__rank"' in root.text
         assert "Rank 1" in root.text
         assert '<span>5 wanted · 8 faces</span>' in root.text
+        landscape_tiles = re.findall(
+            r'<article class="[^"]*elbysodic-network-home-tile--landscape[^"]*"[^>]*>.*?</article>',
+            root.text,
+            re.DOTALL,
+        )
+        assert landscape_tiles
+        assert not any("wanted ·" in tile or "faces</span>" in tile for tile in landscape_tiles)
         assert "Search by premise, pace, hooks, and chapters in motion." not in root.text
         assert "Search story fit" not in root.text
         assert 'class="elbysodic-topbar-search" action="/search"' in root.text
