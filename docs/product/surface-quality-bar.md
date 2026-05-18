@@ -133,6 +133,24 @@ Before adding any eyebrow, badge, metric label, helper line, or footer, answer:
 If not, remove it. Spend the space on more useful story copy or let the surface
 breathe.
 
+## Public Premise Stage Contract
+
+Public realm homes should describe the living premise as story motion, not as
+an internal `current chapter` label. The service-owned gateway contract should
+separate these ideas before a template renders:
+
+- **Premise:** the stable story promise or world condition.
+- **Inciting incident:** the public situation that makes the realm playable.
+- **Current pressure:** the event, chapter, or premise pressure active now.
+- **Consequences:** how that pressure is already moving through scenes, places,
+  wanted hooks, or cast relationships.
+- **Next openings:** what a visitor can read, answer, request, or join next.
+
+Templates may render concise labels such as `What changed` or `Openings`, but
+they should not prefix titles with `Current Chapter:` or `Premise:` once the
+section context is clear. Draft, staff-only, private, inactive, or cross-realm
+materials must not become public premise-stage copy.
+
 ## Visual QA Gate
 
 For substantial rendered UI work, browser QA is part of done:
