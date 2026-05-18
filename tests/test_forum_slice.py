@@ -2118,6 +2118,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert gateway.premise_stage.summary
         assert gateway.premise_stage.playable_pressure
         assert gateway.social_lanes
+        assert gateway.cast_members
         assert gateway.signals
         assert "Open calls" in {signal.title for signal in gateway.signals}
         assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
@@ -2185,6 +2186,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "What to know before a first face" in content
                 assert "Social lanes" in content
                 if community_slug == "harbor-society":
+                    assert "Cast" in content
+                    assert "Maris Vale" in content
+                    assert "August Reed" in content
                     assert "Family" in content
                     assert "Club Role" in content
                     assert "Business" in content
@@ -2341,6 +2345,7 @@ def test_realm_gateway_home_tolerates_missing_scene_previews(
             scene_hubs=gateway.scene_hubs,
             entry_paths=gateway.entry_paths,
             social_lanes=gateway.social_lanes,
+            cast_members=gateway.cast_members,
             wanted_previews=gateway.wanted_previews,
             continuation=gateway.continuation,
         )

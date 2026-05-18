@@ -274,6 +274,7 @@ from elbysodic.services.read_models import (
     PublicCatalogCard,
     RealmGatewayAction,
     RealmGatewayAtmosphere,
+    RealmGatewayCastMember,
     RealmGatewayContinuation,
     RealmGatewayEntryPath,
     RealmGatewayHero,
@@ -3530,6 +3531,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         curated_slots=gateway_slots[GATEWAY_SLOT_GUIDEBOOK_MATERIAL],
     )
     social_lanes = _realm_gateway_social_lanes(repo, community.id)
+    cast_members = _realm_gateway_cast_members(repo, community.id)
     wanted_previews = _realm_gateway_wanted_previews(
         repo,
         program,
@@ -3549,6 +3551,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         entry_paths=entry_paths,
         guidebook_previews=guidebook_previews,
         social_lanes=social_lanes,
+        cast_members=cast_members,
         wanted_previews=wanted_previews,
     )
 
@@ -4127,6 +4130,25 @@ def _realm_gateway_social_lanes(
         if len(lanes) >= limit:
             break
     return tuple(lanes)
+
+
+def _realm_gateway_cast_members(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    limit: int = 4,
+) -> tuple[RealmGatewayCastMember, ...]:
+    members = []
+    for character in repo.list_community_characters(community_id):
+        if character.application_status != "accepted":
+            continue
+        summary = character.tagline or character.summary
+        if not summary:
+            continue
+        members.append(RealmGatewayCastMember(character=character, summary=summary))
+        if len(members) >= limit:
+            break
+    return tuple(members)
 
 
 def _curated_wanted_ads(

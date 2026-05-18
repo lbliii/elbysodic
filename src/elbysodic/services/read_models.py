@@ -1925,6 +1925,25 @@ class RealmGatewaySocialLane:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayCastMember:
+    character: Character
+    summary: str
+
+    @property
+    def href(self) -> str:
+        return f"/characters/{self.character.slug}"
+
+    @property
+    def monogram(self) -> str:
+        parts = [part for part in self.character.name.split() if part]
+        if not parts:
+            return "?"
+        if len(parts) == 1:
+            return parts[0][:1].upper()
+        return "".join(part[:1] for part in parts[:2]).upper()
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewaySceneHub:
     board: Board
     public_thread_count: int
@@ -2004,6 +2023,7 @@ class RealmGatewayView:
     entry_paths: tuple[RealmGatewayEntryPath, ...]
     guidebook_previews: tuple[MaterialSummary, ...]
     social_lanes: tuple[RealmGatewaySocialLane, ...]
+    cast_members: tuple[RealmGatewayCastMember, ...]
     wanted_previews: tuple[RealmGatewayWantedPreview, ...]
     continuation: RealmGatewayContinuation | None = None
 

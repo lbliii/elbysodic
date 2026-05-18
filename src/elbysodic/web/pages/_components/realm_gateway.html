@@ -215,6 +215,31 @@
 {% end %}
 {% end %}
 
+{% def gateway_cast(gateway) %}
+{% if gateway.cast_members %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-cast-title">
+  {{ gateway_section_header("Cast", "Characters already shaping the room") }}
+  <div class="elbysodic-realm-cast-grid">
+    {% for member in gateway.cast_members %}
+    <a class="elbysodic-realm-cast-card" href="{{ member.href }}">
+      <span class="elbysodic-realm-cast-card__avatar">
+        {% if member.character.avatar_url %}
+        <img src="{{ member.character.avatar_url }}" alt="">
+        {% else %}
+        {{ member.monogram }}
+        {% end %}
+      </span>
+      <span>
+        <strong>{{ member.character.name }}</strong>
+        <small>{{ member.summary }}</small>
+      </span>
+    </a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
 {% def gateway_social_lanes(gateway) %}
 {% if gateway.social_lanes %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-social-title">
@@ -270,6 +295,7 @@
   {% if not viewer %}
   {{ gateway_entry_paths(gateway) }}
   {{ gateway_lore(gateway) }}
+  {{ gateway_cast(gateway) }}
   {{ gateway_social_lanes(gateway) }}
   {{ gateway_wanted(gateway) }}
   {% end %}
