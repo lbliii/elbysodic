@@ -14,6 +14,11 @@ from pathlib import Path
 from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.db import Database, ForumRepository, connect, create_schema
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
+from elbysodic.db.repositories.gateway import (
+    GATEWAY_SLOT_GUIDEBOOK_MATERIAL,
+    GATEWAY_SLOT_SCENE_HUB,
+    GATEWAY_SLOT_WANTED_HOOK,
+)
 from elbysodic.db.seed import (
     SEED_PERSONAS,
     DemoSeed,
@@ -48,6 +53,7 @@ from elbysodic.domain.models import (
     CharacterReserve,
     Community,
     CommunityDiscoveryProfile,
+    CommunityGatewaySlot,
     CommunityInvitation,
     CommunityMembership,
     Material,
@@ -3340,15 +3346,28 @@ def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board |
 def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmGatewayView:
     program = _public_studio_program(repo, community.slug)
     guidebook = _public_world_hub(repo, community.id)
+    gateway_slots = _gateway_slots_by_type(repo, community.id)
     profile = None
     with suppress(LookupError):
         profile = repo.get_discovery_profile(community.id)
     premise = _realm_gateway_premise(program, profile)
     atmosphere = _realm_gateway_atmosphere(program, guidebook)
-    scene_hubs = _realm_gateway_scene_hubs(repo, community.id)
+    scene_hubs = _realm_gateway_scene_hubs(
+        repo,
+        community.id,
+        curated_slots=gateway_slots[GATEWAY_SLOT_SCENE_HUB],
+    )
     scene_previews = _realm_gateway_scene_previews(repo, program)
     entry_paths = _realm_gateway_entry_paths(program, guidebook)
-    wanted_previews = _realm_gateway_wanted_previews(repo, program)
+    guidebook_previews = _realm_gateway_guidebook_previews(
+        guidebook,
+        curated_slots=gateway_slots[GATEWAY_SLOT_GUIDEBOOK_MATERIAL],
+    )
+    wanted_previews = _realm_gateway_wanted_previews(
+        repo,
+        program,
+        curated_slots=gateway_slots[GATEWAY_SLOT_WANTED_HOOK],
+    )
     return RealmGatewayView(
         program=program,
         guidebook=guidebook,
@@ -3359,6 +3378,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         scene_hubs=scene_hubs,
         scene_previews=scene_previews,
         entry_paths=entry_paths,
+        guidebook_previews=guidebook_previews,
         wanted_previews=wanted_previews,
     )
 
@@ -3574,14 +3594,14 @@ def _realm_gateway_scene_hubs(
     repo: ForumRepository,
     community_id: int,
     *,
+    curated_slots: tuple[CommunityGatewaySlot, ...] = (),
     limit: int = 4,
 ) -> tuple[RealmGatewaySceneHub, ...]:
+    curated_board_ids = {slot.target_id for slot in curated_slots}
     boards = [
         board
         for board in repo.list_boards(community_id)
-        if board.parent_board_id is None
-        and board.board_kind in {"location", "community"}
-        and not board.is_private
+        if _is_gateway_scene_hub_board(board, curated_board_ids)
     ]
     threads_by_board = repo.list_threads_for_boards(community_id, [board.id for board in boards])
     thread_counts = {
@@ -3624,7 +3644,41 @@ def _realm_gateway_scene_hubs(
         ),
         reverse=True,
     )
-    return tuple(ranked_hubs[:limit])
+    return _curated_scene_hubs(ranked_hubs, curated_slots, limit=limit)
+
+
+def _is_gateway_scene_hub_board(board: Board, curated_board_ids: set[int]) -> bool:
+    if board.is_private:
+        return False
+    if board.id in curated_board_ids:
+        return board.board_kind in {"location", "community", "sublocation"}
+    return board.parent_board_id is None and board.board_kind in {"location", "community"}
+
+
+def _curated_scene_hubs(
+    ranked_hubs: list[RealmGatewaySceneHub],
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    *,
+    limit: int,
+) -> tuple[RealmGatewaySceneHub, ...]:
+    hubs_by_board_id = {hub.board.id: hub for hub in ranked_hubs}
+    selected = []
+    selected_ids = set()
+    for slot in curated_slots:
+        hub = hubs_by_board_id.get(slot.target_id)
+        if hub is None or hub.board.id in selected_ids:
+            continue
+        selected.append(hub)
+        selected_ids.add(hub.board.id)
+        if len(selected) >= limit:
+            return tuple(selected)
+    for hub in ranked_hubs:
+        if hub.board.id in selected_ids:
+            continue
+        selected.append(hub)
+        if len(selected) >= limit:
+            break
+    return tuple(selected)
 
 
 def _realm_gateway_hub_rank(emphasis: str) -> int:
@@ -3773,11 +3827,12 @@ def _realm_gateway_wanted_previews(
     repo: ForumRepository,
     program: StudioNetworkProgramView,
     *,
+    curated_slots: tuple[CommunityGatewaySlot, ...] = (),
     limit: int = 3,
 ) -> tuple[RealmGatewayWantedPreview, ...]:
     wanted_ads = repo.list_wanted_ads(program.community.id, status="open")
     previews = []
-    for wanted_ad in wanted_ads[:limit]:
+    for wanted_ad in wanted_ads:
         summary = _public_wanted_ad_summary(repo, program.community.id, wanted_ad)
         previews.append(
             RealmGatewayWantedPreview(
@@ -3790,7 +3845,86 @@ def _realm_gateway_wanted_previews(
                 ),
             )
         )
-    return tuple(previews)
+    return _curated_wanted_previews(previews, wanted_ads, curated_slots, limit=limit)
+
+
+def _realm_gateway_guidebook_previews(
+    guidebook: WorldHub,
+    *,
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    limit: int = 4,
+) -> tuple[MaterialSummary, ...]:
+    materials = [*guidebook.featured, *guidebook.events, *guidebook.guides]
+    return _curated_material_previews(materials, curated_slots, limit=limit)
+
+
+def _curated_wanted_previews(
+    previews: list[RealmGatewayWantedPreview],
+    wanted_ads: list[WantedAd],
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    *,
+    limit: int,
+) -> tuple[RealmGatewayWantedPreview, ...]:
+    preview_by_wanted_id = {
+        wanted_ad.id: preview for wanted_ad, preview in zip(wanted_ads, previews, strict=True)
+    }
+    selected = []
+    selected_ids = set()
+    for slot in curated_slots:
+        preview = preview_by_wanted_id.get(slot.target_id)
+        if preview is None or slot.target_id in selected_ids:
+            continue
+        selected.append(preview)
+        selected_ids.add(slot.target_id)
+        if len(selected) >= limit:
+            return tuple(selected)
+    for wanted_ad, preview in zip(wanted_ads, previews, strict=True):
+        if wanted_ad.id in selected_ids:
+            continue
+        selected.append(preview)
+        if len(selected) >= limit:
+            break
+    return tuple(selected)
+
+
+def _curated_material_previews(
+    materials: list[MaterialSummary],
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    *,
+    limit: int,
+) -> tuple[MaterialSummary, ...]:
+    materials_by_id = {item.material.id: item for item in materials}
+    selected = []
+    selected_ids = set()
+    for slot in curated_slots:
+        item = materials_by_id.get(slot.target_id)
+        if item is None or item.material.id in selected_ids:
+            continue
+        selected.append(item)
+        selected_ids.add(item.material.id)
+        if len(selected) >= limit:
+            return tuple(selected)
+    for item in materials:
+        if item.material.id in selected_ids:
+            continue
+        selected.append(item)
+        if len(selected) >= limit:
+            break
+    return tuple(selected)
+
+
+def _gateway_slots_by_type(
+    repo: ForumRepository,
+    community_id: int,
+) -> dict[str, tuple[CommunityGatewaySlot, ...]]:
+    slots_by_type: dict[str, list[CommunityGatewaySlot]] = {
+        GATEWAY_SLOT_SCENE_HUB: [],
+        GATEWAY_SLOT_WANTED_HOOK: [],
+        GATEWAY_SLOT_GUIDEBOOK_MATERIAL: [],
+    }
+    for slot in repo.list_community_gateway_slots(community_id):
+        slots_by_type.setdefault(slot.slot_type, []).append(slot)
+    return {slot_type: tuple(slots) for slot_type, slots in slots_by_type.items()}
 
 
 def _realm_gateway_continuation(

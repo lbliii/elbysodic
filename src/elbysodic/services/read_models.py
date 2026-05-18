@@ -1933,6 +1933,7 @@ class RealmGatewayView:
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
     scene_previews: tuple[RealmGatewayScenePreview, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
+    guidebook_previews: tuple[MaterialSummary, ...]
     wanted_previews: tuple[RealmGatewayWantedPreview, ...]
     continuation: RealmGatewayContinuation | None = None
 

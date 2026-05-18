@@ -2371,6 +2371,143 @@ def test_public_realm_gateway_ranks_active_scene_hubs_before_limit() -> None:
     assert len(gateway.scene_hubs) == 4
 
 
+def test_public_realm_gateway_uses_curated_slots_before_fallbacks() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = repo.create_community("curated-gateway", "Curated Gateway")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("curated-gateway@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "curated-director",
+        "Curated Director",
+    )
+    repo.create_material(
+        community.id,
+        "premise",
+        "Curated Gateway Premise",
+        material_type="premise",
+        summary="A public premise for curated gateway slots.",
+    )
+    boards = [
+        repo.create_board(
+            community.id,
+            f"gateway-hub-{index}",
+            f"Gateway Hub {index}",
+            tagline=f"Gateway hub {index} scene pressure.",
+            sort_order=index,
+        )
+        for index in range(5)
+    ]
+    stale_board = repo.create_board(
+        community.id,
+        "stale-gateway-hub",
+        "Stale Gateway Hub",
+        tagline="This place should disappear when made private.",
+    )
+    wanted_ads = [
+        repo.create_wanted_ad(
+            community.id,
+            membership.id,
+            f"gateway-hook-{index}",
+            f"Gateway Hook {index}",
+            summary=f"Gateway hook {index} wants a first face.",
+        )
+        for index in range(5)
+    ]
+    stale_wanted = repo.create_wanted_ad(
+        community.id,
+        membership.id,
+        "stale-gateway-hook",
+        "Stale Gateway Hook",
+        summary="This hook should disappear when archived.",
+    )
+    materials = [
+        repo.create_material(
+            community.id,
+            f"gateway-guide-{index}",
+            f"Gateway Guide {index}",
+            summary=f"Gateway guide {index} grounds a first face.",
+            sort_order=index,
+        )
+        for index in range(5)
+    ]
+    stale_material = repo.create_material(
+        community.id,
+        "stale-gateway-guide",
+        "Stale Gateway Guide",
+        summary="This guide should disappear when drafted.",
+    )
+    repo.update_community_launch_status(community.id, "public-preview")
+
+    repo.create_community_gateway_slot(community.id, "scene_hub", stale_board.id, position=1)
+    repo.create_community_gateway_slot(community.id, "scene_hub", boards[4].id, position=2)
+    repo.create_community_gateway_slot(community.id, "wanted_hook", stale_wanted.id, position=1)
+    repo.create_community_gateway_slot(community.id, "wanted_hook", wanted_ads[4].id, position=2)
+    repo.create_community_gateway_slot(
+        community.id,
+        "guidebook_material",
+        stale_material.id,
+        position=1,
+    )
+    repo.create_community_gateway_slot(
+        community.id,
+        "guidebook_material",
+        materials[4].id,
+        position=2,
+    )
+    repo.update_board(
+        community.id,
+        stale_board.id,
+        name=stale_board.name,
+        description=stale_board.description,
+        tagline=stale_board.tagline,
+        sort_order=stale_board.sort_order,
+        board_kind=stale_board.board_kind,
+        is_private=True,
+    )
+    repo.update_wanted_ad_status(community.id, stale_wanted.id, "archived")
+    repo.update_material(
+        community.id,
+        stale_material.id,
+        title=stale_material.title,
+        material_type=stale_material.material_type,
+        summary=stale_material.summary,
+        body=stale_material.body,
+        status="draft",
+        sort_order=stale_material.sort_order,
+        is_featured=stale_material.is_featured,
+    )
+
+    gateway = services.public_realm_gateway(community.slug)
+
+    assert gateway.scene_hubs[0].board.id == boards[4].id
+    assert gateway.wanted_previews[0].title == wanted_ads[4].title
+    assert gateway.guidebook_previews[0].material.id == materials[4].id
+    assert all(hub.board.id != stale_board.id for hub in gateway.scene_hubs)
+    assert all(preview.title != stale_wanted.title for preview in gateway.wanted_previews)
+    assert all(item.material.id != stale_material.id for item in gateway.guidebook_previews)
+
+    async def run() -> None:
+        app = create_app(debug=False, services=AppServices(services.repo, None))
+        async with TestClient(app) as client:
+            response = await client.get("/c/curated-gateway")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert content.index("Gateway Hub 4") < content.index("Gateway Hub 0")
+            assert content.index("Gateway Hook 4") < content.index("Gateway Hook 0")
+            assert "Gateway Guide 4" in content
+            assert "Gateway Guide 0" in content
+            assert "Stale Gateway Hub" not in content
+            assert "Stale Gateway Hook" not in content
+            assert "Stale Gateway Guide" not in content
+
+    asyncio.run(run())
+
+
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
     async def run() -> None:
         app = _app()

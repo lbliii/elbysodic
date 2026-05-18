@@ -175,7 +175,21 @@
 {% end %}
 
 {% def gateway_guidebook(gateway) %}
-{% if gateway.guidebook.featured or gateway.guidebook.events %}
+{% set guidebook_previews = gateway | get("guidebook_previews", ()) %}
+{% if guidebook_previews %}
+<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-guide-title">
+  {{ gateway_section_header("Start here", "Premise, current chapters, and public guidebook") }}
+  <div class="elbysodic-material-grid">
+    {% for item in guidebook_previews %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
+      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+  </div>
+</section>
+{% elif gateway.guidebook.featured or gateway.guidebook.events %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-guide-title">
   {{ gateway_section_header("Start here", "Premise, current chapters, and public guidebook") }}
   <div class="elbysodic-material-grid">
