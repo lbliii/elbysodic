@@ -1,6 +1,6 @@
 # Community Hub Editorial Iteration
 
-Status: planned next iteration after gateway cleanup and surface-quality doctrine
+Status: implementation wave landed; monitor preview feedback before archive
 Owner: Product design, Writer Network, Realm Studio, service, web, storage/seed,
 tests, and surface-contract stewardship
 Created: 2026-05-18
@@ -290,11 +290,8 @@ Initial Harbor Society seed audit on 2026-05-18:
 - 4 claim types cover face, family, club role, and business lanes.
 - 4 scene hubs render through the gateway.
 - 3 wanted previews render through the gateway.
-- 0 scene previews currently render because the seeded starter scenes are
-  `active` while the current gateway preview helper only admits `open` public
-  threads. Task 6 should resolve this deliberately by either seeding preview
-  candidates with the accepted public-open state or broadening the read model
-  after a product decision about `active` versus `open` public scenes.
+- Public active/open scenes now render after the gateway read model was
+  broadened to public, unlocked scene threads without exposing private rooms.
 
 Schema review is deferred until at least Task 2 or Task 3 proves a stable
 missing concept. Candidate future fields:
@@ -349,16 +346,13 @@ User Panel Synthesis:
 
 ## Validation
 
-Plan-only proof:
+Implementation proof from this wave:
 
-- `git diff --check`
-
-Expected implementation gates:
-
-- `uv run ruff check .`
+- `uv run ruff check src/elbysodic/services/read_models.py src/elbysodic/services/forum.py tests/test_forum_slice.py scripts/browser_qa.py`
 - `uv run ruff format . --check`
 - `uv run pytest tests/test_forum_slice.py -q --tb=short -k "gateway or original_premise"`
 - `uv run pytest tests/test_web_security.py tests/test_tenant_repository.py -q --tb=short`
 - `uv run ty check src/elbysodic/ tests/`
 - `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
-- Browser QA against Harbor Society desktop/mobile and two archetype variants.
+- `make changelog-check`
+- `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8002 --profile community-hub --artifact-dir /private/tmp/elbysodic-community-hub-qa`

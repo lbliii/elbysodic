@@ -218,6 +218,42 @@ Deferred:
 - Reserve and claim rows remain deferred until they are backed by an explicit
   notification or deadline service contract.
 
+## Community Hub Editorial QA
+
+Date: 2026-05-18
+
+Scope: browser smoke and screenshot review for the public community hub
+editorial iteration, focused on Harbor Society and original-premise discovery
+variants.
+
+Verified:
+
+- `community-hub` browser profile passes on desktop and mobile for public
+  network searches plus Harbor Society, Signal Creek, Nocturne Row, and
+  Wayfarer Station.
+- Harbor Society first viewport now sells genre, access posture, writing fit,
+  premise pressure, open calls, and the current story without readiness metrics.
+- Public places, scenes, entry paths, lore, cast, social lanes, and wanted hooks
+  render without repeated child labels such as `Scene hub`, `Wanted hook`, or
+  `Current Chapter:` stacks.
+- Active public scene threads appear in the visitor surface while private and
+  locked routes remain out of the public read model.
+- Desktop and mobile screenshots avoid horizontal overflow, broken media, and
+  topbar height regressions.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-community-hub-qa/desktop-harbor-society-c-harbor-society.png`
+- `/private/tmp/elbysodic-community-hub-qa/mobile-harbor-society-c-harbor-society.png`
+- `/private/tmp/elbysodic-community-hub-qa/desktop-signal-creek-c-signal-creek.png`
+- `/private/tmp/elbysodic-community-hub-qa/mobile-wayfarer-station-c-wayfarer-station.png`
+
+Deferred:
+
+- Real user observation is still needed before archiving the iteration plan.
+- Richer director-authored premise-stage schema remains deferred until the
+  material-backed read model shows a concrete gap.
+
 ## Community Premise Gateway QA
 
 Date: 2026-05-16
