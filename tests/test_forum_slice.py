@@ -9282,6 +9282,8 @@ def test_theme_stylesheet_is_loaded_and_theme_aware() -> None:
             stylesheet_text = await _stylesheet_text_with_imports(client)
             assert '[data-theme="light"]' in stylesheet_text
             assert '[data-theme="system"]' in stylesheet_text
+            assert ".elbysodic-realm-cast-card__copy" in stylesheet_text
+            assert "padding-inline-start: 0.15rem;" in stylesheet_text
 
     asyncio.run(run())
 

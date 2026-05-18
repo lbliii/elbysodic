@@ -1136,8 +1136,8 @@
 .elbysodic-realm-cast-card {
     align-items: center;
     color: inherit;
+    column-gap: var(--chirpui-space-4);
     display: grid;
-    gap: var(--chirpui-space-3);
     grid-template-columns: auto minmax(0, 1fr);
     min-inline-size: 0;
     padding-block: 0.2rem;
@@ -1174,6 +1174,7 @@
     display: grid;
     gap: 0.15rem;
     min-inline-size: 0;
+    padding-inline-start: 0.15rem;
 }
 
 .elbysodic-realm-cast-card strong {
