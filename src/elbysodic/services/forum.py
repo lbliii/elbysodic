@@ -3653,9 +3653,7 @@ def _realm_gateway_story_frame(
     rating_parts = []
     if profile is not None:
         rating_parts.extend(
-            label
-            for label in (profile.age_rating.strip(), profile.content_rating.strip())
-            if label
+            label for label in (profile.age_rating.strip(), profile.content_rating.strip()) if label
         )
     rating_label = " / ".join(rating_parts) if rating_parts else "Rating set by directors"
     cadence_label = (
@@ -3720,9 +3718,7 @@ def _realm_gateway_stage_pressure(
     stage_title: str,
 ) -> str:
     if program.open_wanted_count:
-        return (
-            f"Open calls, public places, and first-face ties can enter through {stage_title}."
-        )
+        return f"Open calls, public places, and first-face ties can enter through {stage_title}."
     return premise.onboarding_pitch
 
 
