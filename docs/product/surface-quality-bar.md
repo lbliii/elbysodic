@@ -141,6 +141,37 @@ Gateway examples:
 - Use `Founders Gala`; do not render `Current Chapter: Founders Gala` once the
   section already establishes the premise stage.
 
+## Gateway Component Doctrine
+
+Public community gateways are story-selling surfaces first. They should behave
+like a readable poster, a current premise brief, and an entry map without
+exposing the scaffolding that produced them.
+
+Use the shared gateway primitives in
+`src/elbysodic/web/pages/_components/realm_gateway.html` before adding
+page-local markup. A gateway section owns its title, orientation, spacing, and
+ARIA label. Child cards should only supply the story object itself: name,
+one useful sentence, optional media, and a clear next action when needed.
+
+Gateway components follow these rules:
+
+- The parent section names the object class. Children in a homogeneous section
+  do not repeat that class as `Scene hub`, `Wanted hook`, `Guidebook path`,
+  `public threads`, or readiness labels.
+- Child labels are allowed only when they distinguish unlike choices in the
+  same set, such as `connection`, `rival`, or `family`, and they must be quieter
+  than the title.
+- Supporting copy must sound like story context a visitor can use, not internal
+  planning notes such as `public scenes carrying the premise` or `ways in
+  before a writer has a face here`.
+- Section rules belong in the component or service contract. Do not solve a
+  repeated gateway problem with one-off page CSS or template branches.
+- Spacing uses Chirp-UI tokens or explicit local values already justified by
+  the pattern. Do not introduce undefined `--chirpui-*` custom properties.
+- Color can carry faction, claim, or lane meaning, but the card still needs
+  breathing room, clear text hierarchy, and enough contrast in light and dark
+  modes.
+
 ## Public Premise Stage Contract
 
 Public realm homes should describe the living premise as story motion, not as
