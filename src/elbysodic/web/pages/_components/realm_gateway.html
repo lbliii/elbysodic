@@ -220,7 +220,7 @@
 {% def gateway_cast(gateway) %}
 {% if gateway.cast_members %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-cast-title">
-  {{ gateway_section_header("Cast", "Characters already shaping the room") }}
+  {{ gateway_section_header("Cast", "Already in the room") }}
   <div class="elbysodic-realm-cast-grid">
     {% for member in gateway.cast_members %}
     <a class="elbysodic-realm-cast-card" href="{{ member.href }}">
@@ -231,7 +231,7 @@
         {{ member.monogram }}
         {% end %}
       </span>
-      <span>
+      <span class="elbysodic-realm-cast-card__copy">
         <strong>{{ member.character.name }}</strong>
         <small>{{ member.summary }}</small>
       </span>

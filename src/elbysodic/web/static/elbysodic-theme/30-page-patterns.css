@@ -1048,18 +1048,33 @@
 .elbysodic-realm-cast-grid {
     display: grid;
     gap: var(--chirpui-space-3);
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 }
 
 .elbysodic-realm-cast-card {
     align-items: center;
+    background: color-mix(in srgb, var(--chirpui-surface) 62%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 54%, transparent);
+    border-radius: var(--chirpui-radius-sm);
     color: inherit;
     display: grid;
     gap: var(--chirpui-space-4);
     grid-template-columns: auto minmax(0, 1fr);
+    min-block-size: 4.75rem;
     min-inline-size: 0;
-    padding-inline-end: var(--chirpui-space-2);
+    padding: 0.75rem 0.9rem;
     text-decoration: none;
+    transition:
+        background-color var(--elbysodic-motion-feedback),
+        border-color var(--elbysodic-motion-feedback),
+        transform var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-realm-cast-card:hover,
+.elbysodic-realm-cast-card:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-surface) 82%, var(--elbysodic-identity-dye));
+    border-color: color-mix(in srgb, var(--elbysodic-identity-dye) 38%, var(--chirpui-border));
+    transform: translateY(-1px);
 }
 
 .elbysodic-realm-cast-card__avatar {
@@ -1083,8 +1098,15 @@
     object-fit: cover;
 }
 
+.elbysodic-realm-cast-card__copy {
+    display: grid;
+    gap: 0.15rem;
+    min-inline-size: 0;
+}
+
 .elbysodic-realm-cast-card strong {
     color: var(--chirpui-text);
+    line-height: 1.16;
 }
 
 .elbysodic-realm-cast-card small {
@@ -1092,7 +1114,7 @@
     display: block;
     font-size: var(--chirpui-font-sm);
     line-height: 1.45;
-    margin-block-start: 0.2rem;
+    margin: 0;
 }
 
 .elbysodic-realm-gateway-section {
