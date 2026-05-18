@@ -57,6 +57,12 @@ def _response_header(response: Any, name: str) -> str:
     raise AssertionError(f"response header not found: {name}")
 
 
+def _csrf_token(html: str) -> str:
+    match = re.search(r'name="_csrf_token" value="([^"]+)"', html)
+    assert match is not None
+    return match.group(1)
+
+
 async def _stylesheet_text_with_imports(
     client: TestClient,
     path: str = "/elbysodic-static/elbysodic-theme.css",
@@ -2504,6 +2510,70 @@ def test_public_realm_gateway_uses_curated_slots_before_fallbacks() -> None:
             assert "Stale Gateway Hub" not in content
             assert "Stale Gateway Hook" not in content
             assert "Stale Gateway Guide" not in content
+
+    asyncio.run(run())
+
+
+def test_studio_gateway_curation_updates_public_home_slots() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        )
+        community = staff.community
+        board = services.repo.get_board_by_slug(community.id, "danger-room")
+        wanted = services.repo.get_wanted_ad_by_slug(
+            community.id,
+            "human-un-liaison-for-b24",
+        )
+        material = services.repo.get_material_by_slug(community.id, "b-24-winter")
+        app = create_app(debug=False, services=staff_services)
+
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+            save = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "gateway_curation",
+                        "scene_hub_target_id": str(board.id),
+                        f"scene_hub_position_{board.id}": "1",
+                        "wanted_hook_target_id": str(wanted.id),
+                        f"wanted_hook_position_{wanted.id}": "1",
+                        "guidebook_material_target_id": str(material.id),
+                        f"guidebook_material_position_{material.id}": "1",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            updated_studio = await client.get("/studio")
+            home = await client.get("/c/x-men-apocalypse")
+
+        assert studio.status == 200
+        assert "Gateway curation" in studio.text
+        assert "Danger Room" in studio.text
+        assert "Human UN liaison for B-24 talks" in studio.text
+        assert "B-24 Winter" in studio.text
+        assert save.status == 302
+        assert _response_header(save, "location") == "/studio#gateway-curation"
+
+        slots = services.repo.list_community_gateway_slots(community.id)
+        assert {(slot.slot_type, slot.target_id, slot.position) for slot in slots} >= {
+            ("scene_hub", board.id, 10),
+            ("wanted_hook", wanted.id, 10),
+            ("guidebook_material", material.id, 10),
+        }
+        assert re.search(
+            rf'name="scene_hub_target_id"\s+value="{board.id}"\s+checked',
+            updated_studio.text,
+        )
+        assert home.status == 200
+        gateway = staff_services.public_realm_gateway(community.slug)
+        assert gateway.scene_hubs[0].board.id == board.id
+        assert gateway.wanted_previews[0].title == wanted.title
+        assert gateway.guidebook_previews[0].material.id == material.id
 
     asyncio.run(run())
 

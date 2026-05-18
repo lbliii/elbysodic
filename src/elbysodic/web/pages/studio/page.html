@@ -110,6 +110,41 @@
 </fieldset>
 {% end %}
 
+{% def gateway_curation_section(section, field_name, position_prefix) %}
+<fieldset class="elbysodic-gateway-curation-section">
+  <legend>{{ section.title }}</legend>
+  <p>{{ section.summary }}</p>
+  {% if section.choices %}
+  <div class="elbysodic-gateway-curation-list">
+    {% for choice in section.choices %}
+    <label class="elbysodic-gateway-curation-choice">
+      <input type="checkbox"
+             name="{{ field_name }}"
+             value="{{ choice.target_id }}"
+             {% if choice.is_selected %}checked{% end %}>
+      <span class="elbysodic-gateway-curation-choice__copy">
+        <strong>{{ choice.title }}</strong>
+        <small>{{ choice.summary }}</small>
+        <a class="chirpui-link" href="{{ choice.href }}">Preview</a>
+      </span>
+      <span class="chirpui-field chirpui-field--outlined chirpui-field--dense elbysodic-gateway-curation-choice__position">
+        <span class="chirpui-field__label">Order</span>
+        <input class="chirpui-field__input"
+               type="number"
+               min="1"
+               step="1"
+               name="{{ position_prefix }}{{ choice.target_id }}"
+               value="{{ choice.position_value }}">
+      </span>
+    </label>
+    {% end %}
+  </div>
+  {% else %}
+  <p class="elbysodic-empty-state">No eligible items are public right now.</p>
+  {% end %}
+</fieldset>
+{% end %}
+
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
@@ -166,6 +201,30 @@
     {{ empty_policy_block("No director queues need attention right now.", "Studio subrooms stay available in the shell when you need to edit structure, intake, appearance, or materials.", "Production calm") }}
     {% end %}
   </section>
+
+  {% if studio.can_manage %}
+  <section id="gateway-curation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="gateway-curation-heading">
+  {{ room_header("Community home", "Gateway curation", "Choose the public scene hubs, wanted hooks, and guidebook pages that should lead first-face browsing.", "gateway-curation-heading") }}
+  {% call surface(variant="elevated") %}
+  <form class="chirpui-stack chirpui-stack--md" method="post">
+    {{ csrf_field() }}
+    <input type="hidden" name="intent" value="gateway_curation">
+    {% if error %}
+    <p class="elbysodic-form-error">{{ error }}</p>
+    {% end %}
+    <div class="elbysodic-gateway-curation-grid">
+      {{ gateway_curation_section(studio.gateway_curation.scene_hubs, "scene_hub_target_id", "scene_hub_position_") }}
+      {{ gateway_curation_section(studio.gateway_curation.wanted_hooks, "wanted_hook_target_id", "wanted_hook_position_") }}
+      {{ gateway_curation_section(studio.gateway_curation.guidebook_materials, "guidebook_material_target_id", "guidebook_material_position_") }}
+    </div>
+    <div class="chirpui-cluster">
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Save gateway curation</button>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview home</a>
+    </div>
+  </form>
+  {% end %}
+  </section>
+  {% end %}
 
   {% if not studio.can_manage %}
   <aside class="elbysodic-notice elbysodic-notice--staff" aria-label="Staff preview">

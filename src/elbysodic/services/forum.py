@@ -250,6 +250,9 @@ from elbysodic.services.read_models import (
     FacetTag,
     FirstRealmSetupResult,
     ForumView,
+    GatewayCurationChoice,
+    GatewayCurationEditor,
+    GatewayCurationSection,
     LocationNavigationGroup,
     MaterialDetail,
     MaterialSummary,
@@ -1968,6 +1971,13 @@ class AppServices:
         claims = _claims_directory(self.repo, viewer)
         return DirectorStudio(
             can_manage=can_manage_studio,
+            gateway_curation=_gateway_curation_editor(
+                self.repo,
+                viewer,
+                board_summaries=board_summaries,
+                materials=materials,
+                wanted_ads=wanted_ads,
+            ),
             launch_readiness=_realm_launch_readiness(
                 viewer=viewer,
                 board_taxonomy=board_taxonomy,
@@ -2010,6 +2020,35 @@ class AppServices:
             open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
             applications=applications,
             claims=claims,
+        )
+
+    def update_gateway_curation(
+        self,
+        *,
+        scene_hub_target_ids: list[int],
+        wanted_hook_target_ids: list[int],
+        guidebook_material_target_ids: list[int],
+    ) -> None:
+        viewer = self.viewer()
+        if not (
+            policies.can_manage_world(viewer.membership, viewer.role)
+            or policies.can_manage_casting(viewer.membership, viewer.role)
+        ):
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage gateway")
+        self.repo.replace_community_gateway_slots(
+            viewer.community.id,
+            GATEWAY_SLOT_SCENE_HUB,
+            [(target_id, "") for target_id in scene_hub_target_ids],
+        )
+        self.repo.replace_community_gateway_slots(
+            viewer.community.id,
+            GATEWAY_SLOT_WANTED_HOOK,
+            [(target_id, "") for target_id in wanted_hook_target_ids],
+        )
+        self.repo.replace_community_gateway_slots(
+            viewer.community.id,
+            GATEWAY_SLOT_GUIDEBOOK_MATERIAL,
+            [(target_id, "") for target_id in guidebook_material_target_ids],
         )
 
     def update_default_theme(
@@ -3340,6 +3379,130 @@ def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board |
             if board.board_kind in {"location", "community"} and not board.is_private
         ),
         None,
+    )
+
+
+def _gateway_curation_editor(
+    repo: ForumRepository,
+    viewer: ForumView,
+    *,
+    board_summaries: list[BoardSummary],
+    materials: list[MaterialSummary],
+    wanted_ads: list[WantedAdSummary],
+) -> GatewayCurationEditor:
+    gateway_slots = _gateway_slots_by_type(repo, viewer.community.id)
+    return GatewayCurationEditor(
+        scene_hubs=_gateway_curation_scene_hubs(
+            viewer.community.slug,
+            board_summaries,
+            gateway_slots[GATEWAY_SLOT_SCENE_HUB],
+        ),
+        wanted_hooks=_gateway_curation_wanted_hooks(
+            viewer.community.slug,
+            wanted_ads,
+            gateway_slots[GATEWAY_SLOT_WANTED_HOOK],
+        ),
+        guidebook_materials=_gateway_curation_guidebook_materials(
+            viewer.community.slug,
+            materials,
+            gateway_slots[GATEWAY_SLOT_GUIDEBOOK_MATERIAL],
+        ),
+    )
+
+
+def _gateway_curation_scene_hubs(
+    community_slug: str,
+    board_summaries: list[BoardSummary],
+    slots: tuple[CommunityGatewaySlot, ...],
+) -> GatewayCurationSection:
+    slots_by_target_id = {slot.target_id: slot for slot in slots}
+    choices = []
+    for index, summary in enumerate(
+        item
+        for item in board_summaries
+        if not item.board.is_private
+        and item.board.board_kind in {"location", "community", "sublocation"}
+    ):
+        slot = slots_by_target_id.get(summary.board.id)
+        choices.append(
+            GatewayCurationChoice(
+                target_id=summary.board.id,
+                title=summary.board.name,
+                summary=summary.board.tagline or summary.board.description or summary.kind_label,
+                href=f"/c/{community_slug}/boards/{summary.board.slug}",
+                is_selected=slot is not None,
+                position_value=slot.position if slot is not None else (index + 1) * 10,
+                slot=slot,
+            )
+        )
+    return GatewayCurationSection(
+        slot_type=GATEWAY_SLOT_SCENE_HUB,
+        title="Scene hubs",
+        summary="Public places or community rooms that should lead the home page.",
+        choices=tuple(choices),
+    )
+
+
+def _gateway_curation_wanted_hooks(
+    community_slug: str,
+    wanted_ads: list[WantedAdSummary],
+    slots: tuple[CommunityGatewaySlot, ...],
+) -> GatewayCurationSection:
+    slots_by_target_id = {slot.target_id: slot for slot in slots}
+    choices = []
+    for index, summary in enumerate(
+        item for item in wanted_ads if item.wanted_ad.status == "open"
+    ):
+        slot = slots_by_target_id.get(summary.wanted_ad.id)
+        choices.append(
+            GatewayCurationChoice(
+                target_id=summary.wanted_ad.id,
+                title=summary.wanted_ad.title,
+                summary=summary.wanted_ad.summary or summary.type_label,
+                href=f"/c/{community_slug}/wanted/{summary.wanted_ad.slug}",
+                is_selected=slot is not None,
+                position_value=slot.position if slot is not None else (index + 1) * 10,
+                slot=slot,
+            )
+        )
+    return GatewayCurationSection(
+        slot_type=GATEWAY_SLOT_WANTED_HOOK,
+        title="Wanted hooks",
+        summary="Open calls that give a new writer a first face path.",
+        choices=tuple(choices),
+    )
+
+
+def _gateway_curation_guidebook_materials(
+    community_slug: str,
+    materials: list[MaterialSummary],
+    slots: tuple[CommunityGatewaySlot, ...],
+) -> GatewayCurationSection:
+    slots_by_target_id = {slot.target_id: slot for slot in slots}
+    choices = []
+    for index, summary in enumerate(
+        item
+        for item in materials
+        if item.material.status == "published"
+        and item.material.material_type in {"premise", "guide", "factions", "event"}
+    ):
+        slot = slots_by_target_id.get(summary.material.id)
+        choices.append(
+            GatewayCurationChoice(
+                target_id=summary.material.id,
+                title=summary.material.title,
+                summary=summary.rendered_summary or summary.type_label,
+                href=f"/c/{community_slug}/world/{summary.material.slug}",
+                is_selected=slot is not None,
+                position_value=slot.position if slot is not None else (index + 1) * 10,
+                slot=slot,
+            )
+        )
+    return GatewayCurationSection(
+        slot_type=GATEWAY_SLOT_GUIDEBOOK_MATERIAL,
+        title="Guidebook materials",
+        summary="Published premise, event, and guide pages that should anchor first reading.",
+        choices=tuple(choices),
     )
 
 

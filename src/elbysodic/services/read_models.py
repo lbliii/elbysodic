@@ -21,6 +21,7 @@ from elbysodic.domain.models import (
     Community,
     CommunityDiscoveryProfile,
     CommunityDiscoveryTag,
+    CommunityGatewaySlot,
     CommunityMembership,
     Facet,
     FacetGroup,
@@ -1180,8 +1181,39 @@ class RealmLaunchReadiness:
 
 
 @dataclass(frozen=True, slots=True)
+class GatewayCurationChoice:
+    target_id: int
+    title: str
+    summary: str
+    href: str
+    is_selected: bool
+    position_value: int
+    slot: CommunityGatewaySlot | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class GatewayCurationSection:
+    slot_type: str
+    title: str
+    summary: str
+    choices: tuple[GatewayCurationChoice, ...]
+
+    @property
+    def selected_count(self) -> int:
+        return sum(1 for choice in self.choices if choice.is_selected)
+
+
+@dataclass(frozen=True, slots=True)
+class GatewayCurationEditor:
+    scene_hubs: GatewayCurationSection
+    wanted_hooks: GatewayCurationSection
+    guidebook_materials: GatewayCurationSection
+
+
+@dataclass(frozen=True, slots=True)
 class DirectorStudio:
     can_manage: bool
+    gateway_curation: GatewayCurationEditor
     launch_readiness: RealmLaunchReadiness
     theme_editor: ThemeEditorView
     theme_warnings: tuple[ThemeHealthWarning, ...]
