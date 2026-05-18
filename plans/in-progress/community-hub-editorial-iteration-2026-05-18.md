@@ -430,6 +430,47 @@ Initial Harbor Society seed audit on 2026-05-18:
 - Public active/open scenes now render after the gateway read model was
   broadened to public, unlocked scene threads without exposing private rooms.
 
+Follow-up Harbor Society seed audit on 2026-05-18:
+
+- Launch state: `public-preview`.
+- Characters: 8 accepted public faces with usable summaries/taglines:
+  Maris Vale, Celia Fairbourne, August Reed, Talia Cross, Grant Keller,
+  Sloane Devereux, Nora Bell, and Owen Vale.
+- Materials: 5 published public materials:
+  `Premise: The Shoreline Vote`, `Current Chapter: Founders Gala`,
+  `Social Ladder`, `Application Guide`, and `Town Calendar`.
+- Places: 5 public location boards plus 1 desk:
+  Shoreline Club, Main Street, Marina Hotel, Town Hall, Harbor Ledger, and
+  Back Veranda. Shoreline Club, Main Street, and Town Hall have image assets;
+  Marina Hotel and Harbor Ledger still need visuals.
+- Wanted: 5 open hooks, all tied to premise/current event material:
+  Reporter source at the club, Returning ex with town leverage, Rival
+  committee chair, School booster with receipts, and Secret donor with
+  conditions.
+- Claims/social lanes: 4 public claim types:
+  Face Claim, Family Claim, Club Role Claim, and Business Claim.
+- Public scenes: 2 active public threads with summaries:
+  `Main Street first-scene ask` and `Opening pressure`.
+
+Remaining data gaps before the full poster-style hub:
+
+- Premise evolution has material-derived fields now, but no director-authored
+  stage order, prior-stage summary, or explicit consequences field.
+- Factions/social lanes are present as claim types, but there are no richer
+  faction/alliance/lore materials for old families, club staff, civic office,
+  hotel workers, newspaper/reporting, or donor networks.
+- Cast has public summaries, but no explicit cast-to-premise relationship field;
+  the hub must derive story ties from tagline, summary, claim, or wanted data
+  until a curation contract exists.
+- Marina Hotel and Harbor Ledger need visual assets or stronger fallback art
+  rules before a cinematic place shelf can feel complete.
+- Existing public scene summaries are usable but thin; additional scene
+  summaries should show actual conflict and cast stakes rather than only
+  proving public visibility.
+- Wanted hooks are strong enough for a shelf, but the hub needs tests proving
+  these render as story invitations without repeating `Wanted hook` or
+  `Current Chapter:` labels.
+
 Schema review is deferred until at least Task 2 or Task 3 proves a stable
 missing concept. Candidate future fields:
 
