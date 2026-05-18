@@ -1055,22 +1055,72 @@
 
 .elbysodic-realm-lane-grid {
     display: grid;
-    gap: var(--chirpui-space-3);
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: var(--chirpui-space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
 }
 
 .elbysodic-realm-lane-card {
-    border-block-start: 1px solid color-mix(in srgb, var(--chirpui-border), transparent 25%);
+    --elbysodic-lane-accent: var(--chirpui-accent);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-lane-accent) 13%, var(--chirpui-surface)), var(--chirpui-surface));
+    align-content: start;
+    align-items: stretch;
+    border: 1px solid color-mix(in srgb, var(--elbysodic-lane-accent) 36%, var(--chirpui-border));
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: var(--chirpui-space-3);
+    grid-template-columns: auto minmax(0, 1fr);
+    min-block-size: 6.4rem;
+    padding: var(--chirpui-space-4);
+}
+
+.elbysodic-realm-lane-card--access {
+    --elbysodic-lane-accent: #cf8b3f;
+}
+
+.elbysodic-realm-lane-card--faction {
+    --elbysodic-lane-accent: #8d6fd1;
+}
+
+.elbysodic-realm-lane-card--kinship {
+    --elbysodic-lane-accent: #d05b82;
+}
+
+.elbysodic-realm-lane-card--lineage {
+    --elbysodic-lane-accent: #57a08b;
+}
+
+.elbysodic-realm-lane-card--place {
+    --elbysodic-lane-accent: #4f8cc9;
+}
+
+.elbysodic-realm-lane-card--power {
+    --elbysodic-lane-accent: #b15bd0;
+}
+
+.elbysodic-realm-lane-card--work {
+    --elbysodic-lane-accent: #6d9561;
+}
+
+.elbysodic-realm-lane-card__mark {
+    background: var(--elbysodic-lane-accent);
+    border-radius: var(--chirpui-radius-sm);
+    inline-size: 0.3rem;
+}
+
+.elbysodic-realm-lane-card__copy {
+    align-content: start;
     display: grid;
     gap: var(--chirpui-space-2);
-    padding-block-start: var(--chirpui-space-3);
+    min-inline-size: 0;
 }
 
 .elbysodic-realm-lane-card strong {
     color: var(--chirpui-text);
+    line-height: 1.18;
 }
 
-.elbysodic-realm-lane-card span {
+.elbysodic-realm-lane-card__copy > span {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
     line-height: 1.5;

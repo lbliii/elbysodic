@@ -2263,6 +2263,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Family" in content
                     assert "Club Role" in content
                     assert "Business" in content
+                    assert "elbysodic-realm-lane-card--kinship" in response.text
+                    assert "elbysodic-realm-lane-card--access" in response.text
+                    assert "elbysodic-realm-lane-card--work" in response.text
                     assert "Family Claim" not in content
                 assert scene_hub in content
                 if community_slug == "harbor-society":

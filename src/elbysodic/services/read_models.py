@@ -1943,6 +1943,7 @@ class RealmGatewayPremiseEvolution:
 class RealmGatewaySocialLane:
     title: str
     summary: str
+    tone: str
 
 
 @dataclass(frozen=True, slots=True)

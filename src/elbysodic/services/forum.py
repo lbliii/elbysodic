@@ -4203,10 +4203,36 @@ def _realm_gateway_social_lanes(
         if claim_type.visibility != "public" or claim_type.claim_kind == "face":
             continue
         title = claim_type.name.removesuffix(" Claim").strip() or claim_type.name
-        lanes.append(RealmGatewaySocialLane(title=title, summary=claim_type.description))
+        lanes.append(
+            RealmGatewaySocialLane(
+                title=title,
+                summary=claim_type.description,
+                tone=_realm_gateway_social_lane_tone(claim_type.claim_kind),
+            )
+        )
         if len(lanes) >= limit:
             break
     return tuple(lanes)
+
+
+def _realm_gateway_social_lane_tone(claim_kind: str) -> str:
+    match claim_kind:
+        case "access":
+            return "access"
+        case "faction":
+            return "faction"
+        case "location":
+            return "place"
+        case "occupation":
+            return "work"
+        case "power":
+            return "power"
+        case "relationship":
+            return "kinship"
+        case "species":
+            return "lineage"
+        case _:
+            return "world"
 
 
 def _realm_gateway_cast_members(

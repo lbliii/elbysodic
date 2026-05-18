@@ -248,13 +248,16 @@
 
 {% def gateway_social_lanes(gateway) %}
 {% if gateway.social_lanes %}
-<section class="elbysodic-realm-gateway-section" aria-labelledby="realm-social-title">
+<section class="elbysodic-realm-gateway-section elbysodic-realm-gateway-section--social-map" aria-labelledby="realm-social-title">
   {{ gateway_section_header("Claims", "Ways to belong") }}
   <div class="elbysodic-realm-lane-grid">
     {% for lane in gateway.social_lanes %}
-    <article class="elbysodic-realm-lane-card">
-      <strong>{{ lane.title }}</strong>
-      <span>{{ lane.summary }}</span>
+    <article class="elbysodic-realm-lane-card elbysodic-realm-lane-card--{{ lane.tone }}">
+      <span class="elbysodic-realm-lane-card__mark" aria-hidden="true"></span>
+      <span class="elbysodic-realm-lane-card__copy">
+        <strong>{{ lane.title }}</strong>
+        <span>{{ lane.summary }}</span>
+      </span>
     </article>
     {% end %}
   </div>
