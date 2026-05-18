@@ -14,6 +14,10 @@ It does not replace `docs/product/experience-direction.md`,
 `docs/product/information-hierarchy.md`, or
 `docs/product/control-topology.md`; it makes their composition rules easier to
 apply.
+Use `docs/product/typography-strategy.md` when composition problems are really
+type-register problems: competing shelf labels, too many all-caps qualifiers,
+metadata that reads like headings, or public copy that exposes planning
+language.
 
 ## Thesis
 
@@ -121,7 +125,7 @@ lanes. The first screen should prove this is a modern roleplay product, not a
 forum index.
 
 Protect: public privacy, clear access posture, next section visible, no passive
-streaming behavior.
+streaming behavior, and one dominant typographic register per heading cluster.
 
 ### Explore
 

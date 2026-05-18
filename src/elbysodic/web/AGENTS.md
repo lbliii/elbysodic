@@ -8,6 +8,7 @@ Related docs:
 
 - root `AGENTS.md`
 - `docs/product/information-hierarchy.md`
+- `docs/product/typography-strategy.md`
 - `docs/product/surface-quality-bar.md`
 - `docs/product/control-topology.md`
 - `docs/product/navigation-menus.md`
@@ -49,6 +50,9 @@ face-aware browsing, staff workflows, and community atmosphere.
 - Label audit: page, section, card, row, badge, metric, and helper labels are
   non-duplicative; metadata and counts add decision value instead of restating
   parent context.
+- Typography audit: heading clusters have one dominant phrase; eyebrows,
+  qualifiers, metadata, and helper text are visually subordinate and use named
+  product roles instead of ad hoc same-register styling.
 - Surface quality: substantial rendered surfaces have a brief for audience,
   first-five-second read, primary object, primary action, dominant reference,
   negative reference, density budget, and progressive disclosure.

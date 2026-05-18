@@ -7,7 +7,9 @@ Last updated: 2026-05-18
 This guide prevents Elbysodic surfaces from becoming dated, overwhelming,
 generic SaaS, or visually noisy. Use it before implementing or materially
 reshaping any public, ritual, discovery, onboarding, writing, or Studio
-surface.
+surface. Use `docs/product/typography-strategy.md` with this guide when a
+surface needs page titles, shelf headings, eyebrows, metadata, or public-story
+copy.
 
 Evidence mode: accepted product doctrine promoted from existing product
 strategy, design composition rules, research synthesis, and synthetic
@@ -114,6 +116,11 @@ Context carries labels. The page title, section title, route, card shape, and
 nearby action often already identify the object. Child copy should add story,
 state, relationship, timing, privacy, urgency, ownership, or active-face
 relevance.
+
+Typography carries the visible contract. A heading cluster should have one
+dominant phrase; qualifiers, eyebrows, and helper lines must be quieter both in
+meaning and visual weight. If two adjacent lines feel like peer headings, remove
+one or demote it through the typography strategy.
 
 Before adding any eyebrow, badge, metric label, helper line, or footer, answer:
 

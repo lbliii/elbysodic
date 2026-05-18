@@ -13,6 +13,8 @@ realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
 Use `docs/product/paragraph-rhythm.md` before adding or changing paragraph
 output; Elbysodic is a text-first app, so prose, summaries, helper copy, and
 metadata need distinct paragraph roles.
+Use `docs/product/typography-strategy.md` before adding page titles, section
+headings, shelf headers, eyebrows, type labels, or metadata treatments.
 Use `docs/product/notices-admonitions.md` before adding current-event bridges,
 warnings, staff notices, toasts, or other page-local alerts.
 Use `docs/product/appearance-studio.md` before adding theme controls,
@@ -159,6 +161,11 @@ Before adding an eyebrow, badge, counter, footer, or helper line, ask:
 If the answer is no, remove the label. Repetition creates cognitive load and
 makes editorial surfaces feel like placeholder scaffolding instead of authored
 story presentation.
+
+Label discipline also has a type-register rule: a qualifier cannot sit beside a
+heading at the same visual level. Public and story-facing shelf headers default
+to one dominant phrase. Add an eyebrow only when it contributes a distinct axis
+such as privacy, lifecycle, urgency, audience, ownership, or mixed object type.
 
 ### Divider Rhythm
 

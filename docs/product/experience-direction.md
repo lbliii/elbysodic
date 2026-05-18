@@ -9,6 +9,8 @@ direction. Use it with `docs/product/strategy-spine.md`,
 `docs/product/appearance-studio.md`, `docs/product/navigation-menus.md`,
 `docs/product/information-hierarchy.md`,
 `docs/product/surface-quality-bar.md`, and `design/technicolor-futurism.md`.
+Use `docs/product/typography-strategy.md` when deciding how page titles,
+shelves, labels, metadata, and prose should visually relate.
 Use `design/composition-bible.md` when the question is page rhythm, surface
 choice, chrome layering, media placement, mobile composition, or bad layout
 patterns.

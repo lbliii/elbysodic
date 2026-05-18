@@ -2067,6 +2067,19 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         "1 public threads",
         "Ready for first scenes",
     )
+    internal_planning_copy = (
+        "landing surface",
+        "tone/current pulse",
+        "public posture",
+        "entry into writing",
+        "preview readiness",
+        "setup readiness",
+        "read model",
+        "surface contract",
+        "public-safe",
+        "entry path",
+        "workflow state",
+    )
 
     gateway_expectations = {
         "harbor-society": (
@@ -2214,6 +2227,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Where a new face can attach" not in content
                 assert "Open roles with story pressure" not in content
                 assert not any(copy in content for copy in boilerplate_copy)
+                assert not any(copy in content.lower() for copy in internal_planning_copy)
                 assert "Faces" not in content
                 assert "Guides" not in content
                 assert "application review" not in content.lower()

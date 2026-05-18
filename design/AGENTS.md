@@ -17,6 +17,7 @@ Related docs:
 - `docs/product/surface-quality-bar.md`
 - `docs/product/appearance-studio.md`
 - `docs/product/information-hierarchy.md`
+- `docs/product/typography-strategy.md`
 - `docs/product/control-topology.md`
 - `docs/product/navigation-menus.md`
 - `docs/product/paragraph-rhythm.md`
@@ -68,6 +69,9 @@ clarity.
 - Label discipline: eyebrows, badges, counts, helper lines, and footers add a
   new distinction; they do not repeat the section title, route, object type, or
   same fact elsewhere in the module.
+- Typography: page titles, shelf headings, eyebrows, metadata, helper text, and
+  prose use the product type ladder; qualifiers never compete visually with the
+  main heading.
 - Surface quality: substantial UI changes have an intent brief, density budget,
   anti-CRM check, progressive-disclosure plan, and rendered screenshot QA when
   composition or responsive behavior matters.
