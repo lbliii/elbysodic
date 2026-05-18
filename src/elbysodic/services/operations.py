@@ -49,6 +49,15 @@ class OperationsCard:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationsLane:
+    label: str
+    summary: str
+    count: int
+    href: str
+    variant: str
+
+
+@dataclass(frozen=True, slots=True)
 class OperationsInspectionConfig:
     environment: str
     secure_cookies: bool
@@ -70,6 +79,7 @@ class OperationsInspection:
 @dataclass(frozen=True, slots=True)
 class DirectorOperations:
     cards: list[OperationsCard]
+    lanes: list[OperationsLane]
     ready_applications: list[ApplicationCharacterView]
     blocked_applications: list[ApplicationCharacterView]
     can_manage: bool
@@ -245,11 +255,45 @@ def director_operations(
     )
     return DirectorOperations(
         cards=cards,
+        lanes=_operations_lanes(cards),
         ready_applications=ready_applications,
         blocked_applications=blocked_applications,
         can_manage=studio.can_manage,
         inspection=inspection,
     )
+
+
+def _operations_lanes(cards: list[OperationsCard]) -> list[OperationsLane]:
+    if not cards:
+        return []
+    attention_count = sum(card.count for card in cards if card.variant == "attention")
+    warning_count = sum(card.count for card in cards if card.variant == "warning")
+    watch_count = sum(
+        card.count for card in cards if card.variant not in {"attention", "warning"}
+    )
+    return [
+        OperationsLane(
+            label="Needs decision",
+            summary="Queues that should move before writers stall.",
+            count=attention_count,
+            href="#director-operation-signals",
+            variant="attention",
+        ),
+        OperationsLane(
+            label="Blocked",
+            summary="Claim, navigation, or production conflicts to resolve.",
+            count=warning_count,
+            href="#director-operation-signals",
+            variant="warning",
+        ),
+        OperationsLane(
+            label="Watching",
+            summary="Active reserves, drafts, and signals worth keeping warm.",
+            count=watch_count,
+            href="#director-operation-signals",
+            variant="status",
+        ),
+    ]
 
 
 def operations_inspection(

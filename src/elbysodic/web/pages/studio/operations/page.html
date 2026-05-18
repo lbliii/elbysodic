@@ -56,8 +56,22 @@
   </section>
   {% end %}
 
+  {% if operations.lanes %}
+  <nav class="elbysodic-operations-lanes" aria-label="Operations attention lanes">
+    {% for lane in operations.lanes %}
+    <a class="elbysodic-operations-lane elbysodic-operations-lane--{{ lane.variant }}" href="{{ lane.href }}">
+      <strong>{{ lane.count }}</strong>
+      <span>
+        <em>{{ lane.label }}</em>
+        <small>{{ lane.summary }}</small>
+      </span>
+    </a>
+    {% end %}
+  </nav>
+  {% end %}
+
   {% if operations.cards %}
-  <section class="elbysodic-operations-grid" aria-label="Director operation signals">
+  <section id="director-operation-signals" class="elbysodic-operations-grid" aria-label="Director operation signals">
     {% for card in operations.cards %}
     {{ operations_card(card) }}
     {% end %}

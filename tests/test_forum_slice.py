@@ -3620,6 +3620,11 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
 
         assert operations.status == 200
         assert "Writer activation" in operations.text
+        assert "Operations attention lanes" in operations.text
+        assert "Needs decision" in operations.text
+        assert "Queues that should move before writers stall." in operations.text
+        assert "Blocked" in operations.text
+        assert "Watching" in operations.text
         assert "accepted member(s) without faces" in operations.text
         assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
             operations.text
