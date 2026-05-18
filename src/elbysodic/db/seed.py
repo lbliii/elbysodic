@@ -6385,6 +6385,13 @@ def _seed_original_premise_depth(
             f"{characters[2].name} took the hook seriously enough to make it "
             "someone else's problem before the next scene could settle."
         )
+    if program.slug in {"harbor-society", "signal-creek", "nocturne-row"}:
+        _archive_legacy_original_premise_thread(
+            repo, community.id, boards[0].id, "opening-pressure"
+        )
+        _archive_legacy_original_premise_thread(
+            repo, community.id, boards[1].id, "wanted-thread-start"
+        )
 
     opening = _get_or_create(
         lambda: repo.get_thread_by_slug(community.id, boards[0].id, opening_slug),
@@ -6455,6 +6462,20 @@ def _seed_original_premise_depth(
     repo.mark_thread_read(community.id, opening.id, membership.id)
 
     _seed_original_premise_character_claims(repo, community.id, program)
+
+
+def _archive_legacy_original_premise_thread(
+    repo: ForumRepository,
+    community_id: int,
+    board_id: int,
+    slug: str,
+) -> None:
+    try:
+        thread = repo.get_thread_by_slug(community_id, board_id, slug)
+    except LookupError:
+        return
+    if thread.status in {"active", "open"}:
+        repo.update_thread_scene(community_id, thread.id, status="archived")
 
 
 def _seed_original_premise_character_claims(

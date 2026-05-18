@@ -2299,6 +2299,41 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
     asyncio.run(run())
 
 
+def test_original_premise_seed_archives_legacy_gateway_scaffold_threads() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = repo.get_community_by_slug("harbor-society")
+    club = repo.get_board_by_slug(community.id, "shoreline-club")
+    main_street = repo.get_board_by_slug(community.id, "main-street")
+    maris = repo.get_character_by_slug(community.id, "maris-vale")
+    celia = repo.get_character_by_slug(community.id, "celia-fairbourne")
+    legacy_opening = repo.create_thread(
+        community.id,
+        club.id,
+        maris.id,
+        "opening-pressure",
+        "Opening pressure",
+        summary="Legacy scaffold scene that should leave the public hub.",
+    )
+    legacy_followup = repo.create_thread(
+        community.id,
+        main_street.id,
+        celia.id,
+        "wanted-thread-start",
+        "Wanted thread start",
+        summary="Legacy wanted-hook style opener should leave the public hub.",
+    )
+
+    seed_demo_forum(repo)
+
+    assert repo.get_thread(community.id, legacy_opening.id).status == "archived"
+    assert repo.get_thread(community.id, legacy_followup.id).status == "archived"
+    gateway = services.public_realm_gateway("harbor-society")
+    scene_titles = {preview.title for preview in gateway.scene_previews}
+    assert "Opening pressure" not in scene_titles
+    assert "Wanted thread start" not in scene_titles
+
+
 def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> None:
     services = _seeded_services()
     app = create_app(debug=False, services=services)
