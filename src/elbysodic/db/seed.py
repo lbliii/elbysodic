@@ -6268,19 +6268,75 @@ def _seed_original_premise_depth(
     ][:3]
     if len(characters) < 3 or len(boards) < 2:
         return
+    if program.slug == "harbor-society":
+        opening_slug = "ledger-page-under-table-six"
+        opening_title = "The Ledger Page Under Table Six"
+        opening_summary = (
+            "Maris turns the Shoreline Club seating meeting into a test of who "
+            "knew last year's auction covered a private debt."
+        )
+        opening_first_post = (
+            "Maris Vale arrived at the Shoreline Club with the gala seating chart, "
+            "one copied ledger page, and a table full of people suddenly invested "
+            "in polite silence."
+        )
+        opening_second_post = (
+            "Celia Fairbourne answered as if the accounting question were only a "
+            "decor problem, then named the donor everyone else had avoided."
+        )
+        followup_slug = "breakfast-before-the-vote"
+        followup_title = "Breakfast Before The Vote"
+        followup_summary = (
+            "Celia, August, and Talia compare rumors in public while donor calls "
+            "and campaign flyers make silence impossible."
+        )
+        followup_first_post = (
+            "Celia left the diner door open behind her, letting the breakfast rush "
+            "hear exactly enough about the club vote to make every booth useful."
+        )
+        followup_second_post = (
+            "August Reed took the hint, folded the wrong campaign flyer into his "
+            "notebook, and asked which family wanted the question buried by noon."
+        )
+    else:
+        opening_slug = "opening-pressure"
+        opening_title = "Opening pressure"
+        opening_summary = (
+            f"{characters[0].name} pulls the first public thread into "
+            f"{community.name}'s current premise."
+        )
+        opening_first_post = (
+            f"{characters[0].name} arrived at {boards[0].name} with the public "
+            f"pressure of {community.name} already waiting in the room."
+        )
+        opening_second_post = (
+            f"{characters[1].name} answered with a practical offer, a private "
+            "reservation, and one question that could turn into a scene."
+        )
+        followup_slug = "wanted-thread-start"
+        followup_title = f"{boards[1].name} first-scene ask"
+        followup_summary = (
+            f"A public ask at {boards[1].name} pulls {characters[2].name} "
+            f"and {characters[3].name} toward {community.name}'s current chapter."
+        )
+        followup_first_post = (
+            f"{characters[1].name} left a note at {boards[1].name}: a clear "
+            "opening for rivals, allies, witnesses, or relatives to answer."
+        )
+        followup_second_post = (
+            f"{characters[2].name} took the hook seriously enough to make it "
+            "someone else's problem before the next scene could settle."
+        )
 
     opening = _get_or_create(
-        lambda: repo.get_thread_by_slug(community.id, boards[0].id, "opening-pressure"),
+        lambda: repo.get_thread_by_slug(community.id, boards[0].id, opening_slug),
         lambda: repo.create_thread(
             community.id,
             boards[0].id,
             characters[0].id,
-            "opening-pressure",
-            "Opening pressure",
-            summary=(
-                f"{characters[0].name} pulls the first public thread into "
-                f"{community.name}'s current premise."
-            ),
+            opening_slug,
+            opening_title,
+            summary=opening_summary,
             location=boards[0].name,
             timeline="Current chapter",
         ),
@@ -6295,34 +6351,25 @@ def _seed_original_premise_depth(
         community.id,
         opening.id,
         characters[0].id,
-        (
-            f"{characters[0].name} arrived at {boards[0].name} with the public "
-            f"pressure of {community.name} already waiting in the room."
-        ),
+        opening_first_post,
     )
     _ensure_post(
         repo,
         community.id,
         opening.id,
         characters[1].id,
-        (
-            f"{characters[1].name} answered with a practical offer, a private "
-            "reservation, and one question that could turn into a scene."
-        ),
+        opening_second_post,
     )
 
     followup = _get_or_create(
-        lambda: repo.get_thread_by_slug(community.id, boards[1].id, "wanted-thread-start"),
+        lambda: repo.get_thread_by_slug(community.id, boards[1].id, followup_slug),
         lambda: repo.create_thread(
             community.id,
             boards[1].id,
             characters[1].id,
-            "wanted-thread-start",
-            f"{boards[1].name} first-scene ask",
-            summary=(
-                f"A public ask at {boards[1].name} pulls {characters[2].name} "
-                f"and {characters[3].name} toward {community.name}'s current chapter."
-            ),
+            followup_slug,
+            followup_title,
+            summary=followup_summary,
             location=boards[1].name,
             timeline="Current chapter",
         ),
@@ -6337,20 +6384,14 @@ def _seed_original_premise_depth(
         community.id,
         followup.id,
         characters[1].id,
-        (
-            f"{characters[1].name} left a note at {boards[1].name}: a clear "
-            "opening for rivals, allies, witnesses, or relatives to answer."
-        ),
+        followup_first_post,
     )
     _ensure_post(
         repo,
         community.id,
         followup.id,
         characters[2].id,
-        (
-            f"{characters[2].name} took the hook seriously enough to make it "
-            "someone else's problem before the next scene could settle."
-        ),
+        followup_second_post,
     )
     repo.watch_thread(community.id, followup.id, membership.id)
     repo.mark_thread_read(community.id, opening.id, membership.id)

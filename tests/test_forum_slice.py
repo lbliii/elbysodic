@@ -2170,7 +2170,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             assert "The Shoreline Vote" in gateway_text
             assert gateway.premise_evolution.has_current_pressure
             assert gateway.premise_evolution.current_pressure_title == "Founders Gala"
-            assert "Opening pressure" in gateway.premise_evolution.consequences
+            assert "The Ledger Page Under Table Six" in gateway.premise_evolution.consequences
+            assert "Breakfast Before The Vote" in gateway.premise_evolution.consequences
             assert "Reporter source at the club" in gateway.premise_evolution.next_openings
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
         assert all(hub.eyebrow for hub in gateway.scene_hubs)
@@ -2200,7 +2201,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert all(preview.summary for preview in gateway.wanted_previews)
         assert all(not hub.board.is_private for hub in gateway.scene_hubs)
         if community_slug == "harbor-society":
-            assert "Opening pressure" in {preview.title for preview in gateway.scene_previews}
+            harbor_scene_titles = {preview.title for preview in gateway.scene_previews}
+            harbor_scene_summaries = {preview.summary for preview in gateway.scene_previews}
+            assert "The Ledger Page Under Table Six" in harbor_scene_titles
+            assert "Breakfast Before The Vote" in harbor_scene_titles
+            assert any("auction covered a private debt" in text for text in harbor_scene_summaries)
+            assert any("donor calls and campaign flyers" in text for text in harbor_scene_summaries)
 
     async def run() -> None:
         app = create_app(debug=False, services=AppServices(services.repo, None))
@@ -2240,7 +2246,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Family Claim" not in content
                 assert scene_hub in content
                 if community_slug == "harbor-society":
-                    assert "Opening pressure" in content
+                    assert "The Ledger Page Under Table Six" in content
+                    assert "Breakfast Before The Vote" in content
                     assert "Reporter source at the club" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content

@@ -449,8 +449,8 @@ Follow-up Harbor Society seed audit on 2026-05-18:
   conditions.
 - Claims/social lanes: 4 public claim types:
   Face Claim, Family Claim, Club Role Claim, and Business Claim.
-- Public scenes: 2 active public threads with summaries:
-  `Main Street first-scene ask` and `Opening pressure`.
+- Public scenes: 2 active public threads with story-specific summaries:
+  `The Ledger Page Under Table Six` and `Breakfast Before The Vote`.
 
 Remaining data gaps before the full poster-style hub:
 
@@ -464,9 +464,9 @@ Remaining data gaps before the full poster-style hub:
   until a curation contract exists.
 - Marina Hotel and Harbor Ledger need visual assets or stronger fallback art
   rules before a cinematic place shelf can feel complete.
-- Existing public scene summaries are usable but thin; additional scene
-  summaries should show actual conflict and cast stakes rather than only
-  proving public visibility.
+- Existing public scene summaries now show actual conflict and cast stakes for
+  Harbor Society; Signal Creek and the third QA archetype still need the same
+  treatment before final browser QA.
 - Wanted hooks are strong enough for a shelf, but the hub needs tests proving
   these render as story invitations without repeating `Wanted hook` or
   `Current Chapter:` labels.
