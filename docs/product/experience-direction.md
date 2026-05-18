@@ -136,6 +136,12 @@ Reject:
   behavior outrank atmosphere on thread and writing surfaces.
 - **Layered, not duplicated:** outer rail, inner shell, page chrome, drawers,
   and object-local controls must each answer a different question.
+- **Context carries labels:** page and section framing identify the object
+  class; child cards, rows, badges, and footers add only distinctions the
+  parent context does not already provide. A `Places` shelf does not need
+  `Scene hub` on every place, a wanted room does not need `Wanted hook` on
+  every hook, and a current-premise hero should not repeat the same chapter
+  label as an eyebrow, sentence, metric, and footer.
 - **Editorial, not dashboard:** Studio and Desk can be dense, but they should
   use edited rows, lanes, command areas, and state language instead of generic
   SaaS cards everywhere.

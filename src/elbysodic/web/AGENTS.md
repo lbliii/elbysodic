@@ -45,6 +45,9 @@ face-aware browsing, staff workflows, and community atmosphere.
 - Surface contracts: route handlers receive named service read models and keep
   privacy, ranking, and lifecycle decisions out of templates.
 - Templates/components: shared patterns use `_components/` where appropriate.
+- Label audit: page, section, card, row, badge, metric, and helper labels are
+  non-duplicative; metadata and counts add decision value instead of restating
+  parent context.
 - Static assets: CSS/JS changes preserve theme tokens, composer behavior, and
   shell navigation.
 - Markup: preview and final render parity stays safe.
@@ -78,6 +81,8 @@ face-aware browsing, staff workflows, and community atmosphere.
 - Scatter shared visual language across page-local CSS.
 - Use visible instructional copy to explain controls that should be clear from
   labels, icons, and placement.
+- Render repeated type labels, badges, counts, or helper copy when parent
+  page/section context already identifies the objects or state.
 - Render unsafe post markup or staff/private data into client-visible state.
 
 ## Own

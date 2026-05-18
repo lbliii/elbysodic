@@ -44,6 +44,8 @@ clarity.
   browsing faces stay calm and legible even when surfaces carry atmosphere.
 - Visual identity supports PBP language: face, roster, thread, scene, plotter,
   wanted, claims, reserves, needs reply, waiting, caught up, and watching.
+- Context carries labels: parent page, shell, and section framing should
+  prevent child cards and rows from repeating the same taxonomy or object type.
 - Shared product concepts graduate into
   `src/elbysodic/web/pages/_components/` before page-local styling becomes a
   parallel design system.
@@ -62,6 +64,9 @@ clarity.
   contrast keep threads, guidebook pages, and application materials readable.
 - Hierarchy: identity, action, metadata, state, and atmosphere each have a
   distinct visual role.
+- Label discipline: eyebrows, badges, counts, helper lines, and footers add a
+  new distinction; they do not repeat the section title, route, object type, or
+  same fact elsewhere in the module.
 - Tokens: colors, type, spacing, radius, density, shadows, and texture use
   Chirp-UI or Elbysodic theme tokens; new tokens are named by product meaning.
 - Components: repeated PBP UI shapes are promoted or aligned with
@@ -118,6 +123,8 @@ clarity.
 - Use neon glow, gradients, glass, image overlays, or motion as a substitute for
   hierarchy.
 - Let every datum become a pill, card, badge, or decorative panel.
+- Add a badge, eyebrow, footer, count, or type label that only repeats the
+  parent section or page context.
 - Create a generic SaaS dashboard, social network, archive, or forum-skin
   aesthetic.
 - Override membership, character, community, permission, or privacy boundaries

@@ -119,6 +119,45 @@ be a line. Counts can be quiet metrics. Related objects can be rows. Secondary
 actions can be inline links or overflow menus. Negative space is part of the
 hierarchy when it separates jobs and gives story material room to breathe.
 
+### Contextual Label Discipline
+
+Visible labels must earn their place. Use them when they distinguish unlike
+objects in a mixed set, clarify lifecycle or privacy state, name an ownership
+relationship, support an action, or prevent a plausible misunderstanding. Do
+not use them to restate the section, page, route, or component type the user is
+already inside.
+
+Context should do as much labeling work as possible:
+
+- In a `Places` or `Scenes` section, each child object should lead with title,
+  atmosphere, playable hook, cast, or activity. Do not repeat `Scene hub`,
+  `Place`, `Public scene`, or `Ready for first scenes` unless the set mixes
+  object types or the state changes the user's next action.
+- In a `Wanted` surface, cards do not need `Wanted hook` on every object. Use
+  relationship, urgency, face requirement, reserve state, or plotting handoff
+  only when that distinction changes comparison or commitment.
+- In a guidebook or lore shelf, material type labels matter only when the set
+  mixes rules, premise, claims, factions, powers, and staff notices. Otherwise
+  let the shelf title carry the category and let the child copy sell the
+  story.
+- In a hero or command panel, avoid repeating the same noun as kicker, heading,
+  metric label, sentence lead-in, and footer. Pick the one place where it
+  improves orientation, then spend the remaining space on premise, stage,
+  access posture, or the next writing action.
+
+Before adding an eyebrow, badge, counter, footer, or helper line, ask:
+
+- Does the parent page, section title, route, or card shape already say this?
+- Would the user be confused, unsafe, or unable to compare choices without it?
+- Does it add a new axis: status, timing, privacy, ownership, relationship,
+  urgency, lifecycle, or active-face relevance?
+- Does it change what the user should read, click, reserve, join, answer, or
+  avoid?
+
+If the answer is no, remove the label. Repetition creates cognitive load and
+makes editorial surfaces feel like placeholder scaffolding instead of authored
+story presentation.
+
 ### Divider Rhythm
 
 Dividers mark workflow mode changes; whitespace marks narrative hierarchy. Use
