@@ -149,6 +149,59 @@ The gateway owns:
 `/world` remains the guidebook/material room. `Locations`, `Wanted`, `Desk`,
 and `Studio` remain scoped rooms in the shell.
 
+## Curated Gateway Slot Contract
+
+Gateway content should be director-curatable after the privacy-safe derived
+gateway is stable. Curation is a small ordering contract, not a layout builder.
+
+Slot types:
+
+- `scene_hub`: targets a public board that can function as a scene hub.
+- `wanted_hook`: targets an open wanted hook.
+- `guidebook_material`: targets a published material.
+- `public_scene`: deferred until the product has an explicit public-scene
+  curation contract; do not infer it from private/staff/thread state.
+
+Storage contract:
+
+- Every slot stores `community_id`, `slot_type`, `target_id`, `position`, an
+  optional director-facing `label`, and timestamps.
+- `community_id` is part of every repository lookup, write, and uniqueness
+  rule.
+- A community can curate several slot types without affecting the order of
+  unrelated gateway sections.
+- Curation never stores permission decisions; services re-check target safety
+  before rendering.
+
+Rendering contract:
+
+- Curated safe targets render first, in slot order.
+- Derived content fills any remaining gateway capacity.
+- Unsafe curated targets are silently omitted and do not block fallback:
+  private boards, archived wanted hooks, draft/unpublished materials, missing
+  rows, and cross-community targets never render.
+- Public visitors still see only published/public-safe gateway material.
+- Signed-in members may see only the same curated public gateway plus their
+  viewer-scoped continuation lane.
+
+Studio contract:
+
+- Director controls may select, reorder, and remove gateway slots.
+- The Studio surface lists only eligible public boards, open wanted hooks, and
+  published materials for the current community.
+- The first implementation should stay operational and compact: no masonry,
+  raw CSS, custom layout controls, or AI-generated public copy.
+
+Proof contract:
+
+- Fresh schema and upgraded schema include the same slot table and indexes.
+- Repository tests prove tenant-scoped create/list/delete behavior and
+  cross-community target rejection.
+- Service tests prove curated order, derived fallback, and unsafe target
+  omission for each slot type.
+- Rendered tests prove public gateway output does not leak private boards,
+  archived wanted hooks, draft materials, Desk state, or active-face state.
+
 ## Non-Negotiables
 
 - Do not copy prototype CSS wholesale.
@@ -682,6 +735,7 @@ Proof:
 | Atmosphere state | N/A | `RealmGatewayAtmosphere` | page copy/sections | no schema first | Appearance/experience docs if promoted | no/one/multi event fixtures | service + rendered | yes if user-visible |
 | Location bento | N/A | `RealmGatewayLocationCard.emphasis` | community home | no schema first | composition/design notes | X-Men emphasized locations | privacy + browser | yes if shipped |
 | Public wanted/scene previews | N/A | public-safe preview rows | community home | existing wanted/thread models first | privacy docs if changed | open/private fixtures | negative leakage tests | yes |
+| Curated gateway slots | N/A | `GatewaySlot` repository + gateway service ordering | `/c/{community_slug}` + Studio curation | `community_gateway_slots` tenant-scoped table | plan + privacy matrix | Harbor curated slots | migration + repository + service + rendered | yes |
 | Member/applicant continuation | N/A | audience-specific continuation | community home | existing membership/application first | info hierarchy if behavior changes | seed personas | rendered privacy | yes |
 
 ## Risks
@@ -701,6 +755,7 @@ Proof:
 
 - Persisted event scheduling or multi-event schema.
 - Director-authored layout builders.
+- Public-scene curation until public scene eligibility is explicit.
 - Public route migration.
 - Cross-realm personalization.
 - Appearance Studio controls for bento layout.
