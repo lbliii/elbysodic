@@ -2131,6 +2131,23 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert not gateway.premise_stage.title.lower().startswith(("current chapter:", "premise:"))
         assert gateway.premise_stage.summary
         assert gateway.premise_stage.playable_pressure
+        assert gateway.premise_evolution.premise_title
+        assert gateway.premise_evolution.premise_summary
+        assert gateway.premise_evolution.inciting_incident
+        assert gateway.premise_evolution.current_pressure_title
+        assert not gateway.premise_evolution.current_pressure_title.lower().startswith(
+            ("current chapter:", "premise:")
+        )
+        assert gateway.premise_evolution.current_pressure_summary
+        assert gateway.premise_evolution.consequences
+        assert gateway.premise_evolution.next_openings
+        assert gateway.premise_evolution.source_href
+        assert gateway.premise_evolution.source_kind in {
+            "event",
+            "premise",
+            "guide",
+            "fallback",
+        }
         assert gateway.social_lanes
         assert gateway.cast_members
         assert all(
@@ -2151,6 +2168,10 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             assert "Read Founders Gala first to understand the chapter in motion." in gateway_text
             assert "Shoreline Club" in gateway_text
             assert "The Shoreline Vote" in gateway_text
+            assert gateway.premise_evolution.has_current_pressure
+            assert gateway.premise_evolution.current_pressure_title == "Founders Gala"
+            assert "Opening pressure" in gateway.premise_evolution.consequences
+            assert "Reporter source at the club" in gateway.premise_evolution.next_openings
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
         assert all(hub.eyebrow for hub in gateway.scene_hubs)
         assert all(
@@ -2261,6 +2282,10 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
 
     assert gateway.premise.premise_label == "Premise-led realm"
     assert gateway.atmosphere.label == "Standing premise"
+    assert gateway.premise_evolution.has_current_pressure is False
+    assert gateway.premise_evolution.source_kind == "premise"
+    assert gateway.premise_evolution.current_pressure_title == "Quiet Harbor Premise"
+    assert gateway.premise_evolution.next_openings.startswith("Read the public premise")
     assert gateway.hero.primary_action.label == "Request access"
     assert gateway.hero.primary_action.href == "/c/quiet-harbor/request-access"
     assert gateway.hero.primary_action.is_hx_boost_safe is False

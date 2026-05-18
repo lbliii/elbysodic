@@ -1923,6 +1923,23 @@ class RealmGatewayPremiseStage:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayPremiseEvolution:
+    premise_title: str
+    premise_summary: str
+    inciting_incident: str
+    current_pressure_title: str
+    current_pressure_summary: str
+    consequences: str
+    next_openings: str
+    source_href: str | None
+    source_kind: str
+
+    @property
+    def has_current_pressure(self) -> bool:
+        return self.source_kind == "event"
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewaySocialLane:
     title: str
     summary: str
@@ -2026,6 +2043,7 @@ class RealmGatewayView:
     premise: RealmGatewayPremise
     story_frame: RealmGatewayStoryFrame
     premise_stage: RealmGatewayPremiseStage
+    premise_evolution: RealmGatewayPremiseEvolution
     atmosphere: RealmGatewayAtmosphere
     signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]

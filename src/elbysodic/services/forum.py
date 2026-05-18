@@ -280,6 +280,7 @@ from elbysodic.services.read_models import (
     RealmGatewayGuidebookPreview,
     RealmGatewayHero,
     RealmGatewayPremise,
+    RealmGatewayPremiseEvolution,
     RealmGatewayPremiseStage,
     RealmGatewaySceneHub,
     RealmGatewayScenePreview,
@@ -3538,13 +3539,21 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         program,
         curated_slots=gateway_slots[GATEWAY_SLOT_WANTED_HOOK],
     )
+    premise_stage = _realm_gateway_premise_stage(program, premise, atmosphere)
     return RealmGatewayView(
         program=program,
         guidebook=guidebook,
         hero=_realm_gateway_hero(program, premise, atmosphere),
         premise=premise,
         story_frame=_realm_gateway_story_frame(program, premise),
-        premise_stage=_realm_gateway_premise_stage(program, premise, atmosphere),
+        premise_stage=premise_stage,
+        premise_evolution=_realm_gateway_premise_evolution(
+            program,
+            premise,
+            atmosphere,
+            scene_previews,
+            wanted_previews,
+        ),
         atmosphere=atmosphere,
         signals=_realm_gateway_signals(program, guidebook, scene_hubs),
         scene_hubs=scene_hubs,
@@ -3720,6 +3729,74 @@ def _realm_gateway_stage_pressure(
 ) -> str:
     if program.open_wanted_count:
         return f"Open calls, public places, and first-face ties can enter through {stage_title}."
+    return premise.onboarding_pitch
+
+
+def _realm_gateway_premise_evolution(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+    scene_previews: tuple[RealmGatewayScenePreview, ...],
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+) -> RealmGatewayPremiseEvolution:
+    premise_title = (
+        _realm_gateway_context_title(program.premise.material.title)
+        if program.premise is not None
+        else atmosphere.title
+    )
+    premise_summary = (
+        program.premise.rendered_summary if program.premise is not None else premise.catalog_pitch
+    )
+    current_pressure_title = atmosphere.title
+    current_pressure_summary = atmosphere.copy
+    consequences = _realm_gateway_consequence_summary(
+        current_pressure_title,
+        scene_previews,
+        wanted_previews,
+    )
+    return RealmGatewayPremiseEvolution(
+        premise_title=premise_title,
+        premise_summary=premise_summary,
+        inciting_incident=premise_summary,
+        current_pressure_title=current_pressure_title,
+        current_pressure_summary=current_pressure_summary,
+        consequences=consequences,
+        next_openings=_realm_gateway_next_openings_summary(
+            program,
+            premise,
+            wanted_previews,
+            current_pressure_title,
+        ),
+        source_href=atmosphere.href,
+        source_kind=atmosphere.source_type,
+    )
+
+
+def _realm_gateway_consequence_summary(
+    current_pressure_title: str,
+    scene_previews: tuple[RealmGatewayScenePreview, ...],
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+) -> str:
+    if scene_previews:
+        scene_titles = _joined_labels(tuple(scene.title for scene in scene_previews[:2]))
+        return f"{current_pressure_title} is already moving through {scene_titles}."
+    if wanted_previews:
+        wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
+        return f"{current_pressure_title} is already asking for {wanted_titles}."
+    return f"{current_pressure_title} is the public story pressure to read first."
+
+
+def _realm_gateway_next_openings_summary(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+    current_pressure_title: str,
+) -> str:
+    if wanted_previews:
+        wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
+        return f"Open calls include {wanted_titles}."
+    if program.open_wanted_count:
+        return f"Open calls can enter through {current_pressure_title}."
     return premise.onboarding_pitch
 
 
