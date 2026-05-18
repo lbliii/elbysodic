@@ -2061,6 +2061,11 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         "ready for public scene browsing",
         "Play readiness",
         "Guidebook path",
+        "Playable doors into the premise",
+        "Active scene hub",
+        "Hot scene hub",
+        "1 public threads",
+        "Ready for first scenes",
     )
 
     gateway_expectations = {
@@ -2161,7 +2166,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Play readiness" not in content
                 assert premise_label in content
                 assert onboarding_pitch in content
-                assert "Playable doors into the premise" in content
+                assert "Places" in content
+                assert "In play" in content
                 assert scene_hub in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content

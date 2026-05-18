@@ -100,7 +100,7 @@
 {% def gateway_scene_hubs(gateway) %}
 {% if gateway.scene_hubs %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scene-hubs-title">
-  {{ gateway_section_header("Scene hubs", "Playable doors into the premise") }}
+  {{ gateway_section_header("Places", "In play") }}
   <div class="elbysodic-realm-hub-grid">
     {% for hub in gateway.scene_hubs %}
     <a class="elbysodic-realm-hub-card elbysodic-realm-hub-card--{{ hub.emphasis }}" href="{{ hub.href }}">
@@ -110,14 +110,8 @@
       </span>
       {% end %}
       <span class="elbysodic-realm-hub-card__body">
-        <span class="elbysodic-material-card__type">{{ hub.eyebrow }}</span>
         <strong>{{ hub.board.name }}</strong>
         <span>{{ hub.display_summary }}</span>
-        {% if hub.public_thread_count %}
-        <em>{{ hub.public_thread_count }} public threads</em>
-        {% else %}
-        <em>Ready for first scenes</em>
-        {% end %}
       </span>
     </a>
     {% end %}

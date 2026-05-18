@@ -65,6 +65,9 @@ Curated gateway follow-up:
 - Removed the rendered public "Play readiness" signal band after visitor
   feedback showed the counts and status copy were not useful for deciding what
   to read or click next.
+- Simplified scene-hub cards so the section context carries the type; cards now
+  show the place and its useful hook instead of repeating hub labels and thread
+  counts.
 
 Proof captured so far:
 
