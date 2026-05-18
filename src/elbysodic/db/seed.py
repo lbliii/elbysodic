@@ -6078,6 +6078,16 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 image_focal_point=board_seed.image_focal_point,
                 image_overlay=board_seed.image_overlay,
             )
+            board = _ensure_board_seed_media(
+                repo,
+                community.id,
+                board,
+                image_url=board_seed.image_url or None,
+                image_alt=board_seed.image_alt,
+                image_treatment=board_seed.image_treatment,
+                image_focal_point=board_seed.image_focal_point,
+                image_overlay=board_seed.image_overlay,
+            )
             media_seed = STUDIO_PROGRAM_BOARD_MEDIA.get(program.slug, {}).get(board_seed.slug)
             if media_seed is not None:
                 _ensure_board_media_default(repo, community.id, board, media_seed)
@@ -6608,6 +6618,40 @@ def _ensure_board_media_default(
         image_treatment=media_seed.image_treatment,
         image_focal_point=media_seed.image_focal_point,
         image_overlay=media_seed.image_overlay,
+        is_private=board.is_private,
+        navigation_order=board.navigation_order,
+        show_in_navigation=board.show_in_navigation,
+    )
+
+
+def _ensure_board_seed_media(
+    repo: ForumRepository,
+    community_id: int,
+    board: Board,
+    *,
+    image_url: str | None,
+    image_alt: str,
+    image_treatment: str,
+    image_focal_point: str,
+    image_overlay: str,
+) -> Board:
+    if image_url is None or board.image_url is not None:
+        return board
+    return repo.update_board(
+        community_id,
+        board.id,
+        name=board.name,
+        description=board.description,
+        sort_order=board.sort_order,
+        parent_board_id=board.parent_board_id,
+        board_kind=board.board_kind,
+        sidebar_section=board.sidebar_section,
+        tagline=board.tagline,
+        image_url=image_url,
+        image_alt=image_alt,
+        image_treatment=image_treatment,
+        image_focal_point=image_focal_point,
+        image_overlay=image_overlay,
         is_private=board.is_private,
         navigation_order=board.navigation_order,
         show_in_navigation=board.show_in_navigation,
