@@ -282,6 +282,7 @@ from elbysodic.services.read_models import (
     RealmGatewaySceneHub,
     RealmGatewayScenePreview,
     RealmGatewaySignalItem,
+    RealmGatewaySocialLane,
     RealmGatewayStoryFrame,
     RealmGatewayView,
     RealmGatewayWantedPreview,
@@ -3528,6 +3529,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         guidebook,
         curated_slots=gateway_slots[GATEWAY_SLOT_GUIDEBOOK_MATERIAL],
     )
+    social_lanes = _realm_gateway_social_lanes(repo, community.id)
     wanted_previews = _realm_gateway_wanted_previews(
         repo,
         program,
@@ -3546,6 +3548,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         scene_previews=scene_previews,
         entry_paths=entry_paths,
         guidebook_previews=guidebook_previews,
+        social_lanes=social_lanes,
         wanted_previews=wanted_previews,
     )
 
@@ -4107,6 +4110,23 @@ def _realm_gateway_guidebook_previews(
 ) -> tuple[MaterialSummary, ...]:
     materials = [*guidebook.featured, *guidebook.events, *guidebook.guides]
     return _curated_material_previews(materials, curated_slots, limit=limit)
+
+
+def _realm_gateway_social_lanes(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    limit: int = 4,
+) -> tuple[RealmGatewaySocialLane, ...]:
+    lanes = []
+    for claim_type in repo.list_claim_types(community_id):
+        if claim_type.visibility != "public" or claim_type.claim_kind == "face":
+            continue
+        title = claim_type.name.removesuffix(" Claim").strip() or claim_type.name
+        lanes.append(RealmGatewaySocialLane(title=title, summary=claim_type.description))
+        if len(lanes) >= limit:
+            break
+    return tuple(lanes)
 
 
 def _curated_wanted_ads(

@@ -1919,6 +1919,12 @@ class RealmGatewayPremiseStage:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewaySocialLane:
+    title: str
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewaySceneHub:
     board: Board
     public_thread_count: int
@@ -1997,6 +2003,7 @@ class RealmGatewayView:
     scene_previews: tuple[RealmGatewayScenePreview, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
     guidebook_previews: tuple[MaterialSummary, ...]
+    social_lanes: tuple[RealmGatewaySocialLane, ...]
     wanted_previews: tuple[RealmGatewayWantedPreview, ...]
     continuation: RealmGatewayContinuation | None = None
 

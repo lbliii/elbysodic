@@ -1009,6 +1009,29 @@
     line-height: 1.38;
 }
 
+.elbysodic-realm-lane-grid {
+    display: grid;
+    gap: var(--chirpui-space-3);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.elbysodic-realm-lane-card {
+    border-block-start: 1px solid color-mix(in srgb, var(--chirpui-border), transparent 25%);
+    display: grid;
+    gap: var(--chirpui-space-2);
+    padding-block-start: var(--chirpui-space-3);
+}
+
+.elbysodic-realm-lane-card strong {
+    color: var(--chirpui-text);
+}
+
+.elbysodic-realm-lane-card span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.5;
+}
+
 .elbysodic-realm-gateway-section {
     display: grid;
     gap: 0.85rem;
