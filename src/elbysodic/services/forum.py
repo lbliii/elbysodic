@@ -3995,12 +3995,12 @@ def _realm_gateway_scene_previews(
         [
             thread.id
             for thread in repo.list_threads(program.community.id)
-            if thread.board_id in boards and thread.status == "open" and not thread.is_locked
+            if thread.board_id in boards and _is_gateway_public_scene_thread(thread)
         ],
     )
     for thread in repo.list_threads(program.community.id):
         board = boards.get(thread.board_id)
-        if board is None or thread.status != "open" or thread.is_locked:
+        if board is None or not _is_gateway_public_scene_thread(thread):
             continue
         try:
             author = repo.get_character(program.community.id, thread.author_character_id)
@@ -4015,13 +4015,17 @@ def _realm_gateway_scene_previews(
                 summary=thread.summary or board.tagline or board.description,
                 href=_community_href(program, f"/boards/{board.slug}/threads/{thread.slug}"),
                 board_label=board.name,
-                status_label="Open scene",
+                status_label="Scene",
                 cast_label=f"{cast_count} face{'s' if cast_count != 1 else ''}",
             )
         )
         if len(previews) >= limit:
             break
     return tuple(previews)
+
+
+def _is_gateway_public_scene_thread(thread: Thread) -> bool:
+    return thread.status in {"active", "open"} and not thread.is_locked
 
 
 def _realm_gateway_entry_paths(

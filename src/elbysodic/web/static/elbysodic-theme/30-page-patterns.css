@@ -1103,7 +1103,7 @@
     color: inherit;
     display: grid;
     gap: 0.65rem;
-    grid-template-columns: minmax(6rem, 0.45fr) minmax(0, 1.35fr) minmax(8rem, auto);
+    grid-template-columns: minmax(0, 1.35fr) minmax(8rem, auto);
     padding: 0.9rem 1rem;
     text-decoration: none;
 }
@@ -1117,7 +1117,7 @@
     background: color-mix(in srgb, var(--chirpui-accent) 7%, transparent);
 }
 
-.elbysodic-realm-scene-row > span:not(.elbysodic-material-card__type) {
+.elbysodic-realm-scene-row > span {
     display: grid;
     gap: 0.2rem;
 }

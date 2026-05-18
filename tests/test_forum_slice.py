@@ -2158,6 +2158,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         )
         assert all(preview.summary for preview in gateway.wanted_previews)
         assert all(not hub.board.is_private for hub in gateway.scene_hubs)
+        if community_slug == "harbor-society":
+            assert "Opening pressure" in {preview.title for preview in gateway.scene_previews}
 
     async def run() -> None:
         app = create_app(debug=False, services=AppServices(services.repo, None))
@@ -2194,6 +2196,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Business" in content
                     assert "Family Claim" not in content
                 assert scene_hub in content
+                if community_slug == "harbor-society":
+                    assert "Opening pressure" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
                 assert "Open roles with story pressure" in content
@@ -2318,7 +2322,7 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
 
             assert response.status == 200
             assert "Playable now" in content
-            assert "Open scenes carrying the premise" in content
+            assert "Public scenes carrying the premise" in content
             assert "Public gateway scene" in content
             assert "Private gateway scene" not in content
             assert "Private story motion" not in content

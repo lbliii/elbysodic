@@ -136,11 +136,10 @@
 {% set scene_previews = gateway | get("scene_previews", ()) %}
 {% if scene_previews %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scenes-title">
-  {{ gateway_section_header("Playable now", "Open scenes carrying the premise") }}
+  {{ gateway_section_header("Playable now", "Public scenes carrying the premise") }}
   <div class="elbysodic-realm-scene-list">
     {% for scene in scene_previews %}
     <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
-      <span class="elbysodic-material-card__type">{{ scene.status_label }}</span>
       <span>
         <strong>{{ scene.title }}</strong>
         <small>{{ scene.summary }}</small>
