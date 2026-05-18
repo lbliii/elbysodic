@@ -2188,6 +2188,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             f"/c/{community_slug}/request-access",
         }
         assert gateway.wanted_previews
+        assert all("wanted" not in preview.type_label.lower() for preview in gateway.wanted_previews)
         assert all(
             preview.related_label is None
             or not preview.related_label.lower().startswith(("current chapter:", "premise:"))
@@ -2250,12 +2251,17 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Reporter source at the club" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
-                assert "Open roles and ties" in content
+                assert "Calls to answer" in content
                 assert "Public scenes carrying the premise" not in content
                 assert "Ways in before a writer has a face here" not in content
                 assert "What to know before a first face" not in content
                 assert "Where a new face can attach" not in content
                 assert "Open roles with story pressure" not in content
+                assert "Open roles and ties" not in content
+                assert "Wanted hook" not in content
+                assert "Scene hub" not in content
+                assert "Current Chapter:" not in content
+                assert "Premise:" not in content
                 assert not any(copy in content for copy in boilerplate_copy)
                 assert not any(copy in content.lower() for copy in internal_planning_copy)
                 assert "Faces" not in content

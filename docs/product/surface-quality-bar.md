@@ -133,6 +133,14 @@ Before adding any eyebrow, badge, metric label, helper line, or footer, answer:
 If not, remove it. Spend the space on more useful story copy or let the surface
 breathe.
 
+Gateway examples:
+
+- Use `Wanted` / `Calls to answer`; do not stamp every card with `Wanted hook`.
+- Use `Places` / `In play`; do not render `Scene hub`, public thread counts,
+  or readiness text inside each place card.
+- Use `Founders Gala`; do not render `Current Chapter: Founders Gala` once the
+  section already establishes the premise stage.
+
 ## Public Premise Stage Contract
 
 Public realm homes should describe the living premise as story motion, not as

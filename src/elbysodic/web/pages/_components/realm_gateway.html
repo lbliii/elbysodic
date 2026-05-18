@@ -261,7 +261,7 @@
 {% def gateway_wanted(gateway) %}
 {% if gateway.program.open_wanted_count %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-wanted-title">
-  {{ gateway_section_header("Wanted", "Open roles and ties") }}
+  {{ gateway_section_header("Wanted", "Calls to answer") }}
   {% if gateway.wanted_previews %}
   <div class="elbysodic-realm-wanted-grid">
     {% for wanted in gateway.wanted_previews %}
