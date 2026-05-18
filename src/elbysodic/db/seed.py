@@ -1702,19 +1702,19 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "maris-vale",
                 "Maris Vale",
                 "Fallen club darling returning with a charity ledger nobody wants opened.",
-                "A smile is a weapon if the room taught you how.",
+                "The seating chart is leverage and she knows who paid for silence.",
             ),
             BlueprintCharacter(
                 "celia-fairbourne",
                 "Celia Fairbourne",
                 "Old-family gatekeeper who treats the Shoreline Club like civic infrastructure.",
-                "Standards keep the town from sinking.",
+                "Standards are how old families keep score.",
             ),
             BlueprintCharacter(
                 "august-reed",
                 "August Reed",
                 "Harbor Ledger reporter with a source in every committee and one burned friendship.",
-                "Print the polite version first.",
+                "He can print the scandal if his source survives the room.",
             ),
             BlueprintCharacter(
                 "talia-cross",
@@ -1726,7 +1726,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "grant-keller",
                 "Grant Keller",
                 "Golden-child football coach trying to keep school donors and old debts apart.",
-                "Everybody loves a winner until the bill arrives.",
+                "Booster money, school pride, and club votes keep landing on his desk.",
             ),
             BlueprintCharacter(
                 "sloane-devereux",
@@ -1752,7 +1752,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "shoreline-club",
                 "Shoreline Club",
                 "location",
-                "White jackets, old money, new grudges, and a membership vote nobody can avoid.",
+                "White jackets, old money, and a membership vote that turns manners into weapons.",
                 "Club politics, social climbing, charitable pressure, private conversations, and public exits.",
                 image_url="/elbysodic-static/seed-media/smalltown-hero.svg",
                 image_alt="Coastal club terrace under warm evening light",
@@ -1762,7 +1762,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "main-street",
                 "Main Street",
                 "location",
-                "Boutiques, gossip windows, campaign flyers, and errands that become alliances.",
+                "Boutiques, campaign flyers, school boosters, and errands that become alliances.",
                 "Everyday town scenes for work ties, rivals, returns, and public reputation.",
                 image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.svg",
                 image_alt="Small-town main street with string lights",
@@ -1772,7 +1772,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "marina-hotel",
                 "Marina Hotel",
                 "location",
-                "Guest books, quiet bars, conference rooms, and people hiding in plain sight.",
+                "Guest books, quiet bars, investor meetings, and names written down wrong on purpose.",
                 "Hotel, tourism, visiting family, investor, and illicit-meeting scenes.",
                 image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg",
                 image_alt="Marina hotel beside dark water and lit windows",
@@ -1782,7 +1782,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "town-hall",
                 "Town Hall",
                 "location",
-                "Minutes, permits, donor plaques, and civic kindness with sharp edges.",
+                "Minutes, permits, donor plaques, and public kindness sharpened into leverage.",
                 "Council scenes, public hearings, campaign pressure, and old-family bargaining.",
                 image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.svg",
                 image_alt="Town hall with a festival banner",
@@ -1840,7 +1840,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "social-ladder",
                 "Social Ladder",
                 "guide",
-                "Status in Harbor Society is public, practical, and never as stable as it looks.",
+                "Every family name, job, invitation, and apology changes where a face can stand.",
                 (
                     "The town always has room for old families, club staff, hotel workers, teachers, "
                     "boosters, reporters, marina workers, seasonal returnees, local officials, "
@@ -1851,7 +1851,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "town-power-map",
                 "Town Power Map",
                 "factions",
-                "Old families, club staff, civic office, donors, and working locals all trade leverage differently.",
+                "Old families, club staff, civic office, donors, press, and working locals all trade leverage differently.",
                 (
                     "Harbor Society is not divided into formal factions so much as public lanes of power. "
                     "Old families own memory and invitations. Club staff control access and overhear what "
@@ -3772,6 +3772,12 @@ STUDIO_CLAIM_TYPES: dict[str, tuple[ClaimTypeSeed, ...]] = {
             "Members, guests, staff, donors, and applicants with something to prove.",
         ),
         ClaimTypeSeed(
+            "influence_lane",
+            "Influence Lane",
+            "faction",
+            "Old families, civic office, press, donors, workers, and club staff all move power differently.",
+        ),
+        ClaimTypeSeed(
             "business",
             "Business Claim",
             "occupation",
@@ -4139,6 +4145,14 @@ STUDIO_APPLICATION_FIELDS: dict[str, tuple[ApplicationFieldSeed, ...]] = {
             "How they touch the Shoreline Club and Founders Gala.",
             options=("Member", "Staff", "Guest", "Donor", "Applicant", "Critic"),
             maps_to_claim_type_slug="club_role",
+        ),
+        ApplicationFieldSeed(
+            "influence_lane_claim",
+            "Influence lane",
+            "select",
+            "Which public lane gives them leverage in town.",
+            options=("Old family", "Civic office", "Press", "Donor circuit", "Working local", "Club staff"),
+            maps_to_claim_type_slug="influence_lane",
         ),
     ),
     "signal-creek": (

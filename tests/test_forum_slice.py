@@ -2272,6 +2272,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Town Power Map" in content
                     assert "Family" in content
                     assert "Club Role" in content
+                    assert "Influence Lane" in content
                     assert "Business" in content
                     assert "Old names, newcomer ties, and marriages that still carry debt." in content
                     assert (
@@ -2279,13 +2280,24 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                         in content
                     )
                     assert (
+                        "Old families, civic office, press, donors, workers, and club staff all move power differently."
+                        in content
+                    )
+                    assert (
                         "Workplaces, civic offices, service counters, and favors traded in public."
+                        in content
+                    )
+                    assert "He can print the scandal if his source survives the room." in content
+                    assert (
+                        "White jackets, old money, and a membership vote that turns manners into weapons."
                         in content
                     )
                     assert "elbysodic-realm-lane-card--kinship" in response.text
                     assert "elbysodic-realm-lane-card--access" in response.text
+                    assert "elbysodic-realm-lane-card--faction" in response.text
                     assert "elbysodic-realm-lane-card--work" in response.text
                     assert "Family Claim" not in content
+                    assert "Faction Claim" not in content
                     assert "Old family, newcomer tie, or married-in pressure." not in content
                     assert "Member, staff, guest, donor, or applicant posture." not in content
                     assert "Public workplace, civic office, or service lane." not in content
