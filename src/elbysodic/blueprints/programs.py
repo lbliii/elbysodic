@@ -237,6 +237,28 @@ class ProgramBlueprintPreview:
             return "No board media payload."
         return f"{count} board media {'slot' if count == 1 else 'slots'}."
 
+    @property
+    def diff_action_summary(self) -> str:
+        if not self.diff_rows:
+            return "Hydration preflight not available."
+        action_order: tuple[BlueprintDiffAction, ...] = (
+            "create",
+            "update",
+            "skip",
+            "blocked",
+            "warning",
+        )
+        counts = {
+            action: sum(1 for row in self.diff_rows if row.action == action)
+            for action in action_order
+        }
+        parts = [
+            f"{count} {action} {'action' if count == 1 else 'actions'}"
+            for action, count in counts.items()
+            if count
+        ]
+        return f"Preflight: {', '.join(parts)}."
+
 
 def preview_program_blueprint_yaml(source: str) -> ProgramBlueprintPreview:
     """Parse and validate director-authored YAML without hydrating anything."""

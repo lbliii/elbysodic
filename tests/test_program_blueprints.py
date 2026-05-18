@@ -857,6 +857,7 @@ materials:
     assert preview.is_valid
     assert preview.preview_fingerprint
     assert len(preview.preview_fingerprint) == 16
+    assert preview.diff_action_summary == "Preflight: 5 create actions."
     assert changed.preview_fingerprint != preview.preview_fingerprint
 
 

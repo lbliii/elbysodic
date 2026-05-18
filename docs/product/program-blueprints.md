@@ -281,6 +281,8 @@ Studio intake currently supports the first dry-run milestone:
 
 The dry-run preview should summarize the resulting program in director language:
 "1 program, 3 starter faces, 5 scene hubs, 3 materials, 2 wanted hooks."
+When a hydration preflight is available, it should also summarize diff actions
+before listing rows, for example "Preflight: 5 create actions."
 
 Do not make file import the first user-facing milestone. The first milestone is
 the shared contract: seed data and future YAML imports should describe the same

@@ -4348,6 +4348,7 @@ appearance:
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration diff preview" in response.text
         assert "Preview fingerprint:" in response.text
+        assert "Preflight: 7 create actions." in response.text
         assert "create</strong> program: RL Small Town Preview" in response.text
         assert "create</strong> scene hub: Main Street" in response.text
         assert "create</strong> wanted hook: Returning sibling" in response.text
