@@ -534,3 +534,15 @@ Implementation proof from this wave:
 - `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
 - `make changelog-check`
 - `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8002 --profile community-hub --artifact-dir /private/tmp/elbysodic-community-hub-qa`
+
+QA pass on 2026-05-18:
+
+- Local preview restarted on `http://127.0.0.1:8002` and reseeded
+  `var/elbysodic.sqlite3`.
+- Community-hub browser QA passed for desktop and mobile screenshots at
+  `/private/tmp/elbysodic-community-hub-qa`.
+- Accepted fixes from screenshot review: archive legacy generic seed scenes
+  (`Opening pressure`, `Wanted thread start`) during reseed, and restore missing
+  seeded board media when an existing preview DB predates the new place art.
+- Remaining risk: Wayfarer Station still uses generic original-premise scene
+  seed copy and should be part of the next seed-depth pass.
