@@ -6949,6 +6949,13 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert form.status == 200
         assert "Begin a new face" in form.text
         assert "Application Guide" in form.text
+        assert "After this face is accepted" in form.text
+        assert "Claims and reserves" in form.text
+        assert 'href="/claims"' in form.text
+        assert "Open calls" in form.text
+        assert 'href="/wanted"' in form.text
+        assert "First scene" in form.text
+        assert 'href="/locations"' in form.text
         assert "Director fields" in form.text
         assert "Face claim" in form.text
         assert response.status == 302

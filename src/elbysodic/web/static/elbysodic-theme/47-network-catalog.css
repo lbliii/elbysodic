@@ -742,6 +742,36 @@
     max-inline-size: 13ch;
 }
 
+.elbysodic-first-face-path {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-start: 1rem;
+}
+
+.elbysodic-first-face-path p {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.elbysodic-first-face-path a {
+    background: var(--chirpui-bg-subtle);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 800;
+    padding: 0.42rem 0.65rem;
+    text-decoration: none;
+}
+
+.elbysodic-first-face-path a:hover,
+.elbysodic-first-face-path a:focus-visible {
+    border-color: var(--chirpui-accent);
+    color: var(--chirpui-accent);
+}
+
 .elbysodic-application-starter__materials,
 .elbysodic-application-form__facets {
     border: 1px solid var(--chirpui-border-subtle);
