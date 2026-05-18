@@ -3073,7 +3073,7 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
             assert "Your roster is caught up" not in desk.text
 
             assert threads.status == 200
-            assert "Roster writing lane" in threads.text
+            assert "Roster replies" in threads.text
             assert "No active thread queue yet." in threads.text
             assert "Thread history" not in threads.text
 
@@ -5978,18 +5978,18 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "Wanted hooks" in event.text
             assert "Active scenes" in event.text
             assert "Locations" in event.text
-            assert "Related materials" in event.text
+            assert "Related guidebook" in event.text
             assert "elbysodic-studio-facts" in event.text
             assert "Featured" in event.text
             assert "Carry this event into play" in event.text
-            assert 'aria-label="Material sections"' in event.text
+            assert 'aria-label="Guide sections"' in event.text
             assert 'href="#event-actions"' in event.text
             assert 'id="canon"' in event.text
             assert "Enter scene" in event.text
             assert "Answer hook" in event.text
             assert "Explore location" in event.text
             assert "Open discovery" in event.text
-            assert "Event progression" in event.text
+            assert "What changed" in event.text
             assert "elbysodic-continuity-timeline" in event.text
             assert "elbysodic-continuity-timeline__title-link" in event.text
             assert "Event opened" in event.text
@@ -6056,7 +6056,7 @@ def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
         assert staff_direct.status == 200
         assert "Director Only Event" in staff_direct.text
         assert "Private director continuity that should not leak." in staff_direct.text
-        assert "Material studio" in staff_direct.text
+        assert "Edit guidebook page" in staff_direct.text
 
     asyncio.run(run())
 
@@ -6430,7 +6430,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             character = await client.get("/characters/rogue")
             assert character.status == 200
             assert "Plotter" in character.text
-            assert "Tracker" in character.text
+            assert "Scenes" in character.text
             assert "Brotherhood rival from Rogue" in character.text
             assert 'href="/wanted"' in character.text
 
@@ -6451,8 +6451,8 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             interested = await client.get("/wanted/human-un-liaison-for-b24")
             assert interested.status == 200
             assert "Rogue is interested in this hook." in interested.text
-            assert "Hook lifecycle" in interested.text
-            assert "Raised hands" in interested.text
+            assert "Interest and reserves" in interested.text
+            assert "Interest" in interested.text
             assert "elbysodic-lifecycle-section" in interested.text
 
             services = get_services()
@@ -6540,13 +6540,13 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "Human UN liaison for B-24 talks" in profile.text
                 casting = await profile_client.get("/casting")
                 assert casting.status == 200
-                assert "Casting Desk" in casting.text
+                assert "Casting desk" in casting.text
                 assert "elbysodic-casting-desk-hero__identity" in casting.text
-                assert "Active-face casting" in casting.text
+                assert "Active face casting" in casting.text
                 assert "Wanted handoffs" in casting.text
                 assert "Active Reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
-                assert "Active-face reserves" in casting.text
+                assert "Active face reserves" in casting.text
                 assert "Browse wanted" not in _page_content(casting.text)
                 assert "Open face" not in _page_content(casting.text)
 
@@ -6610,7 +6610,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             )
 
             assert filled_response.status == 302
-            assert "Manage hook lifecycle" in filled_view.text
+            assert "Manage hook" in filled_view.text
             assert '<option value="filled" selected>Filled</option>' in filled_view.text
             assert archive_response.status == 302
             assert archived_manager_view.status == 200
@@ -6659,7 +6659,7 @@ def test_structured_wanted_casting_packet_renders_for_rent_week_hook() -> None:
             detail = await client.get("/c/rl-nyc/wanted/ex-bandmate-with-the-old-lease")
 
         assert detail.status == 200
-        assert "Casting packet" in detail.text
+        assert "In play" in detail.text
         assert "What this role brings into play" in detail.text
         assert "Why this matters" in detail.text
         assert "First scene invitations" in detail.text
@@ -7474,7 +7474,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                     "/characters/rogue/hooks/coffee-before-the-crisis"
                 )
                 assert creator_detail.status == 200
-                assert "Hook lifecycle" in creator_detail.text
+                assert "Interest and rooms" in creator_detail.text
                 assert "elbysodic-lifecycle-section" in creator_detail.text
                 assert "Start plotting room" in creator_detail.text
 
@@ -7493,7 +7493,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 plotting = await owner_client.get("/plotting")
                 assert plotting.status == 200
-                assert "Plotting Rooms" in plotting.text
+                assert "Plotting rooms" in plotting.text
                 assert "Open plotting room" in plotting.text
                 assert "Active face plotter" not in _page_content(plotting.text)
                 assert "Discover hooks" not in _page_content(plotting.text)
@@ -7501,7 +7501,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 profile = await owner_client.get("/characters/rogue")
                 assert profile.status == 200
-                assert "Plotting Now" in profile.text
+                assert "Plotting now" in profile.text
                 assert "Coffee before the crisis: Hookfan Face" in profile.text
 
             assert (
@@ -7737,7 +7737,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
 
             plotting = await charlie_client.get("/plotting")
             assert plotting.status == 200
-            assert "Raised hands" in plotting.text
+            assert "Interest" in plotting.text
             assert "Open plotting room" in plotting.text
             assert "Active face plotter" not in _page_content(plotting.text)
             assert "Browse wanted" not in _page_content(plotting.text)
@@ -9094,7 +9094,7 @@ def test_my_threads_defaults_to_current_face_lens() -> None:
 
         assert dashboard.status == 200
         assert "My threads" in dashboard.text
-        assert "Active-face writing lane" in dashboard.text
+        assert "Active face first" in dashboard.text
         assert "Queue lens: active face" in dashboard.text
         assert "Rogue's writing lane" not in dashboard.text
         assert 'href="/my/threads?character=all"' in dashboard.text
@@ -9202,13 +9202,13 @@ def test_character_activity_center_tracks_identity_specific_threads() -> None:
 
             profile = await client.get("/characters/rogue")
             assert profile.status == 200
-            assert "Next actions" in profile.text
+            assert "Write as Rogue" in profile.text
             assert "active-face defaults on" in profile.text
             assert "Reply as Rogue" in profile.text
             assert "Find play for Rogue" not in _page_content(profile.text)
             assert "Casting as Rogue" not in _page_content(profile.text)
             assert "Browse wanted" not in _page_content(profile.text)
-            assert "Tracker" in profile.text
+            assert "Scenes" in profile.text
             assert "Open filtered queue" in profile.text
             assert "Open thread roster" in profile.text
             assert "Sentinel drill after midnight" in profile.text

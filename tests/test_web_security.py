@@ -251,21 +251,21 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert tenant_world.status == 200
         assert "World guide" in tenant_world.text
         assert "Application Guide" in tenant_world.text
-        assert "Material studio" not in tenant_world.text
+        assert "Edit guidebook page" not in tenant_world.text
         assert tenant_material.status == 200
         assert "begins after the school has reopened under a fragile truce" in (
             tenant_material.text
         )
         assert "Active scenes" not in tenant_material.text
-        assert "Material studio" not in tenant_material.text
+        assert "Edit guidebook page" not in tenant_material.text
         assert tenant_wanted.status == 200
         assert "Brotherhood rival from Rogue" in tenant_wanted.text
         assert 'href="/c/x-men-apocalypse/characters/rogue"' not in tenant_wanted.text
         assert tenant_wanted_detail.status == 200
         assert "Rogue needs someone who remembers" in tenant_wanted_detail.text
         assert "Log in to raise interest" in tenant_wanted_detail.text
-        assert "Hook lifecycle" not in tenant_wanted_detail.text
-        assert "Raised hands" not in tenant_wanted_detail.text
+        assert "Interest and reserves" not in tenant_wanted_detail.text
+        assert "Interest" not in tenant_wanted_detail.text
         assert tenant_applications.status == 302
         assert dict(tenant_applications.headers)["location"] == (
             "/login?next=%2Fc%2Fx-men-apocalypse%2Fapplications"

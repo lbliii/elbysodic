@@ -63,7 +63,7 @@
   {% else %}
   {% call section_header("My threads") %}
   {% if dashboard.selected_character %}
-  Active-face queue first; switch to the whole roster when you need the broader tracker.
+  Active face first; switch to the whole roster when you need the broader tracker.
   {% else %}
   Track where your roster owes replies and where you are waiting on other writers.
   {% end %}
@@ -73,15 +73,15 @@
   {% call surface(variant="elevated") %}
   <section class="elbysodic-queue-focus" aria-labelledby="queue-focus-heading">
     <div class="elbysodic-queue-focus__copy">
-      <p class="elbysodic-section-kicker">Queue focus</p>
+      <p class="elbysodic-section-kicker">Now</p>
       {% if dashboard.selected_character and character_lens_is_explicit %}
-      <h2 id="queue-focus-heading">{{ dashboard.selected_character.name }}'s writing lane</h2>
+      <h2 id="queue-focus-heading">{{ dashboard.selected_character.name }}'s replies</h2>
       <p class="elbysodic-copy-section">Open the scenes that need this face first; use history when you need the broader tracker.</p>
       {% elif dashboard.selected_character %}
-      <h2 id="queue-focus-heading">Active-face writing lane</h2>
+      <h2 id="queue-focus-heading">Active face first</h2>
       <p class="elbysodic-copy-section">Open the scenes that need the active face first; use history when you need the broader tracker.</p>
       {% else %}
-      <h2 id="queue-focus-heading">Roster writing lane</h2>
+      <h2 id="queue-focus-heading">Roster replies</h2>
       <p class="elbysodic-copy-section">Open scenes that need any of your faces first; use history when you need the broader tracker.</p>
       {% end %}
     </div>

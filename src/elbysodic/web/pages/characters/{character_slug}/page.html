@@ -44,7 +44,7 @@
     <div class="elbysodic-profile-hero__body">
       <div class="elbysodic-face-hub__identity">
         <div class="elbysodic-face-hub__status">
-          <span class="elbysodic-section-kicker">Face hub</span>
+          <span class="elbysodic-section-kicker">Face</span>
           <span class="elbysodic-face-hub__badges">
             {{ badge("current", variant="success") if profile.is_default else badge(viewer.community.name, variant="muted") }}
             {{ badge(profile.application_status_label, variant=profile.application_status_variant) }}
@@ -118,8 +118,8 @@
   {% call surface(variant="elevated") %}
   <section class="elbysodic-face-writing-lane" aria-labelledby="face-writing-lane-heading">
     <div class="elbysodic-face-writing-lane__copy">
-      <p class="elbysodic-section-kicker">Writing lane</p>
-      <h2 id="face-writing-lane-heading">{{ profile.character.name }}'s current queue</h2>
+      <p class="elbysodic-section-kicker">Queue</p>
+      <h2 id="face-writing-lane-heading">{{ profile.character.name }}'s replies</h2>
       {% if profile.activity.needs_reply %}
       {% set next_reply = profile.activity.needs_reply[0] %}
       <p class="elbysodic-face-writing-lane__next">
@@ -168,8 +168,8 @@
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="face-next-actions-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
       <div>
-        <p class="elbysodic-section-kicker">Next actions</p>
-        <h2 id="face-next-actions-heading">{{ profile.character.name }} as your working face</h2>
+        <p class="elbysodic-section-kicker">Now</p>
+        <h2 id="face-next-actions-heading">Write as {{ profile.character.name }}</h2>
       </div>
       {% if profile.is_default %}
       {{ badge("active-face defaults on", variant="success") }}
@@ -228,7 +228,7 @@
 
   {% if profile.plotting_rooms %}
   <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Plotting Now") %}
+    {% call section_header("Plotting now") %}
     Rooms where {{ profile.character.name }} is already in conversation.
     {% end %}
     <div class="elbysodic-interest-list">
@@ -236,7 +236,6 @@
       {% call surface(variant="elevated") %}
       <article class="elbysodic-interest-card">
         <div>
-          <p class="elbysodic-wanted-card__type">{{ item.source_label }}</p>
           <h3><a class="chirpui-link" href="/plotting/{{ item.room.id }}">{{ item.room.title }}</a></h3>
           {% if item.room.summary %}
           <p class="elbysodic-copy-summary">{{ item.room.summary }}</p>
@@ -358,7 +357,7 @@
   {% end %}
 
   <section id="tracker" class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Tracker") %}
+    {% call section_header("Scenes") %}
     {{ profile.character.name }}'s scene tracker and thread history.
     {% end %}
     {% if profile.activity.participated %}

@@ -90,7 +90,7 @@
     {% if wanted.casting_packet.has_content %}
     <section class="elbysodic-casting-packet" aria-labelledby="casting-packet-heading">
       <div>
-        <p class="elbysodic-section-kicker">Casting packet</p>
+        <p class="elbysodic-section-kicker">In play</p>
         <h2 id="casting-packet-heading">What this role brings into play</h2>
       </div>
       <div class="elbysodic-casting-packet__grid">
@@ -220,7 +220,7 @@
     {% if wanted.can_manage %}
     <details class="elbysodic-management-disclosure elbysodic-action-disclosure">
       <summary>
-        <span id="wanted-lifecycle">Manage hook lifecycle</span>
+        <span id="wanted-lifecycle">Manage hook</span>
         <small>Open, reserve, fill, or archive this wanted without changing its history.</small>
       </summary>
       <form method="post"
@@ -256,13 +256,13 @@
 
   {% if wanted.interests or wanted.reserves %}
   <section class="elbysodic-lifecycle-section">
-    {% call section_header("Hook lifecycle") %}
-    Raised hands, plotting handoffs, and reserves for this wanted hook.
+    {% call section_header("Interest and reserves") %}
+    Writers, plotting handoffs, and reserves for this wanted hook.
     {% end %}
 
     {% if wanted.interests %}
     <div class="elbysodic-lifecycle-lane">
-      <h3 class="elbysodic-lifecycle-lane__heading">Raised hands</h3>
+      <h3 class="elbysodic-lifecycle-lane__heading">Interest</h3>
       <div class="elbysodic-lifecycle-list">
         {% for item in wanted.interests %}
         <article class="elbysodic-interest-card elbysodic-interest-card--{{ item.interest.status }}">
@@ -394,7 +394,7 @@
   {% end %}
 
   {% if wanted.related_ads %}
-  {% call section_header("Related wanted") %}
+  {% call section_header("Related calls") %}
   Hooks that share this world lens.
   {% end %}
   <div class="elbysodic-wanted-grid">
