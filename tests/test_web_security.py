@@ -525,6 +525,8 @@ def test_public_network_explore_keeps_filters_below_results() -> None:
 
         assert response.status == 200
         assert 'class="elbysodic-network-filter-drawer"' in response.text
+        assert "elbysodic-network-explore-map" not in response.text
+        assert "elbysodic-network-two-up" not in response.text
         assert "Browse by fit" in response.text
         assert response.text.index("explore-results-heading") < response.text.index(
             "elbysodic-network-filter-drawer"

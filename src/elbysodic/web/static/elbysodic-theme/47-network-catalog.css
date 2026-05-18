@@ -355,10 +355,11 @@
     color: var(--chirpui-accent);
 }
 
-.elbysodic-network-explore-map {
+.elbysodic-network-filter-drawer__chips {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    grid-column: 1 / -1;
 }
 
 .elbysodic-network-explore-tag {
@@ -706,42 +707,6 @@
     background: color-mix(in srgb, var(--elbysodic-network-accent) 14%, var(--chirpui-surface));
     border-color: color-mix(in srgb, var(--elbysodic-network-accent) 56%, var(--chirpui-border));
     color: var(--chirpui-text);
-}
-
-.elbysodic-network-editorial-panel {
-    display: grid;
-    gap: 1rem;
-    padding: 1rem;
-}
-
-.elbysodic-network-editorial-panel h2 {
-    color: var(--chirpui-text);
-    font-family: var(--elbysodic-display-font-family);
-    font-size: 1.8rem;
-    letter-spacing: 0;
-    line-height: 1;
-    margin: 0;
-}
-
-.elbysodic-network-casting-list {
-    display: grid;
-    gap: 0.55rem;
-}
-
-.elbysodic-network-casting-list a {
-    align-items: center;
-    border-block-start: 1px solid var(--chirpui-border);
-    color: var(--chirpui-text);
-    display: flex;
-    gap: 0.75rem;
-    justify-content: space-between;
-    padding-block-start: 0.55rem;
-    text-decoration: none;
-}
-
-.elbysodic-network-casting-list span {
-    color: var(--chirpui-text-muted);
-    font-size: var(--chirpui-font-sm);
 }
 
 .elbysodic-network-mood-grid {

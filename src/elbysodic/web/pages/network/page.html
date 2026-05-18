@@ -257,12 +257,6 @@
     </form>
   </section>
 
-  <section class="elbysodic-network-explore-map" aria-label="Explore by tag relationship">
-    {% for facet in browse_facets %}
-    {{ explore_tag(facet.label, facet.href, facet.tone, facet.result_count) }}
-    {% end %}
-  </section>
-
   <section class="elbysodic-network-rail" aria-labelledby="explore-results-heading">
     <div class="elbysodic-network-rail__header">
       <div>
@@ -305,9 +299,14 @@
   <details class="elbysodic-network-filter-drawer">
     <summary>
       <span>Browse by fit</span>
-      <em>{{ filter_groups | length }} groups</em>
+      <em>{{ browse_facets | length + filter_groups | length }} ways</em>
     </summary>
     <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
+      <div class="elbysodic-network-filter-drawer__chips" aria-label="Popular fits">
+        {% for facet in browse_facets %}
+        {{ explore_tag(facet.label, facet.href, facet.tone, facet.result_count) }}
+        {% end %}
+      </div>
       {% for group in filter_groups %}
       {{ explore_filter_group(group) }}
       {% end %}
@@ -318,40 +317,6 @@
   <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
     {% for lane in relationship_lanes %}
     {{ explore_lane(lane.title, lane.summary, lane.href, lane.result_count ~ " " ~ lane.metric_label) }}
-    {% end %}
-  </section>
-
-  <section class="elbysodic-network-two-up" aria-label="Explore support lanes">
-    {% call surface(variant="elevated") %}
-    <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Wanted</p>
-      <h2>Open roles and ties across the network.</h2>
-      <div class="elbysodic-network-casting-list">
-        {% for program in explore_programs %}
-        {% if program.open_wanted_count %}
-        <a href="{{ program.entry_href }}/wanted">
-          <strong>{{ program.community.name }}</strong>
-          <span>{{ program.open_wanted_count }} wanted hooks</span>
-        </a>
-        {% end %}
-        {% end %}
-      </div>
-    </div>
-    {% end %}
-
-    {% call surface(variant="elevated") %}
-    <div class="elbysodic-network-editorial-panel">
-      <p class="elbysodic-section-kicker">Start here</p>
-      <h2>Realms you can read before you apply.</h2>
-      <div class="elbysodic-network-casting-list">
-        {% for program in explore_programs %}
-        <a href="{{ program.entry_href }}">
-          <strong>{{ program.community.name }}</strong>
-          <span>{{ program.application_posture_label }} · {{ program.invite_posture_label }}</span>
-        </a>
-        {% end %}
-      </div>
-    </div>
     {% end %}
   </section>
   {% else %}

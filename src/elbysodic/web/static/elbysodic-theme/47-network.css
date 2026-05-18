@@ -398,8 +398,7 @@
     justify-content: space-between;
 }
 
-.elbysodic-network-continue-grid,
-.elbysodic-network-two-up {
+.elbysodic-network-continue-grid {
     display: grid;
     gap: 0.9rem;
 }
@@ -409,6 +408,8 @@
 }
 
 .elbysodic-network-two-up {
+    display: grid;
+    gap: 0.9rem;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 }
 
