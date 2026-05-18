@@ -2061,6 +2061,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         "ready for public scene browsing",
         "Play readiness",
         "Guidebook path",
+        "Scene hubs ready",
         "Playable doors into the premise",
         "Active scene hub",
         "Hot scene hub",
@@ -2244,6 +2245,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Already moving" in content
                 assert "Ways in" in content
                 assert "Start here" in content
+                assert content.count("Start here") == 1
                 assert "Play readiness" not in content
                 assert "Public preview" in content
                 if community_slug == "harbor-society":
