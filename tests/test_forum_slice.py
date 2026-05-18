@@ -2983,6 +2983,8 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "Rank 1" in root.text
         assert "Search by premise, pace, hooks, and chapters in motion." not in root.text
         assert "Search story fit" not in root.text
+        assert 'class="elbysodic-topbar-search" action="/search"' in root.text
+        assert "All realms" in root.text
         assert "Your desk is one click away." not in root.text
         assert "Open Writer Desk" not in root.text
         assert "What can move next." not in root.text
@@ -3023,6 +3025,10 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             assert 'href="/c/x-men-apocalypse/desk"' in index.text
             assert 'aria-label="Primary community rooms"' in index.text
             assert 'aria-label="Global"' in index.text
+            assert (
+                'class="elbysodic-topbar-search" action="/c/x-men-apocalypse/search"' in index.text
+            )
+            assert "Search X-Men Apocalypse" in index.text
             assert 'class="elbysodic-primary-rail"' in index.text
             assert ">Home</a>" not in index.text
             assert re.search(

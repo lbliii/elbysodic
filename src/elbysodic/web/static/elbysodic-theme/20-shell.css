@@ -615,6 +615,64 @@
     padding: 0.02rem 0.35rem;
 }
 
+.elbysodic-topbar-search {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 78%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    flex: 1 1 22rem;
+    grid-template-columns: auto minmax(8rem, 1fr) auto;
+    max-inline-size: 34rem;
+    min-inline-size: 16rem;
+    overflow: hidden;
+}
+
+.elbysodic-topbar-search__scope {
+    align-items: center;
+    border-inline-end: 1px solid color-mix(in srgb, var(--chirpui-border) 78%, transparent);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    max-inline-size: 8.5rem;
+    min-block-size: 2.15rem;
+    overflow: hidden;
+    padding-inline: 0.65rem;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.elbysodic-topbar-search input {
+    background: transparent;
+    border: 0;
+    color: var(--chirpui-text);
+    font: inherit;
+    font-size: var(--chirpui-font-sm);
+    min-block-size: 2.15rem;
+    min-width: 0;
+    padding: 0.35rem 0.65rem;
+}
+
+.elbysodic-topbar-search button {
+    background: color-mix(in srgb, var(--chirpui-accent) 88%, var(--chirpui-text));
+    border: 0;
+    border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+    color: var(--chirpui-on-accent);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 900;
+    min-block-size: 2.15rem;
+    padding-inline: 0.75rem;
+}
+
+.elbysodic-topbar-search button:hover,
+.elbysodic-topbar-search button:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 78%, var(--chirpui-text));
+}
+
 .elbysodic-shell-identity {
     align-items: center;
     display: flex;
@@ -1121,6 +1179,17 @@
         overflow-y: hidden;
         padding-bottom: 0.1rem;
         scrollbar-width: thin;
+    }
+
+    .elbysodic-topbar-search {
+        flex: 1 1 auto;
+        grid-template-columns: minmax(0, 1fr) auto;
+        max-inline-size: none;
+        min-inline-size: 0;
+    }
+
+    .elbysodic-topbar-search__scope {
+        display: none;
     }
 
     .elbysodic-shell-identity {

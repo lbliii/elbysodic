@@ -175,6 +175,19 @@
 </a>
 {% end %}
 
+{% def topbar_search(scope_label, query="") %}
+<form class="elbysodic-topbar-search" action="/search" method="get" role="search" hx-boost="false">
+  <label class="chirpui-visually-hidden" for="elbysodic-topbar-search-input">Search {{ scope_label }}</label>
+  <span class="elbysodic-topbar-search__scope">{{ scope_label }}</span>
+  <input id="elbysodic-topbar-search-input"
+         name="q"
+         type="search"
+         value="{{ query }}"
+         placeholder="Search">
+  <button type="submit">Search</button>
+</form>
+{% end %}
+
 {% block topbar_center %}
 {% set topbar_board_section = board_section_for_path(viewer, current_path or "/") if viewer else "" %}
 {% if board is defined %}
@@ -193,6 +206,10 @@
 <nav class="elbysodic-topnav elbysodic-topnav--global" aria-label="Global">
   {{ topnav_link("/network", "Explore", topbar_route.network_active) }}
 </nav>
+{% set topbar_search_viewer = viewer | default(none) %}
+{% set topbar_search_community = (topbar_search_viewer.community if shell_has_community and topbar_search_viewer else (community | default(none))) %}
+{% set topbar_search_query = search_query | default(network_search_query | default("")) %}
+{{ topbar_search(topbar_search_community.name if topbar_search_community else "All realms", topbar_search_query) }}
 {% if shell_has_community %}
 {% call drawer("elbysodic-mobile-shell", title=mobile_nav_label, side="left", cls="elbysodic-mobile-shell-drawer") %}
   {% set drawer_board_section = topbar_board_section %}
