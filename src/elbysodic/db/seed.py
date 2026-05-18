@@ -1774,6 +1774,9 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Guest books, quiet bars, conference rooms, and people hiding in plain sight.",
                 "Hotel, tourism, visiting family, investor, and illicit-meeting scenes.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg",
+                image_alt="Marina hotel beside dark water and lit windows",
+                image_treatment="background",
             ),
             BlueprintBoard(
                 "town-hall",
@@ -1791,6 +1794,9 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "A weekly paper with a printer that overheats whenever the town gets interesting.",
                 "Reporter scenes, anonymous tips, editorials, public scandals, and local history.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg",
+                image_alt="Harbor Ledger office with stacked newspapers and warm window light",
+                image_treatment="background",
             ),
             BlueprintBoard(
                 "back-veranda",

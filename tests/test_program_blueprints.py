@@ -748,6 +748,25 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
         ).fetchall()
     }
     assert harbor_materials >= {"Town Power Map", "Donor Circuit"}
+    harbor_board_media = {
+        row["slug"]: row["image_url"]
+        for row in connection.execute(
+            """
+            SELECT boards.slug, boards.image_url
+            FROM boards
+            JOIN communities ON communities.id = boards.community_id
+            WHERE communities.slug = 'harbor-society'
+            """
+        ).fetchall()
+    }
+    assert (
+        harbor_board_media["marina-hotel"]
+        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
+    )
+    assert (
+        harbor_board_media["harbor-ledger"]
+        == "/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg"
+    )
 
 
 def test_program_blueprint_preview_fingerprint_changes_with_source() -> None:
