@@ -1910,6 +1910,15 @@ class RealmGatewayAtmosphere:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayPremiseStage:
+    label: str
+    title: str
+    summary: str
+    playable_pressure: str
+    action: RealmGatewayAction | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewaySceneHub:
     board: Board
     public_thread_count: int
@@ -1981,6 +1990,7 @@ class RealmGatewayView:
     hero: RealmGatewayHero
     premise: RealmGatewayPremise
     story_frame: RealmGatewayStoryFrame
+    premise_stage: RealmGatewayPremiseStage
     atmosphere: RealmGatewayAtmosphere
     signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]

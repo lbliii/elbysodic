@@ -2114,6 +2114,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert gateway.story_frame.cadence_label
         assert gateway.story_frame.writing_expectation
         assert gateway.story_frame.roster_posture
+        assert gateway.premise_stage.title
+        assert gateway.premise_stage.summary
+        assert gateway.premise_stage.playable_pressure
         assert gateway.signals
         assert "Open calls" in {signal.title for signal in gateway.signals}
         assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
@@ -2167,7 +2170,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 content = _page_content(response.text)
 
                 assert response.status == 200
-                assert "Now playing" in content
+                assert "What it opens" in content
                 assert "First face path" in content
                 assert "Play readiness" not in content
                 assert "Public preview" in content
@@ -2323,6 +2326,7 @@ def test_realm_gateway_home_tolerates_missing_scene_previews(
             hero=gateway.hero,
             premise=gateway.premise,
             story_frame=gateway.story_frame,
+            premise_stage=gateway.premise_stage,
             atmosphere=gateway.atmosphere,
             signals=gateway.signals,
             scene_hubs=gateway.scene_hubs,

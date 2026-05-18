@@ -860,6 +860,45 @@
     line-height: 1.42;
 }
 
+.elbysodic-realm-stage {
+    align-items: end;
+    display: grid;
+    gap: var(--chirpui-space-5);
+    grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.7fr);
+}
+
+.elbysodic-realm-stage h2 {
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(1.9rem, 4vw, 3.6rem);
+    letter-spacing: 0;
+    line-height: 0.95;
+    margin: 0;
+}
+
+.elbysodic-realm-stage p {
+    color: var(--chirpui-text-muted);
+    line-height: 1.58;
+    margin-block-end: 0;
+    max-inline-size: 54rem;
+}
+
+.elbysodic-realm-stage__pressure {
+    border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-border), transparent 20%);
+    display: grid;
+    gap: var(--chirpui-space-2);
+    padding-inline-start: var(--chirpui-space-4);
+}
+
+.elbysodic-realm-stage__pressure strong {
+    color: var(--chirpui-text);
+}
+
+.elbysodic-realm-stage__pressure span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.5;
+}
+
 .elbysodic-realm-gateway-hero__media {
     align-self: stretch;
     background:
@@ -1186,6 +1225,16 @@
     .elbysodic-realm-gateway-hero__media {
         grid-template-rows: minmax(12rem, 48vw) auto;
         min-block-size: 0;
+    }
+
+    .elbysodic-realm-stage {
+        align-items: start;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-realm-stage__pressure {
+        border-inline-start: 0;
+        padding-inline-start: 0;
     }
 
     .elbysodic-realm-entry-row {

@@ -278,6 +278,7 @@ from elbysodic.services.read_models import (
     RealmGatewayEntryPath,
     RealmGatewayHero,
     RealmGatewayPremise,
+    RealmGatewayPremiseStage,
     RealmGatewaySceneHub,
     RealmGatewayScenePreview,
     RealmGatewaySignalItem,
@@ -3538,6 +3539,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         hero=_realm_gateway_hero(program, premise, atmosphere),
         premise=premise,
         story_frame=_realm_gateway_story_frame(program, premise),
+        premise_stage=_realm_gateway_premise_stage(program, premise, atmosphere),
         atmosphere=atmosphere,
         signals=_realm_gateway_signals(program, guidebook, scene_hubs),
         scene_hubs=scene_hubs,
@@ -3666,6 +3668,56 @@ def _realm_gateway_story_frame(
         writing_expectation=writing_expectation,
         roster_posture=premise.roster_posture,
     )
+
+
+def _realm_gateway_premise_stage(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+) -> RealmGatewayPremiseStage:
+    if program.current_event is not None:
+        return RealmGatewayPremiseStage(
+            label="In motion",
+            title=program.current_event.material.title,
+            summary=program.current_event.rendered_summary,
+            playable_pressure=_realm_gateway_stage_pressure(program, premise, atmosphere.title),
+            action=(
+                RealmGatewayAction("Read the chapter", program.current_event_href)
+                if program.current_event_href is not None
+                else None
+            ),
+        )
+    if program.premise is not None:
+        return RealmGatewayPremiseStage(
+            label="Story promise",
+            title=program.premise.material.title,
+            summary=program.premise.rendered_summary,
+            playable_pressure=premise.onboarding_pitch,
+            action=(
+                RealmGatewayAction("Read the premise", program.premise_href)
+                if program.premise_href is not None
+                else None
+            ),
+        )
+    return RealmGatewayPremiseStage(
+        label="Open doors",
+        title=atmosphere.title,
+        summary=atmosphere.copy,
+        playable_pressure=premise.onboarding_pitch,
+        action=_realm_gateway_reading_action(program),
+    )
+
+
+def _realm_gateway_stage_pressure(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    stage_title: str,
+) -> str:
+    if program.open_wanted_count:
+        return (
+            f"Open calls, public places, and first-face ties can enter through {stage_title}."
+        )
+    return premise.onboarding_pitch
 
 
 def _realm_gateway_primary_action(
