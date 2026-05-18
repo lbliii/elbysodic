@@ -59,31 +59,35 @@
 {% def gateway_premise_stage(gateway) %}
 {% set premise_evolution = gateway | get("premise_evolution", none) %}
 <section class="elbysodic-realm-stage" aria-labelledby="realm-stage-title">
-  <div>
+  <div class="elbysodic-realm-stage__story">
     <p class="elbysodic-section-kicker">{{ gateway.premise_stage.label }}</p>
     <h2 id="realm-stage-title">{{ gateway.premise_stage.title }}</h2>
     <p>{{ gateway.premise_stage.summary }}</p>
   </div>
-  <div class="elbysodic-realm-stage__pressure">
+  <aside class="elbysodic-realm-stage__pressure" aria-label="Story pressure">
+    <dl class="elbysodic-realm-stage__beats">
     {% if premise_evolution %}
-    <div>
-      <strong>What changed</strong>
-      <span>{{ premise_evolution.consequences }}</span>
+    <div class="elbysodic-realm-stage__beat">
+      <dt>Already moving</dt>
+      <dd>{{ premise_evolution.consequences }}</dd>
     </div>
-    <div>
-      <strong>Openings</strong>
-      <span>{{ premise_evolution.next_openings }}</span>
+    <div class="elbysodic-realm-stage__beat">
+      <dt>Ways in</dt>
+      <dd>{{ premise_evolution.next_openings }}</dd>
     </div>
     {% else %}
-    <div>
-      <strong>Openings</strong>
-      <span>{{ gateway.premise_stage.playable_pressure }}</span>
+    <div class="elbysodic-realm-stage__beat">
+      <dt>Ways in</dt>
+      <dd>{{ gateway.premise_stage.playable_pressure }}</dd>
     </div>
     {% end %}
+    </dl>
     {% if gateway.premise_stage.action %}
-    {{ gateway_action(gateway.premise_stage.action, "secondary") }}
+    <div class="elbysodic-realm-stage__action">
+      {{ gateway_action(gateway.premise_stage.action, "secondary") }}
+    </div>
     {% end %}
-  </div>
+  </aside>
 </section>
 {% end %}
 

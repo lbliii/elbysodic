@@ -2241,8 +2241,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 content = _page_content(response.text)
 
                 assert response.status == 200
-                assert "What changed" in content
-                assert "Openings" in content
+                assert "Already moving" in content
+                assert "Ways in" in content
                 assert "Start here" in content
                 assert "Play readiness" not in content
                 assert "Public preview" in content
