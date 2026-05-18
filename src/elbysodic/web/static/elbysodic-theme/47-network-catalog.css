@@ -150,35 +150,34 @@
 }
 
 .elbysodic-network-explore-map {
-    display: grid;
-    gap: 0.55rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .elbysodic-network-explore-tag {
-    align-items: end;
+    align-items: center;
     background:
         linear-gradient(135deg, color-mix(in srgb, var(--chirpui-accent) 10%, transparent), transparent 58%),
         var(--chirpui-surface);
     border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius-sm);
+    border-radius: 999px;
     color: var(--chirpui-text);
-    display: grid;
-    font-family: var(--elbysodic-display-font-family);
-    font-size: 1.1rem;
-    line-height: 1;
-    min-block-size: 6rem;
-    padding: 0.8rem;
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 750;
+    gap: 0.45rem;
+    line-height: 1.15;
+    min-block-size: 2.35rem;
+    padding: 0.5rem 0.7rem;
     text-decoration: none;
 }
 
 .elbysodic-network-explore-tag em {
     color: var(--chirpui-text-muted);
-    font-family: var(--chirpui-font-family);
     font-size: var(--chirpui-font-xs);
     font-style: normal;
     font-weight: 850;
-    justify-self: end;
 }
 
 .elbysodic-network-explore-tag--hot {
@@ -194,10 +193,39 @@
     color: var(--chirpui-accent);
 }
 
+.elbysodic-network-filter-drawer {
+    background: color-mix(in srgb, var(--chirpui-surface) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 72%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+}
+
+.elbysodic-network-filter-drawer summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+}
+
+.elbysodic-network-filter-drawer summary span {
+    color: var(--chirpui-text);
+    font-weight: 800;
+}
+
+.elbysodic-network-filter-drawer summary em {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
 .elbysodic-network-filter-panel {
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    padding: 0 1rem 1rem;
 }
 
 .elbysodic-network-filter-group {
@@ -222,17 +250,7 @@
 }
 
 .elbysodic-network-filter-group__options .elbysodic-network-explore-tag {
-    align-items: center;
-    display: flex;
-    font-family: var(--chirpui-font-family);
-    font-size: var(--chirpui-font-sm);
-    font-weight: 750;
-    gap: 0.5rem;
     justify-content: space-between;
-    line-height: 1.2;
-    min-block-size: 2.6rem;
-    min-inline-size: 0;
-    padding: 0.55rem 0.7rem;
 }
 
 .elbysodic-network-explore-lanes {

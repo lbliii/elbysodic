@@ -194,9 +194,12 @@
 </section>
 {% end %}
 
-{% def explore_tag(label, href, tone="neutral") %}
+{% def explore_tag(label, href, tone="neutral", count=none) %}
 <a class="elbysodic-network-explore-tag elbysodic-network-explore-tag--{{ tone }}" href="{{ href }}">
   <span>{{ label }}</span>
+  {% if count %}
+  <em>{{ count }}</em>
+  {% end %}
 </a>
 {% end %}
 
@@ -205,12 +208,7 @@
   <h2>{{ group.title }}</h2>
   <div class="elbysodic-network-filter-group__options">
     {% for option in group.options %}
-    <a class="elbysodic-network-explore-tag elbysodic-network-explore-tag--{{ option.tone }}" href="{{ option.href }}">
-      <span>{{ option.label }}</span>
-      {% if option.result_count %}
-      <em>{{ option.result_count }}</em>
-      {% end %}
-    </a>
+    {{ explore_tag(option.label, option.href, option.tone, option.result_count) }}
     {% end %}
   </div>
 </section>
@@ -256,21 +254,7 @@
 
   <section class="elbysodic-network-explore-map" aria-label="Explore by tag relationship">
     {% for facet in browse_facets %}
-    {{ explore_tag(facet.label ~ (" (" ~ facet.result_count ~ ")" if facet.result_count else ""), facet.href, facet.tone) }}
-    {% end %}
-  </section>
-
-  {% if filter_groups %}
-  <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
-    {% for group in filter_groups %}
-    {{ explore_filter_group(group) }}
-    {% end %}
-  </section>
-  {% end %}
-
-  <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
-    {% for lane in relationship_lanes %}
-    {{ explore_lane(lane.title, lane.summary, lane.href, lane.result_count ~ " " ~ lane.metric_label) }}
+    {{ explore_tag(facet.label, facet.href, facet.tone, facet.result_count) }}
     {% end %}
   </section>
 
@@ -309,6 +293,26 @@
     {% call surface(variant="elevated") %}
     <p class="elbysodic-empty-state">No reachable realms match that search yet.</p>
     {% end %}
+    {% end %}
+  </section>
+
+  {% if filter_groups %}
+  <details class="elbysodic-network-filter-drawer">
+    <summary>
+      <span>Browse by fit</span>
+      <em>{{ filter_groups | length }} groups</em>
+    </summary>
+    <section class="elbysodic-network-filter-panel" aria-label="Explore by discovery profile">
+      {% for group in filter_groups %}
+      {{ explore_filter_group(group) }}
+      {% end %}
+    </section>
+  </details>
+  {% end %}
+
+  <section class="elbysodic-network-explore-lanes" aria-label="Relationship browse lanes">
+    {% for lane in relationship_lanes %}
+    {{ explore_lane(lane.title, lane.summary, lane.href, lane.result_count ~ " " ~ lane.metric_label) }}
     {% end %}
   </section>
 

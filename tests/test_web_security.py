@@ -511,6 +511,22 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         assert card.invite_posture_label == "Public preview"
 
 
+def test_public_network_explore_keeps_filters_below_results() -> None:
+    async def run() -> None:
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        async with TestClient(app) as client:
+            response = await client.get("/network")
+
+        assert response.status == 200
+        assert 'class="elbysodic-network-filter-drawer"' in response.text
+        assert "Browse by fit" in response.text
+        assert response.text.index("explore-results-heading") < response.text.index(
+            "elbysodic-network-filter-drawer"
+        )
+
+    asyncio.run(run())
+
+
 def test_public_network_search_uses_explicit_discovery_metadata() -> None:
     services = create_services(path=":memory:")
     community = services.repo.get_community_by_slug("rl-small-town")
