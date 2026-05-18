@@ -892,10 +892,8 @@
 }
 
 .elbysodic-realm-stage__pressure {
-    border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-border), transparent 20%);
     display: grid;
     gap: var(--chirpui-space-3);
-    padding-inline-start: var(--chirpui-space-5);
 }
 
 .elbysodic-realm-stage__pressure > div {
@@ -1309,11 +1307,6 @@
     .elbysodic-realm-stage {
         align-items: start;
         grid-template-columns: 1fr;
-    }
-
-    .elbysodic-realm-stage__pressure {
-        border-inline-start: 0;
-        padding-inline-start: 0;
     }
 
     .elbysodic-realm-entry-row {
