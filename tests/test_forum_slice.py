@@ -3029,6 +3029,14 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
                 'class="elbysodic-topbar-search" action="/c/x-men-apocalypse/search"' in index.text
             )
             assert "Search X-Men Apocalypse" in index.text
+            identity_summary = re.search(
+                r'<summary class="elbysodic-identity-menu__summary"[^>]*>(?P<body>.*?)</summary>',
+                index.text,
+                re.S,
+            )
+            assert identity_summary is not None
+            assert "elbysodic-identity-menu__summary-avatar" in identity_summary.group("body")
+            assert "elbysodic-identity-menu__copy" not in identity_summary.group("body")
             assert 'class="elbysodic-primary-rail"' in index.text
             assert ">Home</a>" not in index.text
             assert re.search(
