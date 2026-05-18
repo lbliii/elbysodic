@@ -736,6 +736,19 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
         assert contract[slug]["thread_count"] >= 2
         assert contract[slug]["post_count"] >= 4
 
+    harbor_materials = {
+        row["title"]
+        for row in connection.execute(
+            """
+            SELECT materials.title
+            FROM materials
+            JOIN communities ON communities.id = materials.community_id
+            WHERE communities.slug = 'harbor-society'
+            """
+        ).fetchall()
+    }
+    assert harbor_materials >= {"Town Power Map", "Donor Circuit"}
+
 
 def test_program_blueprint_preview_fingerprint_changes_with_source() -> None:
     connection = connect()

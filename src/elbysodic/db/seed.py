@@ -1842,6 +1842,31 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 ),
             ),
             BlueprintMaterial(
+                "town-power-map",
+                "Town Power Map",
+                "factions",
+                "Old families, club staff, civic office, donors, and working locals all trade leverage differently.",
+                (
+                    "Harbor Society is not divided into formal factions so much as public lanes of power. "
+                    "Old families own memory and invitations. Club staff control access and overhear what "
+                    "members pretend was private. Civic office turns permits, donations, and school-board "
+                    "appointments into favors. Hotel and marina workers see who arrives under the wrong name. "
+                    "Reporters and diner regulars decide which version becomes town history."
+                ),
+            ),
+            BlueprintMaterial(
+                "donor-circuit",
+                "Donor Circuit",
+                "guide",
+                "Money, favors, and public service move through the same handful of rooms.",
+                (
+                    "A donation can be charity, apology, vote-buying, family pressure, or a way to keep a "
+                    "name off the front page. Use sponsors, booster clubs, hotel investors, gala committees, "
+                    "marina permits, school fundraisers, and paper deadlines when a scene needs social "
+                    "pressure without leaving town."
+                ),
+            ),
+            BlueprintMaterial(
                 "application-guide",
                 "Application Guide",
                 "application",

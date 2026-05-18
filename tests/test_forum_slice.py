@@ -2233,6 +2233,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Cast" in content
                     assert "Maris Vale" in content
                     assert "August Reed" in content
+                    assert "Town Power Map" in content
                     assert "Family" in content
                     assert "Club Role" in content
                     assert "Business" in content
