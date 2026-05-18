@@ -108,7 +108,7 @@ def _render_material(
         material_statuses=MATERIAL_STATUSES,
         show_community_shell=viewer is not None,
         error=error,
-        title=material.material.title if title is None else title,
+        title=material.display_title if title is None else title,
         material_type=material.material.material_type if material_type is None else material_type,
         summary=material.material.summary if summary is None else summary,
         body=material.material.body if body is None else body,

@@ -11,7 +11,7 @@
   <div class="chirpui-cluster chirpui-cluster--between">
     <div>
       <h2>
-        <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+        <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a>
       </h2>
     </div>
     {% if item.material.is_featured %}
@@ -76,7 +76,7 @@
   {% if hub.events %}
   {% set current_event = hub.events[0] %}
   <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ current_event.material.material_type }}" href="/world/{{ current_event.material.slug }}">
-    <strong>{{ current_event.material.title }}</strong>
+    <strong>{{ current_event.display_title }}</strong>
     <span>{{ current_event.rendered_summary }}</span>
   </a>
   {% end %}

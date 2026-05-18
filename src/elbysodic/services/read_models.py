@@ -1017,12 +1017,23 @@ class PlotDiscovery:
     used_active_face_lens: bool
 
 
+def _story_material_display_title(title: str) -> str:
+    for prefix in ("Current Chapter:", "Premise:"):
+        if title.lower().startswith(prefix.lower()):
+            return title[len(prefix) :].strip() or title
+    return title
+
+
 @dataclass(frozen=True, slots=True)
 class MaterialSummary:
     material: Material
     facets: list[FacetTag]
     rendered_summary: str
     type_label: str
+
+    @property
+    def display_title(self) -> str:
+        return _story_material_display_title(self.material.title)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1057,6 +1068,10 @@ class MaterialDetail:
     continuity_beats: list[ContinuityBeat]
     event_actions: list[EventAction]
     can_manage: bool
+
+    @property
+    def display_title(self) -> str:
+        return _story_material_display_title(self.material.title)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1315,6 +1330,12 @@ class WantedAdSummary:
     related_characters: list[Character]
     facets: list[FacetTag]
     type_label: str
+
+    @property
+    def related_material_display_title(self) -> str:
+        if self.related_material is None:
+            return ""
+        return _story_material_display_title(self.related_material.title)
 
 
 @dataclass(frozen=True, slots=True)

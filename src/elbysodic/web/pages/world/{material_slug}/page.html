@@ -49,7 +49,7 @@
 {% call stack(gap="lg") %}
   <a class="chirpui-link" href="/world">← Guidebook</a>
 
-  {% call detail_header(title=material.material.title, summary=material.material.summary, eyebrow=material.type_label, cls="elbysodic-material-hero elbysodic-material-hero--" ~ material.material.material_type) %}
+  {% call detail_header(title=material.display_title, summary=material.material.summary, eyebrow=material.type_label, cls="elbysodic-material-hero elbysodic-material-hero--" ~ material.material.material_type) %}
     {% slot badges %}
       {{ facet_pills(material.facets) }}
     {% end %}
@@ -236,7 +236,7 @@
     {% for item in material.related_materials %}
     {% call surface(variant="elevated", cls="elbysodic-material-card-shell elbysodic-material-card-shell--" ~ item.material.material_type) %}
     <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
-      <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
+      <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a></h2>
       <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
       {{ facet_pills(item.facets) }}
     </article>

@@ -2307,6 +2307,19 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "The Ledger Page Under Table Six" in content
                     assert "Breakfast Before The Vote" in content
                     assert "Reporter source at the club" in content
+                    for path in (
+                        "/world",
+                        "/world/founders-gala",
+                        "/wanted",
+                    ):
+                        related_response = await client.get(f"/c/{community_slug}{path}")
+                        related_content = _page_content(related_response.text)
+                        assert related_response.status == 200
+                        assert "Founders Gala" in related_content
+                        assert "Current Chapter:" not in related_content
+                        assert "Premise:" not in related_content
+                        assert "public-safe" not in related_content.lower()
+                        assert "surface contract" not in related_content.lower()
                 if community_slug == "signal-creek":
                     assert "The Voice On The Old Feed" in content
                     assert "Diner Map Of Missing Hours" in content
