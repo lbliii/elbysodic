@@ -794,22 +794,9 @@
 
 .elbysodic-realm-gateway-fit {
     color: var(--chirpui-text-muted);
-    display: flex;
-    flex-wrap: wrap;
     font-size: var(--chirpui-font-sm);
-    gap: var(--chirpui-space-2);
+    line-height: 1.45;
     margin-block: -0.15rem 0;
-}
-
-.elbysodic-realm-gateway-fit span {
-    align-items: center;
-    display: inline-flex;
-}
-
-.elbysodic-realm-gateway-fit span + span::before {
-    color: color-mix(in srgb, var(--chirpui-text-muted), transparent 40%);
-    content: "/";
-    margin-inline-end: var(--chirpui-space-2);
 }
 
 .elbysodic-realm-gateway-hero h1 {

@@ -28,11 +28,7 @@
     <p class="elbysodic-section-kicker">{{ gateway.story_frame.eyebrow }}</p>
     <h1 id="realm-gateway-title">{{ gateway.hero.title }}</h1>
     <p class="elbysodic-copy-lead">{{ gateway.hero.lead }}</p>
-    <div class="elbysodic-realm-gateway-fit" aria-label="Story fit">
-      {% for label in gateway.story_frame.fit_labels %}
-      <span>{{ label }}</span>
-      {% end %}
-    </div>
+    <p class="elbysodic-realm-gateway-fit">{{ gateway.story_frame.fit_summary }}</p>
     <p class="elbysodic-realm-gateway-writing">{{ gateway.story_frame.writing_expectation }}</p>
     <p class="elbysodic-realm-gateway-first-face">
       <strong>First face path</strong>
@@ -179,9 +175,9 @@
   {{ gateway_section_header("Lore", "What to know before a first face") }}
   <div class="elbysodic-material-grid">
     {% for item in guidebook_previews %}
-    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
-      <strong>{{ item.material.title }}</strong>
-      <span>{{ item.rendered_summary }}</span>
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.material.slug }}">
+      <strong>{{ item.display_title }}</strong>
+      <span>{{ item.material.rendered_summary }}</span>
     </a>
     {% end %}
   </div>

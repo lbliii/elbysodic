@@ -277,6 +277,7 @@ from elbysodic.services.read_models import (
     RealmGatewayCastMember,
     RealmGatewayContinuation,
     RealmGatewayEntryPath,
+    RealmGatewayGuidebookPreview,
     RealmGatewayHero,
     RealmGatewayPremise,
     RealmGatewayPremiseStage,
@@ -3594,7 +3595,7 @@ def _realm_gateway_atmosphere(
 ) -> RealmGatewayAtmosphere:
     if program.current_event is not None:
         return RealmGatewayAtmosphere(
-            title=program.current_event.material.title,
+            title=_realm_gateway_context_title(program.current_event.material.title),
             label="Current chapter",
             copy=program.current_event.rendered_summary,
             href=program.current_event_href,
@@ -3602,7 +3603,7 @@ def _realm_gateway_atmosphere(
         )
     if program.premise is not None:
         return RealmGatewayAtmosphere(
-            title=program.premise.material.title,
+            title=_realm_gateway_context_title(program.premise.material.title),
             label="Standing premise",
             copy=program.premise.rendered_summary,
             href=program.premise_href,
@@ -3611,7 +3612,7 @@ def _realm_gateway_atmosphere(
     featured = guidebook.featured[0] if guidebook.featured else None
     if featured is not None:
         return RealmGatewayAtmosphere(
-            title=featured.material.title,
+            title=_realm_gateway_context_title(featured.material.title),
             label=featured.type_label,
             copy=featured.rendered_summary,
             href=f"/world/{featured.material.slug}",
@@ -3682,7 +3683,7 @@ def _realm_gateway_premise_stage(
     if program.current_event is not None:
         return RealmGatewayPremiseStage(
             label="In motion",
-            title=program.current_event.material.title,
+            title=_realm_gateway_context_title(program.current_event.material.title),
             summary=program.current_event.rendered_summary,
             playable_pressure=_realm_gateway_stage_pressure(program, premise, atmosphere.title),
             action=(
@@ -3694,7 +3695,7 @@ def _realm_gateway_premise_stage(
     if program.premise is not None:
         return RealmGatewayPremiseStage(
             label="Story promise",
-            title=program.premise.material.title,
+            title=_realm_gateway_context_title(program.premise.material.title),
             summary=program.premise.rendered_summary,
             playable_pressure=premise.onboarding_pitch,
             action=(
@@ -3794,11 +3795,11 @@ def _realm_gateway_signals(
 
 def _realm_gateway_public_status_summary(program: StudioNetworkProgramView) -> str:
     if program.current_event is not None:
-        return (
-            f"Read {program.current_event.material.title} first to understand the current chapter."
-        )
+        title = _realm_gateway_context_title(program.current_event.material.title)
+        return f"Read {title} first to understand the chapter in motion."
     if program.premise is not None:
-        return f"Start with {program.premise.material.title} before choosing a first face."
+        title = _realm_gateway_context_title(program.premise.material.title)
+        return f"Start with {title} before choosing a first face."
     return f"{program.community.name} is open for public browsing before access."
 
 
@@ -3807,11 +3808,11 @@ def _realm_gateway_wanted_signal_summary(program: StudioNetworkProgramView) -> s
     if program.open_wanted_count != 1:
         count_label += "s"
     if program.current_event is not None:
-        return f"{count_label} connect new faces to {program.current_event.material.title}."
+        title = _realm_gateway_context_title(program.current_event.material.title)
+        return f"{count_label} connect new faces to {title}."
     if program.premise is not None:
-        return (
-            f"{count_label} turns {program.premise.material.title} into relationships and rivals."
-        )
+        title = _realm_gateway_context_title(program.premise.material.title)
+        return f"{count_label} turns {title} into relationships and rivals."
     return f"{count_label} can become a first relationship, role, rival, or scene lane."
 
 
@@ -4071,11 +4072,11 @@ def _realm_gateway_entry_paths(
 
 def _realm_gateway_open_calls_entry_summary(program: StudioNetworkProgramView) -> str:
     if program.current_event is not None:
-        return (
-            f"Find a role, rival, or relationship tied to {program.current_event.material.title}."
-        )
+        title = _realm_gateway_context_title(program.current_event.material.title)
+        return f"Find a role, rival, or relationship tied to {title}."
     if program.premise is not None:
-        return f"Find a role, rival, or relationship that fits {program.premise.material.title}."
+        title = _realm_gateway_context_title(program.premise.material.title)
+        return f"Find a role, rival, or relationship that fits {title}."
     return "Find a relationship, role, rival, or scenario request that wants a writer."
 
 
@@ -4098,7 +4099,9 @@ def _realm_gateway_wanted_previews(
                 href=_community_href(program, f"/wanted/{summary.wanted_ad.slug}"),
                 type_label=summary.type_label,
                 related_label=(
-                    summary.related_material.title if summary.related_material is not None else None
+                    _realm_gateway_context_title(summary.related_material.title)
+                    if summary.related_material is not None
+                    else None
                 ),
             )
         )
@@ -4110,9 +4113,20 @@ def _realm_gateway_guidebook_previews(
     *,
     curated_slots: tuple[CommunityGatewaySlot, ...],
     limit: int = 4,
-) -> tuple[MaterialSummary, ...]:
+) -> tuple[RealmGatewayGuidebookPreview, ...]:
     materials = [*guidebook.featured, *guidebook.events, *guidebook.guides]
-    return _curated_material_previews(materials, curated_slots, limit=limit)
+    return tuple(
+        RealmGatewayGuidebookPreview(
+            material=item,
+            display_title=_realm_gateway_context_title(item.material.title),
+        )
+        for item in _curated_material_previews(materials, curated_slots, limit=limit)
+    )
+
+
+def _realm_gateway_context_title(title: str) -> str:
+    display_title = re.sub(r"^(current\s+chapter|premise)\s*:\s*", "", title, flags=re.I)
+    return display_title.strip() or title
 
 
 def _realm_gateway_social_lanes(

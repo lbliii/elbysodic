@@ -2115,10 +2115,15 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert gateway.story_frame.writing_expectation
         assert gateway.story_frame.roster_posture
         assert gateway.premise_stage.title
+        assert not gateway.premise_stage.title.lower().startswith(("current chapter:", "premise:"))
         assert gateway.premise_stage.summary
         assert gateway.premise_stage.playable_pressure
         assert gateway.social_lanes
         assert gateway.cast_members
+        assert all(
+            not item.display_title.lower().startswith(("current chapter:", "premise:"))
+            for item in gateway.guidebook_previews
+        )
         assert gateway.signals
         assert "Open calls" in {signal.title for signal in gateway.signals}
         assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
@@ -2130,12 +2135,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         )
         assert not any(copy in gateway_text for copy in boilerplate_copy)
         if community_slug == "harbor-society":
-            assert (
-                "Read Current Chapter: Founders Gala first to understand the current chapter."
-                in gateway_text
-            )
+            assert "Read Founders Gala first to understand the chapter in motion." in gateway_text
             assert "Shoreline Club" in gateway_text
-            assert "Premise: The Shoreline Vote" in gateway_text
+            assert "The Shoreline Vote" in gateway_text
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
         assert all(hub.eyebrow for hub in gateway.scene_hubs)
         assert all(
@@ -2152,6 +2154,11 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             f"/c/{community_slug}/request-access",
         }
         assert gateway.wanted_previews
+        assert all(
+            preview.related_label is None
+            or not preview.related_label.lower().startswith(("current chapter:", "premise:"))
+            for preview in gateway.wanted_previews
+        )
         assert any(
             preview.href == f"/c/{community_slug}/wanted/{wanted_slug}"
             for preview in gateway.wanted_previews
@@ -2539,10 +2546,12 @@ def test_public_realm_gateway_uses_curated_slots_before_fallbacks() -> None:
 
     assert gateway.scene_hubs[0].board.id == boards[4].id
     assert gateway.wanted_previews[0].title == wanted_ads[4].title
-    assert gateway.guidebook_previews[0].material.id == materials[4].id
+    assert gateway.guidebook_previews[0].material.material.id == materials[4].id
     assert all(hub.board.id != stale_board.id for hub in gateway.scene_hubs)
     assert all(preview.title != stale_wanted.title for preview in gateway.wanted_previews)
-    assert all(item.material.id != stale_material.id for item in gateway.guidebook_previews)
+    assert all(
+        item.material.material.id != stale_material.id for item in gateway.guidebook_previews
+    )
 
     async def run() -> None:
         app = create_app(debug=False, services=AppServices(services.repo, None))
@@ -2621,7 +2630,7 @@ def test_studio_gateway_curation_updates_public_home_slots() -> None:
         gateway = staff_services.public_realm_gateway(community.slug)
         assert gateway.scene_hubs[0].board.id == board.id
         assert gateway.wanted_previews[0].title == wanted.title
-        assert gateway.guidebook_previews[0].material.id == material.id
+        assert gateway.guidebook_previews[0].material.material.id == material.id
 
     asyncio.run(run())
 

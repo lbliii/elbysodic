@@ -1899,6 +1899,10 @@ class RealmGatewayStoryFrame:
         ]
         return tuple(label for label in labels if label)
 
+    @property
+    def fit_summary(self) -> str:
+        return ", ".join(self.fit_labels)
+
 
 @dataclass(frozen=True, slots=True)
 class RealmGatewayAtmosphere:
@@ -1999,6 +2003,12 @@ class RealmGatewayWantedPreview:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayGuidebookPreview:
+    material: MaterialSummary
+    display_title: str
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayContinuation:
     audience: str
     title: str
@@ -2021,7 +2031,7 @@ class RealmGatewayView:
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
     scene_previews: tuple[RealmGatewayScenePreview, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
-    guidebook_previews: tuple[MaterialSummary, ...]
+    guidebook_previews: tuple[RealmGatewayGuidebookPreview, ...]
     social_lanes: tuple[RealmGatewaySocialLane, ...]
     cast_members: tuple[RealmGatewayCastMember, ...]
     wanted_previews: tuple[RealmGatewayWantedPreview, ...]
