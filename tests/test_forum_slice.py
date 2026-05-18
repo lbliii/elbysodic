@@ -2299,10 +2299,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Guidebook" in content
                 assert "Before you enter" in content
                 assert "Claims" in content
+                assert "Social map" in content
                 assert 'aria-labelledby="realm-social-title"' in response.text
                 assert 'id="realm-social-title"' in response.text
                 if community_slug == "harbor-society":
                     assert "Cast" in content
+                    assert "Featured faces" in content
                     assert "Maris Vale" in content
                     assert "August Reed" in content
                     assert "Town Power Map" in content
