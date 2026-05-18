@@ -2057,6 +2057,10 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         "Relationships, roles, rivals, and scenario requests already want a writer.",
         "Wanted thread start",
         "wanted-hook style opener tests",
+        "public chapter pressure",
+        "ready for public scene browsing",
+        "Play readiness",
+        "Guidebook path",
     )
 
     gateway_expectations = {
@@ -2110,7 +2114,10 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         )
         assert not any(copy in gateway_text for copy in boilerplate_copy)
         if community_slug == "harbor-society":
-            assert "Current Chapter: Founders Gala is the public chapter pressure." in gateway_text
+            assert (
+                "Read Current Chapter: Founders Gala first to understand the current chapter."
+                in gateway_text
+            )
             assert "Shoreline Club" in gateway_text
             assert "Premise: The Shoreline Vote" in gateway_text
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
@@ -2151,7 +2158,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert response.status == 200
                 assert "Now playing" in content
                 assert "First face path" in content
-                assert "Play readiness" in content
+                assert "Play readiness" not in content
                 assert premise_label in content
                 assert onboarding_pitch in content
                 assert "Playable doors into the premise" in content

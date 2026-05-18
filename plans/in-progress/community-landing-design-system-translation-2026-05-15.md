@@ -62,6 +62,9 @@ Curated gateway follow-up:
   preview public home-page slots without raw layout controls or generated copy.
 - Replaced the remaining original-premise demo "Wanted thread start" scaffold
   with board/face-specific first-scene language.
+- Removed the rendered public "Play readiness" signal band after visitor
+  feedback showed the counts and status copy were not useful for deciding what
+  to read or click next.
 
 Proof captured so far:
 

@@ -3707,9 +3707,11 @@ def _realm_gateway_signals(
 
 def _realm_gateway_public_status_summary(program: StudioNetworkProgramView) -> str:
     if program.current_event is not None:
-        return f"{program.current_event.material.title} is the public chapter pressure."
+        return (
+            f"Read {program.current_event.material.title} first to understand the current chapter."
+        )
     if program.premise is not None:
-        return f"{program.premise.material.title} is open for first-face fit checks."
+        return f"Start with {program.premise.material.title} before choosing a first face."
     return f"{program.community.name} is open for public browsing before access."
 
 
@@ -3718,7 +3720,7 @@ def _realm_gateway_wanted_signal_summary(program: StudioNetworkProgramView) -> s
     if program.open_wanted_count != 1:
         count_label += "s"
     if program.current_event is not None:
-        return f"{count_label} can enter through {program.current_event.material.title}."
+        return f"{count_label} connect new faces to {program.current_event.material.title}."
     if program.premise is not None:
         return (
             f"{count_label} turns {program.premise.material.title} into relationships and rivals."
@@ -3731,15 +3733,15 @@ def _realm_gateway_scene_hub_signal_summary(
 ) -> str:
     hub_names = _joined_labels(tuple(hub.board.name for hub in scene_hubs[:3]))
     if len(scene_hubs) == 1:
-        return f"{hub_names} is ready for public scene browsing."
-    return f"{hub_names} are ready for public scene browsing."
+        return f"{hub_names} is a public place to read before starting a scene."
+    return f"{hub_names} are public places to read before starting a scene."
 
 
 def _realm_gateway_guidebook_signal_summary(guidebook: WorldHub) -> str:
     items = [*guidebook.featured, *guidebook.events, *guidebook.guides]
     labels = _joined_labels(tuple(item.material.title for item in items[:3]))
     if labels:
-        return f"{labels} can ground a first face."
+        return f"{labels} are the fastest reads before choosing a face."
     return "Published guidebook material can ground a first face."
 
 
