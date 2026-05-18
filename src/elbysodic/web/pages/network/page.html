@@ -148,7 +148,7 @@
 </section>
 {% end %}
 
-{% def home_realm_tile(program, variant="landscape") %}
+{% def home_realm_tile(program, variant="landscape", rank=none) %}
 <article class="elbysodic-network-home-tile elbysodic-network-home-tile--{{ variant }}"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }};">
   <a href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
@@ -156,6 +156,9 @@
     <img src="{{ program.community.world_hero_image_url }}" alt="{{ program.community.world_hero_image_alt }}">
     {% else %}
     <span class="elbysodic-network-home-tile__fallback" aria-hidden="true">{{ program.monogram }}</span>
+    {% end %}
+    {% if rank %}
+    <span class="elbysodic-network-home-tile__rank" aria-label="Rank {{ rank }}">{{ "%02d" % rank }}</span>
     {% end %}
     <span class="elbysodic-network-home-tile__shade" aria-hidden="true"></span>
     <span class="elbysodic-network-home-tile__copy">
@@ -188,7 +191,7 @@
   </div>
   <div class="elbysodic-network-home-rail elbysodic-network-home-rail--portrait">
     {% for program in programs %}
-    {{ home_realm_tile(program, "portrait") }}
+    {{ home_realm_tile(program, "portrait", loop.index) }}
     {% end %}
   </div>
 </section>

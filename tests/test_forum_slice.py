@@ -2939,10 +2939,14 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
         assert "Studio Network" in root.text
         assert "Featured realm" in root.text
-        assert "Premise engines" in root.text
+        assert "Top 10 realms" in root.text
+        assert "Premise engines" not in root.text
         assert "Small-town social webs" in root.text
-        assert "Mystery and current chapters" in root.text
-        assert "Search realms by premise, pace, hooks, and current chapters." in root.text
+        assert "Weird-town mysteries" in root.text
+        assert "Mystery and current chapters" not in root.text
+        assert 'class="elbysodic-network-home-tile__rank"' in root.text
+        assert "Rank 1" in root.text
+        assert "Search by premise, pace, hooks, and chapters in motion." in root.text
         assert "Your desk is one click away." in root.text
         assert "What can move next." not in root.text
         assert "Memberships on this account." not in root.text
@@ -2950,7 +2954,7 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "Explore Elbysodic" not in root.text
         assert 'aria-label="Community"' not in root.text
         assert 'class="chirpui-sidebar elbysodic-sidebar"' not in root.text
-        assert 'href="/c/x-men-apocalypse"' in root.text
+        assert 'href="/c/afterlight-accord"' in root.text
         assert 'href="/c/x-men-apocalypse/desk"' in root.text
         assert "Afterlight Accord" in root.text
 

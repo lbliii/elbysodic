@@ -296,6 +296,7 @@
 
 .elbysodic-network-home-tile img,
 .elbysodic-network-home-tile__fallback,
+.elbysodic-network-home-tile__rank,
 .elbysodic-network-home-tile__shade,
 .elbysodic-network-home-tile__copy {
     grid-area: 1 / 1;
@@ -329,6 +330,25 @@
 
 .elbysodic-network-home-tile__shade {
     background: linear-gradient(0deg, rgba(4, 6, 8, 0.82), rgba(4, 6, 8, 0.06) 62%);
+}
+
+.elbysodic-network-home-tile__rank {
+    align-self: start;
+    background: color-mix(in srgb, var(--chirpui-surface) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 40%, var(--chirpui-border));
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--elbysodic-network-accent) 68%, var(--chirpui-text));
+    display: grid;
+    font-family: var(--elbysodic-display-font-family);
+    font-size: 1.05rem;
+    font-weight: 900;
+    inline-size: 2.8rem;
+    justify-self: end;
+    line-height: 1;
+    margin: 0.75rem;
+    min-block-size: 2.8rem;
+    place-items: center;
+    z-index: 2;
 }
 
 .elbysodic-network-home-tile__copy {

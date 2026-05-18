@@ -465,6 +465,12 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
     assert home.featured.community.slug == "afterlight-accord"
     assert home.return_path is not None
     assert home.return_path.desk_href.startswith("/c/")
+    assert home.slices[0].title == "Top 10 realms"
+    assert len(home.slices[0].programs) == 10
+    assert {home_slice.title for home_slice in home.slices[1:]} >= {
+        "Small-town social webs",
+        "Weird-town mysteries",
+    }
     assert explore.results
     assert {facet.label for facet in explore.browse_facets} >= {
         "open wanted hooks",
@@ -536,6 +542,8 @@ def test_network_home_does_not_render_full_filter_matrix() -> None:
         assert response.status == 200
         assert "Search by premise, pace, hooks, and chapters in motion." in response.text
         assert 'class="elbysodic-network-home-genres"' in response.text
+        assert "Top 10 realms" in response.text
+        assert "Premise engines" not in response.text
         assert 'class="elbysodic-network-filter-panel"' not in response.text
 
     asyncio.run(run())
