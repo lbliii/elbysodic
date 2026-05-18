@@ -271,6 +271,9 @@ Verified:
 - The premise browser profile passed across desktop and mobile with no
   horizontal overflow, broken media, unusually tall topbar, or text/control
   overflow.
+- Follow-up content cleanup removed the old signed-in board/activity index from
+  the gateway-first home and replaced generic gateway helper copy with
+  premise/event/hub/material-derived text.
 
 Artifacts:
 

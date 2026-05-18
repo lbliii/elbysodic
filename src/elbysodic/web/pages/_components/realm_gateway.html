@@ -100,7 +100,7 @@
 {% def gateway_scene_hubs(gateway) %}
 {% if gateway.scene_hubs %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scene-hubs-title">
-  {{ gateway_section_header("Scene hubs", "Playable doors into the premise", "Public places, institutions, and social rooms where threads can start.") }}
+  {{ gateway_section_header("Scene hubs", "Playable doors into the premise") }}
   <div class="elbysodic-realm-hub-grid">
     {% for hub in gateway.scene_hubs %}
     <a class="elbysodic-realm-hub-card elbysodic-realm-hub-card--{{ hub.emphasis }}" href="{{ hub.href }}">
@@ -130,7 +130,7 @@
 {% set scene_previews = gateway | get("scene_previews", ()) %}
 {% if scene_previews %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-scenes-title">
-  {{ gateway_section_header("Playable now", "Open scenes carrying the premise", "Public scene previews show story motion without exposing private queues or member obligations.") }}
+  {{ gateway_section_header("Playable now", "Open scenes carrying the premise") }}
   <div class="elbysodic-realm-scene-list">
     {% for scene in scene_previews %}
     <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
@@ -150,7 +150,7 @@
 {% def gateway_entry_paths(gateway) %}
 {% if gateway.entry_paths %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-entry-title">
-  {{ gateway_section_header("First writing path", "Ways in before a writer has a face here", "Public-safe entry paths for reading, fitting, and requesting access.") }}
+  {{ gateway_section_header("First writing path", "Ways in before a writer has a face here") }}
   <div class="elbysodic-realm-entry-list">
     {% for path in gateway.entry_paths %}
     <a class="elbysodic-realm-entry-row"
@@ -177,7 +177,7 @@
 {% def gateway_guidebook(gateway) %}
 {% if gateway.guidebook.featured or gateway.guidebook.events %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-guide-title">
-  {{ gateway_section_header("Start here", "Premise, current chapters, and public guidebook", "Director-published material that can ground a first face.") }}
+  {{ gateway_section_header("Start here", "Premise, current chapters, and public guidebook") }}
   <div class="elbysodic-material-grid">
     {% for item in gateway.guidebook.featured %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
@@ -201,7 +201,7 @@
 {% def gateway_wanted(gateway) %}
 {% if gateway.program.open_wanted_count %}
 <section class="elbysodic-realm-gateway-section" aria-labelledby="realm-wanted-title">
-  {{ gateway_section_header("Wanted hooks", "Open roles with story pressure", "Open calls that can become a first relationship, role, rival, or scene lane.") }}
+  {{ gateway_section_header("Wanted hooks", "Open roles with story pressure") }}
   {% if gateway.wanted_previews %}
   <div class="elbysodic-realm-wanted-grid">
     {% for wanted in gateway.wanted_previews %}

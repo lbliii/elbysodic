@@ -21,8 +21,8 @@ Completed in task commits:
 - Hardened `RealmGatewayView` with hero, action, signal, scene-hub emphasis,
   wanted preview, and continuation contracts.
 - Replaced the early card-grid community home with
-  `_components/realm_gateway.html` while keeping signed-in operational home
-  sections below the gateway.
+  `_components/realm_gateway.html`; signed-in homes now keep the gateway and
+  continuation lane rather than also rendering the old board/activity index.
 - Added tokenized theme CSS across page, media, board/place, and wanted layers
   without copying prototype CSS.
 - Rendered open wanted hooks as public first-face previews from existing
@@ -41,11 +41,23 @@ Second wave:
 - Added rendered fallback proof for no-media/no-wanted public gateways.
 - Reran the premise browser profile with wave-two screenshots.
 
+Content cleanup:
+
+- Removed generic explanatory section summaries and placeholder signal copy
+  from the rendered gateway.
+- Derived signal and entry-path copy from current event, premise, guidebook,
+  wanted, and scene-hub names.
+- Added rendered regression coverage so original-premise gateways do not
+  reintroduce the known boilerplate phrases.
+- Hid legacy signed-in home activity/index rows when a gateway exists; those
+  workflows live in Desk, Locations, and board routes.
+
 Proof captured so far:
 
 - `uv run ruff check src/elbysodic/services/read_models.py src/elbysodic/services/forum.py src/elbysodic/web/pages/page.py tests/test_forum_slice.py`
 - `uv run pytest tests/test_forum_slice.py tests/test_web_security.py -q --tb=short -k 'original_premise_gateways or forum_pages_render_seeded_boards_and_thread or anonymous or public_realm_gateway_contract'`
 - `uv run pytest tests/test_forum_slice.py::test_writer_desk_keeps_first_face_application_active tests/test_forum_slice.py::test_public_realm_gateway_scene_previews_hide_private_threads tests/test_forum_slice.py::test_public_realm_gateway_ranks_active_scene_hubs_before_limit tests/test_forum_slice.py::test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage -q --tb=short`
+- `uv run pytest tests/test_forum_slice.py::test_original_premise_gateways_surface_premise_entry_and_scene_hubs tests/test_forum_slice.py::test_forum_pages_render_seeded_boards_and_thread tests/test_forum_slice.py::test_rendered_route_query_budgets_are_tracked -q --tb=short`
 - `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
 - `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8003 --profile premise --artifact-dir /private/tmp/elbysodic-gateway-premise-qa`
 - `uv run python /private/tmp/run_elbysodic_gateway_qa.py`

@@ -2041,6 +2041,15 @@ def test_network_directory_enter_realm_sets_identity_cookie() -> None:
 
 def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> None:
     services = _seeded_services()
+    boilerplate_copy = (
+        "Public preview copy is safe to read before a writer has a face here.",
+        "Public places, institutions, and social rooms have visible doors into play.",
+        "Published premise, event, or guide material can ground an application.",
+        "Public scene previews show story motion without exposing private queues or member obligations.",
+        "Public-safe entry paths for reading, fitting, and requesting access.",
+        "Start with the public story promise before choosing a face.",
+        "Relationships, roles, rivals, and scenario requests already want a writer.",
+    )
 
     gateway_expectations = {
         "harbor-society": (
@@ -2085,6 +2094,17 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert gateway.signals
         assert "Open calls" in {signal.title for signal in gateway.signals}
         assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
+        gateway_text = " ".join(
+            [
+                *(signal.summary for signal in gateway.signals),
+                *(path.summary for path in gateway.entry_paths),
+            ]
+        )
+        assert not any(copy in gateway_text for copy in boilerplate_copy)
+        if community_slug == "harbor-society":
+            assert "Current Chapter: Founders Gala is the public chapter pressure." in gateway_text
+            assert "Shoreline Club" in gateway_text
+            assert "Premise: The Shoreline Vote" in gateway_text
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
         assert all(hub.eyebrow for hub in gateway.scene_hubs)
         assert all(
@@ -2131,6 +2151,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
                 assert "Open roles with story pressure" in content
+                assert not any(copy in content for copy in boilerplate_copy)
                 assert "Faces" not in content
                 assert "Guides" not in content
                 assert "application review" not in content.lower()
@@ -2374,19 +2395,10 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "X-Men Apocalypse" in index.text
-            assert "Announcements" in index.text
-            assert "Danger Room" in index.text
             assert "Staff Room" not in index.text
-            assert "Latest" in index.text
-            assert "Recent activity" in index.text
             assert "Continue writing as Rogue" in index.text
             assert 'href="/c/x-men-apocalypse/desk"' in index.text
             assert 'href="/c/x-men-apocalypse/characters/rogue"' in index.text
-            assert "#post-" in index.text
-            assert "/members/starlane" in index.text
-            assert "Latest details:" in index.text
-            assert "Relevant to the active face:" in index.text
-            assert "elbysodic-board-poster__face-signal-hint" in index.text
             assert "elbysodic-identity-menu" in index.text
             assert '@click.outside="open = false"' in index.text
             assert "elbysodic-identity-menu__hero" in index.text
@@ -2394,22 +2406,12 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "elbysodic-identity-menu__notification-link" in index.text
             assert "elbysodic-identity-menu__theme-row" in index.text
             assert "playing as Rogue" in index.text
-            assert "elbysodic-community-table" in index.text
-            assert "elbysodic-community-row" in index.text
-            assert "✉" in index.text
-            assert "✏" in index.text
-            assert "◉" in index.text
-            assert "⟳" in index.text
-            assert "elbysodic-activity-log" in index.text
-            assert "elbysodic-activity-log-item" in index.text
-            assert re.search(
-                r">\s*(?:Today|Yesterday), \d{1,2}:\d{2} [AP]M\s*</time>",
-                index.text,
-            )
-            assert re.search(
-                r'<time class="elbysodic-activity-log-item__time"\s+datetime="[^"]+"\s+title="[A-Z][a-z]{2} \d{1,2}, 2026 \d{1,2}:\d{2} [AP]M UTC">',
-                index.text,
-            )
+            assert "Recent activity" not in index.text
+            assert "Latest details:" not in index.text
+            assert "elbysodic-community-table" not in index.text
+            assert "elbysodic-community-row" not in index.text
+            assert "elbysodic-activity-log" not in index.text
+            assert "elbysodic-activity-log-item" not in index.text
             assert _sidebar_board_count(index.text, "plotting") == 1
 
             board = await client.get("/boards/plotting")
@@ -2456,11 +2458,11 @@ def test_seeded_world_surfaces_place_hierarchy() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            index = await client.get("/c/x-men-apocalypse")
-            assert index.status == 200
-            assert "/boards/xavier-institute" in index.text
-            assert "/boards/med-bay" in index.text
-            assert "Locations" in index.text
+            locations = await client.get("/c/x-men-apocalypse/locations")
+            assert locations.status == 200
+            assert "/boards/xavier-institute" in locations.text
+            assert "/boards/med-bay" in locations.text
+            assert "Locations" in locations.text
 
             academy = await client.get("/boards/xavier-institute")
             assert academy.status == 200
@@ -2600,22 +2602,18 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
     asyncio.run(run())
 
 
-def test_new_realm_homepage_uses_quiet_sections_and_actionable_empty_states() -> None:
+def test_new_realm_locations_use_actionable_empty_states() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            response = await client.get("/c/rl-nyc")
+            response = await client.get("/c/rl-nyc/locations")
 
         assert response.status == 200
         content = _page_content(response.text)
-        assert "elbysodic-home-section-header" in content
-        assert "chirpui-section-header" not in content
-        assert "elbysodic-quiet-empty" in content
-        assert "Your roster is caught up for now." in content
+        assert "chirpui-section-header" in content
         assert "No scenes have opened here yet." in content
         assert 'href="/c/rl-nyc/boards/brooklyn/threads/new"' in content
         assert 'href="/c/rl-nyc/boards/queens-night-market/threads/new"' in content
-        assert "Community Table" not in content
         assert "Recent activity" not in content
 
     asyncio.run(run())
@@ -8720,12 +8718,12 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
         )
 
         async with TestClient(app) as client:
-            index = await client.get("/c/x-men-apocalypse")
-            assert index.status == 200
-            assert "Needs reply" in index.text
-            assert "Open thread roster" in index.text
-            assert "Attention Face" in index.text
-            assert "A different writer nudges the plot forward." in index.text
+            desk = await client.get("/c/x-men-apocalypse/desk")
+            assert desk.status == 200
+            assert "Needs reply" in desk.text
+            assert "Open thread roster" in desk.text
+            assert "Attention Face" in desk.text
+            assert "A different writer nudges the plot forward." in desk.text
 
             board_attention = await client.get("/boards/plotting?filter=attention")
             assert board_attention.status == 200
@@ -8742,8 +8740,8 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
             locations = await client.get("/locations")
             assert "Open thread roster" not in locations.text
 
-            index_after_read = await client.get("/c/x-men-apocalypse")
-            assert "Your roster is caught up for now." in index_after_read.text
+            desk_after_read = await client.get("/c/x-men-apocalypse/desk")
+            assert "Queue clear" in desk_after_read.text or "caught up" in desk_after_read.text
 
     asyncio.run(run())
 

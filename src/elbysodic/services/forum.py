@@ -3484,14 +3484,14 @@ def _realm_gateway_signals(
     signals = [
         RealmGatewaySignalItem(
             title=program.invite_posture_label,
-            summary="Public preview copy is safe to read before a writer has a face here.",
+            summary=_realm_gateway_public_status_summary(program),
         )
     ]
     if program.open_wanted_count:
         signals.append(
             RealmGatewaySignalItem(
                 title="Open calls",
-                summary="Wanted hooks can become a first relationship, role, rival, or scene lane.",
+                summary=_realm_gateway_wanted_signal_summary(program),
                 value=str(program.open_wanted_count),
             )
         )
@@ -3506,7 +3506,7 @@ def _realm_gateway_signals(
         signals.append(
             RealmGatewaySignalItem(
                 title="Scene hubs ready",
-                summary="Public places, institutions, and social rooms have visible doors into play.",
+                summary=_realm_gateway_scene_hub_signal_summary(scene_hubs),
                 value=str(len(scene_hubs)),
             )
         )
@@ -3515,11 +3515,59 @@ def _realm_gateway_signals(
         signals.append(
             RealmGatewaySignalItem(
                 title="Guidebook path",
-                summary="Published premise, event, or guide material can ground an application.",
+                summary=_realm_gateway_guidebook_signal_summary(guidebook),
                 value=str(public_material_count),
             )
         )
     return tuple(signals[:4])
+
+
+def _realm_gateway_public_status_summary(program: StudioNetworkProgramView) -> str:
+    if program.current_event is not None:
+        return f"{program.current_event.material.title} is the public chapter pressure."
+    if program.premise is not None:
+        return f"{program.premise.material.title} is open for first-face fit checks."
+    return f"{program.community.name} is open for public browsing before access."
+
+
+def _realm_gateway_wanted_signal_summary(program: StudioNetworkProgramView) -> str:
+    count_label = f"{program.open_wanted_count} hook"
+    if program.open_wanted_count != 1:
+        count_label += "s"
+    if program.current_event is not None:
+        return f"{count_label} can enter through {program.current_event.material.title}."
+    if program.premise is not None:
+        return (
+            f"{count_label} turns {program.premise.material.title} into relationships and rivals."
+        )
+    return f"{count_label} can become a first relationship, role, rival, or scene lane."
+
+
+def _realm_gateway_scene_hub_signal_summary(
+    scene_hubs: tuple[RealmGatewaySceneHub, ...],
+) -> str:
+    hub_names = _joined_labels(tuple(hub.board.name for hub in scene_hubs[:3]))
+    if len(scene_hubs) == 1:
+        return f"{hub_names} is ready for public scene browsing."
+    return f"{hub_names} are ready for public scene browsing."
+
+
+def _realm_gateway_guidebook_signal_summary(guidebook: WorldHub) -> str:
+    items = [*guidebook.featured, *guidebook.events, *guidebook.guides]
+    labels = _joined_labels(tuple(item.material.title for item in items[:3]))
+    if labels:
+        return f"{labels} can ground a first face."
+    return "Published guidebook material can ground a first face."
+
+
+def _joined_labels(labels: tuple[str, ...]) -> str:
+    if not labels:
+        return ""
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f"{labels[0]} and {labels[1]}"
+    return f"{', '.join(labels[:-1])}, and {labels[-1]}"
 
 
 def _realm_gateway_scene_hubs(
@@ -3675,7 +3723,7 @@ def _realm_gateway_entry_paths(
         paths.append(
             RealmGatewayEntryPath(
                 "Read the premise",
-                "Start with the public story promise before choosing a face.",
+                program.premise.rendered_summary,
                 program.premise_href,
                 "premise",
             )
@@ -3684,7 +3732,7 @@ def _realm_gateway_entry_paths(
         paths.append(
             RealmGatewayEntryPath(
                 "Browse open calls",
-                "Relationships, roles, rivals, and scenario requests already want a writer.",
+                _realm_gateway_open_calls_entry_summary(program),
                 _community_href(program, "/wanted"),
                 "open wanted",
                 program.open_wanted_count,
@@ -3703,12 +3751,22 @@ def _realm_gateway_entry_paths(
     paths.append(
         RealmGatewayEntryPath(
             "Request access",
-            "Ask to enter when the premise, roster, and open calls feel like a fit.",
+            f"Ask to enter when {program.community.name}'s premise, roster, and hooks fit.",
             _community_href(program, "/request-access"),
             "entry",
         )
     )
     return tuple(paths)
+
+
+def _realm_gateway_open_calls_entry_summary(program: StudioNetworkProgramView) -> str:
+    if program.current_event is not None:
+        return (
+            f"Find a role, rival, or relationship tied to {program.current_event.material.title}."
+        )
+    if program.premise is not None:
+        return f"Find a role, rival, or relationship that fits {program.premise.material.title}."
+    return "Find a relationship, role, rival, or scenario request that wants a writer."
 
 
 def _realm_gateway_wanted_previews(

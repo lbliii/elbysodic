@@ -73,7 +73,7 @@
     {% end %}
   </section>
   {% end %}
-  {% if viewer %}
+  {% if viewer and not realm_gateway %}
   {{ home_section_header("Locations", "In-character doors into the board's world, conflicts, and current event pressure.") }}
 
   <div class="elbysodic-location-grid">
