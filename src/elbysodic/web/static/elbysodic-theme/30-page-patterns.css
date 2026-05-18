@@ -1141,24 +1141,15 @@
 }
 
 .elbysodic-realm-entry-row {
-    align-items: center;
     color: inherit;
-    display: flex;
-    gap: 1rem;
-    justify-content: space-between;
+    display: block;
     padding: 0.9rem 1rem;
+    text-decoration: none;
 }
 
 .elbysodic-realm-entry-row > span {
     display: grid;
     gap: 0.2rem;
-}
-
-.elbysodic-realm-entry-row em {
-    color: var(--chirpui-text-subtle);
-    font-size: var(--chirpui-font-xs);
-    font-style: normal;
-    text-transform: uppercase;
 }
 
 .elbysodic-community-grid {

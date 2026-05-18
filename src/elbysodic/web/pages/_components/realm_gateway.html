@@ -165,13 +165,6 @@
         <strong>{{ path.title }}</strong>
         <small>{{ path.summary }}</small>
       </span>
-      <em>
-        {% if path.metric_value is not none %}
-        {{ path.metric_value }} {{ path.metric_label }}
-        {% else %}
-        {{ path.metric_label }}
-        {% end %}
-      </em>
     </a>
     {% end %}
   </div>
@@ -268,8 +261,6 @@
       <span>{{ wanted.summary }}</span>
       {% if wanted.related_label %}
       <em>{{ wanted.related_label }}</em>
-      {% else %}
-      <em>First-face hook</em>
       {% end %}
     </a>
     {% end %}
@@ -277,7 +268,7 @@
   {% end %}
   <div>
     <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">
-      Browse {{ gateway.program.open_wanted_count }} wanted hooks
+      Browse all open calls
     </a>
   </div>
 </section>
