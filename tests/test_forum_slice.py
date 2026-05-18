@@ -2058,6 +2058,8 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         "Wanted thread start",
         "wanted-hook style opener tests",
         "public chapter pressure",
+        "public story pressure",
+        "Open calls can enter through",
         "ready for public scene browsing",
         "Play readiness",
         "Guidebook path",
@@ -2177,6 +2179,10 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             assert "The Shoreline Vote" in gateway_text
             assert gateway.premise_evolution.has_current_pressure
             assert gateway.premise_evolution.current_pressure_title == "Founders Gala"
+            assert (
+                gateway.premise_evolution.inciting_incident
+                == gateway.premise_evolution.current_pressure_summary
+            )
             assert "The Ledger Page Under Table Six" in gateway.premise_evolution.consequences
             assert "Breakfast Before The Vote" in gateway.premise_evolution.consequences
             assert "Reporter source at the club" in gateway.premise_evolution.next_openings

@@ -3728,7 +3728,7 @@ def _realm_gateway_stage_pressure(
     stage_title: str,
 ) -> str:
     if program.open_wanted_count:
-        return f"Open calls, public places, and first-face ties can enter through {stage_title}."
+        return f"Open calls, places, and first ties are already pointed at {stage_title}."
     return premise.onboarding_pitch
 
 
@@ -3749,6 +3749,11 @@ def _realm_gateway_premise_evolution(
     )
     current_pressure_title = atmosphere.title
     current_pressure_summary = atmosphere.copy
+    inciting_incident = (
+        current_pressure_summary
+        if atmosphere.source_type == "event"
+        else premise_summary
+    )
     consequences = _realm_gateway_consequence_summary(
         current_pressure_title,
         scene_previews,
@@ -3757,7 +3762,7 @@ def _realm_gateway_premise_evolution(
     return RealmGatewayPremiseEvolution(
         premise_title=premise_title,
         premise_summary=premise_summary,
-        inciting_incident=premise_summary,
+        inciting_incident=inciting_incident,
         current_pressure_title=current_pressure_title,
         current_pressure_summary=current_pressure_summary,
         consequences=consequences,
@@ -3779,11 +3784,11 @@ def _realm_gateway_consequence_summary(
 ) -> str:
     if scene_previews:
         scene_titles = _joined_labels(tuple(scene.title for scene in scene_previews[:2]))
-        return f"{current_pressure_title} is already moving through {scene_titles}."
+        return f"Already playing in {scene_titles}."
     if wanted_previews:
         wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
-        return f"{current_pressure_title} is already asking for {wanted_titles}."
-    return f"{current_pressure_title} is the public story pressure to read first."
+        return f"Open calls are already tied to {wanted_titles}."
+    return f"Read {current_pressure_title} before choosing where a first face enters."
 
 
 def _realm_gateway_next_openings_summary(
@@ -3796,7 +3801,7 @@ def _realm_gateway_next_openings_summary(
         wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
         return f"Open calls include {wanted_titles}."
     if program.open_wanted_count:
-        return f"Open calls can enter through {current_pressure_title}."
+        return f"Browse open calls tied to {current_pressure_title}."
     return premise.onboarding_pitch
 
 
