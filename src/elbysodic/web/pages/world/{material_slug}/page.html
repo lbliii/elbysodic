@@ -49,7 +49,7 @@
 {% call stack(gap="lg") %}
   <a class="chirpui-link" href="/world">← Guidebook</a>
 
-  {% call detail_header(title=material.material.title, summary=material.material.summary, eyebrow=material.type_label, cls="elbysodic-material-hero elbysodic-material-hero--" ~ material.material.material_type) %}
+  {% call detail_header(title=material.display_title, summary=material.material.summary, eyebrow=material.type_label, cls="elbysodic-material-hero elbysodic-material-hero--" ~ material.material.material_type) %}
     {% slot badges %}
       {{ facet_pills(material.facets) }}
     {% end %}
@@ -60,7 +60,7 @@
     {% end %}
   {% end %}
 
-  {% call inline_nav("Material sections", cls="elbysodic-section-jump") %}
+  {% call inline_nav("Guide sections", cls="elbysodic-section-jump") %}
     {% if material.event_actions %}
     {{ inline_nav_link("Write now", "#event-actions") }}
     {% end %}
@@ -87,7 +87,7 @@
     <div>
       <p class="elbysodic-kicker">Write now</p>
       <h2 id="event-actions-title">Carry this event into play</h2>
-      <p class="elbysodic-copy-section">Scenes, hooks, places, and discovery routes that turn this canon pressure into posts.</p>
+      <p class="elbysodic-copy-section">Scenes, hooks, places, and paths that help writers answer this event.</p>
     </div>
     <div class="elbysodic-event-action-grid">
       {% for action in material.event_actions %}
@@ -107,11 +107,11 @@
 
   {% if material.continuity_beats %}
   <section id="event-progression" class="chirpui-stack chirpui-stack--md">
-  {% call section_header("Event progression") %}
-  Continuity beats showing how this material is moving from canon into scenes, hooks, and playable locations.
+  {% call section_header("What changed") %}
+  Continuity beats showing how this event is moving through scenes, hooks, and playable locations.
   {% end %}
   {% call surface(variant="elevated") %}
-  <div class="elbysodic-material-continuity" aria-label="Event progression">
+  <div class="elbysodic-material-continuity" aria-label="What changed">
     {{ continuity_timeline(material.continuity_beats) }}
   </div>
   {% end %}
@@ -123,8 +123,8 @@
   <details class="elbysodic-management-disclosure elbysodic-material-studio-disclosure">
     <summary>
       <span>
-        <strong>Material studio</strong>
-        <small>Edit this canon document in place</small>
+        <strong>Edit guidebook page</strong>
+        <small>Update this world material in place</small>
       </span>
     </summary>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md elbysodic-material-editor">
@@ -229,15 +229,14 @@
 
   {% if material.related_materials %}
   <section id="related-materials" class="chirpui-stack chirpui-stack--md">
-  {% call section_header("Related materials") %}
-  More creator-authored context that shares this lens.
+  {% call section_header("Related guidebook") %}
+  More lore that shares this lens.
   {% end %}
   <div class="elbysodic-material-grid">
     {% for item in material.related_materials %}
     {% call surface(variant="elevated", cls="elbysodic-material-card-shell elbysodic-material-card-shell--" ~ item.material.material_type) %}
     <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
-      <p class="elbysodic-material-card__type">{{ item.type_label }}</p>
-      <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
+      <h2><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a></h2>
       <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
       {{ facet_pills(item.facets) }}
     </article>

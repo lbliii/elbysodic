@@ -10,7 +10,7 @@
 {% elif program.premise %}
 {{ program.premise.material.summary }}
 {% else %}
-A studio program ready for scenes, casting, and writer movement.
+A realm ready for scenes, casting, and writer movement.
 {% end %}
 {% end %}
 
@@ -50,11 +50,11 @@ A studio program ready for scenes, casting, and writer movement.
       <div>
         <p class="elbysodic-section-kicker">
           {% if program.current_event %}
-          Current chapter
+          In motion
           {% elif program.premise %}
-          World premise
+          Premise
           {% else %}
-          Public realm
+          Open realm
           {% end %}
         </p>
         <h2>{{ program.community.name }}</h2>
@@ -81,7 +81,7 @@ A studio program ready for scenes, casting, and writer movement.
       {% end %}
     </p>
     {% else %}
-    <p class="elbysodic-copy-meta">Public preview · check premise, roster, wanted hooks, and first-face paths.</p>
+    <p class="elbysodic-copy-meta">Read the premise, roster, wanted, and first steps.</p>
     {% end %}
     <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
       {{ program_metric_links(program) }}
@@ -89,12 +89,12 @@ A studio program ready for scenes, casting, and writer movement.
   </div>
   <div class="elbysodic-network-card__actions">
     {% if program.current_event %}
-    {{ compact_link_action(program.current_event_href, "Current event", "bolt") }}
+    {{ compact_link_action(program.current_event_href, "Read chapter", "bolt") }}
     {% elif program.premise %}
     {{ compact_link_action(program.premise_href, "Premise", "list") }}
     {% end %}
     {% if program.open_wanted_count %}
-    {{ compact_link_action(program.entry_href ~ "/wanted", "Wanted hooks", "star") }}
+    {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "star") }}
     {% end %}
   </div>
 </article>

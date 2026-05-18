@@ -44,8 +44,8 @@
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("Casting Desk") %}
-  Raised hands, active reserves, and wanted handoffs across {{ viewer.community.name }}.
+  {% call section_header("Casting desk") %}
+  Interest, active reserves, and wanted handoffs across {{ viewer.community.name }}.
   {% end %}
 
   {% call surface(variant="elevated") %}
@@ -56,14 +56,14 @@
         <div>
           <h2>
             {% if desk.active_face %}
-            Active-face casting
+            Active face casting
             {% else %}
             No face selected
             {% end %}
           </h2>
           <p class="elbysodic-copy-section">
             {% if desk.active_face %}
-            Casting views prioritize active-face relevance.
+            Casting views prioritize the face you are wearing now.
             {% else %}
             Choose a face to personalize casting filters and claims.
             {% end %}
@@ -76,7 +76,7 @@
       {{ stat(value=desk.wanted_with_interest | length, label="Hooks with interest") }}
       {{ stat(value=desk.my_reserves | length, label="My reserves") }}
       {% if desk.active_face %}
-      {{ stat(value=desk.active_face_reserves | length, label="Active-face reserves") }}
+      {{ stat(value=desk.active_face_reserves | length, label="Active face reserves") }}
       {% end %}
     {% end %}
   </article>
@@ -84,13 +84,13 @@
 
   {% set has_handoffs = desk.active_face_reserves or desk.wanted_with_interest or desk.active_reserves %}
   {% if not has_handoffs %}
-  {{ empty_policy_block("No casting handoffs need work right now.", "Raised hands, active-face reserves, and wanted reserves will appear here when they need movement.", "Casting clear") }}
+  {{ empty_policy_block("No casting handoffs need work right now.", "Interest, active face reserves, and wanted reserves will appear here when they need movement.", "Casting clear") }}
   {% else %}
 
   {% if desk.active_face %}
   {% if desk.active_face_reserves %}
   <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Active-face reserves") %}
+    {% call section_header("Active face reserves") %}
     Hooks and claims attached to the active face.
     {% end %}
     <div class="elbysodic-interest-list">
@@ -115,7 +115,6 @@
           <div class="elbysodic-wanted-card__heading">
             {{ thread_signal() }}
             <div>
-              <p class="elbysodic-wanted-card__type">{{ item.wanted_ad.type_label }}</p>
               <h2>
                 <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.wanted_ad.slug }}">
                   {{ item.wanted_ad.wanted_ad.title }}
@@ -135,7 +134,7 @@
         </div>
         {% if item.interests %}
         <div>
-          <p class="elbysodic-section-kicker">Raised hands</p>
+          <p class="elbysodic-section-kicker">Interest</p>
           <div class="elbysodic-character-chip-row">
             {% for interest in item.interests %}
             {% if interest.character %}

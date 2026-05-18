@@ -145,6 +145,25 @@ async def post(request: Request) -> Page | Redirect:
                 is_featured=form.get("is_featured") == "on",
             )
             redirect_to = "/studio#continuity-events"
+        elif intent == "gateway_curation":
+            services.update_gateway_curation(
+                scene_hub_target_ids=_ordered_targets(
+                    form,
+                    "scene_hub_target_id",
+                    "scene_hub_position_",
+                ),
+                wanted_hook_target_ids=_ordered_targets(
+                    form,
+                    "wanted_hook_target_id",
+                    "wanted_hook_position_",
+                ),
+                guidebook_material_target_ids=_ordered_targets(
+                    form,
+                    "guidebook_material_target_id",
+                    "guidebook_material_position_",
+                ),
+            )
+            redirect_to = "/studio#gateway-curation"
         else:
             raw_group_id = str(form.get("identity_accent_facet_group_id") or "")
             facet_group_id = int(raw_group_id) if raw_group_id else None
@@ -196,6 +215,21 @@ def _form_values(form: object, name: str) -> list[str]:
         return [str(value) for value in getlist(name)]
     raw = getattr(form, "get", lambda _name: None)(name)
     return [] if raw is None else [str(raw)]
+
+
+def _ordered_targets(form: object, field_name: str, position_prefix: str) -> list[int]:
+    selected_ids = {int(value) for value in _form_values(form, field_name) if str(value)}
+    get_value = getattr(form, "get", lambda _name: "")
+
+    def position_for(target_id: int) -> tuple[int, int]:
+        raw_position = str(get_value(f"{position_prefix}{target_id}") or "")
+        try:
+            position = int(raw_position)
+        except ValueError:
+            position = 999
+        return (position, target_id)
+
+    return sorted(selected_ids, key=position_for)
 
 
 def _required_int(raw: object, message: str) -> int:
@@ -297,7 +331,7 @@ def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
             StudioCockpitLane(
                 "Launch",
                 "Opening checklist",
-                "Required realm setup lanes still backstage before invite-only opening.",
+                "Required opening lanes still backstage before invite-only opening.",
                 "/studio/launch",
                 "Open launch room",
                 len(missing_launch_items),

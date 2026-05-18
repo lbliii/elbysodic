@@ -13,9 +13,18 @@ EMPTY_SELECTOR_FILES = {
     "50-page-compositions.css": "composition review queue",
     "90-legacy.css": "legacy ledger",
 }
+EXTERNALLY_PROVIDED_PROPERTIES = {
+    "--elbysodic-preview-accent",
+    "--elbysodic-preview-bg",
+    "--elbysodic-preview-border",
+    "--elbysodic-preview-muted",
+    "--elbysodic-preview-text",
+}
 
 _IMPORT_RE = re.compile(r'@import\s+url\("\./elbysodic-theme/([^"]+\.css)"\);')
 _SELECTOR_RE = re.compile(r"^(?:[.#]|[a-z][\w-]*(?:[.#:\[]|\s|,|>|\+|~))", re.IGNORECASE)
+_CUSTOM_PROPERTY_DEFINITION_RE = re.compile(r"(?<![\w-])(--[A-Za-z0-9_-]+)\s*:")
+_CUSTOM_PROPERTY_REFERENCE_RE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)(\s*,)?")
 
 
 def imported_theme_files(entrypoint: Path = THEME_ENTRYPOINT) -> list[str]:
@@ -46,6 +55,32 @@ def file_selector_lines(path: Path) -> list[int]:
             selector_lines.append(line_number)
 
     return selector_lines
+
+
+def theme_custom_property_errors(
+    *,
+    entrypoint: Path = THEME_ENTRYPOINT,
+    theme_dir: Path = THEME_DIR,
+) -> list[str]:
+    files = [entrypoint, *sorted(theme_dir.glob("*.css"))]
+    definitions: set[str] = set()
+    references: list[tuple[Path, int, str, bool]] = []
+
+    for path in files:
+        text = path.read_text(encoding="utf-8")
+        definitions.update(_CUSTOM_PROPERTY_DEFINITION_RE.findall(text))
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            references.extend(
+                (path, line_number, match.group(1), bool(match.group(2)))
+                for match in _CUSTOM_PROPERTY_REFERENCE_RE.finditer(line)
+            )
+
+    allowed = definitions | EXTERNALLY_PROVIDED_PROPERTIES
+    return [
+        f"{path.relative_to(REPO_ROOT)}:{line_number} references undefined custom property {name}"
+        for path, line_number, name, has_fallback in references
+        if name not in allowed and not has_fallback
+    ]
 
 
 def validate_theme_css(
@@ -85,6 +120,8 @@ def validate_theme_css(
                 f"{path.relative_to(REPO_ROOT)} should remain an empty {purpose}; "
                 f"selectors found on line(s) {lines}"
             )
+
+    errors.extend(theme_custom_property_errors(entrypoint=entrypoint, theme_dir=theme_dir))
 
     return errors
 

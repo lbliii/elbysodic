@@ -2,15 +2,18 @@
 
 Status: product and design doctrine
 Owner: Product, design, web, research, and steward coordination
-Last updated: 2026-05-15
+Last updated: 2026-05-18
 
 This is the short synthesis for Elbysodic's current product experience
 direction. Use it with `docs/product/strategy-spine.md`,
 `docs/product/appearance-studio.md`, `docs/product/navigation-menus.md`,
-`docs/product/information-hierarchy.md`, and
-`design/technicolor-futurism.md`. Use `design/composition-bible.md` when the
-question is page rhythm, surface choice, chrome layering, media placement,
-mobile composition, or bad layout patterns.
+`docs/product/information-hierarchy.md`,
+`docs/product/surface-quality-bar.md`, and `design/technicolor-futurism.md`.
+Use `docs/product/typography-strategy.md` when deciding how page titles,
+shelves, labels, metadata, and prose should visually relate.
+Use `design/composition-bible.md` when the question is page rhythm, surface
+choice, chrome layering, media placement, mobile composition, or bad layout
+patterns.
 
 It distills the latest research, static mocks, user-panel synthesis, and
 implementation direction into one decision rule:
@@ -136,6 +139,12 @@ Reject:
   behavior outrank atmosphere on thread and writing surfaces.
 - **Layered, not duplicated:** outer rail, inner shell, page chrome, drawers,
   and object-local controls must each answer a different question.
+- **Context carries labels:** page and section framing identify the object
+  class; child cards, rows, badges, and footers add only distinctions the
+  parent context does not already provide. A `Places` shelf does not need
+  `Scene hub` on every place, a wanted room does not need `Wanted hook` on
+  every hook, and a current-premise hero should not repeat the same chapter
+  label as an eyebrow, sentence, metric, and footer.
 - **Editorial, not dashboard:** Studio and Desk can be dense, but they should
   use edited rows, lanes, command areas, and state language instead of generic
   SaaS cards everywhere.
@@ -175,3 +184,6 @@ Reject:
 - Has the decision been promoted to the right durable place: product docs,
   design docs, service read model, shared component, tests, plan, or not-now
   item?
+- Does the surface pass the Surface Quality Bar: intent brief, density budget,
+  anti-CRM rules, label discipline, and screenshot QA when rendered composition
+  matters?

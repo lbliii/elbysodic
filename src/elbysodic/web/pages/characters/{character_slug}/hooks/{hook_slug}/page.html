@@ -75,11 +75,11 @@
 
   {% if hook.interests %}
   <section class="elbysodic-lifecycle-section">
-    {% call section_header("Hook lifecycle") %}
-    Raised hands and plotting handoffs for this character hook.
+    {% call section_header("Interest and rooms") %}
+    Writers and plotting handoffs for this character hook.
     {% end %}
     <div class="elbysodic-lifecycle-lane">
-      <h3 class="elbysodic-lifecycle-lane__heading">Raised hands</h3>
+      <h3 class="elbysodic-lifecycle-lane__heading">Interest</h3>
       <div class="elbysodic-lifecycle-list">
         {% for item in hook.interests %}
         <article class="elbysodic-interest-card elbysodic-interest-card--{{ item.interest.status }}">

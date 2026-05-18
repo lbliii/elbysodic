@@ -1,15 +1,104 @@
 # Community Landing Design-System Translation
 
-Status: draft implementation plan after static V2 prototype
+Status: implementation pass landed on `codex/community-gateway-plan`; final
+merge/review pending
 Owner: Product design, Chirp/web, service, privacy, tests, and docs stewardship
 Created: 2026-05-15
-Last updated: 2026-05-15
+Last updated: 2026-05-18
 Review by: 2026-05-29
 Closure criteria: the community landing V2 prototype is translated into
 service-owned public/member/applicant read models, Chirp-composed Elbysodic
 components, theme-layer CSS, privacy-tested rendered routes, desktop/mobile
 browser QA, and docs/checklist updates; or the prototype is explicitly
 superseded by a narrower gateway plan.
+
+## 2026-05-16 Implementation Pass
+
+Branch: `codex/community-gateway-plan`
+
+Completed in task commits:
+
+- Hardened `RealmGatewayView` with hero, action, signal, scene-hub emphasis,
+  wanted preview, and continuation contracts.
+- Replaced the early card-grid community home with
+  `_components/realm_gateway.html`; signed-in homes now keep the gateway and
+  continuation lane rather than also rendering the old board/activity index.
+- Added tokenized theme CSS across page, media, board/place, and wanted layers
+  without copying prototype CSS.
+- Rendered open wanted hooks as public first-face previews from existing
+  public wanted data.
+- Added member/faceless continuation lanes from service-owned identity state.
+- Updated rendered QA notes, privacy matrix coverage, and changelog.
+
+Second wave:
+
+- Routed applicant continuation through writer activation, including existing
+  draft first-face applications.
+- Added public-safe open scene previews from existing public boards and
+  threads.
+- Ranked scene hubs by gateway emphasis and public thread activity before the
+  four-card limit.
+- Added rendered fallback proof for no-media/no-wanted public gateways.
+- Reran the premise browser profile with wave-two screenshots.
+
+Content cleanup:
+
+- Removed generic explanatory section summaries and placeholder signal copy
+  from the rendered gateway.
+- Derived signal and entry-path copy from current event, premise, guidebook,
+  wanted, and scene-hub names.
+- Added rendered regression coverage so original-premise gateways do not
+  reintroduce the known boilerplate phrases.
+- Hid legacy signed-in home activity/index rows when a gateway exists; those
+  workflows live in Desk, Locations, and board routes.
+
+Curated gateway follow-up:
+
+- Added tenant-scoped `community_gateway_slots` storage for curated scene hubs,
+  wanted hooks, and guidebook materials.
+- Rendered curated gateway slots ahead of derived fallback content, while
+  omitting stale private boards, closed wanted hooks, and draft materials.
+- Added Studio gateway curation so directors can select, order, remove, and
+  preview public home-page slots without raw layout controls or generated copy.
+- Replaced the remaining original-premise demo "Wanted thread start" scaffold
+  with board/face-specific first-scene language.
+- Removed the rendered public "Play readiness" signal band after visitor
+  feedback showed the counts and status copy were not useful for deciding what
+  to read or click next.
+- Simplified scene-hub cards so the section context carries the type; cards now
+  show the place and its useful hook instead of repeating hub labels and thread
+  counts.
+
+Proof captured so far:
+
+- `uv run ruff check src/elbysodic/services/read_models.py src/elbysodic/services/forum.py src/elbysodic/web/pages/page.py tests/test_forum_slice.py`
+- `uv run pytest tests/test_forum_slice.py tests/test_web_security.py -q --tb=short -k 'original_premise_gateways or forum_pages_render_seeded_boards_and_thread or anonymous or public_realm_gateway_contract'`
+- `uv run pytest tests/test_forum_slice.py::test_writer_desk_keeps_first_face_application_active tests/test_forum_slice.py::test_public_realm_gateway_scene_previews_hide_private_threads tests/test_forum_slice.py::test_public_realm_gateway_ranks_active_scene_hubs_before_limit tests/test_forum_slice.py::test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage -q --tb=short`
+- `uv run pytest tests/test_forum_slice.py::test_original_premise_gateways_surface_premise_entry_and_scene_hubs tests/test_forum_slice.py::test_forum_pages_render_seeded_boards_and_thread tests/test_forum_slice.py::test_rendered_route_query_budgets_are_tracked -q --tb=short`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`
+- `uv run python scripts/browser_qa.py --base-url http://127.0.0.1:8003 --profile premise --artifact-dir /private/tmp/elbysodic-gateway-premise-qa`
+- `uv run python /private/tmp/run_elbysodic_gateway_qa.py`
+- `uv run ruff check .`
+- `uv run ruff format . --check`
+- `uv run ty check src/elbysodic/ tests/`
+- `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"`
+- `make changelog-check`
+- `uv run pytest -q --tb=short`
+- `uv run pytest tests/test_tenant_repository.py -q --tb=short`
+- `uv run pytest tests/test_forum_slice.py -q --tb=short -k "gateway_curation or realm_gateway or gateway"`
+
+Remaining before merge:
+
+- Review branch diff and open PR.
+
+Next iteration:
+
+- The next community hub pass is split into
+  `plans/in-progress/community-hub-editorial-iteration-2026-05-18.md`.
+- That plan supersedes any remaining dashboard/readiness framing from this
+  translation plan. The next pass should treat `/c/{community_slug}` as an
+  editorial story hub with a Surface Intent Brief, density budget, label audit,
+  mature seed proof, and browser screenshot QA before merge.
 
 ## Purpose
 
@@ -87,6 +176,59 @@ The gateway owns:
 
 `/world` remains the guidebook/material room. `Locations`, `Wanted`, `Desk`,
 and `Studio` remain scoped rooms in the shell.
+
+## Curated Gateway Slot Contract
+
+Gateway content should be director-curatable after the privacy-safe derived
+gateway is stable. Curation is a small ordering contract, not a layout builder.
+
+Slot types:
+
+- `scene_hub`: targets a public board that can function as a scene hub.
+- `wanted_hook`: targets an open wanted hook.
+- `guidebook_material`: targets a published material.
+- `public_scene`: deferred until the product has an explicit public-scene
+  curation contract; do not infer it from private/staff/thread state.
+
+Storage contract:
+
+- Every slot stores `community_id`, `slot_type`, `target_id`, `position`, an
+  optional director-facing `label`, and timestamps.
+- `community_id` is part of every repository lookup, write, and uniqueness
+  rule.
+- A community can curate several slot types without affecting the order of
+  unrelated gateway sections.
+- Curation never stores permission decisions; services re-check target safety
+  before rendering.
+
+Rendering contract:
+
+- Curated safe targets render first, in slot order.
+- Derived content fills any remaining gateway capacity.
+- Unsafe curated targets are silently omitted and do not block fallback:
+  private boards, archived wanted hooks, draft/unpublished materials, missing
+  rows, and cross-community targets never render.
+- Public visitors still see only published/public-safe gateway material.
+- Signed-in members may see only the same curated public gateway plus their
+  viewer-scoped continuation lane.
+
+Studio contract:
+
+- Director controls may select, reorder, and remove gateway slots.
+- The Studio surface lists only eligible public boards, open wanted hooks, and
+  published materials for the current community.
+- The first implementation should stay operational and compact: no masonry,
+  raw CSS, custom layout controls, or AI-generated public copy.
+
+Proof contract:
+
+- Fresh schema and upgraded schema include the same slot table and indexes.
+- Repository tests prove tenant-scoped create/list/delete behavior and
+  cross-community target rejection.
+- Service tests prove curated order, derived fallback, and unsafe target
+  omission for each slot type.
+- Rendered tests prove public gateway output does not leak private boards,
+  archived wanted hooks, draft materials, Desk state, or active-face state.
 
 ## Non-Negotiables
 
@@ -621,6 +763,7 @@ Proof:
 | Atmosphere state | N/A | `RealmGatewayAtmosphere` | page copy/sections | no schema first | Appearance/experience docs if promoted | no/one/multi event fixtures | service + rendered | yes if user-visible |
 | Location bento | N/A | `RealmGatewayLocationCard.emphasis` | community home | no schema first | composition/design notes | X-Men emphasized locations | privacy + browser | yes if shipped |
 | Public wanted/scene previews | N/A | public-safe preview rows | community home | existing wanted/thread models first | privacy docs if changed | open/private fixtures | negative leakage tests | yes |
+| Curated gateway slots | N/A | `GatewaySlot` repository + gateway service ordering | `/c/{community_slug}` + Studio curation | `community_gateway_slots` tenant-scoped table | plan + privacy matrix | Harbor curated slots | migration + repository + service + rendered | yes |
 | Member/applicant continuation | N/A | audience-specific continuation | community home | existing membership/application first | info hierarchy if behavior changes | seed personas | rendered privacy | yes |
 
 ## Risks
@@ -640,6 +783,7 @@ Proof:
 
 - Persisted event scheduling or multi-event schema.
 - Director-authored layout builders.
+- Public-scene curation until public scene eligibility is explicit.
 - Public route migration.
 - Cross-realm personalization.
 - Appearance Studio controls for bento layout.

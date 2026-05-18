@@ -650,7 +650,7 @@ def network_filter_groups(cards: list[PublicCatalogCard]) -> list[NetworkDiscove
             _profile_filter_options(cards, "lore_aperture"),
         ),
         NetworkDiscoveryFilterGroup(
-            "Ways in",
+            "Start here",
             _profile_filter_options(cards, "access_model")
             + _profile_filter_options(cards, "application_model"),
         ),

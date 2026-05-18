@@ -15,8 +15,8 @@
          alt="">
     <span class="elbysodic-product-identity__name">Elbysodic</span>
   </div>
-  {% call section_header("Accept Invitation") %}
-  Join {{ community.name }} with a community-local writer identity.
+  {% call section_header("Accept invitation") %}
+  Join {{ community.name }} with the writer identity you will use here.
   {% end %}
 
   {% call surface(variant="elevated") %}
@@ -25,8 +25,8 @@
     <p class="elbysodic-section-kicker">Invite-only access</p>
     <h1>{{ community.name }}</h1>
     <p>
-      This invitation is for {{ invitation.email }}. Your login account is global,
-      but your writer name, role, and faces belong to this realm.
+      This invitation is for {{ invitation.email }}. Your login works across
+      Elbysodic, but your writer name, role, and faces belong to this realm.
     </p>
     {% if error %}
     <p class="elbysodic-form-error" role="alert">{{ error }}</p>

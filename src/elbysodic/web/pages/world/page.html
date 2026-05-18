@@ -10,9 +10,8 @@
 <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
   <div class="chirpui-cluster chirpui-cluster--between">
     <div>
-      <p class="elbysodic-material-card__type">{{ item.type_label }}</p>
       <h2>
-        <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
+        <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a>
       </h2>
     </div>
     {% if item.material.is_featured %}
@@ -53,10 +52,9 @@
   <section class="elbysodic-material-studio-hero">
     <div>
       <p class="elbysodic-kicker">Guidebook</p>
-      <h1>World studio</h1>
+      <h1>World guide</h1>
       <p class="elbysodic-copy-lead">
-        Director-authored canon, events, applications, and story lenses that turn a forum
-        into a playable world.
+        Canon, events, applications, and story lenses that make the realm playable.
       </p>
     </div>
     <div class="elbysodic-material-studio-hero__pulse" aria-label="Guidebook pulse">
@@ -78,21 +76,20 @@
   {% if hub.events %}
   {% set current_event = hub.events[0] %}
   <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ current_event.material.material_type }}" href="/world/{{ current_event.material.slug }}">
-    <span class="elbysodic-material-card__type">{{ current_event.type_label }}</span>
-    <strong>{{ current_event.material.title }}</strong>
+    <strong>{{ current_event.display_title }}</strong>
     <span>{{ current_event.rendered_summary }}</span>
   </a>
   {% end %}
 
-  {{ material_section("Start here", "The board's highest-signal pillars.", hub.featured, "No guidebook pillars have been featured yet.", "start-here") }}
+  {{ material_section("Start here", "The strongest pillars for reading the realm.", hub.featured, "No guidebook pillars have been featured yet.", "start-here") }}
   {% if hub.guides %}
-  {{ material_section("Guides", "Premise, rules, faction context, and setting reference.", hub.guides, "No guidebook pages have been published yet.", "guides") }}
+  {{ material_section("Guides", "Premise, rules, factions, and setting reference.", hub.guides, "No guidebook pages have been published yet.", "guides") }}
   {% end %}
   {% if hub.events %}
-  {{ material_section("Events", "Current plot pressure that should inspire scenes.", hub.events, "No event pressure is live yet.", "events") }}
+  {{ material_section("Events", "Plot pressure ready to become scenes.", hub.events, "No event pressure is live yet.", "events") }}
   {% end %}
   {% if hub.application_materials %}
-  {{ material_section("Applications", "Character submission guidance outside the thread format.", hub.application_materials, "No application guidance is live yet.", "applications") }}
+  {{ material_section("Applications", "Character guidance before the form.", hub.application_materials, "No application guidance is live yet.", "applications") }}
   {% end %}
 {% end %}
 {% end %}

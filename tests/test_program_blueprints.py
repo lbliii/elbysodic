@@ -736,6 +736,76 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
         assert contract[slug]["thread_count"] >= 2
         assert contract[slug]["post_count"] >= 4
 
+    harbor_materials = {
+        row["title"]
+        for row in connection.execute(
+            """
+            SELECT materials.title
+            FROM materials
+            JOIN communities ON communities.id = materials.community_id
+            WHERE communities.slug = 'harbor-society'
+            """
+        ).fetchall()
+    }
+    assert harbor_materials >= {"Town Power Map", "Donor Circuit"}
+    harbor_board_media = {
+        row["slug"]: row["image_url"]
+        for row in connection.execute(
+            """
+            SELECT boards.slug, boards.image_url
+            FROM boards
+            JOIN communities ON communities.id = boards.community_id
+            WHERE communities.slug = 'harbor-society'
+            """
+        ).fetchall()
+    }
+    assert (
+        harbor_board_media["marina-hotel"]
+        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
+    )
+    assert (
+        harbor_board_media["harbor-ledger"]
+        == "/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg"
+    )
+
+
+def test_original_premise_seed_restores_missing_seeded_board_media() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+
+    seed_demo_forum(repo)
+    harbor = repo.get_community_by_slug("harbor-society")
+    marina = repo.get_board_by_slug(harbor.id, "marina-hotel")
+    repo.update_board(
+        harbor.id,
+        marina.id,
+        name=marina.name,
+        description=marina.description,
+        sort_order=marina.sort_order,
+        parent_board_id=marina.parent_board_id,
+        board_kind=marina.board_kind,
+        sidebar_section=marina.sidebar_section,
+        tagline=marina.tagline,
+        image_url=None,
+        image_alt="",
+        image_treatment=marina.image_treatment,
+        image_focal_point=marina.image_focal_point,
+        image_overlay=marina.image_overlay,
+        is_private=marina.is_private,
+        navigation_order=marina.navigation_order,
+        show_in_navigation=marina.show_in_navigation,
+    )
+
+    seed_demo_forum(repo)
+
+    restored = repo.get_board_by_slug(harbor.id, "marina-hotel")
+    assert (
+        restored.image_url
+        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
+    )
+    assert restored.image_alt == "Marina hotel beside dark water and lit windows"
+
 
 def test_program_blueprint_preview_fingerprint_changes_with_source() -> None:
     connection = connect()

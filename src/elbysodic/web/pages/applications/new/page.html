@@ -10,17 +10,17 @@
 {% block page_content %}
 {% call container(max_width="68rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("Start Application") %}
-  Create a draft face inside {{ viewer.community.name }}.
+  {% call section_header("Start a face") %}
+  Begin a character concept for {{ viewer.community.name }}.
   {% end %}
 
   {% call surface(variant="elevated") %}
   <section class="elbysodic-application-starter" aria-labelledby="application-starter-heading">
     <div>
-      <p class="elbysodic-section-kicker">Casting ritual</p>
-      <h1 id="application-starter-heading">Begin a new face for this realm.</h1>
+      <p class="elbysodic-section-kicker">Casting</p>
+      <h1 id="application-starter-heading">Begin a new face</h1>
       <p class="elbysodic-copy-section">
-        Start with the playable shape. The application room will hold the fuller notes.
+        Start with a concise concept. The full application can grow from there.
       </p>
       {% if not viewer.current_character %}
       <p class="elbysodic-copy-meta">

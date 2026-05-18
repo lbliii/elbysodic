@@ -66,6 +66,16 @@ PREMISE_DISCOVERY_ROUTES = (
     Route("studio-discovery", "/studio/discovery"),
 )
 
+COMMUNITY_HUB_ROUTES = (
+    Route("network-small-town-social-web", "/network?q=small-town+social+web"),
+    Route("network-weird-town-mystery", "/network?q=weird-town+mystery"),
+    Route("network-strange-frontier", "/network?q=strange+frontier"),
+    Route("harbor-society", "/c/harbor-society"),
+    Route("signal-creek", "/c/signal-creek"),
+    Route("nocturne-row", "/c/nocturne-row"),
+    Route("wayfarer-station", "/c/wayfarer-station"),
+)
+
 DEEP_SEED_ROUTES = (
     Route("home", "/"),
     Route("network", "/network"),
@@ -316,6 +326,8 @@ async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
             routes = await _discover_deep_routes(page, base_url)
         elif profile == "premise":
             routes = list(PREMISE_DISCOVERY_ROUTES)
+        elif profile == "community-hub":
+            routes = list(COMMUNITY_HUB_ROUTES)
         else:
             routes = [*STATIC_ROUTES, *(await _discover_routes(page, base_url))]
         await page.close()
@@ -395,7 +407,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run Elbysodic browser visual smoke QA.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8003")
     parser.add_argument("--artifact-dir", default="tests/browser/artifacts")
-    parser.add_argument("--profile", choices=("smoke", "deep", "premise"), default="smoke")
+    parser.add_argument(
+        "--profile",
+        choices=("smoke", "deep", "premise", "community-hub"),
+        default="smoke",
+    )
     args = parser.parse_args()
     return asyncio.run(_run(args.base_url, Path(args.artifact_dir), args.profile))
 

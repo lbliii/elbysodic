@@ -1,3 +1,3 @@
 from chirp.pages.types import RouteMeta
 
-META = RouteMeta(title="Realm Launch", breadcrumb_label="Launch")
+META = RouteMeta(title="Open realm", breadcrumb_label="Launch")

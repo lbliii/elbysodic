@@ -205,6 +205,11 @@ Do not add arbitrary font URLs to community input. If a new stack is useful
 for multiple boards, add it as a named allowlist key and test representative
 surfaces.
 
+These stack keys do not replace the product type ladder in
+`docs/product/typography-strategy.md`. Appearance controls may alter mood, but
+they must not let community styling collapse heading hierarchy, make metadata
+look like primary headings, or put prose into an unreadable measure.
+
 ### Shape And Texture Tokens
 
 Radius, density, and texture should remain presets. They can change the room's

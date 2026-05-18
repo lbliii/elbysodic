@@ -57,6 +57,12 @@ def _response_header(response: Any, name: str) -> str:
     raise AssertionError(f"response header not found: {name}")
 
 
+def _csrf_token(html: str) -> str:
+    match = re.search(r'name="_csrf_token" value="([^"]+)"', html)
+    assert match is not None
+    return match.group(1)
+
+
 async def _stylesheet_text_with_imports(
     client: TestClient,
     path: str = "/elbysodic-static/elbysodic-theme.css",
@@ -1048,7 +1054,7 @@ def test_tenant_prefixed_identity_and_casting_routes_scope_rendered_links() -> N
         )
 
         assert application.status == 200
-        assert "Start Application" in application.text
+        assert "Start a face" in application.text
         assert "Create draft face" in application.text
         assert 'data-elbysodic-submit-label="Creating draft face..."' in application.text
         assert f'href="/c/{community_slug}/applications"' in application.text
@@ -1823,8 +1829,8 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
             response = await client.get("/network")
 
         assert response.status == 200
-        assert "Find realms by mood, hook, face, or story pressure." in response.text
-        assert "Public-preview realm catalog." in response.text
+        assert "Find a realm that fits the story you want to write." in response.text
+        assert "Open for browsing" in response.text
         assert "Start with a wanted hook" in response.text
         assert "Start with a current chapter" in response.text
         assert "Home hub" not in response.text
@@ -1851,12 +1857,12 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert 'class="elbysodic-network-card__realm-link"' in response.text
         assert 'aria-label="Preview Jurassic Park Universe"' in response.text
         assert 'class="elbysodic-network-card__icon-action' in response.text
-        assert 'aria-label="Current event"' in response.text
-        assert 'aria-label="Wanted hooks"' in response.text
+        assert 'aria-label="Read chapter"' in response.text
+        assert 'aria-label="Open calls"' in response.text
         assert "elbysodic-network-card__tooltip" in response.text
-        assert 'title="Wanted hooks"' not in response.text
+        assert 'title="Open calls"' not in response.text
         assert "elbysodic-network-search__control" in response.text
-        assert "premise, current chapter, roster energy" in response.text
+        assert "premise, pace, hooks, roster shape" in response.text
         assert "urban supernatural" in response.text
         assert "weird-town mystery" in response.text
         assert "small-town social web" in response.text
@@ -1864,7 +1870,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Premise engine" in response.text
         assert "Play engine" in response.text
         assert "Lore aperture" in response.text
-        assert "Ways in" in response.text
+        assert "Start here" in response.text
         assert "Pace and touchpoints" in response.text
         assert "Small Town Social Web" in response.text
         assert "Weird Town Mystery" in response.text
@@ -2001,7 +2007,7 @@ def test_original_premise_entry_paths_support_first_face_and_wanted_browsing() -
             assert "Application Guide" in applications.text
 
             assert first_face.status == 200
-            assert "Start Application" in first_face.text
+            assert "Start a face" in first_face.text
             assert "Face name" in first_face.text
             assert f"This will become your first active face in {community.name}" in first_face.text
             assert "Director fields" in first_face.text
@@ -2041,22 +2047,67 @@ def test_network_directory_enter_realm_sets_identity_cookie() -> None:
 
 def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> None:
     services = _seeded_services()
+    boilerplate_copy = (
+        "Public preview copy is safe to read before a writer has a face here.",
+        "Public places, institutions, and social rooms have visible doors into play.",
+        "Published premise, event, or guide material can ground an application.",
+        "Public scene previews show story motion without exposing private queues or member obligations.",
+        "Public-safe entry paths for reading, fitting, and requesting access.",
+        "Start with the public story promise before choosing a face.",
+        "Relationships, roles, rivals, and scenario requests already want a writer.",
+        "Wanted thread start",
+        "wanted-hook style opener tests",
+        "public chapter pressure",
+        "public story pressure",
+        "Open calls can enter through",
+        "ready for public scene browsing",
+        "Play readiness",
+        "Guidebook path",
+        "Scene hubs ready",
+        "Playable doors into the premise",
+        "Active scene hub",
+        "Hot scene hub",
+        "1 public threads",
+        "Ready for first scenes",
+    )
+    internal_planning_copy = (
+        "landing surface",
+        "tone/current pulse",
+        "public posture",
+        "entry into writing",
+        "preview readiness",
+        "setup readiness",
+        "read model",
+        "surface contract",
+        "public-safe",
+        "entry path",
+        "workflow state",
+    )
 
     gateway_expectations = {
         "harbor-society": (
             "The gala vote, family ties, town jobs, and quiet debts are already in motion.",
             "Shoreline Club",
             "Small Town Social Web",
+            "reporter-source-at-the-club",
         ),
         "signal-creek": (
             "The midnight signal gives newcomers a reason to ask questions before town memory closes ranks.",
             "Blackridge Observatory",
             "Weird Town Mystery",
+            "cult-survivor-who-remembers-1998",
+        ),
+        "nocturne-row": (
+            "The treaty breach gives every faction, witness, and bystander a reason to move before daylight.",
+            "Emberline District",
+            "Urban Supernatural Pressure Cooker",
+            "blood-bank-whistleblower",
         ),
         "wayfarer-station": (
             "The missing convoy has already tightened supplies, stirred old debts, and made the station listen.",
             "Docking Ring",
             "Strange Frontier",
+            "corporate-auditor",
         ),
     }
 
@@ -2064,38 +2115,705 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         onboarding_pitch,
         scene_hub,
         premise_label,
+        wanted_slug,
     ) in gateway_expectations.items():
         gateway = services.public_realm_gateway(community_slug)
 
+        assert gateway.hero.title == gateway.program.community.name
+        assert gateway.hero.kicker == f"{premise_label} - Public preview"
+        assert gateway.hero.lead == gateway.premise.catalog_pitch
+        assert gateway.hero.now_playing_label in {"Current chapter", "Standing premise"}
+        assert gateway.hero.first_face_path == onboarding_pitch
+        assert gateway.hero.primary_action.label == "Browse open calls"
+        assert gateway.hero.primary_action.href == f"/c/{community_slug}/wanted"
+        assert gateway.hero.secondary_action is not None
+        assert gateway.hero.secondary_action.href.startswith(f"/c/{community_slug}/world")
         assert gateway.premise.onboarding_pitch == onboarding_pitch
         assert gateway.premise.premise_label == premise_label
+        assert gateway.story_frame.eyebrow == premise_label
+        assert gateway.story_frame.access_label == "Public preview"
+        assert gateway.story_frame.rating_label
+        assert gateway.story_frame.cadence_label
+        assert gateway.story_frame.writing_expectation
+        assert gateway.story_frame.roster_posture
+        assert gateway.premise_stage.title
+        assert not gateway.premise_stage.title.lower().startswith(("current chapter:", "premise:"))
+        assert gateway.premise_stage.summary
+        assert gateway.premise_stage.playable_pressure
+        assert gateway.premise_evolution.premise_title
+        assert gateway.premise_evolution.premise_summary
+        assert gateway.premise_evolution.inciting_incident
+        assert gateway.premise_evolution.current_pressure_title
+        assert not gateway.premise_evolution.current_pressure_title.lower().startswith(
+            ("current chapter:", "premise:")
+        )
+        assert gateway.premise_evolution.current_pressure_summary
+        assert gateway.premise_evolution.consequences
+        assert gateway.premise_evolution.next_openings
+        assert gateway.premise_evolution.source_href
+        assert gateway.premise_evolution.source_kind in {
+            "event",
+            "premise",
+            "guide",
+            "fallback",
+        }
+        assert gateway.social_lanes
+        assert gateway.cast_members
+        assert all(
+            not item.display_title.lower().startswith(("current chapter:", "premise:"))
+            for item in gateway.guidebook_previews
+        )
+        assert gateway.signals
+        assert "Open calls" in {signal.title for signal in gateway.signals}
+        assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
+        gateway_text = " ".join(
+            [
+                *(signal.summary for signal in gateway.signals),
+                *(path.summary for path in gateway.entry_paths),
+            ]
+        )
+        assert not any(copy in gateway_text for copy in boilerplate_copy)
+        if community_slug == "harbor-society":
+            assert "Read Founders Gala first to understand the chapter in motion." in gateway_text
+            assert "Shoreline Club" in gateway_text
+            assert "The Shoreline Vote" in gateway_text
+            assert gateway.premise_evolution.has_current_pressure
+            assert gateway.premise_evolution.current_pressure_title == "Founders Gala"
+            assert (
+                gateway.premise_evolution.inciting_incident
+                == gateway.premise_evolution.current_pressure_summary
+            )
+            assert "The Ledger Page Under Table Six" in gateway.premise_evolution.consequences
+            assert "Breakfast Before The Vote" in gateway.premise_evolution.consequences
+            assert "Reporter source at the club" in gateway.premise_evolution.next_openings
+        expected_scene_titles = {
+            "harbor-society": {
+                "The Ledger Page Under Table Six",
+                "Breakfast Before The Vote",
+            },
+            "signal-creek": {
+                "The Voice On The Old Feed",
+                "Diner Map Of Missing Hours",
+            },
+            "nocturne-row": {
+                "Witness Video At Last Call",
+                "Emergency Court Before Dawn",
+            },
+        }
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
+        assert all(
+            hub.emphasis in {"normal", "featured", "hot", "high_activity"}
+            for hub in gateway.scene_hubs
+        )
         assert {path.title for path in gateway.entry_paths} >= {
             "Read the premise",
             "Browse open calls",
             "Request access",
         }
+        assert {path.href for path in gateway.entry_paths} >= {
+            f"/c/{community_slug}/wanted",
+            f"/c/{community_slug}/request-access",
+        }
+        assert gateway.wanted_previews
+        assert all("wanted" not in preview.type_label.lower() for preview in gateway.wanted_previews)
+        assert all(
+            preview.related_label is None
+            or not preview.related_label.lower().startswith(("current chapter:", "premise:"))
+            for preview in gateway.wanted_previews
+        )
+        assert any(
+            preview.href == f"/c/{community_slug}/wanted/{wanted_slug}"
+            for preview in gateway.wanted_previews
+        )
+        assert all(preview.summary for preview in gateway.wanted_previews)
         assert all(not hub.board.is_private for hub in gateway.scene_hubs)
+        if community_slug in expected_scene_titles:
+            scene_titles = {preview.title for preview in gateway.scene_previews}
+            assert expected_scene_titles[community_slug] <= scene_titles
+        if community_slug == "harbor-society":
+            harbor_scene_summaries = {preview.summary for preview in gateway.scene_previews}
+            assert any("auction covered a private debt" in text for text in harbor_scene_summaries)
+            assert any("donor calls and campaign flyers" in text for text in harbor_scene_summaries)
 
     async def run() -> None:
-        app = _app()
+        app = create_app(debug=False, services=AppServices(services.repo, None))
         async with TestClient(app) as client:
             for community_slug, (
                 onboarding_pitch,
                 scene_hub,
                 premise_label,
+                wanted_slug,
             ) in gateway_expectations.items():
                 response = await client.get(f"/c/{community_slug}")
                 content = _page_content(response.text)
 
                 assert response.status == 200
-                assert "Premise and pressure" in content
+                assert "Already moving" in content
+                assert "Ways in" in content
+                assert response.text.count("elbysodic-realm-stage__beat-card") >= 2
+                assert "Start here" in content
+                assert content.count("Start here") == 1
+                assert "Play readiness" not in content
+                assert "Public preview" in content
+                if community_slug == "harbor-society":
+                    assert "21+ / 2/2/2" in content
                 assert premise_label in content
                 assert onboarding_pitch in content
-                assert "Scene hubs" in content
+                assert "Places" in content
+                assert "In play" in content
+                assert "Guidebook" in content
+                assert "Before you enter" in content
+                assert "Claims" in content
+                assert 'aria-labelledby="realm-social-title"' in response.text
+                assert 'id="realm-social-title"' in response.text
+                if community_slug == "harbor-society":
+                    assert "Cast" in content
+                    assert "Maris Vale" in content
+                    assert "August Reed" in content
+                    assert "Town Power Map" in content
+                    assert "Family" in content
+                    assert "Club Role" in content
+                    assert "Influence Lane" in content
+                    assert "Business" in content
+                    assert "Old names, newcomer ties, and marriages that still carry debt." in content
+                    assert (
+                        "Members, guests, staff, donors, and applicants with something to prove."
+                        in content
+                    )
+                    assert (
+                        "Old families, civic office, press, donors, workers, and club staff all move power differently."
+                        in content
+                    )
+                    assert (
+                        "Workplaces, civic offices, service counters, and favors traded in public."
+                        in content
+                    )
+                    assert "He can print the scandal if his source survives the room." in content
+                    assert (
+                        "White jackets, old money, and a membership vote that turns manners into weapons."
+                        in content
+                    )
+                    assert "elbysodic-realm-lane-card--kinship" in response.text
+                    assert "elbysodic-realm-lane-card--access" in response.text
+                    assert "elbysodic-realm-lane-card--faction" in response.text
+                    assert "elbysodic-realm-lane-card--work" in response.text
+                    assert "Family Claim" not in content
+                    assert "Faction Claim" not in content
+                    assert "Old family, newcomer tie, or married-in pressure." not in content
+                    assert "Member, staff, guest, donor, or applicant posture." not in content
+                    assert "Public workplace, civic office, or service lane." not in content
                 assert scene_hub in content
+                if community_slug == "harbor-society":
+                    assert "The Ledger Page Under Table Six" in content
+                    assert "Breakfast Before The Vote" in content
+                    assert "Reporter source at the club" in content
+                    for path in (
+                        "/world",
+                        "/world/founders-gala",
+                        "/wanted",
+                    ):
+                        related_response = await client.get(f"/c/{community_slug}{path}")
+                        related_content = _page_content(related_response.text)
+                        assert related_response.status == 200
+                        assert "Founders Gala" in related_content
+                        assert "Current Chapter:" not in related_content
+                        assert "Premise:" not in related_content
+                        assert "public-safe" not in related_content.lower()
+                        assert "surface contract" not in related_content.lower()
+                if community_slug == "signal-creek":
+                    assert "The Voice On The Old Feed" in content
+                    assert "Diner Map Of Missing Hours" in content
+                if community_slug == "nocturne-row":
+                    assert "Witness Video At Last Call" in content
+                    assert "Emergency Court Before Dawn" in content
+                assert f"/c/{community_slug}/wanted" in content
+                assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
+                assert "Calls to answer" in content
+                assert "Public scenes carrying the premise" not in content
+                assert "Ways in before a writer has a face here" not in content
+                assert "What to know before a first face" not in content
+                assert "Where a new face can attach" not in content
+                assert "Open roles with story pressure" not in content
+                assert "Open roles and ties" not in content
+                assert "Wanted hook" not in content
+                assert "Scene hub" not in content
+                assert "Current Chapter:" not in content
+                assert "Premise:" not in content
+                assert not any(copy in content for copy in boilerplate_copy)
+                assert not any(copy in content.lower() for copy in internal_planning_copy)
+                assert "Faces" not in content
+                assert "Guides" not in content
                 assert "application review" not in content.lower()
                 assert "staff controls" not in content.lower()
+                assert "active face" not in content.lower()
+
+    asyncio.run(run())
+
+
+def test_original_premise_seed_archives_legacy_gateway_scaffold_threads() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = repo.get_community_by_slug("harbor-society")
+    club = repo.get_board_by_slug(community.id, "shoreline-club")
+    main_street = repo.get_board_by_slug(community.id, "main-street")
+    maris = repo.get_character_by_slug(community.id, "maris-vale")
+    celia = repo.get_character_by_slug(community.id, "celia-fairbourne")
+    legacy_opening = repo.create_thread(
+        community.id,
+        club.id,
+        maris.id,
+        "opening-pressure",
+        "Opening pressure",
+        summary="Legacy scaffold scene that should leave the public hub.",
+    )
+    legacy_followup = repo.create_thread(
+        community.id,
+        main_street.id,
+        celia.id,
+        "wanted-thread-start",
+        "Wanted thread start",
+        summary="Legacy wanted-hook style opener should leave the public hub.",
+    )
+
+    seed_demo_forum(repo)
+
+    assert repo.get_thread(community.id, legacy_opening.id).status == "archived"
+    assert repo.get_thread(community.id, legacy_followup.id).status == "archived"
+    gateway = services.public_realm_gateway("harbor-society")
+    scene_titles = {preview.title for preview in gateway.scene_previews}
+    assert "Opening pressure" not in scene_titles
+    assert "Wanted thread start" not in scene_titles
+
+
+def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> None:
+    services = _seeded_services()
+    app = create_app(debug=False, services=services)
+    repo = services.repo
+    public_community = repo.create_community("quiet-harbor", "Quiet Harbor")
+    repo.create_material(
+        public_community.id,
+        "quiet-harbor-premise",
+        "Quiet Harbor Premise",
+        material_type="premise",
+        summary="A quiet realm where the public premise and one scene hub are enough to begin.",
+    )
+    repo.create_material(
+        public_community.id,
+        "quiet-harbor-draft-event",
+        "Draft Event: Locked Harbor",
+        material_type="event",
+        summary="Director-only pressure that must stay out of the public gateway.",
+        status="draft",
+    )
+    repo.create_board(
+        public_community.id,
+        "main-street",
+        "Main Street",
+        tagline="Errands, porch conversations, and first faces.",
+    )
+    repo.update_community_launch_status(public_community.id, "public-preview")
+
+    gateway = services.public_realm_gateway(public_community.slug)
+
+    assert gateway.premise.premise_label == "Premise-led realm"
+    assert gateway.atmosphere.label == "Standing premise"
+    assert gateway.premise_evolution.has_current_pressure is False
+    assert gateway.premise_evolution.source_kind == "premise"
+    assert gateway.premise_evolution.current_pressure_title == "Quiet Harbor Premise"
+    assert gateway.premise_evolution.next_openings.startswith("Read the public premise")
+    assert "Locked Harbor" not in gateway.premise_evolution.current_pressure_title
+    assert "Director-only pressure" not in gateway.premise_evolution.current_pressure_summary
+    assert gateway.hero.primary_action.label == "Request access"
+    assert gateway.hero.primary_action.href == "/c/quiet-harbor/request-access"
+    assert gateway.hero.primary_action.is_hx_boost_safe is False
+    assert gateway.hero.secondary_action is not None
+    assert gateway.hero.secondary_action.label == "Read premise"
+    assert gateway.wanted_previews == ()
+    assert {signal.title for signal in gateway.signals} >= {
+        "Public preview",
+        "Start here",
+        "Scene hubs ready",
+    }
+
+    backstage = repo.create_community("backstage-realm", "Backstage Realm")
+    repo.create_material(
+        backstage.id,
+        "backstage-premise",
+        "Backstage Premise",
+        material_type="premise",
+        summary="This should not be enough without public-preview launch status.",
+    )
+    repo.create_board(backstage.id, "backstage-yard", "Backstage Yard")
+
+    with pytest.raises(LookupError):
+        services.public_realm_gateway(backstage.slug)
+
+    async def run() -> None:
+        async with TestClient(app) as client:
+            response = await client.get("/c/quiet-harbor")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert "Quiet Harbor Premise" in content
+            assert "Locked Harbor" not in content
+            assert "Director-only pressure" not in content
+            assert "Main Street" in content
+            assert "Request access" in content
+            assert "/c/quiet-harbor/request-access" in response.text
+            assert "elbysodic-realm-gateway-hero__fallback" in response.text
+            assert "Wanted hooks" not in content
+            assert "Browse 0 wanted hooks" not in content
+            assert "active face" not in content.lower()
+            assert "staff controls" not in content.lower()
+
+    asyncio.run(run())
+
+
+def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = services.seed.community
+    public_board = repo.get_board_by_slug(community.id, "danger-room")
+    private_board = repo.get_board_by_slug(community.id, "staff-room")
+    rogue = repo.get_character_by_slug(community.id, "rogue")
+    private_thread = repo.create_thread(
+        community.id,
+        private_board.id,
+        rogue.id,
+        "private-gateway-scene",
+        "Private gateway scene",
+        status="open",
+        summary="Private story motion that should not reach public previews.",
+    )
+    public_thread = repo.create_thread(
+        community.id,
+        public_board.id,
+        rogue.id,
+        "public-gateway-scene",
+        "Public gateway scene",
+        status="open",
+        summary="A public scene that can safely invite first-face readers.",
+    )
+
+    gateway = services.public_realm_gateway(community.slug)
+
+    assert any(preview.title == public_thread.title for preview in gateway.scene_previews)
+    assert all(preview.title != private_thread.title for preview in gateway.scene_previews)
+    assert all(
+        preview.href.startswith(f"/c/{community.slug}/boards/")
+        for preview in gateway.scene_previews
+    )
+
+    async def run() -> None:
+        app = create_app(debug=False, services=AppServices(services.repo, None))
+        async with TestClient(app) as client:
+            response = await client.get(f"/c/{community.slug}")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert "Scenes" in content
+            assert "In motion" in content
+            assert "Public gateway scene" in content
+            assert "Private gateway scene" not in content
+            assert "Private story motion" not in content
+
+    asyncio.run(run())
+
+
+def test_realm_gateway_home_tolerates_missing_scene_previews(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_realm_gateway = AppServices.realm_gateway
+
+    def legacy_realm_gateway(self: AppServices) -> SimpleNamespace:
+        gateway = original_realm_gateway(self)
+        return SimpleNamespace(
+            program=gateway.program,
+            guidebook=gateway.guidebook,
+            hero=gateway.hero,
+            premise=gateway.premise,
+            story_frame=gateway.story_frame,
+            premise_stage=gateway.premise_stage,
+            atmosphere=gateway.atmosphere,
+            signals=gateway.signals,
+            scene_hubs=gateway.scene_hubs,
+            entry_paths=gateway.entry_paths,
+            social_lanes=gateway.social_lanes,
+            cast_members=gateway.cast_members,
+            wanted_previews=gateway.wanted_previews,
+            continuation=gateway.continuation,
+        )
+
+    monkeypatch.setattr(AppServices, "realm_gateway", legacy_realm_gateway)
+
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.get("/c/x-men-apocalypse")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert "X-Men Apocalypse" in content
+            assert "In play" in content
+            assert "Playable now" not in content
+
+    asyncio.run(run())
+
+
+def test_public_realm_gateway_ranks_active_scene_hubs_before_limit() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = repo.create_community("ranked-gateway", "Ranked Gateway")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("ranked-gateway@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "ranked-writer",
+        "Ranked Writer",
+    )
+    character = repo.create_character(community.id, membership.id, "ranked-face", "Ranked Face")
+    repo.create_material(
+        community.id,
+        "premise",
+        "Ranked Gateway Premise",
+        material_type="premise",
+        summary="A public premise for ranked scene hubs.",
+    )
+    for index in range(4):
+        repo.create_board(
+            community.id,
+            f"quiet-hub-{index}",
+            f"Quiet Hub {index}",
+            sort_order=index,
+            image_url=f"/quiet-{index}.svg",
+        )
+    hot_board = repo.create_board(
+        community.id,
+        "fifth-active-hub",
+        "Fifth Active Hub",
+        sort_order=99,
+    )
+    for index in range(3):
+        repo.create_thread(
+            community.id,
+            hot_board.id,
+            character.id,
+            f"active-hub-scene-{index}",
+            f"Active hub scene {index}",
+            status="open",
+        )
+    repo.update_community_launch_status(community.id, "public-preview")
+
+    gateway = services.public_realm_gateway(community.slug)
+
+    assert "Fifth Active Hub" in {hub.board.name for hub in gateway.scene_hubs}
+    active_hub = next(hub for hub in gateway.scene_hubs if hub.board.name == "Fifth Active Hub")
+    assert active_hub.emphasis == "hot"
+    assert active_hub.public_thread_count == 3
+    assert len(gateway.scene_hubs) == 4
+
+
+def test_public_realm_gateway_uses_curated_slots_before_fallbacks() -> None:
+    services = _seeded_services()
+    repo = services.repo
+    community = repo.create_community("curated-gateway", "Curated Gateway")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("curated-gateway@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "curated-director",
+        "Curated Director",
+    )
+    repo.create_material(
+        community.id,
+        "premise",
+        "Curated Gateway Premise",
+        material_type="premise",
+        summary="A public premise for curated gateway slots.",
+    )
+    boards = [
+        repo.create_board(
+            community.id,
+            f"gateway-hub-{index}",
+            f"Gateway Hub {index}",
+            tagline=f"Gateway hub {index} scene pressure.",
+            sort_order=index,
+        )
+        for index in range(5)
+    ]
+    stale_board = repo.create_board(
+        community.id,
+        "stale-gateway-hub",
+        "Stale Gateway Hub",
+        tagline="This place should disappear when made private.",
+    )
+    wanted_ads = [
+        repo.create_wanted_ad(
+            community.id,
+            membership.id,
+            f"gateway-hook-{index}",
+            f"Gateway Hook {index}",
+            summary=f"Gateway hook {index} wants a first face.",
+        )
+        for index in range(5)
+    ]
+    stale_wanted = repo.create_wanted_ad(
+        community.id,
+        membership.id,
+        "stale-gateway-hook",
+        "Stale Gateway Hook",
+        summary="This hook should disappear when archived.",
+    )
+    materials = [
+        repo.create_material(
+            community.id,
+            f"gateway-guide-{index}",
+            f"Gateway Guide {index}",
+            summary=f"Gateway guide {index} grounds a first face.",
+            sort_order=index,
+        )
+        for index in range(5)
+    ]
+    stale_material = repo.create_material(
+        community.id,
+        "stale-gateway-guide",
+        "Stale Gateway Guide",
+        summary="This guide should disappear when drafted.",
+    )
+    repo.update_community_launch_status(community.id, "public-preview")
+
+    repo.create_community_gateway_slot(community.id, "scene_hub", stale_board.id, position=1)
+    repo.create_community_gateway_slot(community.id, "scene_hub", boards[4].id, position=2)
+    repo.create_community_gateway_slot(community.id, "wanted_hook", stale_wanted.id, position=1)
+    repo.create_community_gateway_slot(community.id, "wanted_hook", wanted_ads[4].id, position=2)
+    repo.create_community_gateway_slot(
+        community.id,
+        "guidebook_material",
+        stale_material.id,
+        position=1,
+    )
+    repo.create_community_gateway_slot(
+        community.id,
+        "guidebook_material",
+        materials[4].id,
+        position=2,
+    )
+    repo.update_board(
+        community.id,
+        stale_board.id,
+        name=stale_board.name,
+        description=stale_board.description,
+        tagline=stale_board.tagline,
+        sort_order=stale_board.sort_order,
+        board_kind=stale_board.board_kind,
+        is_private=True,
+    )
+    repo.update_wanted_ad_status(community.id, stale_wanted.id, "archived")
+    repo.update_material(
+        community.id,
+        stale_material.id,
+        title=stale_material.title,
+        material_type=stale_material.material_type,
+        summary=stale_material.summary,
+        body=stale_material.body,
+        status="draft",
+        sort_order=stale_material.sort_order,
+        is_featured=stale_material.is_featured,
+    )
+
+    gateway = services.public_realm_gateway(community.slug)
+
+    assert gateway.scene_hubs[0].board.id == boards[4].id
+    assert gateway.wanted_previews[0].title == wanted_ads[4].title
+    assert gateway.guidebook_previews[0].material.material.id == materials[4].id
+    assert all(hub.board.id != stale_board.id for hub in gateway.scene_hubs)
+    assert all(preview.title != stale_wanted.title for preview in gateway.wanted_previews)
+    assert all(
+        item.material.material.id != stale_material.id for item in gateway.guidebook_previews
+    )
+
+    async def run() -> None:
+        app = create_app(debug=False, services=AppServices(services.repo, None))
+        async with TestClient(app) as client:
+            response = await client.get("/c/curated-gateway")
+            content = _page_content(response.text)
+
+            assert response.status == 200
+            assert content.index("Gateway Hub 4") < content.index("Gateway Hub 0")
+            assert content.index("Gateway Hook 4") < content.index("Gateway Hook 0")
+            assert "Gateway Guide 4" in content
+            assert "Gateway Guide 0" in content
+            assert "Stale Gateway Hub" not in content
+            assert "Stale Gateway Hook" not in content
+            assert "Stale Gateway Guide" not in content
+
+    asyncio.run(run())
+
+
+def test_studio_gateway_curation_updates_public_home_slots() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        )
+        community = staff.community
+        board = services.repo.get_board_by_slug(community.id, "danger-room")
+        wanted = services.repo.get_wanted_ad_by_slug(
+            community.id,
+            "human-un-liaison-for-b24",
+        )
+        material = services.repo.get_material_by_slug(community.id, "b-24-winter")
+        app = create_app(debug=False, services=staff_services)
+
+        async with TestClient(app) as client:
+            studio = await client.get("/studio")
+            save = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "gateway_curation",
+                        "scene_hub_target_id": str(board.id),
+                        f"scene_hub_position_{board.id}": "1",
+                        "wanted_hook_target_id": str(wanted.id),
+                        f"wanted_hook_position_{wanted.id}": "1",
+                        "guidebook_material_target_id": str(material.id),
+                        f"guidebook_material_position_{material.id}": "1",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            updated_studio = await client.get("/studio")
+            home = await client.get("/c/x-men-apocalypse")
+
+        assert studio.status == 200
+        assert "Gateway curation" in studio.text
+        assert "Danger Room" in studio.text
+        assert "Human UN liaison for B-24 talks" in studio.text
+        assert "B-24 Winter" in studio.text
+        assert save.status == 302
+        assert _response_header(save, "location") == "/studio#gateway-curation"
+
+        slots = services.repo.list_community_gateway_slots(community.id)
+        assert {(slot.slot_type, slot.target_id, slot.position) for slot in slots} >= {
+            ("scene_hub", board.id, 10),
+            ("wanted_hook", wanted.id, 10),
+            ("guidebook_material", material.id, 10),
+        }
+        assert re.search(
+            rf'name="scene_hub_target_id"\s+value="{board.id}"\s+checked',
+            updated_studio.text,
+        )
+        assert home.status == 200
+        gateway = staff_services.public_realm_gateway(community.slug)
+        assert gateway.scene_hubs[0].board.id == board.id
+        assert gateway.wanted_previews[0].title == wanted.title
+        assert gateway.guidebook_previews[0].material.material.id == material.id
 
     asyncio.run(run())
 
@@ -2124,16 +2842,10 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             index = await client.get("/c/x-men-apocalypse")
             assert index.status == 200
             assert "X-Men Apocalypse" in index.text
-            assert "Announcements" in index.text
-            assert "Danger Room" in index.text
             assert "Staff Room" not in index.text
-            assert "Latest" in index.text
-            assert "Recent activity" in index.text
-            assert "#post-" in index.text
-            assert "/members/starlane" in index.text
-            assert "Latest details:" in index.text
-            assert "Relevant to the active face:" in index.text
-            assert "elbysodic-board-poster__face-signal-hint" in index.text
+            assert "Continue writing as Rogue" in index.text
+            assert 'href="/c/x-men-apocalypse/desk"' in index.text
+            assert 'href="/c/x-men-apocalypse/characters/rogue"' in index.text
             assert "elbysodic-identity-menu" in index.text
             assert '@click.outside="open = false"' in index.text
             assert "elbysodic-identity-menu__hero" in index.text
@@ -2141,22 +2853,12 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "elbysodic-identity-menu__notification-link" in index.text
             assert "elbysodic-identity-menu__theme-row" in index.text
             assert "playing as Rogue" in index.text
-            assert "elbysodic-community-table" in index.text
-            assert "elbysodic-community-row" in index.text
-            assert "✉" in index.text
-            assert "✏" in index.text
-            assert "◉" in index.text
-            assert "⟳" in index.text
-            assert "elbysodic-activity-log" in index.text
-            assert "elbysodic-activity-log-item" in index.text
-            assert re.search(
-                r">\s*(?:Today|Yesterday), \d{1,2}:\d{2} [AP]M\s*</time>",
-                index.text,
-            )
-            assert re.search(
-                r'<time class="elbysodic-activity-log-item__time"\s+datetime="[^"]+"\s+title="[A-Z][a-z]{2} \d{1,2}, 2026 \d{1,2}:\d{2} [AP]M UTC">',
-                index.text,
-            )
+            assert "Recent activity" not in index.text
+            assert "Latest details:" not in index.text
+            assert "elbysodic-community-table" not in index.text
+            assert "elbysodic-community-row" not in index.text
+            assert "elbysodic-activity-log" not in index.text
+            assert "elbysodic-activity-log-item" not in index.text
             assert _sidebar_board_count(index.text, "plotting") == 1
 
             board = await client.get("/boards/plotting")
@@ -2203,11 +2905,11 @@ def test_seeded_world_surfaces_place_hierarchy() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            index = await client.get("/c/x-men-apocalypse")
-            assert index.status == 200
-            assert "/boards/xavier-institute" in index.text
-            assert "/boards/med-bay" in index.text
-            assert "Locations" in index.text
+            locations = await client.get("/c/x-men-apocalypse/locations")
+            assert locations.status == 200
+            assert "/boards/xavier-institute" in locations.text
+            assert "/boards/med-bay" in locations.text
+            assert "Locations" in locations.text
 
             academy = await client.get("/boards/xavier-institute")
             assert academy.status == 200
@@ -2326,15 +3028,14 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
             hp_home = await client.get("/c/hp-universe", headers={"Cookie": cookie})
 
         assert xmen.status == 200
-        assert "elbysodic-world-hero--split" in xmen.text
+        assert "elbysodic-realm-gateway-hero" in xmen.text
         assert "/elbysodic-static/seed-media/xmen-hero.svg" in xmen.text
         assert 'alt="Snow-lit academy and B-24 signal lines"' in xmen.text
         assert "Current Event: B-24 Winter" in xmen.text
         assert "Iceman is infected with B-24" in xmen.text
 
         assert hp_home.status == 200
-        assert "elbysodic-world-hero--poster" in hp_home.text
-        assert "elbysodic-world-hero--focal-top" in hp_home.text
+        assert "elbysodic-realm-gateway-hero" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
         assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
@@ -2348,22 +3049,18 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
     asyncio.run(run())
 
 
-def test_new_realm_homepage_uses_quiet_sections_and_actionable_empty_states() -> None:
+def test_new_realm_locations_use_actionable_empty_states() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            response = await client.get("/c/rl-nyc")
+            response = await client.get("/c/rl-nyc/locations")
 
         assert response.status == 200
         content = _page_content(response.text)
-        assert "elbysodic-home-section-header" in content
-        assert "chirpui-section-header" not in content
-        assert "elbysodic-quiet-empty" in content
-        assert "Your roster is caught up for now." in content
+        assert "chirpui-section-header" in content
         assert "No scenes have opened here yet." in content
         assert 'href="/c/rl-nyc/boards/brooklyn/threads/new"' in content
         assert 'href="/c/rl-nyc/boards/queens-night-market/threads/new"' in content
-        assert "Community Table" not in content
         assert "Recent activity" not in content
 
     asyncio.run(run())
@@ -2540,7 +3237,7 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
             assert "Your roster is caught up" not in desk.text
 
             assert threads.status == 200
-            assert "Roster writing lane" in threads.text
+            assert "Roster replies" in threads.text
             assert "No active thread queue yet." in threads.text
             assert "Thread history" not in threads.text
 
@@ -2576,6 +3273,7 @@ def test_writer_desk_keeps_first_face_application_active() -> None:
 
         async with TestClient(app) as client:
             desk = await client.get("/desk")
+            home = await client.get("/c/x-men-apocalypse")
 
         assert desk.status == 200
         assert "Finish Draft Face" in desk.text
@@ -2583,6 +3281,12 @@ def test_writer_desk_keeps_first_face_application_active() -> None:
         assert 'href="/applications/draft-face"' in desk.text
         assert "Your roster is caught up" not in desk.text
         assert "Caught up" not in desk.text
+
+        assert home.status == 200
+        assert "Finish Draft Face" in home.text
+        assert "Complete the draft and submit this face for director review." in home.text
+        assert 'href="/c/x-men-apocalypse/applications/draft-face"' in home.text
+        assert 'href="/c/x-men-apocalypse/applications"' in home.text
 
     asyncio.run(run())
 
@@ -2718,7 +3422,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Shape X-Men Apocalypse" in studio.text
-            assert "Production cockpit" in studio.text
+            assert "Director attention" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
             assert "Public discovery profile" not in studio.text
@@ -2772,9 +3476,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/world/b-24-winter"' in studio.text
             assert 'href="/applications"' in studio.text
             assert 'href="/wanted"' in studio.text
-            assert "Current Event" in studio.text
+            assert "Current event" in studio.text
             assert operations.status == 200
-            assert "Director Operations" in operations.text
+            assert "Director desk" in operations.text
             assert "What needs a director?" in operations.text
             assert "No director operations need attention right now." in operations.text
             assert "Operations clear" in operations.text
@@ -2789,7 +3493,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Dry-run intake" not in operations.text
             assert "Release smoke" not in operations.text
             assert "Community builder checklist" not in operations.text
-            assert "Application Triage" not in operations.text
+            assert "Ready to review" not in operations.text
 
         services = create_services(path=":memory:")
         staff = resolve_seed_persona(services.repo, "xmen_staff")
@@ -2804,9 +3508,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             launch = await staff_client.get("/studio/launch")
 
         assert launch.status == 200
-        assert "Realm Launch" in launch.text
+        assert "Open realm" in launch.text
         assert "Open the realm with the writing surface intact." in launch.text
-        assert "Launch checklist" in launch.text
+        assert "Opening checklist" in launch.text
         assert "Realm identity" in launch.text
         assert "Scene hubs" in launch.text
         assert "Director materials" in launch.text
@@ -2937,7 +3641,7 @@ def test_guided_realm_builder_creates_minimum_opening_packet() -> None:
 
         assert response.status == 200
         assert (
-            "Realm Builder added scene hub, premise material, application guide." in response.text
+            "Opening packet added scene hub, premise material, application guide." in response.text
         )
         assert "Ready for invite-only opening" in launch.text
         assert board.community_id == community.id
@@ -3006,7 +3710,7 @@ def test_director_can_update_discovery_profile_from_studio() -> None:
         assert updated.status == 302
         assert _response_header(updated, "location") == "/studio/discovery"
         assert restored.status == 200
-        assert "This is the same public card component used by Network Explore." in restored.text
+        assert "This is how the realm appears in Network Explore." in restored.text
         assert 'class="elbysodic-network-card' in restored.text
         assert "A testable mystery posture for public catalog cards." in restored.text
         assert profile.premise_archetype == "weird-town-mystery"
@@ -3092,13 +3796,13 @@ def test_director_can_update_realm_launch_status() -> None:
             )
 
         assert updated.status == 200
-        assert "Launch status changed to invite-only." in updated.text
+        assert "Opening changed to invite-only." in updated.text
         assert invite_only.launch_status == "invite-only"
         assert all(
             program.community.id != staff.community.id for program in public_directory.programs
         )
         assert restored.status == 200
-        assert "Launch status changed to public-preview." in restored.text
+        assert "Opening changed to public-preview." in restored.text
         assert services.repo.get_community(staff.community.id).launch_status == "public-preview"
 
     asyncio.run(run())
@@ -3336,7 +4040,7 @@ def test_invited_writer_without_first_face_continues_to_application_form() -> No
         assert _response_header(accepted, "location") == "/c/x-men-apocalypse/applications/new"
         assert membership.default_character_id is None
         assert application.status == 200
-        assert "Start Application" in application.text
+        assert "Start a face" in application.text
         assert "Face name" in application.text
         assert "This will become your first active face in X-Men Apocalypse" in application.text
         assert desk.status == 200
@@ -3400,7 +4104,7 @@ def test_realm_launch_room_requires_director_membership() -> None:
 
         assert launch.status == 403
         assert "Open the realm with the writing surface intact." not in launch.text
-        assert "Launch checklist" not in launch.text
+        assert "Opening checklist" not in launch.text
 
     asyncio.run(run())
 
@@ -3467,16 +4171,16 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Privacy Queue Face" not in member_operations.text
         assert "Private application body should not leak" not in member_operations.text
         assert "0 ready apps" in member_operations.text
-        assert "Hosted inspection" not in member_operations.text
+        assert "Live check" not in member_operations.text
         assert "Database path" not in member_operations.text
         assert staff_operations.status == 200
         assert "Privacy Queue Face - ready" in staff_operations.text
         assert "ready apps" in staff_operations.text
-        assert "Hosted inspection" in staff_operations.text
+        assert "Live check" in staff_operations.text
         assert "Runtime and persistence" in staff_operations.text
         assert "Database path" in staff_operations.text
         assert "Schema" in staff_operations.text
-        assert "Launch status" in staff_operations.text
+        assert "Opening" in staff_operations.text
 
     asyncio.run(run())
 
@@ -5415,7 +6119,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
         async with TestClient(app) as client:
             world = await client.get("/world")
             assert world.status == 200
-            assert "World studio" in world.text
+            assert "World guide" in world.text
             assert "Premise" in world.text
             assert "Application Guide" in world.text
             assert "Current Event: B-24 Winter" in world.text
@@ -5438,18 +6142,18 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "Wanted hooks" in event.text
             assert "Active scenes" in event.text
             assert "Locations" in event.text
-            assert "Related materials" in event.text
+            assert "Related guidebook" in event.text
             assert "elbysodic-studio-facts" in event.text
             assert "Featured" in event.text
             assert "Carry this event into play" in event.text
-            assert 'aria-label="Material sections"' in event.text
+            assert 'aria-label="Guide sections"' in event.text
             assert 'href="#event-actions"' in event.text
             assert 'id="canon"' in event.text
             assert "Enter scene" in event.text
             assert "Answer hook" in event.text
             assert "Explore location" in event.text
             assert "Open discovery" in event.text
-            assert "Event progression" in event.text
+            assert "What changed" in event.text
             assert "elbysodic-continuity-timeline" in event.text
             assert "elbysodic-continuity-timeline__title-link" in event.text
             assert "Event opened" in event.text
@@ -5516,7 +6220,7 @@ def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
         assert staff_direct.status == 200
         assert "Director Only Event" in staff_direct.text
         assert "Private director continuity that should not leak." in staff_direct.text
-        assert "Material studio" in staff_direct.text
+        assert "Edit guidebook page" in staff_direct.text
 
     asyncio.run(run())
 
@@ -5890,7 +6594,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             character = await client.get("/characters/rogue")
             assert character.status == 200
             assert "Plotter" in character.text
-            assert "Tracker" in character.text
+            assert "Scenes" in character.text
             assert "Brotherhood rival from Rogue" in character.text
             assert 'href="/wanted"' in character.text
 
@@ -5911,8 +6615,8 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             interested = await client.get("/wanted/human-un-liaison-for-b24")
             assert interested.status == 200
             assert "Rogue is interested in this hook." in interested.text
-            assert "Hook lifecycle" in interested.text
-            assert "Raised hands" in interested.text
+            assert "Interest and reserves" in interested.text
+            assert "Interest" in interested.text
             assert "elbysodic-lifecycle-section" in interested.text
 
             services = get_services()
@@ -6000,13 +6704,13 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "Human UN liaison for B-24 talks" in profile.text
                 casting = await profile_client.get("/casting")
                 assert casting.status == 200
-                assert "Casting Desk" in casting.text
+                assert "Casting desk" in casting.text
                 assert "elbysodic-casting-desk-hero__identity" in casting.text
-                assert "Active-face casting" in casting.text
+                assert "Active face casting" in casting.text
                 assert "Wanted handoffs" in casting.text
                 assert "Active Reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
-                assert "Active-face reserves" in casting.text
+                assert "Active face reserves" in casting.text
                 assert "Browse wanted" not in _page_content(casting.text)
                 assert "Open face" not in _page_content(casting.text)
 
@@ -6070,7 +6774,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
             )
 
             assert filled_response.status == 302
-            assert "Manage hook lifecycle" in filled_view.text
+            assert "Manage hook" in filled_view.text
             assert '<option value="filled" selected>Filled</option>' in filled_view.text
             assert archive_response.status == 302
             assert archived_manager_view.status == 200
@@ -6119,7 +6823,7 @@ def test_structured_wanted_casting_packet_renders_for_rent_week_hook() -> None:
             detail = await client.get("/c/rl-nyc/wanted/ex-bandmate-with-the-old-lease")
 
         assert detail.status == 200
-        assert "Casting packet" in detail.text
+        assert "In play" in detail.text
         assert "What this role brings into play" in detail.text
         assert "Why this matters" in detail.text
         assert "First scene invitations" in detail.text
@@ -6934,7 +7638,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                     "/characters/rogue/hooks/coffee-before-the-crisis"
                 )
                 assert creator_detail.status == 200
-                assert "Hook lifecycle" in creator_detail.text
+                assert "Interest and rooms" in creator_detail.text
                 assert "elbysodic-lifecycle-section" in creator_detail.text
                 assert "Start plotting room" in creator_detail.text
 
@@ -6953,7 +7657,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 plotting = await owner_client.get("/plotting")
                 assert plotting.status == 200
-                assert "Plotting Rooms" in plotting.text
+                assert "Plotting rooms" in plotting.text
                 assert "Open plotting room" in plotting.text
                 assert "Active face plotter" not in _page_content(plotting.text)
                 assert "Discover hooks" not in _page_content(plotting.text)
@@ -6961,7 +7665,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 profile = await owner_client.get("/characters/rogue")
                 assert profile.status == 200
-                assert "Plotting Now" in profile.text
+                assert "Plotting now" in profile.text
                 assert "Coffee before the crisis: Hookfan Face" in profile.text
 
             assert (
@@ -7197,7 +7901,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
 
             plotting = await charlie_client.get("/plotting")
             assert plotting.status == 200
-            assert "Raised hands" in plotting.text
+            assert "Interest" in plotting.text
             assert "Open plotting room" in plotting.text
             assert "Active face plotter" not in _page_content(plotting.text)
             assert "Browse wanted" not in _page_content(plotting.text)
@@ -8461,12 +9165,12 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
         )
 
         async with TestClient(app) as client:
-            index = await client.get("/c/x-men-apocalypse")
-            assert index.status == 200
-            assert "Needs reply" in index.text
-            assert "Open thread roster" in index.text
-            assert "Attention Face" in index.text
-            assert "A different writer nudges the plot forward." in index.text
+            desk = await client.get("/c/x-men-apocalypse/desk")
+            assert desk.status == 200
+            assert "Needs reply" in desk.text
+            assert "Open thread roster" in desk.text
+            assert "Attention Face" in desk.text
+            assert "A different writer nudges the plot forward." in desk.text
 
             board_attention = await client.get("/boards/plotting?filter=attention")
             assert board_attention.status == 200
@@ -8483,8 +9187,8 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
             locations = await client.get("/locations")
             assert "Open thread roster" not in locations.text
 
-            index_after_read = await client.get("/c/x-men-apocalypse")
-            assert "Your roster is caught up for now." in index_after_read.text
+            desk_after_read = await client.get("/c/x-men-apocalypse/desk")
+            assert "Queue clear" in desk_after_read.text or "caught up" in desk_after_read.text
 
     asyncio.run(run())
 
@@ -8554,7 +9258,7 @@ def test_my_threads_defaults_to_current_face_lens() -> None:
 
         assert dashboard.status == 200
         assert "My threads" in dashboard.text
-        assert "Active-face writing lane" in dashboard.text
+        assert "Active face first" in dashboard.text
         assert "Queue lens: active face" in dashboard.text
         assert "Rogue's writing lane" not in dashboard.text
         assert 'href="/my/threads?character=all"' in dashboard.text
@@ -8626,6 +9330,8 @@ def test_theme_stylesheet_is_loaded_and_theme_aware() -> None:
             stylesheet_text = await _stylesheet_text_with_imports(client)
             assert '[data-theme="light"]' in stylesheet_text
             assert '[data-theme="system"]' in stylesheet_text
+            assert ".elbysodic-realm-cast-card__copy" in stylesheet_text
+            assert "padding-inline-start: 0.15rem;" in stylesheet_text
 
     asyncio.run(run())
 
@@ -8662,13 +9368,13 @@ def test_character_activity_center_tracks_identity_specific_threads() -> None:
 
             profile = await client.get("/characters/rogue")
             assert profile.status == 200
-            assert "Next actions" in profile.text
+            assert "Write as Rogue" in profile.text
             assert "active-face defaults on" in profile.text
             assert "Reply as Rogue" in profile.text
             assert "Find play for Rogue" not in _page_content(profile.text)
             assert "Casting as Rogue" not in _page_content(profile.text)
             assert "Browse wanted" not in _page_content(profile.text)
-            assert "Tracker" in profile.text
+            assert "Scenes" in profile.text
             assert "Open filtered queue" in profile.text
             assert "Open thread roster" in profile.text
             assert "Sentinel drill after midnight" in profile.text
@@ -9162,11 +9868,7 @@ def test_director_studio_updates_world_hero_media() -> None:
         assert updated.world_hero_overlay == "heavy"
         assert updated.world_hero_height == "immersive"
         assert home.status == 200
-        assert "elbysodic-world-hero--with-media" in home.text
-        assert "elbysodic-world-hero--background" in home.text
-        assert "elbysodic-world-hero--height-immersive" in home.text
-        assert "elbysodic-world-hero--overlay-heavy" in home.text
-        assert "elbysodic-world-hero--focal-top" in home.text
+        assert "elbysodic-realm-gateway-hero__media" in home.text
         assert 'src="https://example.test/world.jpg"' in home.text
         assert 'alt="A fog-covered academy at night"' in home.text
         assert studio.status == 200

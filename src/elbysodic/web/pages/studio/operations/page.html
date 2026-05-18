@@ -35,8 +35,8 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("Director Operations") %}
-  Daily production console for {{ viewer.community.name }}.
+  {% call section_header("Director desk") %}
+  Daily decisions for {{ viewer.community.name }}.
   {% end %}
 
   {% call surface(variant="elevated") %}
@@ -69,7 +69,7 @@
   {% if operations.inspection %}
   {% call surface(variant="elevated") %}
   <section class="elbysodic-operations-panel" aria-labelledby="hosted-inspection-heading">
-    <p class="elbysodic-section-kicker">Hosted inspection</p>
+    <p class="elbysodic-section-kicker">Live check</p>
     <h2 id="hosted-inspection-heading">Runtime and persistence</h2>
     <dl class="elbysodic-definition-grid">
       <div>
@@ -101,7 +101,7 @@
         <dd>{{ operations.inspection.community_count }}</dd>
       </div>
       <div>
-        <dt>Launch status</dt>
+        <dt>Opening</dt>
         <dd>{{ operations.inspection.launch_status }}</dd>
       </div>
     </dl>
@@ -111,7 +111,7 @@
 
   {% if operations.ready_applications or operations.blocked_applications %}
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">
-    {% call section_header("Application Triage") %}
+    {% call section_header("Applications") %}
     The fastest split between ready review and claim-blocked submissions.
     {% end %}
     <div class="elbysodic-operations-columns">

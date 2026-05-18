@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Harbor Ledger office with stacked newspapers and warm window light</title>
+  <rect width="1200" height="700" fill="#f3ead9"/>
+  <path d="M0 535h1200v165H0z" fill="#6f8b73"/>
+  <path d="M270 220h630v320H270z" fill="#fff7e5"/>
+  <path d="M230 220h710l-80-90H310z" fill="#b74b55"/>
+  <path d="M345 305h95v95h-95zM735 305h95v95h-95z" fill="#f2c56d"/>
+  <path d="M500 305h170v235H500z" fill="#6b4b35"/>
+  <path d="M520 340h130M520 380h130M520 420h130" stroke="#f7e6c8" stroke-width="10"/>
+  <path d="M330 465h125M720 465h125" stroke="#6b4b35" stroke-width="16"/>
+  <path d="M115 500h190v70H115zM135 460h190v55H135zM160 425h190v45H160z" fill="#f7e6c8"/>
+  <path d="M145 532h130M165 487h130M190 448h130" stroke="#6b4b35" stroke-width="8"/>
+</svg>

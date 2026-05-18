@@ -78,9 +78,11 @@
     --chirpui-surface-alt: #142333;
     --chirpui-surface-elevated: var(--elbysodic-key-dark-3);
     --chirpui-border: #24394d;
+    --chirpui-border-strong: color-mix(in srgb, var(--chirpui-border) 78%, var(--chirpui-text));
     --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 64%, transparent);
     --chirpui-text: #f4f7fb;
     --chirpui-text-muted: #b2c0cc;
+    --chirpui-text-subtle: color-mix(in srgb, var(--chirpui-text-muted) 74%, transparent);
     --chirpui-accent: var(--elbysodic-identity-dye);
     --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
     --chirpui-accent-dim: var(--elbysodic-identity-dye-dim);
@@ -106,16 +108,33 @@
     --chirpui-card-header-color: var(--chirpui-text);
     --chirpui-card-hover-border: color-mix(in srgb, var(--chirpui-accent) 64%, var(--chirpui-border));
     --chirpui-card-hover-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    --chirpui-elevation-2: var(--chirpui-shadow-md);
+    --chirpui-shadow: #000000;
     --chirpui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
     --chirpui-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.28);
+    --chirpui-shadow-lg: 0 18px 46px rgba(0, 0, 0, 0.32);
     --chirpui-radius: 0.5rem;
     --chirpui-radius-sm: 0.25rem;
     --chirpui-radius-xs: 0.125rem;
     --chirpui-radius-md: 0.75rem;
     --chirpui-radius-full: 999rem;
     --chirpui-spacing-2xs: 0.25rem;
+    --chirpui-spacing-xs: 0.5rem;
+    --chirpui-spacing-sm: 0.75rem;
+    --chirpui-spacing: 1rem;
     --chirpui-space-xs: 0.5rem;
     --chirpui-space-sm: 0.75rem;
+    --chirpui-font-md: var(--chirpui-font-base);
+    --chirpui-font-3xl: 2.25rem;
+    --chirpui-font-4xl: 3rem;
+    --chirpui-font-sans: var(--chirpui-ui-font-family);
+    --chirpui-font-mono: var(--chirpui-code-font-family);
+    --chirpui-font-weight-bold: 700;
+    --chirpui-ui-font-weight-bold: 700;
+    --chirpui-ui-xs: var(--chirpui-font-xs);
+    --chirpui-line-tight: 1.1;
+    --chirpui-line-height-relaxed: 1.65;
+    --chirpui-shell-offset-top: 0px;
     --chirpui-control-block-size-sm: 2rem;
     --chirpui-control-block-size: 2.5rem;
     --chirpui-control-touch-target: 2.75rem;
@@ -163,9 +182,11 @@
     --chirpui-surface-alt: #edf7fc;
     --chirpui-surface-elevated: #fbfdff;
     --chirpui-border: #bfd2df;
+    --chirpui-border-strong: color-mix(in srgb, var(--chirpui-border) 78%, var(--chirpui-text));
     --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
     --chirpui-text: #132231;
     --chirpui-text-muted: #5d6e7f;
+    --chirpui-text-subtle: color-mix(in srgb, var(--chirpui-text-muted) 74%, transparent);
     --chirpui-accent: var(--elbysodic-identity-dye);
     --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
     --chirpui-accent-dim: var(--elbysodic-identity-dye-dim);
@@ -188,8 +209,10 @@
     --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
     --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
     --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
+    --chirpui-shadow: #1f394e;
     --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
     --chirpui-shadow-md: 0 8px 22px rgba(31, 57, 78, 0.1);
+    --chirpui-shadow-lg: 0 18px 46px rgba(31, 57, 78, 0.14);
 }
 
 [data-theme="system"] {
@@ -226,9 +249,11 @@
         --chirpui-surface-alt: #edf7fc;
         --chirpui-surface-elevated: #fbfdff;
         --chirpui-border: #bfd2df;
+        --chirpui-border-strong: color-mix(in srgb, var(--chirpui-border) 78%, var(--chirpui-text));
         --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
         --chirpui-text: #132231;
         --chirpui-text-muted: #5d6e7f;
+        --chirpui-text-subtle: color-mix(in srgb, var(--chirpui-text-muted) 74%, transparent);
         --chirpui-accent: var(--elbysodic-identity-dye);
         --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
         --chirpui-accent-dim: var(--elbysodic-identity-dye-dim);
@@ -251,8 +276,10 @@
         --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
         --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
         --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
+        --chirpui-shadow: #1f394e;
         --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
         --chirpui-shadow-md: 0 8px 22px rgba(31, 57, 78, 0.1);
+        --chirpui-shadow-lg: 0 18px 46px rgba(31, 57, 78, 0.14);
     }
 }
 

@@ -10,7 +10,7 @@ def get(request: Request) -> Page:
     return Page.mounted(
         "request-access/page.html",
         current_path=request.url,
-        page_title="Request Access · Elbysodic",
+        page_title="Request access · Elbysodic",
         viewer=None,
         show_community_shell=False,
     )

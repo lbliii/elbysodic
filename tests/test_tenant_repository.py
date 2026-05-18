@@ -371,6 +371,50 @@ def test_schema_migrates_community_discovery_profiles_from_version_16() -> None:
     assert migration["name"] == "community-discovery-profiles"
 
 
+def test_schema_migrates_community_gateway_slots_from_version_17() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DROP INDEX IF EXISTS idx_community_gateway_slots_order")
+    connection.execute("DROP TABLE IF EXISTS community_gateway_slots")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (17, 'community-discovery-profiles', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 17")
+    connection.commit()
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_gateway_slots)").fetchall()
+    }
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 18
+        """
+    ).fetchone()
+    indexes = _index_names(connection)
+
+    assert {
+        "id",
+        "community_id",
+        "slot_type",
+        "target_id",
+        "position",
+        "label",
+        "created_at",
+        "updated_at",
+    }.issubset(columns)
+    assert "idx_community_gateway_slots_order" in indexes
+    assert migration["name"] == "community-gateway-slots"
+
+
 def test_discovery_profiles_and_tags_are_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("discovery-hosted", "Discovery Hosted")
@@ -485,6 +529,133 @@ def test_discovery_rows_cascade_with_community(repo: ForumRepository) -> None:
         ).fetchone()[0]
         == 0
     )
+
+
+def test_gateway_slots_are_tenant_scoped_and_validate_eligible_targets(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("gateway-hosted", "Gateway Hosted")
+    default_role = repo.create_role(default.id, "gateway-member", "Gateway Member")
+    hosted_role = repo.create_role(hosted.id, "gateway-member", "Gateway Member")
+    default_user = repo.create_user("gateway-default@example.com", "hash")
+    hosted_user = repo.create_user("gateway-hosted@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        default_user.id,
+        default_role.id,
+        "gateway-default",
+        "Gateway Default",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "gateway-hosted",
+        "Gateway Hosted",
+    )
+    scene_hub = repo.create_board(
+        default.id,
+        "public-scene-hub",
+        "Public scene hub",
+        board_kind="location",
+    )
+    private_hub = repo.create_board(
+        default.id,
+        "private-scene-hub",
+        "Private scene hub",
+        board_kind="location",
+        is_private=True,
+    )
+    desk_board = repo.create_board(default.id, "desk-hub", "Desk hub", board_kind="desk")
+    hosted_scene_hub = repo.create_board(
+        hosted.id,
+        "public-scene-hub",
+        "Hosted public scene hub",
+        board_kind="location",
+    )
+    wanted = repo.create_wanted_ad(
+        default.id,
+        default_membership.id,
+        "public-wanted-hook",
+        "Public wanted hook",
+    )
+    reserved_wanted = repo.create_wanted_ad(
+        default.id,
+        default_membership.id,
+        "reserved-wanted-hook",
+        "Reserved wanted hook",
+        status="reserved",
+    )
+    hosted_wanted = repo.create_wanted_ad(
+        hosted.id,
+        hosted_membership.id,
+        "public-wanted-hook",
+        "Hosted public wanted hook",
+    )
+    material = repo.create_material(
+        default.id,
+        "public-guidebook-material",
+        "Public guidebook material",
+    )
+    draft_material = repo.create_material(
+        default.id,
+        "draft-guidebook-material",
+        "Draft guidebook material",
+        status="draft",
+    )
+
+    first = repo.create_community_gateway_slot(
+        default.id,
+        "scene_hub",
+        scene_hub.id,
+        position=20,
+        label="Start here",
+    )
+    second = repo.create_community_gateway_slot(default.id, "wanted_hook", wanted.id)
+    third = repo.create_community_gateway_slot(
+        default.id,
+        "guidebook_material",
+        material.id,
+    )
+
+    assert first.label == "Start here"
+    assert second.position == 10
+    assert third.slot_type == "guidebook_material"
+    assert repo.list_community_gateway_slots(default.id, slot_type="scene_hub") == [first]
+    assert repo.list_community_gateway_slots(hosted.id) == []
+
+    replaced = repo.replace_community_gateway_slots(
+        default.id,
+        "scene_hub",
+        [(scene_hub.id, "Featured place")],
+    )
+    assert [(slot.target_id, slot.position, slot.label) for slot in replaced] == [
+        (scene_hub.id, 10, "Featured place")
+    ]
+    repo.delete_community_gateway_slot(default.id, replaced[0].id)
+    assert repo.list_community_gateway_slots(default.id, slot_type="scene_hub") == []
+
+    with pytest.raises(LookupError):
+        repo.create_community_gateway_slot(hosted.id, "scene_hub", scene_hub.id)
+    with pytest.raises(LookupError):
+        repo.create_community_gateway_slot(default.id, "wanted_hook", hosted_wanted.id)
+    with pytest.raises(LookupError):
+        repo.delete_community_gateway_slot(hosted.id, first.id)
+    with pytest.raises(ValueError, match="public scene hub board"):
+        repo.create_community_gateway_slot(default.id, "scene_hub", private_hub.id)
+    with pytest.raises(ValueError, match="public scene hub board"):
+        repo.create_community_gateway_slot(default.id, "scene_hub", desk_board.id)
+    with pytest.raises(ValueError, match="open wanted hook"):
+        repo.create_community_gateway_slot(default.id, "wanted_hook", reserved_wanted.id)
+    with pytest.raises(ValueError, match="published material"):
+        repo.create_community_gateway_slot(
+            default.id,
+            "guidebook_material",
+            draft_material.id,
+        )
+    with pytest.raises(ValueError, match="gateway slot type must be one of:"):
+        repo.create_community_gateway_slot(default.id, "public_scene", hosted_scene_hub.id)
 
 
 def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) -> None:

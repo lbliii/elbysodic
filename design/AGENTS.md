@@ -14,8 +14,10 @@ Related docs:
 - `design/technicolor-futurism.md`
 - `design/technicolor-futurism-research.md`
 - `docs/product/experience-direction.md`
+- `docs/product/surface-quality-bar.md`
 - `docs/product/appearance-studio.md`
 - `docs/product/information-hierarchy.md`
+- `docs/product/typography-strategy.md`
 - `docs/product/control-topology.md`
 - `docs/product/navigation-menus.md`
 - `docs/product/paragraph-rhythm.md`
@@ -44,6 +46,8 @@ clarity.
   browsing faces stay calm and legible even when surfaces carry atmosphere.
 - Visual identity supports PBP language: face, roster, thread, scene, plotter,
   wanted, claims, reserves, needs reply, waiting, caught up, and watching.
+- Context carries labels: parent page, shell, and section framing should
+  prevent child cards and rows from repeating the same taxonomy or object type.
 - Shared product concepts graduate into
   `src/elbysodic/web/pages/_components/` before page-local styling becomes a
   parallel design system.
@@ -62,6 +66,15 @@ clarity.
   contrast keep threads, guidebook pages, and application materials readable.
 - Hierarchy: identity, action, metadata, state, and atmosphere each have a
   distinct visual role.
+- Label discipline: eyebrows, badges, counts, helper lines, and footers add a
+  new distinction; they do not repeat the section title, route, object type, or
+  same fact elsewhere in the module.
+- Typography: page titles, shelf headings, eyebrows, metadata, helper text, and
+  prose use the product type ladder; qualifiers never compete visually with the
+  main heading.
+- Surface quality: substantial UI changes have an intent brief, density budget,
+  anti-CRM check, progressive-disclosure plan, and rendered screenshot QA when
+  composition or responsive behavior matters.
 - Tokens: colors, type, spacing, radius, density, shadows, and texture use
   Chirp-UI or Elbysodic theme tokens; new tokens are named by product meaning.
 - Components: repeated PBP UI shapes are promoted or aligned with
@@ -92,6 +105,9 @@ clarity.
   labels.
 - Keep the product's prestige cues in typography, spacing, hierarchy, and
   restraint before adding more decoration.
+- Require stronger surface briefs when implementation starts from structured
+  data, because database completeness is not the same thing as user-facing
+  clarity.
 
 ## Serve Peers
 
@@ -118,6 +134,8 @@ clarity.
 - Use neon glow, gradients, glass, image overlays, or motion as a substitute for
   hierarchy.
 - Let every datum become a pill, card, badge, or decorative panel.
+- Add a badge, eyebrow, footer, count, or type label that only repeats the
+  parent section or page context.
 - Create a generic SaaS dashboard, social network, archive, or forum-skin
   aesthetic.
 - Override membership, character, community, permission, or privacy boundaries

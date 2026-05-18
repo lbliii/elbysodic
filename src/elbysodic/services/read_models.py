@@ -21,6 +21,7 @@ from elbysodic.domain.models import (
     Community,
     CommunityDiscoveryProfile,
     CommunityDiscoveryTag,
+    CommunityGatewaySlot,
     CommunityMembership,
     Facet,
     FacetGroup,
@@ -1016,12 +1017,23 @@ class PlotDiscovery:
     used_active_face_lens: bool
 
 
+def _story_material_display_title(title: str) -> str:
+    for prefix in ("Current Chapter:", "Premise:"):
+        if title.lower().startswith(prefix.lower()):
+            return title[len(prefix) :].strip() or title
+    return title
+
+
 @dataclass(frozen=True, slots=True)
 class MaterialSummary:
     material: Material
     facets: list[FacetTag]
     rendered_summary: str
     type_label: str
+
+    @property
+    def display_title(self) -> str:
+        return _story_material_display_title(self.material.title)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1056,6 +1068,10 @@ class MaterialDetail:
     continuity_beats: list[ContinuityBeat]
     event_actions: list[EventAction]
     can_manage: bool
+
+    @property
+    def display_title(self) -> str:
+        return _story_material_display_title(self.material.title)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1180,8 +1196,39 @@ class RealmLaunchReadiness:
 
 
 @dataclass(frozen=True, slots=True)
+class GatewayCurationChoice:
+    target_id: int
+    title: str
+    summary: str
+    href: str
+    is_selected: bool
+    position_value: int
+    slot: CommunityGatewaySlot | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class GatewayCurationSection:
+    slot_type: str
+    title: str
+    summary: str
+    choices: tuple[GatewayCurationChoice, ...]
+
+    @property
+    def selected_count(self) -> int:
+        return sum(1 for choice in self.choices if choice.is_selected)
+
+
+@dataclass(frozen=True, slots=True)
+class GatewayCurationEditor:
+    scene_hubs: GatewayCurationSection
+    wanted_hooks: GatewayCurationSection
+    guidebook_materials: GatewayCurationSection
+
+
+@dataclass(frozen=True, slots=True)
 class DirectorStudio:
     can_manage: bool
+    gateway_curation: GatewayCurationEditor
     launch_readiness: RealmLaunchReadiness
     theme_editor: ThemeEditorView
     theme_warnings: tuple[ThemeHealthWarning, ...]
@@ -1283,6 +1330,12 @@ class WantedAdSummary:
     related_characters: list[Character]
     facets: list[FacetTag]
     type_label: str
+
+    @property
+    def related_material_display_title(self) -> str:
+        if self.related_material is None:
+            return ""
+        return _story_material_display_title(self.related_material.title)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1819,6 +1872,25 @@ class StudioNetworkProgramView:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayAction:
+    label: str
+    href: str
+    is_hx_boost_safe: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayHero:
+    kicker: str
+    title: str
+    lead: str
+    now_playing_label: str
+    now_playing_copy: str
+    first_face_path: str
+    primary_action: RealmGatewayAction
+    secondary_action: RealmGatewayAction | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayPremise:
     discovery_profile: CommunityDiscoveryProfile | None
     catalog_pitch: str
@@ -1827,6 +1899,30 @@ class RealmGatewayPremise:
     play_label: str
     lore_label: str
     roster_posture: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayStoryFrame:
+    eyebrow: str
+    access_label: str
+    rating_label: str
+    cadence_label: str
+    writing_expectation: str
+    roster_posture: str
+
+    @property
+    def fit_labels(self) -> tuple[str, ...]:
+        labels = [
+            self.access_label,
+            self.rating_label,
+            self.cadence_label,
+            self.roster_posture,
+        ]
+        return tuple(label for label in labels if label)
+
+    @property
+    def fit_summary(self) -> str:
+        return ", ".join(self.fit_labels)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1839,9 +1935,66 @@ class RealmGatewayAtmosphere:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayPremiseStage:
+    label: str
+    title: str
+    summary: str
+    playable_pressure: str
+    action: RealmGatewayAction | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayPremiseEvolution:
+    premise_title: str
+    premise_summary: str
+    inciting_incident: str
+    current_pressure_title: str
+    current_pressure_summary: str
+    consequences: str
+    next_openings: str
+    source_href: str | None
+    source_kind: str
+
+    @property
+    def has_current_pressure(self) -> bool:
+        return self.source_kind == "event"
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewaySocialLane:
+    title: str
+    summary: str
+    tone: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayCastMember:
+    character: Character
+    summary: str
+
+    @property
+    def href(self) -> str:
+        return f"/characters/{self.character.slug}"
+
+    @property
+    def monogram(self) -> str:
+        parts = [part for part in self.character.name.split() if part]
+        if not parts:
+            return "?"
+        if len(parts) == 1:
+            return parts[0][:1].upper()
+        return "".join(part[:1] for part in parts[:2]).upper()
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewaySceneHub:
     board: Board
     public_thread_count: int
+    emphasis: str = "normal"
+    summary: str = ""
+    image_url: str | None = None
+    image_alt: str = ""
+    image_treatment: str = "standard"
 
     @property
     def href(self) -> str:
@@ -1849,7 +2002,16 @@ class RealmGatewaySceneHub:
 
     @property
     def display_summary(self) -> str:
-        return self.board.tagline or self.board.description or self.board.board_kind
+        return self.summary or self.board.tagline or self.board.description or self.board.board_kind
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayScenePreview:
+    title: str
+    summary: str
+    href: str
+    board_label: str
+    cast_label: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -1862,13 +2024,56 @@ class RealmGatewayEntryPath:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewaySignalItem:
+    title: str
+    summary: str
+    value: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayWantedPreview:
+    title: str
+    summary: str
+    href: str
+    type_label: str
+    related_label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayGuidebookPreview:
+    material: MaterialSummary
+    display_title: str
+
+
+@dataclass(frozen=True, slots=True)
+class RealmGatewayContinuation:
+    audience: str
+    title: str
+    summary: str
+    primary_action: RealmGatewayAction
+    secondary_action: RealmGatewayAction | None = None
+    active_face_label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayView:
     program: StudioNetworkProgramView
     guidebook: WorldHub
+    hero: RealmGatewayHero
     premise: RealmGatewayPremise
+    story_frame: RealmGatewayStoryFrame
+    premise_stage: RealmGatewayPremiseStage
+    premise_evolution: RealmGatewayPremiseEvolution
     atmosphere: RealmGatewayAtmosphere
+    signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
+    scene_previews: tuple[RealmGatewayScenePreview, ...]
     entry_paths: tuple[RealmGatewayEntryPath, ...]
+    guidebook_previews: tuple[RealmGatewayGuidebookPreview, ...]
+    social_lanes: tuple[RealmGatewaySocialLane, ...]
+    cast_members: tuple[RealmGatewayCastMember, ...]
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...]
+    continuation: RealmGatewayContinuation | None = None
 
 
 @dataclass(frozen=True, slots=True)

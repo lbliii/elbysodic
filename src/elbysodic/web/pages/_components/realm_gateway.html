@@ -1,0 +1,315 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+{% end %}
+
+{% def gateway_action(action, variant="primary") %}
+{% if action %}
+<a class="chirpui-btn chirpui-btn--{{ variant }}"
+   href="{{ action.href }}"
+   {{ 'hx-boost="false"' if not action.is_hx_boost_safe else "" }}>
+  {{ action.label }}
+</a>
+{% end %}
+{% end %}
+
+{% def gateway_section_header(kicker, title, summary="", heading_id="") %}
+<header class="elbysodic-home-section-header elbysodic-home-section-header--qualified">
+  <p class="elbysodic-section-kicker">{{ kicker }}</p>
+  {% if heading_id %}
+  <h2 id="{{ heading_id }}">{{ title }}</h2>
+  {% else %}
+  <h2>{{ title }}</h2>
+  {% end %}
+  {% if summary %}
+  <p>{{ summary }}</p>
+  {% end %}
+</header>
+{% end %}
+
+{% def gateway_section(kicker, title, summary="", heading_id="", modifier="") %}
+<section class="elbysodic-realm-gateway-section{{ " " ~ modifier if modifier else "" }}" {% if heading_id %}aria-labelledby="{{ heading_id }}"{% end %}>
+  {{ gateway_section_header(kicker, title, summary, heading_id) }}
+  {% slot %}
+</section>
+{% end %}
+
+{% def gateway_social_lane_card(lane) %}
+<article class="elbysodic-realm-lane-card elbysodic-realm-lane-card--{{ lane.tone }}">
+  <span class="elbysodic-realm-lane-card__mark" aria-hidden="true"></span>
+  <h3>{{ lane.title }}</h3>
+  <p>{{ lane.summary }}</p>
+</article>
+{% end %}
+
+{% def gateway_hero(gateway) %}
+<section class="elbysodic-realm-gateway-hero" aria-labelledby="realm-gateway-title">
+  <div class="elbysodic-realm-gateway-hero__copy">
+    <p class="elbysodic-section-kicker">{{ gateway.story_frame.eyebrow }}</p>
+    <h1 id="realm-gateway-title">{{ gateway.hero.title }}</h1>
+    <p class="elbysodic-copy-lead">{{ gateway.hero.lead }}</p>
+    <p class="elbysodic-realm-gateway-fit">{{ gateway.story_frame.fit_summary }}</p>
+    <p class="elbysodic-realm-gateway-writing">{{ gateway.story_frame.writing_expectation }}</p>
+    <p class="elbysodic-realm-gateway-first-face">
+      <strong>Start here</strong>
+      <span>{{ gateway.hero.first_face_path }}</span>
+    </p>
+    <div class="chirpui-cluster elbysodic-realm-gateway-hero__actions">
+      {{ gateway_action(gateway.hero.primary_action) }}
+      {{ gateway_action(gateway.hero.secondary_action, "secondary") }}
+    </div>
+  </div>
+  <figure class="elbysodic-realm-gateway-hero__media">
+    {% if gateway.program.community.world_hero_image_url %}
+    <img src="{{ gateway.program.community.world_hero_image_url }}"
+         alt="{{ gateway.program.community.world_hero_image_alt }}">
+    {% else %}
+    <span class="elbysodic-realm-gateway-hero__fallback" aria-hidden="true">
+      {{ gateway.program.monogram }}
+    </span>
+    {% end %}
+    <figcaption>
+      <strong>{{ gateway.atmosphere.title }}</strong>
+      <span>{{ gateway.atmosphere.copy }}</span>
+    </figcaption>
+  </figure>
+</section>
+{% end %}
+
+{% def gateway_premise_stage(gateway) %}
+{% set premise_evolution = gateway | get("premise_evolution", none) %}
+<section class="elbysodic-realm-stage" aria-labelledby="realm-stage-title">
+  <div class="elbysodic-realm-stage__story">
+    <p class="elbysodic-section-kicker">{{ gateway.premise_stage.label }}</p>
+    <h2 id="realm-stage-title">{{ gateway.premise_stage.title }}</h2>
+    <p>{{ gateway.premise_stage.summary }}</p>
+  </div>
+  <aside class="elbysodic-realm-stage__pressure" aria-label="Story pressure">
+    <dl class="elbysodic-realm-stage__beats">
+    {% if premise_evolution %}
+    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
+      <dt>Already moving</dt>
+      <dd>{{ premise_evolution.consequences }}</dd>
+    </div>
+    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
+      <dt>Ways in</dt>
+      <dd>{{ premise_evolution.next_openings }}</dd>
+    </div>
+    {% else %}
+    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
+      <dt>Ways in</dt>
+      <dd>{{ gateway.premise_stage.playable_pressure }}</dd>
+    </div>
+    {% end %}
+    </dl>
+    {% if gateway.premise_stage.action %}
+    <div class="elbysodic-realm-stage__action">
+      {{ gateway_action(gateway.premise_stage.action, "secondary") }}
+    </div>
+    {% end %}
+  </aside>
+</section>
+{% end %}
+
+{% def gateway_signal_band(gateway) %}
+{% if gateway.signals %}
+<section class="elbysodic-realm-signal-band" aria-label="Play readiness">
+  {% for signal in gateway.signals %}
+  <article class="elbysodic-realm-signal">
+    {% if signal.value %}
+    <span class="elbysodic-realm-signal__value">{{ signal.value }}</span>
+    {% end %}
+    <strong>{{ signal.title }}</strong>
+    <span>{{ signal.summary }}</span>
+  </article>
+  {% end %}
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_continuation(gateway) %}
+{% if gateway.continuation %}
+<section class="elbysodic-realm-continuation" aria-label="Continue writing">
+  <div>
+    <p class="elbysodic-section-kicker">Continue writing</p>
+    <h2>{{ gateway.continuation.title }}</h2>
+    <p>{{ gateway.continuation.summary }}</p>
+  </div>
+  <div class="chirpui-cluster">
+    {{ gateway_action(gateway.continuation.primary_action) }}
+    {{ gateway_action(gateway.continuation.secondary_action, "secondary") }}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_scene_hubs(gateway) %}
+{% if gateway.scene_hubs %}
+{% call gateway_section("Places", "In play", heading_id="realm-scene-hubs-title") %}
+  <div class="elbysodic-realm-hub-grid">
+    {% for hub in gateway.scene_hubs %}
+    <a class="elbysodic-realm-hub-card elbysodic-realm-hub-card--{{ hub.emphasis }}" href="{{ hub.href }}">
+      {% if hub.image_url %}
+      <span class="elbysodic-realm-hub-card__media elbysodic-board-media-treatment--{{ hub.image_treatment }}">
+        <img src="{{ hub.image_url }}" alt="{{ hub.image_alt }}">
+      </span>
+      {% end %}
+      <span class="elbysodic-realm-hub-card__body">
+        <strong>{{ hub.board.name }}</strong>
+        <span>{{ hub.display_summary }}</span>
+      </span>
+    </a>
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def gateway_scene_previews(gateway) %}
+{% set scene_previews = gateway | get("scene_previews", ()) %}
+{% if scene_previews %}
+{% call gateway_section("Scenes", "In motion", heading_id="realm-scenes-title") %}
+  <div class="elbysodic-realm-scene-list">
+    {% for scene in scene_previews %}
+    <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
+      <span>
+        <strong>{{ scene.title }}</strong>
+        <small>{{ scene.summary }}</small>
+      </span>
+      <em>{{ scene.board_label }} · {{ scene.cast_label }}</em>
+    </a>
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def gateway_entry_paths(gateway) %}
+{% if gateway.entry_paths %}
+{% call gateway_section("Entry", "Choose your way in", heading_id="realm-entry-title") %}
+  <div class="elbysodic-realm-entry-list">
+    {% for path in gateway.entry_paths %}
+    <a class="elbysodic-realm-entry-row"
+       href="{{ path.href }}"
+       {{ 'hx-boost="false"' if path.href.endswith("/request-access") else "" }}>
+      <span>
+        <strong>{{ path.title }}</strong>
+        <small>{{ path.summary }}</small>
+      </span>
+    </a>
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def gateway_lore(gateway) %}
+{% set guidebook_previews = gateway | get("guidebook_previews", ()) %}
+{% if guidebook_previews %}
+{% call gateway_section("Guidebook", "Before you enter", heading_id="realm-guide-title") %}
+  <div class="elbysodic-material-grid">
+    {% for item in guidebook_previews %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.material.slug }}">
+      <strong>{{ item.display_title }}</strong>
+      <span>{{ item.material.rendered_summary }}</span>
+    </a>
+    {% end %}
+  </div>
+{% end %}
+{% elif gateway.guidebook.featured or gateway.guidebook.events %}
+{% call gateway_section("Guidebook", "Before you enter", heading_id="realm-guide-title") %}
+  <div class="elbysodic-material-grid">
+    {% for item in gateway.guidebook.featured %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+    {% for item in gateway.guidebook.events[:2] %}
+    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
+      <strong>{{ item.material.title }}</strong>
+      <span>{{ item.rendered_summary }}</span>
+    </a>
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def gateway_cast(gateway) %}
+{% if gateway.cast_members %}
+{% call gateway_section("Cast", "Already in the room", heading_id="realm-cast-title") %}
+  <div class="elbysodic-realm-cast-grid">
+    {% for member in gateway.cast_members %}
+    <a class="elbysodic-realm-cast-card" href="{{ member.href }}">
+      <span class="elbysodic-realm-cast-card__avatar">
+        {% if member.character.avatar_url %}
+        <img src="{{ member.character.avatar_url }}" alt="">
+        {% else %}
+        {{ member.monogram }}
+        {% end %}
+      </span>
+      <span class="elbysodic-realm-cast-card__copy">
+        <strong>{{ member.character.name }}</strong>
+        <small>{{ member.summary }}</small>
+      </span>
+    </a>
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def gateway_social_lanes(gateway) %}
+{% if gateway.social_lanes %}
+{% call gateway_section("Claims", "Ways to belong", heading_id="realm-social-title", modifier="elbysodic-realm-gateway-section--social-map") %}
+  <div class="elbysodic-realm-lane-grid">
+    {% for lane in gateway.social_lanes %}
+    {{ gateway_social_lane_card(lane) }}
+    {% end %}
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def gateway_wanted(gateway) %}
+{% if gateway.program.open_wanted_count %}
+{% call gateway_section("Wanted", "Calls to answer", heading_id="realm-wanted-title") %}
+  {% if gateway.wanted_previews %}
+  <div class="elbysodic-realm-wanted-grid">
+    {% for wanted in gateway.wanted_previews %}
+    <a class="elbysodic-realm-wanted-card" href="{{ wanted.href }}">
+      <span class="elbysodic-material-card__type">{{ wanted.type_label }}</span>
+      <strong>{{ wanted.title }}</strong>
+      <span>{{ wanted.summary }}</span>
+      {% if wanted.related_label %}
+      <em>{{ wanted.related_label }}</em>
+      {% end %}
+    </a>
+    {% end %}
+  </div>
+  {% end %}
+  <div>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">
+      Browse all open calls
+    </a>
+  </div>
+{% end %}
+{% end %}
+{% end %}
+
+{% def realm_gateway_home(gateway, viewer=None) %}
+<div class="elbysodic-realm-gateway">
+  {{ gateway_hero(gateway) }}
+  {{ gateway_continuation(gateway) }}
+  {{ gateway_premise_stage(gateway) }}
+  {{ gateway_scene_hubs(gateway) }}
+  {{ gateway_scene_previews(gateway) }}
+  {% if not viewer %}
+  {{ gateway_entry_paths(gateway) }}
+  {{ gateway_lore(gateway) }}
+  {{ gateway_cast(gateway) }}
+  {{ gateway_social_lanes(gateway) }}
+  {{ gateway_wanted(gateway) }}
+  {% end %}
+</div>
+{% end %}

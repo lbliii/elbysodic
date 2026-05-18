@@ -18,7 +18,6 @@
 <article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card elbysodic-wanted-card--{{ item.wanted_ad.status }}">
   <div class="chirpui-cluster chirpui-cluster--between elbysodic-wanted-card__header">
     <div class="elbysodic-wanted-card__heading">
-      <p class="elbysodic-wanted-card__type">{{ item.type_label }}</p>
       <h2>
         <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">
           {{ item.wanted_ad.title }}
@@ -55,7 +54,7 @@
     {% if item.related_material %}
     <span>
       <a class="chirpui-link" href="/world/{{ item.related_material.slug }}">
-        {{ item.related_material.title }}
+        {{ item.related_material_display_title }}
       </a>
     </span>
     {% end %}

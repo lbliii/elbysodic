@@ -1702,19 +1702,19 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "maris-vale",
                 "Maris Vale",
                 "Fallen club darling returning with a charity ledger nobody wants opened.",
-                "A smile is a weapon if the room taught you how.",
+                "The seating chart is leverage and she knows who paid for silence.",
             ),
             BlueprintCharacter(
                 "celia-fairbourne",
                 "Celia Fairbourne",
                 "Old-family gatekeeper who treats the Shoreline Club like civic infrastructure.",
-                "Standards keep the town from sinking.",
+                "Standards are how old families keep score.",
             ),
             BlueprintCharacter(
                 "august-reed",
                 "August Reed",
                 "Harbor Ledger reporter with a source in every committee and one burned friendship.",
-                "Print the polite version first.",
+                "He can print the scandal if his source survives the room.",
             ),
             BlueprintCharacter(
                 "talia-cross",
@@ -1726,7 +1726,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "grant-keller",
                 "Grant Keller",
                 "Golden-child football coach trying to keep school donors and old debts apart.",
-                "Everybody loves a winner until the bill arrives.",
+                "Booster money, school pride, and club votes keep landing on his desk.",
             ),
             BlueprintCharacter(
                 "sloane-devereux",
@@ -1752,7 +1752,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "shoreline-club",
                 "Shoreline Club",
                 "location",
-                "White jackets, old money, new grudges, and a membership vote nobody can avoid.",
+                "White jackets, old money, and a membership vote that turns manners into weapons.",
                 "Club politics, social climbing, charitable pressure, private conversations, and public exits.",
                 image_url="/elbysodic-static/seed-media/smalltown-hero.svg",
                 image_alt="Coastal club terrace under warm evening light",
@@ -1762,7 +1762,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "main-street",
                 "Main Street",
                 "location",
-                "Boutiques, gossip windows, campaign flyers, and errands that become alliances.",
+                "Boutiques, campaign flyers, school boosters, and errands that become alliances.",
                 "Everyday town scenes for work ties, rivals, returns, and public reputation.",
                 image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.svg",
                 image_alt="Small-town main street with string lights",
@@ -1772,14 +1772,17 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "marina-hotel",
                 "Marina Hotel",
                 "location",
-                "Guest books, quiet bars, conference rooms, and people hiding in plain sight.",
+                "Guest books, quiet bars, investor meetings, and names written down wrong on purpose.",
                 "Hotel, tourism, visiting family, investor, and illicit-meeting scenes.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg",
+                image_alt="Marina hotel beside dark water and lit windows",
+                image_treatment="background",
             ),
             BlueprintBoard(
                 "town-hall",
                 "Town Hall",
                 "location",
-                "Minutes, permits, donor plaques, and civic kindness with sharp edges.",
+                "Minutes, permits, donor plaques, and public kindness sharpened into leverage.",
                 "Council scenes, public hearings, campaign pressure, and old-family bargaining.",
                 image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.svg",
                 image_alt="Town hall with a festival banner",
@@ -1791,6 +1794,9 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "A weekly paper with a printer that overheats whenever the town gets interesting.",
                 "Reporter scenes, anonymous tips, editorials, public scandals, and local history.",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg",
+                image_alt="Harbor Ledger office with stacked newspapers and warm window light",
+                image_treatment="background",
             ),
             BlueprintBoard(
                 "back-veranda",
@@ -1834,11 +1840,36 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "social-ladder",
                 "Social Ladder",
                 "guide",
-                "Status in Harbor Society is public, practical, and never as stable as it looks.",
+                "Every family name, job, invitation, and apology changes where a face can stand.",
                 (
                     "The town always has room for old families, club staff, hotel workers, teachers, "
                     "boosters, reporters, marina workers, seasonal returnees, local officials, "
                     "artists, donors, service workers, and people who married into the wrong story."
+                ),
+            ),
+            BlueprintMaterial(
+                "town-power-map",
+                "Town Power Map",
+                "factions",
+                "Old families, club staff, civic office, donors, press, and working locals all trade leverage differently.",
+                (
+                    "Harbor Society is not divided into formal factions so much as public lanes of power. "
+                    "Old families own memory and invitations. Club staff control access and overhear what "
+                    "members pretend was private. Civic office turns permits, donations, and school-board "
+                    "appointments into favors. Hotel and marina workers see who arrives under the wrong name. "
+                    "Reporters and diner regulars decide which version becomes town history."
+                ),
+            ),
+            BlueprintMaterial(
+                "donor-circuit",
+                "Donor Circuit",
+                "guide",
+                "Money, favors, and public service move through the same handful of rooms.",
+                (
+                    "A donation can be charity, apology, vote-buying, family pressure, or a way to keep a "
+                    "name off the front page. Use sponsors, booster clubs, hotel investors, gala committees, "
+                    "marina permits, school fundraisers, and paper deadlines when a scene needs social "
+                    "pressure without leaving town."
                 ),
             ),
             BlueprintMaterial(
@@ -3732,19 +3763,25 @@ STUDIO_CLAIM_TYPES: dict[str, tuple[ClaimTypeSeed, ...]] = {
             "family",
             "Family Claim",
             "relationship",
-            "Old family, newcomer tie, or married-in pressure.",
+            "Old names, newcomer ties, and marriages that still carry debt.",
         ),
         ClaimTypeSeed(
             "club_role",
             "Club Role Claim",
             "access",
-            "Member, staff, guest, donor, or applicant posture.",
+            "Members, guests, staff, donors, and applicants with something to prove.",
+        ),
+        ClaimTypeSeed(
+            "influence_lane",
+            "Influence Lane",
+            "faction",
+            "Old families, civic office, press, donors, workers, and club staff all move power differently.",
         ),
         ClaimTypeSeed(
             "business",
             "Business Claim",
             "occupation",
-            "Public workplace, civic office, or service lane.",
+            "Workplaces, civic offices, service counters, and favors traded in public.",
         ),
     ),
     "signal-creek": (
@@ -4108,6 +4145,14 @@ STUDIO_APPLICATION_FIELDS: dict[str, tuple[ApplicationFieldSeed, ...]] = {
             "How they touch the Shoreline Club and Founders Gala.",
             options=("Member", "Staff", "Guest", "Donor", "Applicant", "Critic"),
             maps_to_claim_type_slug="club_role",
+        ),
+        ApplicationFieldSeed(
+            "influence_lane_claim",
+            "Influence lane",
+            "select",
+            "Which public lane gives them leverage in town.",
+            options=("Old family", "Civic office", "Press", "Donor circuit", "Working local", "Club staff"),
+            maps_to_claim_type_slug="influence_lane",
         ),
     ),
     "signal-creek": (
@@ -6047,6 +6092,16 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 image_focal_point=board_seed.image_focal_point,
                 image_overlay=board_seed.image_overlay,
             )
+            board = _ensure_board_seed_media(
+                repo,
+                community.id,
+                board,
+                image_url=board_seed.image_url or None,
+                image_alt=board_seed.image_alt,
+                image_treatment=board_seed.image_treatment,
+                image_focal_point=board_seed.image_focal_point,
+                image_overlay=board_seed.image_overlay,
+            )
             media_seed = STUDIO_PROGRAM_BOARD_MEDIA.get(program.slug, {}).get(board_seed.slug)
             if media_seed is not None:
                 _ensure_board_media_default(repo, community.id, board, media_seed)
@@ -6237,19 +6292,140 @@ def _seed_original_premise_depth(
     ][:3]
     if len(characters) < 3 or len(boards) < 2:
         return
+    if program.slug == "harbor-society":
+        opening_slug = "ledger-page-under-table-six"
+        opening_title = "The Ledger Page Under Table Six"
+        opening_summary = (
+            "Maris turns the Shoreline Club seating meeting into a test of who "
+            "knew last year's auction covered a private debt."
+        )
+        opening_first_post = (
+            "Maris Vale arrived at the Shoreline Club with the gala seating chart, "
+            "one copied ledger page, and a table full of people suddenly invested "
+            "in polite silence."
+        )
+        opening_second_post = (
+            "Celia Fairbourne answered as if the accounting question were only a "
+            "decor problem, then named the donor everyone else had avoided."
+        )
+        followup_slug = "breakfast-before-the-vote"
+        followup_title = "Breakfast Before The Vote"
+        followup_summary = (
+            "Celia, August, and Talia compare rumors in public while donor calls "
+            "and campaign flyers make silence impossible."
+        )
+        followup_first_post = (
+            "Celia left the diner door open behind her, letting the breakfast rush "
+            "hear exactly enough about the club vote to make every booth useful."
+        )
+        followup_second_post = (
+            "August Reed took the hint, folded the wrong campaign flyer into his "
+            "notebook, and asked which family wanted the question buried by noon."
+        )
+    elif program.slug == "signal-creek":
+        opening_slug = "voice-on-the-old-feed"
+        opening_title = "The Voice On The Old Feed"
+        opening_summary = (
+            "Ira keeps the observatory recording live while Mae and Lena argue "
+            "over why the missing hiker is describing 1998."
+        )
+        opening_first_post = (
+            "Ira Bell left the receiver running after the hiker named a road that "
+            "had not existed in twenty-eight years."
+        )
+        opening_second_post = (
+            "Sheriff Mae Kincaid put the search map on the desk and asked Lena "
+            "Ortiz which version of town history she was about to deny."
+        )
+        followup_slug = "diner-map-of-missing-hours"
+        followup_title = "Diner Map Of Missing Hours"
+        followup_summary = (
+            "Mae, Lena, and Cal turn a breakfast crowd into witnesses when three "
+            "trail reports disagree about the same twelve hours."
+        )
+        followup_first_post = (
+            "Mae pinned the first flyer near the register, then watched everyone "
+            "in the diner pretend they had not heard the broadcast."
+        )
+        followup_second_post = (
+            "Lena marked the wrong hour on a napkin map and realized Cal Rivera "
+            "was staring at the one trail nobody had searched."
+        )
+    elif program.slug == "nocturne-row":
+        opening_slug = "witness-video-at-last-call"
+        opening_title = "Witness Video At Last Call"
+        opening_summary = (
+            "Marcel tries to contain the Emberline footage while Eliana and Ren "
+            "count which treaty protections failed on camera."
+        )
+        opening_first_post = (
+            "Marcel Voss watched the nightclub footage for the third time and "
+            "heard the crowd gasp before the missing elder crossed the frame."
+        )
+        opening_second_post = (
+            "Eliana Crowe named the treaty clauses the council would invoke, then "
+            "asked who had already edited the witness audio."
+        )
+        followup_slug = "emergency-court-before-dawn"
+        followup_title = "Emergency Court Before Dawn"
+        followup_summary = (
+            "Eliana, Ren, and Jules arrive at Covenant Hall before sunrise with "
+            "different reasons to keep the wrong witness alive."
+        )
+        followup_first_post = (
+            "Eliana entered Covenant Hall with a sealed warrant, a blood-bank "
+            "rumor, and no patience for ceremonial panic."
+        )
+        followup_second_post = (
+            "Ren Maddox brought the clinic list anyway, because every missing "
+            "name had started to look like faction math."
+        )
+    else:
+        opening_slug = "opening-pressure"
+        opening_title = "Opening pressure"
+        opening_summary = (
+            f"{characters[0].name} pulls the first public thread into "
+            f"{community.name}'s current premise."
+        )
+        opening_first_post = (
+            f"{characters[0].name} arrived at {boards[0].name} with the public "
+            f"pressure of {community.name} already waiting in the room."
+        )
+        opening_second_post = (
+            f"{characters[1].name} answered with a practical offer, a private "
+            "reservation, and one question that could turn into a scene."
+        )
+        followup_slug = "wanted-thread-start"
+        followup_title = f"{boards[1].name} first-scene ask"
+        followup_summary = (
+            f"A public ask at {boards[1].name} pulls {characters[2].name} "
+            f"and {characters[3].name} toward {community.name}'s current chapter."
+        )
+        followup_first_post = (
+            f"{characters[1].name} left a note at {boards[1].name}: a clear "
+            "opening for rivals, allies, witnesses, or relatives to answer."
+        )
+        followup_second_post = (
+            f"{characters[2].name} took the hook seriously enough to make it "
+            "someone else's problem before the next scene could settle."
+        )
+    if program.slug in {"harbor-society", "signal-creek", "nocturne-row"}:
+        _archive_legacy_original_premise_thread(
+            repo, community.id, boards[0].id, "opening-pressure"
+        )
+        _archive_legacy_original_premise_thread(
+            repo, community.id, boards[1].id, "wanted-thread-start"
+        )
 
     opening = _get_or_create(
-        lambda: repo.get_thread_by_slug(community.id, boards[0].id, "opening-pressure"),
+        lambda: repo.get_thread_by_slug(community.id, boards[0].id, opening_slug),
         lambda: repo.create_thread(
             community.id,
             boards[0].id,
             characters[0].id,
-            "opening-pressure",
-            "Opening pressure",
-            summary=(
-                f"{characters[0].name} pulls the first public thread into "
-                f"{community.name}'s current premise."
-            ),
+            opening_slug,
+            opening_title,
+            summary=opening_summary,
             location=boards[0].name,
             timeline="Current chapter",
         ),
@@ -6264,34 +6440,25 @@ def _seed_original_premise_depth(
         community.id,
         opening.id,
         characters[0].id,
-        (
-            f"{characters[0].name} arrived at {boards[0].name} with the public "
-            f"pressure of {community.name} already waiting in the room."
-        ),
+        opening_first_post,
     )
     _ensure_post(
         repo,
         community.id,
         opening.id,
         characters[1].id,
-        (
-            f"{characters[1].name} answered with a practical offer, a private "
-            "reservation, and one question that could turn into a scene."
-        ),
+        opening_second_post,
     )
 
     followup = _get_or_create(
-        lambda: repo.get_thread_by_slug(community.id, boards[1].id, "wanted-thread-start"),
+        lambda: repo.get_thread_by_slug(community.id, boards[1].id, followup_slug),
         lambda: repo.create_thread(
             community.id,
             boards[1].id,
             characters[1].id,
-            "wanted-thread-start",
-            "Wanted thread start",
-            summary=(
-                f"A wanted-hook style opener tests how {community.name} moves "
-                "a new face from premise fit into active play."
-            ),
+            followup_slug,
+            followup_title,
+            summary=followup_summary,
             location=boards[1].name,
             timeline="Current chapter",
         ),
@@ -6306,25 +6473,33 @@ def _seed_original_premise_depth(
         community.id,
         followup.id,
         characters[1].id,
-        (
-            f"{characters[1].name} left a note at {boards[1].name}: a clear "
-            "opening for rivals, allies, witnesses, or relatives to answer."
-        ),
+        followup_first_post,
     )
     _ensure_post(
         repo,
         community.id,
         followup.id,
         characters[2].id,
-        (
-            f"{characters[2].name} took the hook seriously enough to make it "
-            "someone else's problem before the next scene could settle."
-        ),
+        followup_second_post,
     )
     repo.watch_thread(community.id, followup.id, membership.id)
     repo.mark_thread_read(community.id, opening.id, membership.id)
 
     _seed_original_premise_character_claims(repo, community.id, program)
+
+
+def _archive_legacy_original_premise_thread(
+    repo: ForumRepository,
+    community_id: int,
+    board_id: int,
+    slug: str,
+) -> None:
+    try:
+        thread = repo.get_thread_by_slug(community_id, board_id, slug)
+    except LookupError:
+        return
+    if thread.status in {"active", "open"}:
+        repo.update_thread_scene(community_id, thread.id, status="archived")
 
 
 def _seed_original_premise_character_claims(
@@ -6457,6 +6632,40 @@ def _ensure_board_media_default(
         image_treatment=media_seed.image_treatment,
         image_focal_point=media_seed.image_focal_point,
         image_overlay=media_seed.image_overlay,
+        is_private=board.is_private,
+        navigation_order=board.navigation_order,
+        show_in_navigation=board.show_in_navigation,
+    )
+
+
+def _ensure_board_seed_media(
+    repo: ForumRepository,
+    community_id: int,
+    board: Board,
+    *,
+    image_url: str | None,
+    image_alt: str,
+    image_treatment: str,
+    image_focal_point: str,
+    image_overlay: str,
+) -> Board:
+    if image_url is None or board.image_url is not None:
+        return board
+    return repo.update_board(
+        community_id,
+        board.id,
+        name=board.name,
+        description=board.description,
+        sort_order=board.sort_order,
+        parent_board_id=board.parent_board_id,
+        board_kind=board.board_kind,
+        sidebar_section=board.sidebar_section,
+        tagline=board.tagline,
+        image_url=image_url,
+        image_alt=image_alt,
+        image_treatment=image_treatment,
+        image_focal_point=image_focal_point,
+        image_overlay=image_overlay,
         is_private=board.is_private,
         navigation_order=board.navigation_order,
         show_in_navigation=board.show_in_navigation,

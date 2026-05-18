@@ -35,7 +35,7 @@
       <span aria-current="page">Discovery profile</span>
     </nav>
     <div class="chirpui-cluster chirpui-cluster--sm">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Preview Network</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Open Network</a>
       <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview realm</a>
     </div>
   </div>
@@ -67,10 +67,10 @@
     <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
       {{ csrf_field() }}
       <div>
-        <p class="elbysodic-kicker">Public catalog</p>
-        <h2>Profile fields</h2>
+        <p class="elbysodic-kicker">Network listing</p>
+        <h2>Story-fit fields</h2>
         <p class="elbysodic-copy-section">
-          These values power premise filters, Explore search, homepage lanes, and public catalog cards.
+          These values shape premise filters, Explore search, homepage lanes, and network cards.
         </p>
       </div>
       <div class="elbysodic-theme-editor-grid">
@@ -87,7 +87,7 @@
         <input class="chirpui-field__input" name="roster_posture" value="{{ editor.value_for('roster_posture') }}" maxlength="180">
       </label>
       <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
-        <span class="chirpui-field__label">Catalog pitch</span>
+        <span class="chirpui-field__label">Network pitch</span>
         <textarea class="chirpui-field__input" name="catalog_pitch" rows="3" maxlength="240">{{ editor.value_for('catalog_pitch') }}</textarea>
       </label>
       <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
@@ -109,11 +109,11 @@
     </form>
     {% end %}
 
-    <section class="chirpui-stack chirpui-stack--md" aria-label="Public catalog card preview">
+    <section class="chirpui-stack chirpui-stack--md" aria-label="Network card preview">
       <div>
-        <p class="elbysodic-kicker">Public card preview</p>
+        <p class="elbysodic-kicker">Network preview</p>
         <h2>Network card</h2>
-        <p class="elbysodic-copy-section">This is the same public card component used by Network Explore.</p>
+        <p class="elbysodic-copy-section">This is how the realm appears in Network Explore.</p>
       </div>
       {{ program_card(editor.preview_card) }}
       {% if editor.tags %}

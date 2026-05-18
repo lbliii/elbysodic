@@ -7,13 +7,18 @@ import re
 import secrets
 import sqlite3
 from contextlib import AbstractContextManager, suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.db import Database, ForumRepository, connect, create_schema
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
+from elbysodic.db.repositories.gateway import (
+    GATEWAY_SLOT_GUIDEBOOK_MATERIAL,
+    GATEWAY_SLOT_SCENE_HUB,
+    GATEWAY_SLOT_WANTED_HOOK,
+)
 from elbysodic.db.seed import (
     SEED_PERSONAS,
     DemoSeed,
@@ -48,6 +53,7 @@ from elbysodic.domain.models import (
     CharacterReserve,
     Community,
     CommunityDiscoveryProfile,
+    CommunityGatewaySlot,
     CommunityInvitation,
     CommunityMembership,
     Material,
@@ -244,6 +250,9 @@ from elbysodic.services.read_models import (
     FacetTag,
     FirstRealmSetupResult,
     ForumView,
+    GatewayCurationChoice,
+    GatewayCurationEditor,
+    GatewayCurationSection,
     LocationNavigationGroup,
     MaterialDetail,
     MaterialSummary,
@@ -263,11 +272,23 @@ from elbysodic.services.read_models import (
     PostRevisionHistory,
     PostStylePolicy,
     PublicCatalogCard,
+    RealmGatewayAction,
     RealmGatewayAtmosphere,
+    RealmGatewayCastMember,
+    RealmGatewayContinuation,
     RealmGatewayEntryPath,
+    RealmGatewayGuidebookPreview,
+    RealmGatewayHero,
     RealmGatewayPremise,
+    RealmGatewayPremiseEvolution,
+    RealmGatewayPremiseStage,
     RealmGatewaySceneHub,
+    RealmGatewayScenePreview,
+    RealmGatewaySignalItem,
+    RealmGatewaySocialLane,
+    RealmGatewayStoryFrame,
     RealmGatewayView,
+    RealmGatewayWantedPreview,
     RealmInteractionDetail,
     RealmInteractionHub,
     RealmLaunchChecklistItem,
@@ -371,8 +392,8 @@ class GuidedRealmBuilderResult:
     @property
     def status_message(self) -> str:
         if not self.created_labels:
-            return "Realm Builder found the minimum launch pieces already in place."
-        return f"Realm Builder added {', '.join(self.created_labels)}."
+            return "Opening packet already has the minimum pieces in place."
+        return f"Opening packet added {', '.join(self.created_labels)}."
 
 
 @dataclass(frozen=True, slots=True)
@@ -1176,6 +1197,17 @@ class AppServices:
         community = self._public_preview_community(community_slug)
         return _public_realm_gateway(self.repo, community)
 
+    def realm_gateway(self) -> RealmGatewayView:
+        viewer = self.viewer()
+        gateway = _public_realm_gateway(self.repo, viewer.community)
+        activation = (
+            self.writer_activation()
+            if viewer.current_character is None
+            or viewer.current_character.application_status != "accepted"
+            else None
+        )
+        return replace(gateway, continuation=_realm_gateway_continuation(viewer, activation))
+
     def discovery_profile_editor(self) -> DiscoveryProfileEditor:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
@@ -1945,6 +1977,13 @@ class AppServices:
         claims = _claims_directory(self.repo, viewer)
         return DirectorStudio(
             can_manage=can_manage_studio,
+            gateway_curation=_gateway_curation_editor(
+                self.repo,
+                viewer,
+                board_summaries=board_summaries,
+                materials=materials,
+                wanted_ads=wanted_ads,
+            ),
             launch_readiness=_realm_launch_readiness(
                 viewer=viewer,
                 board_taxonomy=board_taxonomy,
@@ -1987,6 +2026,35 @@ class AppServices:
             open_wanted_ads=[item for item in wanted_ads if item.wanted_ad.status == "open"],
             applications=applications,
             claims=claims,
+        )
+
+    def update_gateway_curation(
+        self,
+        *,
+        scene_hub_target_ids: list[int],
+        wanted_hook_target_ids: list[int],
+        guidebook_material_target_ids: list[int],
+    ) -> None:
+        viewer = self.viewer()
+        if not (
+            policies.can_manage_world(viewer.membership, viewer.role)
+            or policies.can_manage_casting(viewer.membership, viewer.role)
+        ):
+            raise PermissionError(f"membership {viewer.membership.id} cannot manage gateway")
+        self.repo.replace_community_gateway_slots(
+            viewer.community.id,
+            GATEWAY_SLOT_SCENE_HUB,
+            [(target_id, "") for target_id in scene_hub_target_ids],
+        )
+        self.repo.replace_community_gateway_slots(
+            viewer.community.id,
+            GATEWAY_SLOT_WANTED_HOOK,
+            [(target_id, "") for target_id in wanted_hook_target_ids],
+        )
+        self.repo.replace_community_gateway_slots(
+            viewer.community.id,
+            GATEWAY_SLOT_GUIDEBOOK_MATERIAL,
+            [(target_id, "") for target_id in guidebook_material_target_ids],
         )
 
     def update_default_theme(
@@ -3320,19 +3388,181 @@ def _first_public_scene_hub(repo: ForumRepository, community_id: int) -> Board |
     )
 
 
+def _gateway_curation_editor(
+    repo: ForumRepository,
+    viewer: ForumView,
+    *,
+    board_summaries: list[BoardSummary],
+    materials: list[MaterialSummary],
+    wanted_ads: list[WantedAdSummary],
+) -> GatewayCurationEditor:
+    gateway_slots = _gateway_slots_by_type(repo, viewer.community.id)
+    return GatewayCurationEditor(
+        scene_hubs=_gateway_curation_scene_hubs(
+            viewer.community.slug,
+            board_summaries,
+            gateway_slots[GATEWAY_SLOT_SCENE_HUB],
+        ),
+        wanted_hooks=_gateway_curation_wanted_hooks(
+            viewer.community.slug,
+            wanted_ads,
+            gateway_slots[GATEWAY_SLOT_WANTED_HOOK],
+        ),
+        guidebook_materials=_gateway_curation_guidebook_materials(
+            viewer.community.slug,
+            materials,
+            gateway_slots[GATEWAY_SLOT_GUIDEBOOK_MATERIAL],
+        ),
+    )
+
+
+def _gateway_curation_scene_hubs(
+    community_slug: str,
+    board_summaries: list[BoardSummary],
+    slots: tuple[CommunityGatewaySlot, ...],
+) -> GatewayCurationSection:
+    slots_by_target_id = {slot.target_id: slot for slot in slots}
+    choices = []
+    for index, summary in enumerate(
+        item
+        for item in board_summaries
+        if not item.board.is_private
+        and item.board.board_kind in {"location", "community", "sublocation"}
+    ):
+        slot = slots_by_target_id.get(summary.board.id)
+        choices.append(
+            GatewayCurationChoice(
+                target_id=summary.board.id,
+                title=summary.board.name,
+                summary=summary.board.tagline
+                or summary.board.description
+                or _display_label(summary.board.board_kind),
+                href=f"/c/{community_slug}/boards/{summary.board.slug}",
+                is_selected=slot is not None,
+                position_value=slot.position if slot is not None else (index + 1) * 10,
+                slot=slot,
+            )
+        )
+    return GatewayCurationSection(
+        slot_type=GATEWAY_SLOT_SCENE_HUB,
+        title="Scene hubs",
+        summary="Public places or community rooms that should lead the home page.",
+        choices=tuple(choices),
+    )
+
+
+def _gateway_curation_wanted_hooks(
+    community_slug: str,
+    wanted_ads: list[WantedAdSummary],
+    slots: tuple[CommunityGatewaySlot, ...],
+) -> GatewayCurationSection:
+    slots_by_target_id = {slot.target_id: slot for slot in slots}
+    choices = []
+    for index, summary in enumerate(item for item in wanted_ads if item.wanted_ad.status == "open"):
+        slot = slots_by_target_id.get(summary.wanted_ad.id)
+        choices.append(
+            GatewayCurationChoice(
+                target_id=summary.wanted_ad.id,
+                title=summary.wanted_ad.title,
+                summary=summary.wanted_ad.summary or summary.type_label,
+                href=f"/c/{community_slug}/wanted/{summary.wanted_ad.slug}",
+                is_selected=slot is not None,
+                position_value=slot.position if slot is not None else (index + 1) * 10,
+                slot=slot,
+            )
+        )
+    return GatewayCurationSection(
+        slot_type=GATEWAY_SLOT_WANTED_HOOK,
+        title="Wanted hooks",
+        summary="Open calls that give a new writer a first face path.",
+        choices=tuple(choices),
+    )
+
+
+def _gateway_curation_guidebook_materials(
+    community_slug: str,
+    materials: list[MaterialSummary],
+    slots: tuple[CommunityGatewaySlot, ...],
+) -> GatewayCurationSection:
+    slots_by_target_id = {slot.target_id: slot for slot in slots}
+    choices = []
+    for index, summary in enumerate(
+        item
+        for item in materials
+        if item.material.status == "published"
+        and item.material.material_type in {"premise", "guide", "factions", "event"}
+    ):
+        slot = slots_by_target_id.get(summary.material.id)
+        choices.append(
+            GatewayCurationChoice(
+                target_id=summary.material.id,
+                title=summary.material.title,
+                summary=summary.rendered_summary or summary.type_label,
+                href=f"/c/{community_slug}/world/{summary.material.slug}",
+                is_selected=slot is not None,
+                position_value=slot.position if slot is not None else (index + 1) * 10,
+                slot=slot,
+            )
+        )
+    return GatewayCurationSection(
+        slot_type=GATEWAY_SLOT_GUIDEBOOK_MATERIAL,
+        title="Guidebook materials",
+        summary="Published premise, event, and guide pages that should anchor first reading.",
+        choices=tuple(choices),
+    )
+
+
 def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmGatewayView:
     program = _public_studio_program(repo, community.slug)
     guidebook = _public_world_hub(repo, community.id)
+    gateway_slots = _gateway_slots_by_type(repo, community.id)
     profile = None
     with suppress(LookupError):
         profile = repo.get_discovery_profile(community.id)
+    premise = _realm_gateway_premise(program, profile)
+    atmosphere = _realm_gateway_atmosphere(program, guidebook)
+    scene_hubs = _realm_gateway_scene_hubs(
+        repo,
+        community.id,
+        curated_slots=gateway_slots[GATEWAY_SLOT_SCENE_HUB],
+    )
+    scene_previews = _realm_gateway_scene_previews(repo, program)
+    entry_paths = _realm_gateway_entry_paths(program, guidebook)
+    guidebook_previews = _realm_gateway_guidebook_previews(
+        guidebook,
+        curated_slots=gateway_slots[GATEWAY_SLOT_GUIDEBOOK_MATERIAL],
+    )
+    social_lanes = _realm_gateway_social_lanes(repo, community.id)
+    cast_members = _realm_gateway_cast_members(repo, community.id)
+    wanted_previews = _realm_gateway_wanted_previews(
+        repo,
+        program,
+        curated_slots=gateway_slots[GATEWAY_SLOT_WANTED_HOOK],
+    )
+    premise_stage = _realm_gateway_premise_stage(program, premise, atmosphere)
     return RealmGatewayView(
         program=program,
         guidebook=guidebook,
-        premise=_realm_gateway_premise(program, profile),
-        atmosphere=_realm_gateway_atmosphere(program, guidebook),
-        scene_hubs=_realm_gateway_scene_hubs(repo, community.id),
-        entry_paths=_realm_gateway_entry_paths(program, guidebook),
+        hero=_realm_gateway_hero(program, premise, atmosphere),
+        premise=premise,
+        story_frame=_realm_gateway_story_frame(program, premise),
+        premise_stage=premise_stage,
+        premise_evolution=_realm_gateway_premise_evolution(
+            program,
+            premise,
+            atmosphere,
+            scene_previews,
+            wanted_previews,
+        ),
+        atmosphere=atmosphere,
+        signals=_realm_gateway_signals(program, guidebook, scene_hubs),
+        scene_hubs=scene_hubs,
+        scene_previews=scene_previews,
+        entry_paths=entry_paths,
+        guidebook_previews=guidebook_previews,
+        social_lanes=social_lanes,
+        cast_members=cast_members,
+        wanted_previews=wanted_previews,
     )
 
 
@@ -3374,7 +3604,7 @@ def _realm_gateway_atmosphere(
 ) -> RealmGatewayAtmosphere:
     if program.current_event is not None:
         return RealmGatewayAtmosphere(
-            title=program.current_event.material.title,
+            title=_realm_gateway_context_title(program.current_event.material.title),
             label="Current chapter",
             copy=program.current_event.rendered_summary,
             href=program.current_event_href,
@@ -3382,7 +3612,7 @@ def _realm_gateway_atmosphere(
         )
     if program.premise is not None:
         return RealmGatewayAtmosphere(
-            title=program.premise.material.title,
+            title=_realm_gateway_context_title(program.premise.material.title),
             label="Standing premise",
             copy=program.premise.rendered_summary,
             href=program.premise_href,
@@ -3391,7 +3621,7 @@ def _realm_gateway_atmosphere(
     featured = guidebook.featured[0] if guidebook.featured else None
     if featured is not None:
         return RealmGatewayAtmosphere(
-            title=featured.material.title,
+            title=_realm_gateway_context_title(featured.material.title),
             label=featured.type_label,
             copy=featured.rendered_summary,
             href=f"/world/{featured.material.slug}",
@@ -3406,30 +3636,461 @@ def _realm_gateway_atmosphere(
     )
 
 
+def _realm_gateway_hero(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+) -> RealmGatewayHero:
+    secondary_action = _realm_gateway_reading_action(program)
+    primary_action = _realm_gateway_primary_action(program, secondary_action)
+    return RealmGatewayHero(
+        kicker=f"{premise.premise_label} - {program.invite_posture_label}",
+        title=program.community.name,
+        lead=premise.catalog_pitch,
+        now_playing_label=atmosphere.label,
+        now_playing_copy=f"{atmosphere.title}: {atmosphere.copy}",
+        first_face_path=premise.onboarding_pitch,
+        primary_action=primary_action,
+        secondary_action=secondary_action if secondary_action.href != primary_action.href else None,
+    )
+
+
+def _realm_gateway_story_frame(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+) -> RealmGatewayStoryFrame:
+    profile = premise.discovery_profile
+    rating_parts = []
+    if profile is not None:
+        rating_parts.extend(
+            label for label in (profile.age_rating.strip(), profile.content_rating.strip()) if label
+        )
+    rating_label = " / ".join(rating_parts) if rating_parts else "Rating set by directors"
+    cadence_label = (
+        _display_label(profile.activity_pace) if profile is not None else "Scene-driven pace"
+    )
+    writing_expectation = (
+        profile.activity_expectation.strip()
+        if profile is not None and profile.activity_expectation.strip()
+        else "Scene cadence, writing length, and fit are set by the realm's public guidebook."
+    )
+    return RealmGatewayStoryFrame(
+        eyebrow=premise.premise_label,
+        access_label=program.invite_posture_label,
+        rating_label=rating_label,
+        cadence_label=cadence_label,
+        writing_expectation=writing_expectation,
+        roster_posture=premise.roster_posture,
+    )
+
+
+def _realm_gateway_premise_stage(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+) -> RealmGatewayPremiseStage:
+    if program.current_event is not None:
+        return RealmGatewayPremiseStage(
+            label="In motion",
+            title=_realm_gateway_context_title(program.current_event.material.title),
+            summary=program.current_event.rendered_summary,
+            playable_pressure=_realm_gateway_stage_pressure(program, premise, atmosphere.title),
+            action=(
+                RealmGatewayAction("Read the chapter", program.current_event_href)
+                if program.current_event_href is not None
+                else None
+            ),
+        )
+    if program.premise is not None:
+        return RealmGatewayPremiseStage(
+            label="Story promise",
+            title=_realm_gateway_context_title(program.premise.material.title),
+            summary=program.premise.rendered_summary,
+            playable_pressure=premise.onboarding_pitch,
+            action=(
+                RealmGatewayAction("Read the premise", program.premise_href)
+                if program.premise_href is not None
+                else None
+            ),
+        )
+    return RealmGatewayPremiseStage(
+        label="Open doors",
+        title=atmosphere.title,
+        summary=atmosphere.copy,
+        playable_pressure=premise.onboarding_pitch,
+        action=_realm_gateway_reading_action(program),
+    )
+
+
+def _realm_gateway_stage_pressure(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    stage_title: str,
+) -> str:
+    if program.open_wanted_count:
+        return f"Open calls, places, and first ties are already pointed at {stage_title}."
+    return premise.onboarding_pitch
+
+
+def _realm_gateway_premise_evolution(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+    scene_previews: tuple[RealmGatewayScenePreview, ...],
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+) -> RealmGatewayPremiseEvolution:
+    premise_title = (
+        _realm_gateway_context_title(program.premise.material.title)
+        if program.premise is not None
+        else atmosphere.title
+    )
+    premise_summary = (
+        program.premise.rendered_summary if program.premise is not None else premise.catalog_pitch
+    )
+    current_pressure_title = atmosphere.title
+    current_pressure_summary = atmosphere.copy
+    inciting_incident = (
+        current_pressure_summary
+        if atmosphere.source_type == "event"
+        else premise_summary
+    )
+    consequences = _realm_gateway_consequence_summary(
+        current_pressure_title,
+        scene_previews,
+        wanted_previews,
+    )
+    return RealmGatewayPremiseEvolution(
+        premise_title=premise_title,
+        premise_summary=premise_summary,
+        inciting_incident=inciting_incident,
+        current_pressure_title=current_pressure_title,
+        current_pressure_summary=current_pressure_summary,
+        consequences=consequences,
+        next_openings=_realm_gateway_next_openings_summary(
+            program,
+            premise,
+            wanted_previews,
+            current_pressure_title,
+        ),
+        source_href=atmosphere.href,
+        source_kind=atmosphere.source_type,
+    )
+
+
+def _realm_gateway_consequence_summary(
+    current_pressure_title: str,
+    scene_previews: tuple[RealmGatewayScenePreview, ...],
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+) -> str:
+    if scene_previews:
+        scene_titles = _joined_labels(tuple(scene.title for scene in scene_previews[:2]))
+        return f"Already playing in {scene_titles}."
+    if wanted_previews:
+        wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
+        return f"Open calls are already tied to {wanted_titles}."
+    return f"Read {current_pressure_title} before choosing where a first face enters."
+
+
+def _realm_gateway_next_openings_summary(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+    current_pressure_title: str,
+) -> str:
+    if wanted_previews:
+        wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
+        return f"Open calls include {wanted_titles}."
+    if program.open_wanted_count:
+        return f"Browse open calls tied to {current_pressure_title}."
+    return premise.onboarding_pitch
+
+
+def _realm_gateway_primary_action(
+    program: StudioNetworkProgramView,
+    fallback_action: RealmGatewayAction,
+) -> RealmGatewayAction:
+    if program.open_wanted_count:
+        return RealmGatewayAction(
+            label="Browse open calls",
+            href=_community_href(program, "/wanted"),
+        )
+    if program.community.launch_status == "public-preview":
+        return RealmGatewayAction(
+            label="Request access",
+            href=_community_href(program, "/request-access"),
+            is_hx_boost_safe=False,
+        )
+    return fallback_action
+
+
+def _realm_gateway_reading_action(program: StudioNetworkProgramView) -> RealmGatewayAction:
+    if program.premise_href is not None:
+        return RealmGatewayAction(label="Read premise", href=program.premise_href)
+    return RealmGatewayAction(label="Open guidebook", href=_community_href(program, "/world"))
+
+
+def _realm_gateway_signals(
+    program: StudioNetworkProgramView,
+    guidebook: WorldHub,
+    scene_hubs: tuple[RealmGatewaySceneHub, ...],
+) -> tuple[RealmGatewaySignalItem, ...]:
+    signals = [
+        RealmGatewaySignalItem(
+            title=program.invite_posture_label,
+            summary=_realm_gateway_public_status_summary(program),
+        )
+    ]
+    if program.open_wanted_count:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Open calls",
+                summary=_realm_gateway_wanted_signal_summary(program),
+                value=str(program.open_wanted_count),
+            )
+        )
+    else:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Start here",
+                summary="Start from the public premise, claims, guidebook, or access request.",
+            )
+        )
+    if scene_hubs:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Scene hubs ready",
+                summary=_realm_gateway_scene_hub_signal_summary(scene_hubs),
+                value=str(len(scene_hubs)),
+            )
+        )
+    public_material_count = len(guidebook.featured) + len(guidebook.guides) + len(guidebook.events)
+    if public_material_count:
+        signals.append(
+            RealmGatewaySignalItem(
+                title="Guidebook path",
+                summary=_realm_gateway_guidebook_signal_summary(guidebook),
+                value=str(public_material_count),
+            )
+        )
+    return tuple(signals[:4])
+
+
+def _realm_gateway_public_status_summary(program: StudioNetworkProgramView) -> str:
+    if program.current_event is not None:
+        title = _realm_gateway_context_title(program.current_event.material.title)
+        return f"Read {title} first to understand the chapter in motion."
+    if program.premise is not None:
+        title = _realm_gateway_context_title(program.premise.material.title)
+        return f"Start with {title} before choosing a first face."
+    return f"{program.community.name} is open for public browsing before access."
+
+
+def _realm_gateway_wanted_signal_summary(program: StudioNetworkProgramView) -> str:
+    count_label = f"{program.open_wanted_count} hook"
+    if program.open_wanted_count != 1:
+        count_label += "s"
+    if program.current_event is not None:
+        title = _realm_gateway_context_title(program.current_event.material.title)
+        return f"{count_label} connect new faces to {title}."
+    if program.premise is not None:
+        title = _realm_gateway_context_title(program.premise.material.title)
+        return f"{count_label} turns {title} into relationships and rivals."
+    return f"{count_label} can become a first relationship, role, rival, or scene lane."
+
+
+def _realm_gateway_scene_hub_signal_summary(
+    scene_hubs: tuple[RealmGatewaySceneHub, ...],
+) -> str:
+    hub_names = _joined_labels(tuple(hub.board.name for hub in scene_hubs[:3]))
+    if len(scene_hubs) == 1:
+        return f"{hub_names} is a public place to read before starting a scene."
+    return f"{hub_names} are public places to read before starting a scene."
+
+
+def _realm_gateway_guidebook_signal_summary(guidebook: WorldHub) -> str:
+    items = [*guidebook.featured, *guidebook.events, *guidebook.guides]
+    labels = _joined_labels(tuple(item.material.title for item in items[:3]))
+    if labels:
+        return f"{labels} are the fastest reads before choosing a face."
+    return "Published guidebook material can ground a first face."
+
+
+def _joined_labels(labels: tuple[str, ...]) -> str:
+    if not labels:
+        return ""
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f"{labels[0]} and {labels[1]}"
+    return f"{', '.join(labels[:-1])}, and {labels[-1]}"
+
+
 def _realm_gateway_scene_hubs(
     repo: ForumRepository,
     community_id: int,
     *,
+    curated_slots: tuple[CommunityGatewaySlot, ...] = (),
     limit: int = 4,
 ) -> tuple[RealmGatewaySceneHub, ...]:
+    curated_board_ids = {slot.target_id for slot in curated_slots}
     boards = [
         board
         for board in repo.list_boards(community_id)
-        if board.parent_board_id is None
-        and board.board_kind in {"location", "community"}
-        and not board.is_private
+        if _is_gateway_scene_hub_board(board, curated_board_ids)
     ]
     threads_by_board = repo.list_threads_for_boards(community_id, [board.id for board in boards])
-    hubs = [
-        RealmGatewaySceneHub(
-            board=board,
-            public_thread_count=sum(
-                1 for thread in threads_by_board.get(board.id, []) if thread.status != "private"
-            ),
+    thread_counts = {
+        board.id: sum(
+            1 for thread in threads_by_board.get(board.id, []) if thread.status != "private"
         )
         for board in boards
-    ]
-    return tuple(hubs[:limit])
+    }
+    most_active_board_id = (
+        max(thread_counts, key=lambda board_id: thread_counts[board_id]) if thread_counts else None
+    )
+    hubs = []
+    for board in boards:
+        public_thread_count = thread_counts[board.id]
+        emphasis = _realm_gateway_hub_emphasis(
+            board,
+            public_thread_count,
+            is_most_active=board.id == most_active_board_id,
+        )
+        hubs.append(
+            RealmGatewaySceneHub(
+                board=board,
+                public_thread_count=public_thread_count,
+                emphasis=emphasis,
+                summary=board.tagline or board.description or board.board_kind,
+                image_url=board.image_url,
+                image_alt=board.image_alt,
+                image_treatment=board.image_treatment or "standard",
+            )
+        )
+    ranked_hubs = sorted(
+        hubs,
+        key=lambda hub: (
+            _realm_gateway_hub_rank(hub.emphasis),
+            hub.public_thread_count,
+            bool(hub.image_url),
+            -hub.board.sort_order,
+            -hub.board.id,
+        ),
+        reverse=True,
+    )
+    return _curated_scene_hubs(ranked_hubs, curated_slots, limit=limit)
+
+
+def _is_gateway_scene_hub_board(board: Board, curated_board_ids: set[int]) -> bool:
+    if board.is_private:
+        return False
+    if board.id in curated_board_ids:
+        return board.board_kind in {"location", "community", "sublocation"}
+    return board.parent_board_id is None and board.board_kind in {"location", "community"}
+
+
+def _curated_scene_hubs(
+    ranked_hubs: list[RealmGatewaySceneHub],
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    *,
+    limit: int,
+) -> tuple[RealmGatewaySceneHub, ...]:
+    hubs_by_board_id = {hub.board.id: hub for hub in ranked_hubs}
+    selected = []
+    selected_ids = set()
+    for slot in curated_slots:
+        hub = hubs_by_board_id.get(slot.target_id)
+        if hub is None or hub.board.id in selected_ids:
+            continue
+        selected.append(hub)
+        selected_ids.add(hub.board.id)
+        if len(selected) >= limit:
+            return tuple(selected)
+    for hub in ranked_hubs:
+        if hub.board.id in selected_ids:
+            continue
+        selected.append(hub)
+        if len(selected) >= limit:
+            break
+    return tuple(selected)
+
+
+def _realm_gateway_hub_rank(emphasis: str) -> int:
+    ranks = {
+        "hot": 4,
+        "high_activity": 3,
+        "featured": 2,
+        "normal": 1,
+    }
+    return ranks.get(emphasis, 0)
+
+
+def _realm_gateway_hub_emphasis(
+    board: Board,
+    public_thread_count: int,
+    *,
+    is_most_active: bool,
+) -> str:
+    if public_thread_count >= 3:
+        return "hot"
+    if public_thread_count and is_most_active:
+        return "high_activity"
+    if board.image_url:
+        return "featured"
+    return "normal"
+
+
+def _realm_gateway_scene_previews(
+    repo: ForumRepository,
+    program: StudioNetworkProgramView,
+    *,
+    limit: int = 3,
+) -> tuple[RealmGatewayScenePreview, ...]:
+    boards = {
+        board.id: board
+        for board in repo.list_boards(program.community.id)
+        if not board.is_private
+        and board.sidebar_section == "locations"
+        and board.board_kind in {"location", "sublocation"}
+    }
+    if not boards:
+        return ()
+    previews = []
+    participants_by_thread = repo.list_thread_participants_for_threads(
+        program.community.id,
+        [
+            thread.id
+            for thread in repo.list_threads(program.community.id)
+            if thread.board_id in boards and _is_gateway_public_scene_thread(thread)
+        ],
+    )
+    for thread in repo.list_threads(program.community.id):
+        board = boards.get(thread.board_id)
+        if board is None or not _is_gateway_public_scene_thread(thread):
+            continue
+        try:
+            author = repo.get_character(program.community.id, thread.author_character_id)
+        except LookupError:
+            continue
+        if author.application_status != "accepted":
+            continue
+        cast_count = max(len(participants_by_thread.get(thread.id, ())), 1)
+        previews.append(
+            RealmGatewayScenePreview(
+                title=thread.title,
+                summary=thread.summary or board.tagline or board.description,
+                href=_community_href(program, f"/boards/{board.slug}/threads/{thread.slug}"),
+                board_label=board.name,
+                cast_label=f"{cast_count} face{'s' if cast_count != 1 else ''}",
+            )
+        )
+        if len(previews) >= limit:
+            break
+    return tuple(previews)
+
+
+def _is_gateway_public_scene_thread(thread: Thread) -> bool:
+    return thread.status in {"active", "open"} and not thread.is_locked
 
 
 def _realm_gateway_entry_paths(
@@ -3441,7 +4102,7 @@ def _realm_gateway_entry_paths(
         paths.append(
             RealmGatewayEntryPath(
                 "Read the premise",
-                "Start with the public story promise before choosing a face.",
+                program.premise.rendered_summary,
                 program.premise_href,
                 "premise",
             )
@@ -3450,8 +4111,8 @@ def _realm_gateway_entry_paths(
         paths.append(
             RealmGatewayEntryPath(
                 "Browse open calls",
-                "Relationships, roles, rivals, and scenario requests already want a writer.",
-                "/wanted",
+                _realm_gateway_open_calls_entry_summary(program),
+                _community_href(program, "/wanted"),
                 "open wanted",
                 program.open_wanted_count,
             )
@@ -3462,19 +4123,264 @@ def _realm_gateway_entry_paths(
             RealmGatewayEntryPath(
                 "Check the application guide",
                 material.rendered_summary,
-                f"/world/{material.material.slug}",
+                _community_href(program, f"/world/{material.material.slug}"),
                 "guide",
             )
         )
     paths.append(
         RealmGatewayEntryPath(
             "Request access",
-            "Ask to enter when the premise, roster, and open calls feel like a fit.",
-            "/request-access",
+            f"Ask to enter when {program.community.name}'s premise, roster, and hooks fit.",
+            _community_href(program, "/request-access"),
             "entry",
         )
     )
     return tuple(paths)
+
+
+def _realm_gateway_open_calls_entry_summary(program: StudioNetworkProgramView) -> str:
+    if program.current_event is not None:
+        title = _realm_gateway_context_title(program.current_event.material.title)
+        return f"Find a role, rival, or relationship tied to {title}."
+    if program.premise is not None:
+        title = _realm_gateway_context_title(program.premise.material.title)
+        return f"Find a role, rival, or relationship that fits {title}."
+    return "Find a relationship, role, rival, or scenario request that wants a writer."
+
+
+def _realm_gateway_wanted_previews(
+    repo: ForumRepository,
+    program: StudioNetworkProgramView,
+    *,
+    curated_slots: tuple[CommunityGatewaySlot, ...] = (),
+    limit: int = 3,
+) -> tuple[RealmGatewayWantedPreview, ...]:
+    wanted_ads = repo.list_wanted_ads(program.community.id, status="open")
+    ordered_wanted_ads = _curated_wanted_ads(wanted_ads, curated_slots, limit=limit)
+    previews = []
+    for wanted_ad in ordered_wanted_ads:
+        summary = _public_wanted_ad_summary(repo, program.community.id, wanted_ad)
+        previews.append(
+            RealmGatewayWantedPreview(
+                title=summary.wanted_ad.title,
+                summary=summary.wanted_ad.summary,
+                href=_community_href(program, f"/wanted/{summary.wanted_ad.slug}"),
+                type_label=summary.type_label,
+                related_label=(
+                    _realm_gateway_context_title(summary.related_material.title)
+                    if summary.related_material is not None
+                    else None
+                ),
+            )
+        )
+    return tuple(previews)
+
+
+def _realm_gateway_guidebook_previews(
+    guidebook: WorldHub,
+    *,
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    limit: int = 4,
+) -> tuple[RealmGatewayGuidebookPreview, ...]:
+    materials = [*guidebook.featured, *guidebook.events, *guidebook.guides]
+    return tuple(
+        RealmGatewayGuidebookPreview(
+            material=item,
+            display_title=_realm_gateway_context_title(item.material.title),
+        )
+        for item in _curated_material_previews(materials, curated_slots, limit=limit)
+    )
+
+
+def _realm_gateway_context_title(title: str) -> str:
+    display_title = re.sub(r"^(current\s+chapter|premise)\s*:\s*", "", title, flags=re.I)
+    return display_title.strip() or title
+
+
+def _realm_gateway_social_lanes(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    limit: int = 4,
+) -> tuple[RealmGatewaySocialLane, ...]:
+    lanes = []
+    for claim_type in repo.list_claim_types(community_id):
+        if claim_type.visibility != "public" or claim_type.claim_kind == "face":
+            continue
+        title = claim_type.name.removesuffix(" Claim").strip() or claim_type.name
+        lanes.append(
+            RealmGatewaySocialLane(
+                title=title,
+                summary=claim_type.description,
+                tone=_realm_gateway_social_lane_tone(claim_type.claim_kind),
+            )
+        )
+        if len(lanes) >= limit:
+            break
+    return tuple(lanes)
+
+
+def _realm_gateway_social_lane_tone(claim_kind: str) -> str:
+    match claim_kind:
+        case "access":
+            return "access"
+        case "faction":
+            return "faction"
+        case "location":
+            return "place"
+        case "occupation":
+            return "work"
+        case "power":
+            return "power"
+        case "relationship":
+            return "kinship"
+        case "species":
+            return "lineage"
+        case _:
+            return "world"
+
+
+def _realm_gateway_cast_members(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    limit: int = 4,
+) -> tuple[RealmGatewayCastMember, ...]:
+    members = []
+    for character in repo.list_community_characters(community_id):
+        if character.application_status != "accepted":
+            continue
+        summary = character.tagline or character.summary
+        if not summary:
+            continue
+        members.append(RealmGatewayCastMember(character=character, summary=summary))
+        if len(members) >= limit:
+            break
+    return tuple(members)
+
+
+def _curated_wanted_ads(
+    wanted_ads: list[WantedAd],
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    *,
+    limit: int,
+) -> list[WantedAd]:
+    wanted_by_id = {wanted_ad.id: wanted_ad for wanted_ad in wanted_ads}
+    selected = []
+    selected_ids = set()
+    for slot in curated_slots:
+        wanted_ad = wanted_by_id.get(slot.target_id)
+        if wanted_ad is None or wanted_ad.id in selected_ids:
+            continue
+        selected.append(wanted_ad)
+        selected_ids.add(wanted_ad.id)
+        if len(selected) >= limit:
+            return selected
+    for wanted_ad in wanted_ads:
+        if wanted_ad.id in selected_ids:
+            continue
+        selected.append(wanted_ad)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def _curated_material_previews(
+    materials: list[MaterialSummary],
+    curated_slots: tuple[CommunityGatewaySlot, ...],
+    *,
+    limit: int,
+) -> tuple[MaterialSummary, ...]:
+    materials_by_id = {item.material.id: item for item in materials}
+    selected = []
+    selected_ids = set()
+    for slot in curated_slots:
+        item = materials_by_id.get(slot.target_id)
+        if item is None or item.material.id in selected_ids:
+            continue
+        selected.append(item)
+        selected_ids.add(item.material.id)
+        if len(selected) >= limit:
+            return tuple(selected)
+    for item in materials:
+        if item.material.id in selected_ids:
+            continue
+        selected.append(item)
+        if len(selected) >= limit:
+            break
+    return tuple(selected)
+
+
+def _gateway_slots_by_type(
+    repo: ForumRepository,
+    community_id: int,
+) -> dict[str, tuple[CommunityGatewaySlot, ...]]:
+    slots_by_type: dict[str, list[CommunityGatewaySlot]] = {
+        GATEWAY_SLOT_SCENE_HUB: [],
+        GATEWAY_SLOT_WANTED_HOOK: [],
+        GATEWAY_SLOT_GUIDEBOOK_MATERIAL: [],
+    }
+    for slot in repo.list_community_gateway_slots(community_id):
+        slots_by_type.setdefault(slot.slot_type, []).append(slot)
+    return {slot_type: tuple(slots) for slot_type, slots in slots_by_type.items()}
+
+
+def _realm_gateway_continuation(
+    viewer: ForumView,
+    activation: WriterActivation | None,
+) -> RealmGatewayContinuation:
+    base = f"/c/{viewer.community.slug}"
+    if activation is not None and (activation.has_application_work or activation.needs_first_face):
+        return RealmGatewayContinuation(
+            audience="applicant",
+            title=activation.headline,
+            summary=activation.summary,
+            primary_action=RealmGatewayAction(
+                activation.primary_label,
+                _community_path(base, activation.primary_href),
+            ),
+            secondary_action=(
+                RealmGatewayAction(
+                    activation.secondary_label,
+                    _community_path(base, activation.secondary_href),
+                )
+                if activation.secondary_label and activation.secondary_href
+                else None
+            ),
+        )
+    if viewer.current_character is not None:
+        return RealmGatewayContinuation(
+            audience="member",
+            title=f"Continue writing as {viewer.current_character.name}",
+            summary="Return to Desk for reply pressure, watched scenes, and active-face work.",
+            primary_action=RealmGatewayAction("Open Desk", f"{base}/desk"),
+            secondary_action=RealmGatewayAction(
+                "View face",
+                f"{base}/characters/{viewer.current_character.slug}",
+            ),
+            active_face_label=viewer.current_character.name,
+        )
+    return RealmGatewayContinuation(
+        audience="applicant",
+        title="Start your first face",
+        summary="Create or continue an application before this membership can post in scenes.",
+        primary_action=RealmGatewayAction("Start application", f"{base}/applications/new"),
+        secondary_action=RealmGatewayAction("Review claims", f"{base}/claims"),
+    )
+
+
+def _community_path(base: str, href: str) -> str:
+    if href.startswith("/c/"):
+        return href
+    if href.startswith("/"):
+        return f"{base}{href}"
+    return f"{base}/{href}"
+
+
+def _community_href(program: StudioNetworkProgramView, path: str) -> str:
+    if path == "/":
+        return f"/c/{program.community.slug}"
+    return f"/c/{program.community.slug}{path}"
 
 
 def _display_label(value: str) -> str:
@@ -3590,8 +4496,8 @@ def _realm_launch_readiness(
                 is_complete=not theme_warnings,
             ),
             RealmLaunchChecklistItem(
-                label="Launch checklist",
-                summary="Public preview can open after required setup lanes are complete.",
+                label="Opening checklist",
+                summary="Public preview can open after required opening lanes are complete.",
                 href="/studio/launch",
                 cta="Open checklist",
                 is_complete=bool(public_scene_hubs)

@@ -2,6 +2,7 @@
   {% from "chirpui/layout.html" import container, stack %}
   {% from "chirpui/stat.html" import stat %}
   {% from "_components/boards.html" import board_signal, community_board_row %}
+  {% from "_components/realm_gateway.html" import realm_gateway_home %}
   {% from "_components/thread_summary.html" import activity_item, activity_log_item %}
 {% end %}
 
@@ -21,6 +22,9 @@
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
   {% set home_community = viewer.community if viewer else public_program.community %}
+  {% if realm_gateway %}
+  {{ realm_gateway_home(realm_gateway, viewer) }}
+  {% else %}
   {% set hero_treatment = home_community.world_hero_treatment or "split" %}
   {% set hero_uses_media = home_community.world_hero_image_url and hero_treatment != "text" %}
   <section class="elbysodic-world-hero elbysodic-world-hero--{{ hero_treatment }} elbysodic-world-hero--height-{{ home_community.world_hero_height or "standard" }} elbysodic-world-hero--overlay-{{ home_community.world_hero_overlay or "medium" }} elbysodic-world-hero--focal-{{ home_community.world_hero_focal_point or "center" }}{{ " elbysodic-world-hero--with-media" if hero_uses_media else "" }}">
@@ -68,93 +72,8 @@
     </figure>
     {% end %}
   </section>
-
-  {% if realm_gateway %}
-  {{ home_section_header("Premise and pressure", realm_gateway.premise.onboarding_pitch) }}
-
-  <div class="elbysodic-realm-gateway">
-    <article class="elbysodic-realm-gateway-card elbysodic-realm-gateway-card--premise">
-      <span class="elbysodic-material-card__type">Premise</span>
-      <strong>{{ realm_gateway.premise.premise_label }}</strong>
-      <p>{{ realm_gateway.premise.catalog_pitch }}</p>
-    </article>
-    <article class="elbysodic-realm-gateway-card">
-      <span class="elbysodic-material-card__type">Play</span>
-      <strong>{{ realm_gateway.premise.play_label }}</strong>
-      <p>{{ realm_gateway.premise.roster_posture }}</p>
-    </article>
-    <article class="elbysodic-realm-gateway-card">
-      <span class="elbysodic-material-card__type">{{ realm_gateway.atmosphere.label }}</span>
-      {% if realm_gateway.atmosphere.href %}
-      <a href="{{ realm_gateway.atmosphere.href }}"><strong>{{ realm_gateway.atmosphere.title }}</strong></a>
-      {% else %}
-      <strong>{{ realm_gateway.atmosphere.title }}</strong>
-      {% end %}
-      <p>{{ realm_gateway.atmosphere.copy }}</p>
-    </article>
-  </div>
-
-  {% if realm_gateway.scene_hubs %}
-  {{ home_section_header("Scene hubs", "Public places, institutions, and social rooms where threads can start.") }}
-
-  <div class="elbysodic-realm-hub-grid">
-    {% for hub in realm_gateway.scene_hubs %}
-    <a class="elbysodic-realm-hub-card" href="{{ hub.href }}">
-      <span class="elbysodic-material-card__type">{{ hub.board.board_kind }}</span>
-      <strong>{{ hub.board.name }}</strong>
-      <span>{{ hub.display_summary }}</span>
-      <em>{{ hub.public_thread_count }} public threads</em>
-    </a>
-    {% end %}
-  </div>
   {% end %}
-  {% end %}
-
-  {% if not viewer %}
-  {{ home_section_header("Ways in", "Public-safe entry paths before a writer has a face here.") }}
-
-  <div class="elbysodic-realm-entry-list">
-    {% for path in realm_gateway.entry_paths %}
-    <a class="elbysodic-realm-entry-row" href="{{ path.href }}"{{ ' hx-boost="false"' if path.href == "/request-access" else "" }}>
-      <span>
-        <strong>{{ path.title }}</strong>
-        <small>{{ path.summary }}</small>
-      </span>
-      <em>
-        {% if path.metric_value is not none %}
-        {{ path.metric_value }} {{ path.metric_label }}
-        {% else %}
-        {{ path.metric_label }}
-        {% end %}
-      </em>
-    </a>
-    {% end %}
-  </div>
-
-  {{ home_section_header("Start here", "Premise, current events, and public guidebook material directors have made visible.") }}
-
-  <div class="elbysodic-material-grid">
-    {% for item in guidebook.featured %}
-    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="/world/{{ item.material.slug }}">
-      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
-      <strong>{{ item.material.title }}</strong>
-      <span>{{ item.rendered_summary }}</span>
-    </a>
-    {% end %}
-    {% for item in guidebook.events[:2] %}
-    <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="/world/{{ item.material.slug }}">
-      <span class="elbysodic-material-card__type">{{ item.type_label }}</span>
-      <strong>{{ item.material.title }}</strong>
-      <span>{{ item.rendered_summary }}</span>
-    </a>
-    {% end %}
-  </div>
-
-  {% if public_program.open_wanted_count %}
-  {{ home_section_header("Wanted hooks", "Open roles and story invitations that can become a first writing lane.") }}
-  <a class="chirpui-btn chirpui-btn--secondary" href="/wanted">Browse {{ public_program.open_wanted_count }} wanted hooks</a>
-  {% end %}
-  {% else %}
+  {% if viewer and not realm_gateway %}
   {{ home_section_header("Locations", "In-character doors into the board's world, conflicts, and current event pressure.") }}
 
   <div class="elbysodic-location-grid">

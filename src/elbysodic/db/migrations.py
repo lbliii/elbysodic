@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 17
+CURRENT_SCHEMA_VERSION = 18
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -642,6 +642,32 @@ def _add_community_discovery_profiles(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_community_gateway_slots(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS community_gateway_slots (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            slot_type TEXT NOT NULL CHECK (
+                slot_type IN ('scene_hub', 'wanted_hook', 'guidebook_material')
+            ),
+            target_id INTEGER NOT NULL,
+            position INTEGER NOT NULL DEFAULT 0,
+            label TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, slot_type, target_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_community_gateway_slots_order
+        ON community_gateway_slots(community_id, slot_type, position, id)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -663,6 +689,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(15, "community-invitations", _add_community_invitations),
     Migration(16, "community-launch-status", _add_community_launch_status),
     Migration(17, "community-discovery-profiles", _add_community_discovery_profiles),
+    Migration(18, "community-gateway-slots", _add_community_gateway_slots),
 )
 
 

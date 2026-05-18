@@ -218,6 +218,108 @@ Deferred:
 - Reserve and claim rows remain deferred until they are backed by an explicit
   notification or deadline service contract.
 
+## Community Hub Editorial QA
+
+Date: 2026-05-18
+
+Scope: browser smoke and screenshot review for the public community hub
+editorial iteration, focused on Harbor Society and original-premise discovery
+variants.
+
+Verified:
+
+- `community-hub` browser profile passes on desktop and mobile for public
+  network searches plus Harbor Society, Signal Creek, Nocturne Row, and
+  Wayfarer Station.
+- Harbor Society first viewport now sells genre, access posture, writing fit,
+  premise pressure, open calls, and the current story without readiness metrics.
+- Public places, scenes, entry paths, lore, cast, social lanes, and wanted hooks
+  render without repeated child labels such as `Scene hub`, `Wanted hook`, or
+  `Current Chapter:` stacks.
+- Active public scene threads appear in the visitor surface while private and
+  locked routes remain out of the public read model.
+- Desktop and mobile screenshots avoid horizontal overflow, broken media, and
+  topbar height regressions.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-community-hub-qa/desktop-harbor-society-c-harbor-society.png`
+- `/private/tmp/elbysodic-community-hub-qa/mobile-harbor-society-c-harbor-society.png`
+- `/private/tmp/elbysodic-community-hub-qa/desktop-signal-creek-c-signal-creek.png`
+- `/private/tmp/elbysodic-community-hub-qa/mobile-wayfarer-station-c-wayfarer-station.png`
+
+Deferred:
+
+- Real user observation is still needed before archiving the iteration plan.
+- Richer director-authored premise-stage schema remains deferred until the
+  material-backed read model shows a concrete gap.
+
+## Community Premise Gateway QA
+
+Date: 2026-05-16
+
+Scope: browser smoke for the V2.1 premise gateway translation on original
+premise realm homes.
+
+Verified:
+
+- `/c/{community_slug}` renders through a service-owned `RealmGatewayView`
+  with hero, `Now playing`, first-face path, signal band, scene hubs, wanted
+  previews, entry paths, and member continuation.
+- Public gateway proof covers no-event/social, mystery, and frontier pressure
+  seeds through `harbor-society`, `signal-creek`, and `wayfarer-station`.
+- Public visitors see tenant-scoped wanted, guidebook, scene-hub, and request
+  access links without active-face, Desk, staff, application-review, unread, or
+  private-board signals.
+- Signed-in members keep the premise gateway orientation and gain a compact
+  continuation lane for the active face before the existing member home
+  sections.
+- Desktop and mobile premise browser QA passed with no horizontal overflow,
+  broken media, unusual topbar height, or text/control overflow.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-gateway-premise-qa`
+
+Deferred:
+
+- Full applicant-owned continuation for existing draft application state.
+- Curated public scene rows beyond service-derived scene hubs.
+
+## Realm Gateway Second-Wave QA
+
+Date: 2026-05-16
+
+Scope: browser and rendered-route proof for the second premise gateway wave on
+`/c/{community_slug}`.
+
+Verified:
+
+- Applicant continuation now uses writer activation state, so draft
+  first-face work resumes at the tenant-scoped draft application path.
+- Public scene previews render only open public scenes and exclude private
+  board/thread activity.
+- Scene hubs are ranked by emphasis and public thread activity before the
+  four-card gateway limit.
+- No-media and no-wanted public gateways render the monogram fallback, keep the
+  request-access path, and omit wanted sections instead of showing empty
+  hook chrome.
+- The premise browser profile passed across desktop and mobile with no
+  horizontal overflow, broken media, unusually tall topbar, or text/control
+  overflow.
+- Follow-up content cleanup removed the old signed-in board/activity index from
+  the gateway-first home and replaced generic gateway helper copy with
+  premise/event/hub/material-derived text.
+
+Artifacts:
+
+- `/private/tmp/elbysodic-gateway-premise-qa-wave2`
+
+Deferred:
+
+- Curated or director-pinned public scene rows remain deferred until a real
+  curation contract exists.
+
 ## Scene Plotting Grounding QA
 
 Date: 2026-05-15

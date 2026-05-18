@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title">
+  <title id="title">Marina hotel beside dark water and lit windows</title>
+  <rect width="1200" height="700" fill="#f3ead9"/>
+  <path d="M0 500h1200v200H0z" fill="#466f78"/>
+  <path d="M250 180h540v320H250z" fill="#fff7e5"/>
+  <path d="M220 180h600l-80-85H300z" fill="#b74b55"/>
+  <path d="M330 250h70v78h-70zM450 250h70v78h-70zM570 250h70v78h-70zM690 250h70v78h-70z" fill="#f2c56d"/>
+  <path d="M330 370h70v78h-70zM450 370h70v78h-70zM570 370h70v78h-70zM690 370h70v78h-70z" fill="#f2c56d"/>
+  <path d="M505 420h120v80H505z" fill="#6b4b35"/>
+  <path d="M850 410h150l70 90H820z" fill="#fff7e5"/>
+  <path d="M885 370h80l35 40H850z" fill="#b74b55"/>
+  <path d="M835 540h250M790 590h310" stroke="#f7e6c8" stroke-width="18"/>
+  <path d="M130 520h260M170 570h180" stroke="#f2c56d" stroke-width="12"/>
+</svg>

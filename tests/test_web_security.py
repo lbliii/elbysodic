@@ -236,35 +236,36 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Staff in X-Men Apocalypse" not in login.text
         assert request_access.status == 200
         assert "Access opens through a director invitation." in request_access.text
-        assert "Public registration is not open yet." in request_access.text
+        assert "Public registration is closed for now." in request_access.text
         assert "_csrf_token" not in request_access.text
         assert "chirpui-sidebar__section-title" not in request_access.text
         assert studio.status == 302
         assert dict(studio.headers)["location"] == "/login?next=/studio"
         assert tenant.status == 200
-        assert "Public realm preview" in tenant.text
+        assert "elbysodic-realm-gateway-hero" in tenant.text
+        assert "What it opens" in tenant.text
         assert "Current Event: B-24 Winter" in tenant.text
         assert "starlane" not in tenant.text
         assert "playing as Rogue" not in tenant.text
         assert "elbysodic-identity-menu" not in tenant.text
         assert tenant_world.status == 200
-        assert "World studio" in tenant_world.text
+        assert "World guide" in tenant_world.text
         assert "Application Guide" in tenant_world.text
-        assert "Material studio" not in tenant_world.text
+        assert "Edit guidebook page" not in tenant_world.text
         assert tenant_material.status == 200
         assert "begins after the school has reopened under a fragile truce" in (
             tenant_material.text
         )
         assert "Active scenes" not in tenant_material.text
-        assert "Material studio" not in tenant_material.text
+        assert "Edit guidebook page" not in tenant_material.text
         assert tenant_wanted.status == 200
         assert "Brotherhood rival from Rogue" in tenant_wanted.text
         assert 'href="/c/x-men-apocalypse/characters/rogue"' not in tenant_wanted.text
         assert tenant_wanted_detail.status == 200
         assert "Rogue needs someone who remembers" in tenant_wanted_detail.text
         assert "Log in to raise interest" in tenant_wanted_detail.text
-        assert "Hook lifecycle" not in tenant_wanted_detail.text
-        assert "Raised hands" not in tenant_wanted_detail.text
+        assert "Interest and reserves" not in tenant_wanted_detail.text
+        assert "Interest" not in tenant_wanted_detail.text
         assert tenant_applications.status == 302
         assert dict(tenant_applications.headers)["location"] == (
             "/login?next=%2Fc%2Fx-men-apocalypse%2Fapplications"
@@ -291,8 +292,8 @@ def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
         assert root.status == 200
         assert network.status == 200
         for response in (root, network):
-            assert "Launch state" in response.text
-            assert "The first realm is still backstage." in response.text
+            assert "Opening soon" in response.text
+            assert "The first realm is still preparing to open." in response.text
             assert "wanted hooks, faces, scenes, and current events" in response.text
             assert 'href="/request-access"' in response.text
             assert 'href="/login?next=/"' in response.text
@@ -336,8 +337,8 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         assert root.status == 200
         assert network.status == 200
         for response in (root, network):
-            assert "Launch state" in response.text
-            assert "The first realm is still backstage." in response.text
+            assert "Opening soon" in response.text
+            assert "The first realm is still preparing to open." in response.text
             assert "Starter Realm" not in response.text
             assert "starter-realm" not in response.text
         assert direct_preview.status == 404
@@ -346,7 +347,7 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         assert "Starter Director" not in direct_world.text
         assert login.status == 302
         assert director_network.status == 200
-        assert "The first realm is still backstage." in director_network.text
+        assert "The first realm is still preparing to open." in director_network.text
         assert "Starter Director" in director_network.text
         assert "Director in Starter Realm" in director_network.text
         assert (
@@ -474,7 +475,7 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         "Premise engine",
         "Play engine",
         "Lore aperture",
-        "Ways in",
+        "Start here",
         "Pace and touchpoints",
         "Roster posture",
     }

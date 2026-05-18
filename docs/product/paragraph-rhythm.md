@@ -7,6 +7,9 @@ atmosphere, summary, helper copy, metadata, status, or empty-state guidance.
 Use this guide before adding or changing paragraph output in templates,
 components, composer previews, rendered markup, hero sections, cards, forms, or
 post frames.
+Use `docs/product/typography-strategy.md` alongside it when a text element is a
+heading, eyebrow, label, metadata line, or public-story shelf title rather than
+paragraph-like copy.
 
 ## Inventory Baseline
 
@@ -154,6 +157,10 @@ Contract:
 - Uppercase, compact, and strong enough to orient the section.
 - Never carry paragraph rhythm or prose spacing.
 - Use only with a named kicker/type class.
+- Never compete with the adjacent heading. A kicker is quieter than the title in
+  size, weight, color, and meaning.
+- Do not require kickers in public shelf components; most public shelves should
+  use a title and optional intro instead.
 
 If the text is the actual section heading, use a heading element instead.
 
