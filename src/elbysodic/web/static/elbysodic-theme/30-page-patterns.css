@@ -752,6 +752,28 @@
     text-align: end;
 }
 
+.elbysodic-home-section-header--qualified {
+    align-items: start;
+    display: grid;
+    gap: 0.2rem;
+    justify-content: start;
+}
+
+.elbysodic-home-section-header--qualified h2 {
+    font-size: var(--chirpui-font-xl);
+    max-inline-size: 34rem;
+}
+
+.elbysodic-home-section-header--qualified .elbysodic-section-kicker {
+    color: color-mix(in srgb, var(--chirpui-text-muted) 78%, transparent);
+    font-size: 0.68rem;
+    font-weight: 750;
+}
+
+.elbysodic-home-section-header--qualified p {
+    text-align: start;
+}
+
 .elbysodic-quiet-empty {
     background: color-mix(in srgb, var(--chirpui-surface) 52%, transparent);
     border: 1px solid color-mix(in srgb, var(--chirpui-border) 58%, transparent);
