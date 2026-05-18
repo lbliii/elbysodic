@@ -2108,6 +2108,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert gateway.hero.secondary_action.href.startswith(f"/c/{community_slug}/world")
         assert gateway.premise.onboarding_pitch == onboarding_pitch
         assert gateway.premise.premise_label == premise_label
+        assert gateway.story_frame.eyebrow == premise_label
+        assert gateway.story_frame.access_label == "Public preview"
+        assert gateway.story_frame.rating_label
+        assert gateway.story_frame.cadence_label
+        assert gateway.story_frame.writing_expectation
+        assert gateway.story_frame.roster_posture
         assert gateway.signals
         assert "Open calls" in {signal.title for signal in gateway.signals}
         assert "Scene hubs ready" in {signal.title for signal in gateway.signals}
@@ -2164,6 +2170,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Now playing" in content
                 assert "First face path" in content
                 assert "Play readiness" not in content
+                assert "Public preview" in content
+                if community_slug == "harbor-society":
+                    assert "21+ / 2/2/2" in content
                 assert premise_label in content
                 assert onboarding_pitch in content
                 assert "Places" in content
@@ -2313,6 +2322,7 @@ def test_realm_gateway_home_tolerates_missing_scene_previews(
             guidebook=gateway.guidebook,
             hero=gateway.hero,
             premise=gateway.premise,
+            story_frame=gateway.story_frame,
             atmosphere=gateway.atmosphere,
             signals=gateway.signals,
             scene_hubs=gateway.scene_hubs,
@@ -2331,7 +2341,7 @@ def test_realm_gateway_home_tolerates_missing_scene_previews(
 
             assert response.status == 200
             assert "X-Men Apocalypse" in content
-            assert "Scene hubs" in content
+            assert "In play" in content
             assert "Playable now" not in content
 
     asyncio.run(run())

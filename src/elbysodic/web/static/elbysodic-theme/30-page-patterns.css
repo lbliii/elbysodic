@@ -792,6 +792,26 @@
     align-items: center;
 }
 
+.elbysodic-realm-gateway-fit {
+    color: var(--chirpui-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--chirpui-font-sm);
+    gap: var(--chirpui-space-2);
+    margin-block: -0.15rem 0;
+}
+
+.elbysodic-realm-gateway-fit span {
+    align-items: center;
+    display: inline-flex;
+}
+
+.elbysodic-realm-gateway-fit span + span::before {
+    color: color-mix(in srgb, var(--chirpui-text-muted), transparent 40%);
+    content: "/";
+    margin-inline-end: var(--chirpui-space-2);
+}
+
 .elbysodic-realm-gateway-hero h1 {
     font-family: var(--elbysodic-display-font-family);
     font-size: clamp(2.5rem, 9vw, 5.4rem);
@@ -806,6 +826,12 @@
     line-height: 1.55;
     margin: 0;
     max-inline-size: 46rem;
+}
+
+.elbysodic-realm-gateway-writing {
+    color: var(--chirpui-text-muted);
+    margin: 0;
+    max-inline-size: 42rem;
 }
 
 .elbysodic-realm-gateway-now,

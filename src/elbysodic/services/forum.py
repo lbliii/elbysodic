@@ -281,6 +281,7 @@ from elbysodic.services.read_models import (
     RealmGatewaySceneHub,
     RealmGatewayScenePreview,
     RealmGatewaySignalItem,
+    RealmGatewayStoryFrame,
     RealmGatewayView,
     RealmGatewayWantedPreview,
     RealmInteractionDetail,
@@ -3536,6 +3537,7 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         guidebook=guidebook,
         hero=_realm_gateway_hero(program, premise, atmosphere),
         premise=premise,
+        story_frame=_realm_gateway_story_frame(program, premise),
         atmosphere=atmosphere,
         signals=_realm_gateway_signals(program, guidebook, scene_hubs),
         scene_hubs=scene_hubs,
@@ -3632,6 +3634,37 @@ def _realm_gateway_hero(
         first_face_path=premise.onboarding_pitch,
         primary_action=primary_action,
         secondary_action=secondary_action if secondary_action.href != primary_action.href else None,
+    )
+
+
+def _realm_gateway_story_frame(
+    program: StudioNetworkProgramView,
+    premise: RealmGatewayPremise,
+) -> RealmGatewayStoryFrame:
+    profile = premise.discovery_profile
+    rating_parts = []
+    if profile is not None:
+        rating_parts.extend(
+            label
+            for label in (profile.age_rating.strip(), profile.content_rating.strip())
+            if label
+        )
+    rating_label = " / ".join(rating_parts) if rating_parts else "Rating set by directors"
+    cadence_label = (
+        _display_label(profile.activity_pace) if profile is not None else "Scene-driven pace"
+    )
+    writing_expectation = (
+        profile.activity_expectation.strip()
+        if profile is not None and profile.activity_expectation.strip()
+        else "Scene cadence, writing length, and fit are set by the realm's public guidebook."
+    )
+    return RealmGatewayStoryFrame(
+        eyebrow=premise.premise_label,
+        access_label=program.invite_posture_label,
+        rating_label=rating_label,
+        cadence_label=cadence_label,
+        writing_expectation=writing_expectation,
+        roster_posture=premise.roster_posture,
     )
 
 

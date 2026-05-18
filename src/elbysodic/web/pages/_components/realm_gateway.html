@@ -25,16 +25,15 @@
 {% def gateway_hero(gateway) %}
 <section class="elbysodic-realm-gateway-hero" aria-labelledby="realm-gateway-title">
   <div class="elbysodic-realm-gateway-hero__copy">
-    <div class="elbysodic-realm-gateway-hero__signals" aria-label="Realm status">
-      {{ badge(gateway.program.invite_posture_label, variant="info") }}
-      {{ badge(gateway.atmosphere.label, variant="info") }}
-      {% if gateway.program.open_wanted_count %}
-      {{ badge(gateway.program.open_wanted_count ~ " wanted hooks", variant="warning") }}
-      {% end %}
-    </div>
-    <p class="elbysodic-section-kicker">{{ gateway.hero.kicker }}</p>
+    <p class="elbysodic-section-kicker">{{ gateway.story_frame.eyebrow }}</p>
     <h1 id="realm-gateway-title">{{ gateway.hero.title }}</h1>
     <p class="elbysodic-copy-lead">{{ gateway.hero.lead }}</p>
+    <div class="elbysodic-realm-gateway-fit" aria-label="Story fit">
+      {% for label in gateway.story_frame.fit_labels %}
+      <span>{{ label }}</span>
+      {% end %}
+    </div>
+    <p class="elbysodic-realm-gateway-writing">{{ gateway.story_frame.writing_expectation }}</p>
     <div class="elbysodic-realm-gateway-now" aria-label="Now playing">
       <strong>Now playing</strong>
       <span>{{ gateway.hero.now_playing_label }}: {{ gateway.hero.now_playing_copy }}</span>

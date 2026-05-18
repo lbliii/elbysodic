@@ -1881,6 +1881,26 @@ class RealmGatewayPremise:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayStoryFrame:
+    eyebrow: str
+    access_label: str
+    rating_label: str
+    cadence_label: str
+    writing_expectation: str
+    roster_posture: str
+
+    @property
+    def fit_labels(self) -> tuple[str, ...]:
+        labels = [
+            self.access_label,
+            self.rating_label,
+            self.cadence_label,
+            self.roster_posture,
+        ]
+        return tuple(label for label in labels if label)
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayAtmosphere:
     title: str
     label: str
@@ -1960,6 +1980,7 @@ class RealmGatewayView:
     guidebook: WorldHub
     hero: RealmGatewayHero
     premise: RealmGatewayPremise
+    story_frame: RealmGatewayStoryFrame
     atmosphere: RealmGatewayAtmosphere
     signals: tuple[RealmGatewaySignalItem, ...]
     scene_hubs: tuple[RealmGatewaySceneHub, ...]
