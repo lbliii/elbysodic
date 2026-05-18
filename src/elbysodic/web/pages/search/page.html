@@ -1,6 +1,5 @@
 {% imports %}
   {% from "chirpui/layout.html" import container, stack %}
-  {% from "chirpui/surface.html" import surface %}
 {% end %}
 
 {% def scoped_search_form(search) %}
@@ -27,7 +26,7 @@
 <section class="elbysodic-search-hero" aria-labelledby="search-heading">
   <div>
     <p class="elbysodic-section-kicker">{{ "All realms" if scoped_search.scope_kind == "global" else "Current realm" }}</p>
-    <h1 id="search-heading">Search {{ scoped_search.scope_label }}</h1>
+    <h1 id="search-heading">Search</h1>
   </div>
   {{ scoped_search_form(scoped_search) }}
   {% if scoped_search.broaden_href %}
@@ -46,7 +45,10 @@
     </div>
     {% for section in scoped_search.sections %}
     <section class="elbysodic-search-section" aria-labelledby="search-section-{{ loop.index }}">
-      <h2 id="search-section-{{ loop.index }}">{{ section.title }}</h2>
+      <div class="elbysodic-search-section__header">
+        <h2 id="search-section-{{ loop.index }}">{{ section.title }}</h2>
+        <span>{{ section.results | length }}</span>
+      </div>
       <div class="elbysodic-search-list">
         {% for result in section.results %}
         <a class="elbysodic-search-result" href="{{ result.href }}">
@@ -64,14 +66,26 @@
     {% end %}
   </section>
   {% else %}
-  {% call surface(variant="elevated") %}
-  <p class="elbysodic-empty-state">No public results match "{{ scoped_search.query }}" here yet.</p>
-  {% end %}
+  <section class="elbysodic-search-empty" aria-label="No search results">
+    <h2>No matches yet</h2>
+    <p>Try fewer words, a place name, a face, or a premise phrase.</p>
+    {% if scoped_search.broaden_href %}
+    <a href="{{ scoped_search.broaden_href }}" data-elbysodic-global-link>Search all realms</a>
+    {% else %}
+    <a href="/network">Browse realms</a>
+    {% end %}
+  </section>
   {% end %}
 {% else %}
-{% call surface(variant="elevated") %}
-<p class="elbysodic-empty-state">Search from the current scope, or broaden to the network when you need a new realm.</p>
-{% end %}
+<section class="elbysodic-search-empty" aria-label="Search prompt">
+  <h2>Start with a few words</h2>
+  <p>{{ "Try a premise, pace, hook, or roster shape." if scoped_search.scope_kind == "global" else "Try a place, scene, face, hook, or guidebook title." }}</p>
+  {% if scoped_search.broaden_href %}
+  <a href="{{ scoped_search.broaden_href }}" data-elbysodic-global-link>Search all realms</a>
+  {% else %}
+  <a href="/network">Browse realms</a>
+  {% end %}
+</section>
 {% end %}
 {% end %}
 {% end %}

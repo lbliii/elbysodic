@@ -1909,6 +1909,7 @@ def test_global_search_renders_public_realm_results() -> None:
 
         assert response.status == 200
         assert "Search All realms" in response.text
+        assert "elbysodic-search-section__header" in response.text
         assert "HP Universe" in response.text
         assert "2 wanted · 3 faces" in response.text
         assert 'href="/c/hp-universe"' in response.text
@@ -1928,6 +1929,7 @@ def test_community_search_scopes_to_public_realm_results() -> None:
         assert 'href="/search?q=ledger"' in response.text
         assert "The Ledger Page Under Table Six" in response.text
         assert "Scenes" in response.text
+        assert "Try a place, scene, face, hook, or guidebook title." not in response.text
 
     asyncio.run(run())
 
