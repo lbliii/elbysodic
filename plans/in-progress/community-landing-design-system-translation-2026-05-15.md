@@ -4,7 +4,7 @@ Status: implementation pass landed on `codex/community-gateway-plan`; final
 merge/review pending
 Owner: Product design, Chirp/web, service, privacy, tests, and docs stewardship
 Created: 2026-05-15
-Last updated: 2026-05-16
+Last updated: 2026-05-18
 Review by: 2026-05-29
 Closure criteria: the community landing V2 prototype is translated into
 service-owned public/member/applicant read models, Chirp-composed Elbysodic
@@ -52,6 +52,17 @@ Content cleanup:
 - Hid legacy signed-in home activity/index rows when a gateway exists; those
   workflows live in Desk, Locations, and board routes.
 
+Curated gateway follow-up:
+
+- Added tenant-scoped `community_gateway_slots` storage for curated scene hubs,
+  wanted hooks, and guidebook materials.
+- Rendered curated gateway slots ahead of derived fallback content, while
+  omitting stale private boards, closed wanted hooks, and draft materials.
+- Added Studio gateway curation so directors can select, order, remove, and
+  preview public home-page slots without raw layout controls or generated copy.
+- Replaced the remaining original-premise demo "Wanted thread start" scaffold
+  with board/face-specific first-scene language.
+
 Proof captured so far:
 
 - `uv run ruff check src/elbysodic/services/read_models.py src/elbysodic/services/forum.py src/elbysodic/web/pages/page.py tests/test_forum_slice.py`
@@ -67,6 +78,8 @@ Proof captured so far:
 - `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"`
 - `make changelog-check`
 - `uv run pytest -q --tb=short`
+- `uv run pytest tests/test_tenant_repository.py -q --tb=short`
+- `uv run pytest tests/test_forum_slice.py -q --tb=short -k "gateway_curation or realm_gateway or gateway"`
 
 Remaining before merge:
 

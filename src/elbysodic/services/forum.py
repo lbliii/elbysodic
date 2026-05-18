@@ -3428,7 +3428,9 @@ def _gateway_curation_scene_hubs(
             GatewayCurationChoice(
                 target_id=summary.board.id,
                 title=summary.board.name,
-                summary=summary.board.tagline or summary.board.description or summary.kind_label,
+                summary=summary.board.tagline
+                or summary.board.description
+                or _display_label(summary.board.board_kind),
                 href=f"/c/{community_slug}/boards/{summary.board.slug}",
                 is_selected=slot is not None,
                 position_value=slot.position if slot is not None else (index + 1) * 10,
@@ -3450,9 +3452,7 @@ def _gateway_curation_wanted_hooks(
 ) -> GatewayCurationSection:
     slots_by_target_id = {slot.target_id: slot for slot in slots}
     choices = []
-    for index, summary in enumerate(
-        item for item in wanted_ads if item.wanted_ad.status == "open"
-    ):
+    for index, summary in enumerate(item for item in wanted_ads if item.wanted_ad.status == "open"):
         slot = slots_by_target_id.get(summary.wanted_ad.id)
         choices.append(
             GatewayCurationChoice(
@@ -3994,8 +3994,9 @@ def _realm_gateway_wanted_previews(
     limit: int = 3,
 ) -> tuple[RealmGatewayWantedPreview, ...]:
     wanted_ads = repo.list_wanted_ads(program.community.id, status="open")
+    ordered_wanted_ads = _curated_wanted_ads(wanted_ads, curated_slots, limit=limit)
     previews = []
-    for wanted_ad in wanted_ads:
+    for wanted_ad in ordered_wanted_ads:
         summary = _public_wanted_ad_summary(repo, program.community.id, wanted_ad)
         previews.append(
             RealmGatewayWantedPreview(
@@ -4008,7 +4009,7 @@ def _realm_gateway_wanted_previews(
                 ),
             )
         )
-    return _curated_wanted_previews(previews, wanted_ads, curated_slots, limit=limit)
+    return tuple(previews)
 
 
 def _realm_gateway_guidebook_previews(
@@ -4021,33 +4022,30 @@ def _realm_gateway_guidebook_previews(
     return _curated_material_previews(materials, curated_slots, limit=limit)
 
 
-def _curated_wanted_previews(
-    previews: list[RealmGatewayWantedPreview],
+def _curated_wanted_ads(
     wanted_ads: list[WantedAd],
     curated_slots: tuple[CommunityGatewaySlot, ...],
     *,
     limit: int,
-) -> tuple[RealmGatewayWantedPreview, ...]:
-    preview_by_wanted_id = {
-        wanted_ad.id: preview for wanted_ad, preview in zip(wanted_ads, previews, strict=True)
-    }
+) -> list[WantedAd]:
+    wanted_by_id = {wanted_ad.id: wanted_ad for wanted_ad in wanted_ads}
     selected = []
     selected_ids = set()
     for slot in curated_slots:
-        preview = preview_by_wanted_id.get(slot.target_id)
-        if preview is None or slot.target_id in selected_ids:
+        wanted_ad = wanted_by_id.get(slot.target_id)
+        if wanted_ad is None or wanted_ad.id in selected_ids:
             continue
-        selected.append(preview)
-        selected_ids.add(slot.target_id)
+        selected.append(wanted_ad)
+        selected_ids.add(wanted_ad.id)
         if len(selected) >= limit:
-            return tuple(selected)
-    for wanted_ad, preview in zip(wanted_ads, previews, strict=True):
+            return selected
+    for wanted_ad in wanted_ads:
         if wanted_ad.id in selected_ids:
             continue
-        selected.append(preview)
+        selected.append(wanted_ad)
         if len(selected) >= limit:
             break
-    return tuple(selected)
+    return selected
 
 
 def _curated_material_previews(
