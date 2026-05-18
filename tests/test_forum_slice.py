@@ -2272,6 +2272,14 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
         material_type="premise",
         summary="A quiet realm where the public premise and one scene hub are enough to begin.",
     )
+    repo.create_material(
+        public_community.id,
+        "quiet-harbor-draft-event",
+        "Draft Event: Locked Harbor",
+        material_type="event",
+        summary="Director-only pressure that must stay out of the public gateway.",
+        status="draft",
+    )
     repo.create_board(
         public_community.id,
         "main-street",
@@ -2288,6 +2296,8 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
     assert gateway.premise_evolution.source_kind == "premise"
     assert gateway.premise_evolution.current_pressure_title == "Quiet Harbor Premise"
     assert gateway.premise_evolution.next_openings.startswith("Read the public premise")
+    assert "Locked Harbor" not in gateway.premise_evolution.current_pressure_title
+    assert "Director-only pressure" not in gateway.premise_evolution.current_pressure_summary
     assert gateway.hero.primary_action.label == "Request access"
     assert gateway.hero.primary_action.href == "/c/quiet-harbor/request-access"
     assert gateway.hero.primary_action.is_hx_boost_safe is False
@@ -2320,6 +2330,8 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
 
             assert response.status == 200
             assert "Quiet Harbor Premise" in content
+            assert "Locked Harbor" not in content
+            assert "Director-only pressure" not in content
             assert "Main Street" in content
             assert "Request access" in content
             assert "/c/quiet-harbor/request-access" in response.text
