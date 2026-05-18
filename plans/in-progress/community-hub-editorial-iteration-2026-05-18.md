@@ -1,6 +1,6 @@
 # Community Hub Editorial Iteration
 
-Status: implementation wave landed; monitor preview feedback before archive
+Status: implementation wave landed; follow-up saga planned
 Owner: Product design, Writer Network, Realm Studio, service, web, storage/seed,
 tests, and surface-contract stewardship
 Created: 2026-05-18
@@ -124,6 +124,143 @@ Member continuation may appear above or near the story frame only when signed
 in, but it must stay visually distinct from the public editorial promise.
 
 ## Implementation Slices
+
+## Follow-Up Saga Backlog
+
+These epics are the next saga after the current community hub copy and
+typography sweep. They should be split into PR-sized passes before
+implementation. Each accepted pass needs rendered proof, copy-quality proof, and
+privacy proof where public/member state differs.
+
+### Epic 1: Community Hub As Story Poster
+
+Goal: make `/c/{community_slug}` sell the realm immediately as a story world,
+not a dashboard.
+
+Tasks:
+
+1. Define the hub content contract: hero, genre/style, premise stage, lore,
+   cast, factions, places, scenes, wanted, and join/read paths.
+2. Redesign the public hub layout around progressive disclosure: poster hero,
+   story state, lore/cast/places, then activity.
+3. Replace stats-first modules with story-first modules.
+4. Add visitor CTAs for read, join, answer a wanted, browse cast, and browse
+   guidebook.
+5. Add rendered tests proving no planning/internal copy appears on the hub.
+6. Visual QA the hub on desktop and mobile.
+
+### Epic 2: Premise Evolution Model
+
+Goal: stop faking "current chapter" with labels and give the app real
+story-stage data.
+
+Tasks:
+
+1. Design the premise-stage read contract: premise, inciting incident, current
+   pressure, consequences, and next openings.
+2. Add repository/service methods only after existing material-derived data
+   proves insufficient.
+3. Seed Harbor Society with real staged premise data.
+4. Render premise stage on the hub and guidebook without repeated
+   `Current Chapter:` labels.
+5. Add tests for public-safe premise-stage visibility.
+6. Document the contract in product docs.
+
+### Epic 3: Rich Seed/Data Maturity
+
+Goal: make demos good enough that the UI does not invent filler.
+
+Tasks:
+
+1. Audit Harbor Society seed data for missing lore, cast, factions, places,
+   scenes, wanted, and visual fields.
+2. Add canon characters with meaningful summaries, relationships, and public
+   hooks.
+3. Add faction/alliance/lore materials for Harbor Society.
+4. Add scene summaries that show actual play state.
+5. Add wanted hooks tied to cast, factions, places, and premise stage.
+6. Add tests that the hub renders real seeded story content, not fallback copy.
+
+### Epic 4: Copy Quality Guardrails
+
+Goal: prevent noisy copy from recurring.
+
+Tasks:
+
+1. Extend the banned-copy test list for public surfaces.
+2. Add duplicate-label checks for homogeneous shelves: wanted, scenes, places,
+   guidebook, and cast.
+3. Add tests for forbidden planning words such as `surface`, `read model`,
+   `workflow`, `entry path`, `catalog`, and `setup`.
+4. Add fixtures that render key pages and scan visible text.
+5. Document acceptable versus unacceptable copy examples.
+6. Add a review checklist item for copy hierarchy.
+
+### Epic 5: Shared Editorial Components
+
+Goal: make the right layout easier than the noisy layout.
+
+Tasks:
+
+1. Extract shared `story_hero`, `story_stage`, `lore_slice`, `cast_shelf`,
+   `place_shelf`, `wanted_shelf`, and `scene_shelf` shapes.
+2. Encode heading hierarchy into component APIs.
+3. Remove per-card type labels where section context already supplies meaning.
+4. Make optional supporting copy visually subordinate by default.
+5. Add component-level rendered tests.
+6. Replace page-local hub markup with shared components.
+
+### Epic 6: Visual Story System
+
+Goal: make realms feel cinematic and editorial, not database-backed.
+
+Tasks:
+
+1. Define media fields needed for hero, places, cast, factions, lore, and
+   wanted.
+2. Add fallback rules for missing images that do not feel placeholder-heavy.
+3. Improve Harbor Society visual assets and alt text.
+4. Add CSS/token rules for public story surfaces: spacing, image ratio,
+   typography scale, and density.
+5. Verify desktop/mobile framing with screenshots.
+6. Add docs for realm visual direction.
+
+### Epic 7: Reader Pathways
+
+Goal: make visitor intent obvious without overexplaining.
+
+Tasks:
+
+1. Define visitor paths: read first, join, wanted-first, cast-first,
+   lore-first, and scene-first.
+2. Map each path to one primary CTA and one secondary CTA on the hub.
+3. Add service-owned pathway ranking based on realm data.
+4. Render pathways as contextual actions, not instructional text.
+5. Add tests for anonymous, member, and current-member CTA differences.
+6. Check privacy boundaries for public visitor paths.
+
+### Epic 8: Surface Sweep II
+
+Goal: apply the new quality bar everywhere else.
+
+Tasks:
+
+1. Sweep claims, applications, guidebook detail, character, locations, scenes,
+   Studio, and Desk.
+2. Remove duplicate child labels and flat supporting text.
+3. Replace title-case/admin labels where they are not needed.
+4. Add missing tests for each swept page.
+5. Update docs where guidance changes reusable patterns.
+6. Run full rendered smoke and focused visual QA.
+
+Recommended order:
+
+1. Epic 2 and Epic 3 first: data contract and mature story data.
+2. Epic 1 next: hub redesign using real data.
+3. Epic 5 and Epic 6 after the hub shape stabilizes.
+4. Epic 4 throughout, hardened after patterns are proven.
+5. Epic 7 alongside Epic 1.
+6. Epic 8 last as the cleanup wave.
 
 ### Task 1: Hub Story Contract
 
