@@ -2094,6 +2094,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             "Weird Town Mystery",
             "cult-survivor-who-remembers-1998",
         ),
+        "nocturne-row": (
+            "The treaty breach gives every faction, witness, and bystander a reason to move before daylight.",
+            "Emberline District",
+            "Urban Supernatural Pressure Cooker",
+            "blood-bank-whistleblower",
+        ),
         "wayfarer-station": (
             "The missing convoy has already tightened supplies, stirred old debts, and made the station listen.",
             "Docking Ring",
@@ -2173,6 +2179,20 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             assert "The Ledger Page Under Table Six" in gateway.premise_evolution.consequences
             assert "Breakfast Before The Vote" in gateway.premise_evolution.consequences
             assert "Reporter source at the club" in gateway.premise_evolution.next_openings
+        expected_scene_titles = {
+            "harbor-society": {
+                "The Ledger Page Under Table Six",
+                "Breakfast Before The Vote",
+            },
+            "signal-creek": {
+                "The Voice On The Old Feed",
+                "Diner Map Of Missing Hours",
+            },
+            "nocturne-row": {
+                "Witness Video At Last Call",
+                "Emergency Court Before Dawn",
+            },
+        }
         assert scene_hub in {hub.board.name for hub in gateway.scene_hubs}
         assert all(
             hub.emphasis in {"normal", "featured", "hot", "high_activity"}
@@ -2200,11 +2220,11 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         )
         assert all(preview.summary for preview in gateway.wanted_previews)
         assert all(not hub.board.is_private for hub in gateway.scene_hubs)
+        if community_slug in expected_scene_titles:
+            scene_titles = {preview.title for preview in gateway.scene_previews}
+            assert expected_scene_titles[community_slug] <= scene_titles
         if community_slug == "harbor-society":
-            harbor_scene_titles = {preview.title for preview in gateway.scene_previews}
             harbor_scene_summaries = {preview.summary for preview in gateway.scene_previews}
-            assert "The Ledger Page Under Table Six" in harbor_scene_titles
-            assert "Breakfast Before The Vote" in harbor_scene_titles
             assert any("auction covered a private debt" in text for text in harbor_scene_summaries)
             assert any("donor calls and campaign flyers" in text for text in harbor_scene_summaries)
 
@@ -2249,6 +2269,12 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "The Ledger Page Under Table Six" in content
                     assert "Breakfast Before The Vote" in content
                     assert "Reporter source at the club" in content
+                if community_slug == "signal-creek":
+                    assert "The Voice On The Old Feed" in content
+                    assert "Diner Map Of Missing Hours" in content
+                if community_slug == "nocturne-row":
+                    assert "Witness Video At Last Call" in content
+                    assert "Emergency Court Before Dawn" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
                 assert "Calls to answer" in content

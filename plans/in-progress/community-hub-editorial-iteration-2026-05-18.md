@@ -465,8 +465,8 @@ Remaining data gaps before the full poster-style hub:
 - Marina Hotel and Harbor Ledger need visual assets or stronger fallback art
   rules before a cinematic place shelf can feel complete.
 - Existing public scene summaries now show actual conflict and cast stakes for
-  Harbor Society; Signal Creek and the third QA archetype still need the same
-  treatment before final browser QA.
+  Harbor Society, Signal Creek, and Nocturne Row. Wayfarer Station still needs
+  the same treatment before final browser QA.
 - Wanted hooks are strong enough for a shelf, but the hub needs tests proving
   these render as story invitations without repeating `Wanted hook` or
   `Current Chapter:` labels.

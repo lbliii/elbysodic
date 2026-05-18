@@ -6298,6 +6298,64 @@ def _seed_original_premise_depth(
             "August Reed took the hint, folded the wrong campaign flyer into his "
             "notebook, and asked which family wanted the question buried by noon."
         )
+    elif program.slug == "signal-creek":
+        opening_slug = "voice-on-the-old-feed"
+        opening_title = "The Voice On The Old Feed"
+        opening_summary = (
+            "Ira keeps the observatory recording live while Mae and Lena argue "
+            "over why the missing hiker is describing 1998."
+        )
+        opening_first_post = (
+            "Ira Bell left the receiver running after the hiker named a road that "
+            "had not existed in twenty-eight years."
+        )
+        opening_second_post = (
+            "Sheriff Mae Kincaid put the search map on the desk and asked Lena "
+            "Ortiz which version of town history she was about to deny."
+        )
+        followup_slug = "diner-map-of-missing-hours"
+        followup_title = "Diner Map Of Missing Hours"
+        followup_summary = (
+            "Mae, Lena, and Cal turn a breakfast crowd into witnesses when three "
+            "trail reports disagree about the same twelve hours."
+        )
+        followup_first_post = (
+            "Mae pinned the first flyer near the register, then watched everyone "
+            "in the diner pretend they had not heard the broadcast."
+        )
+        followup_second_post = (
+            "Lena marked the wrong hour on a napkin map and realized Cal Rivera "
+            "was staring at the one trail nobody had searched."
+        )
+    elif program.slug == "nocturne-row":
+        opening_slug = "witness-video-at-last-call"
+        opening_title = "Witness Video At Last Call"
+        opening_summary = (
+            "Marcel tries to contain the Emberline footage while Eliana and Ren "
+            "count which treaty protections failed on camera."
+        )
+        opening_first_post = (
+            "Marcel Voss watched the nightclub footage for the third time and "
+            "heard the crowd gasp before the missing elder crossed the frame."
+        )
+        opening_second_post = (
+            "Eliana Crowe named the treaty clauses the council would invoke, then "
+            "asked who had already edited the witness audio."
+        )
+        followup_slug = "emergency-court-before-dawn"
+        followup_title = "Emergency Court Before Dawn"
+        followup_summary = (
+            "Eliana, Ren, and Jules arrive at Covenant Hall before sunrise with "
+            "different reasons to keep the wrong witness alive."
+        )
+        followup_first_post = (
+            "Eliana entered Covenant Hall with a sealed warrant, a blood-bank "
+            "rumor, and no patience for ceremonial panic."
+        )
+        followup_second_post = (
+            "Ren Maddox brought the clinic list anyway, because every missing "
+            "name had started to look like faction math."
+        )
     else:
         opening_slug = "opening-pressure"
         opening_title = "Opening pressure"
