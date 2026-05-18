@@ -143,6 +143,9 @@ def _render_wanted(request: Request, wanted_slug: str) -> Page:
             else services.account_visitor(request, current_community=community)
         ),
         community=community,
+        request_access_href=(
+            f"/c/{tenant_slug}/request-access" if tenant_slug is not None else "/request-access"
+        ),
         wanted=wanted,
         show_community_shell=viewer is not None,
     )

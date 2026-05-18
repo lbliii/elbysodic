@@ -269,6 +269,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert tenant_wanted_detail.status == 200
         assert "Rogue needs someone who remembers" in tenant_wanted_detail.text
         assert "Log in to raise interest" in tenant_wanted_detail.text
+        assert 'href="/c/x-men-apocalypse/request-access"' in tenant_wanted_detail.text
         assert "Interest and reserves" not in tenant_wanted_detail.text
         assert "Interest" not in tenant_wanted_detail.text
         assert tenant_search.status == 200
@@ -352,6 +353,9 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
         assert 'action="/c/afterlight-accord/search"' in search.text
         assert 'href="/search?q=seal"' in search.text
         assert "Archive thief with a sealed branch" in wanted_detail.text
+        assert "Request access to raise interest" in wanted_detail.text
+        assert 'href="/c/afterlight-accord/request-access"' in wanted_detail.text
+        assert 'href="/network"' in wanted_detail.text
         assert "Access opens through a director invitation." in request_access.text
 
     asyncio.run(run())
