@@ -91,6 +91,15 @@ Remaining before merge:
 
 - Review branch diff and open PR.
 
+Next iteration:
+
+- The next community hub pass is split into
+  `plans/in-progress/community-hub-editorial-iteration-2026-05-18.md`.
+- That plan supersedes any remaining dashboard/readiness framing from this
+  translation plan. The next pass should treat `/c/{community_slug}` as an
+  editorial story hub with a Surface Intent Brief, density budget, label audit,
+  mature seed proof, and browser screenshot QA before merge.
+
 ## Purpose
 
 Translate `design/static-community-landing-v2-mock.html` into the real
