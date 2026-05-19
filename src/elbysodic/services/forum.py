@@ -95,6 +95,9 @@ from elbysodic.services.auth import (
     session_token_hash,
     verify_password,
 )
+from elbysodic.services.blueprints import (
+    apply_program_blueprint_preview as _apply_program_blueprint_preview,
+)
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
 from elbysodic.services.boards import board_page as _board_page
 from elbysodic.services.boards import board_summary as _board_summary
@@ -2151,6 +2154,18 @@ class AppServices:
 
     def preview_program_blueprint(self, source: str) -> ProgramBlueprintPreview:
         return _preview_program_blueprint(self.repo, self.viewer(), source)
+
+    def apply_program_blueprint_preview(
+        self,
+        source: str,
+        accepted_fingerprint: str,
+    ) -> ProgramBlueprintPreview:
+        return _apply_program_blueprint_preview(
+            self.repo,
+            self.viewer(),
+            source,
+            accepted_fingerprint,
+        )
 
     def update_board_taxonomy(
         self,

@@ -4376,6 +4376,29 @@ appearance:
                 ).encode(),
                 headers=_FORM,
             )
+            preview = admin_services.preview_program_blueprint(blueprint_yaml)
+            stale_apply = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "apply_blueprint",
+                        "blueprint_yaml": blueprint_yaml,
+                        "preview_fingerprint": "stale-preview",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            gated_apply = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "apply_blueprint",
+                        "blueprint_yaml": blueprint_yaml,
+                        "preview_fingerprint": preview.preview_fingerprint,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
 
         assert page.status == 200
         assert "Dry-run YAML intake" in page.text
@@ -4396,6 +4419,14 @@ appearance:
         assert "create</strong> wanted hook: Returning sibling" in response.text
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
+        assert stale_apply.status == 200
+        assert "Program Blueprint preview changed; preview again before applying." in (
+            stale_apply.text
+        )
+        assert gated_apply.status == 200
+        assert "Program Blueprint apply remains gated; no rows were written." in (
+            gated_apply.text
+        )
         after_count = repo.connection.execute(
             "SELECT COUNT(*) FROM communities",
         ).fetchone()[0]

@@ -19,6 +19,7 @@ from elbysodic.web.state import get_services
 class IntakeEditorForm:
     intent: str
     blueprint_yaml: str = ""
+    preview_fingerprint: str = ""
     name: str = ""
     claim_kind: str = ""
     sort_order: str = ""
@@ -53,7 +54,13 @@ async def post(request: Request) -> Page | Redirect:
                 blueprint_yaml=blueprint_yaml,
                 blueprint_preview=services.preview_program_blueprint(blueprint_yaml),
             )
-        if intent == "create_claim_type":
+        elif intent == "apply_blueprint":
+            blueprint_yaml = str(form.get("blueprint_yaml") or "")
+            services.apply_program_blueprint_preview(
+                blueprint_yaml,
+                str(form.get("preview_fingerprint") or ""),
+            )
+        elif intent == "create_claim_type":
             services.create_claim_type_config(
                 name=str(form.get("name") or ""),
                 claim_kind=str(form.get("claim_kind") or ""),

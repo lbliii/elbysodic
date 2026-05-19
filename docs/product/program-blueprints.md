@@ -302,6 +302,9 @@ The planned apply flow is separate production work:
 Until that work lands, Program Blueprints are a validation and preview contract
 for Studio intake, plus the privileged seed-data source used by development
 fixtures.
+Studio may accept an apply-shaped POST only as a guarded no-op: it must re-run
+preview, reject stale fingerprints, enter the transaction boundary, and return
+that apply is still gated without writing rows.
 
 ## Hydration Gate
 

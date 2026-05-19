@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from dataclasses import replace
 from typing import Literal, Protocol
 
@@ -19,6 +20,8 @@ from elbysodic.services.read_models import ForumView
 
 
 class BlueprintPlanRepository(Protocol):
+    def transaction(self) -> AbstractContextManager[None]: ...
+
     def get_community_by_slug(self, slug: str) -> Community: ...
 
     def get_role_by_slug(self, community_id: int, slug: str) -> Role: ...
@@ -52,6 +55,21 @@ def preview_program_blueprint(
         diff_rows=diff_rows,
         preview_fingerprint=_preview_fingerprint(source, diff_rows),
     )
+
+
+def apply_program_blueprint_preview(
+    repo: BlueprintPlanRepository,
+    viewer: ForumView,
+    source: str,
+    accepted_fingerprint: str,
+) -> ProgramBlueprintPreview:
+    preview = preview_program_blueprint(repo, viewer, source)
+    if not preview.is_valid:
+        raise ValueError("Preview a valid Program Blueprint before applying.")
+    if not accepted_fingerprint or accepted_fingerprint != preview.preview_fingerprint:
+        raise ValueError("Program Blueprint preview changed; preview again before applying.")
+    with repo.transaction():
+        raise ValueError("Program Blueprint apply remains gated; no rows were written.")
 
 
 def plan_program_blueprint_hydration(
