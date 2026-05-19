@@ -208,7 +208,7 @@
         {% for item in access_request_items %}
         <li>
           <div>
-            <strong>{{ item.request.email }}</strong>
+            <strong><a class="chirpui-link" href="/studio/access-requests/{{ item.request.id }}">{{ item.request.email }}</a></strong>
             <span>{{ item.status_label }} · {{ item.request.display_name or "No writer name yet" }}</span>
             {% if item.request.face_concept %}
             <span>Face concept: {{ item.request.face_concept }}</span>

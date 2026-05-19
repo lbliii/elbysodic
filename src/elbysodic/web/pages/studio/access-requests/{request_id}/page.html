@@ -1,0 +1,91 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="58rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Access request") %}
+  Director-only review for one prospective writer. Request details stay out of
+  public previews, account-visitor pages, member queues, and invitation links.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <article class="chirpui-stack chirpui-stack--md">
+    <header class="chirpui-cluster chirpui-cluster--between">
+      <div>
+        <p class="elbysodic-section-kicker">Writer entry</p>
+        <h1>{{ item.request.display_name or item.request.email }}</h1>
+        <p class="elbysodic-copy-meta">{{ item.request.email }}</p>
+      </div>
+      {{ badge(item.status_label, variant="success" if item.request.status == "invited" else "muted") }}
+    </header>
+
+    <dl class="elbysodic-definition-grid">
+      <div>
+        <dt>Status</dt>
+        <dd>{{ item.status_label }}</dd>
+      </div>
+      <div>
+        <dt>Submitted</dt>
+        <dd>{{ item.request.created_at }}</dd>
+      </div>
+      <div>
+        <dt>Updated</dt>
+        <dd>{{ item.request.updated_at }}</dd>
+      </div>
+      <div>
+        <dt>Linked invitation</dt>
+        <dd>{{ "#" ~ item.request.invitation_id if item.request.invitation_id else "None yet" }}</dd>
+      </div>
+    </dl>
+
+    <section class="chirpui-stack chirpui-stack--sm" aria-labelledby="access-request-concept-heading">
+      <h2 id="access-request-concept-heading">First-face context</h2>
+      <p><strong>Face concept:</strong> {{ item.request.face_concept or "Not supplied" }}</p>
+      <p><strong>Wanted hook or way in:</strong> {{ item.request.wanted_hook or "Not supplied" }}</p>
+    </section>
+
+    <section class="chirpui-stack chirpui-stack--sm" aria-labelledby="access-request-notes-heading">
+      <h2 id="access-request-notes-heading">Director notes</h2>
+      <p>{{ item.request.notes or "No notes supplied." }}</p>
+    </section>
+
+    <div class="chirpui-cluster">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/launch#access-requests">Back to launch queue</a>
+      {% if item.request.status == "pending" %}
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="review_access_request">
+        <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Mark reviewed</button>
+      </form>
+      {% end %}
+      {% if item.request.status in ("pending", "reviewed") %}
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="invite_access_request">
+        <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">Create invitation</button>
+      </form>
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="decline_access_request">
+        <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+        <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Decline request</button>
+      </form>
+      {% end %}
+    </div>
+  </article>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

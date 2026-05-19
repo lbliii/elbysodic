@@ -3839,6 +3839,75 @@ def test_access_request_submission_reuses_open_request_for_email() -> None:
     assert first.display_name == "Prospect One"
 
 
+def test_director_reads_access_request_detail() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="detail-prospect@example.com",
+            display_name="Detail Prospect",
+            face_concept="Secret transfer",
+            wanted_hook="Archive opening",
+            notes="PRIVATE ACCESS NOTE: detail room only.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert launch.status == 200
+        assert f'href="/studio/access-requests/{access_request.id}"' in launch.text
+        assert detail.status == 200
+        assert "Access request" in detail.text
+        assert "First-face context" in detail.text
+        assert "detail-prospect@example.com" in detail.text
+        assert "Secret transfer" in detail.text
+        assert "PRIVATE ACCESS NOTE" in detail.text
+        assert "Create invitation" in detail.text
+
+    asyncio.run(run())
+
+
+def test_access_request_detail_denies_non_director() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        writer = resolve_seed_persona(services.repo, "xmen_writer")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="hidden-prospect@example.com",
+            display_name="Hidden Prospect",
+            face_concept="Hidden transfer",
+            wanted_hook="Hidden opening",
+            notes="PRIVATE ACCESS NOTE: staff-only.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(writer.community, writer.user, writer.membership, writer.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            response = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert response.status == 403
+        assert "hidden-prospect@example.com" not in response.text
+        assert "Hidden transfer" not in response.text
+        assert "PRIVATE ACCESS NOTE" not in response.text
+
+    asyncio.run(run())
+
+
 def test_studio_launch_invites_writer_from_access_request() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")

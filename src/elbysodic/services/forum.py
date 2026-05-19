@@ -1012,6 +1012,16 @@ class AppServices:
             for item in self.repo.list_community_access_requests(viewer.community.id)
         ]
 
+    def access_request_detail(self, request_id: int) -> AccessRequestManagementItem:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        access_request = self.repo.get_community_access_request(viewer.community.id, request_id)
+        return AccessRequestManagementItem(
+            request=access_request,
+            status_label=access_request.status.title(),
+        )
+
     def review_access_request(self, request_id: int) -> CommunityAccessRequest:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
