@@ -65,6 +65,9 @@
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
         {{ csrf_field() }}
       <input type="hidden" name="intent" value="preview_blueprint">
+      <input type="hidden"
+             name="preview_fingerprint"
+             value="{{ blueprint_preview.preview_fingerprint if blueprint_preview else '' }}">
       <label>
         <span class="chirpui-field__label">Blueprint YAML</span>
         <textarea class="chirpui-field__input"
