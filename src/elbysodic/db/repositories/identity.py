@@ -1107,6 +1107,33 @@ class IdentityRepositoryMixin(RepositoryBase):
             )
         return _community_access_request_from_row(row)
 
+    def update_community_access_request_status(
+        self,
+        community_id: int,
+        request_id: int,
+        *,
+        status: str,
+        invitation_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        if status not in {"pending", "reviewed", "invited", "declined"}:
+            raise ValueError("access request status must be pending, reviewed, invited, or declined")
+        self.get_community_access_request(community_id, request_id)
+        if invitation_id is not None:
+            invitation = self.get_community_invitation(community_id, invitation_id)
+            invitation_id = invitation.id
+        self.connection.execute(
+            """
+            UPDATE community_access_requests
+            SET status = ?,
+                invitation_id = COALESCE(?, invitation_id),
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, invitation_id, _utc_now(), community_id, request_id),
+        )
+        self._commit()
+        return self.get_community_access_request(community_id, request_id)
+
     def list_community_access_requests(
         self,
         community_id: int,
@@ -1154,6 +1181,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 wanted_hook,
                 notes,
                 account_user_id,
+                invitation_id,
                 status,
                 created_at,
                 updated_at

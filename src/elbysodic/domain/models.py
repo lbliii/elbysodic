@@ -92,6 +92,7 @@ class CommunityAccessRequest:
     wanted_hook: str
     notes: str
     account_user_id: int | None
+    invitation_id: int | None
     status: str
     created_at: str
     updated_at: str

@@ -454,12 +454,54 @@ def test_schema_migrates_community_access_requests_from_version_18() -> None:
         "wanted_hook",
         "notes",
         "account_user_id",
+        "invitation_id",
         "status",
         "created_at",
         "updated_at",
     }.issubset(columns)
     assert "idx_community_access_requests_community" in indexes
     assert migration["name"] == "community-access-requests"
+
+
+def test_schema_migrates_community_access_request_invitation_link_from_version_19() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (19, 'community-access-requests', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 19")
+    connection.execute(
+        """
+        CREATE TABLE legacy_access_requests AS
+        SELECT id, community_id, email, display_name, face_concept, wanted_hook,
+               notes, account_user_id, status, created_at, updated_at
+        FROM community_access_requests
+        """
+    )
+    connection.execute("DROP TABLE community_access_requests")
+    connection.execute("ALTER TABLE legacy_access_requests RENAME TO community_access_requests")
+    connection.commit()
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_access_requests)").fetchall()
+    }
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 20
+        """
+    ).fetchone()
+
+    assert "invitation_id" in columns
+    assert migration["name"] == "community-access-request-invitation-link"
 
 
 def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> None:
@@ -489,6 +531,13 @@ def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> N
     assert repo.get_community_access_request(default.id, default_request.id) == default_request
     assert repo.list_community_access_requests(default.id) == [default_request]
     assert repo.list_community_access_requests(default.id, status="pending") == [default_request]
+    reviewed = repo.update_community_access_request_status(
+        default.id,
+        default_request.id,
+        status="reviewed",
+    )
+    assert reviewed.status == "reviewed"
+    assert reviewed.invitation_id is None
     with pytest.raises(LookupError, match="access request not found"):
         repo.get_community_access_request(hosted.id, default_request.id)
 

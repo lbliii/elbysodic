@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS community_access_requests (
     wanted_hook TEXT NOT NULL DEFAULT '',
     notes TEXT NOT NULL DEFAULT '',
     account_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    invitation_id INTEGER REFERENCES community_invitations(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL

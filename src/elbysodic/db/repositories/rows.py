@@ -148,6 +148,7 @@ def _community_access_request_from_row(row: sqlite3.Row) -> CommunityAccessReque
         wanted_hook=row["wanted_hook"],
         notes=row["notes"],
         account_user_id=row["account_user_id"],
+        invitation_id=row["invitation_id"],
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],

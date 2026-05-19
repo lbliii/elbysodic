@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 19
+CURRENT_SCHEMA_VERSION = 20
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -694,6 +694,20 @@ def _add_community_access_requests(connection: sqlite3.Connection) -> None:
     )
 
 
+def _add_community_access_request_invitation_link(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_access_requests)").fetchall()
+    }
+    if "invitation_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE community_access_requests
+            ADD COLUMN invitation_id INTEGER REFERENCES community_invitations(id) ON DELETE SET NULL
+            """
+        )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -717,6 +731,11 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(17, "community-discovery-profiles", _add_community_discovery_profiles),
     Migration(18, "community-gateway-slots", _add_community_gateway_slots),
     Migration(19, "community-access-requests", _add_community_access_requests),
+    Migration(
+        20,
+        "community-access-request-invitation-link",
+        _add_community_access_request_invitation_link,
+    ),
 )
 
 
