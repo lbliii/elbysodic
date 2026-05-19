@@ -3486,6 +3486,57 @@ def test_first_playable_openings_hide_closed_and_private_candidates() -> None:
     assert "Draft Application Only" not in labels
 
 
+def test_writer_activation_recommends_specific_opening_after_acceptance() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = repo.create_community("activation-openings", "Activation Openings")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("activation-openings@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "activation-openings",
+        "Activation Openings",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "accepted-face",
+        "Accepted Face",
+        application_status="accepted",
+        make_default=True,
+    )
+    other_user = repo.create_user("activation-hook-owner@example.com", "hash")
+    other_membership = repo.create_membership(
+        community.id,
+        other_user.id,
+        role.id,
+        "hook-owner",
+        "Hook Owner",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        other_membership.id,
+        "scene-partner",
+        "Scene Partner",
+        summary="A specific wanted hook for the accepted face.",
+        wanted_type="plot_role",
+        status="open",
+    )
+
+    activation = AppServices(
+        repo,
+        DemoSeed(community, user, membership, character),
+    ).writer_activation()
+
+    assert activation.stage == "accepted_no_scene"
+    assert activation.headline == "Start with Scene Partner"
+    assert activation.summary == "A specific wanted hook for the accepted face."
+    assert activation.primary_label == "Open plot role"
+    assert activation.primary_href == "/wanted/scene-partner"
+
+
 def test_first_face_activation_surfaces_claim_and_reserve_work() -> None:
     async def run() -> None:
         services, character_id = _outsider_services(
