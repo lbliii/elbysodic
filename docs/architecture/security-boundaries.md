@@ -128,6 +128,11 @@ other realm. Studio invitation management may list invitation state and revoke
 pending invites, but only the creation response renders the raw invite link
 because stored invitations retain token hashes.
 
+Invitation delivery is copy-only until a sender policy exists. "Resend" means
+reissue, not recover: a director revokes the pending invitation and creates a
+fresh token for the same email. Accepted, revoked, or expired invitations do
+not expose raw tokens and should not be resurrected.
+
 Current community and membership selection is stored on `user_sessions` as
 `selected_community_id` and `selected_membership_id`. Switching membership
 validates that the target membership belongs to the session user and is active

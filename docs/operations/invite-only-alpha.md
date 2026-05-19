@@ -35,6 +35,20 @@ replica, and explicit smoke evidence before writers are invited.
   fresh invitation.
 - Confirm expired, revoked, and accepted links do not grant access.
 
+### Invitation Delivery Policy
+
+Until an email sender is configured and approved, Elbysodic does not claim that
+Studio can send, resend, or recover an invitation link. Directors see the raw
+invite URL only in the creation response because the database stores only a
+token hash. The supported recovery path is reissue: revoke the still-pending
+invitation, create a new invitation for the same email, copy the new URL, and
+keep the old invitation row as audit history.
+
+Accepted, revoked, and expired invitations are terminal for link delivery. Do
+not reissue them as though the same token can be recovered. If a writer already
+accepted the invitation, use membership support workflows instead of creating a
+second invite.
+
 ## 5. Smoke
 
 - Run the Railway smoke checklist.
