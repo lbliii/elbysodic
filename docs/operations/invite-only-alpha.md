@@ -31,8 +31,9 @@ replica, and explicit smoke evidence before writers are invited.
 - Set launch status to `invite-only`.
 - Create one writer invitation.
 - Copy the link immediately; alpha delivery is copy-only.
-- If the link is lost or shared with the wrong person, revoke it and create a
-  fresh invitation.
+- If the link is lost or shared with the wrong person while it is still
+  pending, use `Reissue invitation` to revoke it and create a fresh invitation
+  for the same email.
 - Confirm expired, revoked, and accepted links do not grant access.
 
 ### Invitation Delivery Policy
@@ -42,7 +43,8 @@ Studio can send, resend, or recover an invitation link. Directors see the raw
 invite URL only in the creation response because the database stores only a
 token hash. The supported recovery path is reissue: revoke the still-pending
 invitation, create a new invitation for the same email, copy the new URL, and
-keep the old invitation row as audit history.
+keep the old invitation row plus any linked access-request activity as audit
+history.
 
 Accepted, revoked, and expired invitations are terminal for link delivery. Do
 not reissue them as though the same token can be recovered. If a writer already

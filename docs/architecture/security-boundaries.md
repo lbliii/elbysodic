@@ -110,6 +110,10 @@ row that was created from it, but the raw invite token is still shown only at
 creation time because stored invitations retain token hashes. A lost link
 requires revoking the pending invitation and creating a fresh one; the original
 access request remains the audit trail for why the invite was issued.
+Director-visible access-request activity events are stored in
+`community_access_request_events` with `community_id`, request id, optional
+actor membership, status transition, optional invitation id, and timestamp.
+These events are staff workflow history, not public preview data.
 
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global
