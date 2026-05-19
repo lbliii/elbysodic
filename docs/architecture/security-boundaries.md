@@ -95,6 +95,22 @@ and offer request-access or network-return actions, but it must not render the
 community shell, Desk, active face, unread counts, private continuation, or
 staff controls.
 
+Community access requests are interest records, not permission records.
+`CommunityAccessRequest` rows are scoped by `community_id` and may include the
+writer's email, display name, face concept, wanted-hook interest, and private
+notes for directors. Creating a request must not create a `User`,
+`CommunityMembership`, role, character, reserve, claim, invitation, session, or
+active-face state. Public realm previews may submit a request and show
+account-vs-anonymous posture, but only director-capable memberships in the same
+community can list or inspect request details.
+
+The access-request lifecycle is `pending -> reviewed -> invited` or
+`pending/reviewed -> declined`. An invited request may link to the invitation
+row that was created from it, but the raw invite token is still shown only at
+creation time because stored invitations retain token hashes. A lost link
+requires revoking the pending invitation and creating a fresh one; the original
+access request remains the audit trail for why the invite was issued.
+
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global
 login user plus a community-local director membership in the same transaction.

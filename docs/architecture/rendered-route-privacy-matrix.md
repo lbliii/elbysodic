@@ -77,6 +77,10 @@ control appears or does not appear than to snapshot large HTML sections.
   accepted/revoked/expired invite tokens fail instead of revealing launch-room
   or membership internals. Studio invite management lists invitation state and
   can revoke pending invitations without rendering token hashes.
+- Community access requests are public-submitted but director-private after
+  creation. Public and account-visitor previews must not reveal request notes,
+  email addresses, face concepts, wanted-hook interest, invitation links, or
+  review state; same-community directors inspect and act on them from Studio.
 - Inactive memberships are absent from `/members`, `/members/{username}`, and
   direct character profile routes, and recovery does not offer cross-realm
   switches for inactive faces.
