@@ -83,6 +83,12 @@ def _render_application_room(request: Request, character_slug: str) -> Page:
         current_path=request.url,
         viewer=services.viewer(),
         room=room,
+        accepted_next_move=(
+            services.writer_activation()
+            if room.character_view.is_owned_by_viewer
+            and room.character_view.character.application_status == "accepted"
+            else None
+        ),
     )
 
 

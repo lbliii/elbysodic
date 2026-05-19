@@ -6648,6 +6648,9 @@ def test_applications_desk_tracks_character_statuses() -> None:
             assert accepted_room.status == 200
             assert "Jubilee is looking for a found-family first scene." in accepted_room.text
             assert "Accepted face handoff" in accepted_room.text
+            assert "Your first scene path is active" in accepted_room.text
+            assert "Open the next scene attached to your roster." in accepted_room.text
+            assert "Open scene" in accepted_room.text
             assert "Settle claims and reserves" in accepted_room.text
             assert 'href="/claims"' in accepted_room.text
             assert "Answer open calls" in accepted_room.text
