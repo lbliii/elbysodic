@@ -3044,6 +3044,9 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             )
             assert "Search X-Men Apocalypse" in index.text
             assert "XMA" in index.text
+            assert "Before you enter" in index.text
+            assert "Calls to answer" in index.text
+            assert "Browse all open calls" in index.text
             identity_summary = re.search(
                 r'<summary class="elbysodic-identity-menu__summary"[^>]*>(?P<body>.*?)</summary>',
                 index.text,
