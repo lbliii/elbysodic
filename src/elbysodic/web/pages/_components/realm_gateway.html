@@ -133,10 +133,20 @@
     <p class="elbysodic-section-kicker">Continue writing</p>
     <h2>{{ gateway.continuation.title }}</h2>
     <p>{{ gateway.continuation.summary }}</p>
+    {% if gateway.continuation.audience == "applicant" %}
+    <p class="elbysodic-copy-meta">
+      You are a member of {{ gateway.program.community.name }}. Finish a first
+      face before reply queues, plotting rooms, and scene posting can open.
+    </p>
+    {% end %}
   </div>
   <div class="chirpui-cluster">
     {{ gateway_action(gateway.continuation.primary_action) }}
     {{ gateway_action(gateway.continuation.secondary_action, "secondary") }}
+    {% if gateway.continuation.audience == "applicant" %}
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">Browse wanted</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/locations">Find a first scene</a>
+    {% end %}
   </div>
 </section>
 {% end %}

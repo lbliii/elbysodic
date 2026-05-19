@@ -3331,10 +3331,19 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
         faceless_services = _faceless_services(services)
         app = create_app(debug=False, services=faceless_services)
         async with TestClient(app) as client:
+            realm_home = await client.get("/c/x-men-apocalypse")
             desk = await client.get("/desk")
             threads = await client.get("/my/threads")
             roster = await client.get("/characters")
             applications = await client.get("/applications")
+
+            assert realm_home.status == 200
+            assert "Start with a first face" in realm_home.text
+            assert "You are a member of X-Men Apocalypse" in realm_home.text
+            assert "Finish a first" in realm_home.text
+            assert 'href="/c/x-men-apocalypse/applications/new"' in realm_home.text
+            assert 'href="/c/x-men-apocalypse/wanted"' in realm_home.text
+            assert 'href="/c/x-men-apocalypse/locations"' in realm_home.text
 
             assert desk.status == 200
             assert "Start with a first face" in desk.text
