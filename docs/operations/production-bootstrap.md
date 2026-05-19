@@ -55,6 +55,32 @@ Production bootstrap:
 - Result:
 ```
 
+## Current Gate Record
+
+```text
+Production bootstrap:
+- Date: 2026-05-19
+- Operator: Codex local workspace
+- Railway project/service/environment: intuitive-friendship / elbysodic / staging
+- Deployment: 8ba55b0f-996e-4059-8592-642273696787
+- App URL: https://elbysodic-staging.up.railway.app
+- Volume path: /app/var
+- Database path: not inspected from app runtime in this run
+- Schema version: not inspected from app runtime in this run
+- Migration ledger: not inspected from app runtime in this run
+- Replica count: not inspected from app runtime in this run
+- Existing realm count before: not inspected from app runtime in this run
+- Realm name: not executed
+- Realm slug: not executed
+- Director email: not executed
+- Director username: not executed
+- Launch status after: not executed
+- Backup path or empty-DB proof: not inspected
+- Result: no-go for production bootstrap. The linked Railway context is staging,
+  not an approved production target, and the app-level inspection fields still
+  need a signed-in Studio Operations check before any production bootstrap.
+```
+
 ## Post-Bootstrap Proof
 
 After the command succeeds:

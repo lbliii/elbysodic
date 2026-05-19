@@ -10,6 +10,28 @@ Production smoke has not been run yet.
 ## Attempt Log
 
 ```text
+Railway staging smoke:
+- Date: 2026-05-19
+- Operator: Codex local workspace
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 8ba55b0f-996e-4059-8592-642273696787
+- Commit: e262ccde
+- Railway project/service/environment: intuitive-friendship / elbysodic / staging
+- Volume path: /app/var, Railway status reported elbysodic-volume mounted
+- Database path: not inspected from app runtime in this run
+- Replica count: not inspected from app runtime in this run
+- Demo mode: not inspected from app runtime in this run
+- Public GETs: `/health` 200, `/` 200, `/network` 200
+- Tenant-prefixed public realm: `/c/afterlight-accord` 404 and
+  `/c/x-men-apocalypse` 404 in the linked staging database
+- Static media: `/elbysodic-static/brand/elbysodic-mark.svg` 200
+- HEAD behavior: `curl -I /health` and `curl -I /network` returned Railway-edge
+  502 because the app attempted to send a body with a 405 HEAD response.
+- Result: incomplete staging smoke. Public product routes and static media
+  respond to GET, but seeded tenant-preview smoke cannot pass against this
+  staging database and HEAD handling needs follow-up before load balancer or
+  monitor HEAD probes can be trusted.
+
 Railway production smoke:
 - Date: 2026-05-19
 - Operator: Codex local workspace
