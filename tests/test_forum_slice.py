@@ -4419,6 +4419,10 @@ appearance:
         assert "create</strong> wanted hook: Returning sibling" in response.text
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
+        assert "Apply readiness review" in response.text
+        assert "Duplicate handling must stay tenant-scoped." in response.text
+        assert "Hydration must run inside one rollback-tested transaction." in response.text
+        assert "Check apply gate" in response.text
         assert stale_apply.status == 200
         assert "Program Blueprint preview changed; preview again before applying." in (
             stale_apply.text

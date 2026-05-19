@@ -129,6 +129,24 @@
         <p class="elbysodic-copy-helper">
           Apply needs a service-layer plan for duplicate handling, ownership defaults, rollback behavior, and tenant tests.
         </p>
+        {% if blueprint_preview.is_valid and blueprint_preview.preview_fingerprint %}
+        <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--xs">
+          {{ csrf_field() }}
+          <input type="hidden" name="intent" value="apply_blueprint">
+          <input type="hidden" name="preview_fingerprint" value="{{ blueprint_preview.preview_fingerprint }}">
+          <textarea class="chirpui-field__input chirpui-visually-hidden"
+                    name="blueprint_yaml"
+                    aria-label="Blueprint YAML for gated apply">{{ blueprint_yaml }}</textarea>
+          <p class="chirpui-field__label">Apply readiness review</p>
+          <ul class="elbysodic-copy-list">
+            <li>Duplicate handling must stay tenant-scoped.</li>
+            <li>Starter faces need explicit ownership defaults.</li>
+            <li>Hydration must run inside one rollback-tested transaction.</li>
+            <li>Unsupported keys must remain visible before apply.</li>
+          </ul>
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Check apply gate</button>
+        </form>
+        {% end %}
       </div>
       {% end %}
     </div>
