@@ -3861,6 +3861,8 @@ def test_studio_launch_invites_writer_from_access_request() -> None:
         assert invitations[0].id == updated.invitation_id
         assert invitations[0].email == "invite-prospect@example.com"
         assert "Invited" in launch_after.text
+        assert f"Invitation #{updated.invitation_id} created." in launch_after.text
+        assert "Studio keeps the token hash only" in launch_after.text
         assert "Decline request" not in launch_after.text
 
     asyncio.run(run())
@@ -4173,6 +4175,7 @@ def test_director_invites_writer_through_first_face_handoff() -> None:
         assert "Invitation ready for new-writer@example.com" in created.text
         assert "Delivery is copy-only for this alpha slice." in created.text
         assert "Copy this link now; Studio stores only the token hash." in created.text
+        assert "Raw link is no longer available here." in created.text
         assert invite.status == 200
         assert "This invitation is for new-writer@example.com" in invite.text
         assert accepted.status == 302

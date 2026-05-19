@@ -181,6 +181,9 @@
         <div>
           <strong>{{ item.invitation.email }}</strong>
           <span>{{ item.status_label }}{% if item.invitation.expires_at %} · expires {{ item.invitation.expires_at }}{% end %}</span>
+          {% if item.can_revoke %}
+          <span>Raw link is no longer available here. Revoke this pending invitation and create a fresh one if the writer loses it.</span>
+          {% end %}
         </div>
         <div class="elbysodic-network-card__actions">
           {% if item.can_revoke %}
@@ -212,6 +215,9 @@
             {% end %}
             {% if item.request.wanted_hook %}
             <span>Way in: {{ item.request.wanted_hook }}</span>
+            {% end %}
+            {% if item.request.status == "invited" and item.request.invitation_id %}
+            <span>Invitation #{{ item.request.invitation_id }} created. Studio keeps the token hash only; revoke that pending invitation and create a fresh one if the writer loses the link.</span>
             {% end %}
             {% if item.request.notes %}
             <span>{{ item.request.notes }}</span>
