@@ -189,6 +189,12 @@
           {% if item.can_revoke %}
           <form method="post" action="/studio/launch" hx-boost="false">
             {{ csrf_field() }}
+            <input type="hidden" name="intent" value="reissue_invite">
+            <input type="hidden" name="invitation_id" value="{{ item.invitation.id }}">
+            <button class="chirpui-btn chirpui-btn--primary" type="submit">Reissue invitation</button>
+          </form>
+          <form method="post" action="/studio/launch" hx-boost="false">
+            {{ csrf_field() }}
             <input type="hidden" name="intent" value="revoke_invite">
             <input type="hidden" name="invitation_id" value="{{ item.invitation.id }}">
             <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Revoke invitation</button>
@@ -217,7 +223,10 @@
             <span>Way in: {{ item.request.wanted_hook }}</span>
             {% end %}
             {% if item.request.status == "invited" and item.request.invitation_id %}
-            <span>Invitation #{{ item.request.invitation_id }} created. Studio keeps the token hash only; revoke that pending invitation and create a fresh one if the writer loses the link.</span>
+            <span>
+              Invitation #{{ item.request.invitation_id }} created{% if item.invitation %} · {{ item.invitation.status_label }}{% end %}.
+              Studio keeps the token hash only; reissue a pending invitation if the writer loses the link.
+            </span>
             {% end %}
             {% if item.request.notes %}
             <span>{{ item.request.notes }}</span>

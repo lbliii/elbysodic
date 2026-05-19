@@ -423,6 +423,7 @@ class InvitationManagementItem:
 class AccessRequestManagementItem:
     request: CommunityAccessRequest
     status_label: str
+    invitation: InvitationManagementItem | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1008,7 +1009,7 @@ class AppServices:
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to manage access requests")
         return [
-            AccessRequestManagementItem(request=item, status_label=item.status.title())
+            _access_request_management_item(self.repo, item)
             for item in self.repo.list_community_access_requests(viewer.community.id)
         ]
 
@@ -1017,10 +1018,7 @@ class AppServices:
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to manage access requests")
         access_request = self.repo.get_community_access_request(viewer.community.id, request_id)
-        return AccessRequestManagementItem(
-            request=access_request,
-            status_label=access_request.status.title(),
-        )
+        return _access_request_management_item(self.repo, access_request)
 
     def review_access_request(self, request_id: int) -> CommunityAccessRequest:
         viewer = self.viewer()
@@ -4830,6 +4828,22 @@ def _invitation_management_item(invitation: CommunityInvitation) -> InvitationMa
     if expired:
         return InvitationManagementItem(invitation, "Expired", can_revoke=False)
     return InvitationManagementItem(invitation, "Pending", can_revoke=True)
+
+
+def _access_request_management_item(
+    repo: ForumRepository,
+    request: CommunityAccessRequest,
+) -> AccessRequestManagementItem:
+    invitation_item = None
+    if request.invitation_id is not None:
+        invitation_item = _invitation_management_item(
+            repo.get_community_invitation(request.community_id, request.invitation_id)
+        )
+    return AccessRequestManagementItem(
+        request=request,
+        status_label=request.status.title(),
+        invitation=invitation_item,
+    )
 
 
 def _invitation_is_expired(invitation: CommunityInvitation) -> bool:

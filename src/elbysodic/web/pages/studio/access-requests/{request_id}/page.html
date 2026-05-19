@@ -41,7 +41,13 @@
       </div>
       <div>
         <dt>Linked invitation</dt>
-        <dd>{{ "#" ~ item.request.invitation_id if item.request.invitation_id else "None yet" }}</dd>
+        <dd>
+          {% if item.invitation %}
+          #{{ item.invitation.invitation.id }} · {{ item.invitation.status_label }}
+          {% else %}
+          None yet
+          {% end %}
+        </dd>
       </div>
     </dl>
 

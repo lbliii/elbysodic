@@ -3879,6 +3879,50 @@ def test_director_reads_access_request_detail() -> None:
     asyncio.run(run())
 
 
+def test_access_request_detail_shows_linked_invitation_status() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="linked-prospect@example.com",
+            display_name="Linked Prospect",
+            face_concept="Linked transfer",
+            wanted_hook="Linked opening",
+            notes="Ready for invitation.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            invited = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "invite_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            updated = services.repo.get_community_access_request(
+                staff.community.id,
+                access_request.id,
+            )
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert invited.status == 200
+        assert updated.invitation_id is not None
+        assert f"#{updated.invitation_id} · Pending" in detail.text
+
+    asyncio.run(run())
+
+
 def test_access_request_detail_denies_non_director() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
@@ -3960,7 +4004,8 @@ def test_studio_launch_invites_writer_from_access_request() -> None:
         assert invitations[0].id == updated.invitation_id
         assert invitations[0].email == "invite-prospect@example.com"
         assert "Invited" in launch_after.text
-        assert f"Invitation #{updated.invitation_id} created." in launch_after.text
+        assert f"Invitation #{updated.invitation_id} created" in launch_after.text
+        assert "Pending" in launch_after.text
         assert "Studio keeps the token hash only" in launch_after.text
         assert "Decline request" not in launch_after.text
 
