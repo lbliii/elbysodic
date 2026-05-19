@@ -2859,6 +2859,40 @@ def test_studio_gateway_curation_updates_public_home_slots() -> None:
     asyncio.run(run())
 
 
+def test_studio_gateway_curation_rejects_invalid_selected_order() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        )
+        board = services.repo.get_board_by_slug(staff.community.id, "danger-room")
+        app = create_app(debug=False, services=staff_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "gateway_curation",
+                        "scene_hub_target_id": str(board.id),
+                        f"scene_hub_position_{board.id}": "0",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 200
+        assert "gateway curation order must be a positive number" in response.text
+        assert services.repo.list_community_gateway_slots(
+            staff.community.id,
+            slot_type="scene_hub",
+        ) == []
+
+    asyncio.run(run())
+
+
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
     async def run() -> None:
         app = _app()

@@ -226,7 +226,9 @@ def _ordered_targets(form: object, field_name: str, position_prefix: str) -> lis
         try:
             position = int(raw_position)
         except ValueError:
-            position = 999
+            raise ValueError("gateway curation order must be a positive number") from None
+        if position < 1:
+            raise ValueError("gateway curation order must be a positive number")
         return (position, target_id)
 
     return sorted(selected_ids, key=position_for)
