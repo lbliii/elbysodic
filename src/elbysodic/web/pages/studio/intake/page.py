@@ -12,6 +12,7 @@ from chirp.http.response import Redirect
 from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
+from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.web.state import get_services
 
 
@@ -120,7 +121,7 @@ def _render_intake_editor(
     *,
     error: str | None = None,
     blueprint_yaml: str = "",
-    blueprint_preview: object | None = None,
+    blueprint_preview: ProgramBlueprintPreview | None = None,
 ) -> Page:
     services = get_services(request)
     return Page.mounted(
@@ -132,6 +133,9 @@ def _render_intake_editor(
         onboarding=services.application_onboarding(),
         blueprint_yaml=blueprint_yaml,
         blueprint_preview=blueprint_preview,
+        blueprint_apply_readiness=services.program_blueprint_apply_readiness(
+            blueprint_preview
+        ),
         error=error,
         shell_actions=_intake_shell_actions(),
     )

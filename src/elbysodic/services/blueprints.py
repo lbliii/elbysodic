@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Callable
 from contextlib import AbstractContextManager
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Literal, Protocol
 
 from elbysodic.blueprints import (
@@ -37,6 +37,12 @@ class BlueprintPlanRepository(Protocol):
     def get_theme_by_slug(self, community_id: int, slug: str) -> CommunityTheme: ...
 
 
+@dataclass(frozen=True, slots=True)
+class BlueprintApplyReadiness:
+    can_check_gate: bool
+    items: tuple[str, ...]
+
+
 def preview_program_blueprint(
     repo: BlueprintPlanRepository,
     viewer: ForumView,
@@ -54,6 +60,22 @@ def preview_program_blueprint(
         preview,
         diff_rows=diff_rows,
         preview_fingerprint=_preview_fingerprint(source, diff_rows),
+    )
+
+
+def program_blueprint_apply_readiness(
+    preview: ProgramBlueprintPreview | None,
+) -> BlueprintApplyReadiness:
+    return BlueprintApplyReadiness(
+        can_check_gate=bool(
+            preview is not None and preview.is_valid and preview.preview_fingerprint
+        ),
+        items=(
+            "Duplicate handling must stay tenant-scoped.",
+            "Starter faces need explicit ownership defaults.",
+            "Hydration must run inside one rollback-tested transaction.",
+            "Unsupported keys must remain visible before apply.",
+        ),
     )
 
 
