@@ -6616,6 +6616,13 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 accepted_room = await applicant_client.get("/applications/jubilee")
             assert accepted_room.status == 200
             assert "Jubilee is looking for a found-family first scene." in accepted_room.text
+            assert "Accepted face handoff" in accepted_room.text
+            assert "Settle claims and reserves" in accepted_room.text
+            assert 'href="/claims"' in accepted_room.text
+            assert "Answer open calls" in accepted_room.text
+            assert 'href="/wanted"' in accepted_room.text
+            assert "Find a first scene" in accepted_room.text
+            assert 'href="/locations"' in accepted_room.text
             assert "Director Review" not in accepted_room.text
             assert "Voice is clear." not in accepted_room.text
             assert "Starter hook" not in accepted_room.text

@@ -192,6 +192,17 @@
   </section>
   {% end %}
 
+  {% if room.character_view.character.application_status == "accepted" %}
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-first-face-path" aria-label="Accepted face handoff">
+    <p class="elbysodic-copy-meta">Accepted face handoff</p>
+    <a class="chirpui-link" href="/claims">Settle claims and reserves</a>
+    <a class="chirpui-link" href="/wanted">Answer open calls</a>
+    <a class="chirpui-link" href="/locations">Find a first scene</a>
+  </section>
+  {% end %}
+  {% end %}
+
   {% if room.can_review %}
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Director Review") %}
