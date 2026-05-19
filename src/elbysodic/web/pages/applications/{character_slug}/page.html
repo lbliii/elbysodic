@@ -162,6 +162,12 @@
               {% end %}
             </span>
             {% end %}
+            {% if item.claim_check and item.claim_check.status == "conflict" %}
+            <span class="elbysodic-field-hint">
+              Exclusive claim conflict: choose a different value or expect staff
+              to request revisions before this face can be accepted.
+            </span>
+            {% end %}
           </label>
           {% end %}
         </div>

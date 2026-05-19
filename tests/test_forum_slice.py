@@ -7129,6 +7129,8 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert conflict_save_response.status == 302
         assert conflict_room.status == 200
         assert "Already claimed" in conflict_room.text
+        assert "Exclusive claim conflict: choose a different value" in conflict_room.text
+        assert "before this face can be accepted" in conflict_room.text
         assert 'href="/characters/magneto"' in conflict_room.text
         assert conflict_applications.status == 200
         assert "1 claim conflict" in conflict_applications.text
