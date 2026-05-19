@@ -317,7 +317,7 @@ def _operations_shortcuts(
         OperationsShortcut(
             "Launch",
             launch_count + len(writer_access_requests),
-            "/studio/launch",
+            "/studio/launch#access-requests" if writer_access_requests else "/studio/launch",
             "Opening checklist gaps and access requests.",
         ),
     ]
@@ -420,6 +420,10 @@ def _writer_activation_card(
     activation_items: list[str] = []
     if writer_access_requests:
         activation_items.append(f"{len(writer_access_requests)} access request(s)")
+        activation_items.extend(
+            _access_request_item_label(item.request)
+            for item in writer_access_requests[:2]
+        )
     if pending_invites:
         activation_items.append(f"{len(pending_invites)} pending invite(s)")
     if no_face_members:
@@ -448,11 +452,20 @@ def _writer_activation_card(
                 len(plotting.wanted_ready_interests),
             )
         ),
-        href="/studio/launch",
+        href="/studio/launch#access-requests" if writer_access_requests else "/studio/launch",
         cta="Open launch room",
         variant="attention",
         items=tuple(activation_items[:4]),
     )
+
+
+def _access_request_item_label(access_request: CommunityAccessRequest) -> str:
+    writer = access_request.display_name or access_request.email
+    if access_request.face_concept:
+        return f"{writer} - {access_request.face_concept}"
+    if access_request.wanted_hook:
+        return f"{writer} - {access_request.wanted_hook}"
+    return writer
 
 
 def _unique_applications(

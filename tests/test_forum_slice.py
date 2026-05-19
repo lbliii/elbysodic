@@ -3674,8 +3674,9 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert 'href="/applications"' in operations.text
         assert 'href="/casting"' in operations.text
         assert 'href="/plotting#interest-inbox"' in operations.text
-        assert 'href="/studio/launch"' in operations.text
+        assert 'href="/studio/launch#access-requests"' in operations.text
         assert "1 access request(s)" in operations.text
+        assert "Prospect - Transfer student" in operations.text
         assert "accepted member(s) without faces" in operations.text
         assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
             operations.text
