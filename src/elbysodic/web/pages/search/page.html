@@ -3,10 +3,14 @@
 {% end %}
 
 {% def scoped_search_form(search) %}
-<form class="elbysodic-scoped-search" action="{{ search.action_href }}" method="get" role="search">
+<form class="elbysodic-scoped-search"
+      action="{{ search.action_href }}"
+      method="get"
+      role="search"
+      aria-label="Search {{ search.scope_label }}">
   <label for="scoped-search-input">Search {{ search.scope_label }}</label>
   <div class="elbysodic-scoped-search__control">
-    <span>{{ search.scope_label }}</span>
+    <span aria-hidden="true" title="{{ search.scope_label }}">{{ search.scope_short_label }}</span>
     <input id="scoped-search-input"
            name="q"
            type="search"

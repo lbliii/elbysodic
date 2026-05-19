@@ -368,6 +368,8 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
 
         assert search.status == 200
         assert "Search Afterlight Accord" in search.text
+        assert 'aria-label="Search Afterlight Accord"' in search.text
+        assert 'title="Afterlight Accord">AA</span>' in search.text
         assert 'action="/c/afterlight-accord/search"' in search.text
         assert 'href="/search?q=seal"' in search.text
         assert "Archive thief with a sealed branch" in wanted_detail.text
