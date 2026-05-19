@@ -130,6 +130,8 @@ Railway smoke:
 
 Do not mark the production gate closed until the smoke record includes restart
 persistence and the one-replica SQLite posture.
+Use `docs/operations/railway-production-smoke-record.md` for the first
+production run so staging proof and production proof stay distinct.
 
 ## Staging Record
 
