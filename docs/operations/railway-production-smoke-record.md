@@ -7,6 +7,33 @@ production gate closed until every required item below has a dated result.
 
 Production smoke has not been run yet.
 
+## Attempt Log
+
+```text
+Railway production smoke:
+- Date: 2026-05-19
+- Operator: Codex local workspace
+- URL: not tested
+- Deployment: not tested
+- Commit: 9d8542a3
+- Railway project/service/environment: unavailable locally
+- Volume path: not tested
+- Database path: not tested
+- Replica count: not tested
+- Demo mode: not tested
+- Account tested: not tested
+- Public GETs: not tested
+- Authenticated GETs: not tested
+- Tenant-prefixed hard refresh: not tested
+- CSRF-protected write tested: not tested
+- Logout boundary: not tested
+- Seed media: not tested
+- Restart persistence: not tested
+- Result: incomplete. Railway CLI is not installed in this workspace, so the
+  real host, volume, static media, cookie, and restart checks still require a
+  Railway-connected operator or environment.
+```
+
 ## Required Record
 
 ```text
