@@ -113,6 +113,7 @@ def _render_launch(
         builder_error=builder_error,
         builder_form=builder_form or LaunchActionForm(),
         invite_items=services.writer_invitations(),
+        access_request_items=services.writer_access_requests(),
         invite_management_message=invite_management_message,
         invite_management_error=invite_management_error,
         launch_status_message=launch_status_message,

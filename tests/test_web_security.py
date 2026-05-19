@@ -136,7 +136,8 @@ def test_production_default_allowed_hosts_pass_chirp_check(monkeypatch) -> None:
 def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
-        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
 
         async with TestClient(app) as client:
             response, _cookies = await _production_login(client, email="moira@example.com")
@@ -295,7 +296,8 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
 ) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
-        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
 
         async with TestClient(app) as client:
             _login, cookies = await _production_login(client, email="moira@example.com")
@@ -327,6 +329,22 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
                 "/c/afterlight-accord/request-access",
                 headers={"Cookie": _cookie_header(cookies)},
             )
+            request_cookies = {**cookies, **_cookie_values(request_access)}
+            request_access_post = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "community_slug": "afterlight-accord",
+                        "email": "moira@example.com",
+                        "display_name": "Moira",
+                        "face_concept": "Archivist with a sealed branch",
+                        "wanted_hook": "Archive thief",
+                        "notes": "Interested in inheritance pressure.",
+                        "_csrf_token": _csrf_token(request_access.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(request_cookies)},
+            )
 
         assert response.status == 200
         assert "Afterlight Accord" in response.text
@@ -357,6 +375,19 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
         assert 'href="/c/afterlight-accord/request-access"' in wanted_detail.text
         assert 'href="/network"' in wanted_detail.text
         assert "Access opens through a director invitation." in request_access.text
+        assert "Writer email" in request_access.text
+        assert "Face concept" in request_access.text
+        assert request_access_post.status == 200
+        assert "Access request received for moira@example.com" in request_access_post.text
+        access_requests = services.repo.list_community_access_requests(
+            services.repo.get_community_by_slug("afterlight-accord").id
+        )
+        assert access_requests[0].email == "moira@example.com"
+        assert access_requests[0].face_concept == "Archivist with a sealed branch"
+        assert access_requests[0].wanted_hook == "Archive thief"
+        assert access_requests[0].account_user_id == services.repo.get_user_by_email(
+            "moira@example.com"
+        ).id
 
     asyncio.run(run())
 

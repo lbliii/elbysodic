@@ -53,6 +53,7 @@ from elbysodic.domain.models import (
     Character,
     CharacterReserve,
     Community,
+    CommunityAccessRequest,
     CommunityDiscoveryProfile,
     CommunityGatewaySlot,
     CommunityInvitation,
@@ -410,6 +411,12 @@ class InvitationManagementItem:
     invitation: CommunityInvitation
     status_label: str
     can_revoke: bool
+
+
+@dataclass(frozen=True, slots=True)
+class AccessRequestManagementItem:
+    request: CommunityAccessRequest
+    status_label: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -957,6 +964,40 @@ class AppServices:
         return [
             _invitation_management_item(invitation)
             for invitation in self.repo.list_community_invitations(viewer.community.id)
+        ]
+
+    def create_access_request(
+        self,
+        community_slug: str,
+        *,
+        email: str,
+        display_name: str,
+        face_concept: str,
+        wanted_hook: str,
+        notes: str,
+        account_user_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        community = self.repo.get_community_by_slug(community_slug)
+        clean_email = email.strip().lower()
+        if "@" not in clean_email:
+            raise ValueError("writer email is required")
+        return self.repo.create_community_access_request(
+            community.id,
+            email=clean_email[:240],
+            display_name=display_name.strip()[:160],
+            face_concept=face_concept.strip()[:500],
+            wanted_hook=wanted_hook.strip()[:240],
+            notes=notes.strip()[:2000],
+            account_user_id=account_user_id,
+        )
+
+    def writer_access_requests(self) -> list[AccessRequestManagementItem]:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        return [
+            AccessRequestManagementItem(request=item, status_label=item.status.title())
+            for item in self.repo.list_community_access_requests(viewer.community.id)
         ]
 
     def revoke_writer_invitation(self, invitation_id: int) -> CommunityInvitation:

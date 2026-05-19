@@ -10,6 +10,7 @@ from typing import Any, Protocol, cast
 
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
+    _community_access_request_from_row,
     _community_from_row,
     _community_invitation_from_row,
     _community_theme_from_row,
@@ -21,6 +22,7 @@ from elbysodic.db.repositories.rows import (
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
 from elbysodic.domain.models import (
     Community,
+    CommunityAccessRequest,
     CommunityInvitation,
     CommunityMembership,
     CommunityTheme,
@@ -1043,6 +1045,120 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self._commit()
         return self.get_community_invitation(community_id, invitation_id)
+
+    def create_community_access_request(
+        self,
+        community_id: int,
+        *,
+        email: str,
+        display_name: str,
+        face_concept: str,
+        wanted_hook: str,
+        notes: str,
+        account_user_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        self.get_community(community_id)
+        if account_user_id is not None:
+            self.get_user(account_user_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO community_access_requests (
+                community_id,
+                email,
+                display_name,
+                face_concept,
+                wanted_hook,
+                notes,
+                account_user_id,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+            """,
+            (
+                community_id,
+                email,
+                display_name,
+                face_concept,
+                wanted_hook,
+                notes,
+                account_user_id,
+                now,
+                now,
+            ),
+        )
+        self._commit()
+        return self.get_community_access_request(community_id, _last_id(cursor))
+
+    def get_community_access_request(
+        self,
+        community_id: int,
+        request_id: int,
+    ) -> CommunityAccessRequest:
+        row = self._community_access_request_row(
+            "WHERE community_id = ? AND id = ?",
+            (community_id, request_id),
+        )
+        if row is None:
+            raise LookupError(
+                f"access request not found in community {community_id}: {request_id}"
+            )
+        return _community_access_request_from_row(row)
+
+    def list_community_access_requests(
+        self,
+        community_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[CommunityAccessRequest]:
+        if status is None:
+            rows = self.connection.execute(
+                self._community_access_request_select()
+                + """
+                WHERE community_id = ?
+                ORDER BY created_at DESC, id DESC
+                """,
+                (community_id,),
+            ).fetchall()
+        else:
+            rows = self.connection.execute(
+                self._community_access_request_select()
+                + """
+                WHERE community_id = ? AND status = ?
+                ORDER BY created_at DESC, id DESC
+                """,
+                (community_id, status),
+            ).fetchall()
+        return [_community_access_request_from_row(row) for row in rows]
+
+    def _community_access_request_row(
+        self,
+        where_clause: str,
+        parameters: tuple[object, ...],
+    ) -> sqlite3.Row | None:
+        return self.connection.execute(
+            f"{self._community_access_request_select()} {where_clause}",
+            parameters,
+        ).fetchone()
+
+    def _community_access_request_select(self) -> str:
+        return """
+            SELECT
+                id,
+                community_id,
+                email,
+                display_name,
+                face_concept,
+                wanted_hook,
+                notes,
+                account_user_id,
+                status,
+                created_at,
+                updated_at
+            FROM community_access_requests
+        """
 
     def _community_invitation_row(
         self,

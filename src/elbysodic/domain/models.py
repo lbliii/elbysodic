@@ -83,6 +83,21 @@ class CommunityInvitation:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityAccessRequest:
+    id: int
+    community_id: int
+    email: str
+    display_name: str
+    face_concept: str
+    wanted_hook: str
+    notes: str
+    account_user_id: int | None
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class CommunityDiscoveryProfile:
     community_id: int
     premise_archetype: str

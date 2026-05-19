@@ -25,6 +25,7 @@ from elbysodic.domain.models import (
     CharacterReserve,
     ClaimType,
     Community,
+    CommunityAccessRequest,
     CommunityDiscoveryProfile,
     CommunityDiscoveryTag,
     CommunityGatewaySlot,
@@ -134,6 +135,22 @@ def _community_invitation_from_row(row: sqlite3.Row) -> CommunityInvitation:
         created_at=row["created_at"],
         accepted_at=row["accepted_at"],
         revoked_at=row["revoked_at"],
+    )
+
+
+def _community_access_request_from_row(row: sqlite3.Row) -> CommunityAccessRequest:
+    return CommunityAccessRequest(
+        id=row["id"],
+        community_id=row["community_id"],
+        email=row["email"],
+        display_name=row["display_name"],
+        face_concept=row["face_concept"],
+        wanted_hook=row["wanted_hook"],
+        notes=row["notes"],
+        account_user_id=row["account_user_id"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
     )
 
 

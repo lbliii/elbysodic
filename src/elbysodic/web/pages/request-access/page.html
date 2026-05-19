@@ -31,6 +31,65 @@
       Public registration is closed for now. A director sends invitations so writer
       names, roles, roster ownership, and first faces start in the right realm.
     </p>
+    {% if submitted_email %}
+    <div class="elbysodic-quiet-empty" role="status">
+      Access request received for {{ submitted_email }}. A director can review it
+      from Studio Launch before sending an invitation.
+    </div>
+    {% end %}
+    {% if error %}
+    <p class="elbysodic-form-error" role="alert">{{ error }}</p>
+    {% end %}
+    {% if community is defined and community %}
+    <form class="chirpui-stack chirpui-stack--sm" method="post" action="/request-access" hx-boost="false">
+      {{ csrf_field() }}
+      <input type="hidden" name="community_slug" value="{{ community.slug }}">
+      <label class="chirpui-field">
+        <span>Writer email</span>
+        <input name="email"
+               type="email"
+               value="{{ form.email }}"
+               autocomplete="email"
+               required>
+      </label>
+      <label class="chirpui-field">
+        <span>Writer name</span>
+        <input name="display_name"
+               value="{{ form.display_name }}"
+               autocomplete="name"
+               placeholder="The name directors should recognize">
+      </label>
+      <label class="chirpui-field">
+        <span>Face concept</span>
+        <input name="face_concept"
+               value="{{ form.face_concept }}"
+               maxlength="500"
+               placeholder="Archivist, rebel heir, forbidden envoy">
+      </label>
+      <label class="chirpui-field">
+        <span>Wanted hook or way in</span>
+        <input name="wanted_hook"
+               value="{{ form.wanted_hook }}"
+               maxlength="240"
+               placeholder="Archive thief, opening pressure, town politics">
+      </label>
+      <label class="chirpui-field">
+        <span>Notes for directors</span>
+        <textarea name="notes"
+                  rows="4"
+                  maxlength="2000"
+                  placeholder="Availability, boundaries, prior invite context, or what you want to write">{{ form.notes }}</textarea>
+      </label>
+      <div class="elbysodic-access-panel__actions">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">Send access request</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="elbysodic-copy-meta">
+      Open a realm preview first, then use its request-access path so directors
+      know which roster and first-face lane you mean.
+    </p>
+    {% end %}
     <div class="elbysodic-access-panel__actions">
       {% if account_visitor | default(none) %}
       <a class="chirpui-btn chirpui-btn--primary" href="/network" data-elbysodic-global-link>Browse your realms</a>

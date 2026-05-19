@@ -415,6 +415,84 @@ def test_schema_migrates_community_gateway_slots_from_version_17() -> None:
     assert migration["name"] == "community-gateway-slots"
 
 
+def test_schema_migrates_community_access_requests_from_version_18() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DROP INDEX IF EXISTS idx_community_access_requests_community")
+    connection.execute("DROP TABLE IF EXISTS community_access_requests")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (18, 'community-gateway-slots', '2026-01-01T00:00:00+00:00')
+        """
+    )
+    connection.execute("PRAGMA user_version = 18")
+    connection.commit()
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(community_access_requests)").fetchall()
+    }
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 19
+        """
+    ).fetchone()
+    indexes = _index_names(connection)
+
+    assert {
+        "id",
+        "community_id",
+        "email",
+        "display_name",
+        "face_concept",
+        "wanted_hook",
+        "notes",
+        "account_user_id",
+        "status",
+        "created_at",
+        "updated_at",
+    }.issubset(columns)
+    assert "idx_community_access_requests_community" in indexes
+    assert migration["name"] == "community-access-requests"
+
+
+def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("access-hosted", "Access Hosted")
+    user = repo.create_user("access-request@example.com", "hash")
+
+    default_request = repo.create_community_access_request(
+        default.id,
+        email="writer@example.com",
+        display_name="Writer",
+        face_concept="Archive thief",
+        wanted_hook="Sealed branch",
+        notes="Interested in public memory pressure.",
+        account_user_id=user.id,
+    )
+    repo.create_community_access_request(
+        hosted.id,
+        email="writer@example.com",
+        display_name="Writer Elsewhere",
+        face_concept="Station medic",
+        wanted_hook="Docking delay",
+        notes="Different realm.",
+        account_user_id=user.id,
+    )
+
+    assert repo.get_community_access_request(default.id, default_request.id) == default_request
+    assert repo.list_community_access_requests(default.id) == [default_request]
+    assert repo.list_community_access_requests(default.id, status="pending") == [default_request]
+    with pytest.raises(LookupError, match="access request not found"):
+        repo.get_community_access_request(hosted.id, default_request.id)
+
+
 def test_discovery_profiles_and_tags_are_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("discovery-hosted", "Discovery Hosted")
