@@ -1995,6 +1995,7 @@ class AppServices:
         casting = self.casting_desk()
         plotting = self.plotting_desk()
         writer_invitations = self.writer_invitations() if studio.can_manage else []
+        writer_access_requests = self.writer_access_requests() if studio.can_manage else []
         return _director_operations(
             self.repo,
             viewer,
@@ -2002,6 +2003,7 @@ class AppServices:
             casting,
             plotting,
             writer_invitations=writer_invitations,
+            writer_access_requests=writer_access_requests,
             unread_notification_count=viewer.unread_notification_count,
             inspection_config=inspection_config,
         )

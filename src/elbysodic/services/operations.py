@@ -9,7 +9,13 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Protocol
 
 from elbysodic.db.migrations import CURRENT_SCHEMA_VERSION
-from elbysodic.domain.models import Character, CommunityInvitation, CommunityMembership, Role
+from elbysodic.domain.models import (
+    Character,
+    CommunityAccessRequest,
+    CommunityInvitation,
+    CommunityMembership,
+    Role,
+)
 from elbysodic.services import policies
 from elbysodic.services.read_models import (
     ApplicationCharacterView,
@@ -22,6 +28,10 @@ from elbysodic.services.read_models import (
 
 class InvitationManagementItemLike(Protocol):
     invitation: CommunityInvitation
+
+
+class AccessRequestManagementItemLike(Protocol):
+    request: CommunityAccessRequest
 
 
 class OperationsRepository(Protocol):
@@ -103,6 +113,7 @@ def director_operations(
     plotting: PlottingDesk,
     *,
     writer_invitations: Sequence[InvitationManagementItemLike],
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
     unread_notification_count: int,
     inspection_config: OperationsInspectionConfig | None,
 ) -> DirectorOperations:
@@ -127,6 +138,7 @@ def director_operations(
         casting,
         plotting,
         writer_invitations=writer_invitations,
+        writer_access_requests=writer_access_requests,
     )
     if activation_card is not None:
         cards.append(activation_card)
@@ -265,7 +277,7 @@ def director_operations(
     return DirectorOperations(
         cards=cards,
         lanes=_operations_lanes(cards),
-        shortcuts=_operations_shortcuts(studio, casting, plotting),
+        shortcuts=_operations_shortcuts(studio, casting, plotting, writer_access_requests),
         ready_applications=ready_applications,
         blocked_applications=blocked_applications,
         can_manage=studio.can_manage,
@@ -277,6 +289,7 @@ def _operations_shortcuts(
     studio: DirectorStudio,
     casting: CastingDesk,
     plotting: PlottingDesk,
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
 ) -> list[OperationsShortcut]:
     casting_count = len(casting.active_reserves) + len(casting.wanted_with_interest)
     launch_count = (
@@ -303,9 +316,9 @@ def _operations_shortcuts(
         ),
         OperationsShortcut(
             "Launch",
-            launch_count,
+            launch_count + len(writer_access_requests),
             "/studio/launch",
-            "Opening checklist gaps before invite or preview.",
+            "Opening checklist gaps and access requests.",
         ),
     ]
 
@@ -380,6 +393,7 @@ def _writer_activation_card(
     plotting: PlottingDesk,
     *,
     writer_invitations: Sequence[InvitationManagementItemLike],
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
 ) -> OperationsCard | None:
     if not studio.can_manage:
         return None
@@ -404,6 +418,8 @@ def _writer_activation_card(
         if not accepted_faces:
             no_face_members.append(membership)
     activation_items: list[str] = []
+    if writer_access_requests:
+        activation_items.append(f"{len(writer_access_requests)} access request(s)")
     if pending_invites:
         activation_items.append(f"{len(pending_invites)} pending invite(s)")
     if no_face_members:
@@ -425,6 +441,7 @@ def _writer_activation_card(
         count=sum(
             (
                 len(pending_invites),
+                len(writer_access_requests),
                 len(no_face_members),
                 len(active_applications),
                 len(casting.wanted_with_interest),
