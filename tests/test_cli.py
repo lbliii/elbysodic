@@ -723,6 +723,27 @@ def test_cli_bootstrap_first_realm_creates_empty_configured_realm(tmp_path, caps
             ]
         )
 
+    cli.main(["init-db", "--db-path", str(db_path)])
+    restarted = connect(db_path)
+    try:
+        restarted_community = restarted.execute(
+            "SELECT slug, launch_status FROM communities"
+        ).fetchone()
+        restarted_membership = restarted.execute(
+            "SELECT username, display_name FROM community_memberships"
+        ).fetchone()
+    finally:
+        restarted.close()
+
+    assert dict(restarted_community) == {
+        "slug": "starter-realm",
+        "launch_status": "backstage",
+    }
+    assert dict(restarted_membership) == {
+        "username": "starlane",
+        "display_name": "Starter Director",
+    }
+
 
 def test_first_realm_setup_rolls_back_partial_rows(monkeypatch) -> None:
     connection = connect(":memory:")
