@@ -987,6 +987,12 @@ class AppServices:
         clean_email = email.strip().lower()
         if "@" not in clean_email:
             raise ValueError("writer email is required")
+        existing = self.repo.find_open_community_access_request(
+            community.id,
+            email=clean_email[:240],
+        )
+        if existing is not None:
+            return existing
         return self.repo.create_community_access_request(
             community.id,
             email=clean_email[:240],

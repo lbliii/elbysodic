@@ -531,6 +531,14 @@ def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> N
     assert repo.get_community_access_request(default.id, default_request.id) == default_request
     assert repo.list_community_access_requests(default.id) == [default_request]
     assert repo.list_community_access_requests(default.id, status="pending") == [default_request]
+    assert repo.find_open_community_access_request(
+        default.id,
+        email="WRITER@example.com",
+    ) == default_request
+    assert repo.find_open_community_access_request(
+        hosted.id,
+        email="writer@example.com",
+    ) is not None
     reviewed = repo.update_community_access_request_status(
         default.id,
         default_request.id,
@@ -538,6 +546,7 @@ def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> N
     )
     assert reviewed.status == "reviewed"
     assert reviewed.invitation_id is None
+    assert repo.find_open_community_access_request(default.id, email="writer@example.com") == reviewed
     with pytest.raises(LookupError, match="access request not found"):
         repo.get_community_access_request(hosted.id, default_request.id)
 

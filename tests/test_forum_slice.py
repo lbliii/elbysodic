@@ -3812,6 +3812,33 @@ def test_studio_launch_moderates_access_requests() -> None:
     asyncio.run(run())
 
 
+def test_access_request_submission_reuses_open_request_for_email() -> None:
+    services = create_services(path=":memory:")
+
+    first = services.create_access_request(
+        "afterlight-accord",
+        email="Prospect@Example.com",
+        display_name="Prospect One",
+        face_concept="Archive thief",
+        wanted_hook="Sealed branch",
+        notes="First note.",
+    )
+    second = services.create_access_request(
+        "afterlight-accord",
+        email="prospect@example.com",
+        display_name="Prospect Two",
+        face_concept="Forbidden envoy",
+        wanted_hook="Transit gate",
+        notes="Second note.",
+    )
+    community = services.repo.get_community_by_slug("afterlight-accord")
+
+    assert second == first
+    assert services.repo.list_community_access_requests(community.id) == [first]
+    assert first.email == "prospect@example.com"
+    assert first.display_name == "Prospect One"
+
+
 def test_studio_launch_invites_writer_from_access_request() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")

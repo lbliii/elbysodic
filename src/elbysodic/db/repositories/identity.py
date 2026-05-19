@@ -1107,6 +1107,24 @@ class IdentityRepositoryMixin(RepositoryBase):
             )
         return _community_access_request_from_row(row)
 
+    def find_open_community_access_request(
+        self,
+        community_id: int,
+        *,
+        email: str,
+    ) -> CommunityAccessRequest | None:
+        row = self._community_access_request_row(
+            """
+            WHERE community_id = ?
+              AND lower(email) = lower(?)
+              AND status IN ('pending', 'reviewed')
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (community_id, email),
+        )
+        return None if row is None else _community_access_request_from_row(row)
+
     def update_community_access_request_status(
         self,
         community_id: int,
