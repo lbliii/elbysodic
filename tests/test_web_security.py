@@ -428,6 +428,53 @@ def test_production_signed_out_public_realm_keeps_anonymous_posture(monkeypatch)
     asyncio.run(run())
 
 
+def test_access_request_notes_do_not_leak_to_public_or_member_surfaces(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("x-men-apocalypse")
+        services.repo.create_community_access_request(
+            community.id,
+            email="private-prospect@example.com",
+            display_name="Private Prospect",
+            face_concept="Secret transfer",
+            wanted_hook="Private hook",
+            notes="PRIVATE ACCESS NOTE: knows the staff-only twist.",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            public_realm = await client.get("/c/x-men-apocalypse")
+            network = await client.get("/network?q=private")
+            request_access = await client.get("/c/x-men-apocalypse/request-access")
+            _login, cookies = await _production_login(
+                client,
+                email="writer@example.com",
+                next_url="/c/x-men-apocalypse/studio/launch",
+            )
+            member_studio = await client.get(
+                "/c/x-men-apocalypse/studio/launch",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            member_operations = await client.get(
+                "/c/x-men-apocalypse/studio/operations",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        for response in (public_realm, network, request_access, member_studio, member_operations):
+            assert "PRIVATE ACCESS NOTE" not in response.text
+            assert "private-prospect@example.com" not in response.text
+            assert "Secret transfer" not in response.text
+
+        assert public_realm.status == 200
+        assert network.status == 200
+        assert request_access.status == 200
+        assert member_studio.status == 403
+        assert member_operations.status == 200
+
+    asyncio.run(run())
+
+
 def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
