@@ -62,6 +62,22 @@
       <p>{{ item.request.notes or "No notes supplied." }}</p>
     </section>
 
+    <section class="chirpui-stack chirpui-stack--sm" aria-labelledby="access-request-activity-heading">
+      <h2 id="access-request-activity-heading">Activity</h2>
+      {% if item.activity %}
+      <ol class="chirpui-stack chirpui-stack--xs">
+        {% for activity in item.activity %}
+        <li>
+          <strong>{{ activity.label }}</strong>
+          <span class="elbysodic-copy-meta">{{ activity.detail }} · {{ activity.event.created_at }}</span>
+        </li>
+        {% end %}
+      </ol>
+      {% else %}
+      <p>No activity recorded yet.</p>
+      {% end %}
+    </section>
+
     <div class="chirpui-cluster">
       <a class="chirpui-btn chirpui-btn--secondary" href="/studio/launch#access-requests">Back to launch queue</a>
       {% if item.request.status == "pending" %}

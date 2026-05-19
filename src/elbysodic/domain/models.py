@@ -99,6 +99,19 @@ class CommunityAccessRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class CommunityAccessRequestEvent:
+    id: int
+    community_id: int
+    access_request_id: int
+    actor_membership_id: int | None
+    event_type: str
+    from_status: str | None
+    to_status: str
+    invitation_id: int | None
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class CommunityDiscoveryProfile:
     community_id: int
     premise_archetype: str

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 20
+CURRENT_SCHEMA_VERSION = 21
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -708,6 +708,30 @@ def _add_community_access_request_invitation_link(connection: sqlite3.Connection
         )
 
 
+def _add_community_access_request_events(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS community_access_request_events (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            access_request_id INTEGER NOT NULL REFERENCES community_access_requests(id) ON DELETE CASCADE,
+            actor_membership_id INTEGER REFERENCES community_memberships(id) ON DELETE SET NULL,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            invitation_id INTEGER REFERENCES community_invitations(id) ON DELETE SET NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_community_access_request_events_request
+        ON community_access_request_events(community_id, access_request_id, created_at, id)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -736,6 +760,7 @@ MIGRATIONS: tuple[Migration, ...] = (
         "community-access-request-invitation-link",
         _add_community_access_request_invitation_link,
     ),
+    Migration(21, "community-access-request-events", _add_community_access_request_events),
 )
 
 

@@ -54,6 +54,7 @@ from elbysodic.domain.models import (
     CharacterReserve,
     Community,
     CommunityAccessRequest,
+    CommunityAccessRequestEvent,
     CommunityDiscoveryProfile,
     CommunityGatewaySlot,
     CommunityInvitation,
@@ -424,6 +425,14 @@ class AccessRequestManagementItem:
     request: CommunityAccessRequest
     status_label: str
     invitation: InvitationManagementItem | None = None
+    activity: tuple[AccessRequestActivityItem, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class AccessRequestActivityItem:
+    event: CommunityAccessRequestEvent
+    label: str
+    detail: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -1018,27 +1027,51 @@ class AppServices:
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to manage access requests")
         access_request = self.repo.get_community_access_request(viewer.community.id, request_id)
-        return _access_request_management_item(self.repo, access_request)
+        return _access_request_management_item(self.repo, access_request, include_activity=True)
 
     def review_access_request(self, request_id: int) -> CommunityAccessRequest:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to manage access requests")
-        return self.repo.update_community_access_request_status(
-            viewer.community.id,
-            request_id,
-            status="reviewed",
-        )
+        with self.repo.transaction():
+            before = self.repo.get_community_access_request(viewer.community.id, request_id)
+            updated = self.repo.update_community_access_request_status(
+                viewer.community.id,
+                request_id,
+                status="reviewed",
+            )
+            if updated.status != before.status:
+                self.repo.create_community_access_request_event(
+                    viewer.community.id,
+                    request_id,
+                    event_type="reviewed",
+                    from_status=before.status,
+                    to_status=updated.status,
+                    actor_membership_id=viewer.membership.id,
+                )
+        return updated
 
     def decline_access_request(self, request_id: int) -> CommunityAccessRequest:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to manage access requests")
-        return self.repo.update_community_access_request_status(
-            viewer.community.id,
-            request_id,
-            status="declined",
-        )
+        with self.repo.transaction():
+            before = self.repo.get_community_access_request(viewer.community.id, request_id)
+            updated = self.repo.update_community_access_request_status(
+                viewer.community.id,
+                request_id,
+                status="declined",
+            )
+            if updated.status != before.status:
+                self.repo.create_community_access_request_event(
+                    viewer.community.id,
+                    request_id,
+                    event_type="declined",
+                    from_status=before.status,
+                    to_status=updated.status,
+                    actor_membership_id=viewer.membership.id,
+                )
+        return updated
 
     def invite_access_request(self, request_id: int) -> CreatedInvitation:
         viewer = self.viewer()
@@ -1053,6 +1086,15 @@ class AppServices:
                 viewer.community.id,
                 request_id,
                 status="invited",
+                invitation_id=created.invitation.id,
+            )
+            self.repo.create_community_access_request_event(
+                viewer.community.id,
+                request_id,
+                event_type="invited",
+                from_status=access_request.status,
+                to_status="invited",
+                actor_membership_id=viewer.membership.id,
                 invitation_id=created.invitation.id,
             )
         return created
@@ -4833,17 +4875,51 @@ def _invitation_management_item(invitation: CommunityInvitation) -> InvitationMa
 def _access_request_management_item(
     repo: ForumRepository,
     request: CommunityAccessRequest,
+    *,
+    include_activity: bool = False,
 ) -> AccessRequestManagementItem:
     invitation_item = None
     if request.invitation_id is not None:
         invitation_item = _invitation_management_item(
             repo.get_community_invitation(request.community_id, request.invitation_id)
         )
+    activity: tuple[AccessRequestActivityItem, ...] = ()
+    if include_activity:
+        activity = tuple(
+            _access_request_activity_item(event)
+            for event in repo.list_community_access_request_events(request.community_id, request.id)
+        )
     return AccessRequestManagementItem(
         request=request,
         status_label=request.status.title(),
         invitation=invitation_item,
+        activity=activity,
     )
+
+
+def _access_request_activity_item(
+    event: CommunityAccessRequestEvent,
+) -> AccessRequestActivityItem:
+    labels = {
+        "submitted": "Requested access",
+        "reviewed": "Marked for review",
+        "invited": "Invitation created",
+        "declined": "Request declined",
+    }
+    detail = f"{_access_request_status_label(event.from_status)} to {event.to_status.title()}"
+    if event.event_type == "submitted":
+        detail = "Entered the access queue"
+    if event.invitation_id is not None:
+        detail = f"{detail} with invitation #{event.invitation_id}"
+    return AccessRequestActivityItem(
+        event=event,
+        label=labels.get(event.event_type, event.event_type.replace("_", " ").title()),
+        detail=detail,
+    )
+
+
+def _access_request_status_label(status: str | None) -> str:
+    return "No status" if status is None else status.title()
 
 
 def _invitation_is_expired(invitation: CommunityInvitation) -> bool:

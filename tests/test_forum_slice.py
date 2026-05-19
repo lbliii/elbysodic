@@ -3923,6 +3923,64 @@ def test_access_request_detail_shows_linked_invitation_status() -> None:
     asyncio.run(run())
 
 
+def test_access_request_detail_shows_activity_history() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="activity-prospect@example.com",
+            display_name="Activity Prospect",
+            face_concept="Activity transfer",
+            wanted_hook="Activity opening",
+            notes="Ready for review.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            reviewed = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "review_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            invited = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "invite_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        events = services.repo.list_community_access_request_events(
+            staff.community.id,
+            access_request.id,
+        )
+        assert reviewed.status == 200
+        assert invited.status == 200
+        assert [event.event_type for event in events] == ["submitted", "reviewed", "invited"]
+        assert "Requested access" in detail.text
+        assert "Marked for review" in detail.text
+        assert "Invitation created" in detail.text
+        assert f"with invitation #{events[-1].invitation_id}" in detail.text
+
+    asyncio.run(run())
+
+
 def test_access_request_detail_denies_non_director() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")

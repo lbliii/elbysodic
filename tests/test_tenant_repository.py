@@ -505,6 +505,56 @@ def test_schema_migrates_community_access_request_invitation_link_from_version_1
     assert migration["name"] == "community-access-request-invitation-link"
 
 
+def test_schema_migrates_community_access_request_events_from_version_20() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DROP TABLE community_access_request_events")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        """
+        INSERT INTO schema_migrations (version, name, applied_at)
+        VALUES (
+            20,
+            'community-access-request-invitation-link',
+            '2026-01-01T00:00:00+00:00'
+        )
+        """
+    )
+    connection.execute("PRAGMA user_version = 20")
+    connection.commit()
+
+    create_schema(connection)
+
+    columns = {
+        row["name"]
+        for row in connection.execute(
+            "PRAGMA table_info(community_access_request_events)"
+        ).fetchall()
+    }
+    indexes = _index_names(connection)
+    migration = connection.execute(
+        """
+        SELECT name
+        FROM schema_migrations
+        WHERE version = 21
+        """
+    ).fetchone()
+
+    assert {
+        "id",
+        "community_id",
+        "access_request_id",
+        "actor_membership_id",
+        "event_type",
+        "from_status",
+        "to_status",
+        "invitation_id",
+        "created_at",
+    }.issubset(columns)
+    assert "idx_community_access_request_events_request" in indexes
+    assert migration["name"] == "community-access-request-events"
+
+
 def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("access-hosted", "Access Hosted")
