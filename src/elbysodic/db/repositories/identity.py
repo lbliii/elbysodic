@@ -1135,7 +1135,23 @@ class IdentityRepositoryMixin(RepositoryBase):
     ) -> CommunityAccessRequest:
         if status not in {"pending", "reviewed", "invited", "declined"}:
             raise ValueError("access request status must be pending, reviewed, invited, or declined")
-        self.get_community_access_request(community_id, request_id)
+        access_request = self.get_community_access_request(community_id, request_id)
+        if status == access_request.status and (
+            invitation_id is None or invitation_id == access_request.invitation_id
+        ):
+            return access_request
+        allowed_transitions = {
+            "pending": {"reviewed", "invited", "declined"},
+            "reviewed": {"invited", "declined"},
+            "invited": set(),
+            "declined": set(),
+        }
+        if status not in allowed_transitions[access_request.status]:
+            raise ValueError(
+                f"cannot move access request from {access_request.status} to {status}"
+            )
+        if status == "invited" and invitation_id is None and access_request.invitation_id is None:
+            raise ValueError("invited access requests require an invitation")
         if invitation_id is not None:
             invitation = self.get_community_invitation(community_id, invitation_id)
             invitation_id = invitation.id
