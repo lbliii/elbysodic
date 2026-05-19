@@ -4070,6 +4070,51 @@ def test_studio_launch_invites_writer_from_access_request() -> None:
     asyncio.run(run())
 
 
+def test_access_request_invitation_rolls_back_when_status_update_fails(monkeypatch) -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    request = services.repo.create_community_access_request(
+        staff.community.id,
+        email="rollback-prospect@example.com",
+        display_name="Rollback Prospect",
+        face_concept="Rollback transfer",
+        wanted_hook="Rollback opening",
+        notes="Should stay pending.",
+    )
+    director_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    before_invitation_ids = {
+        invitation.id
+        for invitation in services.repo.list_community_invitations(staff.community.id)
+    }
+
+    def fail_status_update(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated access-request update failure")
+
+    monkeypatch.setattr(
+        services.repo,
+        "update_community_access_request_status",
+        fail_status_update,
+    )
+
+    with pytest.raises(RuntimeError, match="simulated access-request update failure"):
+        director_services.invite_access_request(request.id)
+
+    after_request = services.repo.get_community_access_request(staff.community.id, request.id)
+    after_invitation_ids = {
+        invitation.id
+        for invitation in services.repo.list_community_invitations(staff.community.id)
+    }
+    events = services.repo.list_community_access_request_events(staff.community.id, request.id)
+
+    assert after_request.status == "pending"
+    assert after_request.invitation_id is None
+    assert after_invitation_ids == before_invitation_ids
+    assert [event.event_type for event in events] == ["submitted"]
+
+
 def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
     async def run() -> None:
         connection = connect(":memory:", check_same_thread=False)

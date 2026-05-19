@@ -903,6 +903,68 @@ materials:
     assert changed.preview_fingerprint != preview.preview_fingerprint
 
 
+def test_program_blueprint_preview_scopes_existing_seed_collisions_by_section() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    admin_services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    source = """
+elbysodic_blueprint: 1
+program:
+  slug: x-men-apocalypse
+  name: "X-Men: Apocalypse"
+  role:
+    slug: staff
+    name: Staff
+    is_admin: true
+characters:
+  - slug: rogue
+    name: Rogue
+    summary: Existing starter face collision.
+boards:
+  - slug: danger-room
+    name: Danger Room
+    kind: location
+    tagline: Existing scene hub collision.
+    description: Existing scene hub collision.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: Existing material collision.
+    body: Existing material collision.
+wanted:
+  - slug: iceman-winter-rescue-specialist
+    title: Iceman winter rescue specialist
+    type: plot_role
+    summary: Existing wanted collision.
+    body: Existing wanted collision.
+    related_material: premise
+"""
+
+    preview = admin_services.preview_program_blueprint(source)
+    rows = {(row.section, row.slug): row for row in preview.diff_rows}
+
+    assert preview.is_valid
+    assert rows[("program", "x-men-apocalypse")].action == "update"
+    assert rows[("role", "staff")].action == "update"
+    assert rows[("face", "rogue")].action == "skip"
+    assert rows[("scene hub", "danger-room")].action == "update"
+    assert rows[("material", "premise")].action == "update"
+    assert rows[("wanted hook", "iceman-winter-rescue-specialist")].action == "skip"
+    assert preview.diff_action_summary == "Preflight: 4 update actions, 2 skip actions."
+
+
 def test_seed_hydrates_blueprint_board_media_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     program = _blueprint(
         boards=(
