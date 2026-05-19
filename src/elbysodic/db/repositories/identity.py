@@ -1245,7 +1245,9 @@ class IdentityRepositoryMixin(RepositoryBase):
             (community_id, event_id),
         ).fetchone()
         if row is None:
-            raise LookupError(f"access request event not found in community {community_id}: {event_id}")
+            raise LookupError(
+                f"access request event not found in community {community_id}: {event_id}"
+            )
         return _community_access_request_event_from_row(row)
 
     def list_community_access_request_events(

@@ -4086,8 +4086,7 @@ def test_access_request_invitation_rolls_back_when_status_update_fails(monkeypat
         DemoSeed(staff.community, staff.user, staff.membership, staff.character),
     )
     before_invitation_ids = {
-        invitation.id
-        for invitation in services.repo.list_community_invitations(staff.community.id)
+        invitation.id for invitation in services.repo.list_community_invitations(staff.community.id)
     }
 
     def fail_status_update(*args: object, **kwargs: object) -> None:
@@ -4104,8 +4103,7 @@ def test_access_request_invitation_rolls_back_when_status_update_fails(monkeypat
 
     after_request = services.repo.get_community_access_request(staff.community.id, request.id)
     after_invitation_ids = {
-        invitation.id
-        for invitation in services.repo.list_community_invitations(staff.community.id)
+        invitation.id for invitation in services.repo.list_community_invitations(staff.community.id)
     }
     events = services.repo.list_community_access_request_events(staff.community.id, request.id)
 
