@@ -1069,6 +1069,18 @@ class AppServices:
             raise ValueError("only pending invitations can be revoked")
         return self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
 
+    def reissue_writer_invitation(self, invitation_id: int) -> CreatedInvitation:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to reissue invitations")
+        with self.repo.transaction():
+            invitation = self.repo.get_community_invitation(viewer.community.id, invitation_id)
+            item = _invitation_management_item(invitation)
+            if not item.can_revoke:
+                raise ValueError("only pending invitations can be reissued")
+            self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
+            return self.create_writer_invitation(invitation.email)
+
     def update_realm_launch_status(self, launch_status: str) -> Community:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):

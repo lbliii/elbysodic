@@ -42,12 +42,23 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         except ValueError as exc:
             return _render_launch(request, builder_error=str(exc), builder_form=form)
         return _render_launch(request, builder_message=result.status_message)
-    if form.intent == "revoke_invite":
+    if form.intent in {"revoke_invite", "reissue_invite"}:
         try:
             invitation_id = int(form.invitation_id)
         except ValueError:
             return _render_launch(request, invite_management_error="invitation is required")
         try:
+            if form.intent == "reissue_invite":
+                created = get_services(request).reissue_writer_invitation(invitation_id)
+                return _render_launch(
+                    request,
+                    invite_path=created.path,
+                    invite_email=created.invitation.email,
+                    invite_management_message=(
+                        f"Invitation for {created.invitation.email} was reissued. "
+                        "Copy the new link now."
+                    ),
+                )
             revoked = get_services(request).revoke_writer_invitation(invitation_id)
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc

@@ -4349,6 +4349,62 @@ def test_director_can_revoke_pending_writer_invitation() -> None:
     asyncio.run(run())
 
 
+def test_director_can_reissue_pending_writer_invitation() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            created = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "create_invite",
+                        "email": "reissue-writer@example.com",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            invitations = services.repo.list_community_invitations(staff.community.id)
+            reissued = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "reissue_invite",
+                        "invitation_id": str(invitations[0].id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        invitations_after = services.repo.list_community_invitations(staff.community.id)
+        old_invitation = services.repo.get_community_invitation(
+            staff.community.id,
+            invitations[0].id,
+        )
+
+        assert created.status == 200
+        assert "Reissue invitation" in created.text
+        assert reissued.status == 200
+        assert "Invitation for reissue-writer@example.com was reissued." in reissued.text
+        assert "Copy the new link now." in reissued.text
+        assert "/invite/" in reissued.text
+        assert old_invitation.status == "revoked"
+        assert old_invitation.revoked_at is not None
+        assert len(invitations_after) == 2
+        assert invitations_after[0].status == "pending"
+        assert invitations_after[0].email == "reissue-writer@example.com"
+
+    asyncio.run(run())
+
+
 def test_expired_writer_invitation_cannot_be_accepted_or_revoked() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
