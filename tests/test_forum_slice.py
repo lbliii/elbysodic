@@ -3662,6 +3662,11 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert "Queues that should move before writers stall." in operations.text
         assert "Blocked" in operations.text
         assert "Watching" in operations.text
+        assert "Operations queue shortcuts" in operations.text
+        assert 'href="/applications"' in operations.text
+        assert 'href="/casting"' in operations.text
+        assert 'href="/plotting#interest-inbox"' in operations.text
+        assert 'href="/studio/launch"' in operations.text
         assert "accepted member(s) without faces" in operations.text
         assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
             operations.text

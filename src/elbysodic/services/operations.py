@@ -58,6 +58,14 @@ class OperationsLane:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationsShortcut:
+    label: str
+    count: int
+    href: str
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
 class OperationsInspectionConfig:
     environment: str
     secure_cookies: bool
@@ -80,6 +88,7 @@ class OperationsInspection:
 class DirectorOperations:
     cards: list[OperationsCard]
     lanes: list[OperationsLane]
+    shortcuts: list[OperationsShortcut]
     ready_applications: list[ApplicationCharacterView]
     blocked_applications: list[ApplicationCharacterView]
     can_manage: bool
@@ -256,11 +265,49 @@ def director_operations(
     return DirectorOperations(
         cards=cards,
         lanes=_operations_lanes(cards),
+        shortcuts=_operations_shortcuts(studio, casting, plotting),
         ready_applications=ready_applications,
         blocked_applications=blocked_applications,
         can_manage=studio.can_manage,
         inspection=inspection,
     )
+
+
+def _operations_shortcuts(
+    studio: DirectorStudio,
+    casting: CastingDesk,
+    plotting: PlottingDesk,
+) -> list[OperationsShortcut]:
+    casting_count = len(casting.active_reserves) + len(casting.wanted_with_interest)
+    launch_count = (
+        0 if studio.launch_readiness.is_ready else studio.launch_readiness.missing_required_count
+    )
+    return [
+        OperationsShortcut(
+            "Applications",
+            len(studio.applications.review_queue),
+            "/applications",
+            "Submitted faces and claim-blocked reviews.",
+        ),
+        OperationsShortcut(
+            "Casting",
+            casting_count,
+            "/casting",
+            "Reserves, claims, and wanted movement.",
+        ),
+        OperationsShortcut(
+            "Plotting",
+            len(plotting.wanted_ready_interests),
+            "/plotting#interest-inbox",
+            "Wanted interest ready for scene handoff.",
+        ),
+        OperationsShortcut(
+            "Launch",
+            launch_count,
+            "/studio/launch",
+            "Opening checklist gaps before invite or preview.",
+        ),
+    ]
 
 
 def _operations_lanes(cards: list[OperationsCard]) -> list[OperationsLane]:
