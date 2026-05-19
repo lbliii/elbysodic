@@ -7,7 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
-from playwright.async_api import Page, async_playwright
+from playwright.async_api import (
+    Page,
+    async_playwright,
+)
+from playwright.async_api import (
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 
 @dataclass(frozen=True)
@@ -344,11 +350,21 @@ async def _switch_dev_persona(
     persona_key: str,
     next_path: str,
 ) -> str | None:
-    response = await page.request.post(
-        urljoin(base_url, "/dev/personas"),
-        form={"persona_key": persona_key, "next": next_path},
-    )
-    if response.status >= 400:
+    response = await page.goto(urljoin(base_url, "/dev/personas"), wait_until="domcontentloaded")
+    if response and response.status >= 400:
+        return f"dev persona switcher failed: HTTP {response.status}"
+
+    form = page.locator(f'form:has(input[name="persona_key"][value="{persona_key}"])').first
+    if await form.count() == 0:
+        return f"dev persona switch failed: missing form for {persona_key}"
+    await form.locator('input[name="next"]').evaluate("(input, value) => input.value = value", next_path)
+    try:
+        async with page.expect_navigation(wait_until="domcontentloaded") as navigation:
+            await form.locator('button[type="submit"]').click()
+        response = await navigation.value
+    except PlaywrightTimeoutError:
+        return f"dev persona switch failed: timeout for {persona_key}"
+    if response and response.status >= 400:
         return f"dev persona switch failed: HTTP {response.status} for {persona_key}"
     return None
 

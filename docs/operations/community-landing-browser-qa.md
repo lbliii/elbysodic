@@ -52,8 +52,34 @@ pass catches viewport, focus, overflow, and state-language regressions.
   thread language remains visible where each state needs it.
 - Screenshots or artifact paths are recorded in the PR or release notes.
 
+## Local Command
+
+Use an isolated seeded development server so the browser harness can switch
+seed personas through the dev-only persona form:
+
+```bash
+ELBYSODIC_ENV=development uv run elbysodic \
+  --db-path /private/tmp/elbysodic-community-landing-qa.sqlite3 \
+  --port 8006 \
+  --seed-demo \
+  serve
+```
+
+Then run the profile:
+
+```bash
+ELBYSODIC_ENV=development uv run python scripts/browser_qa.py \
+  --base-url http://127.0.0.1:8006 \
+  --profile community-landing \
+  --artifact-dir /private/tmp/elbysodic-community-landing-qa-2026-05-19
+```
+
 ## Current Status
 
-Not run in this workspace. The local route and contract checks passed, but this
-browser QA still needs a running app URL and screenshots for the required
-viewports.
+Passed locally on May 19, 2026 against the isolated seeded development server
+above. Screenshot artifacts:
+`/private/tmp/elbysodic-community-landing-qa-2026-05-19`.
+
+The first run caught a tablet scoped-search heading overflow on
+`/c/afterlight-accord/search?q=seal`; the responsive search hero layout was
+tightened and the profile passed on rerun.
