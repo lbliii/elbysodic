@@ -85,6 +85,25 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         except (LookupError, ValueError) as exc:
             return _render_launch(request, access_request_error=str(exc))
         return _render_launch(request, access_request_message=access_request_message)
+    if form.intent == "invite_access_request":
+        try:
+            access_request_id = int(form.access_request_id)
+        except ValueError:
+            return _render_launch(request, access_request_error="access request is required")
+        try:
+            created = get_services(request).invite_access_request(access_request_id)
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except (LookupError, ValueError) as exc:
+            return _render_launch(request, access_request_error=str(exc))
+        return _render_launch(
+            request,
+            invite_path=created.path,
+            invite_email=created.invitation.email,
+            access_request_message=(
+                f"Invitation created from access request for {created.invitation.email}."
+            ),
+        )
     if form.intent != "create_invite":
         raise HTTPError(status=400, detail="unsupported launch action")
     try:

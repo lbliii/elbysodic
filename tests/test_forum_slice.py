@@ -3751,6 +3751,60 @@ def test_studio_launch_moderates_access_requests() -> None:
     asyncio.run(run())
 
 
+def test_studio_launch_invites_writer_from_access_request() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="invite-prospect@example.com",
+            display_name="Invite Prospect",
+            face_concept="Transfer student",
+            wanted_hook="Archive opening",
+            notes="Ready for invite-only access.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            invited = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "invite_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            launch_after = await client.get("/studio/launch")
+
+        updated = services.repo.get_community_access_request(staff.community.id, access_request.id)
+        invitations = services.repo.list_community_invitations(staff.community.id)
+
+        assert launch.status == 200
+        assert "Create invitation" in launch.text
+        assert invited.status == 200
+        assert "Invitation created from access request for invite-prospect@example.com." in (
+            invited.text
+        )
+        assert "/invite/" in invited.text
+        assert updated.status == "invited"
+        assert updated.invitation_id is not None
+        assert invitations[0].id == updated.invitation_id
+        assert invitations[0].email == "invite-prospect@example.com"
+        assert "Invited" in launch_after.text
+        assert "Decline request" not in launch_after.text
+
+    asyncio.run(run())
+
+
 def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
     async def run() -> None:
         connection = connect(":memory:", check_same_thread=False)

@@ -229,6 +229,12 @@
             {% if item.request.status in ("pending", "reviewed") %}
             <form method="post" action="/studio/launch" hx-boost="false">
               {{ csrf_field() }}
+              <input type="hidden" name="intent" value="invite_access_request">
+              <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+              <button class="chirpui-btn chirpui-btn--primary" type="submit">Create invitation</button>
+            </form>
+            <form method="post" action="/studio/launch" hx-boost="false">
+              {{ csrf_field() }}
               <input type="hidden" name="intent" value="decline_access_request">
               <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
               <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Decline request</button>

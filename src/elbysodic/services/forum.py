@@ -1020,6 +1020,23 @@ class AppServices:
             status="declined",
         )
 
+    def invite_access_request(self, request_id: int) -> CreatedInvitation:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        with self.repo.transaction():
+            access_request = self.repo.get_community_access_request(viewer.community.id, request_id)
+            if access_request.status not in {"pending", "reviewed"}:
+                raise ValueError("only pending or reviewed access requests can become invitations")
+            created = self.create_writer_invitation(access_request.email)
+            self.repo.update_community_access_request_status(
+                viewer.community.id,
+                request_id,
+                status="invited",
+                invitation_id=created.invitation.id,
+            )
+        return created
+
     def revoke_writer_invitation(self, invitation_id: int) -> CommunityInvitation:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
