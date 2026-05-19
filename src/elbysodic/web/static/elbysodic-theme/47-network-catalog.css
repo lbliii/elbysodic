@@ -355,6 +355,33 @@
     color: var(--chirpui-accent);
 }
 
+.elbysodic-network-access-note {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-surface));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    justify-content: space-between;
+    padding: 0.75rem 0.9rem;
+}
+
+.elbysodic-network-access-note strong,
+.elbysodic-network-access-note span {
+    line-height: 1.35;
+}
+
+.elbysodic-network-access-note strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+}
+
+.elbysodic-network-access-note span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+}
+
 .elbysodic-network-filter-drawer__chips {
     display: flex;
     flex-wrap: wrap;

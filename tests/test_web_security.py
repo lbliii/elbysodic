@@ -465,6 +465,28 @@ def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) 
     asyncio.run(run())
 
 
+def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            network = await client.get(
+                "/network?q=x-men",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert network.status == 200
+        assert "Signed in as Lane in X-Men Apocalypse" in network.text
+        assert "Explore cards stay public-preview safe" in network.text
+        assert "current membership" in network.text
+        assert "Staff in X-Men Apocalypse" not in network.text
+        assert "Application Review Room" not in network.text
+
+    asyncio.run(run())
+
+
 def test_public_network_search_contract_stays_service_owned() -> None:
     services = create_services(path=":memory:")
 
