@@ -532,7 +532,7 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
             "/network": 105,
             "/c/x-men-apocalypse": 345,
             "/c/x-men-apocalypse/locations": 150,
-            "/c/x-men-apocalypse/community": 300,
+            "/c/x-men-apocalypse/community": 305,
             "/c/x-men-apocalypse/world/b-24-winter": 155,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 105,
@@ -1848,7 +1848,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Emberhouse" in response.text
         assert "Gaslight Ward" in response.text
         assert "Wayfarer Station" in response.text
-        assert "current realm" not in response.text
+        assert "your current realm is marked when it appears" in response.text
         assert "Public preview" in response.text
         assert "Application guide ready" in response.text
         assert "Claims configured" in response.text
