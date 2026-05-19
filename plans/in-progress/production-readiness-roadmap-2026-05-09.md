@@ -23,6 +23,44 @@ Graph all depend on boringly correct tenant routing, sessions, persistence,
 rendered privacy, transaction boundaries, and recovery before their product
 surfaces expand.
 
+## 2026-05-19 Status Refresh
+
+The production-trust surface is now materially clearer for alpha entry, but
+live production proof is still blocked outside this workspace. Railway CLI is
+not installed locally, so `docs/operations/railway-production-smoke-record.md`
+contains an incomplete attempt record rather than a pass. The live host, volume,
+cookie, seed media, and restart checks still need a Railway-connected operator.
+
+Local work since the previous refresh closed several account/member/applicant
+state gaps:
+
+- Signed-in non-members render as account visitors on public realm surfaces,
+  not as logged-out users.
+- Tenant-scoped access requests are stored, moderated in Studio Launch, can be
+  declined/reviewed, and can create linked writer invitations without granting
+  membership directly.
+- Access request notes have rendered privacy proof across public pages and
+  non-director member surfaces.
+- Studio Operations links directly to access requests and includes request
+  context in the activation lane.
+- No-face members see first-face guidance from the realm home.
+- Accepted applications surface a service-owned next writing move, and accepted
+  face activation can recommend a specific opening when claims/reserves are
+  clear.
+- Program Blueprint apply remains gated, with apply-readiness checklist data
+  owned by the service rather than the template.
+- `scripts/browser_qa.py --profile community-landing` now covers public,
+  account-visitor, member, accepted-application, and Studio routes for local
+  screenshot QA.
+
+Still required before this roadmap can call the production gate closed:
+
+- Run and record live Railway production smoke.
+- Run and record community landing browser QA screenshots from the new profile.
+- Decide email/resend/copy-later policy for invitations created from access
+  requests.
+- Add a changelog/release note once this branch is prepared for PR.
+
 ## 2026-05-18 Status Refresh
 
 Local proof is stronger than the stale review date implied. The full test suite
@@ -498,12 +536,15 @@ move before manual scene outcomes and rendered privacy proof.
 ## Immediate PR Queue
 
 1. Execute production bootstrap only after the go/no-go checklist is approved.
-2. Run invite-only alpha using the alpha runbook and record restart persistence.
-3. Replace copy-only invitation delivery with an explicit email or resend
+2. Run live Railway production smoke and record restart persistence.
+3. Run community landing browser QA with `scripts/browser_qa.py --profile
+   community-landing`.
+4. Replace copy-only invitation delivery with an explicit email or resend
    contract when credentials and sender policy exist.
-4. Extend first-face onboarding into claims, reserves, and first-scene guidance.
-5. Transaction helper expansion to the next high-risk workflow.
-6. Blueprint diff/apply readiness remains gated behind transaction and
+5. Extend access-request moderation into email delivery/resend once the sender
+   contract exists.
+6. Transaction helper expansion to the next high-risk workflow.
+7. Blueprint diff/apply readiness remains gated behind transaction and
    collision proof.
 
 ## Progress Log
@@ -547,3 +588,7 @@ move before manual scene outcomes and rendered privacy proof.
   invitations, rendered no-face invite continuation proof, and closed privacy
   gaps for claims notes, direct application outsider access, and cross-tenant
   plotting room id leakage.
+- 2026-05-19: Added account-visitor public preview proof, tenant access request
+  capture/moderation/invite linking, access-request privacy proof, no-face
+  realm-home guidance, accepted-face next-move recommendations, service-owned
+  Blueprint apply readiness, and the `community-landing` browser QA profile.
