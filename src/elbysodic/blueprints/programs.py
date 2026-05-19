@@ -33,7 +33,16 @@ APPEARANCE_DISALLOWED_KEYS: frozenset[str] = frozenset(
     {"css", "raw_css", "script", "javascript", "html", "template", "external_font_url"}
 )
 ROOT_KEYS: frozenset[str] = frozenset(
-    {"elbysodic_blueprint", "program", "characters", "boards", "materials", "wanted", "theme", "appearance"}
+    {
+        "elbysodic_blueprint",
+        "program",
+        "characters",
+        "boards",
+        "materials",
+        "wanted",
+        "theme",
+        "appearance",
+    }
 )
 PROGRAM_KEYS: frozenset[str] = frozenset({"slug", "name", "role"})
 ROLE_KEYS: frozenset[str] = frozenset({"slug", "name", "is_admin"})
@@ -68,9 +77,20 @@ BOARD_MEDIA_KEYS: frozenset[str] = frozenset(
         "image_overlay",
     }
 )
-MATERIAL_KEYS: frozenset[str] = frozenset({"slug", "title", "type", "material_type", "summary", "body"})
+MATERIAL_KEYS: frozenset[str] = frozenset(
+    {"slug", "title", "type", "material_type", "summary", "body"}
+)
 WANTED_KEYS: frozenset[str] = frozenset(
-    {"slug", "title", "type", "wanted_type", "summary", "body", "related_material", "related_material_slug"}
+    {
+        "slug",
+        "title",
+        "type",
+        "wanted_type",
+        "summary",
+        "body",
+        "related_material",
+        "related_material_slug",
+    }
 )
 THEME_KEYS: frozenset[str] = frozenset(
     {"slug", "name", "typography", "light", "dark", "radius", "density", "texture"}

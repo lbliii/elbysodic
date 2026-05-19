@@ -328,9 +328,7 @@ def _operations_lanes(cards: list[OperationsCard]) -> list[OperationsLane]:
         return []
     attention_count = sum(card.count for card in cards if card.variant == "attention")
     warning_count = sum(card.count for card in cards if card.variant == "warning")
-    watch_count = sum(
-        card.count for card in cards if card.variant not in {"attention", "warning"}
-    )
+    watch_count = sum(card.count for card in cards if card.variant not in {"attention", "warning"})
     return [
         OperationsLane(
             label="Needs decision",
@@ -421,8 +419,7 @@ def _writer_activation_card(
     if writer_access_requests:
         activation_items.append(f"{len(writer_access_requests)} access request(s)")
         activation_items.extend(
-            _access_request_item_label(item.request)
-            for item in writer_access_requests[:2]
+            _access_request_item_label(item.request) for item in writer_access_requests[:2]
         )
     if pending_invites:
         activation_items.append(f"{len(pending_invites)} pending invite(s)")

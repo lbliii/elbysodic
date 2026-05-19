@@ -133,9 +133,7 @@ def _render_intake_editor(
         onboarding=services.application_onboarding(),
         blueprint_yaml=blueprint_yaml,
         blueprint_preview=blueprint_preview,
-        blueprint_apply_readiness=services.program_blueprint_apply_readiness(
-            blueprint_preview
-        ),
+        blueprint_apply_readiness=services.program_blueprint_apply_readiness(blueprint_preview),
         error=error,
         shell_actions=_intake_shell_actions(),
     )

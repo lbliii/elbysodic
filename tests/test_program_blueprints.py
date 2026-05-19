@@ -845,10 +845,7 @@ def test_original_premise_seed_restores_missing_seeded_board_media() -> None:
     seed_demo_forum(repo)
 
     restored = repo.get_board_by_slug(harbor.id, "marina-hotel")
-    assert (
-        restored.image_url
-        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
-    )
+    assert restored.image_url == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
     assert restored.image_alt == "Marina hotel beside dark water and lit windows"
 
 

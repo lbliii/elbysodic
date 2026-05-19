@@ -1102,9 +1102,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             (community_id, request_id),
         )
         if row is None:
-            raise LookupError(
-                f"access request not found in community {community_id}: {request_id}"
-            )
+            raise LookupError(f"access request not found in community {community_id}: {request_id}")
         return _community_access_request_from_row(row)
 
     def find_open_community_access_request(
@@ -1134,7 +1132,9 @@ class IdentityRepositoryMixin(RepositoryBase):
         invitation_id: int | None = None,
     ) -> CommunityAccessRequest:
         if status not in {"pending", "reviewed", "invited", "declined"}:
-            raise ValueError("access request status must be pending, reviewed, invited, or declined")
+            raise ValueError(
+                "access request status must be pending, reviewed, invited, or declined"
+            )
         access_request = self.get_community_access_request(community_id, request_id)
         if status == access_request.status and (
             invitation_id is None or invitation_id == access_request.invitation_id
@@ -1147,9 +1147,7 @@ class IdentityRepositoryMixin(RepositoryBase):
             "declined": set(),
         }
         if status not in allowed_transitions[access_request.status]:
-            raise ValueError(
-                f"cannot move access request from {access_request.status} to {status}"
-            )
+            raise ValueError(f"cannot move access request from {access_request.status} to {status}")
         if status == "invited" and invitation_id is None and access_request.invitation_id is None:
             raise ValueError("invited access requests require an invitation")
         if invitation_id is not None:

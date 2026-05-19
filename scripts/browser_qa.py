@@ -357,7 +357,9 @@ async def _switch_dev_persona(
     form = page.locator(f'form:has(input[name="persona_key"][value="{persona_key}"])').first
     if await form.count() == 0:
         return f"dev persona switch failed: missing form for {persona_key}"
-    await form.locator('input[name="next"]').evaluate("(input, value) => input.value = value", next_path)
+    await form.locator('input[name="next"]').evaluate(
+        "(input, value) => input.value = value", next_path
+    )
     try:
         async with page.expect_navigation(wait_until="domcontentloaded") as navigation:
             await form.locator('button[type="submit"]').click()

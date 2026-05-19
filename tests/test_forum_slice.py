@@ -2885,10 +2885,13 @@ def test_studio_gateway_curation_rejects_invalid_selected_order() -> None:
 
         assert response.status == 200
         assert "gateway curation order must be a positive number" in response.text
-        assert services.repo.list_community_gateway_slots(
-            staff.community.id,
-            slot_type="scene_hub",
-        ) == []
+        assert (
+            services.repo.list_community_gateway_slots(
+                staff.community.id,
+                slot_type="scene_hub",
+            )
+            == []
+        )
 
     asyncio.run(run())
 
@@ -4718,9 +4721,7 @@ appearance:
             stale_apply.text
         )
         assert gated_apply.status == 200
-        assert "Program Blueprint apply remains gated; no rows were written." in (
-            gated_apply.text
-        )
+        assert "Program Blueprint apply remains gated; no rows were written." in (gated_apply.text)
         after_count = repo.connection.execute(
             "SELECT COUNT(*) FROM communities",
         ).fetchone()[0]

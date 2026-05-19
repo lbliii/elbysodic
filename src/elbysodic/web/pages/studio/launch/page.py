@@ -76,10 +76,14 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         try:
             if form.intent == "review_access_request":
                 updated_request = get_services(request).review_access_request(access_request_id)
-                access_request_message = f"Access request from {updated_request.email} was reviewed."
+                access_request_message = (
+                    f"Access request from {updated_request.email} was reviewed."
+                )
             else:
                 updated_request = get_services(request).decline_access_request(access_request_id)
-                access_request_message = f"Access request from {updated_request.email} was declined."
+                access_request_message = (
+                    f"Access request from {updated_request.email} was declined."
+                )
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc
         except (LookupError, ValueError) as exc:

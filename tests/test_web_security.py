@@ -387,9 +387,10 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
         assert access_requests[0].email == "moira@example.com"
         assert access_requests[0].face_concept == "Archivist with a sealed branch"
         assert access_requests[0].wanted_hook == "Archive thief"
-        assert access_requests[0].account_user_id == services.repo.get_user_by_email(
-            "moira@example.com"
-        ).id
+        assert (
+            access_requests[0].account_user_id
+            == services.repo.get_user_by_email("moira@example.com").id
+        )
 
     asyncio.run(run())
 
@@ -1012,7 +1013,7 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert "playing as Rogue" not in public_root.text
         assert public_search.status == 200
         assert "Search All realms" in public_search.text
-        assert "results for \"rogue\"" in public_search.text
+        assert 'results for "rogue"' in public_search.text
         assert "playing as Rogue" not in public_search.text
         assert public_realm.status == 200
         assert "X-Men Apocalypse" in public_realm.text
