@@ -32,6 +32,72 @@ APPEARANCE_MATERIAL_VARIANTS: frozenset[str] = frozenset(
 APPEARANCE_DISALLOWED_KEYS: frozenset[str] = frozenset(
     {"css", "raw_css", "script", "javascript", "html", "template", "external_font_url"}
 )
+ROOT_KEYS: frozenset[str] = frozenset(
+    {"elbysodic_blueprint", "program", "characters", "boards", "materials", "wanted", "theme", "appearance"}
+)
+PROGRAM_KEYS: frozenset[str] = frozenset({"slug", "name", "role"})
+ROLE_KEYS: frozenset[str] = frozenset({"slug", "name", "is_admin"})
+CHARACTER_KEYS: frozenset[str] = frozenset({"slug", "name", "summary", "tagline"})
+BOARD_KEYS: frozenset[str] = frozenset(
+    {
+        "slug",
+        "name",
+        "kind",
+        "board_kind",
+        "tagline",
+        "description",
+        "media",
+        "image_url",
+        "image_alt",
+        "image_treatment",
+        "image_focal_point",
+        "image_overlay",
+    }
+)
+BOARD_MEDIA_KEYS: frozenset[str] = frozenset(
+    {
+        "url",
+        "alt",
+        "treatment",
+        "focal_point",
+        "overlay",
+        "image_url",
+        "image_alt",
+        "image_treatment",
+        "image_focal_point",
+        "image_overlay",
+    }
+)
+MATERIAL_KEYS: frozenset[str] = frozenset({"slug", "title", "type", "material_type", "summary", "body"})
+WANTED_KEYS: frozenset[str] = frozenset(
+    {"slug", "title", "type", "wanted_type", "summary", "body", "related_material", "related_material_slug"}
+)
+THEME_KEYS: frozenset[str] = frozenset(
+    {"slug", "name", "typography", "light", "dark", "radius", "density", "texture"}
+)
+THEME_TYPOGRAPHY_KEYS: frozenset[str] = frozenset({"display", "body", "mono"})
+THEME_MODE_KEYS: frozenset[str] = frozenset(
+    {
+        "bg",
+        "bg_subtle",
+        "surface",
+        "surface_elevated",
+        "border",
+        "text",
+        "text_muted",
+        "accent",
+        "accent_hover",
+        "accent_dim",
+        "accent_secondary",
+        "success",
+        "warning",
+        "error",
+    }
+)
+APPEARANCE_KEYS: frozenset[str] = frozenset({"post_style", "material_variants"})
+POST_STYLE_KEYS: frozenset[str] = frozenset(
+    {"profile_variant", "accent_style", "border_style", "title_style", "density"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -276,10 +342,13 @@ def preview_program_blueprint_yaml(source: str) -> ProgramBlueprintPreview:
     root = _mapping(loaded, "blueprint", errors)
     if root is None:
         return ProgramBlueprintPreview(None, tuple(errors))
+    _unsupported_keys(root, "blueprint", ROOT_KEYS, errors)
     if root.get("elbysodic_blueprint") != 1:
         errors.append("elbysodic_blueprint must be 1")
     program_data = _mapping(root.get("program"), "program", errors) or {}
     role_data = _mapping(program_data.get("role"), "program.role", errors) or {}
+    _unsupported_keys(program_data, "program", PROGRAM_KEYS, errors)
+    _unsupported_keys(role_data, "program.role", ROLE_KEYS, errors)
     blueprint = ProgramBlueprint(
         slug=_text(program_data.get("slug")),
         name=_text(program_data.get("name")),
@@ -611,6 +680,19 @@ def _mapping(value: object, path: str, errors: list[str]) -> dict[str, Any] | No
     return None
 
 
+def _unsupported_keys(
+    mapping: dict[str, Any],
+    path: str,
+    allowed_keys: frozenset[str],
+    errors: list[str],
+) -> None:
+    errors.extend(
+        f"{path}.{key} is not supported in Program Blueprints"
+        for key in sorted(mapping)
+        if key not in allowed_keys and key not in APPEARANCE_DISALLOWED_KEYS
+    )
+
+
 def _optional_mapping(value: object, path: str, errors: list[str]) -> dict[str, Any]:
     if value is None:
         return {}
@@ -629,6 +711,18 @@ def _mapping_items(value: object, path: str, errors: list[str]) -> tuple[dict[st
         if mapping is not None:
             items.append(mapping)
     return tuple(items)
+
+
+def _checked_mapping_items(
+    value: object,
+    path: str,
+    allowed_keys: frozenset[str],
+    errors: list[str],
+) -> tuple[dict[str, Any], ...]:
+    items = _mapping_items(value, path, errors)
+    for index, item in enumerate(items):
+        _unsupported_keys(item, f"{path}[{index}]", allowed_keys, errors)
+    return items
 
 
 def _text(value: object) -> str:
@@ -662,14 +756,15 @@ def _characters_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintCh
             summary=_field(item, "summary"),
             tagline=_field(item, "tagline"),
         )
-        for item in _mapping_items(value, "characters", errors)
+        for item in _checked_mapping_items(value, "characters", CHARACTER_KEYS, errors)
     )
 
 
 def _boards_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintBoard, ...]:
     boards: list[BlueprintBoard] = []
-    for index, item in enumerate(_mapping_items(value, "boards", errors)):
+    for index, item in enumerate(_checked_mapping_items(value, "boards", BOARD_KEYS, errors)):
         media = _optional_mapping(item.get("media"), f"boards[{index}].media", errors)
+        _unsupported_keys(media, f"boards[{index}].media", BOARD_MEDIA_KEYS, errors)
         boards.append(
             BlueprintBoard(
                 slug=_field(item, "slug"),
@@ -709,7 +804,7 @@ def _materials_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintMat
             summary=_field(item, "summary"),
             body=_field(item, "body"),
         )
-        for item in _mapping_items(value, "materials", errors)
+        for item in _checked_mapping_items(value, "materials", MATERIAL_KEYS, errors)
     )
 
 
@@ -724,7 +819,7 @@ def _wanted_from_yaml(value: object, errors: list[str]) -> tuple[BlueprintWanted
             related_material_slug=_field(item, "related_material")
             or _field(item, "related_material_slug"),
         )
-        for item in _mapping_items(value, "wanted", errors)
+        for item in _checked_mapping_items(value, "wanted", WANTED_KEYS, errors)
     )
 
 
@@ -734,7 +829,9 @@ def _theme_from_yaml(value: object, errors: list[str]) -> BlueprintTheme | None:
     theme = _mapping(value, "theme", errors)
     if theme is None:
         return None
+    _unsupported_keys(theme, "theme", THEME_KEYS, errors)
     typography = _mapping(theme.get("typography"), "theme.typography", errors) or {}
+    _unsupported_keys(typography, "theme.typography", THEME_TYPOGRAPHY_KEYS, errors)
     light = _theme_mode_from_yaml(theme.get("light"), "theme.light", errors)
     dark = _theme_mode_from_yaml(theme.get("dark"), "theme.dark", errors)
     return BlueprintTheme(
@@ -759,6 +856,7 @@ def _appearance_from_yaml(value: object, errors: list[str]) -> BlueprintAppearan
     appearance = _mapping(value, "appearance", errors)
     if appearance is None:
         return None
+    _unsupported_keys(appearance, "appearance", APPEARANCE_KEYS, errors)
     post_style = _post_style_from_yaml(appearance.get("post_style"), errors)
     return BlueprintAppearance(
         post_style=post_style,
@@ -775,6 +873,7 @@ def _post_style_from_yaml(value: object, errors: list[str]) -> BlueprintPostStyl
     post_style = _mapping(value, "appearance.post_style", errors)
     if post_style is None:
         return None
+    _unsupported_keys(post_style, "appearance.post_style", POST_STYLE_KEYS, errors)
     return BlueprintPostStyle(
         profile_variant=_field(post_style, "profile_variant") or "bio",
         accent_style=_field(post_style, "accent_style") or "soft",
@@ -808,6 +907,7 @@ def _theme_mode_from_yaml(
     errors: list[str],
 ) -> BlueprintThemeMode:
     mode = _mapping(value, path, errors) or {}
+    _unsupported_keys(mode, path, THEME_MODE_KEYS, errors)
     return BlueprintThemeMode(
         bg=_field(mode, "bg"),
         bg_subtle=_field(mode, "bg_subtle"),

@@ -604,6 +604,51 @@ materials: []
     )
 
 
+def test_program_blueprint_yaml_preview_reports_unknown_keys() -> None:
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+unexpected_root: no
+program:
+  slug: mystery-manor
+  name: Mystery Manor
+  tagline: This belongs in discovery, not the program block.
+  role:
+    slug: director
+    name: Director
+    badge: Head Writer
+characters:
+  - slug: vera-vale
+    name: Vera Vale
+    summary: Keeps keys for every locked room.
+    secret: Unknown to the importer.
+boards:
+  - slug: east-wing
+    name: East Wing
+    kind: location
+    tagline: Locked after midnight.
+    description: Portrait hall and sealed study.
+    media:
+      url: /media/east-wing.svg
+      caption: Not a supported media field.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: Every inheritance has a witness.
+    body: The house keeps producing new doors.
+wanted: []
+"""
+    )
+
+    assert not preview.is_valid
+    assert "blueprint.unexpected_root is not supported in Program Blueprints" in preview.errors
+    assert "program.tagline is not supported in Program Blueprints" in preview.errors
+    assert "program.role.badge is not supported in Program Blueprints" in preview.errors
+    assert "characters[0].secret is not supported in Program Blueprints" in preview.errors
+    assert "boards[0].media.caption is not supported in Program Blueprints" in preview.errors
+
+
 def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
     connection = connect()
     create_schema(connection)

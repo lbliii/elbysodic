@@ -230,6 +230,8 @@ Blueprint validation should fail before hydration when:
 - A blueprint has no playable boards.
 - A blueprint has no director materials.
 - Program, character, board, material, or wanted slugs are duplicated.
+- Unsupported keys appear in the top-level packet, program, role, roster face,
+  board, media, material, wanted, theme, or appearance sections.
 - A board uses an unknown `board_kind`.
 - A director material uses an unknown material type.
 - A wanted hook uses an unknown wanted-hook type.
