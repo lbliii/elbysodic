@@ -394,6 +394,40 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
     asyncio.run(run())
 
 
+def test_production_signed_out_public_realm_keeps_anonymous_posture(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/afterlight-accord")
+            search = await client.get("/c/afterlight-accord/search?q=seal")
+            request_access = await client.get("/c/afterlight-accord/request-access")
+
+        assert response.status == 200
+        assert "Afterlight Accord" in response.text
+        assert "elbysodic-anonymous-actions" in response.text
+        assert "Log in" in response.text
+        assert "Not a member of Afterlight Accord yet" not in response.text
+        assert "Account menu: signed in as" not in response.text
+        assert 'href="/c/afterlight-accord/desk"' not in response.text
+        assert "playing as Orin Vale" not in response.text
+
+        assert search.status == 200
+        assert "Search Afterlight Accord" in search.text
+        assert 'title="Afterlight Accord">AA</span>' in search.text
+        assert "Account menu: signed in as" not in search.text
+
+        assert request_access.status == 200
+        assert "Access opens through a director invitation." in request_access.text
+        assert "Writer email" in request_access.text
+        assert "Send access request" in request_access.text
+        assert 'value="moira@example.com"' not in request_access.text
+        assert "Not a member of Afterlight Accord yet" not in request_access.text
+
+    asyncio.run(run())
+
+
 def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
