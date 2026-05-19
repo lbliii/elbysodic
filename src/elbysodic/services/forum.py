@@ -1000,6 +1000,26 @@ class AppServices:
             for item in self.repo.list_community_access_requests(viewer.community.id)
         ]
 
+    def review_access_request(self, request_id: int) -> CommunityAccessRequest:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        return self.repo.update_community_access_request_status(
+            viewer.community.id,
+            request_id,
+            status="reviewed",
+        )
+
+    def decline_access_request(self, request_id: int) -> CommunityAccessRequest:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        return self.repo.update_community_access_request_status(
+            viewer.community.id,
+            request_id,
+            status="declined",
+        )
+
     def revoke_writer_invitation(self, invitation_id: int) -> CommunityInvitation:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):

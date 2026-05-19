@@ -151,6 +151,12 @@
     {% if invite_management_message %}
     <div class="elbysodic-quiet-empty" role="status">{{ invite_management_message }}</div>
     {% end %}
+    {% if access_request_error %}
+    <p class="elbysodic-form-error" role="alert">{{ access_request_error }}</p>
+    {% end %}
+    {% if access_request_message %}
+    <div class="elbysodic-quiet-empty" role="status">{{ access_request_message }}</div>
+    {% end %}
     {% if invite_path %}
     <div class="elbysodic-quiet-empty" role="status">
       Invitation ready for {{ invite_email }}: <a class="chirpui-link" href="{{ invite_path }}">{{ invite_path }}</a>
@@ -209,6 +215,26 @@
             {% end %}
             {% if item.request.notes %}
             <span>{{ item.request.notes }}</span>
+            {% end %}
+          </div>
+          <div class="elbysodic-network-card__actions">
+            {% if item.request.status == "pending" %}
+            <form method="post" action="/studio/launch" hx-boost="false">
+              {{ csrf_field() }}
+              <input type="hidden" name="intent" value="review_access_request">
+              <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+              <button class="chirpui-btn chirpui-btn--secondary" type="submit">Mark reviewed</button>
+            </form>
+            {% end %}
+            {% if item.request.status in ("pending", "reviewed") %}
+            <form method="post" action="/studio/launch" hx-boost="false">
+              {{ csrf_field() }}
+              <input type="hidden" name="intent" value="decline_access_request">
+              <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+              <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Decline request</button>
+            </form>
+            {% else %}
+            {{ badge(item.status_label, variant="success" if item.request.status == "invited" else "muted") }}
             {% end %}
           </div>
         </li>

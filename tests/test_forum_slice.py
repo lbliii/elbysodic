@@ -3684,6 +3684,73 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
     asyncio.run(run())
 
 
+def test_studio_launch_moderates_access_requests() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="launch-prospect@example.com",
+            display_name="Launch Prospect",
+            face_concept="Exchange student",
+            wanted_hook="Danger Room opening",
+            notes="Can post weekly.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            reviewed = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "review_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            launch_after_review = await client.get("/studio/launch")
+            declined = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "decline_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            launch_after_decline = await client.get("/studio/launch")
+
+        assert launch.status == 200
+        assert "Access requests" in launch.text
+        assert "launch-prospect@example.com" in launch.text
+        assert "Exchange student" in launch.text
+        assert "Mark reviewed" in launch.text
+        assert "Decline request" in launch.text
+        assert reviewed.status == 200
+        assert "was reviewed" in reviewed.text
+        assert "Reviewed" in launch_after_review.text
+        assert "Decline request" in launch_after_review.text
+        assert declined.status == 200
+        assert "was declined" in declined.text
+        assert "Declined" in launch_after_decline.text
+        assert "Mark reviewed" not in launch_after_decline.text
+        assert (
+            services.repo.get_community_access_request(staff.community.id, access_request.id).status
+            == "declined"
+        )
+
+    asyncio.run(run())
+
+
 def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
     async def run() -> None:
         connection = connect(":memory:", check_same_thread=False)
