@@ -793,6 +793,11 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
 
         async with TestClient(app) as client:
             health = await client.get("/health")
+            public_root = await client.get("/")
+            public_search = await client.get("/search?q=rogue")
+            public_realm = await client.get("/c/x-men-apocalypse")
+            seed_media = await client.get("/elbysodic-static/seed-media/xmen-hero.svg")
+            signed_out_studio = await client.get("/studio")
             login, cookies = await _production_login(
                 client,
                 email="writer@example.com",
@@ -866,6 +871,19 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
             )
 
         assert health.status == 200
+        assert public_root.status == 200
+        assert "Top 10 realms" in public_root.text
+        assert "playing as Rogue" not in public_root.text
+        assert public_search.status == 200
+        assert "Search All realms" in public_search.text
+        assert "results for \"rogue\"" in public_search.text
+        assert "playing as Rogue" not in public_search.text
+        assert public_realm.status == 200
+        assert "X-Men Apocalypse" in public_realm.text
+        assert "elbysodic-identity-menu" not in public_realm.text
+        assert seed_media.status == 200
+        assert signed_out_studio.status == 302
+        assert dict(signed_out_studio.headers)["location"] == "/login?next=/studio"
         assert login.status == 302
         assert dict(login.headers)["location"] == "/c/x-men-apocalypse"
         assert xmen_home.status == 200
