@@ -99,6 +99,9 @@ A realm ready for scenes, casting, and writer movement.
     {% if program.open_wanted_count %}
     {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "star") }}
     {% end %}
+    {% if program.community.launch_status == "public-preview" and not (viewer and viewer.community.id == program.community.id) %}
+    {{ compact_link_action(program.entry_href ~ "/request-access", "Request access", "envelope") }}
+    {% end %}
   </div>
 </article>
 {% end %}

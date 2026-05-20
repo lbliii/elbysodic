@@ -580,6 +580,23 @@ def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) 
     asyncio.run(run())
 
 
+def test_public_network_cards_link_to_request_access(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            network = await client.get("/network?q=x-men")
+
+        assert network.status == 200
+        assert 'href="/c/x-men-apocalypse/request-access"' in network.text
+        assert 'aria-label="Request access"' in network.text
+        assert "Application Review Room" not in network.text
+        assert "unread" not in network.text
+
+    asyncio.run(run())
+
+
 def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
@@ -596,6 +613,7 @@ def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch
         assert "Signed in as Lane in X-Men Apocalypse" in network.text
         assert "Explore cards stay public-preview safe" in network.text
         assert "current membership" in network.text
+        assert 'href="/c/x-men-apocalypse/request-access"' not in network.text
         assert "Staff in X-Men Apocalypse" not in network.text
         assert "Application Review Room" not in network.text
 
