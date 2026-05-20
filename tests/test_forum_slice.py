@@ -7686,6 +7686,34 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
     asyncio.run(run())
 
 
+def test_application_start_rolls_back_when_review_room_creation_fails(monkeypatch) -> None:
+    services = _faceless_services(create_services(path=":memory:"), prefix="rollback-app")
+    community = services.seed.community
+    membership = services.seed.membership
+
+    def fail_application_creation(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated application room failure")
+
+    monkeypatch.setattr(
+        services.repo,
+        "ensure_character_application",
+        fail_application_creation,
+    )
+
+    with pytest.raises(RuntimeError, match="simulated application room failure"):
+        services.create_character(
+            name="Rollback Face",
+            summary="This draft should not survive a late failure.",
+            application_body="This application should not survive either.",
+            make_default=True,
+        )
+
+    assert services.repo.list_characters(community.id, membership.id) == []
+    assert services.repo.get_membership(community.id, membership.id).default_character_id is None
+    with pytest.raises(LookupError):
+        services.repo.get_character_by_slug(community.id, "rollback-face")
+
+
 def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None:
     async def run() -> None:
         _app()

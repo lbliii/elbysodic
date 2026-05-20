@@ -3112,48 +3112,49 @@ class AppServices:
             "post density",
         )
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
-        character = self.repo.create_character(
-            viewer.community.id,
-            viewer.membership.id,
-            slug,
-            cleaned_name,
-            avatar_url=cleaned_avatar_url,
-            poster_url=cleaned_poster_url,
-            poster_alt=cleaned_poster_alt,
-            tagline=cleaned_tagline,
-            accent_color=cleaned_accent_color,
-            summary=cleaned_summary,
-            post_profile_variant=cleaned_post_profile_variant,
-            post_accent_style=cleaned_post_accent_style,
-            post_border_style=cleaned_post_border_style,
-            post_title_style=cleaned_post_title_style,
-            post_density=cleaned_post_density,
-            application_status="draft",
-            make_default=make_default,
-        )
-        for facet in _resolve_facets(self.repo, viewer.community.id, facet_slugs or []):
-            self.repo.assign_character_facet(viewer.community.id, character.id, facet.id)
-        application = self.repo.ensure_character_application(viewer.community.id, character.id)
-        cleaned_application_body = application_body.strip()
-        if cleaned_application_body:
-            if len(cleaned_application_body) > 5000:
-                raise ValueError("application body must be 5000 characters or fewer")
-            self.repo.update_character_application_draft(
+        with self.repo.transaction():
+            character = self.repo.create_character(
                 viewer.community.id,
-                application.id,
-                title=character.name,
-                summary=character.summary,
-                body=cleaned_application_body,
+                viewer.membership.id,
+                slug,
+                cleaned_name,
+                avatar_url=cleaned_avatar_url,
+                poster_url=cleaned_poster_url,
+                poster_alt=cleaned_poster_alt,
+                tagline=cleaned_tagline,
+                accent_color=cleaned_accent_color,
+                summary=cleaned_summary,
+                post_profile_variant=cleaned_post_profile_variant,
+                post_accent_style=cleaned_post_accent_style,
+                post_border_style=cleaned_post_border_style,
+                post_title_style=cleaned_post_title_style,
+                post_density=cleaned_post_density,
+                application_status="draft",
+                make_default=make_default,
             )
-        for field_id, value in (application_field_values or {}).items():
-            cleaned_value = value.strip()
-            if cleaned_value:
-                self.repo.set_application_field_value(
+            for facet in _resolve_facets(self.repo, viewer.community.id, facet_slugs or []):
+                self.repo.assign_character_facet(viewer.community.id, character.id, facet.id)
+            application = self.repo.ensure_character_application(viewer.community.id, character.id)
+            cleaned_application_body = application_body.strip()
+            if cleaned_application_body:
+                if len(cleaned_application_body) > 5000:
+                    raise ValueError("application body must be 5000 characters or fewer")
+                self.repo.update_character_application_draft(
                     viewer.community.id,
                     application.id,
-                    field_id,
-                    cleaned_value,
+                    title=character.name,
+                    summary=character.summary,
+                    body=cleaned_application_body,
                 )
+            for field_id, value in (application_field_values or {}).items():
+                cleaned_value = value.strip()
+                if cleaned_value:
+                    self.repo.set_application_field_value(
+                        viewer.community.id,
+                        application.id,
+                        field_id,
+                        cleaned_value,
+                    )
         return character
 
     def update_character(
