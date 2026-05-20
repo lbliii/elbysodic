@@ -47,7 +47,7 @@ Use these viewer modes when a route can expose scoped data:
 | `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. | partial |
 | `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. | covered for inactive identity regressions |
 | `/network`, `/network?q=...` | Public catalog cards, discovery profiles/tags, signed-in continuation, staff/member counts, backstage realm names. | Public catalog cards may show only public profile fields, public discovery tags, published premise/current chapter links, safe roster/wanted/claim counts, access/application posture, ratings, and pace; member continuation stays separate and viewer-scoped. | Own continuation lanes only. | Staff signals only where policy allows and never inside public catalog cards. | No private/staff data, discovery tags, member state, active faces, unread counts, applications, plotting rooms, drafts, or backstage realm names from other realms. | signed-out public catalog, profile/tag search, backstage realm filtering, Railway smoke, local browser QA, and premise browser QA covered |
-| shell/sidebar counts | Private board counts, notification counts, Studio attention counts. | Own permitted counts only. | Same as member. | Capability-scoped counts only. | No cross-realm or private counts. | partial |
+| shell/sidebar counts | Private board counts, notification counts, Studio attention counts. | Own permitted counts only. | Same as member. | Capability-scoped counts only. | No cross-realm or private counts. | covered for notification count regressions across inactive memberships, faceless memberships, forged/inaccessible notification targets, own inbox state, watched-thread replies, and mentions; Studio attention counts covered in Studio operations tests |
 
 ## Test Checklist
 
@@ -116,6 +116,5 @@ control appears or does not appear than to snapshot large HTML sections.
 
 ## Current Gaps
 
-- Notifications still need shell/sidebar count coverage across inactive and
-  faceless identities; current proof covers forged targets, own inbox,
-  watched-thread replies, and mentions.
+- Live production smoke remains the standing privacy gate that cannot be closed
+  from local rendered tests.

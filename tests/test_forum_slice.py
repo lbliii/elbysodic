@@ -9112,6 +9112,69 @@ def test_faceless_writer_does_not_count_unowned_character_notifications() -> Non
     asyncio.run(run())
 
 
+def test_faceless_identity_option_hides_unowned_character_notification_count() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        active = services.seed
+        faceless_community = repo.create_community(
+            "faceless-option-notify",
+            "Faceless Option Notify",
+        )
+        role = repo.create_role(faceless_community.id, "member", "Member")
+        faceless = repo.create_membership(
+            faceless_community.id,
+            active.user.id,
+            role.id,
+            "faceless-option",
+            "Faceless Option",
+        )
+        actor_user = repo.create_user("faceless-option-actor@example.com", "hash")
+        actor = repo.create_membership(
+            faceless_community.id,
+            actor_user.id,
+            role.id,
+            "faceless-option-actor",
+            "Faceless Option Actor",
+        )
+        target = repo.create_character(
+            faceless_community.id,
+            actor.id,
+            "faceless-option-target",
+            "Faceless Option Target",
+        )
+        repo.create_notification(
+            faceless_community.id,
+            faceless.id,
+            kind="application_submitted",
+            character_id=target.id,
+            actor_membership_id=actor.id,
+            actor_character_id=target.id,
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            home = await client.get("/")
+
+        viewer = services.viewer()
+        option = next(item for item in viewer.identity_options if item.membership.id == faceless.id)
+        option_match = re.search(
+            r'<button class="[^"]*elbysodic-identity-switcher__option[^"]*"'
+            r"[^>]*>\s*<span>\s*<strong>Faceless Option Notify</strong>.*?</button>",
+            home.text,
+            re.DOTALL,
+        )
+
+        assert option.current_character is None
+        assert option.unread_notification_count == 0
+        assert home.status == 200
+        assert option_match is not None
+        assert "<b>" not in option_match.group(0)
+        assert "Faceless Option Target" not in home.text
+
+    asyncio.run(run())
+
+
 def test_inactive_membership_notifications_do_not_render_identity_option_counts() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
