@@ -112,6 +112,33 @@ CREATE TABLE IF NOT EXISTS community_invitations (
     revoked_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS community_access_requests (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    display_name TEXT NOT NULL DEFAULT '',
+    face_concept TEXT NOT NULL DEFAULT '',
+    wanted_hook TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    account_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    invitation_id INTEGER REFERENCES community_invitations(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS community_access_request_events (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    access_request_id INTEGER NOT NULL REFERENCES community_access_requests(id) ON DELETE CASCADE,
+    actor_membership_id INTEGER REFERENCES community_memberships(id) ON DELETE SET NULL,
+    event_type TEXT NOT NULL,
+    from_status TEXT,
+    to_status TEXT NOT NULL,
+    invitation_id INTEGER REFERENCES community_invitations(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS community_discovery_profiles (
     community_id INTEGER PRIMARY KEY REFERENCES communities(id) ON DELETE CASCADE,
     premise_archetype TEXT NOT NULL DEFAULT '',
@@ -808,6 +835,10 @@ CREATE INDEX IF NOT EXISTS idx_community_invitations_lookup
 ON community_invitations(token_hash, status, expires_at);
 CREATE INDEX IF NOT EXISTS idx_community_invitations_community
 ON community_invitations(community_id, status, created_at);
+CREATE INDEX IF NOT EXISTS idx_community_access_requests_community
+ON community_access_requests(community_id, status, created_at);
+CREATE INDEX IF NOT EXISTS idx_community_access_request_events_request
+ON community_access_request_events(community_id, access_request_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_thread ON thread_facets(community_id, thread_id, facet_id);
 CREATE INDEX IF NOT EXISTS idx_thread_facets_facet ON thread_facets(community_id, facet_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_thread_reads_membership ON thread_reads(community_id, membership_id, thread_id);

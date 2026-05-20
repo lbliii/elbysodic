@@ -9,7 +9,13 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Protocol
 
 from elbysodic.db.migrations import CURRENT_SCHEMA_VERSION
-from elbysodic.domain.models import Character, CommunityInvitation, CommunityMembership, Role
+from elbysodic.domain.models import (
+    Character,
+    CommunityAccessRequest,
+    CommunityInvitation,
+    CommunityMembership,
+    Role,
+)
 from elbysodic.services import policies
 from elbysodic.services.read_models import (
     ApplicationCharacterView,
@@ -22,6 +28,10 @@ from elbysodic.services.read_models import (
 
 class InvitationManagementItemLike(Protocol):
     invitation: CommunityInvitation
+
+
+class AccessRequestManagementItemLike(Protocol):
+    request: CommunityAccessRequest
 
 
 class OperationsRepository(Protocol):
@@ -49,6 +59,23 @@ class OperationsCard:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationsLane:
+    label: str
+    summary: str
+    count: int
+    href: str
+    variant: str
+
+
+@dataclass(frozen=True, slots=True)
+class OperationsShortcut:
+    label: str
+    count: int
+    href: str
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
 class OperationsInspectionConfig:
     environment: str
     secure_cookies: bool
@@ -70,6 +97,8 @@ class OperationsInspection:
 @dataclass(frozen=True, slots=True)
 class DirectorOperations:
     cards: list[OperationsCard]
+    lanes: list[OperationsLane]
+    shortcuts: list[OperationsShortcut]
     ready_applications: list[ApplicationCharacterView]
     blocked_applications: list[ApplicationCharacterView]
     can_manage: bool
@@ -84,6 +113,7 @@ def director_operations(
     plotting: PlottingDesk,
     *,
     writer_invitations: Sequence[InvitationManagementItemLike],
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
     unread_notification_count: int,
     inspection_config: OperationsInspectionConfig | None,
 ) -> DirectorOperations:
@@ -108,6 +138,7 @@ def director_operations(
         casting,
         plotting,
         writer_invitations=writer_invitations,
+        writer_access_requests=writer_access_requests,
     )
     if activation_card is not None:
         cards.append(activation_card)
@@ -245,11 +276,82 @@ def director_operations(
     )
     return DirectorOperations(
         cards=cards,
+        lanes=_operations_lanes(cards),
+        shortcuts=_operations_shortcuts(studio, casting, plotting, writer_access_requests),
         ready_applications=ready_applications,
         blocked_applications=blocked_applications,
         can_manage=studio.can_manage,
         inspection=inspection,
     )
+
+
+def _operations_shortcuts(
+    studio: DirectorStudio,
+    casting: CastingDesk,
+    plotting: PlottingDesk,
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
+) -> list[OperationsShortcut]:
+    casting_count = len(casting.active_reserves) + len(casting.wanted_with_interest)
+    launch_count = (
+        0 if studio.launch_readiness.is_ready else studio.launch_readiness.missing_required_count
+    )
+    return [
+        OperationsShortcut(
+            "Applications",
+            len(studio.applications.review_queue),
+            "/applications",
+            "Submitted faces and claim-blocked reviews.",
+        ),
+        OperationsShortcut(
+            "Casting",
+            casting_count,
+            "/casting",
+            "Reserves, claims, and wanted movement.",
+        ),
+        OperationsShortcut(
+            "Plotting",
+            len(plotting.wanted_ready_interests),
+            "/plotting#interest-inbox",
+            "Wanted interest ready for scene handoff.",
+        ),
+        OperationsShortcut(
+            "Launch",
+            launch_count + len(writer_access_requests),
+            "/studio/launch#access-requests" if writer_access_requests else "/studio/launch",
+            "Opening checklist gaps and access requests.",
+        ),
+    ]
+
+
+def _operations_lanes(cards: list[OperationsCard]) -> list[OperationsLane]:
+    if not cards:
+        return []
+    attention_count = sum(card.count for card in cards if card.variant == "attention")
+    warning_count = sum(card.count for card in cards if card.variant == "warning")
+    watch_count = sum(card.count for card in cards if card.variant not in {"attention", "warning"})
+    return [
+        OperationsLane(
+            label="Needs decision",
+            summary="Queues that should move before writers stall.",
+            count=attention_count,
+            href="#director-operation-signals",
+            variant="attention",
+        ),
+        OperationsLane(
+            label="Blocked",
+            summary="Claim, navigation, or production conflicts to resolve.",
+            count=warning_count,
+            href="#director-operation-signals",
+            variant="warning",
+        ),
+        OperationsLane(
+            label="Watching",
+            summary="Active reserves, drafts, and signals worth keeping warm.",
+            count=watch_count,
+            href="#director-operation-signals",
+            variant="status",
+        ),
+    ]
 
 
 def operations_inspection(
@@ -289,6 +391,7 @@ def _writer_activation_card(
     plotting: PlottingDesk,
     *,
     writer_invitations: Sequence[InvitationManagementItemLike],
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
 ) -> OperationsCard | None:
     if not studio.can_manage:
         return None
@@ -313,6 +416,11 @@ def _writer_activation_card(
         if not accepted_faces:
             no_face_members.append(membership)
     activation_items: list[str] = []
+    if writer_access_requests:
+        activation_items.append(f"{len(writer_access_requests)} access request(s)")
+        activation_items.extend(
+            _access_request_item_label(item.request) for item in writer_access_requests[:2]
+        )
     if pending_invites:
         activation_items.append(f"{len(pending_invites)} pending invite(s)")
     if no_face_members:
@@ -334,17 +442,27 @@ def _writer_activation_card(
         count=sum(
             (
                 len(pending_invites),
+                len(writer_access_requests),
                 len(no_face_members),
                 len(active_applications),
                 len(casting.wanted_with_interest),
                 len(plotting.wanted_ready_interests),
             )
         ),
-        href="/studio/launch",
+        href="/studio/launch#access-requests" if writer_access_requests else "/studio/launch",
         cta="Open launch room",
         variant="attention",
         items=tuple(activation_items[:4]),
     )
+
+
+def _access_request_item_label(access_request: CommunityAccessRequest) -> str:
+    writer = access_request.display_name or access_request.email
+    if access_request.face_concept:
+        return f"{writer} - {access_request.face_concept}"
+    if access_request.wanted_hook:
+        return f"{writer} - {access_request.wanted_hook}"
+    return writer
 
 
 def _unique_applications(

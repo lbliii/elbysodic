@@ -23,7 +23,7 @@
 {% call stack(gap="lg") %}
   {% set home_community = viewer.community if viewer else public_program.community %}
   {% if realm_gateway %}
-  {{ realm_gateway_home(realm_gateway, viewer) }}
+  {{ realm_gateway_home(realm_gateway, viewer, account_visitor | default(none)) }}
   {% else %}
   {% set hero_treatment = home_community.world_hero_treatment or "split" %}
   {% set hero_uses_media = home_community.world_hero_image_url and hero_treatment != "text" %}

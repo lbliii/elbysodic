@@ -138,6 +138,13 @@ Account owns access. Membership owns community identity. Face owns story
 context. Notifications belong to the writer, but can expose face-scoped queues
 inside the identity menu or Writer Desk.
 
+When a valid global account visits a public realm where it has no active
+membership, the identity cluster should show signed-in account posture without
+promoting the visitor into the community shell. That state may offer request
+access, logout, and a return to the Studio Network, but it must not show Desk,
+active-face defaults, member queues, unread counts, or staff routes for the
+current realm.
+
 Writer Desk is the operating room that cashes out the shell promise. It should
 start with "what needs me," then let the writer narrow by face lane or move to
 work lanes: Queue, Inbox, Roster, Plotting, Applications, Discovery, and

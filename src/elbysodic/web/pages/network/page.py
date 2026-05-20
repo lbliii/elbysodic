@@ -29,6 +29,7 @@ def get(request: Request) -> Page:
         relationship_lanes=network_explore.relationship_lanes,
         return_path=None,
         viewer=viewer,
+        account_visitor=None if viewer is not None else services.account_visitor(request),
         explore_programs=network_explore.results,
         show_community_shell=False,
     )

@@ -162,6 +162,25 @@ def writer_activation(
             secondary_href="/wanted",
             **counts,
         )
+    openings = first_playable_openings(
+        repo,
+        viewer,
+        applications=applications,
+        plotting=plotting,
+        limit=1,
+    )
+    if openings:
+        opening = openings[0]
+        return WriterActivation(
+            stage="accepted_no_scene",
+            headline=f"Start with {opening.label}",
+            summary=opening.summary,
+            primary_label=f"Open {opening.detail.lower()}" if opening.detail else "Open next move",
+            primary_href=opening.href,
+            secondary_label="Open Desk",
+            secondary_href="/desk",
+            **counts,
+        )
     return WriterActivation(
         stage="accepted_no_scene",
         headline="Find the first playable opening",

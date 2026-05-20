@@ -133,10 +133,36 @@
     <p class="elbysodic-section-kicker">Continue writing</p>
     <h2>{{ gateway.continuation.title }}</h2>
     <p>{{ gateway.continuation.summary }}</p>
+    {% if gateway.continuation.audience == "applicant" %}
+    <p class="elbysodic-copy-meta">
+      You are a member of {{ gateway.program.community.name }}. Finish a first
+      face before reply queues, plotting rooms, and scene posting can open.
+    </p>
+    {% end %}
   </div>
   <div class="chirpui-cluster">
     {{ gateway_action(gateway.continuation.primary_action) }}
     {{ gateway_action(gateway.continuation.secondary_action, "secondary") }}
+    {% if gateway.continuation.audience == "applicant" %}
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/wanted">Browse wanted</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="{{ gateway.program.entry_href }}/locations">Find a first scene</a>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}
+
+{% def gateway_account_status(gateway, account_visitor) %}
+{% if account_visitor %}
+<section class="elbysodic-realm-account-status" aria-label="Account access">
+  <div>
+    <p class="elbysodic-section-kicker">Signed in</p>
+    <h2>Not a member of {{ gateway.program.community.name }} yet</h2>
+    <p>{{ account_visitor.display_label }} can browse the public preview, then request access when this realm fits.</p>
+  </div>
+  <div class="chirpui-cluster">
+    <a class="chirpui-btn chirpui-btn--primary" href="{{ gateway.program.entry_href }}/request-access" hx-boost="false">Request access</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/network" data-elbysodic-global-link>Browse your realms</a>
   </div>
 </section>
 {% end %}
@@ -297,19 +323,20 @@
 {% end %}
 {% end %}
 
-{% def realm_gateway_home(gateway, viewer=None) %}
+{% def realm_gateway_home(gateway, viewer=None, account_visitor=None) %}
 <div class="elbysodic-realm-gateway">
   {{ gateway_hero(gateway) }}
+  {{ gateway_account_status(gateway, account_visitor) }}
   {{ gateway_continuation(gateway) }}
   {{ gateway_premise_stage(gateway) }}
   {{ gateway_scene_hubs(gateway) }}
   {{ gateway_scene_previews(gateway) }}
+  {{ gateway_lore(gateway) }}
+  {{ gateway_wanted(gateway) }}
   {% if not viewer %}
   {{ gateway_entry_paths(gateway) }}
-  {{ gateway_lore(gateway) }}
   {{ gateway_cast(gateway) }}
   {{ gateway_social_lanes(gateway) }}
-  {{ gateway_wanted(gateway) }}
   {% end %}
 </div>
 {% end %}

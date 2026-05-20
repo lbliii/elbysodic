@@ -53,6 +53,8 @@ from elbysodic.domain.models import (
     Character,
     CharacterReserve,
     Community,
+    CommunityAccessRequest,
+    CommunityAccessRequestEvent,
     CommunityDiscoveryProfile,
     CommunityGatewaySlot,
     CommunityInvitation,
@@ -86,6 +88,7 @@ from elbysodic.services.applications import (
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
 from elbysodic.services.auth import (
+    SESSION_COOKIE,
     SESSION_TTL,
     LoginSession,
     create_login_session,
@@ -94,7 +97,16 @@ from elbysodic.services.auth import (
     session_token_hash,
     verify_password,
 )
+from elbysodic.services.blueprints import (
+    BlueprintApplyReadiness,
+)
+from elbysodic.services.blueprints import (
+    apply_program_blueprint_preview as _apply_program_blueprint_preview,
+)
 from elbysodic.services.blueprints import preview_program_blueprint as _preview_program_blueprint
+from elbysodic.services.blueprints import (
+    program_blueprint_apply_readiness as _program_blueprint_apply_readiness,
+)
 from elbysodic.services.boards import board_page as _board_page
 from elbysodic.services.boards import board_summary as _board_summary
 from elbysodic.services.boards import board_summary_factory as _board_summary_factory
@@ -227,6 +239,7 @@ from elbysodic.services.read_models import (
     POST_PROFILE_VARIANTS,
     POST_STYLE_PRESETS,
     POST_TITLE_STYLES,
+    AccountVisitorView,
     ActivityItem,
     ApplicationClaimCheck,
     ApplicationOnboarding,
@@ -405,6 +418,21 @@ class InvitationManagementItem:
     invitation: CommunityInvitation
     status_label: str
     can_revoke: bool
+
+
+@dataclass(frozen=True, slots=True)
+class AccessRequestManagementItem:
+    request: CommunityAccessRequest
+    status_label: str
+    invitation: InvitationManagementItem | None = None
+    activity: tuple[AccessRequestActivityItem, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class AccessRequestActivityItem:
+    event: CommunityAccessRequestEvent
+    label: str
+    detail: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -595,8 +623,21 @@ class AppServices:
         self._membership_contexts_by_user.clear()
 
     def _identity_options(self, identity: RequestIdentityContext) -> list[StudioIdentityOption]:
-        options: list[StudioIdentityOption] = []
         contexts = self._membership_contexts_for_user(identity.user_id)
+        return self._identity_options_for_contexts(
+            contexts,
+            current_community_id=identity.community_id,
+            current_membership_id=identity.membership_id,
+        )
+
+    def _identity_options_for_contexts(
+        self,
+        contexts: list[_MembershipContext],
+        *,
+        current_community_id: int | None,
+        current_membership_id: int | None,
+    ) -> list[StudioIdentityOption]:
+        options: list[StudioIdentityOption] = []
         unread_counts = _visible_unread_notification_counts(
             self.repo,
             [(context.community.id, context.membership, context.role) for context in contexts],
@@ -613,8 +654,8 @@ class AppServices:
                     current_character=context.current_character,
                     unread_notification_count=unread_counts.get(membership.id, 0),
                     is_current=(
-                        community.id == identity.community_id
-                        and membership.id == identity.membership_id
+                        community.id == current_community_id
+                        and membership.id == current_membership_id
                     ),
                 )
             )
@@ -625,6 +666,36 @@ class AppServices:
                 option.community.name,
                 option.membership.display_name,
                 option.membership.id,
+            ),
+        )
+
+    def account_visitor(
+        self,
+        request: object | None,
+        *,
+        current_community: Community | None = None,
+    ) -> AccountVisitorView | None:
+        """Return signed-in account posture without requiring a local membership."""
+
+        cookies = getattr(request, "cookies", None)
+        getter = getattr(cookies, "get", None)
+        if getter is None:
+            return None
+        token = getter(SESSION_COOKIE)
+        if token is None:
+            return None
+        session = session_for_session_token(self.repo, str(token))
+        if session is None:
+            return None
+        user = self.repo.get_user(session.user_id)
+        contexts = self._membership_contexts_for_user(user.id)
+        return AccountVisitorView(
+            user=user,
+            current_community=current_community,
+            identity_options=self._identity_options_for_contexts(
+                contexts,
+                current_community_id=session.selected_community_id,
+                current_membership_id=session.selected_membership_id,
             ),
         )
 
@@ -911,6 +982,123 @@ class AppServices:
             for invitation in self.repo.list_community_invitations(viewer.community.id)
         ]
 
+    def create_access_request(
+        self,
+        community_slug: str,
+        *,
+        email: str,
+        display_name: str,
+        face_concept: str,
+        wanted_hook: str,
+        notes: str,
+        account_user_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        community = self.repo.get_community_by_slug(community_slug)
+        clean_email = email.strip().lower()
+        if "@" not in clean_email:
+            raise ValueError("writer email is required")
+        existing = self.repo.find_open_community_access_request(
+            community.id,
+            email=clean_email[:240],
+        )
+        if existing is not None:
+            return existing
+        return self.repo.create_community_access_request(
+            community.id,
+            email=clean_email[:240],
+            display_name=display_name.strip()[:160],
+            face_concept=face_concept.strip()[:500],
+            wanted_hook=wanted_hook.strip()[:240],
+            notes=notes.strip()[:2000],
+            account_user_id=account_user_id,
+        )
+
+    def writer_access_requests(self) -> list[AccessRequestManagementItem]:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        return [
+            _access_request_management_item(self.repo, item)
+            for item in self.repo.list_community_access_requests(viewer.community.id)
+        ]
+
+    def access_request_detail(self, request_id: int) -> AccessRequestManagementItem:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        access_request = self.repo.get_community_access_request(viewer.community.id, request_id)
+        return _access_request_management_item(self.repo, access_request, include_activity=True)
+
+    def review_access_request(self, request_id: int) -> CommunityAccessRequest:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        with self.repo.transaction():
+            before = self.repo.get_community_access_request(viewer.community.id, request_id)
+            updated = self.repo.update_community_access_request_status(
+                viewer.community.id,
+                request_id,
+                status="reviewed",
+            )
+            if updated.status != before.status:
+                self.repo.create_community_access_request_event(
+                    viewer.community.id,
+                    request_id,
+                    event_type="reviewed",
+                    from_status=before.status,
+                    to_status=updated.status,
+                    actor_membership_id=viewer.membership.id,
+                )
+        return updated
+
+    def decline_access_request(self, request_id: int) -> CommunityAccessRequest:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        with self.repo.transaction():
+            before = self.repo.get_community_access_request(viewer.community.id, request_id)
+            updated = self.repo.update_community_access_request_status(
+                viewer.community.id,
+                request_id,
+                status="declined",
+            )
+            if updated.status != before.status:
+                self.repo.create_community_access_request_event(
+                    viewer.community.id,
+                    request_id,
+                    event_type="declined",
+                    from_status=before.status,
+                    to_status=updated.status,
+                    actor_membership_id=viewer.membership.id,
+                )
+        return updated
+
+    def invite_access_request(self, request_id: int) -> CreatedInvitation:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        with self.repo.transaction():
+            access_request = self.repo.get_community_access_request(viewer.community.id, request_id)
+            if access_request.status not in {"pending", "reviewed"}:
+                raise ValueError("only pending or reviewed access requests can become invitations")
+            created = self.create_writer_invitation(access_request.email)
+            self.repo.update_community_access_request_status(
+                viewer.community.id,
+                request_id,
+                status="invited",
+                invitation_id=created.invitation.id,
+            )
+            self.repo.create_community_access_request_event(
+                viewer.community.id,
+                request_id,
+                event_type="invited",
+                from_status=access_request.status,
+                to_status="invited",
+                actor_membership_id=viewer.membership.id,
+                invitation_id=created.invitation.id,
+            )
+        return created
+
     def revoke_writer_invitation(self, invitation_id: int) -> CommunityInvitation:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
@@ -920,6 +1108,18 @@ class AppServices:
         if not item.can_revoke:
             raise ValueError("only pending invitations can be revoked")
         return self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
+
+    def reissue_writer_invitation(self, invitation_id: int) -> CreatedInvitation:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to reissue invitations")
+        with self.repo.transaction():
+            invitation = self.repo.get_community_invitation(viewer.community.id, invitation_id)
+            item = _invitation_management_item(invitation)
+            if not item.can_revoke:
+                raise ValueError("only pending invitations can be reissued")
+            self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
+            return self.create_writer_invitation(invitation.email)
 
     def update_realm_launch_status(self, launch_status: str) -> Community:
         viewer = self.viewer()
@@ -1906,6 +2106,7 @@ class AppServices:
         casting = self.casting_desk()
         plotting = self.plotting_desk()
         writer_invitations = self.writer_invitations() if studio.can_manage else []
+        writer_access_requests = self.writer_access_requests() if studio.can_manage else []
         return _director_operations(
             self.repo,
             viewer,
@@ -1913,6 +2114,7 @@ class AppServices:
             casting,
             plotting,
             writer_invitations=writer_invitations,
+            writer_access_requests=writer_access_requests,
             unread_notification_count=viewer.unread_notification_count,
             inspection_config=inspection_config,
         )
@@ -2106,6 +2308,24 @@ class AppServices:
 
     def preview_program_blueprint(self, source: str) -> ProgramBlueprintPreview:
         return _preview_program_blueprint(self.repo, self.viewer(), source)
+
+    def program_blueprint_apply_readiness(
+        self,
+        preview: ProgramBlueprintPreview | None,
+    ) -> BlueprintApplyReadiness:
+        return _program_blueprint_apply_readiness(preview)
+
+    def apply_program_blueprint_preview(
+        self,
+        source: str,
+        accepted_fingerprint: str,
+    ) -> ProgramBlueprintPreview:
+        return _apply_program_blueprint_preview(
+            self.repo,
+            self.viewer(),
+            source,
+            accepted_fingerprint,
+        )
 
     def update_board_taxonomy(
         self,
@@ -2892,48 +3112,49 @@ class AppServices:
             "post density",
         )
         slug = _unique_character_slug(self.repo, viewer.community.id, cleaned_name)
-        character = self.repo.create_character(
-            viewer.community.id,
-            viewer.membership.id,
-            slug,
-            cleaned_name,
-            avatar_url=cleaned_avatar_url,
-            poster_url=cleaned_poster_url,
-            poster_alt=cleaned_poster_alt,
-            tagline=cleaned_tagline,
-            accent_color=cleaned_accent_color,
-            summary=cleaned_summary,
-            post_profile_variant=cleaned_post_profile_variant,
-            post_accent_style=cleaned_post_accent_style,
-            post_border_style=cleaned_post_border_style,
-            post_title_style=cleaned_post_title_style,
-            post_density=cleaned_post_density,
-            application_status="draft",
-            make_default=make_default,
-        )
-        for facet in _resolve_facets(self.repo, viewer.community.id, facet_slugs or []):
-            self.repo.assign_character_facet(viewer.community.id, character.id, facet.id)
-        application = self.repo.ensure_character_application(viewer.community.id, character.id)
-        cleaned_application_body = application_body.strip()
-        if cleaned_application_body:
-            if len(cleaned_application_body) > 5000:
-                raise ValueError("application body must be 5000 characters or fewer")
-            self.repo.update_character_application_draft(
+        with self.repo.transaction():
+            character = self.repo.create_character(
                 viewer.community.id,
-                application.id,
-                title=character.name,
-                summary=character.summary,
-                body=cleaned_application_body,
+                viewer.membership.id,
+                slug,
+                cleaned_name,
+                avatar_url=cleaned_avatar_url,
+                poster_url=cleaned_poster_url,
+                poster_alt=cleaned_poster_alt,
+                tagline=cleaned_tagline,
+                accent_color=cleaned_accent_color,
+                summary=cleaned_summary,
+                post_profile_variant=cleaned_post_profile_variant,
+                post_accent_style=cleaned_post_accent_style,
+                post_border_style=cleaned_post_border_style,
+                post_title_style=cleaned_post_title_style,
+                post_density=cleaned_post_density,
+                application_status="draft",
+                make_default=make_default,
             )
-        for field_id, value in (application_field_values or {}).items():
-            cleaned_value = value.strip()
-            if cleaned_value:
-                self.repo.set_application_field_value(
+            for facet in _resolve_facets(self.repo, viewer.community.id, facet_slugs or []):
+                self.repo.assign_character_facet(viewer.community.id, character.id, facet.id)
+            application = self.repo.ensure_character_application(viewer.community.id, character.id)
+            cleaned_application_body = application_body.strip()
+            if cleaned_application_body:
+                if len(cleaned_application_body) > 5000:
+                    raise ValueError("application body must be 5000 characters or fewer")
+                self.repo.update_character_application_draft(
                     viewer.community.id,
                     application.id,
-                    field_id,
-                    cleaned_value,
+                    title=character.name,
+                    summary=character.summary,
+                    body=cleaned_application_body,
                 )
+            for field_id, value in (application_field_values or {}).items():
+                cleaned_value = value.strip()
+                if cleaned_value:
+                    self.repo.set_application_field_value(
+                        viewer.community.id,
+                        application.id,
+                        field_id,
+                        cleaned_value,
+                    )
         return character
 
     def update_character(
@@ -4650,6 +4871,56 @@ def _invitation_management_item(invitation: CommunityInvitation) -> InvitationMa
     if expired:
         return InvitationManagementItem(invitation, "Expired", can_revoke=False)
     return InvitationManagementItem(invitation, "Pending", can_revoke=True)
+
+
+def _access_request_management_item(
+    repo: ForumRepository,
+    request: CommunityAccessRequest,
+    *,
+    include_activity: bool = False,
+) -> AccessRequestManagementItem:
+    invitation_item = None
+    if request.invitation_id is not None:
+        invitation_item = _invitation_management_item(
+            repo.get_community_invitation(request.community_id, request.invitation_id)
+        )
+    activity: tuple[AccessRequestActivityItem, ...] = ()
+    if include_activity:
+        activity = tuple(
+            _access_request_activity_item(event)
+            for event in repo.list_community_access_request_events(request.community_id, request.id)
+        )
+    return AccessRequestManagementItem(
+        request=request,
+        status_label=request.status.title(),
+        invitation=invitation_item,
+        activity=activity,
+    )
+
+
+def _access_request_activity_item(
+    event: CommunityAccessRequestEvent,
+) -> AccessRequestActivityItem:
+    labels = {
+        "submitted": "Requested access",
+        "reviewed": "Marked for review",
+        "invited": "Invitation created",
+        "declined": "Request declined",
+    }
+    detail = f"{_access_request_status_label(event.from_status)} to {event.to_status.title()}"
+    if event.event_type == "submitted":
+        detail = "Entered the access queue"
+    if event.invitation_id is not None:
+        detail = f"{detail} with invitation #{event.invitation_id}"
+    return AccessRequestActivityItem(
+        event=event,
+        label=labels.get(event.event_type, event.event_type.replace("_", " ").title()),
+        detail=detail,
+    )
+
+
+def _access_request_status_label(status: str | None) -> str:
+    return "No status" if status is None else status.title()
 
 
 def _invitation_is_expired(invitation: CommunityInvitation) -> bool:

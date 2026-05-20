@@ -10,6 +10,8 @@ from typing import Any, Protocol, cast
 
 from elbysodic.db.repositories.base import RepositoryBase, _last_id, _utc_now
 from elbysodic.db.repositories.rows import (
+    _community_access_request_event_from_row,
+    _community_access_request_from_row,
     _community_from_row,
     _community_invitation_from_row,
     _community_theme_from_row,
@@ -21,6 +23,8 @@ from elbysodic.db.repositories.rows import (
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
 from elbysodic.domain.models import (
     Community,
+    CommunityAccessRequest,
+    CommunityAccessRequestEvent,
     CommunityInvitation,
     CommunityMembership,
     CommunityTheme,
@@ -1043,6 +1047,288 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self._commit()
         return self.get_community_invitation(community_id, invitation_id)
+
+    def create_community_access_request(
+        self,
+        community_id: int,
+        *,
+        email: str,
+        display_name: str,
+        face_concept: str,
+        wanted_hook: str,
+        notes: str,
+        account_user_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        self.get_community(community_id)
+        if account_user_id is not None:
+            self.get_user(account_user_id)
+        now = _utc_now()
+        cursor = self.connection.execute(
+            """
+            INSERT INTO community_access_requests (
+                community_id,
+                email,
+                display_name,
+                face_concept,
+                wanted_hook,
+                notes,
+                account_user_id,
+                status,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+            """,
+            (
+                community_id,
+                email,
+                display_name,
+                face_concept,
+                wanted_hook,
+                notes,
+                account_user_id,
+                now,
+                now,
+            ),
+        )
+        access_request = self.get_community_access_request(community_id, _last_id(cursor))
+        self.create_community_access_request_event(
+            community_id,
+            access_request.id,
+            event_type="submitted",
+            from_status=None,
+            to_status="pending",
+        )
+        return access_request
+
+    def get_community_access_request(
+        self,
+        community_id: int,
+        request_id: int,
+    ) -> CommunityAccessRequest:
+        row = self._community_access_request_row(
+            "WHERE community_id = ? AND id = ?",
+            (community_id, request_id),
+        )
+        if row is None:
+            raise LookupError(f"access request not found in community {community_id}: {request_id}")
+        return _community_access_request_from_row(row)
+
+    def find_open_community_access_request(
+        self,
+        community_id: int,
+        *,
+        email: str,
+    ) -> CommunityAccessRequest | None:
+        row = self._community_access_request_row(
+            """
+            WHERE community_id = ?
+              AND lower(email) = lower(?)
+              AND status IN ('pending', 'reviewed')
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (community_id, email),
+        )
+        return None if row is None else _community_access_request_from_row(row)
+
+    def update_community_access_request_status(
+        self,
+        community_id: int,
+        request_id: int,
+        *,
+        status: str,
+        invitation_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        if status not in {"pending", "reviewed", "invited", "declined"}:
+            raise ValueError(
+                "access request status must be pending, reviewed, invited, or declined"
+            )
+        access_request = self.get_community_access_request(community_id, request_id)
+        if status == access_request.status and (
+            invitation_id is None or invitation_id == access_request.invitation_id
+        ):
+            return access_request
+        allowed_transitions = {
+            "pending": {"reviewed", "invited", "declined"},
+            "reviewed": {"invited", "declined"},
+            "invited": set(),
+            "declined": set(),
+        }
+        if status not in allowed_transitions[access_request.status]:
+            raise ValueError(f"cannot move access request from {access_request.status} to {status}")
+        if status == "invited" and invitation_id is None and access_request.invitation_id is None:
+            raise ValueError("invited access requests require an invitation")
+        if invitation_id is not None:
+            invitation = self.get_community_invitation(community_id, invitation_id)
+            invitation_id = invitation.id
+        self.connection.execute(
+            """
+            UPDATE community_access_requests
+            SET status = ?,
+                invitation_id = COALESCE(?, invitation_id),
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (status, invitation_id, _utc_now(), community_id, request_id),
+        )
+        self._commit()
+        return self.get_community_access_request(community_id, request_id)
+
+    def create_community_access_request_event(
+        self,
+        community_id: int,
+        request_id: int,
+        *,
+        event_type: str,
+        from_status: str | None,
+        to_status: str,
+        actor_membership_id: int | None = None,
+        invitation_id: int | None = None,
+    ) -> CommunityAccessRequestEvent:
+        if event_type not in {"submitted", "reviewed", "invited", "declined"}:
+            raise ValueError("access request event type is not supported")
+        access_request = self.get_community_access_request(community_id, request_id)
+        if actor_membership_id is not None:
+            self.get_membership(community_id, actor_membership_id)
+        if invitation_id is not None:
+            invitation = self.get_community_invitation(community_id, invitation_id)
+            invitation_id = invitation.id
+        cursor = self.connection.execute(
+            """
+            INSERT INTO community_access_request_events (
+                community_id,
+                access_request_id,
+                actor_membership_id,
+                event_type,
+                from_status,
+                to_status,
+                invitation_id,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                community_id,
+                access_request.id,
+                actor_membership_id,
+                event_type,
+                from_status,
+                to_status,
+                invitation_id,
+                _utc_now(),
+            ),
+        )
+        self._commit()
+        return self.get_community_access_request_event(community_id, _last_id(cursor))
+
+    def get_community_access_request_event(
+        self,
+        community_id: int,
+        event_id: int,
+    ) -> CommunityAccessRequestEvent:
+        row = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                access_request_id,
+                actor_membership_id,
+                event_type,
+                from_status,
+                to_status,
+                invitation_id,
+                created_at
+            FROM community_access_request_events
+            WHERE community_id = ? AND id = ?
+            """,
+            (community_id, event_id),
+        ).fetchone()
+        if row is None:
+            raise LookupError(
+                f"access request event not found in community {community_id}: {event_id}"
+            )
+        return _community_access_request_event_from_row(row)
+
+    def list_community_access_request_events(
+        self,
+        community_id: int,
+        request_id: int,
+    ) -> list[CommunityAccessRequestEvent]:
+        self.get_community_access_request(community_id, request_id)
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                access_request_id,
+                actor_membership_id,
+                event_type,
+                from_status,
+                to_status,
+                invitation_id,
+                created_at
+            FROM community_access_request_events
+            WHERE community_id = ? AND access_request_id = ?
+            ORDER BY created_at ASC, id ASC
+            """,
+            (community_id, request_id),
+        ).fetchall()
+        return [_community_access_request_event_from_row(row) for row in rows]
+
+    def list_community_access_requests(
+        self,
+        community_id: int,
+        *,
+        status: str | None = None,
+    ) -> list[CommunityAccessRequest]:
+        if status is None:
+            rows = self.connection.execute(
+                self._community_access_request_select()
+                + """
+                WHERE community_id = ?
+                ORDER BY created_at DESC, id DESC
+                """,
+                (community_id,),
+            ).fetchall()
+        else:
+            rows = self.connection.execute(
+                self._community_access_request_select()
+                + """
+                WHERE community_id = ? AND status = ?
+                ORDER BY created_at DESC, id DESC
+                """,
+                (community_id, status),
+            ).fetchall()
+        return [_community_access_request_from_row(row) for row in rows]
+
+    def _community_access_request_row(
+        self,
+        where_clause: str,
+        parameters: tuple[object, ...],
+    ) -> sqlite3.Row | None:
+        return self.connection.execute(
+            f"{self._community_access_request_select()} {where_clause}",
+            parameters,
+        ).fetchone()
+
+    def _community_access_request_select(self) -> str:
+        return """
+            SELECT
+                id,
+                community_id,
+                email,
+                display_name,
+                face_concept,
+                wanted_hook,
+                notes,
+                account_user_id,
+                invitation_id,
+                status,
+                created_at,
+                updated_at
+            FROM community_access_requests
+        """
 
     def _community_invitation_row(
         self,

@@ -1,6 +1,6 @@
 # Wanted Backstage Handoff Plan
 
-Status: implemented locally; archive after full gate verification
+Status: archived 2026-05-18; implemented and verified
 Owner: Product, service, web, storage, and test stewardship
 Created: 2026-05-09
 Last updated: 2026-05-09
@@ -8,6 +8,12 @@ Review by: 2026-05-30
 Closure criteria: archive after the full local gate passes or any remaining
 same-user-different-community proof gap is moved into the production-readiness
 roadmap.
+
+## Archival Note
+
+Archived after the local full test gate passed on 2026-05-18. Remaining
+wanted-to-scene and source-grounding ideas stay in their gated follow-up plans
+instead of keeping this implementation plan active.
 
 ## 2026-05-09 Implementation Update
 

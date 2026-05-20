@@ -530,9 +530,9 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         app = create_app(debug=False, services=services)
         budgets = {
             "/network": 105,
-            "/c/x-men-apocalypse": 340,
+            "/c/x-men-apocalypse": 345,
             "/c/x-men-apocalypse/locations": 150,
-            "/c/x-men-apocalypse/community": 300,
+            "/c/x-men-apocalypse/community": 305,
             "/c/x-men-apocalypse/world/b-24-winter": 155,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 105,
@@ -1848,7 +1848,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Emberhouse" in response.text
         assert "Gaslight Ward" in response.text
         assert "Wayfarer Station" in response.text
-        assert "current realm" not in response.text
+        assert "your current realm is marked when it appears" in response.text
         assert "Public preview" in response.text
         assert "Application guide ready" in response.text
         assert "Claims configured" in response.text
@@ -2859,6 +2859,43 @@ def test_studio_gateway_curation_updates_public_home_slots() -> None:
     asyncio.run(run())
 
 
+def test_studio_gateway_curation_rejects_invalid_selected_order() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        )
+        board = services.repo.get_board_by_slug(staff.community.id, "danger-room")
+        app = create_app(debug=False, services=staff_services)
+
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/studio",
+                body=urlencode(
+                    {
+                        "intent": "gateway_curation",
+                        "scene_hub_target_id": str(board.id),
+                        f"scene_hub_position_{board.id}": "0",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert response.status == 200
+        assert "gateway curation order must be a positive number" in response.text
+        assert (
+            services.repo.list_community_gateway_slots(
+                staff.community.id,
+                slot_type="scene_hub",
+            )
+            == []
+        )
+
+    asyncio.run(run())
+
+
 def test_identity_dropdown_switches_to_canonical_community_path() -> None:
     async def run() -> None:
         app = _app()
@@ -2987,7 +3024,7 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "Mystery and current chapters" not in root.text
         assert 'class="elbysodic-network-home-tile__rank"' in root.text
         assert "Rank 1" in root.text
-        assert '<span>5 wanted · 8 faces</span>' in root.text
+        assert "<span>5 wanted · 8 faces</span>" in root.text
         landscape_tiles = re.findall(
             r'<article class="[^"]*elbysodic-network-home-tile--landscape[^"]*"[^>]*>.*?</article>',
             root.text,
@@ -3043,6 +3080,10 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
                 'class="elbysodic-topbar-search" action="/c/x-men-apocalypse/search"' in index.text
             )
             assert "Search X-Men Apocalypse" in index.text
+            assert "XMA" in index.text
+            assert "Before you enter" in index.text
+            assert "Calls to answer" in index.text
+            assert "Browse all open calls" in index.text
             identity_summary = re.search(
                 r'<summary class="elbysodic-identity-menu__summary"[^>]*>(?P<body>.*?)</summary>',
                 index.text,
@@ -3293,10 +3334,19 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
         faceless_services = _faceless_services(services)
         app = create_app(debug=False, services=faceless_services)
         async with TestClient(app) as client:
+            realm_home = await client.get("/c/x-men-apocalypse")
             desk = await client.get("/desk")
             threads = await client.get("/my/threads")
             roster = await client.get("/characters")
             applications = await client.get("/applications")
+
+            assert realm_home.status == 200
+            assert "Start with a first face" in realm_home.text
+            assert "You are a member of X-Men Apocalypse" in realm_home.text
+            assert "Finish a first" in realm_home.text
+            assert 'href="/c/x-men-apocalypse/applications/new"' in realm_home.text
+            assert 'href="/c/x-men-apocalypse/wanted"' in realm_home.text
+            assert 'href="/c/x-men-apocalypse/locations"' in realm_home.text
 
             assert desk.status == 200
             assert "Start with a first face" in desk.text
@@ -3437,6 +3487,57 @@ def test_first_playable_openings_hide_closed_and_private_candidates() -> None:
     assert "/wanted/closed-hook" not in hrefs
     assert any(item.kind == "wanted" for item in openings)
     assert "Draft Application Only" not in labels
+
+
+def test_writer_activation_recommends_specific_opening_after_acceptance() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = repo.create_community("activation-openings", "Activation Openings")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("activation-openings@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "activation-openings",
+        "Activation Openings",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "accepted-face",
+        "Accepted Face",
+        application_status="accepted",
+        make_default=True,
+    )
+    other_user = repo.create_user("activation-hook-owner@example.com", "hash")
+    other_membership = repo.create_membership(
+        community.id,
+        other_user.id,
+        role.id,
+        "hook-owner",
+        "Hook Owner",
+    )
+    repo.create_wanted_ad(
+        community.id,
+        other_membership.id,
+        "scene-partner",
+        "Scene Partner",
+        summary="A specific wanted hook for the accepted face.",
+        wanted_type="plot_role",
+        status="open",
+    )
+
+    activation = AppServices(
+        repo,
+        DemoSeed(community, user, membership, character),
+    ).writer_activation()
+
+    assert activation.stage == "accepted_no_scene"
+    assert activation.headline == "Start with Scene Partner"
+    assert activation.summary == "A specific wanted hook for the accepted face."
+    assert activation.primary_label == "Open plot role"
+    assert activation.primary_href == "/wanted/scene-partner"
 
 
 def test_first_face_activation_surfaces_claim_and_reserve_work() -> None:
@@ -3606,6 +3707,14 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
             "activation-watch",
             "Activation Watch",
         )
+        services.repo.create_community_access_request(
+            staff.community.id,
+            email="prospect@example.com",
+            display_name="Prospect",
+            face_concept="Transfer student",
+            wanted_hook="Danger Room opening",
+            notes="Needs an invitation.",
+        )
         app = create_app(
             debug=False,
             services=AppServices(
@@ -3619,12 +3728,389 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
 
         assert operations.status == 200
         assert "Writer activation" in operations.text
+        assert "Operations attention lanes" in operations.text
+        assert "Needs decision" in operations.text
+        assert "Queues that should move before writers stall." in operations.text
+        assert "Blocked" in operations.text
+        assert "Watching" in operations.text
+        assert "Operations queue shortcuts" in operations.text
+        assert 'href="/applications"' in operations.text
+        assert 'href="/casting"' in operations.text
+        assert 'href="/plotting#interest-inbox"' in operations.text
+        assert 'href="/studio/launch#access-requests"' in operations.text
+        assert "1 access request(s)" in operations.text
+        assert "Prospect - Transfer student" in operations.text
         assert "accepted member(s) without faces" in operations.text
         assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
             operations.text
         )
 
     asyncio.run(run())
+
+
+def test_studio_launch_moderates_access_requests() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="launch-prospect@example.com",
+            display_name="Launch Prospect",
+            face_concept="Exchange student",
+            wanted_hook="Danger Room opening",
+            notes="Can post weekly.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            reviewed = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "review_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            launch_after_review = await client.get("/studio/launch")
+            declined = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "decline_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            launch_after_decline = await client.get("/studio/launch")
+
+        assert launch.status == 200
+        assert "Access requests" in launch.text
+        assert "launch-prospect@example.com" in launch.text
+        assert "Exchange student" in launch.text
+        assert "Mark reviewed" in launch.text
+        assert "Decline request" in launch.text
+        assert reviewed.status == 200
+        assert "was reviewed" in reviewed.text
+        assert "Reviewed" in launch_after_review.text
+        assert "Decline request" in launch_after_review.text
+        assert declined.status == 200
+        assert "was declined" in declined.text
+        assert "Declined" in launch_after_decline.text
+        assert "Mark reviewed" not in launch_after_decline.text
+        assert (
+            services.repo.get_community_access_request(staff.community.id, access_request.id).status
+            == "declined"
+        )
+
+    asyncio.run(run())
+
+
+def test_access_request_submission_reuses_open_request_for_email() -> None:
+    services = create_services(path=":memory:")
+
+    first = services.create_access_request(
+        "afterlight-accord",
+        email="Prospect@Example.com",
+        display_name="Prospect One",
+        face_concept="Archive thief",
+        wanted_hook="Sealed branch",
+        notes="First note.",
+    )
+    second = services.create_access_request(
+        "afterlight-accord",
+        email="prospect@example.com",
+        display_name="Prospect Two",
+        face_concept="Forbidden envoy",
+        wanted_hook="Transit gate",
+        notes="Second note.",
+    )
+    community = services.repo.get_community_by_slug("afterlight-accord")
+
+    assert second == first
+    assert services.repo.list_community_access_requests(community.id) == [first]
+    assert first.email == "prospect@example.com"
+    assert first.display_name == "Prospect One"
+
+
+def test_director_reads_access_request_detail() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="detail-prospect@example.com",
+            display_name="Detail Prospect",
+            face_concept="Secret transfer",
+            wanted_hook="Archive opening",
+            notes="PRIVATE ACCESS NOTE: detail room only.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert launch.status == 200
+        assert f'href="/studio/access-requests/{access_request.id}"' in launch.text
+        assert detail.status == 200
+        assert "Access request" in detail.text
+        assert "First-face context" in detail.text
+        assert "detail-prospect@example.com" in detail.text
+        assert "Secret transfer" in detail.text
+        assert "PRIVATE ACCESS NOTE" in detail.text
+        assert "Create invitation" in detail.text
+
+    asyncio.run(run())
+
+
+def test_access_request_detail_shows_linked_invitation_status() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="linked-prospect@example.com",
+            display_name="Linked Prospect",
+            face_concept="Linked transfer",
+            wanted_hook="Linked opening",
+            notes="Ready for invitation.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            invited = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "invite_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            updated = services.repo.get_community_access_request(
+                staff.community.id,
+                access_request.id,
+            )
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert invited.status == 200
+        assert updated.invitation_id is not None
+        assert f"#{updated.invitation_id} · Pending" in detail.text
+
+    asyncio.run(run())
+
+
+def test_access_request_detail_shows_activity_history() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="activity-prospect@example.com",
+            display_name="Activity Prospect",
+            face_concept="Activity transfer",
+            wanted_hook="Activity opening",
+            notes="Ready for review.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            reviewed = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "review_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            invited = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "invite_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        events = services.repo.list_community_access_request_events(
+            staff.community.id,
+            access_request.id,
+        )
+        assert reviewed.status == 200
+        assert invited.status == 200
+        assert [event.event_type for event in events] == ["submitted", "reviewed", "invited"]
+        assert "Requested access" in detail.text
+        assert "Marked for review" in detail.text
+        assert "Invitation created" in detail.text
+        assert f"with invitation #{events[-1].invitation_id}" in detail.text
+
+    asyncio.run(run())
+
+
+def test_access_request_detail_denies_non_director() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        writer = resolve_seed_persona(services.repo, "xmen_writer")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="hidden-prospect@example.com",
+            display_name="Hidden Prospect",
+            face_concept="Hidden transfer",
+            wanted_hook="Hidden opening",
+            notes="PRIVATE ACCESS NOTE: staff-only.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(writer.community, writer.user, writer.membership, writer.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            response = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert response.status == 403
+        assert "hidden-prospect@example.com" not in response.text
+        assert "Hidden transfer" not in response.text
+        assert "PRIVATE ACCESS NOTE" not in response.text
+
+    asyncio.run(run())
+
+
+def test_studio_launch_invites_writer_from_access_request() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="invite-prospect@example.com",
+            display_name="Invite Prospect",
+            face_concept="Transfer student",
+            wanted_hook="Archive opening",
+            notes="Ready for invite-only access.",
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            invited = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "invite_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            launch_after = await client.get("/studio/launch")
+
+        updated = services.repo.get_community_access_request(staff.community.id, access_request.id)
+        invitations = services.repo.list_community_invitations(staff.community.id)
+
+        assert launch.status == 200
+        assert "Create invitation" in launch.text
+        assert invited.status == 200
+        assert "Invitation created from access request for invite-prospect@example.com." in (
+            invited.text
+        )
+        assert "/invite/" in invited.text
+        assert updated.status == "invited"
+        assert updated.invitation_id is not None
+        assert invitations[0].id == updated.invitation_id
+        assert invitations[0].email == "invite-prospect@example.com"
+        assert "Invited" in launch_after.text
+        assert f"Invitation #{updated.invitation_id} created" in launch_after.text
+        assert "Pending" in launch_after.text
+        assert "Studio keeps the token hash only" in launch_after.text
+        assert "Decline request" not in launch_after.text
+
+    asyncio.run(run())
+
+
+def test_access_request_invitation_rolls_back_when_status_update_fails(monkeypatch) -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    request = services.repo.create_community_access_request(
+        staff.community.id,
+        email="rollback-prospect@example.com",
+        display_name="Rollback Prospect",
+        face_concept="Rollback transfer",
+        wanted_hook="Rollback opening",
+        notes="Should stay pending.",
+    )
+    director_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    before_invitation_ids = {
+        invitation.id for invitation in services.repo.list_community_invitations(staff.community.id)
+    }
+
+    def fail_status_update(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated access-request update failure")
+
+    monkeypatch.setattr(
+        services.repo,
+        "update_community_access_request_status",
+        fail_status_update,
+    )
+
+    with pytest.raises(RuntimeError, match="simulated access-request update failure"):
+        director_services.invite_access_request(request.id)
+
+    after_request = services.repo.get_community_access_request(staff.community.id, request.id)
+    after_invitation_ids = {
+        invitation.id for invitation in services.repo.list_community_invitations(staff.community.id)
+    }
+    events = services.repo.list_community_access_request_events(staff.community.id, request.id)
+
+    assert after_request.status == "pending"
+    assert after_request.invitation_id is None
+    assert after_invitation_ids == before_invitation_ids
+    assert [event.event_type for event in events] == ["submitted"]
 
 
 def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
@@ -3934,6 +4420,7 @@ def test_director_invites_writer_through_first_face_handoff() -> None:
         assert "Invitation ready for new-writer@example.com" in created.text
         assert "Delivery is copy-only for this alpha slice." in created.text
         assert "Copy this link now; Studio stores only the token hash." in created.text
+        assert "Raw link is no longer available here." in created.text
         assert invite.status == 200
         assert "This invitation is for new-writer@example.com" in invite.text
         assert accepted.status == 302
@@ -4004,6 +4491,62 @@ def test_director_can_revoke_pending_writer_invitation() -> None:
         assert denied.status == 403
         assert invitation.status == "revoked"
         assert invitation.revoked_at is not None
+
+    asyncio.run(run())
+
+
+def test_director_can_reissue_pending_writer_invitation() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            created = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "create_invite",
+                        "email": "reissue-writer@example.com",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            invitations = services.repo.list_community_invitations(staff.community.id)
+            reissued = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "reissue_invite",
+                        "invitation_id": str(invitations[0].id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        invitations_after = services.repo.list_community_invitations(staff.community.id)
+        old_invitation = services.repo.get_community_invitation(
+            staff.community.id,
+            invitations[0].id,
+        )
+
+        assert created.status == 200
+        assert "Reissue invitation" in created.text
+        assert reissued.status == 200
+        assert "Invitation for reissue-writer@example.com was reissued." in reissued.text
+        assert "Copy the new link now." in reissued.text
+        assert "/invite/" in reissued.text
+        assert old_invitation.status == "revoked"
+        assert old_invitation.revoked_at is not None
+        assert len(invitations_after) == 2
+        assert invitations_after[0].status == "pending"
+        assert invitations_after[0].email == "reissue-writer@example.com"
 
     asyncio.run(run())
 
@@ -4328,6 +4871,29 @@ appearance:
                 ).encode(),
                 headers=_FORM,
             )
+            preview = admin_services.preview_program_blueprint(blueprint_yaml)
+            stale_apply = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "apply_blueprint",
+                        "blueprint_yaml": blueprint_yaml,
+                        "preview_fingerprint": "stale-preview",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            gated_apply = await client.post(
+                "/studio/intake",
+                body=urlencode(
+                    {
+                        "intent": "apply_blueprint",
+                        "blueprint_yaml": blueprint_yaml,
+                        "preview_fingerprint": preview.preview_fingerprint,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
 
         assert page.status == 200
         assert "Dry-run YAML intake" in page.text
@@ -4342,11 +4908,22 @@ appearance:
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration diff preview" in response.text
         assert "Preview fingerprint:" in response.text
+        assert "Preflight: 7 create actions." in response.text
         assert "create</strong> program: RL Small Town Preview" in response.text
         assert "create</strong> scene hub: Main Street" in response.text
         assert "create</strong> wanted hook: Returning sibling" in response.text
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
+        assert "Apply readiness review" in response.text
+        assert "Duplicate handling must stay tenant-scoped." in response.text
+        assert "Hydration must run inside one rollback-tested transaction." in response.text
+        assert "Check apply gate" in response.text
+        assert stale_apply.status == 200
+        assert "Program Blueprint preview changed; preview again before applying." in (
+            stale_apply.text
+        )
+        assert gated_apply.status == 200
+        assert "Program Blueprint apply remains gated; no rows were written." in (gated_apply.text)
         after_count = repo.connection.execute(
             "SELECT COUNT(*) FROM communities",
         ).fetchone()[0]
@@ -4939,7 +5516,12 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
 
             community = await client.get("/community")
             assert community.status == 200
+            assert "elbysodic-world-hero--poster" in community.text
+            assert "/elbysodic-static/seed-media/xmen-hero.svg" in community.text
+            assert 'alt="Snow-lit academy and B-24 signal lines"' in community.text
             assert "Writer room and record" in community.text
+            assert "Current Event: B-24 Winter" in community.text
+            assert "Iceman is infected with B-24" in community.text
             assert "Community table" in community.text
             assert "Announcements" in community.text
             assert "Playable world map" not in community.text
@@ -6562,6 +7144,16 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 accepted_room = await applicant_client.get("/applications/jubilee")
             assert accepted_room.status == 200
             assert "Jubilee is looking for a found-family first scene." in accepted_room.text
+            assert "Accepted face handoff" in accepted_room.text
+            assert "Your first scene path is active" in accepted_room.text
+            assert "Open the next scene attached to your roster." in accepted_room.text
+            assert "Open scene" in accepted_room.text
+            assert "Settle claims and reserves" in accepted_room.text
+            assert 'href="/claims"' in accepted_room.text
+            assert "Answer open calls" in accepted_room.text
+            assert 'href="/wanted"' in accepted_room.text
+            assert "Find a first scene" in accepted_room.text
+            assert 'href="/locations"' in accepted_room.text
             assert "Director Review" not in accepted_room.text
             assert "Voice is clear." not in accepted_room.text
             assert "Starter hook" not in accepted_room.text
@@ -6946,8 +7538,15 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         facets = services.repo.list_character_facets(community.id, character.id)
 
         assert form.status == 200
-        assert "Begin a new face for this realm." in form.text
+        assert "Begin a new face" in form.text
         assert "Application Guide" in form.text
+        assert "After this face is accepted" in form.text
+        assert "Claims and reserves" in form.text
+        assert 'href="/claims"' in form.text
+        assert "Open calls" in form.text
+        assert 'href="/wanted"' in form.text
+        assert "First scene" in form.text
+        assert 'href="/locations"' in form.text
         assert "Director fields" in form.text
         assert "Face claim" in form.text
         assert response.status == 302
@@ -7027,6 +7626,8 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert conflict_save_response.status == 302
         assert conflict_room.status == 200
         assert "Already claimed" in conflict_room.text
+        assert "Exclusive claim conflict: choose a different value" in conflict_room.text
+        assert "before this face can be accepted" in conflict_room.text
         assert 'href="/characters/magneto"' in conflict_room.text
         assert conflict_applications.status == 200
         assert "1 claim conflict" in conflict_applications.text
@@ -7083,6 +7684,34 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         assert "Sophie Turner" in claims.text
 
     asyncio.run(run())
+
+
+def test_application_start_rolls_back_when_review_room_creation_fails(monkeypatch) -> None:
+    services = _faceless_services(create_services(path=":memory:"), prefix="rollback-app")
+    community = services.seed.community
+    membership = services.seed.membership
+
+    def fail_application_creation(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated application room failure")
+
+    monkeypatch.setattr(
+        services.repo,
+        "ensure_character_application",
+        fail_application_creation,
+    )
+
+    with pytest.raises(RuntimeError, match="simulated application room failure"):
+        services.create_character(
+            name="Rollback Face",
+            summary="This draft should not survive a late failure.",
+            application_body="This application should not survive either.",
+            make_default=True,
+        )
+
+    assert services.repo.list_characters(community.id, membership.id) == []
+    assert services.repo.get_membership(community.id, membership.id).default_character_id is None
+    with pytest.raises(LookupError):
+        services.repo.get_character_by_slug(community.id, "rollback-face")
 
 
 def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None:
@@ -7300,7 +7929,7 @@ def test_direct_application_path_switches_to_realm_form() -> None:
         assert _response_header(response, "location") == "/c/hp-universe/applications/new"
         assert form.status == 200
         assert '<span class="elbysodic-community-brand__name">HP Universe</span>' in form.text
-        assert "Begin a new face for this realm." in form.text
+        assert "Begin a new face" in form.text
 
     asyncio.run(run())
 
@@ -8507,6 +9136,69 @@ def test_faceless_writer_does_not_count_unowned_character_notifications() -> Non
         assert inbox.status == 200
         assert "No notifications are waiting on you." in inbox.text
         assert "Rogue" not in inbox.text
+
+    asyncio.run(run())
+
+
+def test_faceless_identity_option_hides_unowned_character_notification_count() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        active = services.seed
+        faceless_community = repo.create_community(
+            "faceless-option-notify",
+            "Faceless Option Notify",
+        )
+        role = repo.create_role(faceless_community.id, "member", "Member")
+        faceless = repo.create_membership(
+            faceless_community.id,
+            active.user.id,
+            role.id,
+            "faceless-option",
+            "Faceless Option",
+        )
+        actor_user = repo.create_user("faceless-option-actor@example.com", "hash")
+        actor = repo.create_membership(
+            faceless_community.id,
+            actor_user.id,
+            role.id,
+            "faceless-option-actor",
+            "Faceless Option Actor",
+        )
+        target = repo.create_character(
+            faceless_community.id,
+            actor.id,
+            "faceless-option-target",
+            "Faceless Option Target",
+        )
+        repo.create_notification(
+            faceless_community.id,
+            faceless.id,
+            kind="application_submitted",
+            character_id=target.id,
+            actor_membership_id=actor.id,
+            actor_character_id=target.id,
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            home = await client.get("/")
+
+        viewer = services.viewer()
+        option = next(item for item in viewer.identity_options if item.membership.id == faceless.id)
+        option_match = re.search(
+            r'<button class="[^"]*elbysodic-identity-switcher__option[^"]*"'
+            r"[^>]*>\s*<span>\s*<strong>Faceless Option Notify</strong>.*?</button>",
+            home.text,
+            re.DOTALL,
+        )
+
+        assert option.current_character is None
+        assert option.unread_notification_count == 0
+        assert home.status == 200
+        assert option_match is not None
+        assert "<b>" not in option_match.group(0)
+        assert "Faceless Option Target" not in home.text
 
     asyncio.run(run())
 
@@ -10804,6 +11496,40 @@ def test_start_thread_rolls_back_when_late_write_fails(monkeypatch) -> None:
     after = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
     assert after == before
     assert "rollback-drill" not in after
+
+
+def test_repository_transaction_rolls_back_nested_mixin_writes() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.viewer().community
+
+    def fail_nested_transaction() -> None:
+        with repo.transaction():
+            repo.create_material(
+                community.id,
+                "nested-rollback-guide",
+                "Nested Rollback Guide",
+                material_type="guide",
+                summary="This guide should roll back with the outer transaction.",
+            )
+            with repo.transaction():
+                repo.create_board(
+                    community.id,
+                    "nested-rollback-board",
+                    "Nested Rollback Board",
+                    board_kind="community",
+                    description="This board should not survive the failed transaction.",
+                )
+            raise RuntimeError("simulated nested transaction failure")
+
+    with pytest.raises(RuntimeError, match="simulated nested transaction failure"):
+        fail_nested_transaction()
+
+    assert not repo.connection.in_transaction
+    with pytest.raises(LookupError):
+        repo.get_material_by_slug(community.id, "nested-rollback-guide")
+    with pytest.raises(LookupError):
+        repo.get_board_by_slug(community.id, "nested-rollback-board")
 
 
 def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: Path) -> None:

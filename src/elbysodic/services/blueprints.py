@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
-from dataclasses import replace
+from contextlib import AbstractContextManager
+from dataclasses import dataclass, replace
 from typing import Literal, Protocol
 
 from elbysodic.blueprints import (
@@ -19,6 +20,8 @@ from elbysodic.services.read_models import ForumView
 
 
 class BlueprintPlanRepository(Protocol):
+    def transaction(self) -> AbstractContextManager[None]: ...
+
     def get_community_by_slug(self, slug: str) -> Community: ...
 
     def get_role_by_slug(self, community_id: int, slug: str) -> Role: ...
@@ -32,6 +35,12 @@ class BlueprintPlanRepository(Protocol):
     def get_wanted_ad_by_slug(self, community_id: int, slug: str) -> WantedAd: ...
 
     def get_theme_by_slug(self, community_id: int, slug: str) -> CommunityTheme: ...
+
+
+@dataclass(frozen=True, slots=True)
+class BlueprintApplyReadiness:
+    can_check_gate: bool
+    items: tuple[str, ...]
 
 
 def preview_program_blueprint(
@@ -52,6 +61,37 @@ def preview_program_blueprint(
         diff_rows=diff_rows,
         preview_fingerprint=_preview_fingerprint(source, diff_rows),
     )
+
+
+def program_blueprint_apply_readiness(
+    preview: ProgramBlueprintPreview | None,
+) -> BlueprintApplyReadiness:
+    return BlueprintApplyReadiness(
+        can_check_gate=bool(
+            preview is not None and preview.is_valid and preview.preview_fingerprint
+        ),
+        items=(
+            "Duplicate handling must stay tenant-scoped.",
+            "Starter faces need explicit ownership defaults.",
+            "Hydration must run inside one rollback-tested transaction.",
+            "Unsupported keys must remain visible before apply.",
+        ),
+    )
+
+
+def apply_program_blueprint_preview(
+    repo: BlueprintPlanRepository,
+    viewer: ForumView,
+    source: str,
+    accepted_fingerprint: str,
+) -> ProgramBlueprintPreview:
+    preview = preview_program_blueprint(repo, viewer, source)
+    if not preview.is_valid:
+        raise ValueError("Preview a valid Program Blueprint before applying.")
+    if not accepted_fingerprint or accepted_fingerprint != preview.preview_fingerprint:
+        raise ValueError("Program Blueprint preview changed; preview again before applying.")
+    with repo.transaction():
+        raise ValueError("Program Blueprint apply remains gated; no rows were written.")
 
 
 def plan_program_blueprint_hydration(

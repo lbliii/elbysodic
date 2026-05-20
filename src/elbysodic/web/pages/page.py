@@ -55,6 +55,7 @@ def get(request: Request) -> Page:
             return_path=network_home.return_path,
             explore_programs=[],
             viewer=viewer,
+            account_visitor=None if viewer is not None else services.account_visitor(request),
             show_community_shell=False,
         )
 
@@ -72,6 +73,10 @@ def get(request: Request) -> Page:
             current_path=request.url,
             page_title=gateway.program.community.name,
             viewer=None,
+            account_visitor=services.account_visitor(
+                request,
+                current_community=gateway.program.community,
+            ),
             realm_gateway=gateway,
             public_program=gateway.program,
             community=gateway.program.community,

@@ -25,9 +25,9 @@ Completed locally:
 
 Still open:
 
-- The transition from no realm to empty configured realm is not implemented.
-  It is now split into
-  [First Realm Setup 2026-05-10](first-realm-setup-2026-05-10.md).
+- The transition from no realm to empty configured realm is implemented and
+  archived in
+  [First Realm Setup 2026-05-10](../archive/2026/first-realm-setup-2026-05-10.md).
 - Launch status now persists backstage, invite-only, and public-preview states
   while public readiness still depends on required realm content.
 - Guided Realm Builder writes, invitation lifecycle, and first-face handoff are
@@ -346,10 +346,10 @@ progress collapsed into operations lanes:
 
 ### PR 1: First Realm Setup Decision And Empty States
 
-Status: split out to
-[First Realm Setup 2026-05-10](first-realm-setup-2026-05-10.md) after steward
-consultation. The accepted direction is CLI/bootstrap-owned first realm setup
-before any web-global setup authority.
+Status: implemented and archived in
+[First Realm Setup 2026-05-10](../archive/2026/first-realm-setup-2026-05-10.md).
+The accepted direction is CLI/bootstrap-owned first realm setup before any
+web-global setup authority.
 
 Scope:
 

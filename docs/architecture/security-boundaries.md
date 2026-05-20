@@ -63,12 +63,13 @@ Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
 Production request identity is session-backed:
 
 - normal app routes require a valid `elbysodic_session`
-- `/health`, `/login`, `/logout`, `/`, `/network`, `/request-access`,
-  `/invite/{token}`, and static assets are public
+- `/health`, `/login`, `/logout`, `/`, `/network`, `/search`,
+  `/request-access`, `/invite/{token}`, and static assets are public
 - signed-out shared-host tenant preview routes are public for `GET`/`HEAD` only:
   `/c/{community}/`, `/c/{community}/world`,
-  `/c/{community}/world/{material_slug}`, `/c/{community}/wanted`, and
-  `/c/{community}/wanted/{wanted_slug}`
+  `/c/{community}/world/{material_slug}`, `/c/{community}/wanted`,
+  `/c/{community}/wanted/{wanted_slug}`, `/c/{community}/search`, and
+  `/c/{community}/request-access`
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
@@ -88,6 +89,32 @@ room links, lifecycle controls, identity menus, unread counts, or any mutating
 forms. Raising interest, reserving, applying, replying, watching, and staff
 workflow actions still require a valid session and community-local membership.
 
+A signed-in account without a membership in the current community keeps the
+same public-safe preview boundary. The shell may identify the global account
+and offer request-access or network-return actions, but it must not render the
+community shell, Desk, active face, unread counts, private continuation, or
+staff controls.
+
+Community access requests are interest records, not permission records.
+`CommunityAccessRequest` rows are scoped by `community_id` and may include the
+writer's email, display name, face concept, wanted-hook interest, and private
+notes for directors. Creating a request must not create a `User`,
+`CommunityMembership`, role, character, reserve, claim, invitation, session, or
+active-face state. Public realm previews may submit a request and show
+account-vs-anonymous posture, but only director-capable memberships in the same
+community can list or inspect request details.
+
+The access-request lifecycle is `pending -> reviewed -> invited` or
+`pending/reviewed -> declined`. An invited request may link to the invitation
+row that was created from it, but the raw invite token is still shown only at
+creation time because stored invitations retain token hashes. A lost link
+requires revoking the pending invitation and creating a fresh one; the original
+access request remains the audit trail for why the invite was issued.
+Director-visible access-request activity events are stored in
+`community_access_request_events` with `community_id`, request id, optional
+actor membership, status transition, optional invitation id, and timestamp.
+These events are staff workflow history, not public preview data.
+
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global
 login user plus a community-local director membership in the same transaction.
@@ -104,6 +131,11 @@ tokens must not grant access to Studio, staff queues, draft materials, or any
 other realm. Studio invitation management may list invitation state and revoke
 pending invites, but only the creation response renders the raw invite link
 because stored invitations retain token hashes.
+
+Invitation delivery is copy-only until a sender policy exists. "Resend" means
+reissue, not recover: a director revokes the pending invitation and creates a
+fresh token for the same email. Accepted, revoked, or expired invitations do
+not expose raw tokens and should not be resurrected.
 
 Current community and membership selection is stored on `user_sessions` as
 `selected_community_id` and `selected_membership_id`. Switching membership

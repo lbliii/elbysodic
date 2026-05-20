@@ -1,10 +1,10 @@
 # Production Readiness Roadmap
 
-Status: active production gate
+Status: active production gate; local auth, tenant, privacy, and full test gates pass
 Owner: Cross-steward production readiness
 Created: 2026-05-09
-Last updated: 2026-05-12
-Review by: 2026-05-16
+Last updated: 2026-05-18
+Review by: 2026-06-01
 Closure criteria: Railway smoke is recorded, schema/seed persistence risks are
 resolved or explicitly deferred, S-tier core user flows have rendered and
 browser proof, and follow-up work is split into PR-sized implementation plans.
@@ -22,6 +22,73 @@ This roadmap is the trust foundation for the product strategy spine in
 Graph all depend on boringly correct tenant routing, sessions, persistence,
 rendered privacy, transaction boundaries, and recovery before their product
 surfaces expand.
+
+## 2026-05-19 Status Refresh
+
+The production-trust surface is now materially clearer for alpha entry, but
+live production proof is still blocked outside this workspace. Railway CLI is
+not installed locally, so `docs/operations/railway-production-smoke-record.md`
+contains an incomplete attempt record rather than a pass. The live host, volume,
+cookie, seed media, and restart checks still need a Railway-connected operator.
+
+Local work since the previous refresh closed several account/member/applicant
+state gaps:
+
+- Signed-in non-members render as account visitors on public realm surfaces,
+  not as logged-out users.
+- Tenant-scoped access requests are stored, moderated in Studio Launch, can be
+  declined/reviewed, and can create linked writer invitations without granting
+  membership directly.
+- Access requests now reuse an existing pending/reviewed request for the same
+  realm email, enforce valid pending/reviewed/invited/declined transitions, and
+  have a director-only detail room for private notes and first-face context.
+- Access request notes have rendered privacy proof across public pages and
+  non-director member surfaces.
+- Studio Operations links directly to access requests and includes request
+  context in the activation lane.
+- No-face members see first-face guidance from the realm home.
+- Accepted applications surface a service-owned next writing move, and accepted
+  face activation can recommend a specific opening when claims/reserves are
+  clear.
+- Program Blueprint apply remains gated, with apply-readiness checklist data
+  owned by the service rather than the template.
+- `scripts/browser_qa.py --profile community-landing` now covers public,
+  account-visitor, member, accepted-application, and Studio routes for local
+  screenshot QA. The profile passed locally on 2026-05-19 with artifacts in
+  `/private/tmp/elbysodic-community-landing-qa-2026-05-19` after catching and
+  closing a tablet scoped-search overflow.
+
+2026-05-20 local follow-up:
+
+- Shell/sidebar notification count coverage now includes inactive membership
+  identity options and faceless memberships with inaccessible character-backed
+  notification targets; the rendered privacy matrix no longer carries that as
+  an open local gap.
+- Public Network cards now expose a public-safe request-access action for
+  public-preview realms while suppressing that action for the viewer's current
+  member realm.
+
+Still required before this roadmap can call the production gate closed:
+
+- Run and record live Railway production smoke.
+- Decide email sender policy before replacing copy-only invitations with
+  resend/email delivery.
+
+## 2026-05-18 Status Refresh
+
+Local proof is stronger than the stale review date implied. The full test suite
+passes after the account-visitor public-preview slice; app contract check passes
+with warnings as errors; `ruff check`, `ty`, and `git diff --check` pass. The
+current remaining production blockers are operational rather than conceptual:
+approve and execute production bootstrap, run the invite-only alpha runbook
+against the live environment, record restart persistence, and decide the
+invitation delivery/resend contract.
+
+The next implementation work should stay focused on production trust and alpha
+entry: account-visitor public route coverage, first-face onboarding polish,
+public catalog access posture, Studio Operations attention lanes, transaction
+proof for the next high-risk workflow, and Blueprint preflight without enabling
+mutating apply.
 
 The theme for this roadmap is production trust:
 
@@ -67,11 +134,11 @@ Still unverified:
 - Production, as distinct from staging, still has not been bootstrapped or
   smoke-tested.
 - Read-only ops inspection for DB/env/session posture is still future work.
-- Invitation email delivery and resend/copy-later posture remain open; Studio
-  can now list invitation state and revoke pending invitations.
-- Rendered privacy matrix gaps remain for inactive/faceless notification counts;
-  claims notes, direct outsider access to another writer's application room, and
-  cross-tenant plotting-room id leakage now have rendered proof.
+- Invitation email delivery remains open; Studio invitation reissue is
+  copy-only and token recovery remains intentionally unsupported.
+- Claims notes, direct outsider access to another writer's application room,
+  cross-tenant plotting-room id leakage, and inactive/faceless notification
+  count modes now have rendered proof.
 - Transaction coverage for broader multi-step workflows remains future work.
 
 Verified locally on 2026-05-09:
@@ -482,10 +549,11 @@ move before manual scene outcomes and rendered privacy proof.
 ## Immediate PR Queue
 
 1. Execute production bootstrap only after the go/no-go checklist is approved.
-2. Run invite-only alpha using the alpha runbook and record restart persistence.
+2. Run live Railway production smoke and record restart persistence.
 3. Replace copy-only invitation delivery with an explicit email or resend
    contract when credentials and sender policy exist.
-4. Extend first-face onboarding into claims, reserves, and first-scene guidance.
+4. Extend access-request moderation into email delivery/resend once the sender
+   contract exists.
 5. Transaction helper expansion to the next high-risk workflow.
 6. Blueprint diff/apply readiness remains gated behind transaction and
    collision proof.
@@ -531,3 +599,11 @@ move before manual scene outcomes and rendered privacy proof.
   invitations, rendered no-face invite continuation proof, and closed privacy
   gaps for claims notes, direct application outsider access, and cross-tenant
   plotting room id leakage.
+- 2026-05-19: Added account-visitor public preview proof, tenant access request
+  capture/moderation/invite linking, access-request privacy proof, no-face
+  realm-home guidance, accepted-face next-move recommendations, service-owned
+  Blueprint apply readiness, and the `community-landing` browser QA profile.
+- 2026-05-19: Ran the community-landing browser QA profile locally, fixed the
+  tablet scoped-search overflow it found, documented the runbook command,
+  added access-request duplicate/status/detail hardening, and added release
+  fragments for the branch's visible community entry changes.

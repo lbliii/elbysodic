@@ -169,10 +169,17 @@
       {% elif wanted.wanted_ad.status != "open" %}
       <p class="elbysodic-copy-status">This hook is {{ wanted.wanted_ad.status }}.</p>
       {% elif not viewer %}
+      {% if account_visitor | default(none) %}
+      <div class="chirpui-cluster chirpui-cluster--end">
+        <a class="chirpui-btn chirpui-btn--primary" href="{{ request_access_href }}" hx-boost="false">Request access to raise interest</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="/network" data-elbysodic-global-link>Browse your realms</a>
+      </div>
+      {% else %}
       <div class="chirpui-cluster chirpui-cluster--end">
         <a class="chirpui-btn chirpui-btn--primary" href="/login?next={{ current_path or "/" }}" hx-boost="false">Log in to raise interest</a>
-        <a class="chirpui-btn chirpui-btn--secondary" href="/request-access" hx-boost="false">Request access</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="{{ request_access_href }}" hx-boost="false">Request access</a>
       </div>
+      {% end %}
       {% end %}
       {% if wanted.can_express_prospective_interest %}
       <details class="elbysodic-management-disclosure elbysodic-action-disclosure elbysodic-prospective-interest">

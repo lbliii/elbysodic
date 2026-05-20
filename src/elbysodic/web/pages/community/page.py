@@ -17,6 +17,7 @@ def get(request: Request, services: AppServices) -> Page:
         current_path=request.url,
         viewer=viewer,
         boards=boards,
+        gateway=services.realm_gateway(),
         community_boards=[
             summary
             for summary in boards

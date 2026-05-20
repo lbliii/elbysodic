@@ -136,7 +136,8 @@ def test_production_default_allowed_hosts_pass_chirp_check(monkeypatch) -> None:
 def test_session_cookies_are_secure_in_production(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
-        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
 
         async with TestClient(app) as client:
             response, _cookies = await _production_login(client, email="moira@example.com")
@@ -201,6 +202,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
             tenant_wanted_detail = await client.get(
                 "/c/x-men-apocalypse/wanted/brotherhood-rival-for-rogue"
             )
+            tenant_search = await client.get("/c/x-men-apocalypse/search?q=rogue")
             tenant_applications = await client.get("/c/x-men-apocalypse/applications")
             tenant_wanted_post = await client.post(
                 "/c/x-men-apocalypse/wanted/brotherhood-rival-for-rogue",
@@ -217,7 +219,9 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert health.status == 200
         assert root.status == 200
         assert "Top 10 realms" in root.text
-        assert "Play-by-post realms with faces, scenes, wanted hooks, and continuity." not in root.text
+        assert (
+            "Play-by-post realms with faces, scenes, wanted hooks, and continuity." not in root.text
+        )
         assert "starlane" not in root.text
         assert "playing as Rogue" not in root.text
         assert "elbysodic-identity-menu" not in root.text
@@ -266,8 +270,13 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert tenant_wanted_detail.status == 200
         assert "Rogue needs someone who remembers" in tenant_wanted_detail.text
         assert "Log in to raise interest" in tenant_wanted_detail.text
+        assert 'href="/c/x-men-apocalypse/request-access"' in tenant_wanted_detail.text
         assert "Interest and reserves" not in tenant_wanted_detail.text
         assert "Interest" not in tenant_wanted_detail.text
+        assert tenant_search.status == 200
+        assert "Search X-Men Apocalypse" in tenant_search.text
+        assert "Rogue" in tenant_search.text
+        assert "playing as Rogue" not in tenant_search.text
         assert tenant_applications.status == 302
         assert dict(tenant_applications.headers)["location"] == (
             "/login?next=%2Fc%2Fx-men-apocalypse%2Fapplications"
@@ -278,6 +287,191 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Log in to keep writing." in post.text
         assert "/login?next=/identity" in post.text
         assert personas.status == 302
+
+    asyncio.run(run())
+
+
+def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="moira@example.com")
+            response = await client.get(
+                "/c/afterlight-accord",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            world = await client.get(
+                "/c/afterlight-accord/world",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            material = await client.get(
+                "/c/afterlight-accord/world/accord-seal-fails",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            wanted = await client.get(
+                "/c/afterlight-accord/wanted",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            wanted_detail = await client.get(
+                "/c/afterlight-accord/wanted/archive-thief",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            search = await client.get(
+                "/c/afterlight-accord/search?q=seal",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            request_access = await client.get(
+                "/c/afterlight-accord/request-access",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            request_cookies = {**cookies, **_cookie_values(request_access)}
+            request_access_post = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "community_slug": "afterlight-accord",
+                        "email": "moira@example.com",
+                        "display_name": "Moira",
+                        "face_concept": "Archivist with a sealed branch",
+                        "wanted_hook": "Archive thief",
+                        "notes": "Interested in inheritance pressure.",
+                        "_csrf_token": _csrf_token(request_access.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(request_cookies)},
+            )
+
+        assert response.status == 200
+        assert "Afterlight Accord" in response.text
+        assert "Account menu: signed in as moira@example.com" in response.text
+        assert "Not a member of Afterlight Accord yet" in response.text
+        assert "moira@example.com can browse the public preview" in response.text
+        assert 'href="/c/afterlight-accord/request-access"' in response.text
+        assert "elbysodic-anonymous-actions" not in response.text
+        assert "Log in" not in response.text
+        assert 'href="/c/afterlight-accord/desk"' not in response.text
+        assert "playing as Orin Vale" not in response.text
+
+        for public_route in (world, material, wanted, wanted_detail, search, request_access):
+            assert public_route.status == 200
+            assert "Account menu: signed in as moira@example.com" in public_route.text
+            assert "Not a member of Afterlight Accord yet" in public_route.text
+            assert "elbysodic-anonymous-actions" not in public_route.text
+            assert "Log in to raise interest" not in public_route.text
+            assert 'href="/c/afterlight-accord/desk"' not in public_route.text
+            assert "playing as Orin Vale" not in public_route.text
+
+        assert search.status == 200
+        assert "Search Afterlight Accord" in search.text
+        assert 'aria-label="Search Afterlight Accord"' in search.text
+        assert 'title="Afterlight Accord">AA</span>' in search.text
+        assert 'action="/c/afterlight-accord/search"' in search.text
+        assert 'href="/search?q=seal"' in search.text
+        assert "Archive thief with a sealed branch" in wanted_detail.text
+        assert "Request access to raise interest" in wanted_detail.text
+        assert 'href="/c/afterlight-accord/request-access"' in wanted_detail.text
+        assert 'href="/network"' in wanted_detail.text
+        assert "Access opens through a director invitation." in request_access.text
+        assert "Writer email" in request_access.text
+        assert "Face concept" in request_access.text
+        assert request_access_post.status == 200
+        assert "Access request received for moira@example.com" in request_access_post.text
+        access_requests = services.repo.list_community_access_requests(
+            services.repo.get_community_by_slug("afterlight-accord").id
+        )
+        assert access_requests[0].email == "moira@example.com"
+        assert access_requests[0].face_concept == "Archivist with a sealed branch"
+        assert access_requests[0].wanted_hook == "Archive thief"
+        assert (
+            access_requests[0].account_user_id
+            == services.repo.get_user_by_email("moira@example.com").id
+        )
+
+    asyncio.run(run())
+
+
+def test_production_signed_out_public_realm_keeps_anonymous_posture(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/c/afterlight-accord")
+            search = await client.get("/c/afterlight-accord/search?q=seal")
+            request_access = await client.get("/c/afterlight-accord/request-access")
+
+        assert response.status == 200
+        assert "Afterlight Accord" in response.text
+        assert "elbysodic-anonymous-actions" in response.text
+        assert "Log in" in response.text
+        assert "Not a member of Afterlight Accord yet" not in response.text
+        assert "Account menu: signed in as" not in response.text
+        assert 'href="/c/afterlight-accord/desk"' not in response.text
+        assert "playing as Orin Vale" not in response.text
+
+        assert search.status == 200
+        assert "Search Afterlight Accord" in search.text
+        assert 'title="Afterlight Accord">AA</span>' in search.text
+        assert "Account menu: signed in as" not in search.text
+
+        assert request_access.status == 200
+        assert "Access opens through a director invitation." in request_access.text
+        assert "Writer email" in request_access.text
+        assert "Send access request" in request_access.text
+        assert 'value="moira@example.com"' not in request_access.text
+        assert "Not a member of Afterlight Accord yet" not in request_access.text
+
+    asyncio.run(run())
+
+
+def test_access_request_notes_do_not_leak_to_public_or_member_surfaces(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("x-men-apocalypse")
+        services.repo.create_community_access_request(
+            community.id,
+            email="private-prospect@example.com",
+            display_name="Private Prospect",
+            face_concept="Secret transfer",
+            wanted_hook="Private hook",
+            notes="PRIVATE ACCESS NOTE: knows the staff-only twist.",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            public_realm = await client.get("/c/x-men-apocalypse")
+            network = await client.get("/network?q=private")
+            request_access = await client.get("/c/x-men-apocalypse/request-access")
+            _login, cookies = await _production_login(
+                client,
+                email="writer@example.com",
+                next_url="/c/x-men-apocalypse/studio/launch",
+            )
+            member_studio = await client.get(
+                "/c/x-men-apocalypse/studio/launch",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            member_operations = await client.get(
+                "/c/x-men-apocalypse/studio/operations",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        for response in (public_realm, network, request_access, member_studio, member_operations):
+            assert "PRIVATE ACCESS NOTE" not in response.text
+            assert "private-prospect@example.com" not in response.text
+            assert "Secret transfer" not in response.text
+
+        assert public_realm.status == 200
+        assert network.status == 200
+        assert request_access.status == 200
+        assert member_studio.status == 403
+        assert member_operations.status == 200
 
     asyncio.run(run())
 
@@ -382,6 +576,46 @@ def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) 
         assert "unread" not in network.text
         assert "Application Review Room" not in network.text
         assert "Staff notes" not in network.text
+
+    asyncio.run(run())
+
+
+def test_public_network_cards_link_to_request_access(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            network = await client.get("/network?q=x-men")
+
+        assert network.status == 200
+        assert 'href="/c/x-men-apocalypse/request-access"' in network.text
+        assert 'aria-label="Request access"' in network.text
+        assert "Application Review Room" not in network.text
+        assert "unread" not in network.text
+
+    asyncio.run(run())
+
+
+def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            network = await client.get(
+                "/network?q=x-men",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert network.status == 200
+        assert "Signed in as Lane in X-Men Apocalypse" in network.text
+        assert "Explore cards stay public-preview safe" in network.text
+        assert "current membership" in network.text
+        assert 'href="/c/x-men-apocalypse/request-access"' not in network.text
+        assert "Staff in X-Men Apocalypse" not in network.text
+        assert "Application Review Room" not in network.text
 
     asyncio.run(run())
 
@@ -714,6 +948,11 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
 
         async with TestClient(app) as client:
             health = await client.get("/health")
+            public_root = await client.get("/")
+            public_search = await client.get("/search?q=rogue")
+            public_realm = await client.get("/c/x-men-apocalypse")
+            seed_media = await client.get("/elbysodic-static/seed-media/xmen-hero.svg")
+            signed_out_studio = await client.get("/studio")
             login, cookies = await _production_login(
                 client,
                 email="writer@example.com",
@@ -787,6 +1026,19 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
             )
 
         assert health.status == 200
+        assert public_root.status == 200
+        assert "Top 10 realms" in public_root.text
+        assert "playing as Rogue" not in public_root.text
+        assert public_search.status == 200
+        assert "Search All realms" in public_search.text
+        assert 'results for "rogue"' in public_search.text
+        assert "playing as Rogue" not in public_search.text
+        assert public_realm.status == 200
+        assert "X-Men Apocalypse" in public_realm.text
+        assert "elbysodic-identity-menu" not in public_realm.text
+        assert seed_media.status == 200
+        assert signed_out_studio.status == 302
+        assert dict(signed_out_studio.headers)["location"] == "/login?next=/studio"
         assert login.status == 302
         assert dict(login.headers)["location"] == "/c/x-men-apocalypse"
         assert xmen_home.status == 200

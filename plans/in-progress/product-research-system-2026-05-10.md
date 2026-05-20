@@ -397,6 +397,24 @@ Proof:
 - Three notes under `research/uat/simulated/`.
 - Accepted findings linked into active plans or product docs.
 
+2026-05-19 follow-up:
+
+- Added
+  `research/uat/simulated/2026-05-19-community-landing-first-face-simulated-uat.md`
+  against the current rendered-route contracts for community landing,
+  account-visitor posture, scoped search, and accepted first-face handoff.
+- Accepted findings promoted into the active implementation queue: signed-in
+  non-members must render as account visitors rather than logged-out users,
+  scoped search may use realm initials only when the full realm name remains
+  available to assistive tech, members keep public story orientation on the
+  realm home, and accepted applications need a service-owned next writing move.
+- 2026-05-20 implementation follow-up closed the remaining local notification
+  count privacy gap for inactive/faceless identity modes and added public
+  Network card request-access actions. Live production smoke and real PBP
+  writer UAT remain deferred.
+- Deferred findings remain synthetic until browser QA and real PBP writer UAT
+  run against a reachable production or staging URL.
+
 ### Phase 3: Real UXR Readiness
 
 Deliverables:

@@ -27,6 +27,12 @@
         This will become your first active face in {{ viewer.community.name }} after the draft is created.
       </p>
       {% end %}
+      <div class="elbysodic-first-face-path" aria-label="After acceptance">
+        <p class="elbysodic-copy-meta">After this face is accepted</p>
+        <a class="chirpui-link" href="/claims">Claims and reserves</a>
+        <a class="chirpui-link" href="/wanted">Open calls</a>
+        <a class="chirpui-link" href="/locations">First scene</a>
+      </div>
     </div>
     {% if onboarding.application_materials %}
     <div class="elbysodic-application-starter__materials">
@@ -134,6 +140,12 @@
             {% else %}
             Held by the casting desk
             {% end %}
+          </span>
+          {% end %}
+          {% if claim_check and claim_check.status == "conflict" %}
+          <span class="elbysodic-field-hint">
+            Exclusive claim conflict: choose a different value or expect staff to
+            request revisions before this face can be accepted.
           </span>
           {% end %}
         </label>

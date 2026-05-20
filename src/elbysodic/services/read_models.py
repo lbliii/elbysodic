@@ -1762,6 +1762,21 @@ class StudioIdentityOption:
 
 
 @dataclass(frozen=True, slots=True)
+class AccountVisitorView:
+    user: User
+    current_community: Community | None
+    identity_options: list[StudioIdentityOption]
+
+    @property
+    def display_label(self) -> str:
+        return self.user.email
+
+    @property
+    def avatar_label(self) -> str:
+        return self.display_label[:1].upper()
+
+
+@dataclass(frozen=True, slots=True)
 class DevPersonaView:
     key: str
     label: str
@@ -2218,6 +2233,17 @@ class ScopedSearchView:
     @property
     def result_count(self) -> int:
         return sum(len(section.results) for section in self.sections)
+
+    @property
+    def scope_short_label(self) -> str:
+        if self.scope_kind == "global":
+            return "All"
+        initials = "".join(
+            part[0].upper()
+            for part in self.scope_label.replace("&", " ").split()
+            if part and part[0].isalnum()
+        )
+        return initials[:4] if initials else self.scope_label[:3].upper()
 
 
 @dataclass(frozen=True, slots=True)

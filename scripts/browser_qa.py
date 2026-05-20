@@ -7,7 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
-from playwright.async_api import Page, async_playwright
+from playwright.async_api import (
+    Page,
+    async_playwright,
+)
+from playwright.async_api import (
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 
 @dataclass(frozen=True)
@@ -21,10 +27,13 @@ class Viewport:
 class Route:
     label: str
     path: str
+    persona_key: str = ""
+    next_path: str = ""
 
 
 VIEWPORTS = (
     Viewport("desktop", 1440, 1200),
+    Viewport("tablet", 900, 1100),
     Viewport("mobile", 390, 844),
 )
 
@@ -74,6 +83,49 @@ COMMUNITY_HUB_ROUTES = (
     Route("signal-creek", "/c/signal-creek"),
     Route("nocturne-row", "/c/nocturne-row"),
     Route("wayfarer-station", "/c/wayfarer-station"),
+)
+
+COMMUNITY_LANDING_ROUTES = (
+    Route("afterlight-public", "/c/afterlight-accord"),
+    Route("afterlight-search", "/c/afterlight-accord/search?q=seal"),
+    Route("afterlight-request-access", "/c/afterlight-accord/request-access"),
+    Route(
+        "afterlight-account-visitor",
+        "/c/afterlight-accord",
+        "xmen_staff",
+        "/c/afterlight-accord",
+    ),
+    Route(
+        "afterlight-account-search",
+        "/c/afterlight-accord/search?q=seal",
+        "xmen_staff",
+        "/c/afterlight-accord/search?q=seal",
+    ),
+    Route("xmen-member-home", "/c/x-men-apocalypse", "xmen_staff", "/c/x-men-apocalypse"),
+    Route(
+        "xmen-first-face",
+        "/c/x-men-apocalypse/applications/new",
+        "xmen_staff",
+        "/c/x-men-apocalypse/applications/new",
+    ),
+    Route(
+        "xmen-accepted-application",
+        "/c/x-men-apocalypse/applications/rogue",
+        "xmen_staff",
+        "/c/x-men-apocalypse/applications/rogue",
+    ),
+    Route(
+        "xmen-studio-operations",
+        "/c/x-men-apocalypse/studio/operations",
+        "xmen_staff",
+        "/c/x-men-apocalypse/studio/operations",
+    ),
+    Route(
+        "xmen-studio-launch",
+        "/c/x-men-apocalypse/studio/launch",
+        "xmen_staff",
+        "/c/x-men-apocalypse/studio/launch",
+    ),
 )
 
 DEEP_SEED_ROUTES = (
@@ -298,11 +350,23 @@ async def _switch_dev_persona(
     persona_key: str,
     next_path: str,
 ) -> str | None:
-    response = await page.request.post(
-        urljoin(base_url, "/dev/personas"),
-        form={"persona_key": persona_key, "next": next_path},
+    response = await page.goto(urljoin(base_url, "/dev/personas"), wait_until="domcontentloaded")
+    if response and response.status >= 400:
+        return f"dev persona switcher failed: HTTP {response.status}"
+
+    form = page.locator(f'form:has(input[name="persona_key"][value="{persona_key}"])').first
+    if await form.count() == 0:
+        return f"dev persona switch failed: missing form for {persona_key}"
+    await form.locator('input[name="next"]').evaluate(
+        "(input, value) => input.value = value", next_path
     )
-    if response.status >= 400:
+    try:
+        async with page.expect_navigation(wait_until="domcontentloaded") as navigation:
+            await form.locator('button[type="submit"]').click()
+        response = await navigation.value
+    except PlaywrightTimeoutError:
+        return f"dev persona switch failed: timeout for {persona_key}"
+    if response and response.status >= 400:
         return f"dev persona switch failed: HTTP {response.status} for {persona_key}"
     return None
 
@@ -328,6 +392,8 @@ async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
             routes = list(PREMISE_DISCOVERY_ROUTES)
         elif profile == "community-hub":
             routes = list(COMMUNITY_HUB_ROUTES)
+        elif profile == "community-landing":
+            routes = list(COMMUNITY_LANDING_ROUTES)
         else:
             routes = [*STATIC_ROUTES, *(await _discover_routes(page, base_url))]
         await page.close()
@@ -335,9 +401,10 @@ async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
         seen: set[str] = set()
         unique_routes = []
         for route in routes:
-            if route.path not in seen:
+            route_key = f"{route.persona_key}:{route.path}"
+            if route_key not in seen:
                 unique_routes.append(route)
-                seen.add(route.path)
+                seen.add(route_key)
 
         for viewport in VIEWPORTS:
             context = await browser.new_context(
@@ -363,6 +430,16 @@ async def _run(base_url: str, artifact_dir: Path, profile: str) -> int:
                     await context.close()
                     continue
             for route in unique_routes:
+                if route.persona_key:
+                    switch_error = await _switch_dev_persona(
+                        page,
+                        base_url,
+                        persona_key=route.persona_key,
+                        next_path=route.next_path or route.path,
+                    )
+                    if switch_error:
+                        failures.append(f"{viewport.name} {route.label}: {switch_error}")
+                        continue
                 url = urljoin(base_url, route.path)
                 response = await page.goto(url, wait_until="domcontentloaded")
                 await page.wait_for_timeout(250)
@@ -409,7 +486,7 @@ def main() -> int:
     parser.add_argument("--artifact-dir", default="tests/browser/artifacts")
     parser.add_argument(
         "--profile",
-        choices=("smoke", "deep", "premise", "community-hub"),
+        choices=("smoke", "deep", "premise", "community-hub", "community-landing"),
         default="smoke",
     )
     args = parser.parse_args()

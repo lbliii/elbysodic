@@ -1,6 +1,6 @@
 # Steward Backlog Rollup Snapshot
 
-Status: superseded by production-readiness roadmap; archive candidate
+Status: archived 2026-05-18; superseded by production-readiness roadmap
 Owner: Steward workflow  
 Created: 2026-05-01  
 Last updated: 2026-05-09
@@ -9,6 +9,12 @@ Source: `ask stewards` consultation on `main` after `git fetch --prune`
 Closure criteria: split this into concrete backlog items, implementation
 plans, or issues; then move this file to `plans/archive/2026/` as completed or
 superseded.
+
+## Archival Note
+
+Archived because the actionable production, identity, privacy, and surface
+risks are now tracked in the production-readiness roadmap and focused active
+plans. Keep this file as historical steward synthesis.
 
 ## 2026-05-09 Verification Update
 

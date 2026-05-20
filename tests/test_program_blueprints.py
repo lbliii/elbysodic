@@ -604,6 +604,51 @@ materials: []
     )
 
 
+def test_program_blueprint_yaml_preview_reports_unknown_keys() -> None:
+    preview = preview_program_blueprint_yaml(
+        """
+elbysodic_blueprint: 1
+unexpected_root: no
+program:
+  slug: mystery-manor
+  name: Mystery Manor
+  tagline: This belongs in discovery, not the program block.
+  role:
+    slug: director
+    name: Director
+    badge: Head Writer
+characters:
+  - slug: vera-vale
+    name: Vera Vale
+    summary: Keeps keys for every locked room.
+    secret: Unknown to the importer.
+boards:
+  - slug: east-wing
+    name: East Wing
+    kind: location
+    tagline: Locked after midnight.
+    description: Portrait hall and sealed study.
+    media:
+      url: /media/east-wing.svg
+      caption: Not a supported media field.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: Every inheritance has a witness.
+    body: The house keeps producing new doors.
+wanted: []
+"""
+    )
+
+    assert not preview.is_valid
+    assert "blueprint.unexpected_root is not supported in Program Blueprints" in preview.errors
+    assert "program.tagline is not supported in Program Blueprints" in preview.errors
+    assert "program.role.badge is not supported in Program Blueprints" in preview.errors
+    assert "characters[0].secret is not supported in Program Blueprints" in preview.errors
+    assert "boards[0].media.caption is not supported in Program Blueprints" in preview.errors
+
+
 def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
     connection = connect()
     create_schema(connection)
@@ -800,10 +845,7 @@ def test_original_premise_seed_restores_missing_seeded_board_media() -> None:
     seed_demo_forum(repo)
 
     restored = repo.get_board_by_slug(harbor.id, "marina-hotel")
-    assert (
-        restored.image_url
-        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
-    )
+    assert restored.image_url == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
     assert restored.image_alt == "Marina hotel beside dark water and lit windows"
 
 
@@ -857,7 +899,70 @@ materials:
     assert preview.is_valid
     assert preview.preview_fingerprint
     assert len(preview.preview_fingerprint) == 16
+    assert preview.diff_action_summary == "Preflight: 5 create actions."
     assert changed.preview_fingerprint != preview.preview_fingerprint
+
+
+def test_program_blueprint_preview_scopes_existing_seed_collisions_by_section() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    admin_services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    source = """
+elbysodic_blueprint: 1
+program:
+  slug: x-men-apocalypse
+  name: "X-Men: Apocalypse"
+  role:
+    slug: staff
+    name: Staff
+    is_admin: true
+characters:
+  - slug: rogue
+    name: Rogue
+    summary: Existing starter face collision.
+boards:
+  - slug: danger-room
+    name: Danger Room
+    kind: location
+    tagline: Existing scene hub collision.
+    description: Existing scene hub collision.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: Existing material collision.
+    body: Existing material collision.
+wanted:
+  - slug: iceman-winter-rescue-specialist
+    title: Iceman winter rescue specialist
+    type: plot_role
+    summary: Existing wanted collision.
+    body: Existing wanted collision.
+    related_material: premise
+"""
+
+    preview = admin_services.preview_program_blueprint(source)
+    rows = {(row.section, row.slug): row for row in preview.diff_rows}
+
+    assert preview.is_valid
+    assert rows[("program", "x-men-apocalypse")].action == "update"
+    assert rows[("role", "staff")].action == "update"
+    assert rows[("face", "rogue")].action == "skip"
+    assert rows[("scene hub", "danger-room")].action == "update"
+    assert rows[("material", "premise")].action == "update"
+    assert rows[("wanted hook", "iceman-winter-rescue-specialist")].action == "skip"
+    assert preview.diff_action_summary == "Preflight: 4 update actions, 2 skip actions."
 
 
 def test_seed_hydrates_blueprint_board_media_fields(monkeypatch: pytest.MonkeyPatch) -> None:

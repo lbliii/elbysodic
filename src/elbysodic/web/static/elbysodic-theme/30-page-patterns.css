@@ -1002,7 +1002,8 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
 }
 
-.elbysodic-realm-continuation {
+.elbysodic-realm-continuation,
+.elbysodic-realm-account-status {
     align-items: center;
     background: color-mix(in srgb, var(--chirpui-accent) 7%, var(--chirpui-surface));
     border: 1px solid color-mix(in srgb, var(--chirpui-accent) 22%, var(--chirpui-border));
@@ -1013,18 +1014,26 @@
     padding: 1rem;
 }
 
+.elbysodic-realm-account-status {
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 90%, transparent);
+}
+
 .elbysodic-realm-continuation h2,
-.elbysodic-realm-continuation p {
+.elbysodic-realm-continuation p,
+.elbysodic-realm-account-status h2,
+.elbysodic-realm-account-status p {
     margin: 0;
 }
 
-.elbysodic-realm-continuation h2 {
+.elbysodic-realm-continuation h2,
+.elbysodic-realm-account-status h2 {
     font-size: var(--chirpui-font-xl);
     letter-spacing: 0;
     line-height: 1.15;
 }
 
-.elbysodic-realm-continuation p:not(.elbysodic-section-kicker) {
+.elbysodic-realm-continuation p:not(.elbysodic-section-kicker),
+.elbysodic-realm-account-status p:not(.elbysodic-section-kicker) {
     color: var(--chirpui-text-muted);
     font-size: var(--chirpui-font-sm);
     line-height: 1.38;
@@ -1445,7 +1454,8 @@
         text-align: start;
     }
 
-    .elbysodic-realm-continuation {
+    .elbysodic-realm-continuation,
+    .elbysodic-realm-account-status {
         align-items: stretch;
         flex-direction: column;
     }

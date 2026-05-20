@@ -1,10 +1,10 @@
 # Post-PR31 Priority Roadmap
 
-Status: active sequencing snapshot
+Status: active sequencing snapshot; first priorities mostly merged or superseded
 Owner: Product, operations, web, service, storage, and test stewardship
 Created: 2026-05-10
-Last updated: 2026-05-12
-Review by: 2026-05-24
+Last updated: 2026-05-18
+Review by: 2026-06-01
 Closure criteria: The first five priorities are merged or superseded by more
 specific implementation plans, and remaining items are linked into the
 production-readiness roadmap, Studio roadmap, or archived as not-now.
@@ -19,6 +19,16 @@ bootstrap, and SQLite inspection docs.
 This plan captures the next work queue after that merge. It is not a feature
 spec. It exists so future agents have a current, ranked sequence for turning
 Elbysodic from a production-like demo into a real, supportable PBP studio.
+
+## 2026-05-18 Status Refresh
+
+The original top priorities have mostly moved into narrower plans or landed:
+first realm setup is archived as implemented, wanted backstage is archived as
+implemented, public discovery and realm previews have advanced, and signed-in
+non-member previews now have an explicit account-visitor boundary. Keep this
+roadmap active only as a short sequencing bridge until the remaining items are
+absorbed by production-readiness, community creator onboarding, Studio
+Operations, and public catalog plans.
 
 ## 2026-05-12 Project State
 
@@ -336,10 +346,10 @@ Collateral:
 
 ## Immediate Next PR Candidates
 
-1. Remaining privacy matrix closure tests for inactive/faceless notification
-   count identity modes.
-2. Read-only production inspection surface if Railway smoke shows manual SQL
+1. Read-only production inspection surface if Railway smoke shows manual SQL
    or env/session introspection remains unavoidable.
-3. Invite delivery and copy/resend posture after the first link display.
-4. First-face onboarding polish for accepted invitees who skip face creation.
-5. Public catalog-field follow-up.
+2. Invite email delivery policy beyond copy-only reissue.
+3. First-face onboarding polish after browser QA on accepted handoff.
+4. Public catalog-field follow-up for activity freshness and request posture.
+5. Broader transaction rollback proof for scene, posting, plotting,
+   application, claims, and future Blueprint apply workflows.

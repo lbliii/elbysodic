@@ -10,13 +10,23 @@
 {% block page_content %}
 {% call container(max_width="68rem") %}
 {% call stack(gap="xl") %}
-  <section class="elbysodic-world-hero">
+  {% set has_community_media = viewer.community.world_hero_image_url %}
+  <section class="elbysodic-world-hero elbysodic-world-hero--poster elbysodic-world-hero--height-compact{{ " elbysodic-world-hero--with-media" if has_community_media else "" }}">
+    {% if has_community_media %}
+    <figure class="elbysodic-world-hero__media">
+      <img src="{{ viewer.community.world_hero_image_url }}"
+           alt="{{ viewer.community.world_hero_image_alt }}">
+    </figure>
+    {% end %}
     <div class="elbysodic-world-hero__copy">
       <p class="elbysodic-kicker">Community</p>
       <h1>Writer room and record</h1>
       <p class="elbysodic-copy-lead">
         Announcements, plotting, OOC chatter, members, and the archives that keep
         the production visible without letting it overpower the world map.
+      </p>
+      <p class="elbysodic-copy-helper">
+        {{ gateway.atmosphere.label }}: {{ gateway.atmosphere.title }} · {{ gateway.atmosphere.copy }}
       </p>
     </div>
     <div class="elbysodic-world-hero__stats">

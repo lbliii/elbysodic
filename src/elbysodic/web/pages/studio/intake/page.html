@@ -65,6 +65,9 @@
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
         {{ csrf_field() }}
       <input type="hidden" name="intent" value="preview_blueprint">
+      <input type="hidden"
+             name="preview_fingerprint"
+             value="{{ blueprint_preview.preview_fingerprint if blueprint_preview else '' }}">
       <label>
         <span class="chirpui-field__label">Blueprint YAML</span>
         <textarea class="chirpui-field__input"
@@ -103,6 +106,7 @@
         {% if blueprint_preview.preview_fingerprint %}
         <p class="elbysodic-copy-meta">Preview fingerprint: {{ blueprint_preview.preview_fingerprint }}</p>
         {% end %}
+        <p class="elbysodic-copy-meta">{{ blueprint_preview.diff_action_summary }}</p>
         {% for row in blueprint_preview.diff_rows %}
         <p class="elbysodic-copy-status">
           <strong>{{ row.action }}</strong> {{ row.section }}: {{ row.label }}
@@ -125,6 +129,23 @@
         <p class="elbysodic-copy-helper">
           Apply needs a service-layer plan for duplicate handling, ownership defaults, rollback behavior, and tenant tests.
         </p>
+        {% if blueprint_apply_readiness.can_check_gate %}
+        <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--xs">
+          {{ csrf_field() }}
+          <input type="hidden" name="intent" value="apply_blueprint">
+          <input type="hidden" name="preview_fingerprint" value="{{ blueprint_preview.preview_fingerprint }}">
+          <textarea class="chirpui-field__input chirpui-visually-hidden"
+                    name="blueprint_yaml"
+                    aria-label="Blueprint YAML for gated apply">{{ blueprint_yaml }}</textarea>
+          <p class="chirpui-field__label">Apply readiness review</p>
+          <ul class="elbysodic-copy-list">
+            {% for item in blueprint_apply_readiness.items %}
+            <li>{{ item }}</li>
+            {% end %}
+          </ul>
+          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Check apply gate</button>
+        </form>
+        {% end %}
       </div>
       {% end %}
     </div>

@@ -101,6 +101,11 @@ def _render_material(
         "world/{material_slug}/page.html",
         current_path=request.url,
         viewer=viewer,
+        account_visitor=(
+            None
+            if viewer is not None
+            else services.account_visitor(request, current_community=community)
+        ),
         community=community,
         material=material,
         guidebook=guidebook,

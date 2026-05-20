@@ -292,7 +292,7 @@ Candidate proof needed:
    transaction boundaries.
 2. Prototype backstage first on wanted interest to plotting room; the focused
    implementation plan is
-   `plans/in-progress/wanted-backstage-handoff-2026-05-09.md`.
+   `plans/archive/2026/wanted-backstage-handoff-2026-05-09.md`.
 3. Add scene-safe social reading only after object-bound privacy patterns are
    proven.
 4. Fold accepted language into `docs/product/information-hierarchy.md` or

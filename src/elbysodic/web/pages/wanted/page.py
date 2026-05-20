@@ -31,6 +31,11 @@ def get(request: Request) -> Page:
         "wanted/page.html",
         current_path=request.url,
         viewer=viewer,
+        account_visitor=(
+            None
+            if viewer is not None
+            else services.account_visitor(request, current_community=community)
+        ),
         community=community,
         board=board,
         show_community_shell=viewer is not None,

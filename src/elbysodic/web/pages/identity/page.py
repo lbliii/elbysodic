@@ -24,7 +24,7 @@ class IdentityForm:
     membership_id: str = "0"
 
 
-@contract(form=FormContract(IdentityForm, "_layout.html"))
+@contract(form=FormContract(IdentityForm, "_layout.html", block="topbar_end"))
 async def post(request: Request) -> Redirect:
     form = await request.form()
     services = get_services(request)

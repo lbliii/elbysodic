@@ -31,7 +31,7 @@ A realm ready for scenes, casting, and writer movement.
 {{ metric_item(program.claim_type_count, "claims", href=program.entry_href ~ "/claims") }}
 {% end %}
 
-{% def program_card(program) %}
+{% def program_card(program, viewer=none) %}
 <article class="elbysodic-network-card{{ " elbysodic-network-card--no-hero" if not program.community.world_hero_image_url else "" }}"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
   <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
@@ -60,6 +60,9 @@ A realm ready for scenes, casting, and writer movement.
         <h2>{{ program.community.name }}</h2>
       </div>
       <div class="elbysodic-network-card__badges">
+        {% if viewer and viewer.community.id == program.community.id %}
+        {{ badge("current membership", variant="success") }}
+        {% end %}
         {{ badge(program.invite_posture_label, variant="info") }}
         {% if program.discovery_profile and program.discovery_profile.activity_pace %}
         {{ badge(program.discovery_profile.activity_pace, variant="info") }}
@@ -95,6 +98,9 @@ A realm ready for scenes, casting, and writer movement.
     {% end %}
     {% if program.open_wanted_count %}
     {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "star") }}
+    {% end %}
+    {% if program.community.launch_status == "public-preview" and not (viewer and viewer.community.id == program.community.id) %}
+    {{ compact_link_action(program.entry_href ~ "/request-access", "Request access", "envelope") }}
     {% end %}
   </div>
 </article>

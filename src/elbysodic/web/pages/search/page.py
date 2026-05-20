@@ -29,11 +29,17 @@ def get(request: Request) -> Page:
         )
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
+    account_visitor = (
+        None
+        if viewer is not None
+        else services.account_visitor(request, current_community=community)
+    )
     return Page.mounted(
         "search/page.html",
         current_path=request.url,
         page_title=f"Search · {search.scope_label}",
         viewer=viewer,
+        account_visitor=account_visitor,
         community=community,
         scoped_search=search,
         search_query=query,

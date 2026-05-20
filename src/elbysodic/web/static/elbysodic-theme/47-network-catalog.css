@@ -355,6 +355,33 @@
     color: var(--chirpui-accent);
 }
 
+.elbysodic-network-access-note {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-surface));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    justify-content: space-between;
+    padding: 0.75rem 0.9rem;
+}
+
+.elbysodic-network-access-note strong,
+.elbysodic-network-access-note span {
+    line-height: 1.35;
+}
+
+.elbysodic-network-access-note strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+}
+
+.elbysodic-network-access-note span {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-sm);
+}
+
 .elbysodic-network-filter-drawer__chips {
     display: flex;
     flex-wrap: wrap;
@@ -742,6 +769,36 @@
     max-inline-size: 13ch;
 }
 
+.elbysodic-first-face-path {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-start: 1rem;
+}
+
+.elbysodic-first-face-path p {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.elbysodic-first-face-path a {
+    background: var(--chirpui-bg-subtle);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: 999px;
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+    font-weight: 800;
+    padding: 0.42rem 0.65rem;
+    text-decoration: none;
+}
+
+.elbysodic-first-face-path a:hover,
+.elbysodic-first-face-path a:focus-visible {
+    border-color: var(--chirpui-accent);
+    color: var(--chirpui-accent);
+}
+
 .elbysodic-application-starter__materials,
 .elbysodic-application-form__facets {
     border: 1px solid var(--chirpui-border-subtle);
@@ -769,6 +826,21 @@
 
 .elbysodic-facet-choice small {
     color: var(--chirpui-text-muted);
+}
+
+@media (max-width: 70rem) {
+    .elbysodic-search-hero {
+        align-items: start;
+        grid-template-columns: 1fr;
+    }
+
+    .elbysodic-search-hero h1 {
+        font-size: 3.4rem;
+    }
+
+    .elbysodic-search-hero__broaden {
+        align-self: start;
+    }
 }
 
 @media (max-width: 48rem) {

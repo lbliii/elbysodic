@@ -230,6 +230,8 @@ Blueprint validation should fail before hydration when:
 - A blueprint has no playable boards.
 - A blueprint has no director materials.
 - Program, character, board, material, or wanted slugs are duplicated.
+- Unsupported keys appear in the top-level packet, program, role, roster face,
+  board, media, material, wanted, theme, or appearance sections.
 - A board uses an unknown `board_kind`.
 - A director material uses an unknown material type.
 - A wanted hook uses an unknown wanted-hook type.
@@ -281,6 +283,8 @@ Studio intake currently supports the first dry-run milestone:
 
 The dry-run preview should summarize the resulting program in director language:
 "1 program, 3 starter faces, 5 scene hubs, 3 materials, 2 wanted hooks."
+When a hydration preflight is available, it should also summarize diff actions
+before listing rows, for example "Preflight: 5 create actions."
 
 Do not make file import the first user-facing milestone. The first milestone is
 the shared contract: seed data and future YAML imports should describe the same
@@ -298,6 +302,9 @@ The planned apply flow is separate production work:
 Until that work lands, Program Blueprints are a validation and preview contract
 for Studio intake, plus the privileged seed-data source used by development
 fixtures.
+Studio may accept an apply-shaped POST only as a guarded no-op: it must re-run
+preview, reject stale fingerprints, enter the transaction boundary, and return
+that apply is still gated without writing rows.
 
 ## Hydration Gate
 

@@ -17,6 +17,7 @@ class LaunchActionForm:
     intent: str = ""
     email: str = ""
     invitation_id: str = ""
+    access_request_id: str = ""
     launch_status: str = ""
     scene_hub_name: str = ""
     premise_summary: str = ""
@@ -41,12 +42,23 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         except ValueError as exc:
             return _render_launch(request, builder_error=str(exc), builder_form=form)
         return _render_launch(request, builder_message=result.status_message)
-    if form.intent == "revoke_invite":
+    if form.intent in {"revoke_invite", "reissue_invite"}:
         try:
             invitation_id = int(form.invitation_id)
         except ValueError:
             return _render_launch(request, invite_management_error="invitation is required")
         try:
+            if form.intent == "reissue_invite":
+                created = get_services(request).reissue_writer_invitation(invitation_id)
+                return _render_launch(
+                    request,
+                    invite_path=created.path,
+                    invite_email=created.invitation.email,
+                    invite_management_message=(
+                        f"Invitation for {created.invitation.email} was reissued. "
+                        "Copy the new link now."
+                    ),
+                )
             revoked = get_services(request).revoke_writer_invitation(invitation_id)
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc
@@ -66,6 +78,46 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         return _render_launch(
             request,
             launch_status_message=f"Opening changed to {updated.launch_status}.",
+        )
+    if form.intent in {"review_access_request", "decline_access_request"}:
+        try:
+            access_request_id = int(form.access_request_id)
+        except ValueError:
+            return _render_launch(request, access_request_error="access request is required")
+        try:
+            if form.intent == "review_access_request":
+                updated_request = get_services(request).review_access_request(access_request_id)
+                access_request_message = (
+                    f"Access request from {updated_request.email} was reviewed."
+                )
+            else:
+                updated_request = get_services(request).decline_access_request(access_request_id)
+                access_request_message = (
+                    f"Access request from {updated_request.email} was declined."
+                )
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except (LookupError, ValueError) as exc:
+            return _render_launch(request, access_request_error=str(exc))
+        return _render_launch(request, access_request_message=access_request_message)
+    if form.intent == "invite_access_request":
+        try:
+            access_request_id = int(form.access_request_id)
+        except ValueError:
+            return _render_launch(request, access_request_error="access request is required")
+        try:
+            created = get_services(request).invite_access_request(access_request_id)
+        except PermissionError as exc:
+            raise HTTPError(status=403, detail=str(exc)) from exc
+        except (LookupError, ValueError) as exc:
+            return _render_launch(request, access_request_error=str(exc))
+        return _render_launch(
+            request,
+            invite_path=created.path,
+            invite_email=created.invitation.email,
+            access_request_message=(
+                f"Invitation created from access request for {created.invitation.email}."
+            ),
         )
     if form.intent != "create_invite":
         raise HTTPError(status=400, detail="unsupported launch action")
@@ -95,6 +147,8 @@ def _render_launch(
     invite_management_error: str = "",
     launch_status_message: str = "",
     launch_status_error: str = "",
+    access_request_message: str = "",
+    access_request_error: str = "",
 ) -> Page:
     services = get_services(request)
     studio = services.director_studio()
@@ -113,8 +167,11 @@ def _render_launch(
         builder_error=builder_error,
         builder_form=builder_form or LaunchActionForm(),
         invite_items=services.writer_invitations(),
+        access_request_items=services.writer_access_requests(),
         invite_management_message=invite_management_message,
         invite_management_error=invite_management_error,
         launch_status_message=launch_status_message,
         launch_status_error=launch_status_error,
+        access_request_message=access_request_message,
+        access_request_error=access_request_error,
     )

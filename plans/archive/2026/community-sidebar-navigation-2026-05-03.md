@@ -1,7 +1,6 @@
 # Community Sidebar Navigation Plan
 
-Status: superseded by `layered-shell-navigation-2026-05-11.md`; archive
-candidate
+Status: archived 2026-05-18; superseded by `layered-shell-navigation-2026-05-11.md`
 Owner: Product/UI stewardship
 Created: 2026-05-03
 Last updated: 2026-05-11
@@ -10,6 +9,12 @@ Closure criteria: topbar/sidebar ownership is documented, the Elbysodic
 sidebar primitives are implemented without duplicate route control, mobile and
 desktop sidebar behavior pass browser QA, and any upstream Chirp UI candidates
 are identified.
+
+## Archival Note
+
+Archived because the accepted navigation contract lives in
+`layered-shell-navigation-2026-05-11.md` and `docs/product/navigation-menus.md`.
+This file remains historical context only.
 
 ## 2026-05-11 Supersession Note
 

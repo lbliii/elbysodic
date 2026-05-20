@@ -505,6 +505,13 @@ Service And Surface Contract:
   `AppServices.public_realm_gateway()` and helper read models.
 - Accepted: member continuation remains viewer-scoped and separate from public
   story presentation.
+- Accepted from 2026-05-19 simulated UAT: signed-in account visitors need a
+  distinct non-member state on the public hub, members should keep the same
+  public story orientation after joining, and accepted first-face writers need
+  service-owned next-move guidance rather than only static room links.
+- Deferred: request-access capture, scoped-search initials, and accepted-face
+  next-move changes need browser QA before this iteration can claim visual
+  readiness.
 
 Storage And Seed:
 

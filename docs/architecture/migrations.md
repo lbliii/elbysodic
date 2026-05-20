@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `17`. Calling
+The checked-in schema currently creates databases at version `21`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -17,6 +17,11 @@ Version `1` is the historical baseline. Versions `2` and later are ordered
 post-baseline migrations in `src/elbysodic/db/migrations.py`. This keeps the
 prototype's existing schema bootstrap intact while giving future schema changes
 an ordered migration path.
+
+Version `21` adds `community_access_request_events`, a tenant-scoped audit
+table for director-visible access-request lifecycle activity. Fresh schema and
+upgraded databases both include the request-scoped event index used by Studio
+request detail pages.
 
 Fresh-schema and upgraded-schema parity is a production-readiness requirement:
 new tables, columns, indexes, and constraints must be represented in both the

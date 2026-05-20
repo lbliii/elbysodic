@@ -29,13 +29,14 @@ Use these viewer modes when a route can expose scoped data:
 | inactive | Membership exists but is inactive. | Actions fail and private data stays hidden. |
 | cross-tenant | Membership belongs to another community or route slug exists elsewhere. | Current community does not leak the other community's object. |
 | faceless | Membership has no active/current character. | Character-backed actions disappear or ask for a face instead of guessing. |
+| account visitor | Valid global login exists, but it has no active membership in the current community. | Public preview remains public-safe; topbar conveys signed-in account posture; no Desk, active face, private counts, member actions, or staff routes appear. |
 | public | Signed-out visitor on a public-ready tenant preview route. | Published premise, guidebook, and wanted context is visible; identity, staff, queues, drafts, private notes, reserves, and POST actions stay hidden or blocked. |
 
 ## Route Families
 
 | Route Family | Sensitive Data | Member | Owner | Staff | Cross-Tenant / Missing | Coverage |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/c/{community}/`, `/c/{community}/world`, `/c/{community}/world/{material}` | Draft materials, Material Studio controls, current event links, raw scene/thread activity, private queue state, active-face continuation. | Community home renders the public premise gateway plus viewer-scoped continuation; member-local `/world` uses published materials only. | Same as member unless staff. | Drafts and edit controls visible only in material/studio surfaces, not public gateway previews; public scene previews use only open threads from non-private boards; curated gateway slots are re-checked for public-safe board, wanted, and material state before rendering. | Recovery page or 404; no draft body, active-face state, Desk lane, private board, archived hook, draft material, or staff queue. | covered for draft material regressions, signed-out public tenant preview, original-premise gateway privacy, public scene preview leakage, no-media/no-wanted fallback, and premise browser QA |
+| `/c/{community}/`, `/c/{community}/world`, `/c/{community}/world/{material}` | Draft materials, Material Studio controls, current event links, raw scene/thread activity, private queue state, active-face continuation. | Community home renders the public premise gateway plus viewer-scoped continuation; member-local `/world` uses published materials only. | Same as member unless staff. | Drafts and edit controls visible only in material/studio surfaces, not public gateway previews; public scene previews use only open threads from non-private boards; curated gateway slots are re-checked for public-safe board, wanted, and material state before rendering. | Recovery page or 404; no draft body, active-face state, Desk lane, private board, archived hook, draft material, or staff queue. | covered for draft material regressions, signed-out public tenant preview, signed-in account visitor preview, original-premise gateway privacy, public scene preview leakage, no-media/no-wanted fallback, and premise browser QA |
 | `/c/{community}/wanted`, `/c/{community}/wanted/{wanted}` | Archived hooks, interested faces, lifecycle controls, private interest notes, plotting-room links, reserves, and scene-handoff links. | Open/non-archived hooks only; unrelated members do not see another writer's note or room link. | Own hook controls and interest notes visible. | Casting controls and interest notes visible. | Recovery page or 404; no archived body, private note, reserve, or room link. | covered for prospective-note privacy, wanted backstage handoff, and signed-out public tenant preview |
 | `/claims`, `/claims?...` | Claim and reserve state, filtered counts, character links, director notes, staff maintenance controls. | Public claim/reserve directory state only; staff controls and director notes absent. | Same as member unless staff. | Claims maintenance forms and director notes visible only with casting/staff capability. | No claim, reserve, character, or count data from another community. | covered for rendered directory state, staff write controls, application conflict handling, and tenant-scoped query/link regressions |
 | `/casting` | Casting desk lanes, active-face prompts, wanted handoffs, reserves, private notes surfaced through casting workflows. | Own visible casting opportunities and face-specific prompts. | Own hook/interest handoffs where applicable. | Casting controls, review lanes, and private notes visible only with capability. | No wanted, reserve, claim, or face data from another community. | partial |
@@ -46,7 +47,7 @@ Use these viewer modes when a route can expose scoped data:
 | `/boards/{board}`, `/boards/{board}/threads/{thread}` | Private boards, private threads, post bodies, moderation controls. | Public visible boards only. | Thread author controls where allowed. | Moderation controls visible. | Not found/recovery; no private activity. | partial |
 | `/members`, `/members/{username}` | Private activity and private-board latest lines. | Public cast/activity only. | Own profile controls when present. | Staff-only private activity only when designed. | No other community profile data. | covered for inactive identity regressions |
 | `/network`, `/network?q=...` | Public catalog cards, discovery profiles/tags, signed-in continuation, staff/member counts, backstage realm names. | Public catalog cards may show only public profile fields, public discovery tags, published premise/current chapter links, safe roster/wanted/claim counts, access/application posture, ratings, and pace; member continuation stays separate and viewer-scoped. | Own continuation lanes only. | Staff signals only where policy allows and never inside public catalog cards. | No private/staff data, discovery tags, member state, active faces, unread counts, applications, plotting rooms, drafts, or backstage realm names from other realms. | signed-out public catalog, profile/tag search, backstage realm filtering, Railway smoke, local browser QA, and premise browser QA covered |
-| shell/sidebar counts | Private board counts, notification counts, Studio attention counts. | Own permitted counts only. | Same as member. | Capability-scoped counts only. | No cross-realm or private counts. | partial |
+| shell/sidebar counts | Private board counts, notification counts, Studio attention counts. | Own permitted counts only. | Same as member. | Capability-scoped counts only. | No cross-realm or private counts. | covered for notification count regressions across inactive memberships, faceless memberships, forged/inaccessible notification targets, own inbox state, watched-thread replies, and mentions; Studio attention counts covered in Studio operations tests |
 
 ## Test Checklist
 
@@ -76,6 +77,10 @@ control appears or does not appear than to snapshot large HTML sections.
   accepted/revoked/expired invite tokens fail instead of revealing launch-room
   or membership internals. Studio invite management lists invitation state and
   can revoke pending invitations without rendering token hashes.
+- Community access requests are public-submitted but director-private after
+  creation. Public and account-visitor previews must not reveal request notes,
+  email addresses, face concepts, wanted-hook interest, invitation links, or
+  review state; same-community directors inspect and act on them from Studio.
 - Inactive memberships are absent from `/members`, `/members/{username}`, and
   direct character profile routes, and recovery does not offer cross-realm
   switches for inactive faces.
@@ -111,6 +116,5 @@ control appears or does not appear than to snapshot large HTML sections.
 
 ## Current Gaps
 
-- Notifications still need shell/sidebar count coverage across inactive and
-  faceless identities; current proof covers forged targets, own inbox,
-  watched-thread replies, and mentions.
+- Live production smoke remains the standing privacy gate that cannot be closed
+  from local rendered tests.

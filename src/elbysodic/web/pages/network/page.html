@@ -257,6 +257,18 @@
     </form>
   </section>
 
+  {% if viewer %}
+  <section class="elbysodic-network-access-note" aria-label="Network access posture">
+    <strong>Signed in as {{ viewer.membership.display_name }} in {{ viewer.community.name }}</strong>
+    <span>Explore cards stay public-preview safe; your current realm is marked when it appears.</span>
+  </section>
+  {% elif account_visitor %}
+  <section class="elbysodic-network-access-note" aria-label="Network access posture">
+    <strong>{{ account_visitor.display_label }} is signed in</strong>
+    <span>Browse public previews first, then request access from the realm that fits.</span>
+  </section>
+  {% end %}
+
   <section class="elbysodic-network-rail" aria-labelledby="explore-results-heading">
     <div class="elbysodic-network-rail__header">
       <div>
@@ -285,7 +297,7 @@
     {% if explore_programs %}
     <div class="elbysodic-network-grid" aria-label="Matching public realms">
       {% for program in explore_programs %}
-      {{ program_card(program) }}
+      {{ program_card(program, viewer) }}
       {% end %}
     </div>
     {% else %}

@@ -162,6 +162,12 @@
               {% end %}
             </span>
             {% end %}
+            {% if item.claim_check and item.claim_check.status == "conflict" %}
+            <span class="elbysodic-field-hint">
+              Exclusive claim conflict: choose a different value or expect staff
+              to request revisions before this face can be accepted.
+            </span>
+            {% end %}
           </label>
           {% end %}
         </div>
@@ -190,6 +196,31 @@
     <p class="elbysodic-copy-summary">{{ room.application.revision_notes }}</p>
     {% end %}
   </section>
+  {% end %}
+
+  {% if room.character_view.character.application_status == "accepted" %}
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-first-face-path" aria-label="Accepted face handoff">
+    <p class="elbysodic-copy-meta">Accepted face handoff</p>
+    {% if accepted_next_move %}
+    <div>
+      <strong>{{ accepted_next_move.headline }}</strong>
+      <p class="elbysodic-copy-summary">{{ accepted_next_move.summary }}</p>
+      <a class="chirpui-btn chirpui-btn--primary" href="{{ accepted_next_move.primary_href }}">
+        {{ accepted_next_move.primary_label }}
+      </a>
+      {% if accepted_next_move.secondary_href %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ accepted_next_move.secondary_href }}">
+        {{ accepted_next_move.secondary_label }}
+      </a>
+      {% end %}
+    </div>
+    {% end %}
+    <a class="chirpui-link" href="/claims">Settle claims and reserves</a>
+    <a class="chirpui-link" href="/wanted">Answer open calls</a>
+    <a class="chirpui-link" href="/locations">Find a first scene</a>
+  </section>
+  {% end %}
   {% end %}
 
   {% if room.can_review %}

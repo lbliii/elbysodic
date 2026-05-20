@@ -10,6 +10,7 @@ from elbysodic.services.forum import (
 from elbysodic.services.read_models import (
     POSTING_MODES,
     THREAD_STATUSES,
+    AccountVisitorView,
     ActivityItem,
     ApplicationCharacterView,
     ApplicationReviewEventView,
@@ -95,6 +96,7 @@ from elbysodic.services.read_models import (
 __all__ = [
     "POSTING_MODES",
     "THREAD_STATUSES",
+    "AccountVisitorView",
     "ActivityItem",
     "AppServices",
     "ApplicationCharacterView",

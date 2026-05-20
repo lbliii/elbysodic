@@ -1,1 +1,1 @@
-Invited writers without a face now see clearer first-face handoff copy when they reach the new application form.
+Accepted writers without a playable face now get a clearer first-face path with wanted hooks, location links, and service-owned next writing moves.

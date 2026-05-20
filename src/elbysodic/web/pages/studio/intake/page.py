@@ -12,6 +12,7 @@ from chirp.http.response import Redirect
 from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
+from elbysodic.blueprints import ProgramBlueprintPreview
 from elbysodic.web.state import get_services
 
 
@@ -19,6 +20,7 @@ from elbysodic.web.state import get_services
 class IntakeEditorForm:
     intent: str
     blueprint_yaml: str = ""
+    preview_fingerprint: str = ""
     name: str = ""
     claim_kind: str = ""
     sort_order: str = ""
@@ -53,7 +55,13 @@ async def post(request: Request) -> Page | Redirect:
                 blueprint_yaml=blueprint_yaml,
                 blueprint_preview=services.preview_program_blueprint(blueprint_yaml),
             )
-        if intent == "create_claim_type":
+        elif intent == "apply_blueprint":
+            blueprint_yaml = str(form.get("blueprint_yaml") or "")
+            services.apply_program_blueprint_preview(
+                blueprint_yaml,
+                str(form.get("preview_fingerprint") or ""),
+            )
+        elif intent == "create_claim_type":
             services.create_claim_type_config(
                 name=str(form.get("name") or ""),
                 claim_kind=str(form.get("claim_kind") or ""),
@@ -113,7 +121,7 @@ def _render_intake_editor(
     *,
     error: str | None = None,
     blueprint_yaml: str = "",
-    blueprint_preview: object | None = None,
+    blueprint_preview: ProgramBlueprintPreview | None = None,
 ) -> Page:
     services = get_services(request)
     return Page.mounted(
@@ -125,6 +133,7 @@ def _render_intake_editor(
         onboarding=services.application_onboarding(),
         blueprint_yaml=blueprint_yaml,
         blueprint_preview=blueprint_preview,
+        blueprint_apply_readiness=services.program_blueprint_apply_readiness(blueprint_preview),
         error=error,
         shell_actions=_intake_shell_actions(),
     )
