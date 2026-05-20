@@ -58,6 +58,16 @@ state gaps:
   `/private/tmp/elbysodic-community-landing-qa-2026-05-19` after catching and
   closing a tablet scoped-search overflow.
 
+2026-05-20 local follow-up:
+
+- Shell/sidebar notification count coverage now includes inactive membership
+  identity options and faceless memberships with inaccessible character-backed
+  notification targets; the rendered privacy matrix no longer carries that as
+  an open local gap.
+- Public Network cards now expose a public-safe request-access action for
+  public-preview realms while suppressing that action for the viewer's current
+  member realm.
+
 Still required before this roadmap can call the production gate closed:
 
 - Run and record live Railway production smoke.
@@ -124,11 +134,11 @@ Still unverified:
 - Production, as distinct from staging, still has not been bootstrapped or
   smoke-tested.
 - Read-only ops inspection for DB/env/session posture is still future work.
-- Invitation email delivery and resend/copy-later posture remain open; Studio
-  can now list invitation state and revoke pending invitations.
-- Rendered privacy matrix gaps remain for inactive/faceless notification counts;
-  claims notes, direct outsider access to another writer's application room, and
-  cross-tenant plotting-room id leakage now have rendered proof.
+- Invitation email delivery remains open; Studio invitation reissue is
+  copy-only and token recovery remains intentionally unsupported.
+- Claims notes, direct outsider access to another writer's application room,
+  cross-tenant plotting-room id leakage, and inactive/faceless notification
+  count modes now have rendered proof.
 - Transaction coverage for broader multi-step workflows remains future work.
 
 Verified locally on 2026-05-09:

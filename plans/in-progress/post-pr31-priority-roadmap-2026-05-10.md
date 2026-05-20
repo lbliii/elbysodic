@@ -346,10 +346,10 @@ Collateral:
 
 ## Immediate Next PR Candidates
 
-1. Remaining privacy matrix closure tests for inactive/faceless notification
-   count identity modes.
-2. Read-only production inspection surface if Railway smoke shows manual SQL
+1. Read-only production inspection surface if Railway smoke shows manual SQL
    or env/session introspection remains unavoidable.
-3. Invite delivery and copy/resend posture after the first link display.
-4. First-face onboarding polish for accepted invitees who skip face creation.
-5. Public catalog-field follow-up.
+2. Invite email delivery policy beyond copy-only reissue.
+3. First-face onboarding polish after browser QA on accepted handoff.
+4. Public catalog-field follow-up for activity freshness and request posture.
+5. Broader transaction rollback proof for scene, posting, plotting,
+   application, claims, and future Blueprint apply workflows.
