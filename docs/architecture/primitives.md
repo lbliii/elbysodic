@@ -18,6 +18,12 @@ workflow policy, and rendered privacy proof.
 permissions, community-local username, roster preferences, and moderation power
 belong here.
 
+Staff power is expressed in services as named membership-scoped capabilities,
+not user-level authority. The current storage shorthand grants all V1 staff
+capabilities through an admin role, but the product contract remains
+capability-shaped so a future partial-staff role can be added without teaching
+pages to read storage flags directly.
+
 `Character` is the public posting identity. Characters are not global. A
 character belongs to exactly one membership in exactly one community.
 

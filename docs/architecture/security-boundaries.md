@@ -51,6 +51,15 @@ When adding a staff workflow, add or reuse a named capability in
 `src/elbysodic/services/policies.py` and route service-layer checks through the
 helper. Avoid direct `role.is_admin` checks outside the policy module.
 
+Policy diagnostics use the same named capability contract. When a maintainer or
+future recovery surface needs to explain a denial, use the service-owned
+capability diagnostic helper rather than inspecting role fields in a page or
+template. Diagnostics may name the requested capability and a generic reason,
+such as inactive membership, missing role, cross-community role, mismatched
+role assignment, or role lacking staff power. They must not include private
+target details, staff notes, application body, access-request notes, raw
+tokens, or role/member display names.
+
 V1 keeps `roles.is_admin` as the storage shorthand for "has every current
 staff capability." Do not add role-capability rows until partial staff roles
 become product-visible. Even while storage is coarse, page handlers and
