@@ -10059,6 +10059,80 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
     asyncio.run(run())
 
 
+def test_notification_inbox_limit_applies_after_visibility_filtering() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        viewer = services.viewer()
+        assert viewer.current_character is not None
+        outsider_services, outsider_character_id = _outsider_services(
+            services,
+            prefix="notifywindow",
+        )
+        visible_post = outsider_services.reply_to_thread(
+            "plotting",
+            "open-thread-roster",
+            outsider_character_id,
+            "A visible reply survives hidden notification noise.",
+        )
+        repo.create_notification(
+            community.id,
+            viewer.membership.id,
+            kind="thread_reply",
+            thread_id=visible_post.thread_id,
+            post_id=visible_post.id,
+            actor_membership_id=outsider_services.seed.membership.id,
+            actor_character_id=outsider_character_id,
+        )
+        private_board = repo.create_board(
+            community.id,
+            "notify-window-private",
+            "Notify Window Private",
+            is_private=True,
+        )
+        private_thread = repo.create_thread(
+            community.id,
+            private_board.id,
+            outsider_character_id,
+            "notify-window-private-thread",
+            "Notify window private thread",
+        )
+        for index in range(55):
+            private_post = repo.create_post(
+                community.id,
+                private_thread.id,
+                outsider_character_id,
+                f"Hidden private notification {index}",
+            )
+            repo.create_notification(
+                community.id,
+                viewer.membership.id,
+                kind="thread_reply",
+                thread_id=private_thread.id,
+                post_id=private_post.id,
+                actor_membership_id=outsider_services.seed.membership.id,
+                actor_character_id=outsider_character_id,
+            )
+
+        inbox = services.notification_center(limit=1).inbox
+        async with TestClient(app) as client:
+            response = await client.get("/notifications")
+
+        assert services.viewer().unread_notification_count == 1
+        assert inbox.unread_count == 1
+        assert [item.post.post.id for item in inbox.items if item.post is not None] == [
+            visible_post.id
+        ]
+        assert response.status == 200
+        assert "A visible reply survives hidden notification noise." in response.text
+        assert "Hidden private notification" not in response.text
+        assert "No notifications are waiting on you." not in response.text
+
+    asyncio.run(run())
+
+
 def test_mentions_notify_character_owner_without_thread_watch() -> None:
     async def run() -> None:
         app = _app()
