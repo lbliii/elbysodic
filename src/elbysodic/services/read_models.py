@@ -458,6 +458,20 @@ class AttentionItem:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmHome:
+    realm_gateway: RealmGatewayView | None
+    can_manage_home: bool
+    world_status_label: str
+    world_status_copy: str
+    boards: list[BoardSummary]
+    location_boards: list[BoardSummary]
+    community_boards: list[BoardSummary]
+    desk_boards: list[BoardSummary]
+    attention: list[AttentionItem]
+    activity: list[ActivityItem]
+
+
+@dataclass(frozen=True, slots=True)
 class NotificationItem:
     notification: Notification
     board: Board | None
@@ -483,6 +497,11 @@ class NotificationItem:
 class NotificationInbox:
     items: list[NotificationItem]
     unread_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class NotificationCenter:
+    inbox: NotificationInbox
 
 
 @dataclass(frozen=True, slots=True)
@@ -607,6 +626,14 @@ class CharacterRosterCard:
 @dataclass(frozen=True, slots=True)
 class CharacterRosterDashboard:
     cards: list[CharacterRosterCard]
+
+
+@dataclass(frozen=True, slots=True)
+class CharacterRosterPage:
+    roster_dashboard: CharacterRosterDashboard
+    post_style_policy: PostStylePolicy
+    post_style_preview_config_id: str
+    post_style_preview_config: dict[str, object]
 
 
 @dataclass(frozen=True, slots=True)
@@ -910,6 +937,12 @@ class ClaimsDirectory:
     @property
     def has_active_filter(self) -> bool:
         return self.status_filter is not None or bool(self.search_query)
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimsPage:
+    directory: ClaimsDirectory
+    characters: list[Character]
 
 
 @dataclass(frozen=True, slots=True)

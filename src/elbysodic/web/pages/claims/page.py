@@ -77,7 +77,7 @@ def _render_claims(
 ) -> Page:
     services = get_services(request)
     viewer = services.viewer()
-    directory = services.claims_directory(
+    claims_page = services.claims_page(
         status_filter=status_filter,
         search_query=search_query,
     )
@@ -85,11 +85,11 @@ def _render_claims(
         "claims/page.html",
         current_path=request.url,
         viewer=viewer,
-        directory=directory,
-        can_manage=directory.can_manage,
-        characters=services.claimable_characters(),
+        directory=claims_page.directory,
+        can_manage=claims_page.directory.can_manage,
+        characters=claims_page.characters,
         error=error,
-        search_query_encoded=quote_plus(directory.search_query),
+        search_query_encoded=quote_plus(claims_page.directory.search_query),
     )
 
 
