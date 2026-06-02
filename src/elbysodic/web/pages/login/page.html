@@ -1,6 +1,7 @@
 {% imports %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/access.html" import product_identity %}
 {% end %}
 
 {% block page_root %}
@@ -9,12 +10,7 @@
 {% block page_content %}
 {% call container(max_width="42rem") %}
 {% call stack(gap="lg") %}
-  <div class="elbysodic-product-identity">
-    <img class="elbysodic-product-identity__mark"
-         src="/elbysodic-static/brand/elbysodic-mark.svg"
-         alt="">
-    <span class="elbysodic-product-identity__name">Elbysodic</span>
-  </div>
+  {{ product_identity() }}
   {% call section_header("Log In") %}
   Choose the account first; Elbysodic will resolve the current community membership and active face after that.
   {% end %}
@@ -39,7 +35,7 @@
         {% if show_demo_login_hint %}
         Invite/demo accounts use password: <code>password</code>.
         {% else %}
-        Access is invite-only for this launch; public registration is not open.
+        Already have an account? Use it before requesting realm access so directors can review the linked account request.
         {% end %}
         <a class="chirpui-link" href="/request-access">Request access</a>.
       </p>

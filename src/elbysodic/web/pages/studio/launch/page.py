@@ -9,6 +9,7 @@ from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
+from elbysodic.domain.models import CommunityAccessRequest
 from elbysodic.web.state import get_services
 
 
@@ -88,12 +89,12 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
             if form.intent == "review_access_request":
                 updated_request = get_services(request).review_access_request(access_request_id)
                 access_request_message = (
-                    f"Access request from {updated_request.email} was reviewed."
+                    f"Access request from {_access_request_label(updated_request)} was reviewed."
                 )
             else:
                 updated_request = get_services(request).decline_access_request(access_request_id)
                 access_request_message = (
-                    f"Access request from {updated_request.email} was declined."
+                    f"Access request from {_access_request_label(updated_request)} was declined."
                 )
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc
@@ -106,7 +107,9 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         except ValueError:
             return _render_launch(request, access_request_error="access request is required")
         try:
-            created = get_services(request).invite_access_request(access_request_id)
+            services = get_services(request)
+            request_item = services.access_request_detail(access_request_id)
+            created = services.invite_access_request(access_request_id)
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc
         except (LookupError, ValueError) as exc:
@@ -116,7 +119,7 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
             invite_path=created.path,
             invite_email=created.invitation.email,
             access_request_message=(
-                f"Invitation created from access request for {created.invitation.email}."
+                f"Invitation created from access request for {request_item.display_label}."
             ),
         )
     if form.intent != "create_invite":
@@ -132,6 +135,14 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
         invite_path=created.path,
         invite_email=created.invitation.email,
     )
+
+
+def _access_request_label(access_request: CommunityAccessRequest) -> str:
+    if access_request.display_name:
+        return access_request.display_name
+    if access_request.account_user_id is not None:
+        return "linked Elbysodic account"
+    return access_request.email
 
 
 def _render_launch(

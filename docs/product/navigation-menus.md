@@ -65,7 +65,7 @@ The accepted primary shell model is:
 | Locations | `locations` | Public-safe when locations are public | Location tree, active scenes here, related wants, current place context | Start scene here, local filters, watch/read, place management when authorized |
 | Wanted | `wanted` | Public/member-safe with capability-gated actions | Wanted board, Casting, Claims, Reserves, related wants, hook handoffs | Raise interest, reserve, watch, start plotting, ready for scene |
 | Desk | `desk` | Signed-in community members only | Queue, Inbox, Roster, Plotting, Applications, Discovery; applicant-state rows when relevant | Reply, mark caught up, watch, continue to next attention item |
-| Studio | `studio` | Staff/director only | Operations, Launch, Intake, Boards, Navigation, Appearance, Continuity, Materials | Save, publish, review, request revision, staff-only object actions |
+| Studio | `studio` | Staff/director only | Operations, Launch, Discovery profile, Structure, Intake, Appearance, Content | Save, publish, review, request revision, staff-only object actions |
 
 `Network` stays out of the default rail until cross-realm network behavior is a
 real workflow.
@@ -314,7 +314,7 @@ Use language and grouping instead:
 
 - Story-facing: `World Home`, `Locations`, `Guidebook`, `Wanted`.
 - Writer work: `Queue`, `Roster`, `Plotting`, `Applications`, `Discovery`.
-- Director work: `Studio`, `Navigation`, `Board taxonomy`, `Production`.
+- Director work: `Studio`, `Navigation`, `Board map`, `Production`.
 
 Active face is a lens and identity state, not a navigation mode. It may appear
 as a compact sidebar context module where relevant, but it must not hide or
@@ -439,21 +439,25 @@ Configurable:
   its short description, choose its relative order, and decide whether its
   divider label is visible. This is for community vocabulary, not for inventing
   new routing rules.
-- Studio's Board Taxonomy editor is the canonical place to review and adjust
-  this classification. Treat it as production direction: changing a board kind
-  changes the board's meaning; changing sidebar placement changes navigation
-  without pretending the board is a different kind of object.
-- Board Taxonomy rows should foreground the director decision first: board
+- Board and location pages are the primary place to adjust that board's
+  identity, parent/sub-forum relationship, sidebar placement, and navigation
+  order when the viewer has permission. Studio's Board Map view is the
+  canonical audit and bulk repair surface for scanning that classification
+  across the whole realm. Treat it as production direction: changing a board
+  kind changes the board's meaning; changing sidebar placement changes
+  navigation without pretending the board is a different kind of object.
+- Board Map rows should foreground the director decision first: board
   name, kind, sidebar placement, visibility, and parent/child relationship.
-  Form controls belong behind an `Edit placement` disclosure so the list stays
+  Bulk controls belong behind a repair disclosure so the list stays
   scannable, especially on mobile.
 - Studio's board editor is the deeper production room for each board: identity,
   parent, media, sort order, navigation order, visibility, and access belong
   there when a quick taxonomy row is not enough.
-- Studio's Navigation Composer preview is the canonical place to inspect the
-  result. It must distinguish configured sections, app-owned rows,
-  board-derived rows, material-derived rows, identity-derived rows, and
-  wanted-derived rows so directors understand what they are configuring.
+- Studio's Sidebar Audit preview is the canonical place to inspect the
+  result. It must explain each sidebar context's goal first, then distinguish
+  fixed routes, configured sections, board links, current events, active-face
+  routes, and wanted-hook routes without making implementation labels the main
+  read.
 - Optional named sidebar collections inside a realm.
 - Ordering and visibility of board-derived links within allowed sections.
 - Hidden boards may remain reachable by direct URL and visible in page content
@@ -689,10 +693,10 @@ These are the navigation pressure points to revisit as Elbysodic grows:
   Writer Desk because it is a cross-cutting attention surface, not a realm.
 - The Guidebook sidebar is acting as a table of contents plus object directory.
   Keep it only while the sections remain stable director-authored collections.
-- Studio's `Production` grouping currently jumps to writer-facing routes such
-  as `/applications`, `/wanted`, and `/casting`. This is acceptable as a
-  shortcut, but a future production workflow should get a real `/studio/...`
-  route instead of overloading those public surfaces.
+- Studio's inner rail stays inside Studio-owned routes. Writer-facing routes
+  such as `/applications`, `/wanted`, `/claims`, `/casting`, and `/world` can
+  appear as inspect links inside a Studio room, but they must not masquerade as
+  Studio subsections.
 - `/applications` is a current edge case: writers submit or track their own
   applications, while directors review production flow. Treat it as Writer Desk
   by default until a distinct Studio application-review route exists.

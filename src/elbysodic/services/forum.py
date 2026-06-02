@@ -64,6 +64,7 @@ from elbysodic.domain.models import (
     Role,
     SidebarSectionConfig,
     Thread,
+    User,
     WantedAd,
     WantedAdInterest,
 )
@@ -424,6 +425,10 @@ class InvitationManagementItem:
 class AccessRequestManagementItem:
     request: CommunityAccessRequest
     status_label: str
+    display_label: str
+    contact_label: str
+    account_link_label: str
+    account_user: User | None = None
     invitation: InvitationManagementItem | None = None
     activity: tuple[AccessRequestActivityItem, ...] = ()
 
@@ -4884,15 +4889,28 @@ def _access_request_management_item(
         invitation_item = _invitation_management_item(
             repo.get_community_invitation(request.community_id, request.invitation_id)
         )
+    account_user = None
+    if request.account_user_id is not None:
+        with suppress(LookupError):
+            account_user = repo.get_user(request.account_user_id)
     activity: tuple[AccessRequestActivityItem, ...] = ()
     if include_activity:
         activity = tuple(
             _access_request_activity_item(event)
             for event in repo.list_community_access_request_events(request.community_id, request.id)
         )
+    display_label = request.display_name or (
+        "Linked account request" if account_user is not None else request.email
+    )
+    contact_label = "Elbysodic account on file" if account_user is not None else request.email
+    account_link_label = "Linked Elbysodic account" if account_user is not None else "Email request"
     return AccessRequestManagementItem(
         request=request,
         status_label=request.status.title(),
+        display_label=display_label,
+        contact_label=contact_label,
+        account_link_label=account_link_label,
+        account_user=account_user,
         invitation=invitation_item,
         activity=activity,
     )
@@ -5130,7 +5148,7 @@ def _navigation_preview_sections(
         NavigationPreviewItem(
             label=item.board.name,
             href=item.summary.href,
-            source_label="Board-derived",
+            source_label="Board",
             behavior_label=(
                 f"{item.child_count} sublocations" if item.child_count else "Major location"
             ),
@@ -5146,7 +5164,7 @@ def _navigation_preview_sections(
         NavigationPreviewItem(
             label=item.board.name,
             href=item.summary.href,
-            source_label="Board-derived",
+            source_label="Board",
             behavior_label=item.kind_label,
             count=item.summary.unread_thread_count or None,
         )
@@ -5157,7 +5175,7 @@ def _navigation_preview_sections(
         NavigationPreviewItem(
             label=item.board.name,
             href=item.summary.href,
-            source_label="Board-derived",
+            source_label="Board",
             behavior_label=item.kind_label,
             count=item.summary.unread_thread_count or None,
         )
@@ -5168,7 +5186,7 @@ def _navigation_preview_sections(
         NavigationPreviewItem(
             label=item.board.name,
             href=item.summary.href,
-            source_label="Board-derived",
+            source_label="Board",
             behavior_label=item.kind_label,
             count=item.summary.unread_thread_count or None,
         )
@@ -5176,31 +5194,31 @@ def _navigation_preview_sections(
         if item.board.show_in_navigation and item.board.sidebar_section == "studio"
     ]
     studio_items = [
-        NavigationPreviewItem("Overview", "/studio", "App-owned", "Realm home"),
+        NavigationPreviewItem("Overview", "/studio", "Fixed route", "Studio home"),
         NavigationPreviewItem(
-            "Board taxonomy",
-            "/studio#board-taxonomy",
-            "App-owned",
-            "Production control",
+            "Board map",
+            "/studio/structure#board-taxonomy",
+            "Fixed route",
+            "Board placement",
         ),
         NavigationPreviewItem(
             "Navigation composer",
-            "/studio#navigation-composer",
-            "App-owned",
-            "Production preview",
+            "/studio/structure#navigation-composer",
+            "Fixed route",
+            "Sidebar result",
         ),
-        NavigationPreviewItem("Guidebook", "/world", "App-owned", "Cross-realm shortcut"),
-        NavigationPreviewItem("World map", "/", "App-owned", "Cross-realm shortcut"),
-        NavigationPreviewItem("Applications", "/applications", "App-owned", "Production queue"),
-        NavigationPreviewItem("Wanted board", "/wanted", "App-owned", "Casting surface"),
-        NavigationPreviewItem("Casting desk", "/casting", "App-owned", "Casting queue"),
+        NavigationPreviewItem("Guidebook", "/world", "Fixed route", "World material"),
+        NavigationPreviewItem("World map", "/", "Fixed route", "Realm home"),
+        NavigationPreviewItem("Applications", "/applications", "Fixed route", "Intake"),
+        NavigationPreviewItem("Wanted board", "/wanted", "Fixed route", "Casting"),
+        NavigationPreviewItem("Casting desk", "/casting", "Fixed route", "Casting queue"),
     ]
     if current_event is not None:
         studio_items.append(
             NavigationPreviewItem(
                 current_event.material.title,
                 f"/world/{current_event.material.slug}",
-                "Material-derived",
+                "Current event",
                 "Current event",
             )
         )
@@ -5209,16 +5227,19 @@ def _navigation_preview_sections(
         NavigationPreviewSection(
             realm_label="World",
             title="World sidebar",
-            description="World lanes use director language while board placement stays constrained.",
+            description=(
+                "Help visitors move from the realm overview into locations, community "
+                "spaces, and the member directory."
+            ),
             label_visible=(
                 sidebar_sections["locations"].show_label or sidebar_sections["community"].show_label
             ),
             items=[
-                NavigationPreviewItem("Overview", "/", "App-owned", "Realm home"),
+                NavigationPreviewItem("Overview", "/", "Fixed route", "Realm home"),
                 NavigationPreviewItem(
                     sidebar_sections["locations"].label,
                     "/locations",
-                    "Configured section",
+                    "Section",
                     "Location index",
                     len(location_items),
                 ),
@@ -5226,40 +5247,45 @@ def _navigation_preview_sections(
                 NavigationPreviewItem(
                     sidebar_sections["community"].label,
                     "/community",
-                    "Configured section",
+                    "Section",
                     "Community index",
                     len(community_items),
                 ),
-                NavigationPreviewItem("Members", "/members", "App-owned", "Directory"),
+                NavigationPreviewItem("Members", "/members", "Fixed route", "Directory"),
                 *community_items,
             ],
         ),
         NavigationPreviewSection(
             realm_label="Writer Desk",
             title="Desk sidebar",
-            description=sidebar_sections["desk"].description,
+            description=(
+                "Keep writer obligations, inbox, roster, plotting, and applications close "
+                "to the active face workflow."
+            ),
             label_visible=sidebar_sections["desk"].show_label,
             items=[
-                NavigationPreviewItem("Overview", "/desk", "App-owned", "Realm home"),
-                NavigationPreviewItem("Queue", "/my/threads", "App-owned", "Writing lane"),
+                NavigationPreviewItem("Overview", "/desk", "Fixed route", "Desk home"),
+                NavigationPreviewItem("Queue", "/my/threads", "Fixed route", "Writing queue"),
                 NavigationPreviewItem(
                     "Inbox",
                     "/notifications",
-                    "App-owned",
-                    "Attention surface",
+                    "Fixed route",
+                    "Attention",
                     unread_notification_count or None,
                 ),
-                NavigationPreviewItem("Roster", "/characters", "App-owned", "Identity lane"),
-                NavigationPreviewItem("Plotting", "/plotting", "App-owned", "Collaboration"),
-                NavigationPreviewItem("Applications", "/applications", "App-owned", "Intake"),
-                NavigationPreviewItem("Discovery", "/discover", "App-owned", "Find play"),
+                NavigationPreviewItem("Roster", "/characters", "Fixed route", "Faces"),
+                NavigationPreviewItem("Plotting", "/plotting", "Fixed route", "Collaboration"),
+                NavigationPreviewItem("Applications", "/applications", "Fixed route", "Intake"),
+                NavigationPreviewItem("Discovery", "/discover", "Fixed route", "Find play"),
                 *desk_board_items,
             ],
         ),
         NavigationPreviewSection(
             realm_label="Studio",
             title="Studio sidebar",
-            description=sidebar_sections["studio"].description,
+            description=(
+                "Keep director production rooms and staff boards separate from writer navigation."
+            ),
             label_visible=sidebar_sections["studio"].show_label,
             items=studio_items,
         ),
@@ -5267,25 +5293,25 @@ def _navigation_preview_sections(
             realm_label="Wanted",
             title="Casting sidebar",
             description=(
-                "Casting navigation stays lean: app-owned surfaces first, then the active "
-                "face and context-specific wants."
+                "Keep wanted hooks, applications, casting work, and active-face context in "
+                "one lean path."
             ),
             label_visible=False,
             items=[
-                NavigationPreviewItem("Wanted board", "/wanted", "App-owned", "Realm home"),
-                NavigationPreviewItem("Casting desk", "/casting", "App-owned", "Pipeline"),
-                NavigationPreviewItem("Applications", "/applications", "App-owned", "Intake"),
+                NavigationPreviewItem("Wanted board", "/wanted", "Fixed route", "Wanted"),
+                NavigationPreviewItem("Casting desk", "/casting", "Fixed route", "Pipeline"),
+                NavigationPreviewItem("Applications", "/applications", "Fixed route", "Intake"),
                 NavigationPreviewItem(
                     active_face.name if active_face else "Active face",
                     f"/characters/{active_face.slug}" if active_face else "/characters",
-                    "Identity-derived",
-                    "Current lens" if active_face else "Choose a face",
+                    "Active face",
+                    "Current face" if active_face else "Choose a face",
                 ),
                 NavigationPreviewItem(
                     "Open wants",
                     "/wanted",
-                    "Wanted-derived",
-                    "Context list",
+                    "Wanted hooks",
+                    "Open hooks",
                     len(open_wanted_ads) or None,
                 ),
             ],
@@ -5417,7 +5443,7 @@ def _navigation_health_warnings(
                         "visible board-derived links currently live there."
                     ),
                     section=section,
-                    href="/studio#navigation-composer",
+                    href="/studio/structure#navigation-composer",
                 )
             )
 
@@ -5442,7 +5468,7 @@ def _navigation_health_warnings(
                         "route row. Hiding the label may make the sidebar cleaner."
                     ),
                     section=section,
-                    href="/studio#navigation-composer",
+                    href="/studio/structure#navigation-composer",
                 )
             )
 

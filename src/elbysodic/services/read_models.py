@@ -246,6 +246,7 @@ class BoardPage:
     direct_thread_count: int
     next_unread_thread: ThreadNavigationItem | None
     can_start_thread: bool
+    can_manage_board: bool
 
 
 @dataclass(frozen=True, slots=True)

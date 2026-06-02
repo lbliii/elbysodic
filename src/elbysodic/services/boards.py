@@ -146,6 +146,7 @@ def board_page(
         direct_thread_count=direct_thread_count,
         next_unread_thread=next_unread_thread(repo, viewer, board),
         can_start_thread=policies.can_start_thread(viewer.membership, board, viewer.role),
+        can_manage_board=policies.can_manage_navigation(viewer.membership, viewer.role),
     )
 
 

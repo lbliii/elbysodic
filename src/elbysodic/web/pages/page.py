@@ -9,6 +9,7 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import is_community_board, is_desk_board, is_location_board
+from elbysodic.services import policies
 from elbysodic.services.forum import AppServices
 from elbysodic.services.read_models import ForumView, MaterialSummary, WorldHub
 from elbysodic.web.state import get_services
@@ -83,6 +84,7 @@ def get(request: Request) -> Page:
             world_status_label=gateway.atmosphere.title,
             world_status_copy=gateway.atmosphere.copy,
             guidebook=gateway.guidebook,
+            can_manage_home=False,
             show_community_shell=False,
         )
     boards = services.list_boards()
@@ -96,6 +98,7 @@ def get(request: Request) -> Page:
         current_path=request.url,
         viewer=viewer,
         realm_gateway=realm_gateway,
+        can_manage_home=_can_manage_home(viewer),
         world_status_label=world_status_label,
         world_status_copy=world_status_copy,
         boards=boards,
@@ -121,3 +124,10 @@ def _network_services(request: Request) -> tuple[AppServices, ForumView | None]:
         return services, services.viewer()
     except PermissionError:
         return get_services(), None
+
+
+def _can_manage_home(viewer: ForumView) -> bool:
+    return policies.can_manage_navigation(
+        viewer.membership,
+        viewer.role,
+    ) or policies.can_manage_world(viewer.membership, viewer.role)

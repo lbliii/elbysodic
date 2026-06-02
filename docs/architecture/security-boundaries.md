@@ -98,7 +98,10 @@ staff controls.
 Community access requests are interest records, not permission records.
 `CommunityAccessRequest` rows are scoped by `community_id` and may include the
 writer's email, display name, face concept, wanted-hook interest, and private
-notes for directors. Creating a request must not create a `User`,
+notes for directors. When the visitor is already signed in to Elbysodic, the
+request may link `account_user_id` and the rendered request flow should treat it
+as an account-linked entry request rather than asking the writer to retype or
+exchange contact email. Creating a request must not create a `User`,
 `CommunityMembership`, role, character, reserve, claim, invitation, session, or
 active-face state. Public realm previews may submit a request and show
 account-vs-anonymous posture, but only director-capable memberships in the same

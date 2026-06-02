@@ -22,6 +22,12 @@
     color: var(--chirpui-text);
 }
 
+.chirpui-app-shell__topbar {
+    position: sticky;
+    top: 0;
+    z-index: calc(var(--chirpui-z-sticky) + 4);
+}
+
 @supports (backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px)) {
     .chirpui-app-shell__topbar,
     .chirpui-app-shell__sidebar {
@@ -421,6 +427,133 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.elbysodic-realm-switcher {
+    min-width: 0;
+    position: relative;
+}
+
+.elbysodic-realm-switcher__summary {
+    align-items: center;
+    color: var(--chirpui-text);
+    cursor: pointer;
+    display: inline-flex;
+    gap: 0.65rem;
+    list-style: none;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.elbysodic-realm-switcher__summary::-webkit-details-marker {
+    display: none;
+}
+
+.elbysodic-realm-switcher__summary::marker {
+    content: "";
+}
+
+.elbysodic-realm-switcher__summary::after {
+    border-left: 0.22rem solid transparent;
+    border-right: 0.22rem solid transparent;
+    border-top: 0.25rem solid var(--chirpui-text-muted);
+    content: "";
+    flex: 0 0 auto;
+}
+
+.elbysodic-realm-switcher[open] .elbysodic-realm-switcher__summary,
+.elbysodic-realm-switcher__summary:hover,
+.elbysodic-realm-switcher__summary:focus-visible {
+    color: var(--chirpui-text);
+}
+
+.elbysodic-realm-switcher__summary:focus-visible {
+    border-radius: var(--chirpui-radius-sm);
+    outline: 2px solid var(--chirpui-focus-ring);
+    outline-offset: 3px;
+}
+
+.elbysodic-realm-switcher__panel {
+    background: var(--elbysodic-glass-bg);
+    border: 1px solid var(--elbysodic-glass-border);
+    border-radius: var(--chirpui-radius-sm);
+    box-shadow: var(--chirpui-shadow-lg);
+    display: grid;
+    gap: 0.45rem;
+    left: 0;
+    max-height: min(36rem, calc(100vh - 5rem));
+    min-width: min(22rem, calc(100vw - 1.5rem));
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 0.7rem;
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    transform-origin: top left;
+    z-index: var(--chirpui-z-dropdown);
+}
+
+.elbysodic-realm-switcher__link {
+    align-items: center;
+    background: color-mix(in srgb, var(--chirpui-accent) 5%, var(--chirpui-bg-subtle));
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text);
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.55rem 0.65rem;
+    text-decoration: none;
+}
+
+.elbysodic-realm-switcher__link:hover,
+.elbysodic-realm-switcher__link:focus-visible {
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-surface));
+    border-color: var(--chirpui-border-strong);
+    color: var(--chirpui-text);
+}
+
+.elbysodic-realm-switcher__link--current {
+    background: color-mix(in srgb, var(--chirpui-accent) 12%, var(--chirpui-surface));
+    border-color: color-mix(in srgb, var(--chirpui-accent) 42%, var(--chirpui-border));
+}
+
+.elbysodic-realm-switcher__link span {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.elbysodic-realm-switcher__link strong {
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.1;
+}
+
+.elbysodic-realm-switcher__link small {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.elbysodic-realm-switcher__link b {
+    align-items: center;
+    background: var(--chirpui-surface);
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    color: var(--chirpui-text-muted);
+    display: inline-flex;
+    font-size: var(--chirpui-font-xs);
+    font-weight: 900;
+    min-height: 1.45rem;
+    padding: 0.1rem 0.35rem;
+}
+
+.elbysodic-realm-switcher__section {
+    border-top: 1px solid var(--chirpui-border-subtle);
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.1rem;
+    padding-top: 0.6rem;
 }
 
 .elbysodic-sidebar-link {
@@ -883,6 +1016,7 @@
 }
 
 @supports (backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px)) {
+    .elbysodic-realm-switcher__panel,
     .elbysodic-identity-menu__panel {
         backdrop-filter: blur(18px) saturate(140%);
         -webkit-backdrop-filter: blur(18px) saturate(140%);
@@ -892,6 +1026,7 @@
 @media (prefers-reduced-transparency: reduce) {
     .chirpui-app-shell__topbar,
     .chirpui-app-shell__sidebar,
+    .elbysodic-realm-switcher__panel,
     .elbysodic-identity-menu__panel {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -1105,6 +1240,24 @@
 
     .elbysodic-topbar-search__scope-short {
         display: inline;
+    }
+}
+
+@media (min-width: 48.001rem) and (max-width: 72rem) {
+    .elbysodic-app-shell--sidebar-hidden.chirpui-app-shell,
+    .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell {
+        --chirpui-sidebar-width: var(--elbysodic-primary-rail-width);
+    }
+
+    .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell__sidebar .chirpui-sidebar,
+    .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell__sidebar .elbysodic-thread-context-sidebar {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-0.5rem);
+    }
+
+    .elbysodic-app-shell--sidebar-hidden .elbysodic-sidebar-resize::before {
+        left: 0.35rem;
     }
 }
 

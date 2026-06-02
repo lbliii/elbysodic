@@ -81,7 +81,7 @@
     })();
     </script>
     <link rel="icon" href="/elbysodic-static/brand/elbysodic-favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sidebar-reexpand-1">
+    <link rel="stylesheet" href="/elbysodic-static/elbysodic-theme.css?v=sticky-topbar-1">
     <style id="elbysodic-program-theme">
 {{ program_theme_css(shell_has_community, viewer) }}
     </style>
@@ -115,7 +115,7 @@
       }
     </style>
     {% end %}
-    <script defer src="/elbysodic-static/elbysodic-shell.js?v=sidebar-cookie-2"></script>
+    <script defer src="/elbysodic-static/elbysodic-shell.js?v=sidebar-rail-toggle-1"></script>
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=scene-context-inspector-1"></script>
     {% if dev_tools_enabled() %}
     <script defer src="/elbysodic-static/elbysodic-htmx-timing.js?v=1"></script>
@@ -139,21 +139,93 @@
 {% block brand_link %}
 {% set brand_has_community_shell = show_community_shell | default(true) %}
 {% set brand_viewer = viewer | default(none) %}
+{% set brand_account = account_visitor | default(none) %}
 {% set brand_community = (brand_viewer.community if brand_has_community_shell and brand_viewer else (community | default(none))) %}
-<a href="/"
-   class="chirpui-app-shell__brand elbysodic-community-brand"
-   hx-boost="false">
-  {% if brand_community and brand_community.community_mark_url %}
-  <img class="elbysodic-community-brand__mark"
-       src="{{ brand_community.community_mark_url }}"
-       alt="{{ brand_community.community_mark_alt }}">
-  {% elif not brand_has_community_shell %}
-  <img class="elbysodic-community-brand__mark elbysodic-product-mark elbysodic-product-mark--brand"
-       src="/elbysodic-static/brand/elbysodic-mark-small.svg"
-       alt="">
-  {% end %}
-  <span class="elbysodic-community-brand__name">{{ brand_community.name if brand_community else "Elbysodic" }}</span>
-</a>
+{% set brand_identity_options = brand_viewer.identity_options if brand_viewer else (brand_account.identity_options if brand_account else ()) %}
+<details class="chirpui-app-shell__brand elbysodic-realm-switcher"
+         x-data="{ open: false }"
+         x-bind:open="open"
+         @toggle="open = $el.open"
+         @click.outside="open = false"
+         @keydown.escape.window="open = false">
+  <summary class="elbysodic-realm-switcher__summary"
+           aria-label="Realm switcher: {{ brand_community.name if brand_community else "Elbysodic" }}">
+    {% if brand_community and brand_community.community_mark_url %}
+    <img class="elbysodic-community-brand__mark"
+         src="{{ brand_community.community_mark_url }}"
+         alt="{{ brand_community.community_mark_alt }}">
+    {% else %}
+    <img class="elbysodic-community-brand__mark elbysodic-product-mark elbysodic-product-mark--brand"
+         src="/elbysodic-static/brand/elbysodic-mark-small.svg"
+         alt="">
+    {% end %}
+    <span class="elbysodic-community-brand__name">{{ brand_community.name if brand_community else "Elbysodic" }}</span>
+  </summary>
+  <div class="elbysodic-realm-switcher__panel">
+    {% if brand_community %}
+    <a class="elbysodic-realm-switcher__link elbysodic-realm-switcher__link--current"
+       href="/"
+       hx-boost="false"
+       aria-current="page">
+      <span>
+        <strong>{{ brand_community.name }}</strong>
+        <small>Current realm home</small>
+      </span>
+      <b>now</b>
+    </a>
+    {% end %}
+    <a class="elbysodic-realm-switcher__link"
+       href="/"
+       data-elbysodic-global-link
+       hx-boost="false">
+      <span>
+        <strong>Elbysodic</strong>
+        <small>Network home</small>
+      </span>
+    </a>
+    <a class="elbysodic-realm-switcher__link"
+       href="/network"
+       data-elbysodic-global-link
+       hx-boost="false">
+      <span>
+        <strong>Explore realms</strong>
+        <small>Browse public previews and wanted hooks</small>
+      </span>
+    </a>
+    {% if brand_identity_options and brand_identity_options | length > 1 %}
+    <div class="elbysodic-realm-switcher__section">
+      <span class="elbysodic-identity-menu__kicker">Your realms</span>
+      <div class="elbysodic-identity-switcher" data-elbysodic-submit-group>
+        {% for option in brand_identity_options %}
+        <form action="/identity"
+              method="post"
+              hx-boost="false"
+              data-elbysodic-submit-label="Entering {{ option.community.name }}...">
+          {{ csrf_field() }}
+          <input type="hidden" name="intent" value="switch_membership">
+          <input type="hidden" name="membership_id" value="{{ option.membership.id }}">
+          <input type="hidden" name="character_id" value="{{ option.current_character.id if option.current_character else 0 }}">
+          <input type="hidden" name="next" value="{{ current_path or "/" if option.is_current and brand_viewer else option.entry_href }}">
+          <button class="elbysodic-identity-switcher__option{{ " elbysodic-identity-switcher__option--current" if option.is_current else "" }}"
+                  type="submit"
+                  {{ "disabled" if option.is_current else "" }}>
+            <span>
+              <strong>{{ option.community.name }}</strong>
+              <small>{{ option.membership.display_name or option.membership.username }} · {{ option.role.name }}{% if option.current_character %} · playing as {{ option.current_character.name }}{% endif %}</small>
+            </span>
+            {% if option.unread_notification_count %}
+            <b>{{ option.unread_notification_count }}</b>
+            {% elif option.is_current %}
+            <b>now</b>
+            {% end %}
+          </button>
+        </form>
+        {% end %}
+      </div>
+    </div>
+    {% end %}
+  </div>
+</details>
 {% end %}
 
 {% def topnav_link(href, label, is_active=False) %}
@@ -291,42 +363,11 @@
         <a href="/my/threads">Threads</a>
         {% end %}
       </div>
-      {% if viewer.identity_options and viewer.identity_options | length > 1 %}
-      <div class="elbysodic-identity-menu__section">
-        <span class="elbysodic-identity-menu__kicker">Studio Network</span>
-        <div class="elbysodic-identity-switcher" data-elbysodic-submit-group>
-          {% for option in viewer.identity_options %}
-          <form action="/identity"
-                method="post"
-                hx-boost="false"
-                data-elbysodic-submit-label="Entering {{ option.community.name }}...">
-        {{ csrf_field() }}
-            <input type="hidden" name="intent" value="switch_membership">
-            <input type="hidden" name="membership_id" value="{{ option.membership.id }}">
-            <input type="hidden" name="character_id" value="{{ option.current_character.id if option.current_character else 0 }}">
-            <input type="hidden" name="next" value="{{ current_path or "/" if option.is_current else option.entry_href }}">
-            <button class="elbysodic-identity-switcher__option{{ " elbysodic-identity-switcher__option--current" if option.is_current else "" }}"
-                    type="submit"
-                    {{ "disabled" if option.is_current else "" }}>
-              <span>
-                <strong>{{ option.community.name }}</strong>
-                <small>{{ option.membership.display_name or option.membership.username }} · {{ option.role.name }}{% if option.current_character %} · playing as {{ option.current_character.name }}{% endif %}</small>
-              </span>
-              {% if option.unread_notification_count %}
-              <b>{{ option.unread_notification_count }}</b>
-              {% elif option.is_current %}
-              <b>now</b>
-              {% end %}
-            </button>
-          </form>
-          {% end %}
-        </div>
-      </div>
-      {% end %}
       {% if viewer.current_character %}
       <form action="/identity" method="post" hx-boost="false" class="elbysodic-identity-menu__face-form">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="set_default_character">
+        <input type="hidden" name="membership_id" value="{{ viewer.membership.id }}">
         <input type="hidden" name="next" value="{{ current_path or "/" }}">
         <label class="elbysodic-identity-menu__kicker" for="active-character">Playing as</label>
         <select id="active-character"
@@ -342,12 +383,6 @@
       </form>
       {% end %}
       <div class="elbysodic-identity-menu__compact-tools">
-        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if topbar_route.network_active else "" }}"
-           href="/network"
-           {% if topbar_route.network_active %}aria-current="page"{% end %}>
-          Studio Network
-          <span>{{ viewer.identity_options | length }} programs</span>
-        </a>
         <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if notifications_active else "" }}"
            href="/notifications"
            {% if notifications_active %}aria-current="page"{% end %}>
@@ -370,12 +405,6 @@
           <span>QA switcher</span>
         </a>
         {% end %}
-        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if topbar_route.login_active else "" }}"
-           href="/login?next={{ current_path or "/" }}"
-           {% if topbar_route.login_active %}aria-current="page"{% end %}>
-          Log in
-          <span>account session</span>
-        </a>
         <a class="elbysodic-identity-menu__notification-link" href="/logout">
           Log out
           <span>clear session</span>
@@ -416,49 +445,9 @@
       {% if signed_in_account.current_community %}
       <div class="elbysodic-identity-menu__quick-links">
         <a href="/request-access" hx-boost="false">Request access</a>
-        <a href="/network" data-elbysodic-global-link>Studio Network</a>
-      </div>
-      {% end %}
-      {% if signed_in_account.identity_options %}
-      <div class="elbysodic-identity-menu__section">
-        <span class="elbysodic-identity-menu__kicker">Your realms</span>
-        <div class="elbysodic-identity-switcher" data-elbysodic-submit-group>
-          {% for option in signed_in_account.identity_options %}
-          <form action="/identity"
-                method="post"
-                hx-boost="false"
-                data-elbysodic-submit-label="Entering {{ option.community.name }}...">
-            {{ csrf_field() }}
-            <input type="hidden" name="intent" value="switch_membership">
-            <input type="hidden" name="membership_id" value="{{ option.membership.id }}">
-            <input type="hidden" name="character_id" value="{{ option.current_character.id if option.current_character else 0 }}">
-            <input type="hidden" name="next" value="{{ option.entry_href }}">
-            <button class="elbysodic-identity-switcher__option{{ " elbysodic-identity-switcher__option--current" if option.is_current else "" }}"
-                    type="submit"
-                    {{ "disabled" if option.is_current else "" }}>
-              <span>
-                <strong>{{ option.community.name }}</strong>
-                <small>{{ option.membership.display_name or option.membership.username }} · {{ option.role.name }}{% if option.current_character %} · playing as {{ option.current_character.name }}{% endif %}</small>
-              </span>
-              {% if option.unread_notification_count %}
-              <b>{{ option.unread_notification_count }}</b>
-              {% elif option.is_current %}
-              <b>now</b>
-              {% end %}
-            </button>
-          </form>
-          {% end %}
-        </div>
       </div>
       {% end %}
       <div class="elbysodic-identity-menu__compact-tools">
-        <a class="elbysodic-identity-menu__notification-link{{ " elbysodic-identity-menu__notification-link--active" if topbar_route.network_active else "" }}"
-           href="/network"
-           data-elbysodic-global-link
-           {% if topbar_route.network_active %}aria-current="page"{% end %}>
-          Studio Network
-          <span>{{ signed_in_account.identity_options | length }} realms</span>
-        </a>
         <div class="elbysodic-identity-menu__theme-row">
           <span>Theme</span>
           {{ theme_toggle() }}

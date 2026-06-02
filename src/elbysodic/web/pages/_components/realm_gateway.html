@@ -1,5 +1,6 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
+  {% from "_components/director_controls.html" import director_context_panel %}
 {% end %}
 
 {% def gateway_action(action, variant="primary") %}
@@ -323,9 +324,16 @@
 {% end %}
 {% end %}
 
-{% def realm_gateway_home(gateway, viewer=None, account_visitor=None) %}
+{% def realm_gateway_home(gateway, viewer=None, account_visitor=None, can_manage_home=false) %}
 <div class="elbysodic-realm-gateway">
   {{ gateway_hero(gateway) }}
+  {% if can_manage_home %}
+  {% call director_context_panel("Director controls", "Realm home controls", "This surface owns the first visitor scan. Use Studio Structure when you need the cross-realm audit.") %}
+    <a class="chirpui-btn chirpui-btn--primary" href="/studio/structure#gateway-curation">Manage home spotlight</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/discovery">Edit discovery profile</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/appearance">Edit appearance</a>
+  {% end %}
+  {% end %}
   {{ gateway_account_status(gateway, account_visitor) }}
   {{ gateway_continuation(gateway) }}
   {{ gateway_premise_stage(gateway) }}

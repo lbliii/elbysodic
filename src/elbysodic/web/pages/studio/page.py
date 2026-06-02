@@ -40,15 +40,32 @@ class StudioCockpitLane:
     variant: str = "attention"
 
 
+@dataclass(frozen=True, slots=True)
+class StudioRoomCard:
+    key: str
+    kicker: str
+    title: str
+    summary: str
+    href: str
+    cta: str
+    count: int
+    items: tuple[str, ...] = ()
+    variant: str = "info"
+
+
 def get(request: Request) -> Page | Redirect:
-    return _render_studio(request)
+    return render_studio_room(request, "overview")
 
 
 async def post(request: Request) -> Page | Redirect:
+    return await handle_studio_post(request, _studio_room_for_path(request.url))
+
+
+async def handle_studio_post(request: Request, room: str) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "identity_accent")
-    redirect_to = "/studio"
+    redirect_to = _studio_room_href(room)
     try:
         if intent == "board_taxonomy":
             raw_parent_id = str(form.get("parent_board_id") or "")
@@ -68,6 +85,7 @@ async def post(request: Request) -> Page | Redirect:
                 show_in_navigation=form.get("show_in_navigation") == "on",
                 sidebar_section=str(form.get("sidebar_section") or ""),
             )
+            redirect_to = "/studio/structure#board-taxonomy"
         elif intent == "board_navigation":
             services.update_board_navigation(
                 _required_int(form.get("board_id"), "choose a board to update"),
@@ -78,6 +96,7 @@ async def post(request: Request) -> Page | Redirect:
                 show_in_navigation=form.get("show_in_navigation") == "on",
                 sidebar_section=str(form.get("sidebar_section") or ""),
             )
+            redirect_to = "/studio/structure#navigation-composer"
         elif intent == "sidebar_section":
             services.update_sidebar_section_config(
                 str(form.get("section_key") or ""),
@@ -89,6 +108,7 @@ async def post(request: Request) -> Page | Redirect:
                 ),
                 show_label=form.get("show_label") == "on",
             )
+            redirect_to = "/studio/structure#navigation-composer"
         elif intent == "post_style_policy":
             services.update_post_style_policy(
                 enabled_post_profile_variants=_form_values(
@@ -112,6 +132,7 @@ async def post(request: Request) -> Page | Redirect:
                     "enabled_post_densities",
                 ),
             )
+            redirect_to = "/studio/appearance#identity-appearance-style"
         elif intent == "default_theme":
             services.update_default_theme(
                 slug=str(form.get("theme_slug") or ""),
@@ -125,7 +146,7 @@ async def post(request: Request) -> Page | Redirect:
                 light=_theme_mode_values(form, "light"),
                 dark=_theme_mode_values(form, "dark"),
             )
-            redirect_to = "/studio#appearance-theme"
+            redirect_to = "/studio/appearance#appearance-theme"
         elif intent == "community_media":
             services.update_community_media(
                 community_mark_url=str(form.get("community_mark_url") or ""),
@@ -137,14 +158,14 @@ async def post(request: Request) -> Page | Redirect:
                 world_hero_overlay=str(form.get("world_hero_overlay") or ""),
                 world_hero_height=str(form.get("world_hero_height") or ""),
             )
-            redirect_to = "/studio#appearance-media"
+            redirect_to = "/studio/appearance#appearance-media"
         elif intent == "material_status":
             services.update_material_production_state(
                 str(form.get("material_slug") or ""),
                 status=str(form.get("status") or ""),
                 is_featured=form.get("is_featured") == "on",
             )
-            redirect_to = "/studio#continuity-events"
+            redirect_to = "/studio/content#continuity-events"
         elif intent == "gateway_curation":
             services.update_gateway_curation(
                 scene_hub_target_ids=_ordered_targets(
@@ -163,28 +184,42 @@ async def post(request: Request) -> Page | Redirect:
                     "guidebook_material_position_",
                 ),
             )
-            redirect_to = "/studio#gateway-curation"
+            redirect_to = "/studio/structure#gateway-curation"
         else:
             raw_group_id = str(form.get("identity_accent_facet_group_id") or "")
             facet_group_id = int(raw_group_id) if raw_group_id else None
             services.update_identity_accent_group(facet_group_id)
+            redirect_to = "/studio/appearance#identity-appearance"
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except (LookupError, ValueError) as exc:
-        return _render_studio(request, error=str(exc))
+        return render_studio_room(request, room, error=str(exc))
     return Redirect(redirect_to)
 
 
-def _render_studio(request: Request, *, error: str | None = None) -> Page | Redirect:
+def render_studio_room(
+    request: Request,
+    room: str,
+    *,
+    error: str | None = None,
+) -> Page | Redirect:
     services = get_services(request)
     studio = services.director_studio()
     if error is None and studio.can_manage and _is_empty_configured_realm(studio):
         return Redirect("/studio/launch")
+    cockpit_lanes = _studio_cockpit_lanes(studio)
+    studio_rooms = _studio_room_cards(studio, cockpit_lanes)
     return Page.mounted(
         "studio/page.html",
         current_path=request.url,
         viewer=services.viewer(),
         studio=studio,
+        studio_room=room,
+        studio_rooms=studio_rooms,
+        current_studio_room=next(
+            (item for item in studio_rooms if item.key == room),
+            None,
+        ),
         error=error,
         post_profile_variant_labels=POST_PROFILE_VARIANT_LABELS,
         post_accent_style_labels=POST_ACCENT_STYLE_LABELS,
@@ -198,12 +233,29 @@ def _render_studio(request: Request, *, error: str | None = None) -> Page | Redi
         theme_radius_labels=RADIUS_LABELS,
         theme_density_labels=DENSITY_LABELS,
         theme_texture_labels=TEXTURE_LABELS,
-        cockpit_lanes=_studio_cockpit_lanes(studio),
+        cockpit_lanes=cockpit_lanes,
     )
 
 
 def _is_empty_configured_realm(studio: DirectorStudio) -> bool:
     return not studio.board_taxonomy and not studio.materials
+
+
+def _studio_room_for_path(current_path: object) -> str:
+    path = str(current_path or "").split("?", 1)[0].split("#", 1)[0].rstrip("/")
+    if path.endswith("/studio/appearance"):
+        return "appearance"
+    if path.endswith("/studio/structure"):
+        return "structure"
+    if path.endswith("/studio/content"):
+        return "content"
+    return "overview"
+
+
+def _studio_room_href(room: str) -> str:
+    if room in {"appearance", "structure", "content"}:
+        return f"/studio/{room}"
+    return "/studio"
 
 
 def _form_values(form: object, name: str) -> list[str]:
@@ -226,9 +278,9 @@ def _ordered_targets(form: object, field_name: str, position_prefix: str) -> lis
         try:
             position = int(raw_position)
         except ValueError:
-            raise ValueError("gateway curation order must be a positive number") from None
+            raise ValueError("spotlight order must be a positive number") from None
         if position < 1:
-            raise ValueError("gateway curation order must be a positive number")
+            raise ValueError("spotlight order must be a positive number")
         return (position, target_id)
 
     return sorted(selected_ids, key=position_for)
@@ -293,7 +345,7 @@ def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
                 "Materials",
                 "Draft materials",
                 "Guidebook, event, and canon pages still waiting on director publication.",
-                "/studio#continuity-events",
+                "/studio/content#continuity-events",
                 "Review drafts",
                 len(studio.draft_materials),
                 tuple(item.material.title for item in studio.draft_materials[:4]),
@@ -304,8 +356,8 @@ def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
             StudioCockpitLane(
                 "Navigation",
                 "Shell health",
-                "Sidebar, board taxonomy, and route-shape notes that need review.",
-                "/studio#navigation",
+                "Sidebar, board map, and route-shape notes that need review.",
+                "/studio/structure#navigation",
                 "Review navigation",
                 len(studio.navigation_warnings),
                 tuple(warning.title for warning in studio.navigation_warnings[:4]),
@@ -318,7 +370,7 @@ def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
                 "Appearance",
                 "Theme health",
                 "Readability warnings in the realm's light or dark palette.",
-                "/studio#appearance-theme",
+                "/studio/appearance#appearance-theme",
                 "Review theme",
                 len(studio.theme_warnings),
                 tuple(warning.title for warning in studio.theme_warnings[:4]),
@@ -341,3 +393,100 @@ def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
             )
         )
     return lanes
+
+
+def _studio_room_cards(
+    studio: DirectorStudio,
+    cockpit_lanes: list[StudioCockpitLane],
+) -> tuple[StudioRoomCard, ...]:
+    missing_launch_items = [
+        item for item in studio.launch_readiness.items if item.is_required and not item.is_complete
+    ]
+    structure_count = (
+        studio.navigation_attention_count
+        + studio.navigation_warning_count
+        + studio.navigation_note_count
+    )
+    content_count = len(studio.draft_materials) + len(studio.events)
+    return (
+        StudioRoomCard(
+            "operations",
+            "Today",
+            "Operations",
+            "A daily director desk for reviews, claim conflicts, reserves, hooks, and health signals.",
+            "/studio/operations",
+            "Open operations",
+            len(cockpit_lanes),
+            tuple(lane.title for lane in cockpit_lanes[:4]) or ("No urgent lanes right now.",),
+            "attention" if cockpit_lanes else "success",
+        ),
+        StudioRoomCard(
+            "launch",
+            "Opening",
+            "Launch",
+            "Realm opening checklist, access requests, invitations, and first-writer gates.",
+            "/studio/launch",
+            "Open launch room",
+            len(missing_launch_items),
+            tuple(item.label for item in missing_launch_items[:4])
+            or ("Opening requirements are currently satisfied.",),
+            "warning" if missing_launch_items else "success",
+        ),
+        StudioRoomCard(
+            "discovery",
+            "Public presence",
+            "Discovery profile",
+            "Network listing, premise fit, pace expectations, roster posture, and public realm signals.",
+            "/studio/discovery",
+            "Edit discovery",
+            studio.open_wanted_count,
+            tuple(item.wanted_ad.title for item in studio.open_wanted_ads[:4])
+            or ("No open wanted hooks are advertising right now.",),
+        ),
+        StudioRoomCard(
+            "structure",
+            "Realm shape",
+            "Structure",
+            "Audit the home spotlight, board map, sidebar language, and navigation health after object-local edits.",
+            "/studio/structure",
+            "Open audit",
+            structure_count,
+            tuple(warning.title for warning in studio.navigation_warnings[:4])
+            or ("Navigation is coherent right now.",),
+            "warning" if structure_count else "success",
+        ),
+        StudioRoomCard(
+            "intake",
+            "Applications",
+            "Intake",
+            "Application fields, claims, reserves, and director-defined face requirements.",
+            "/studio/intake",
+            "Edit intake",
+            len(studio.claims.groups),
+            tuple(studio.claims.claim_type_names[:4]) or ("No claim types configured yet.",),
+        ),
+        StudioRoomCard(
+            "appearance",
+            "Skinning",
+            "Appearance",
+            "Theme tokens, realm media, identity accents, and post style vocabulary.",
+            "/studio/appearance",
+            "Open appearance",
+            len(studio.theme_warnings),
+            tuple(warning.title for warning in studio.theme_warnings[:4])
+            or ("Theme contrast is healthy for checked surfaces.",),
+            "warning" if studio.theme_warnings else "success",
+        ),
+        StudioRoomCard(
+            "content",
+            "Canon pressure",
+            "Content",
+            "Guidebook materials, current event pressure, wanted hooks, and location coverage.",
+            "/studio/content",
+            "Open content",
+            content_count,
+            tuple(item.material.title for item in studio.draft_materials[:4])
+            or tuple(studio.event_titles[:4])
+            or ("No guidebook drafts are waiting.",),
+        ),
+    )

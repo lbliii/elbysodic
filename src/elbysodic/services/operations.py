@@ -232,9 +232,9 @@ def director_operations(
             OperationsCard(
                 kicker="Navigation",
                 title="Production health",
-                summary="Sidebar, board taxonomy, and route-shape notes.",
+                summary="Sidebar, board map, and route-shape notes.",
                 count=len(studio.navigation_warnings),
-                href="/studio#navigation",
+                href="/studio/structure#navigation",
                 cta="Open navigation studio",
                 variant="warning",
                 items=tuple(warning.title for warning in studio.navigation_warnings[:4]),

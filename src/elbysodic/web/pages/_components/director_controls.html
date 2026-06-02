@@ -1,0 +1,26 @@
+{% def director_context_panel(kicker, title, summary="", cls="") %}
+<aside class="elbysodic-director-context{{ " " ~ cls if cls else "" }}" aria-label="{{ title }}">
+  <div class="elbysodic-director-context__copy">
+    <p class="elbysodic-kicker">{{ kicker }}</p>
+    <h2>{{ title }}</h2>
+    {% if summary %}
+    <p>{{ summary }}</p>
+    {% end %}
+  </div>
+  <div class="elbysodic-director-context__actions">
+    {% slot %}
+  </div>
+</aside>
+{% end %}
+
+{% def director_action_menu(label, summary="Director tools") %}
+<details class="elbysodic-director-menu">
+  <summary>
+    <span>{{ label }}</span>
+    <small>{{ summary }}</small>
+  </summary>
+  <div class="elbysodic-director-menu__panel">
+    {% slot %}
+  </div>
+</details>
+{% end %}

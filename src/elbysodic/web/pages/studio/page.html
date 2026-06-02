@@ -41,6 +41,29 @@
 {% end %}
 {% end %}
 
+{% def studio_room_card(room) %}
+{% call surface(variant="elevated") %}
+<article class="elbysodic-director-lane elbysodic-director-lane--{{ room.variant }}">
+  <div class="elbysodic-director-lane__header">
+    <div>
+      <p class="elbysodic-kicker">{{ room.kicker }}</p>
+      <h2><a class="chirpui-link" href="{{ room.href }}">{{ room.title }}</a></h2>
+    </div>
+    <span class="elbysodic-director-lane__count">{{ room.count }}</span>
+  </div>
+  <p class="elbysodic-copy-summary">{{ room.summary }}</p>
+  {% if room.items %}
+  <ul class="elbysodic-director-list">
+    {% for item in room.items[:3] %}
+    <li>{{ item }}</li>
+    {% end %}
+  </ul>
+  {% end %}
+  <a class="elbysodic-director-action" href="{{ room.href }}">{{ room.cta }}</a>
+</article>
+{% end %}
+{% end %}
+
 {% def navigation_health(studio) %}
 <section class="elbysodic-navigation-health" aria-labelledby="navigation-health-heading">
   <div class="elbysodic-navigation-health__header">
@@ -110,39 +133,133 @@
 </fieldset>
 {% end %}
 
-{% def gateway_curation_section(section, field_name, position_prefix) %}
-<fieldset class="elbysodic-gateway-curation-section">
-  <legend>{{ section.title }}</legend>
-  <p>{{ section.summary }}</p>
-  {% if section.choices %}
-  <div class="elbysodic-gateway-curation-list">
-    {% for choice in section.choices %}
-    <label class="elbysodic-gateway-curation-choice">
-      <input type="checkbox"
-             name="{{ field_name }}"
-             value="{{ choice.target_id }}"
-             {% if choice.is_selected %}checked{% end %}>
-      <span class="elbysodic-gateway-curation-choice__copy">
-        <strong>{{ choice.title }}</strong>
-        <small>{{ choice.summary }}</small>
-        <a class="chirpui-link" href="{{ choice.href }}">Preview</a>
-      </span>
-      <span class="chirpui-field chirpui-field--outlined chirpui-field--dense elbysodic-gateway-curation-choice__position">
-        <span class="chirpui-field__label">Order</span>
-        <input class="chirpui-field__input"
-               type="number"
-               min="1"
-               step="1"
-               name="{{ position_prefix }}{{ choice.target_id }}"
-               value="{{ choice.position_value }}">
-      </span>
-    </label>
-    {% end %}
+{% def spotlight_item(choice, field_name, position_prefix, type_label, selected) %}
+<article class="elbysodic-spotlight-item{% if selected %} elbysodic-spotlight-item--selected{% else %} elbysodic-spotlight-item--available{% end %}"
+         draggable="{{ 'true' if selected else 'false' }}"
+         tabindex="-1"
+         data-elbysodic-gateway-curation-item
+         data-elbysodic-spotlight-item
+         data-elbysodic-spotlight-type="{{ type_label }}"
+         data-elbysodic-spotlight-title="{{ choice.title }}"
+         data-elbysodic-spotlight-summary="{{ choice.summary }}">
+  <input type="checkbox"
+         name="{{ field_name }}"
+         value="{{ choice.target_id }}"
+         aria-label="Show {{ choice.title }} on the public home spotlight"
+         data-elbysodic-gateway-curation-select
+         hidden
+         {% if selected %}checked{% end %}>
+  <input type="hidden"
+         name="{{ position_prefix }}{{ choice.target_id }}"
+         value="{{ choice.position_value }}"
+         data-elbysodic-gateway-curation-position>
+  <button class="elbysodic-spotlight-item__handle"
+          type="button"
+          aria-label="Drag {{ choice.title }} to reorder">
+    Drag
+  </button>
+  <div class="elbysodic-spotlight-item__copy">
+    <span>{{ type_label }}</span>
+    <h4>{{ choice.title }}</h4>
+    <p>{{ choice.summary }}</p>
   </div>
-  {% else %}
-  <p class="elbysodic-empty-state">No eligible items are public right now.</p>
-  {% end %}
-</fieldset>
+  <div class="elbysodic-spotlight-item__actions">
+    <span class="elbysodic-spotlight-item__rank" data-elbysodic-gateway-curation-rank></span>
+    <a class="chirpui-link" href="{{ choice.href }}">Preview</a>
+    <button class="chirpui-btn chirpui-btn--secondary elbysodic-spotlight-item__add"
+            type="button"
+            data-elbysodic-spotlight-add>
+      Add to spotlight
+    </button>
+    <button class="chirpui-btn chirpui-btn--secondary elbysodic-spotlight-item__remove"
+            type="button"
+            data-elbysodic-spotlight-remove>
+      Remove
+    </button>
+    <span class="elbysodic-spotlight-item__move" aria-label="Reorder {{ choice.title }}">
+      <button class="chirpui-btn chirpui-btn--secondary" type="button" aria-label="Move {{ choice.title }} up" data-elbysodic-gateway-curation-up>Move up</button>
+      <button class="chirpui-btn chirpui-btn--secondary" type="button" aria-label="Move {{ choice.title }} down" data-elbysodic-gateway-curation-down>Move down</button>
+    </span>
+  </div>
+</article>
+{% end %}
+
+{% def spotlight_selected_lane(section, field_name, position_prefix, type_label) %}
+<section class="elbysodic-spotlight-lane" aria-labelledby="spotlight-selected-{{ section.slot_type }}">
+  <header class="elbysodic-spotlight-lane__header">
+    <div>
+      <p class="elbysodic-kicker">{{ type_label }}</p>
+      <h3 id="spotlight-selected-{{ section.slot_type }}">{{ section.title }}</h3>
+    </div>
+    <span data-elbysodic-spotlight-count>{{ section.selected_count }}</span>
+  </header>
+  <div class="elbysodic-spotlight-list"
+       data-elbysodic-gateway-curation-list
+       data-elbysodic-spotlight-selected-list
+       data-elbysodic-spotlight-list-for="{{ section.slot_type }}"
+       aria-label="{{ section.title }} spotlight order">
+    {% for choice in section.choices %}
+    {% if choice.is_selected %}
+    {{ spotlight_item(choice, field_name, position_prefix, type_label, true) }}
+    {% end %}
+    {% end %}
+    <p class="elbysodic-empty-state elbysodic-spotlight-empty" data-elbysodic-spotlight-empty>
+      No {{ section.title | lower }} are in the public spotlight yet.
+    </p>
+  </div>
+</section>
+{% end %}
+
+{% def spotlight_library_section(section, field_name, position_prefix, type_label) %}
+<details class="elbysodic-spotlight-library-section" open>
+  <summary>
+    <span>{{ section.title }}</span>
+    <small>{{ section.summary }}</small>
+  </summary>
+  <div class="elbysodic-spotlight-library-list"
+       data-elbysodic-spotlight-library-list
+       data-elbysodic-spotlight-list-for="{{ section.slot_type }}">
+    {% for choice in section.choices %}
+    {% if not choice.is_selected %}
+    {{ spotlight_item(choice, field_name, position_prefix, type_label, false) }}
+    {% end %}
+    {% end %}
+    <p class="elbysodic-empty-state elbysodic-spotlight-empty" data-elbysodic-spotlight-empty>
+      All available {{ section.title | lower }} are already in the spotlight.
+    </p>
+  </div>
+</details>
+{% end %}
+
+{% def spotlight_preview(studio) %}
+<aside class="elbysodic-spotlight-preview" aria-label="Realm home spotlight preview">
+  <div>
+    <p class="elbysodic-kicker">Realm home preview</p>
+    <h3>What visitors see first</h3>
+    <p>Selected items appear as the first public ways into the realm before board map and sidebar choices matter.</p>
+  </div>
+  <ol data-elbysodic-spotlight-preview-list>
+    {% for choice in studio.gateway_curation.scene_hubs.choices %}
+    {% if choice.is_selected %}
+    <li><span>Scene hub</span><strong>{{ choice.title }}</strong></li>
+    {% end %}
+    {% end %}
+    {% for choice in studio.gateway_curation.wanted_hooks.choices %}
+    {% if choice.is_selected %}
+    <li><span>Wanted hook</span><strong>{{ choice.title }}</strong></li>
+    {% end %}
+    {% end %}
+    {% for choice in studio.gateway_curation.guidebook_materials.choices %}
+    {% if choice.is_selected %}
+    <li><span>Guidebook</span><strong>{{ choice.title }}</strong></li>
+    {% end %}
+    {% end %}
+  </ol>
+  <p class="elbysodic-empty-state" data-elbysodic-spotlight-preview-empty>
+    Visitors will see the default realm overview until you add spotlight items.
+  </p>
+  <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview realm home</a>
+</aside>
 {% end %}
 
 {% block page_root %}
@@ -151,13 +268,31 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
+  {% if studio_room != "overview" and current_studio_room %}
+  <div class="elbysodic-place-toolbar">
+    <nav class="elbysodic-place-path" aria-label="Studio path">
+      <a href="/studio">Studio</a>
+      <span class="elbysodic-place-path__separator" aria-hidden="true">/</span>
+      <span aria-current="page">{{ current_studio_room.title }}</span>
+    </nav>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/operations">Operations</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview realm</a>
+    </div>
+  </div>
+  {% end %}
+
   <section class="elbysodic-director-hero">
     <div>
       <p class="elbysodic-kicker">Director Studio</p>
-      <h1>Shape {{ viewer.community.name }}</h1>
+      <h1>{% if current_studio_room %}{{ current_studio_room.title }}{% else %}Shape {{ viewer.community.name }}{% end %}</h1>
       <p class="elbysodic-copy-lead">
+        {% if current_studio_room %}
+        {{ current_studio_room.summary }}
+        {% else %}
         A director room for the canon, locations, applications, and hooks that
         need director attention now.
+        {% end %}
       </p>
     </div>
     <aside class="elbysodic-director-hero__signals" aria-label="Studio pulse">
@@ -168,6 +303,21 @@
     </aside>
   </section>
 
+  {% if not studio.can_manage %}
+  <aside class="elbysodic-notice elbysodic-notice--staff" aria-label="Staff preview">
+    <span class="elbysodic-notice__mark" aria-hidden="true">i</span>
+    <span class="elbysodic-notice__label">Staff preview</span>
+    <span class="elbysodic-notice__body">
+      <strong class="elbysodic-notice__title">Director tools are read-only here</strong>
+      <span class="elbysodic-notice__summary">
+        Director Studio is visible as a preview, but only staff memberships can manage
+        community canon and queues.
+      </span>
+    </span>
+  </aside>
+  {% end %}
+
+  {% if studio_room == "overview" %}
   <section class="chirpui-stack chirpui-stack--md" aria-label="Director attention">
     {% call section_header("Director attention") %}
     Queues and opening risks that need movement before writers feel them.
@@ -202,42 +352,78 @@
     {% end %}
   </section>
 
+  <section class="chirpui-stack chirpui-stack--md" aria-label="Studio rooms">
+    {% call section_header("Studio rooms") %}
+    Move through the realm in the order directors usually need: daily desk, opening gates, public presence, structure, intake, appearance, then content pressure.
+    {% end %}
+    <div class="elbysodic-director-grid" aria-label="Studio room shortcuts">
+      {% for room in studio_rooms %}
+      {{ studio_room_card(room) }}
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+  {% if studio_room == "structure" %}
   {% if studio.can_manage %}
   <section id="gateway-curation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="gateway-curation-heading">
-  {{ room_header("Community home", "Gateway curation", "Choose the public scene hubs, wanted hooks, and guidebook pages that should lead first-face browsing.", "gateway-curation-heading") }}
+  {{ room_header("Public home", "Home spotlight audit", "Review the first scene hubs, wanted hooks, and guidebook materials visitors see before they request access or make a first face.", "gateway-curation-heading") }}
   {% call surface(variant="elevated") %}
-  <form class="chirpui-stack chirpui-stack--md" method="post">
+  <form class="elbysodic-spotlight-composer chirpui-stack chirpui-stack--md"
+        method="post"
+        data-elbysodic-spotlight-composer>
     {{ csrf_field() }}
     <input type="hidden" name="intent" value="gateway_curation">
     {% if error %}
     <p class="elbysodic-form-error">{{ error }}</p>
     {% end %}
-    <div class="elbysodic-gateway-curation-grid">
-      {{ gateway_curation_section(studio.gateway_curation.scene_hubs, "scene_hub_target_id", "scene_hub_position_") }}
-      {{ gateway_curation_section(studio.gateway_curation.wanted_hooks, "wanted_hook_target_id", "wanted_hook_position_") }}
-      {{ gateway_curation_section(studio.gateway_curation.guidebook_materials, "guidebook_material_target_id", "guidebook_material_position_") }}
+    <div class="elbysodic-spotlight-composer__brief">
+      <p class="elbysodic-kicker">Visitor-facing curation</p>
+      <p>
+        This is the cross-realm audit view. Directors can also open these controls from the realm home.
+      </p>
     </div>
-    <div class="chirpui-cluster">
-      <button class="chirpui-btn chirpui-btn--primary" type="submit">Save gateway curation</button>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview home</a>
+    <div class="elbysodic-spotlight-composer__layout">
+      <section class="elbysodic-spotlight-sequence" aria-label="Selected public home spotlight">
+        <div class="elbysodic-spotlight-section-heading">
+          <div>
+            <p class="elbysodic-kicker">Shown on home</p>
+            <h3>Selected spotlight</h3>
+          </div>
+          <p>Move selected items into the order visitors should scan them.</p>
+        </div>
+        {{ spotlight_selected_lane(studio.gateway_curation.scene_hubs, "scene_hub_target_id", "scene_hub_position_", "Scene hub") }}
+        {{ spotlight_selected_lane(studio.gateway_curation.wanted_hooks, "wanted_hook_target_id", "wanted_hook_position_", "Wanted hook") }}
+        {{ spotlight_selected_lane(studio.gateway_curation.guidebook_materials, "guidebook_material_target_id", "guidebook_material_position_", "Guidebook") }}
+      </section>
+      <aside class="elbysodic-spotlight-library" aria-label="Available public home spotlight items">
+        <div class="elbysodic-spotlight-section-heading">
+          <div>
+            <p class="elbysodic-kicker">Available</p>
+            <h3>Spotlight library</h3>
+          </div>
+          <p>Add published material without changing board placement.</p>
+        </div>
+        {{ spotlight_library_section(studio.gateway_curation.scene_hubs, "scene_hub_target_id", "scene_hub_position_", "Scene hub") }}
+        {{ spotlight_library_section(studio.gateway_curation.wanted_hooks, "wanted_hook_target_id", "wanted_hook_position_", "Wanted hook") }}
+        {{ spotlight_library_section(studio.gateway_curation.guidebook_materials, "guidebook_material_target_id", "guidebook_material_position_", "Guidebook") }}
+      </aside>
+    </div>
+    {{ spotlight_preview(studio) }}
+    <div class="elbysodic-spotlight-savebar">
+      <span data-elbysodic-spotlight-dirty>Saved spotlight order</span>
+      <button class="chirpui-btn chirpui-btn--primary" type="submit">Save home spotlight</button>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview realm</a>
     </div>
   </form>
   {% end %}
   </section>
   {% end %}
 
+  {% end %}
+
+  {% if studio_room == "appearance" %}
   {% if not studio.can_manage %}
-  <aside class="elbysodic-notice elbysodic-notice--staff" aria-label="Staff preview">
-    <span class="elbysodic-notice__mark" aria-hidden="true">i</span>
-    <span class="elbysodic-notice__label">Staff preview</span>
-    <span class="elbysodic-notice__body">
-      <strong class="elbysodic-notice__title">Director tools are read-only here</strong>
-      <span class="elbysodic-notice__summary">
-        Director Studio is visible as a preview, but only staff memberships can manage
-        community canon and queues.
-      </span>
-    </span>
-  </aside>
   <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
   {{ room_header("Identity and appearance", "The board's visual language", "Preview the accent source and post style vocabulary directors use to guide the board.", "identity-appearance-heading") }}
   {% call surface(variant="elevated") %}
@@ -435,19 +621,23 @@
   {% end %}
   </section>
 
+  {% end %}
+  {% end %}
+
+  {% if studio_room == "structure" and studio.can_manage %}
   <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
-  {{ room_header("World structure", "Boards, places, and community rooms", "Keep the world map, community boards, desk lanes, and staff spaces legible as the board grows.", "world-structure-heading") }}
+  {{ room_header("Board map", "Boards, places, and community rooms", "Audit the board map after directors edit individual boards from their own pages.", "world-structure-heading") }}
   {% call surface(variant="elevated") %}
   <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
       <div>
-        <p class="elbysodic-kicker">Community Direction</p>
-        <h2 id="board-taxonomy-heading">Board taxonomy</h2>
+        <p class="elbysodic-kicker">Board placement</p>
+        <h2 id="board-taxonomy-heading">Board map audit and bulk repair</h2>
         <p class="elbysodic-copy-section">
-          Classify each board so World, Desk, Studio, and the sidebar know what kind of place it is.
+          Single-board edits belong on the board's page. Use this room when you need to scan every board at once, repair parent/sub-forum placement, or fix sidebar order in a batch.
         </p>
       </div>
-      <div class="elbysodic-board-taxonomy__pulse" aria-label="Board taxonomy totals">
+      <div class="elbysodic-board-taxonomy__pulse" aria-label="Board map totals">
         {{ studio_signal("Locations", studio.location_count + studio.sublocation_count) }}
         {{ studio_signal("Community", studio.community_board_count + studio.archive_board_count) }}
         {{ studio_signal("Staff", studio.staff_board_count + studio.desk_board_count) }}
@@ -479,8 +669,8 @@
         </div>
         <details class="elbysodic-board-taxonomy-row__editor">
           <summary>
-            <span>Edit placement</span>
-            <small>{{ item.kind_label }} · nav {{ item.board.navigation_order }}</small>
+            <span>Bulk repair placement</span>
+            <small>{{ item.sidebar_section_label }} · nav {{ item.board.navigation_order }}</small>
           </summary>
           <div class="elbysodic-board-taxonomy-row__controls">
             <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
@@ -513,7 +703,7 @@
               </select>
             </label>
             <label class="chirpui-field chirpui-field--outlined elbysodic-form-field">
-              <span class="chirpui-field__label">Order</span>
+              <span class="chirpui-field__label">Navigation order</span>
               <input class="chirpui-field__input" type="number"
                      name="navigation_order"
                      value="{{ item.board.navigation_order }}"
@@ -537,14 +727,14 @@
   </section>
 
   <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
-  {{ room_header("Navigation", "Sidebar language and health", "Shape how writers move through the board while keeping route meaning stable.", "navigation-heading") }}
+  {{ room_header("Navigation", "Sidebar language and health", "Audit how writers move through the board while keeping route meaning stable.", "navigation-heading") }}
   {% call surface(variant="elevated") %}
   <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
       <p class="elbysodic-kicker">Community Direction</p>
-      <h2 id="navigation-composer-heading">Navigation composer</h2>
+      <h2 id="navigation-composer-heading">Sidebar audit</h2>
       <p class="elbysodic-copy-section">
-        Preview how app-owned routes, board taxonomy, and contextual objects compose the sidebars writers actually use.
+        Check the sidebars people will actually see after object-local board edits, sidebar labels, and contextual route choices compose together. Use this to catch boards in the wrong work area, repeated section labels, or sidebars that bury the next useful move.
       </p>
     </div>
     {% if studio.can_manage %}
@@ -597,19 +787,21 @@
       {% for section in studio.navigation_preview_sections %}
       <article class="elbysodic-navigation-preview">
         <div class="elbysodic-navigation-preview__header">
-          <p class="elbysodic-kicker">{{ section.realm_label }}</p>
-          <h3>{{ section.title }}</h3>
-          <p class="elbysodic-copy-summary">{{ section.description }}</p>
-          <p class="elbysodic-copy-meta">
-            {{ "Section label shown" if section.label_visible else "Section label hidden; the route title carries the context." }}
-          </p>
+          <div>
+            <p class="elbysodic-kicker">{{ section.realm_label }} context</p>
+            <h3>{{ section.title }}</h3>
+          </div>
+          <span>{{ "Label shown" if section.label_visible else "Label hidden" }}</span>
         </div>
+        <p class="elbysodic-navigation-preview__goal"><strong>Goal</strong>{{ section.description }}</p>
         <ol class="elbysodic-navigation-preview__list">
           {% for item in section.items %}
           <li>
-            <a href="{{ item.href }}">{{ item.label }}</a>
-            <span>{{ item.source_label }}</span>
-            <small>{{ item.behavior_label }}</small>
+            <a href="{{ item.href }}">
+              <span>{{ item.label }}</span>
+              <small>{{ item.behavior_label }}</small>
+            </a>
+            <em>{{ item.source_label }}</em>
             {% if item.count %}
             <strong>{{ item.count }}</strong>
             {% end %}
@@ -622,7 +814,9 @@
   </section>
   {% end %}
   </section>
+  {% end %}
 
+  {% if studio_room == "appearance" and studio.can_manage %}
   <section id="identity-appearance-style" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-label="Post style vocabulary">
   {% call surface(variant="elevated") %}
   <form class="chirpui-stack chirpui-stack--md" method="post">
@@ -705,20 +899,20 @@
   </section>
   {% end %}
 
-  {% if not studio.can_manage %}
+  {% if studio_room == "structure" and not studio.can_manage %}
   <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
-  {{ room_header("World structure", "Boards, places, and community rooms", "Preview how the board's places and community rooms are classified.", "world-structure-heading") }}
+  {{ room_header("Board map", "Boards, places, and community rooms", "Preview how object-local board edits classify board kinds, parent and sub-forum relationships, sidebar placement, and navigation order.", "world-structure-heading") }}
   {% call surface(variant="elevated") %}
   <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
     <div class="chirpui-cluster chirpui-cluster--between">
       <div>
-        <p class="elbysodic-kicker">Community Direction</p>
-        <h2 id="board-taxonomy-heading">Board taxonomy</h2>
+        <p class="elbysodic-kicker">Board placement</p>
+        <h2 id="board-taxonomy-heading">Board map audit</h2>
         <p class="elbysodic-copy-section">
-          Classify each board so World, Desk, Studio, and the sidebar know what kind of place it is.
+          Read what each board is, whether it lives under a parent as a sub-forum, which sidebar section owns it, and where it sorts in navigation.
         </p>
       </div>
-      <div class="elbysodic-board-taxonomy__pulse" aria-label="Board taxonomy totals">
+      <div class="elbysodic-board-taxonomy__pulse" aria-label="Board map totals">
         {{ studio_signal("Locations", studio.location_count + studio.sublocation_count) }}
         {{ studio_signal("Community", studio.community_board_count + studio.archive_board_count) }}
         {{ studio_signal("Staff", studio.staff_board_count + studio.desk_board_count) }}
@@ -752,14 +946,14 @@
   {% end %}
   </section>
   <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
-  {{ room_header("Navigation", "Sidebar language and health", "Preview the sidebar composer and health notes.", "navigation-heading") }}
+  {{ room_header("Navigation", "Sidebar language and health", "Preview the sidebar audit and health notes.", "navigation-heading") }}
   {% call surface(variant="elevated") %}
   <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
       <p class="elbysodic-kicker">Community Direction</p>
-      <h2 id="navigation-composer-heading">Navigation composer</h2>
+      <h2 id="navigation-composer-heading">Sidebar audit</h2>
       <p class="elbysodic-copy-section">
-        Preview how app-owned routes, board taxonomy, and contextual objects compose the sidebars writers actually use.
+        Check the sidebars people will actually see after board map, sidebar label, and contextual route choices compose together.
       </p>
     </div>
     <div class="elbysodic-sidebar-section-configs" aria-label="Sidebar section settings">
@@ -778,19 +972,21 @@
       {% for section in studio.navigation_preview_sections %}
       <article class="elbysodic-navigation-preview">
         <div class="elbysodic-navigation-preview__header">
-          <p class="elbysodic-kicker">{{ section.realm_label }}</p>
-          <h3>{{ section.title }}</h3>
-          <p class="elbysodic-copy-summary">{{ section.description }}</p>
-          <p class="elbysodic-copy-meta">
-            {{ "Section label shown" if section.label_visible else "Section label hidden; the route title carries the context." }}
-          </p>
+          <div>
+            <p class="elbysodic-kicker">{{ section.realm_label }} context</p>
+            <h3>{{ section.title }}</h3>
+          </div>
+          <span>{{ "Label shown" if section.label_visible else "Label hidden" }}</span>
         </div>
+        <p class="elbysodic-navigation-preview__goal"><strong>Goal</strong>{{ section.description }}</p>
         <ol class="elbysodic-navigation-preview__list">
           {% for item in section.items %}
           <li>
-            <a href="{{ item.href }}">{{ item.label }}</a>
-            <span>{{ item.source_label }}</span>
-            <small>{{ item.behavior_label }}</small>
+            <a href="{{ item.href }}">
+              <span>{{ item.label }}</span>
+              <small>{{ item.behavior_label }}</small>
+            </a>
+            <em>{{ item.source_label }}</em>
             {% if item.count %}
             <strong>{{ item.count }}</strong>
             {% end %}
@@ -805,6 +1001,7 @@
   </section>
   {% end %}
 
+  {% if studio_room == "content" %}
   <section id="casting-applications" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="casting-applications-heading">
   {{ room_header("Casting and applications", "Intake, wanted hooks, and review queues", "Keep character growth and casting prompts close to the board's production pulse.", "casting-applications-heading") }}
   <section class="elbysodic-director-grid" aria-label="Director work lanes">
@@ -993,6 +1190,7 @@
   {% end %}
   {% end %}
   </section>
+  {% end %}
 {% end %}
 {% end %}
 {% end %}

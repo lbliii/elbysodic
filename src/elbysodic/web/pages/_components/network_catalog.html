@@ -5,7 +5,9 @@
 {% end %}
 
 {% def program_summary(program) %}
-{% if program.current_event %}
+{% if program.discovery_profile and program.discovery_profile.catalog_pitch %}
+{{ program.discovery_profile.catalog_pitch }}
+{% elif program.current_event %}
 {{ program.current_event.material.summary }}
 {% elif program.premise %}
 {{ program.premise.material.summary }}
@@ -31,9 +33,10 @@ A realm ready for scenes, casting, and writer movement.
 {{ metric_item(program.claim_type_count, "claims", href=program.entry_href ~ "/claims") }}
 {% end %}
 
-{% def program_card(program, viewer=none) %}
+{% def program_card(program, viewer=none, preview=false) %}
 <article class="elbysodic-network-card{{ " elbysodic-network-card--no-hero" if not program.community.world_hero_image_url else "" }}"
-         style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
+         style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};"
+         {% if preview %}data-elbysodic-discovery-preview-card{% end %}>
   <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
     <span class="chirpui-visually-hidden">Preview {{ program.community.name }}</span>
   </a>
@@ -63,18 +66,18 @@ A realm ready for scenes, casting, and writer movement.
         {% if viewer and viewer.community.id == program.community.id %}
         {{ badge("current membership", variant="success") }}
         {% end %}
-        {{ badge(program.invite_posture_label, variant="info") }}
+        <span {% if preview %}data-elbysodic-preview-access{% end %}>{{ badge(program.invite_posture_label, variant="info") }}</span>
         {% if program.discovery_profile and program.discovery_profile.activity_pace %}
-        {{ badge(program.discovery_profile.activity_pace, variant="info") }}
+        <span {% if preview %}data-elbysodic-preview-pace{% end %}>{{ badge(program.discovery_profile.activity_pace, variant="info") }}</span>
         {% end %}
       </div>
     </header>
-    <p class="elbysodic-copy-summary">{{ program_summary(program) }}</p>
+    <p class="elbysodic-copy-summary" {% if preview %}data-elbysodic-preview-summary{% end %}>{{ program_summary(program) }}</p>
     <p class="elbysodic-copy-meta">
       {{ program.application_posture_label }} · {{ program.claims_posture_label }}
     </p>
     {% if program.discovery_profile %}
-    <p class="elbysodic-copy-meta">
+    <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>
       {{ program.discovery_profile.premise_archetype or "Premise-led realm" }}
       {% if program.discovery_profile.lore_aperture %}
       · {{ program.discovery_profile.lore_aperture }}
@@ -84,7 +87,7 @@ A realm ready for scenes, casting, and writer movement.
       {% end %}
     </p>
     {% else %}
-    <p class="elbysodic-copy-meta">Read the premise, roster, wanted, and first steps.</p>
+    <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>Read the premise, roster, wanted, and first steps.</p>
     {% end %}
     <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
       {{ program_metric_links(program) }}

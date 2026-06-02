@@ -37,7 +37,7 @@ async def post(request: Request, form: RequestAccessForm) -> Page:
     try:
         access_request = services.create_access_request(
             community_slug,
-            email=form.email,
+            email=account_visitor.user.email if account_visitor else form.email,
             display_name=form.display_name,
             face_concept=form.face_concept,
             wanted_hook=form.wanted_hook,
@@ -52,6 +52,7 @@ async def post(request: Request, form: RequestAccessForm) -> Page:
         request,
         form=RequestAccessForm(),
         submitted_email=access_request.email,
+        submitted_account=account_visitor is not None,
     )
 
 
@@ -61,6 +62,7 @@ def _render_request_access(
     error: str = "",
     form: RequestAccessForm | None = None,
     submitted_email: str = "",
+    submitted_account: bool = False,
 ) -> Page:
     services = get_services()
     tenant_slug = request_tenant_slug(request)
@@ -82,5 +84,6 @@ def _render_request_access(
         form=form,
         error=error,
         submitted_email=submitted_email,
+        submitted_account=submitted_account,
         show_community_shell=False,
     )

@@ -1,0 +1,25 @@
+{% def product_identity() %}
+<div class="elbysodic-product-identity">
+  <img class="elbysodic-product-identity__mark"
+       src="/elbysodic-static/brand/elbysodic-mark.svg"
+       alt="">
+  <span class="elbysodic-product-identity__name">Elbysodic</span>
+</div>
+{% end %}
+
+{% def access_account_notice(account_visitor, community=none) %}
+{% if account_visitor %}
+<section class="elbysodic-access-account" aria-label="Signed-in account">
+  <span class="elbysodic-access-account__avatar" aria-hidden="true">{{ account_visitor.avatar_label }}</span>
+  <div>
+    <p class="elbysodic-section-kicker">Existing Elbysodic account</p>
+    <h2>Request access without a separate email handoff.</h2>
+    {% if community %}
+    <p>Your account can ask to join {{ community.name }} directly. Directors see the request, first-face context, and linked account state.</p>
+    {% else %}
+    <p>Your account is active. Open a realm preview to request entry into that roster.</p>
+    {% end %}
+  </div>
+</section>
+{% end %}
+{% end %}

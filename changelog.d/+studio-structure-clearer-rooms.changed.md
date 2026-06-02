@@ -1,0 +1,1 @@
+Studio Structure now uses a Public Home Spotlight composer with selected items, a candidate library, and a preview while separating board map, sidebar, sub-forum placement, and navigation preview goals.
