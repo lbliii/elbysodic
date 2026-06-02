@@ -73,6 +73,8 @@ Production request identity is session-backed:
 - dev identity headers are ignored
 - unsigned `elbysodic_dev_identity` cookies are ignored and are not issued
 - `/dev/personas` is unavailable even when `ELBYSODIC_DEV_TOOLS` is set
+- logout revokes the stored session and clears its selected community and
+  membership so stale cookies cannot carry forward active realm identity state
 
 The logged-out `/` and `/network` surfaces use public catalog read models.
 They can show realm names, public premise or current-event summaries, public

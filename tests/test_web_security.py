@@ -10,6 +10,7 @@ from chirp.testing import TestClient
 
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.services import create_services
+from elbysodic.services.auth import session_token_hash
 from elbysodic.services.network import search_studio_network
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
@@ -1037,6 +1038,9 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
                 "/studio",
                 headers={"Cookie": f"elbysodic_session={original_session}"},
             )
+            revoked_session = services.repo.get_user_session_by_token_hash(
+                session_token_hash(original_session)
+            )
 
         assert health.status == 200
         assert public_root.status == 200
@@ -1084,6 +1088,9 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert dict(studio_after_logout.headers)["location"] == "/login?next=/studio"
         assert studio_with_stale_session.status == 302
         assert dict(studio_with_stale_session.headers)["location"] == "/login?next=/studio"
+        assert revoked_session.revoked_at is not None
+        assert revoked_session.selected_community_id is None
+        assert revoked_session.selected_membership_id is None
 
     asyncio.run(run())
 

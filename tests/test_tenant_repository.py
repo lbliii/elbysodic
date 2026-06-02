@@ -1296,10 +1296,24 @@ def test_thread_counts_are_scoped_to_board_and_community() -> None:
 
 def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository) -> None:
     user = repo.create_user("session@example.com", "hash")
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "session-member", "Session Member")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "session-member",
+        "Session Member",
+    )
     session = repo.create_user_session(
         user.id,
         "abc123",
         expires_at="2026-06-01T00:00:00+00:00",
+    )
+    repo.update_user_session_identity(
+        session.id,
+        community_id=community.id,
+        membership_id=membership.id,
     )
 
     stored = repo.get_user_session_by_token_hash("abc123")
@@ -1309,8 +1323,12 @@ def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository)
 
     assert stored.user_id == user.id
     assert stored.expires_at == "2026-06-01T00:00:00+00:00"
+    assert stored.selected_community_id == community.id
+    assert stored.selected_membership_id == membership.id
     assert touched.last_seen_at >= session.last_seen_at
     assert revoked.revoked_at is not None
+    assert revoked.selected_community_id is None
+    assert revoked.selected_membership_id is None
 
 
 def test_membership_role_integrity_issues_detect_cross_community_roles(

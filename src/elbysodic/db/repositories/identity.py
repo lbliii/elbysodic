@@ -861,7 +861,9 @@ class IdentityRepositoryMixin(RepositoryBase):
         self.connection.execute(
             """
             UPDATE user_sessions
-            SET revoked_at = COALESCE(revoked_at, ?)
+            SET revoked_at = COALESCE(revoked_at, ?),
+                selected_community_id = NULL,
+                selected_membership_id = NULL
             WHERE token_hash = ?
             """,
             (_utc_now(), token_hash),
