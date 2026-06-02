@@ -5187,6 +5187,11 @@ appearance:
         assert "Hydration gate: nothing has been applied." in response.text
         assert "duplicate handling, ownership defaults, rollback behavior" in response.text
         assert "Apply readiness review" in response.text
+        assert (
+            "Preflight resolved 7 create, 0 update, 0 skip, 0 blocked, and 0 warning actions."
+            in (response.text)
+        )
+        assert "No live face or wanted-hook collisions need explicit update mode." in response.text
         assert "Duplicate handling must stay tenant-scoped." in response.text
         assert "Hydration must run inside one rollback-tested transaction." in response.text
         assert "Check apply gate" in response.text

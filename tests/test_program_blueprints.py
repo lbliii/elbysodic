@@ -953,6 +953,7 @@ wanted:
 """
 
     preview = admin_services.preview_program_blueprint(source)
+    readiness = admin_services.program_blueprint_apply_readiness(preview)
     rows = {(row.section, row.slug): row for row in preview.diff_rows}
 
     assert preview.is_valid
@@ -963,6 +964,11 @@ wanted:
     assert rows[("material", "premise")].action == "update"
     assert rows[("wanted hook", "iceman-winter-rescue-specialist")].action == "skip"
     assert preview.diff_action_summary == "Preflight: 4 update actions, 2 skip actions."
+    assert readiness.can_check_gate
+    assert (
+        "Skipped live collisions need explicit update mode before apply: "
+        "face: Rogue, wanted hook: Iceman winter rescue specialist."
+    ) in readiness.items
 
 
 def test_seed_hydrates_blueprint_board_media_fields(monkeypatch: pytest.MonkeyPatch) -> None:

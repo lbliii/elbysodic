@@ -66,16 +66,28 @@ def preview_program_blueprint(
 def program_blueprint_apply_readiness(
     preview: ProgramBlueprintPreview | None,
 ) -> BlueprintApplyReadiness:
+    if preview is None:
+        return BlueprintApplyReadiness(
+            can_check_gate=False,
+            items=("Preview a valid Program Blueprint before checking the apply gate.",),
+        )
+    if not preview.is_valid:
+        return BlueprintApplyReadiness(
+            can_check_gate=False,
+            items=("Resolve validation notes before checking the apply gate.",),
+        )
+    action_counts = _diff_action_counts(preview.diff_rows)
+    items = [
+        _diff_action_readiness_summary(action_counts),
+        _collision_readiness_summary(preview.diff_rows),
+        "Duplicate handling must stay tenant-scoped.",
+        "Starter faces need explicit ownership defaults.",
+        "Hydration must run inside one rollback-tested transaction.",
+        "Unsupported keys must remain visible before apply.",
+    ]
     return BlueprintApplyReadiness(
-        can_check_gate=bool(
-            preview is not None and preview.is_valid and preview.preview_fingerprint
-        ),
-        items=(
-            "Duplicate handling must stay tenant-scoped.",
-            "Starter faces need explicit ownership defaults.",
-            "Hydration must run inside one rollback-tested transaction.",
-            "Unsupported keys must remain visible before apply.",
-        ),
+        can_check_gate=bool(preview.preview_fingerprint),
+        items=tuple(items),
     )
 
 
@@ -302,3 +314,34 @@ def _preview_fingerprint(source: str, rows: tuple[BlueprintDiffRow, ...]) -> str
         digest.update(b"\0")
         digest.update(row.detail.encode("utf-8"))
     return digest.hexdigest()[:16]
+
+
+def _diff_action_counts(rows: tuple[BlueprintDiffRow, ...]) -> dict[str, int]:
+    return {
+        action: sum(1 for row in rows if row.action == action)
+        for action in ("create", "update", "skip", "blocked", "warning")
+    }
+
+
+def _diff_action_readiness_summary(action_counts: dict[str, int]) -> str:
+    return (
+        "Preflight resolved "
+        f"{action_counts['create']} create, "
+        f"{action_counts['update']} update, "
+        f"{action_counts['skip']} skip, "
+        f"{action_counts['blocked']} blocked, and "
+        f"{action_counts['warning']} warning actions."
+    )
+
+
+def _collision_readiness_summary(rows: tuple[BlueprintDiffRow, ...]) -> str:
+    skipped_collisions = [
+        row for row in rows if row.action == "skip" and row.section in {"face", "wanted hook"}
+    ]
+    if not skipped_collisions:
+        return "No live face or wanted-hook collisions need explicit update mode."
+    labels = ", ".join(f"{row.section}: {row.label}" for row in skipped_collisions[:3])
+    overflow = len(skipped_collisions) - 3
+    if overflow > 0:
+        labels = f"{labels}, and {overflow} more"
+    return f"Skipped live collisions need explicit update mode before apply: {labels}."
