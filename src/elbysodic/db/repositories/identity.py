@@ -1576,6 +1576,60 @@ class IdentityRepositoryMixin(RepositoryBase):
             SELECT table_name, row_id, community_id, reason
             FROM (
                 SELECT
+                    'communities' AS table_name,
+                    community.id AS row_id,
+                    community.id AS community_id,
+                    CASE
+                        WHEN theme.id IS NULL
+                            AND community.default_theme_id IS NOT NULL
+                            THEN 'community default theme belongs to another community'
+                        WHEN facet_group.id IS NULL
+                            AND community.identity_accent_facet_group_id IS NOT NULL
+                            THEN 'community identity accent facet group belongs to another community'
+                        ELSE 'community tenant pair is invalid'
+                    END AS reason
+                FROM communities AS community
+                LEFT JOIN themes AS theme
+                    ON theme.id = community.default_theme_id
+                    AND theme.community_id = community.id
+                LEFT JOIN facet_groups AS facet_group
+                    ON facet_group.id = community.identity_accent_facet_group_id
+                    AND facet_group.community_id = community.id
+                WHERE (
+                        community.default_theme_id IS NOT NULL
+                        AND theme.id IS NULL
+                    )
+                    OR (
+                        community.identity_accent_facet_group_id IS NOT NULL
+                        AND facet_group.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'boards' AS table_name,
+                    board.id AS row_id,
+                    board.community_id,
+                    CASE
+                        WHEN board.parent_board_id = board.id THEN 'board cannot be its own parent'
+                        WHEN parent.id IS NULL
+                            AND board.parent_board_id IS NOT NULL
+                            THEN 'board parent belongs to another community'
+                        ELSE 'board tenant pair is invalid'
+                    END AS reason
+                FROM boards AS board
+                LEFT JOIN boards AS parent
+                    ON parent.id = board.parent_board_id
+                    AND parent.community_id = board.community_id
+                WHERE board.parent_board_id IS NOT NULL
+                    AND (
+                        board.parent_board_id = board.id
+                        OR parent.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
                     'threads' AS table_name,
                     thread.id AS row_id,
                     thread.community_id,
@@ -1603,6 +1657,624 @@ class IdentityRepositoryMixin(RepositoryBase):
                 UNION ALL
 
                 SELECT
+                    'community_invitations' AS table_name,
+                    invitation.id AS row_id,
+                    invitation.community_id,
+                    CASE
+                        WHEN role.id IS NULL THEN 'community invitation role belongs to another community'
+                        WHEN invited_by.id IS NULL THEN 'community invitation invited-by membership belongs to another community'
+                        WHEN accepted_membership.id IS NULL
+                            AND invitation.accepted_membership_id IS NOT NULL
+                            THEN 'community invitation accepted membership belongs to another community'
+                        WHEN accepted_membership.user_id != invitation.accepted_user_id
+                            AND invitation.accepted_membership_id IS NOT NULL
+                            AND invitation.accepted_user_id IS NOT NULL
+                            THEN 'community invitation accepted membership does not match accepted user'
+                        ELSE 'community invitation tenant pair is invalid'
+                    END AS reason
+                FROM community_invitations AS invitation
+                LEFT JOIN roles AS role
+                    ON role.id = invitation.role_id
+                    AND role.community_id = invitation.community_id
+                LEFT JOIN community_memberships AS invited_by
+                    ON invited_by.id = invitation.invited_by_membership_id
+                    AND invited_by.community_id = invitation.community_id
+                LEFT JOIN community_memberships AS accepted_membership
+                    ON accepted_membership.id = invitation.accepted_membership_id
+                    AND accepted_membership.community_id = invitation.community_id
+                WHERE role.id IS NULL
+                    OR invited_by.id IS NULL
+                    OR (
+                        invitation.accepted_membership_id IS NOT NULL
+                        AND accepted_membership.id IS NULL
+                    )
+                    OR (
+                        invitation.accepted_membership_id IS NOT NULL
+                        AND invitation.accepted_user_id IS NOT NULL
+                        AND accepted_membership.user_id != invitation.accepted_user_id
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'community_access_requests' AS table_name,
+                    request.id AS row_id,
+                    request.community_id,
+                    CASE
+                        WHEN invitation.id IS NULL
+                            AND request.invitation_id IS NOT NULL
+                            THEN 'community access request invitation belongs to another community'
+                        ELSE 'community access request tenant pair is invalid'
+                    END AS reason
+                FROM community_access_requests AS request
+                LEFT JOIN community_invitations AS invitation
+                    ON invitation.id = request.invitation_id
+                    AND invitation.community_id = request.community_id
+                WHERE request.invitation_id IS NOT NULL
+                    AND invitation.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'community_access_request_events' AS table_name,
+                    event.id AS row_id,
+                    event.community_id,
+                    CASE
+                        WHEN request.id IS NULL THEN 'community access request event request belongs to another community'
+                        WHEN actor.id IS NULL
+                            AND event.actor_membership_id IS NOT NULL
+                            THEN 'community access request event actor membership belongs to another community'
+                        WHEN invitation.id IS NULL
+                            AND event.invitation_id IS NOT NULL
+                            THEN 'community access request event invitation belongs to another community'
+                        ELSE 'community access request event tenant pair is invalid'
+                    END AS reason
+                FROM community_access_request_events AS event
+                LEFT JOIN community_access_requests AS request
+                    ON request.id = event.access_request_id
+                    AND request.community_id = event.community_id
+                LEFT JOIN community_memberships AS actor
+                    ON actor.id = event.actor_membership_id
+                    AND actor.community_id = event.community_id
+                LEFT JOIN community_invitations AS invitation
+                    ON invitation.id = event.invitation_id
+                    AND invitation.community_id = event.community_id
+                WHERE request.id IS NULL
+                    OR (
+                        event.actor_membership_id IS NOT NULL
+                        AND actor.id IS NULL
+                    )
+                    OR (
+                        event.invitation_id IS NOT NULL
+                        AND invitation.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'community_gateway_slots' AS table_name,
+                    slot.id AS row_id,
+                    slot.community_id,
+                    CASE
+                        WHEN slot.slot_type = 'scene_hub' AND board.id IS NULL
+                            THEN 'community gateway slot scene hub board belongs to another community'
+                        WHEN slot.slot_type = 'wanted_hook' AND wanted.id IS NULL
+                            THEN 'community gateway slot wanted hook belongs to another community'
+                        WHEN slot.slot_type = 'guidebook_material' AND material.id IS NULL
+                            THEN 'community gateway slot guidebook material belongs to another community'
+                        ELSE 'community gateway slot tenant pair is invalid'
+                    END AS reason
+                FROM community_gateway_slots AS slot
+                LEFT JOIN boards AS board
+                    ON board.id = slot.target_id
+                    AND board.community_id = slot.community_id
+                    AND slot.slot_type = 'scene_hub'
+                LEFT JOIN wanted_ads AS wanted
+                    ON wanted.id = slot.target_id
+                    AND wanted.community_id = slot.community_id
+                    AND slot.slot_type = 'wanted_hook'
+                LEFT JOIN materials AS material
+                    ON material.id = slot.target_id
+                    AND material.community_id = slot.community_id
+                    AND slot.slot_type = 'guidebook_material'
+                WHERE (
+                        slot.slot_type = 'scene_hub'
+                        AND board.id IS NULL
+                    )
+                    OR (
+                        slot.slot_type = 'wanted_hook'
+                        AND wanted.id IS NULL
+                    )
+                    OR (
+                        slot.slot_type = 'guidebook_material'
+                        AND material.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'community_discovery_profiles' AS table_name,
+                    profile.community_id AS row_id,
+                    profile.community_id,
+                    CASE
+                        WHEN material.id IS NULL
+                            AND profile.featured_event_material_id IS NOT NULL
+                            THEN 'community discovery profile featured event belongs to another community'
+                        ELSE 'community discovery profile tenant pair is invalid'
+                    END AS reason
+                FROM community_discovery_profiles AS profile
+                LEFT JOIN materials AS material
+                    ON material.id = profile.featured_event_material_id
+                    AND material.community_id = profile.community_id
+                WHERE profile.featured_event_material_id IS NOT NULL
+                    AND material.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'applications' AS table_name,
+                    application.id AS row_id,
+                    application.community_id,
+                    CASE
+                        WHEN membership.id IS NULL THEN 'application membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'application character does not match community and membership'
+                        ELSE 'application tenant pair is invalid'
+                    END AS reason
+                FROM applications AS application
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = application.membership_id
+                    AND membership.community_id = application.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = application.character_id
+                    AND character.community_id = application.community_id
+                    AND character.membership_id = application.membership_id
+                WHERE membership.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'application_events' AS table_name,
+                    event.id AS row_id,
+                    event.community_id,
+                    CASE
+                        WHEN application.id IS NULL THEN 'application event application belongs to another community'
+                        WHEN membership.id IS NULL THEN 'application event actor membership belongs to another community'
+                        WHEN character.id IS NULL
+                            AND event.actor_character_id IS NOT NULL
+                            THEN 'application event actor character does not match community and membership'
+                        ELSE 'application event tenant pair is invalid'
+                    END AS reason
+                FROM application_events AS event
+                LEFT JOIN applications AS application
+                    ON application.id = event.application_id
+                    AND application.community_id = event.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = event.actor_membership_id
+                    AND membership.community_id = event.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = event.actor_character_id
+                    AND character.community_id = event.community_id
+                    AND character.membership_id = event.actor_membership_id
+                WHERE application.id IS NULL
+                    OR membership.id IS NULL
+                    OR (
+                        event.actor_character_id IS NOT NULL
+                        AND character.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'application_template_fields' AS table_name,
+                    field.id AS row_id,
+                    field.community_id,
+                    CASE
+                        WHEN claim_type.id IS NULL
+                            AND field.maps_to_claim_type_id IS NOT NULL
+                            THEN 'application template field mapped claim type belongs to another community'
+                        ELSE 'application template field tenant pair is invalid'
+                    END AS reason
+                FROM application_template_fields AS field
+                LEFT JOIN claim_types AS claim_type
+                    ON claim_type.id = field.maps_to_claim_type_id
+                    AND claim_type.community_id = field.community_id
+                WHERE field.maps_to_claim_type_id IS NOT NULL
+                    AND claim_type.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'application_field_values' AS table_name,
+                    value.id AS row_id,
+                    value.community_id,
+                    CASE
+                        WHEN application.id IS NULL THEN 'application field value application belongs to another community'
+                        WHEN field.id IS NULL THEN 'application field value field belongs to another community'
+                        ELSE 'application field value tenant pair is invalid'
+                    END AS reason
+                FROM application_field_values AS value
+                LEFT JOIN applications AS application
+                    ON application.id = value.application_id
+                    AND application.community_id = value.community_id
+                LEFT JOIN application_template_fields AS field
+                    ON field.id = value.field_id
+                    AND field.community_id = value.community_id
+                WHERE application.id IS NULL
+                    OR field.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'character_claims' AS table_name,
+                    claim.id AS row_id,
+                    claim.community_id,
+                    CASE
+                        WHEN claim_type.id IS NULL THEN 'character claim type belongs to another community'
+                        WHEN character.id IS NULL
+                            AND claim.character_id IS NOT NULL
+                            THEN 'character claim character belongs to another community'
+                        WHEN application.id IS NULL
+                            AND claim.application_id IS NOT NULL
+                            THEN 'character claim application belongs to another community'
+                        WHEN reserve.id IS NULL
+                            AND claim.source_reserve_id IS NOT NULL
+                            THEN 'character claim source reserve belongs to another community'
+                        ELSE 'character claim tenant pair is invalid'
+                    END AS reason
+                FROM character_claims AS claim
+                LEFT JOIN claim_types AS claim_type
+                    ON claim_type.id = claim.claim_type_id
+                    AND claim_type.community_id = claim.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = claim.character_id
+                    AND character.community_id = claim.community_id
+                LEFT JOIN applications AS application
+                    ON application.id = claim.application_id
+                    AND application.community_id = claim.community_id
+                LEFT JOIN character_reserves AS reserve
+                    ON reserve.id = claim.source_reserve_id
+                    AND reserve.community_id = claim.community_id
+                WHERE claim_type.id IS NULL
+                    OR (
+                        claim.character_id IS NOT NULL
+                        AND character.id IS NULL
+                    )
+                    OR (
+                        claim.application_id IS NOT NULL
+                        AND application.id IS NULL
+                    )
+                    OR (
+                        claim.source_reserve_id IS NOT NULL
+                        AND reserve.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'character_reserves' AS table_name,
+                    reserve.id AS row_id,
+                    reserve.community_id,
+                    CASE
+                        WHEN membership.id IS NULL THEN 'character reserve membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'character reserve character does not match community and membership'
+                        WHEN wanted_ad.id IS NULL
+                            AND reserve.wanted_ad_id IS NOT NULL
+                            THEN 'character reserve wanted hook belongs to another community'
+                        WHEN interest.id IS NULL
+                            AND reserve.wanted_ad_interest_id IS NOT NULL
+                            THEN 'character reserve wanted interest does not match reserve owner'
+                        ELSE 'character reserve tenant pair is invalid'
+                    END AS reason
+                FROM character_reserves AS reserve
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = reserve.membership_id
+                    AND membership.community_id = reserve.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = reserve.character_id
+                    AND character.community_id = reserve.community_id
+                    AND character.membership_id = reserve.membership_id
+                LEFT JOIN wanted_ads AS wanted_ad
+                    ON wanted_ad.id = reserve.wanted_ad_id
+                    AND wanted_ad.community_id = reserve.community_id
+                LEFT JOIN wanted_ad_interests AS interest
+                    ON interest.id = reserve.wanted_ad_interest_id
+                    AND interest.community_id = reserve.community_id
+                    AND interest.membership_id = reserve.membership_id
+                    AND interest.character_id = reserve.character_id
+                    AND (
+                        reserve.wanted_ad_id IS NULL
+                        OR interest.wanted_ad_id = reserve.wanted_ad_id
+                    )
+                WHERE membership.id IS NULL
+                    OR character.id IS NULL
+                    OR (
+                        reserve.wanted_ad_id IS NOT NULL
+                        AND wanted_ad.id IS NULL
+                    )
+                    OR (
+                        reserve.wanted_ad_interest_id IS NOT NULL
+                        AND interest.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'wanted_ads' AS table_name,
+                    wanted.id AS row_id,
+                    wanted.community_id,
+                    CASE
+                        WHEN membership.id IS NULL THEN 'wanted hook creator membership belongs to another community'
+                        WHEN character.id IS NULL
+                            AND wanted.creator_character_id IS NOT NULL
+                            THEN 'wanted hook creator character does not match community and membership'
+                        WHEN material.id IS NULL
+                            AND wanted.related_material_id IS NOT NULL
+                            THEN 'wanted hook related material belongs to another community'
+                        ELSE 'wanted hook tenant pair is invalid'
+                    END AS reason
+                FROM wanted_ads AS wanted
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = wanted.creator_membership_id
+                    AND membership.community_id = wanted.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = wanted.creator_character_id
+                    AND character.community_id = wanted.community_id
+                    AND character.membership_id = wanted.creator_membership_id
+                LEFT JOIN materials AS material
+                    ON material.id = wanted.related_material_id
+                    AND material.community_id = wanted.community_id
+                WHERE membership.id IS NULL
+                    OR (
+                        wanted.creator_character_id IS NOT NULL
+                        AND character.id IS NULL
+                    )
+                    OR (
+                        wanted.related_material_id IS NOT NULL
+                        AND material.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'wanted_ad_interests' AS table_name,
+                    interest.id AS row_id,
+                    interest.community_id,
+                    CASE
+                        WHEN wanted.id IS NULL THEN 'wanted interest wanted hook belongs to another community'
+                        WHEN membership.id IS NULL THEN 'wanted interest membership belongs to another community'
+                        WHEN character.id IS NULL
+                            AND interest.character_id IS NOT NULL
+                            THEN 'wanted interest character does not match community and membership'
+                        ELSE 'wanted interest tenant pair is invalid'
+                    END AS reason
+                FROM wanted_ad_interests AS interest
+                LEFT JOIN wanted_ads AS wanted
+                    ON wanted.id = interest.wanted_ad_id
+                    AND wanted.community_id = interest.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = interest.membership_id
+                    AND membership.community_id = interest.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = interest.character_id
+                    AND character.community_id = interest.community_id
+                    AND character.membership_id = interest.membership_id
+                WHERE wanted.id IS NULL
+                    OR membership.id IS NULL
+                    OR (
+                        interest.character_id IS NOT NULL
+                        AND character.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'wanted_ad_related_characters' AS table_name,
+                    related.id AS row_id,
+                    related.community_id,
+                    CASE
+                        WHEN wanted.id IS NULL THEN 'wanted related face wanted hook belongs to another community'
+                        WHEN character.id IS NULL THEN 'wanted related face character belongs to another community'
+                        ELSE 'wanted related face tenant pair is invalid'
+                    END AS reason
+                FROM wanted_ad_related_characters AS related
+                LEFT JOIN wanted_ads AS wanted
+                    ON wanted.id = related.wanted_ad_id
+                    AND wanted.community_id = related.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = related.character_id
+                    AND character.community_id = related.community_id
+                WHERE wanted.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'character_plot_hooks' AS table_name,
+                    hook.id AS row_id,
+                    hook.community_id,
+                    CASE
+                        WHEN membership.id IS NULL THEN 'plot hook author membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'plot hook character does not match community and membership'
+                        WHEN material.id IS NULL
+                            AND hook.related_material_id IS NOT NULL
+                            THEN 'plot hook related material belongs to another community'
+                        ELSE 'plot hook tenant pair is invalid'
+                    END AS reason
+                FROM character_plot_hooks AS hook
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = hook.author_membership_id
+                    AND membership.community_id = hook.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = hook.character_id
+                    AND character.community_id = hook.community_id
+                    AND character.membership_id = hook.author_membership_id
+                LEFT JOIN materials AS material
+                    ON material.id = hook.related_material_id
+                    AND material.community_id = hook.community_id
+                WHERE membership.id IS NULL
+                    OR character.id IS NULL
+                    OR (
+                        hook.related_material_id IS NOT NULL
+                        AND material.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'character_plot_hook_interests' AS table_name,
+                    interest.id AS row_id,
+                    interest.community_id,
+                    CASE
+                        WHEN hook.id IS NULL THEN 'plot hook interest hook belongs to another community'
+                        WHEN membership.id IS NULL THEN 'plot hook interest membership belongs to another community'
+                        WHEN character.id IS NULL THEN 'plot hook interest character does not match community and membership'
+                        ELSE 'plot hook interest tenant pair is invalid'
+                    END AS reason
+                FROM character_plot_hook_interests AS interest
+                LEFT JOIN character_plot_hooks AS hook
+                    ON hook.id = interest.plot_hook_id
+                    AND hook.community_id = interest.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = interest.membership_id
+                    AND membership.community_id = interest.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = interest.character_id
+                    AND character.community_id = interest.community_id
+                    AND character.membership_id = interest.membership_id
+                WHERE hook.id IS NULL
+                    OR membership.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'character_facets' AS table_name,
+                    assignment.id AS row_id,
+                    assignment.community_id,
+                    CASE
+                        WHEN character.id IS NULL THEN 'character facet character belongs to another community'
+                        WHEN facet.id IS NULL THEN 'character facet facet belongs to another community'
+                        ELSE 'character facet tenant pair is invalid'
+                    END AS reason
+                FROM character_facets AS assignment
+                LEFT JOIN characters AS character
+                    ON character.id = assignment.character_id
+                    AND character.community_id = assignment.community_id
+                LEFT JOIN facets AS facet
+                    ON facet.id = assignment.facet_id
+                    AND facet.community_id = assignment.community_id
+                WHERE character.id IS NULL
+                    OR facet.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'board_facets' AS table_name,
+                    assignment.id AS row_id,
+                    assignment.community_id,
+                    CASE
+                        WHEN board.id IS NULL THEN 'board facet board belongs to another community'
+                        WHEN facet.id IS NULL THEN 'board facet facet belongs to another community'
+                        ELSE 'board facet tenant pair is invalid'
+                    END AS reason
+                FROM board_facets AS assignment
+                LEFT JOIN boards AS board
+                    ON board.id = assignment.board_id
+                    AND board.community_id = assignment.community_id
+                LEFT JOIN facets AS facet
+                    ON facet.id = assignment.facet_id
+                    AND facet.community_id = assignment.community_id
+                WHERE board.id IS NULL
+                    OR facet.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'material_facets' AS table_name,
+                    assignment.id AS row_id,
+                    assignment.community_id,
+                    CASE
+                        WHEN material.id IS NULL THEN 'material facet material belongs to another community'
+                        WHEN facet.id IS NULL THEN 'material facet facet belongs to another community'
+                        ELSE 'material facet tenant pair is invalid'
+                    END AS reason
+                FROM material_facets AS assignment
+                LEFT JOIN materials AS material
+                    ON material.id = assignment.material_id
+                    AND material.community_id = assignment.community_id
+                LEFT JOIN facets AS facet
+                    ON facet.id = assignment.facet_id
+                    AND facet.community_id = assignment.community_id
+                WHERE material.id IS NULL
+                    OR facet.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'wanted_ad_facets' AS table_name,
+                    assignment.id AS row_id,
+                    assignment.community_id,
+                    CASE
+                        WHEN wanted.id IS NULL THEN 'wanted hook facet wanted hook belongs to another community'
+                        WHEN facet.id IS NULL THEN 'wanted hook facet facet belongs to another community'
+                        ELSE 'wanted hook facet tenant pair is invalid'
+                    END AS reason
+                FROM wanted_ad_facets AS assignment
+                LEFT JOIN wanted_ads AS wanted
+                    ON wanted.id = assignment.wanted_ad_id
+                    AND wanted.community_id = assignment.community_id
+                LEFT JOIN facets AS facet
+                    ON facet.id = assignment.facet_id
+                    AND facet.community_id = assignment.community_id
+                WHERE wanted.id IS NULL
+                    OR facet.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'character_plot_hook_facets' AS table_name,
+                    assignment.id AS row_id,
+                    assignment.community_id,
+                    CASE
+                        WHEN hook.id IS NULL THEN 'plot hook facet hook belongs to another community'
+                        WHEN facet.id IS NULL THEN 'plot hook facet facet belongs to another community'
+                        ELSE 'plot hook facet tenant pair is invalid'
+                    END AS reason
+                FROM character_plot_hook_facets AS assignment
+                LEFT JOIN character_plot_hooks AS hook
+                    ON hook.id = assignment.plot_hook_id
+                    AND hook.community_id = assignment.community_id
+                LEFT JOIN facets AS facet
+                    ON facet.id = assignment.facet_id
+                    AND facet.community_id = assignment.community_id
+                WHERE hook.id IS NULL
+                    OR facet.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'thread_facets' AS table_name,
+                    assignment.id AS row_id,
+                    assignment.community_id,
+                    CASE
+                        WHEN thread.id IS NULL THEN 'thread facet thread belongs to another community'
+                        WHEN facet.id IS NULL THEN 'thread facet facet belongs to another community'
+                        ELSE 'thread facet tenant pair is invalid'
+                    END AS reason
+                FROM thread_facets AS assignment
+                LEFT JOIN threads AS thread
+                    ON thread.id = assignment.thread_id
+                    AND thread.community_id = assignment.community_id
+                LEFT JOIN facets AS facet
+                    ON facet.id = assignment.facet_id
+                    AND facet.community_id = assignment.community_id
+                WHERE thread.id IS NULL
+                    OR facet.id IS NULL
+
+                UNION ALL
+
+                SELECT
                     'posts' AS table_name,
                     post.id AS row_id,
                     post.community_id,
@@ -1626,6 +2298,155 @@ class IdentityRepositoryMixin(RepositoryBase):
                 WHERE thread.id IS NULL
                     OR membership.id IS NULL
                     OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'post_revisions' AS table_name,
+                    revision.id AS row_id,
+                    revision.community_id,
+                    CASE
+                        WHEN post.id IS NULL THEN 'post revision post belongs to another community'
+                        WHEN membership.id IS NULL THEN 'post revision editor membership belongs to another community'
+                        ELSE 'post revision tenant pair is invalid'
+                    END AS reason
+                FROM post_revisions AS revision
+                LEFT JOIN posts AS post
+                    ON post.id = revision.post_id
+                    AND post.community_id = revision.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = revision.editor_membership_id
+                    AND membership.community_id = revision.community_id
+                WHERE post.id IS NULL
+                    OR membership.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'realm_interaction_responses' AS table_name,
+                    response.id AS row_id,
+                    response.community_id,
+                    CASE
+                        WHEN interaction.id IS NULL THEN 'realm interaction response interaction belongs to another community'
+                        WHEN membership.id IS NULL THEN 'realm interaction response membership belongs to another community'
+                        WHEN character.id IS NULL
+                            AND response.character_id IS NOT NULL
+                            THEN 'realm interaction response character does not match community and membership'
+                        ELSE 'realm interaction response tenant pair is invalid'
+                    END AS reason
+                FROM realm_interaction_responses AS response
+                LEFT JOIN realm_interactions AS interaction
+                    ON interaction.id = response.interaction_id
+                    AND interaction.community_id = response.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = response.membership_id
+                    AND membership.community_id = response.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = response.character_id
+                    AND character.community_id = response.community_id
+                    AND character.membership_id = response.membership_id
+                WHERE interaction.id IS NULL
+                    OR membership.id IS NULL
+                    OR (
+                        response.character_id IS NOT NULL
+                        AND character.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'realm_interaction_answers' AS table_name,
+                    answer.id AS row_id,
+                    answer.community_id,
+                    CASE
+                        WHEN response.id IS NULL THEN 'realm interaction answer response belongs to another community'
+                        WHEN question.id IS NULL THEN 'realm interaction answer question does not match response interaction'
+                        WHEN option.id IS NULL
+                            AND answer.option_id IS NOT NULL
+                            THEN 'realm interaction answer option does not match question'
+                        ELSE 'realm interaction answer tenant pair is invalid'
+                    END AS reason
+                FROM realm_interaction_answers AS answer
+                LEFT JOIN realm_interaction_responses AS response
+                    ON response.id = answer.response_id
+                    AND response.community_id = answer.community_id
+                LEFT JOIN realm_interaction_questions AS question
+                    ON question.id = answer.question_id
+                    AND question.community_id = answer.community_id
+                    AND question.interaction_id = response.interaction_id
+                LEFT JOIN realm_interaction_options AS option
+                    ON option.id = answer.option_id
+                    AND option.community_id = answer.community_id
+                    AND option.question_id = answer.question_id
+                WHERE response.id IS NULL
+                    OR question.id IS NULL
+                    OR (
+                        answer.option_id IS NOT NULL
+                        AND option.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'thread_participants' AS table_name,
+                    participant.id AS row_id,
+                    participant.community_id,
+                    CASE
+                        WHEN thread.id IS NULL THEN 'thread participant thread belongs to another community'
+                        WHEN character.id IS NULL THEN 'thread participant character belongs to another community'
+                        ELSE 'thread participant tenant pair is invalid'
+                    END AS reason
+                FROM thread_participants AS participant
+                LEFT JOIN threads AS thread
+                    ON thread.id = participant.thread_id
+                    AND thread.community_id = participant.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = participant.character_id
+                    AND character.community_id = participant.community_id
+                WHERE thread.id IS NULL
+                    OR character.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'thread_reads' AS table_name,
+                    read.id AS row_id,
+                    read.community_id,
+                    CASE
+                        WHEN thread.id IS NULL THEN 'thread read thread belongs to another community'
+                        WHEN membership.id IS NULL THEN 'thread read membership belongs to another community'
+                        ELSE 'thread read tenant pair is invalid'
+                    END AS reason
+                FROM thread_reads AS read
+                LEFT JOIN threads AS thread
+                    ON thread.id = read.thread_id
+                    AND thread.community_id = read.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = read.membership_id
+                    AND membership.community_id = read.community_id
+                WHERE thread.id IS NULL
+                    OR membership.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'thread_watches' AS table_name,
+                    watch.id AS row_id,
+                    watch.community_id,
+                    CASE
+                        WHEN thread.id IS NULL THEN 'thread watch thread belongs to another community'
+                        WHEN membership.id IS NULL THEN 'thread watch membership belongs to another community'
+                        ELSE 'thread watch tenant pair is invalid'
+                    END AS reason
+                FROM thread_watches AS watch
+                LEFT JOIN threads AS thread
+                    ON thread.id = watch.thread_id
+                    AND thread.community_id = watch.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = watch.membership_id
+                    AND membership.community_id = watch.community_id
+                WHERE thread.id IS NULL
+                    OR membership.id IS NULL
 
                 UNION ALL
 
@@ -1667,6 +2488,70 @@ class IdentityRepositoryMixin(RepositoryBase):
                     OR (
                         notification.character_id IS NOT NULL
                         AND target_character.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'plotting_room_participants' AS table_name,
+                    participant.id AS row_id,
+                    participant.community_id,
+                    CASE
+                        WHEN room.id IS NULL THEN 'plotting room participant room belongs to another community'
+                        WHEN membership.id IS NULL THEN 'plotting room participant membership belongs to another community'
+                        WHEN character.id IS NULL
+                            AND participant.character_id IS NOT NULL
+                            THEN 'plotting room participant character does not match community and membership'
+                        ELSE 'plotting room participant tenant pair is invalid'
+                    END AS reason
+                FROM plotting_room_participants AS participant
+                LEFT JOIN plotting_rooms AS room
+                    ON room.id = participant.plotting_room_id
+                    AND room.community_id = participant.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = participant.membership_id
+                    AND membership.community_id = participant.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = participant.character_id
+                    AND character.community_id = participant.community_id
+                    AND character.membership_id = participant.membership_id
+                WHERE room.id IS NULL
+                    OR membership.id IS NULL
+                    OR (
+                        participant.character_id IS NOT NULL
+                        AND character.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'plotting_room_messages' AS table_name,
+                    message.id AS row_id,
+                    message.community_id,
+                    CASE
+                        WHEN room.id IS NULL THEN 'plotting room message room belongs to another community'
+                        WHEN membership.id IS NULL THEN 'plotting room message author membership belongs to another community'
+                        WHEN character.id IS NULL
+                            AND message.author_character_id IS NOT NULL
+                            THEN 'plotting room message author character does not match community and membership'
+                        ELSE 'plotting room message tenant pair is invalid'
+                    END AS reason
+                FROM plotting_room_messages AS message
+                LEFT JOIN plotting_rooms AS room
+                    ON room.id = message.plotting_room_id
+                    AND room.community_id = message.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = message.author_membership_id
+                    AND membership.community_id = message.community_id
+                LEFT JOIN characters AS character
+                    ON character.id = message.author_character_id
+                    AND character.community_id = message.community_id
+                    AND character.membership_id = message.author_membership_id
+                WHERE room.id IS NULL
+                    OR membership.id IS NULL
+                    OR (
+                        message.author_character_id IS NOT NULL
+                        AND character.id IS NULL
                     )
             )
             ORDER BY table_name, community_id, row_id

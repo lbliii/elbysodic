@@ -12,7 +12,6 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.db.repositories.base import TenantBoundaryError
-from elbysodic.services import policies
 from elbysodic.web.state import get_services
 
 
@@ -87,7 +86,7 @@ def _render_claims(
         current_path=request.url,
         viewer=viewer,
         directory=directory,
-        can_manage=policies.can_manage_applications(viewer.membership, viewer.role),
+        can_manage=directory.can_manage,
         characters=services.claimable_characters(),
         error=error,
         search_query_encoded=quote_plus(directory.search_query),

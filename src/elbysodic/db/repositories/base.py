@@ -34,16 +34,20 @@ class RepositoryBase:
         self._transaction_depth += 1
         try:
             yield
-        except Exception:
+        except BaseException:
             self._transaction_depth -= 1
             if outermost:
                 self.connection.rollback()
-            self._transaction_lock.release()
             raise
         else:
             self._transaction_depth -= 1
             if outermost:
-                self._commit()
+                try:
+                    self._commit()
+                except BaseException:
+                    self.connection.rollback()
+                    raise
+        finally:
             self._transaction_lock.release()
 
     def _commit(self) -> None:

@@ -14,6 +14,7 @@ from elbysodic.domain.models import (
     CharacterClaim,
     ClaimType,
 )
+from elbysodic.services import policies
 from elbysodic.services.read_models import (
     ApplicationClaimCheck,
     ApplicationFieldValueView,
@@ -180,6 +181,7 @@ def claims_directory(
         groups=groups,
         status_filter=status_filter,
         search_query=cleaned_search_query,
+        can_manage=policies.can_manage_applications(viewer.membership, viewer.role),
     )
 
 

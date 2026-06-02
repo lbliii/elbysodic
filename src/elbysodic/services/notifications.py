@@ -71,9 +71,19 @@ class NotificationRepository(PostViewRepository, Protocol):
 
     def count_unread_notifications(self, community_id: int, membership_id: int) -> int: ...
 
-    def mark_notification_read(self, community_id: int, notification_id: int) -> Notification: ...
+    def mark_notification_read(
+        self,
+        community_id: int,
+        membership_id: int,
+        notification_id: int,
+    ) -> Notification: ...
 
-    def mark_all_notifications_read(self, community_id: int, membership_id: int) -> None: ...
+    def mark_notifications_read(
+        self,
+        community_id: int,
+        membership_id: int,
+        notification_ids: list[int],
+    ) -> None: ...
 
     def list_thread_watch_membership_ids(
         self,
@@ -131,11 +141,11 @@ def count_visible_unread_notifications(
     membership: CommunityMembership,
     role: Role | None,
 ) -> int:
+    notifications = _unread_notifications_for_membership(repo, community_id, membership.id)
     return sum(
         1
-        for notification in repo.list_notifications(community_id, membership.id, limit=1000)
-        if notification.read_at is None
-        and _can_view_notification_target(repo, community_id, membership, role, notification)
+        for notification in notifications
+        if _can_view_notification_target(repo, community_id, membership, role, notification)
     )
 
 
@@ -172,12 +182,38 @@ def open_notification(
     item = notification_item(repo, viewer, notification)
     if item is None:
         raise LookupError(f"notification target not found: {notification.id}")
-    repo.mark_notification_read(viewer.community.id, notification.id)
+    repo.mark_notification_read(viewer.community.id, viewer.membership.id, notification.id)
     return item.href
 
 
 def mark_all_notifications_read(repo: NotificationRepository, viewer: ForumView) -> None:
-    repo.mark_all_notifications_read(viewer.community.id, viewer.membership.id)
+    readable_ids = [
+        notification.id
+        for notification in _unread_notifications_for_membership(
+            repo,
+            viewer.community.id,
+            viewer.membership.id,
+        )
+        if _can_view_notification_target(
+            repo,
+            viewer.community.id,
+            viewer.membership,
+            viewer.role,
+            notification,
+        )
+    ]
+    repo.mark_notifications_read(viewer.community.id, viewer.membership.id, readable_ids)
+
+
+def _unread_notifications_for_membership(
+    repo: NotificationRepository,
+    community_id: int,
+    membership_id: int,
+) -> list[Notification]:
+    return repo.list_unread_notifications_for_memberships([(community_id, membership_id)]).get(
+        (community_id, membership_id),
+        [],
+    )
 
 
 def notify_post_created(
@@ -310,6 +346,8 @@ def notification_item(
             viewer.community.id,
             notification.character_plot_hook_id,
         )
+        if not _can_view_plot_hook_notification(viewer.membership, viewer.role, plot_hook):
+            return None
         character = repo.get_character(viewer.community.id, plot_hook.character_id)
         return NotificationItem(
             notification=notification,
@@ -433,6 +471,12 @@ def _can_view_notification_target(
                 wanted_ad,
                 interest,
             )
+        if notification.character_plot_hook_id is not None:
+            plot_hook = repo.get_character_plot_hook(
+                community_id,
+                notification.character_plot_hook_id,
+            )
+            return _can_view_plot_hook_notification(membership, role, plot_hook)
         if notification.character_id is not None:
             character = repo.get_character(community_id, notification.character_id)
             return character.membership_id == membership.id or policies.can_manage_casting(
@@ -441,6 +485,17 @@ def _can_view_notification_target(
     except LookupError:
         return False
     return True
+
+
+def _can_view_plot_hook_notification(
+    membership: CommunityMembership,
+    role: Role | None,
+    plot_hook: CharacterPlotHook,
+) -> bool:
+    return plot_hook.author_membership_id == membership.id or policies.can_manage_casting(
+        membership,
+        role,
+    )
 
 
 def _can_view_wanted_interest_notification(

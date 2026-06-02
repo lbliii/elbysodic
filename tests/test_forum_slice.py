@@ -22,6 +22,11 @@ from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services, default_database_path
 from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
+from elbysodic.services.notifications import (
+    count_visible_unread_notifications,
+    mark_all_notifications_read,
+    visible_unread_notification_counts,
+)
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, scope_response_urls
@@ -668,6 +673,139 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
         assert trace.count <= 85
 
     asyncio.run(run())
+
+
+def test_visible_unread_notification_counts_use_batched_membership_query() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    assert services.seed.default_character is not None
+    contexts = [
+        (
+            services.seed.community.id,
+            services.seed.membership,
+            repo.get_role(services.seed.community.id, services.seed.membership.role_id),
+            services.seed.default_character.id,
+        )
+    ]
+    for index in range(12):
+        community, _user_id, membership_id, character_id = _add_hosted_membership(
+            services,
+            slug=f"notify-scale-{index}",
+            user_id=services.seed.user.id,
+            username=f"notify-scale-{index}",
+        )
+        membership = repo.get_membership(community.id, membership_id)
+        contexts.append(
+            (
+                community.id,
+                membership,
+                repo.get_role(community.id, membership.role_id),
+                character_id,
+            )
+        )
+    for community_id, membership, _role, character_id in contexts:
+        repo.create_notification(
+            community_id,
+            membership.id,
+            kind="character",
+            character_id=character_id,
+            actor_membership_id=membership.id,
+            actor_character_id=character_id,
+        )
+
+    with trace_sql(repo.connection) as trace:
+        counts = visible_unread_notification_counts(
+            repo,
+            [(community_id, membership, role) for community_id, membership, role, _ in contexts],
+        )
+
+    assert counts == {membership.id: 1 for _community_id, membership, _role, _ in contexts}
+    batch_queries = [
+        statement
+        for statement in trace.statements
+        if "JOIN requested" in statement and "notifications.read_at IS NULL" in statement
+    ]
+    per_membership_notification_queries = [
+        statement
+        for statement in trace.statements
+        if "FROM notifications" in statement
+        and "WHERE community_id" in statement
+        and "membership_id" in statement
+        and "LIMIT" in statement
+    ]
+    assert len(batch_queries) == 1
+    assert per_membership_notification_queries == []
+
+
+def test_mark_all_notifications_read_has_no_visible_count_cap() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    viewer = services.viewer()
+    assert services.seed.default_character is not None
+    other_membership = repo.create_membership(
+        viewer.community.id,
+        repo.create_user("hidden-notify@example.com", "hash").id,
+        viewer.membership.role_id,
+        "hidden-notify",
+        "Hidden Notify",
+    )
+    hidden_character = repo.create_character(
+        viewer.community.id,
+        other_membership.id,
+        "hidden-notify-face",
+        "Hidden Notify Face",
+    )
+
+    with repo.transaction():
+        for _index in range(1001):
+            repo.create_notification(
+                viewer.community.id,
+                viewer.membership.id,
+                kind="character",
+                character_id=services.seed.default_character.id,
+                actor_membership_id=viewer.membership.id,
+                actor_character_id=services.seed.default_character.id,
+            )
+        hidden_notification = repo.create_notification(
+            viewer.community.id,
+            viewer.membership.id,
+            kind="character",
+            character_id=hidden_character.id,
+            actor_membership_id=other_membership.id,
+            actor_character_id=hidden_character.id,
+        )
+
+    assert (
+        count_visible_unread_notifications(
+            repo,
+            viewer.community.id,
+            viewer.membership,
+            viewer.role,
+        )
+        == 1001
+    )
+
+    with trace_sql(repo.connection) as trace:
+        mark_all_notifications_read(repo, viewer)
+
+    assert (
+        count_visible_unread_notifications(
+            repo,
+            viewer.community.id,
+            viewer.membership,
+            viewer.role,
+        )
+        == 0
+    )
+    assert repo.count_unread_notifications(viewer.community.id, viewer.membership.id) == 1
+    assert repo.get_notification(viewer.community.id, hidden_notification.id).read_at is None
+    notification_updates = [
+        statement
+        for statement in trace.statements
+        if statement.strip().upper().startswith("UPDATE notifications".upper())
+    ]
+    assert len(notification_updates) == 1
+    assert "json_each" in notification_updates[0]
 
 
 def test_request_identity_resolves_membership_inside_selected_community() -> None:
@@ -8445,7 +8583,10 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
             assert "Coffee before the crisis" in discover.text
 
             services = get_services()
-            outsider_services, _character_id = _outsider_services(services, prefix="hookfan")
+            outsider_services, outsider_character_id = _outsider_services(
+                services,
+                prefix="hookfan",
+            )
             outsider_app = create_app(debug=False, services=outsider_services)
             async with TestClient(outsider_app) as outsider_client:
                 outsider_detail = await outsider_client.get(
@@ -8472,6 +8613,46 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                 "coffee-before-the-crisis",
             )
             interest = repo.list_character_plot_hook_interests(community.id, hook.id)[0]
+            leak_services, _leak_character_id = _outsider_services(
+                services,
+                prefix="hookleak",
+            )
+            leak_notification = repo.create_notification(
+                community.id,
+                leak_services.seed.membership.id,
+                kind="plot_hook_interest",
+                character_plot_hook_id=hook.id,
+                actor_membership_id=outsider_services.seed.membership.id,
+                actor_character_id=outsider_character_id,
+            )
+            leak_app = create_app(debug=False, services=leak_services)
+            async with TestClient(leak_app) as leak_client:
+                leak_inbox = await leak_client.get("/notifications")
+                leak_mark_all = await leak_client.post(
+                    "/notifications",
+                    body=b"intent=mark_all_read",
+                    headers=_FORM,
+                )
+                leak_open = await leak_client.post(
+                    "/notifications",
+                    body=urlencode(
+                        {
+                            "intent": "open",
+                            "notification_id": str(leak_notification.id),
+                        }
+                    ).encode(),
+                    headers=_FORM,
+                )
+
+            assert leak_services.viewer().unread_notification_count == 0
+            assert leak_services.notifications().unread_count == 0
+            assert leak_inbox.status == 200
+            assert "No notifications are waiting on you." in leak_inbox.text
+            assert "Coffee before the crisis" not in leak_inbox.text
+            assert "Hookfan Face" not in leak_inbox.text
+            assert leak_mark_all.status == 302
+            assert repo.get_notification(community.id, leak_notification.id).read_at is None
+            assert leak_open.status == 404
 
             owner_app = create_app(debug=False, services=AppServices(repo, services.seed))
             async with TestClient(owner_app) as owner_client:
@@ -9675,6 +9856,20 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
             assert "new" in notifications.text
 
             item = services.notifications().items[0]
+            marked_all = await client.post(
+                "/notifications",
+                body=b"intent=mark_all_read",
+                headers=_FORM,
+            )
+            assert marked_all.status == 302
+            assert (
+                services.repo.get_notification(
+                    services.seed.community.id,
+                    item.notification.id,
+                ).read_at
+                is not None
+            )
+
             opened = await client.post(
                 "/notifications",
                 body=f"intent=open&notification_id={item.notification.id}".encode(),
@@ -11212,6 +11407,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
         services = get_services()
         roster = services.viewer().roster
         magneto = next(character for character in roster if character.name == "Magneto")
+        rogue = next(character for character in roster if character.name == "Rogue")
         xavier = services.repo.get_character_by_slug(
             services.seed.community.id,
             "charles-xavier",
@@ -11250,7 +11446,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                 body=urlencode(
                     {
                         "character_id": magneto.id,
-                        "participant_ids": [xavier.id],
+                        "participant_ids": [xavier.id, rogue.id],
                         "title": "Metal and Memory",
                         "status": "open",
                         "location": "Sublevel 3",
@@ -11296,6 +11492,18 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
             assert "Before breakfast" in thread.text
             assert "Magneto tags Xavier into an unreasonable simulation." in thread.text
             assert "/characters/charles-xavier" in thread.text
+            created_thread = services.repo.get_thread_by_slug(
+                services.seed.community.id,
+                services.repo.get_board_by_slug(services.seed.community.id, "danger-room").id,
+                "metal-and-memory",
+            )
+            assert {
+                character.slug
+                for character in services.repo.list_thread_participants(
+                    services.seed.community.id,
+                    created_thread.id,
+                )
+            } == {"magneto", "charles-xavier"}
 
             board = await client.get("/boards/danger-room")
             assert "Metal and Memory" in board.text

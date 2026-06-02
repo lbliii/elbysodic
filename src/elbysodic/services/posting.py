@@ -139,6 +139,8 @@ class PostingRepository(NotificationRepository, Protocol):
         limit: int = 10,
     ) -> list[CommunityMembership]: ...
 
+    def list_community_characters(self, community_id: int) -> list[Character]: ...
+
 
 def search_mentionables(
     repo: PostingRepository,
@@ -384,9 +386,19 @@ def start_thread(
         raise ValueError("opening post is required")
     cleaned_status = clean_thread_status(status)
     cleaned_posting_mode = clean_posting_mode(posting_mode)
-    cleaned_participant_ids = clean_participant_ids([character.id, *(participant_ids or [])])
-    for participant_id in cleaned_participant_ids:
-        repo.get_character(viewer.community.id, participant_id)
+    taggable_ids = {
+        item.id
+        for item in taggable_characters(
+            repo.list_community_characters(viewer.community.id),
+            viewer.roster,
+        )
+    }
+    tag_ids = [
+        participant_id
+        for participant_id in clean_participant_ids(participant_ids or [])
+        if participant_id in taggable_ids
+    ]
+    cleaned_participant_ids = clean_participant_ids([character.id, *tag_ids])
     slug = unique_thread_slug(repo, viewer.community.id, board.id, cleaned_title)
     with repo.transaction():
         thread = repo.create_thread(
