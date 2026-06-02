@@ -15,6 +15,7 @@ High-risk tenant-paired rows include:
 - memberships and roles
 - characters and memberships
 - boards, threads, posts, and public authorship
+- command submissions and the membership that reserved the command
 - applications and review events
 - wanted hooks, interests, reserves, and claims
 - plotting rooms, participants, and messages
@@ -32,6 +33,10 @@ Use all three layers:
 
 Diagnostics are not a substitute for constraints. They are the repair and
 operations surface for old data, migrations, imports, and local demo databases.
+`ForumRepository.list_tenant_pair_integrity_issues()` is the shared repository
+diagnostic for tenant-paired creative and workflow rows, including membership
+roles, default faces, character ownership, command submissions, authorship,
+claims, plotting, thread state, and notifications.
 
 ## Session Selection
 
