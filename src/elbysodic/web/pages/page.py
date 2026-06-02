@@ -2,37 +2,14 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
-
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.templating.returns import Page
 
-from elbysodic.domain.boards import is_community_board, is_desk_board, is_location_board
 from elbysodic.services.forum import AppServices
-from elbysodic.services.read_models import ForumView, MaterialSummary, WorldHub
+from elbysodic.services.read_models import ForumView
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_tenant_slug
-
-
-def _home_world_status(hub: WorldHub) -> tuple[str, str]:
-    current_event = _first_material(hub.events)
-    if current_event is not None:
-        return current_event.material.title, current_event.rendered_summary
-
-    featured = _first_material(hub.featured)
-    if featured is not None:
-        return featured.material.title, featured.rendered_summary
-
-    guide = _first_material(hub.guides)
-    if guide is not None:
-        return guide.material.title, guide.rendered_summary
-
-    return "World status", "Choose a door into the board's story, locations, and current threads."
-
-
-def _first_material(materials: list[MaterialSummary]) -> MaterialSummary | None:
-    return materials[0] if materials else None
 
 
 def get(request: Request) -> Page:
@@ -86,34 +63,21 @@ def get(request: Request) -> Page:
             can_manage_home=False,
             show_community_shell=False,
         )
-    boards = services.list_boards()
-    hub = services.world_hub()
-    world_status_label, world_status_copy = _home_world_status(hub)
-    realm_gateway = None
-    with suppress(LookupError):
-        realm_gateway = services.realm_gateway()
+    home = services.realm_home()
     return Page.mounted(
         "page.html",
         current_path=request.url,
         viewer=viewer,
-        realm_gateway=realm_gateway,
-        can_manage_home=services.can_manage_realm_home(),
-        world_status_label=world_status_label,
-        world_status_copy=world_status_copy,
-        boards=boards,
-        location_boards=[
-            summary
-            for summary in boards
-            if summary.board.parent_board_id is None and is_location_board(summary.board)
-        ],
-        community_boards=[
-            summary
-            for summary in boards
-            if summary.board.parent_board_id is None and is_community_board(summary.board)
-        ],
-        desk_boards=[summary for summary in boards if is_desk_board(summary.board)],
-        attention=services.needs_attention(),
-        activity=services.recent_activity(),
+        realm_gateway=home.realm_gateway,
+        can_manage_home=home.can_manage_home,
+        world_status_label=home.world_status_label,
+        world_status_copy=home.world_status_copy,
+        boards=home.boards,
+        location_boards=home.location_boards,
+        community_boards=home.community_boards,
+        desk_boards=home.desk_boards,
+        attention=home.attention,
+        activity=home.activity,
     )
 
 

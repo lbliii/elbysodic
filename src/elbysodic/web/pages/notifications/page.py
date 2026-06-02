@@ -42,11 +42,12 @@ async def post(request: Request) -> Page | Redirect:
 def _render_notifications(request: Request) -> Page:
     services = get_services(request)
     viewer = services.viewer()
+    notification_center = services.notification_center()
     return Page.mounted(
         "notifications/page.html",
         current_path=request.url,
         viewer=viewer,
-        inbox=services.notifications(),
+        inbox=notification_center.inbox,
     )
 
 

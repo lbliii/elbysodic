@@ -197,6 +197,26 @@ def test_web_page_handlers_do_not_make_policy_decisions_directly() -> None:
     assert offenders == []
 
 
+def test_critical_rendered_pages_use_named_service_surface_contracts() -> None:
+    expected_calls = {
+        "src/elbysodic/web/pages/page.py": "services.realm_home()",
+        "src/elbysodic/web/pages/claims/page.py": "services.claims_page(",
+        "src/elbysodic/web/pages/characters/page.py": "services.character_roster_page(",
+        "src/elbysodic/web/pages/notifications/page.py": "services.notification_center()",
+        "src/elbysodic/web/pages/wanted/page.py": "services.wanted_ads()",
+        "src/elbysodic/web/pages/boards/{board_slug}/page.py": "services.board_page(",
+        "src/elbysodic/web/pages/studio/page.py": "services.director_studio()",
+    }
+
+    missing: list[str] = []
+    for relative_path, service_call in expected_calls.items():
+        source = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        if service_call not in source:
+            missing.append(f"{relative_path}: {service_call}")
+
+    assert missing == []
+
+
 def test_service_raw_sql_stays_limited_to_lifecycle_and_operations_diagnostics() -> None:
     exact_allowed = {
         (

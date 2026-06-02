@@ -40,7 +40,9 @@ from elbysodic.domain.boards import (
     BOARD_SIDEBAR_SECTION_GUIDANCE,
     BOARD_SIDEBAR_SECTION_LABELS,
     BoardKind,
+    is_community_board,
     is_community_sidebar_board,
+    is_desk_board,
     is_desk_sidebar_board,
     is_location_board,
     is_location_sidebar_board,
@@ -257,7 +259,9 @@ from elbysodic.services.read_models import (
     CharacterPlotHookDetail,
     CharacterProfile,
     CharacterRosterDashboard,
+    CharacterRosterPage,
     ClaimsDirectory,
+    ClaimsPage,
     CreatedThread,
     DevPersonaView,
     DirectorStudio,
@@ -281,6 +285,7 @@ from elbysodic.services.read_models import (
     NavigationPreviewSection,
     NetworkExploreView,
     NetworkHomeView,
+    NotificationCenter,
     NotificationInbox,
     PlotDiscovery,
     PlottingDesk,
@@ -305,6 +310,7 @@ from elbysodic.services.read_models import (
     RealmGatewayStoryFrame,
     RealmGatewayView,
     RealmGatewayWantedPreview,
+    RealmHome,
     RealmInteractionDetail,
     RealmInteractionHub,
     RealmLaunchChecklistItem,
@@ -374,6 +380,26 @@ def _load_viewer_role(
         return repo.get_role(community.id, membership.role_id)
     except LookupError as exc:
         raise PermissionError("realm membership role is not valid for this community") from exc
+
+
+def _home_world_status(hub: WorldHub) -> tuple[str, str]:
+    current_event = _first_material(hub.events)
+    if current_event is not None:
+        return current_event.material.title, current_event.rendered_summary
+
+    featured = _first_material(hub.featured)
+    if featured is not None:
+        return featured.material.title, featured.rendered_summary
+
+    guide = _first_material(hub.guides)
+    if guide is not None:
+        return guide.material.title, guide.rendered_summary
+
+    return "World status", "Choose a door into the board's story, locations, and current threads."
+
+
+def _first_material(materials: list[MaterialSummary]) -> MaterialSummary | None:
+    return materials[0] if materials else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1437,6 +1463,34 @@ class AppServices:
         )
         return replace(gateway, continuation=_realm_gateway_continuation(viewer, activation))
 
+    def realm_home(self) -> RealmHome:
+        boards = self.list_boards()
+        hub = self.world_hub()
+        world_status_label, world_status_copy = _home_world_status(hub)
+        realm_gateway = None
+        with suppress(LookupError):
+            realm_gateway = self.realm_gateway()
+        return RealmHome(
+            realm_gateway=realm_gateway,
+            can_manage_home=self.can_manage_realm_home(),
+            world_status_label=world_status_label,
+            world_status_copy=world_status_copy,
+            boards=boards,
+            location_boards=[
+                summary
+                for summary in boards
+                if summary.board.parent_board_id is None and is_location_board(summary.board)
+            ],
+            community_boards=[
+                summary
+                for summary in boards
+                if summary.board.parent_board_id is None and is_community_board(summary.board)
+            ],
+            desk_boards=[summary for summary in boards if is_desk_board(summary.board)],
+            attention=self.needs_attention(),
+            activity=self.recent_activity(),
+        )
+
     def discovery_profile_editor(self) -> DiscoveryProfileEditor:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
@@ -1700,6 +1754,53 @@ class AppServices:
         viewer = self.viewer()
         return _character_roster_dashboard(self.repo, viewer)
 
+    def character_roster_page(
+        self,
+        *,
+        name: str = "",
+        summary: str = "",
+        avatar_url: str = "",
+        poster_url: str = "",
+        poster_alt: str = "",
+        tagline: str = "",
+        accent_color: str = "",
+        post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
+        post_style_preset: str = "",
+        accent_source: str = "inherit",
+    ) -> CharacterRosterPage:
+        viewer = self.viewer()
+        post_style_preview_config_id = "character-post-style-preview-config"
+        return CharacterRosterPage(
+            roster_dashboard=_character_roster_dashboard(self.repo, viewer),
+            post_style_policy=_post_style_policy(viewer.community),
+            post_style_preview_config_id=post_style_preview_config_id,
+            post_style_preview_config={
+                "inheritedAccentColor": "",
+                "inheritedAccentLabel": "Inherit from community direction",
+                "initial": {
+                    "accentSource": accent_source,
+                    "customAccent": accent_color,
+                    "name": name or "New face",
+                    "postAccentStyle": post_accent_style,
+                    "postBorderStyle": post_border_style,
+                    "postDensity": post_density,
+                    "postProfileVariant": post_profile_variant,
+                    "postTitleStyle": post_title_style,
+                    "posterAlt": poster_alt,
+                    "posterUrl": poster_url,
+                    "stylePreset": post_style_preset,
+                    "summary": summary,
+                    "tagline": tagline,
+                    "writer": viewer.membership.username,
+                },
+                "presets": POST_STYLE_PRESETS,
+            },
+        )
+
     def applications_desk(self) -> ApplicationsDesk:
         viewer = self.viewer()
         return _applications_desk(self.repo, viewer)
@@ -1795,6 +1896,20 @@ class AppServices:
             viewer,
             status_filter=status_filter,
             search_query=search_query,
+        )
+
+    def claims_page(
+        self,
+        *,
+        status_filter: str | None = None,
+        search_query: str = "",
+    ) -> ClaimsPage:
+        return ClaimsPage(
+            directory=self.claims_directory(
+                status_filter=status_filter,
+                search_query=search_query,
+            ),
+            characters=self.claimable_characters(),
         )
 
     def claimable_characters(self) -> list[Character]:
@@ -2807,6 +2922,9 @@ class AppServices:
 
     def notifications(self, *, limit: int = 50) -> NotificationInbox:
         return _notification_inbox(self.repo, self.viewer(), limit=limit)
+
+    def notification_center(self, *, limit: int = 50) -> NotificationCenter:
+        return NotificationCenter(inbox=self.notifications(limit=limit))
 
     def search_mentionables(
         self,

@@ -113,6 +113,12 @@ control appears or does not appear than to snapshot large HTML sections.
   writer's application body and staff review surface.
 - Claims directory rendering hides director claim notes and maintenance
   controls from ordinary members while preserving staff edit visibility.
+- Rendered surface parity covers member, staff, director, inactive, and
+  cross-community viewers across Realm home, claims, roster, notifications,
+  wanted, thread/posting, and Studio surfaces. The regression asserts
+  service-owned page lists and detail/action regions do not inherit
+  cross-realm claims, wrong-face roster state, staff-only claim notes, inactive
+  identity, or notification targets.
 
 ## Current Gaps
 

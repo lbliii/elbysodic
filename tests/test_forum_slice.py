@@ -8258,6 +8258,181 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
     asyncio.run(run())
 
 
+def test_rendered_surface_contract_parity_across_realm_viewers() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        xmen = services.seed.community
+        xmen_writer = services.seed
+        xmen_staff = resolve_seed_persona(repo, "xmen_staff")
+        hp_director = resolve_seed_persona(repo, "hp_director")
+        xmen_inactive = resolve_seed_persona(repo, "xmen_inactive")
+        assert xmen_writer.default_character is not None
+        assert xmen_staff.character is not None
+        assert hp_director.character is not None
+
+        xmen_face_claim = repo.get_claim_type_by_slug(xmen.id, "face")
+        repo.create_character_claim(
+            xmen.id,
+            xmen_face_claim.id,
+            "private-contract-face",
+            "Private Contract Face",
+            character_id=xmen_writer.default_character.id,
+            status="claimed",
+            notes="PRIVATE REALM CONTRACT NOTE",
+        )
+        hp_claim_type = repo.create_claim_type(
+            hp_director.community.id,
+            "contract-face",
+            "Contract Face",
+            claim_kind="face",
+            description="HP-only parity claim type.",
+            visibility="public",
+        )
+        repo.create_character_claim(
+            hp_director.community.id,
+            hp_claim_type.id,
+            "cross-realm-only-face",
+            "Cross-Realm Only Face",
+            character_id=hp_director.character.id,
+            status="claimed",
+            notes="HP DIRECTOR CONTRACT NOTE",
+        )
+        repo.create_notification(
+            xmen.id,
+            xmen_writer.membership.id,
+            kind="application_accepted",
+            character_id=xmen_writer.default_character.id,
+            actor_membership_id=xmen_staff.membership.id,
+            actor_character_id=xmen_staff.character.id,
+        )
+
+        member_services = AppServices(repo, xmen_writer)
+        staff_services = AppServices(
+            repo,
+            DemoSeed(
+                xmen_staff.community,
+                xmen_staff.user,
+                xmen_staff.membership,
+                xmen_staff.character,
+            ),
+        )
+        hp_services = AppServices(
+            repo,
+            DemoSeed(
+                hp_director.community,
+                hp_director.user,
+                hp_director.membership,
+                hp_director.character,
+            ),
+        )
+        inactive_services = AppServices(
+            repo,
+            DemoSeed(
+                xmen_inactive.community,
+                xmen_inactive.user,
+                xmen_inactive.membership,
+                xmen_inactive.character,
+            ),
+        )
+
+        async with TestClient(create_app(debug=False, services=member_services)) as client:
+            member_home = await client.get("/c/x-men-apocalypse")
+            member_claims = await client.get("/claims")
+            member_roster = await client.get("/characters")
+            member_notifications = await client.get("/notifications")
+            member_wanted = await client.get("/wanted")
+            member_thread = await client.get("/boards/danger-room/threads/sentinel-drill")
+
+        async with TestClient(create_app(debug=False, services=staff_services)) as client:
+            staff_claims = await client.get("/claims")
+            staff_studio = await client.get("/studio")
+
+        async with TestClient(create_app(debug=False, services=hp_services)) as client:
+            hp_claims = await client.get("/claims")
+            hp_roster = await client.get("/characters")
+            hp_notifications = await client.get("/notifications")
+
+        async with TestClient(create_app(debug=False, services=inactive_services)) as client:
+            inactive_home = await client.get("/c/x-men-apocalypse")
+            inactive_claims = await client.get("/claims")
+            inactive_notifications = await client.get("/notifications")
+
+        assert member_home.status == 200
+        assert "playing as Rogue" in member_home.text
+        assert 'href="/c/x-men-apocalypse/desk"' in member_home.text
+        assert "Cross-Realm Only Face" not in member_home.text
+        assert "HP DIRECTOR CONTRACT NOTE" not in member_home.text
+
+        member_claims_content = _page_content(member_claims.text)
+        assert member_claims.status == 200
+        assert "Private Contract Face" in member_claims_content
+        assert "PRIVATE REALM CONTRACT NOTE" not in member_claims_content
+        assert "Edit claim" not in member_claims_content
+        assert "Cross-Realm Only Face" not in member_claims_content
+        assert "HP DIRECTOR CONTRACT NOTE" not in member_claims_content
+
+        staff_claims_content = _page_content(staff_claims.text)
+        assert staff_claims.status == 200
+        assert "Private Contract Face" in staff_claims_content
+        assert "PRIVATE REALM CONTRACT NOTE" in staff_claims_content
+        assert "Edit claim" in staff_claims_content
+        assert "Cross-Realm Only Face" not in staff_claims_content
+
+        hp_claims_content = _page_content(hp_claims.text)
+        assert hp_claims.status == 200
+        assert "Cross-Realm Only Face" in hp_claims_content
+        assert "HP DIRECTOR CONTRACT NOTE" in hp_claims_content
+        assert "Private Contract Face" not in hp_claims_content
+        assert "PRIVATE REALM CONTRACT NOTE" not in hp_claims_content
+
+        member_roster_content = _page_content(member_roster.text)
+        hp_roster_content = _page_content(hp_roster.text)
+        assert member_roster.status == 200
+        assert "Your roster" in member_roster_content
+        assert "Rogue" in member_roster_content
+        assert "Rowan Ash" not in member_roster_content
+        assert hp_roster.status == 200
+        assert "Rowan Ash" in hp_roster_content
+        assert "Rogue" not in hp_roster_content
+
+        member_notifications_content = _page_content(member_notifications.text)
+        hp_notifications_content = _page_content(hp_notifications.text)
+        assert member_notifications.status == 200
+        assert "Application accepted" in member_notifications_content
+        assert "Rogue" in member_notifications_content
+        assert hp_notifications.status == 200
+        assert "Application accepted" not in hp_notifications_content
+        assert "Rogue" not in hp_notifications_content
+
+        member_wanted_content = _page_content(member_wanted.text)
+        member_thread_content = _page_content(member_thread.text)
+        assert member_wanted.status == 200
+        assert "Brotherhood rival from Rogue" in member_wanted_content
+        assert "PRIVATE REALM CONTRACT NOTE" not in member_wanted_content
+        assert member_thread.status == 200
+        assert "Reply as" in member_thread_content
+        assert "Rogue profile" in member_thread_content
+        assert "Edit claim" not in member_thread_content
+        assert "PRIVATE REALM CONTRACT NOTE" not in member_thread_content
+
+        assert staff_studio.status == 200
+        assert "Studio" in staff_studio.text
+        assert "Review" in staff_studio.text
+        assert "HP DIRECTOR CONTRACT NOTE" not in staff_studio.text
+
+        assert inactive_home.status == 200
+        assert "sleepingstar" not in inactive_home.text
+        assert "Sleeping Star" not in inactive_home.text
+        assert "playing as Sleeping Star" not in inactive_home.text
+        assert inactive_claims.status == 403
+        assert inactive_notifications.status == 403
+        assert "Private Contract Face" not in inactive_claims.text
+        assert "Rogue" not in inactive_notifications.text
+
+    asyncio.run(run())
+
+
 def test_director_can_record_manual_claims_from_claims_directory() -> None:
     async def run() -> None:
         _app()
