@@ -559,6 +559,38 @@ def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> N
     default = repo.get_community(1)
     hosted = repo.create_community("access-hosted", "Access Hosted")
     user = repo.create_user("access-request@example.com", "hash")
+    default_role = repo.create_role(default.id, "access-member", "Access Member")
+    hosted_role = repo.create_role(hosted.id, "access-member", "Access Member")
+    default_director = repo.create_membership(
+        default.id,
+        user.id,
+        default_role.id,
+        "access-director",
+        "Access Director",
+    )
+    hosted_director = repo.create_membership(
+        hosted.id,
+        user.id,
+        hosted_role.id,
+        "access-director",
+        "Access Director Elsewhere",
+    )
+    default_invitation = repo.create_community_invitation(
+        default.id,
+        email="writer@example.com",
+        role_id=default_role.id,
+        invited_by_membership_id=default_director.id,
+        token_hash=token_hex(16),
+        expires_at=None,
+    )
+    hosted_invitation = repo.create_community_invitation(
+        hosted.id,
+        email="writer@example.com",
+        role_id=hosted_role.id,
+        invited_by_membership_id=hosted_director.id,
+        token_hash=token_hex(16),
+        expires_at=None,
+    )
 
     default_request = repo.create_community_access_request(
         default.id,
@@ -608,6 +640,52 @@ def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> N
     )
     with pytest.raises(LookupError, match="access request not found"):
         repo.get_community_access_request(hosted.id, default_request.id)
+
+    reviewed_with_invitation = repo.update_community_access_request_status(
+        default.id,
+        default_request.id,
+        status="invited",
+        invitation_id=default_invitation.id,
+    )
+    invited_event = repo.create_community_access_request_event(
+        default.id,
+        default_request.id,
+        event_type="invited",
+        from_status="reviewed",
+        to_status="invited",
+        actor_membership_id=default_director.id,
+        invitation_id=default_invitation.id,
+    )
+    assert reviewed_with_invitation.invitation_id == default_invitation.id
+    repo.connection.execute(
+        """
+        UPDATE community_access_requests
+        SET invitation_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_invitation.id, default.id, default_request.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_access_request_events
+        SET actor_membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_director.id, default.id, invited_event.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("community_access_requests", default_request.id)] == (
+        "community access request invitation belongs to another community"
+    )
+    assert issue_map[("community_access_request_events", invited_event.id)] == (
+        "community access request event actor membership belongs to another community"
+    )
 
 
 def test_community_access_request_status_transitions(repo: ForumRepository) -> None:
@@ -737,6 +815,25 @@ def test_discovery_profiles_and_tags_are_tenant_scoped(repo: ForumRepository) ->
     assert {tag.community_id for tag in tags[default.id]} == {default.id}
     assert repo.get_discovery_tag(hosted.id, "premise", "weird-town").label == "Weird town"
 
+    repo.connection.execute(
+        """
+        UPDATE community_discovery_profiles
+        SET featured_event_material_id = ?
+        WHERE community_id = ?
+        """,
+        (hosted_event.id, default.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("community_discovery_profiles", default.id)] == (
+        "community discovery profile featured event belongs to another community"
+    )
+
 
 def test_discovery_profile_rejects_cross_community_featured_event(
     repo: ForumRepository,
@@ -855,6 +952,11 @@ def test_gateway_slots_are_tenant_scoped_and_validate_eligible_targets(
         "public-guidebook-material",
         "Public guidebook material",
     )
+    hosted_material = repo.create_material(
+        hosted.id,
+        "public-guidebook-material",
+        "Hosted public guidebook material",
+    )
     draft_material = repo.create_material(
         default.id,
         "draft-guidebook-material",
@@ -913,6 +1015,48 @@ def test_gateway_slots_are_tenant_scoped_and_validate_eligible_targets(
         )
     with pytest.raises(ValueError, match="gateway slot type must be one of:"):
         repo.create_community_gateway_slot(default.id, "public_scene", hosted_scene_hub.id)
+
+    diagnostic_scene = repo.create_community_gateway_slot(default.id, "scene_hub", scene_hub.id)
+    repo.connection.execute(
+        """
+        UPDATE community_gateway_slots
+        SET target_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_scene_hub.id, default.id, diagnostic_scene.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_gateway_slots
+        SET target_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_wanted.id, default.id, second.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_gateway_slots
+        SET target_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_material.id, default.id, third.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("community_gateway_slots", diagnostic_scene.id)] == (
+        "community gateway slot scene hub board belongs to another community"
+    )
+    assert issue_map[("community_gateway_slots", second.id)] == (
+        "community gateway slot wanted hook belongs to another community"
+    )
+    assert issue_map[("community_gateway_slots", third.id)] == (
+        "community gateway slot guidebook material belongs to another community"
+    )
 
 
 def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) -> None:
@@ -993,6 +1137,36 @@ def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) 
     assert accepted.accepted_at is not None
     assert revoked.status == "revoked"
     assert revoked.revoked_at is not None
+
+    repo.connection.execute(
+        """
+        UPDATE community_invitations
+        SET role_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (default_role.id, hosted.id, invitation.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_invitations
+        SET accepted_membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (default_director.id, hosted.id, second_invitation.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("community_invitations", invitation.id)] == (
+        "community invitation role belongs to another community"
+    )
+    assert issue_map[("community_invitations", second_invitation.id)] == (
+        "community invitation accepted membership belongs to another community"
+    )
 
 
 def test_schema_migrates_existing_posts_for_thread_local_public_numbers() -> None:
@@ -1259,6 +1433,19 @@ def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
         "hosted-authorship",
         "Hosted Authorship",
     )
+    other_default_membership = repo.create_membership(
+        default.id,
+        repo.create_user("other-authorship@example.com", "hash").id,
+        default_role.id,
+        "other-authorship",
+        "Other Authorship",
+    )
+    other_default_character = repo.create_character(
+        default.id,
+        other_default_membership.id,
+        "other-authorship",
+        "Other Authorship",
+    )
     board = repo.create_board(default.id, "authorship", "Authorship")
     thread = repo.create_thread(
         default.id,
@@ -1275,6 +1462,53 @@ def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
         character_id=default_character.id,
         actor_membership_id=default_membership.id,
         actor_character_id=default_character.id,
+    )
+
+    with pytest.raises(LookupError, match="character not found"):
+        repo.create_notification(
+            default.id,
+            default_membership.id,
+            kind="character",
+            character_id=default_character.id,
+            actor_membership_id=default_membership.id,
+            actor_character_id=hosted_character.id,
+        )
+    with pytest.raises(TenantBoundaryError, match="does not belong to membership"):
+        repo.create_notification(
+            default.id,
+            default_membership.id,
+            kind="character",
+            character_id=default_character.id,
+            actor_membership_id=default_membership.id,
+            actor_character_id=other_default_character.id,
+        )
+
+    wanted = repo.create_wanted_ad(default.id, default_membership.id, "authorship", "Authorship")
+    interest = repo.create_wanted_ad_interest(
+        default.id,
+        wanted.id,
+        other_default_membership.id,
+        other_default_character.id,
+    )
+    room = repo.create_plotting_room(
+        default.id,
+        default_membership.id,
+        "Authorship Room",
+        source_wanted_ad_id=wanted.id,
+        source_wanted_ad_interest_id=interest.id,
+    )
+    participant = repo.create_plotting_room_participant(
+        default.id,
+        room.id,
+        default_membership.id,
+        character_id=default_character.id,
+    )
+    message = repo.create_plotting_room_message(
+        default.id,
+        room.id,
+        default_membership.id,
+        "A clean planning note.",
+        author_character_id=default_character.id,
     )
 
     repo.connection.execute(
@@ -1295,11 +1529,35 @@ def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
     )
     repo.connection.execute(
         """
+        UPDATE thread_participants
+        SET character_id = ?
+        WHERE community_id = ? AND thread_id = ? AND character_id = ?
+        """,
+        (hosted_character.id, default.id, thread.id, default_character.id),
+    )
+    repo.connection.execute(
+        """
         UPDATE notifications
         SET actor_character_id = ?
         WHERE community_id = ? AND id = ?
         """,
         (hosted_character.id, default.id, notification.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE plotting_room_participants
+        SET character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, participant.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE plotting_room_messages
+        SET author_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (other_default_character.id, default.id, message.id),
     )
     repo.connection.commit()
 
@@ -1313,9 +1571,88 @@ def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
     assert issue_map[("posts", post.id)] == (
         "post author character does not match community and membership"
     )
+    participant_issue = next(
+        issue
+        for issue in issues
+        if issue.table_name == "thread_participants" and issue.community_id == default.id
+    )
+    assert participant_issue.reason == "thread participant character belongs to another community"
     assert issue_map[("notifications", notification.id)] == (
         "notification actor character does not match community and membership"
     )
+    assert issue_map[("plotting_room_participants", participant.id)] == (
+        "plotting room participant character does not match community and membership"
+    )
+    assert issue_map[("plotting_room_messages", message.id)] == (
+        "plotting room message author character does not match community and membership"
+    )
+
+
+def test_notification_read_writes_are_membership_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    role = repo.create_role(default.id, "member", "Member")
+    first_membership = repo.create_membership(
+        default.id,
+        repo.create_user("first-notify-read@example.com", "hash").id,
+        role.id,
+        "first-notify-read",
+        "First Notify Read",
+    )
+    second_membership = repo.create_membership(
+        default.id,
+        repo.create_user("second-notify-read@example.com", "hash").id,
+        role.id,
+        "second-notify-read",
+        "Second Notify Read",
+    )
+    first_character = repo.create_character(
+        default.id,
+        first_membership.id,
+        "first-notify-read",
+        "First Notify Read",
+    )
+    second_character = repo.create_character(
+        default.id,
+        second_membership.id,
+        "second-notify-read",
+        "Second Notify Read",
+    )
+    first_notification = repo.create_notification(
+        default.id,
+        first_membership.id,
+        kind="character",
+        character_id=first_character.id,
+        actor_membership_id=first_membership.id,
+        actor_character_id=first_character.id,
+    )
+    second_notification = repo.create_notification(
+        default.id,
+        second_membership.id,
+        kind="character",
+        character_id=second_character.id,
+        actor_membership_id=second_membership.id,
+        actor_character_id=second_character.id,
+    )
+
+    repo.mark_notifications_read(
+        default.id,
+        first_membership.id,
+        [first_notification.id, second_notification.id],
+    )
+
+    assert repo.get_notification(default.id, first_notification.id).read_at is not None
+    assert repo.get_notification(default.id, second_notification.id).read_at is None
+    with pytest.raises(LookupError, match="notification not found for membership"):
+        repo.mark_notification_read(
+            default.id,
+            first_membership.id,
+            second_notification.id,
+        )
+    assert repo.get_notification(default.id, second_notification.id).read_at is None
+
+    repo.mark_notification_read(default.id, second_membership.id, second_notification.id)
+
+    assert repo.get_notification(default.id, second_notification.id).read_at is not None
 
 
 def test_schema_migrates_existing_boards_for_place_navigation() -> None:
@@ -1501,6 +1838,12 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
         "poll-face",
         "Poll Face",
     )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-poll-face",
+        "Hosted Poll Face",
+    )
     interaction = repo.create_realm_interaction(
         default.id,
         "sorting",
@@ -1518,11 +1861,22 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
         "library",
         "The library",
     )
-    repo.create_realm_interaction(
+    hosted_interaction = repo.create_realm_interaction(
         hosted.id,
         "sorting",
         "Hosted Sorting",
         placement="application",
+    )
+    hosted_question = repo.create_realm_interaction_question(
+        hosted.id,
+        hosted_interaction.id,
+        "Where do you belong elsewhere?",
+    )
+    hosted_option = repo.create_realm_interaction_option(
+        hosted.id,
+        hosted_question.id,
+        "hosted-library",
+        "The hosted library",
     )
 
     response = repo.submit_realm_interaction_response(
@@ -1553,6 +1907,74 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
             hosted_membership.id,
             selected_option_ids={question.id: option.id},
         )
+    with pytest.raises(LookupError, match="character not found"):
+        repo.submit_realm_interaction_response(
+            default.id,
+            interaction.id,
+            default_membership.id,
+            character_id=hosted_character.id,
+            selected_option_ids={question.id: option.id},
+        )
+    other_user = repo.create_user("other-poll@example.com", "hash")
+    other_membership = repo.create_membership(
+        default.id,
+        other_user.id,
+        default_role.id,
+        "other-poll",
+        "Other Poll",
+    )
+    other_character = repo.create_character(
+        default.id,
+        other_membership.id,
+        "other-poll-face",
+        "Other Poll Face",
+    )
+    with pytest.raises(TenantBoundaryError, match="responding membership"):
+        repo.submit_realm_interaction_response(
+            default.id,
+            interaction.id,
+            default_membership.id,
+            character_id=other_character.id,
+            selected_option_ids={question.id: option.id},
+        )
+
+    answer_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM realm_interaction_answers
+        WHERE community_id = ? AND response_id = ?
+        """,
+        (default.id, response.id),
+    ).fetchone()["id"]
+    repo.connection.execute(
+        """
+        UPDATE realm_interaction_responses
+        SET character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, response.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE realm_interaction_answers
+        SET option_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_option.id, default.id, answer_id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("realm_interaction_responses", response.id)] == (
+        "realm interaction response character does not match community and membership"
+    )
+    assert issue_map[("realm_interaction_answers", answer_id)] == (
+        "realm interaction answer option does not match question"
+    )
 
 
 def test_claim_types_template_fields_and_character_claims_are_scoped(
@@ -1625,15 +2047,36 @@ def test_claim_types_template_fields_and_character_claims_are_scoped(
         maps_to_claim_type_id=default_face.id,
         is_required=True,
     )
+    faction_field = repo.create_application_template_field(
+        default.id,
+        "faction_claim",
+        "Faction claim",
+        field_type="text",
+        maps_to_claim_type_id=default_faction.id,
+    )
+    hosted_field = repo.create_application_template_field(
+        hosted.id,
+        "face_claim",
+        "Hosted face claim",
+        field_type="text",
+        maps_to_claim_type_id=hosted_face.id,
+    )
     application = repo.ensure_character_application(default.id, default_character.id)
+    hosted_application = repo.ensure_character_application(hosted.id, hosted_character.id)
     field_value = repo.set_application_field_value(
         default.id,
         application.id,
         field.id,
         "Sample Face",
     )
+    faction_field_value = repo.set_application_field_value(
+        default.id,
+        application.id,
+        faction_field.id,
+        "X-Men",
+    )
 
-    repo.create_character_claim(
+    face_claim = repo.create_character_claim(
         default.id,
         default_face.id,
         "sample-face",
@@ -1670,7 +2113,7 @@ def test_claim_types_template_fields_and_character_claims_are_scoped(
     )
     assert [
         value.value for value in repo.list_application_field_values(default.id, application.id)
-    ] == ["Sample Face"]
+    ] == ["Sample Face", "X-Men"]
     assert len(repo.list_character_claims(default.id, claim_type_id=default_faction.id)) == 2
     assert len(repo.list_character_claims(hosted.id, claim_type_id=hosted_face.id)) == 1
 
@@ -1693,6 +2136,58 @@ def test_claim_types_template_fields_and_character_claims_are_scoped(
         )
     with pytest.raises(LookupError, match="application not found"):
         repo.set_application_field_value(hosted.id, application.id, field.id, "Leak")
+
+    repo.connection.execute(
+        """
+        UPDATE application_template_fields
+        SET maps_to_claim_type_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_face.id, default.id, field.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE application_field_values
+        SET field_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_field.id, default.id, field_value.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE application_field_values
+        SET application_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_application.id, default.id, faction_field_value.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE character_claims
+        SET character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, face_claim.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("character_claims", face_claim.id)] == (
+        "character claim character belongs to another community"
+    )
+    assert issue_map[("application_template_fields", field.id)] == (
+        "application template field mapped claim type belongs to another community"
+    )
+    assert issue_map[("application_field_values", field_value.id)] == (
+        "application field value field belongs to another community"
+    )
+    assert issue_map[("application_field_values", faction_field_value.id)] == (
+        "application field value application belongs to another community"
+    )
 
 
 def test_schema_migrates_plot_hook_and_prospective_interest_columns() -> None:
@@ -1879,6 +2374,25 @@ def test_community_identity_accent_group_is_tenant_scoped(repo: ForumRepository)
     with pytest.raises(LookupError):
         repo.update_community_identity_accent_group(default.id, hosted_group.id)
 
+    repo.connection.execute(
+        """
+        UPDATE communities
+        SET identity_accent_facet_group_id = ?
+        WHERE id = ?
+        """,
+        (hosted_group.id, default.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("communities", default.id)] == (
+        "community identity accent facet group belongs to another community"
+    )
+
 
 def test_community_post_style_policy_is_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
@@ -1951,6 +2465,23 @@ def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:
             parent_board_id=hosted_parent.id,
         )
 
+    repo.connection.execute(
+        """
+        UPDATE boards
+        SET parent_board_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_parent.id, default.id, child.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("boards", child.id)] == "board parent belongs to another community"
+
 
 def test_board_cannot_parent_itself(repo: ForumRepository) -> None:
     community = repo.get_community(1)
@@ -1970,6 +2501,23 @@ def test_board_cannot_parent_itself(repo: ForumRepository) -> None:
             image_alt=board.image_alt,
             is_private=board.is_private,
         )
+
+    repo.connection.execute(
+        """
+        UPDATE boards
+        SET parent_board_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (board.id, community.id, board.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("boards", board.id)] == "board cannot be its own parent"
 
 
 def test_public_identity_is_membership_scoped(repo: ForumRepository) -> None:
@@ -2095,6 +2643,37 @@ def test_application_review_rooms_are_tenant_scoped(repo: ForumRepository) -> No
             actor_character_id=jean.id,
         )
     assert repo.get_role(default.id, default_membership.role_id).is_admin is False
+
+    event_id = events[0].id
+    repo.connection.execute(
+        """
+        UPDATE applications
+        SET membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_membership.id, default.id, submitted.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE application_events
+        SET actor_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (jean.id, default.id, event_id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("applications", submitted.id)] == (
+        "application membership belongs to another community"
+    )
+    assert issue_map[("application_events", event_id)] == (
+        "application event actor character does not match community and membership"
+    )
 
 
 def test_characters_are_membership_owned_posting_identities(repo: ForumRepository) -> None:
@@ -2273,11 +2852,28 @@ def test_character_updates_are_scoped_by_community(repo: ForumRepository) -> Non
 
 def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository) -> None:
     community = repo.get_community(1)
+    hosted = repo.create_community("hosted-world-facets", "Hosted World Facets")
     role = repo.create_role(community.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
     user = repo.create_user("writer@example.com", "hash")
+    hosted_user = repo.create_user("hosted-writer@example.com", "hash")
     membership = repo.create_membership(community.id, user.id, role.id, "writer", "Writer")
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "hosted-writer",
+        "Hosted Writer",
+    )
     rogue = repo.create_character(community.id, membership.id, "rogue", "Rogue")
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-rogue",
+        "Hosted Rogue",
+    )
     board = repo.create_board(community.id, "danger-room", "Danger Room")
+    hosted_board = repo.create_board(hosted.id, "danger-room", "Hosted Danger Room")
     thread = repo.create_thread(
         community.id, board.id, rogue.id, "sentinel-drill", "Sentinel Drill"
     )
@@ -2288,6 +2884,13 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
         "blackbird-briefing",
         "Blackbird Briefing",
     )
+    hosted_thread = repo.create_thread(
+        hosted.id,
+        hosted_board.id,
+        hosted_character.id,
+        "hosted-drill",
+        "Hosted Drill",
+    )
 
     species = repo.create_facet_group(community.id, "species", "Species", sort_order=10)
     affiliation = repo.create_facet_group(
@@ -2296,8 +2899,10 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
         "Affiliation",
         sort_order=20,
     )
+    hosted_group = repo.create_facet_group(hosted.id, "species", "Hosted Species")
     mutant = repo.create_facet(community.id, species.id, "mutant", "Mutant")
     x_men = repo.create_facet(community.id, affiliation.id, "x-men", "X-Men")
+    hosted_facet = repo.create_facet(hosted.id, hosted_group.id, "mutant", "Hosted Mutant")
 
     repo.assign_character_facet(community.id, rogue.id, mutant.id)
     repo.assign_character_facet(community.id, rogue.id, x_men.id)
@@ -2345,6 +2950,71 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
         thread.id,
         second_thread.id,
     }
+
+    character_assignment_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM character_facets
+        WHERE community_id = ? AND character_id = ? AND facet_id = ?
+        """,
+        (community.id, rogue.id, mutant.id),
+    ).fetchone()["id"]
+    board_assignment_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM board_facets
+        WHERE community_id = ? AND board_id = ? AND facet_id = ?
+        """,
+        (community.id, board.id, x_men.id),
+    ).fetchone()["id"]
+    thread_assignment_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM thread_facets
+        WHERE community_id = ? AND thread_id = ? AND facet_id = ?
+        """,
+        (community.id, thread.id, x_men.id),
+    ).fetchone()["id"]
+    repo.connection.execute(
+        """
+        UPDATE character_facets
+        SET character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, community.id, character_assignment_id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE board_facets
+        SET facet_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_facet.id, community.id, board_assignment_id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE thread_facets
+        SET thread_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_thread.id, community.id, thread_assignment_id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("character_facets", character_assignment_id)] == (
+        "character facet character belongs to another community"
+    )
+    assert issue_map[("board_facets", board_assignment_id)] == (
+        "board facet facet belongs to another community"
+    )
+    assert issue_map[("thread_facets", thread_assignment_id)] == (
+        "thread facet thread belongs to another community"
+    )
 
 
 def test_board_rollup_batch_reads_are_tenant_scoped(repo: ForumRepository) -> None:
@@ -2426,6 +3096,12 @@ def test_network_catalog_batch_reads_are_tenant_scoped(repo: ForumRepository) ->
         name="Catalog Theme",
         tokens_json="{}",
     )
+    other_theme = repo.upsert_default_theme(
+        other.id,
+        slug="catalog-theme",
+        name="Other Catalog Theme",
+        tokens_json="{}",
+    )
 
     assert repo.public_scene_hub_community_ids([community.id]) == {community.id}
     assert repo.list_materials_for_communities([community.id]) == {
@@ -2438,6 +3114,28 @@ def test_network_catalog_batch_reads_are_tenant_scoped(repo: ForumRepository) ->
     assert repo.list_facet_groups_for_communities([community.id]) == {community.id: [group]}
     assert repo.default_themes_for_communities([community.id]) == {community.id: theme}
     assert scene_hub.community_id == community.id
+
+    with pytest.raises(LookupError, match="theme not found"):
+        repo.set_default_theme(community.id, other_theme.id)
+
+    repo.connection.execute(
+        """
+        UPDATE communities
+        SET default_theme_id = ?
+        WHERE id = ?
+        """,
+        (other_theme.id, community.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("communities", community.id)] == (
+        "community default theme belongs to another community"
+    )
 
 
 def test_network_membership_counts_batch_application_state(repo: ForumRepository) -> None:
@@ -2495,7 +3193,7 @@ def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepositor
     default_group = repo.create_facet_group(default.id, "affiliation", "Affiliation")
     hosted_group = repo.create_facet_group(hosted.id, "affiliation", "Affiliation")
     x_men = repo.create_facet(default.id, default_group.id, "x-men", "X-Men")
-    repo.create_facet(hosted.id, hosted_group.id, "x-men", "X-Men Elsewhere")
+    hosted_x_men = repo.create_facet(hosted.id, hosted_group.id, "x-men", "X-Men Elsewhere")
 
     premise = repo.create_material(
         default.id,
@@ -2537,6 +3235,33 @@ def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepositor
     with pytest.raises(LookupError):
         repo.assign_material_facet(hosted.id, premise.id, x_men.id)
 
+    material_assignment_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM material_facets
+        WHERE community_id = ? AND material_id = ? AND facet_id = ?
+        """,
+        (default.id, premise.id, x_men.id),
+    ).fetchone()["id"]
+    repo.connection.execute(
+        """
+        UPDATE material_facets
+        SET facet_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_x_men.id, default.id, material_assignment_id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("material_facets", material_assignment_id)] == (
+        "material facet facet belongs to another community"
+    )
+
 
 def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) -> None:
     default = repo.get_community(1)
@@ -2568,7 +3293,9 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
         "Rogue Elsewhere",
     )
     group = repo.create_facet_group(default.id, "affiliation", "Affiliation")
+    hosted_group = repo.create_facet_group(hosted.id, "affiliation", "Hosted Affiliation")
     x_men = repo.create_facet(default.id, group.id, "x-men", "X-Men")
+    hosted_x_men = repo.create_facet(hosted.id, hosted_group.id, "x-men", "Hosted X-Men")
 
     wanted = repo.create_wanted_ad(
         default.id,
@@ -2602,9 +3329,10 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
         actor_membership_id=default_membership.id,
         actor_character_id=magneto.id,
     )
+    hosted_wanted = repo.get_wanted_ad_by_slug(hosted.id, "rogue-rival")
 
     assert repo.get_wanted_ad_by_slug(default.id, "rogue-rival").title == "Rogue rival"
-    assert repo.get_wanted_ad_by_slug(hosted.id, "rogue-rival").title == "Hosted rival"
+    assert hosted_wanted.title == "Hosted rival"
     assert [item.title for item in repo.list_wanted_ads(default.id)] == ["Rogue rival"]
     assert [facet.slug for facet in repo.list_wanted_ad_facets(default.id, wanted.id)] == ["x-men"]
     assert repo.list_wanted_ad_facets_for_wanted_ads(default.id, [wanted.id]) == {
@@ -2650,6 +3378,93 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
             wanted_ad_id=wanted.id,
         )
 
+    wanted_facet_assignment_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM wanted_ad_facets
+        WHERE community_id = ? AND wanted_ad_id = ? AND facet_id = ?
+        """,
+        (default.id, wanted.id, x_men.id),
+    ).fetchone()["id"]
+    related_character_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM wanted_ad_related_characters
+        WHERE community_id = ? AND wanted_ad_id = ? AND character_id = ?
+        """,
+        (default.id, wanted.id, magneto.id),
+    ).fetchone()["id"]
+    repo.connection.execute(
+        """
+        UPDATE wanted_ad_facets
+        SET facet_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_x_men.id, default.id, wanted_facet_assignment_id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE wanted_ad_related_characters
+        SET character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, related_character_id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE character_reserves
+        SET membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_membership.id, default.id, reserve.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("character_reserves", reserve.id)] == (
+        "character reserve membership belongs to another community"
+    )
+    assert issue_map[("wanted_ad_facets", wanted_facet_assignment_id)] == (
+        "wanted hook facet facet belongs to another community"
+    )
+    assert issue_map[("wanted_ad_related_characters", related_character_id)] == (
+        "wanted related face character belongs to another community"
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE wanted_ads
+        SET creator_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, wanted.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE wanted_ad_interests
+        SET wanted_ad_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_wanted.id, default.id, interest.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("wanted_ads", wanted.id)] == (
+        "wanted hook creator character does not match community and membership"
+    )
+    assert issue_map[("wanted_ad_interests", interest.id)] == (
+        "wanted interest wanted hook belongs to another community"
+    )
+
 
 def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
     repo: ForumRepository,
@@ -2680,7 +3495,9 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
     gambit = repo.create_character(default.id, prospect.id, "gambit", "Gambit")
     hosted_character = repo.create_character(hosted.id, hosted_membership.id, "rogue", "Rogue")
     group = repo.create_facet_group(default.id, "affiliation", "Affiliation")
+    hosted_group = repo.create_facet_group(hosted.id, "affiliation", "Hosted Affiliation")
     x_men = repo.create_facet(default.id, group.id, "x-men", "X-Men")
+    hosted_x_men = repo.create_facet(hosted.id, hosted_group.id, "x-men", "Hosted X-Men")
 
     hook = repo.create_character_plot_hook(
         default.id,
@@ -2691,7 +3508,7 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
         hook_type="relationship",
         summary="A pressure point.",
     )
-    repo.create_character_plot_hook(
+    hosted_hook = repo.create_character_plot_hook(
         hosted.id,
         hosted_membership.id,
         hosted_character.id,
@@ -2855,6 +3672,27 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
             hosted_membership.id,
             "Wrong room.",
         )
+    with pytest.raises(LookupError):
+        repo.create_plotting_room_participant(
+            hosted.id,
+            room.id,
+            hosted_membership.id,
+            character_id=hosted_character.id,
+        )
+    with pytest.raises(LookupError):
+        repo.create_plotting_room_participant(
+            default.id,
+            room.id,
+            hosted_membership.id,
+            character_id=hosted_character.id,
+        )
+    with pytest.raises(TenantBoundaryError):
+        repo.create_plotting_room_participant(
+            default.id,
+            room.id,
+            owner.id,
+            character_id=gambit.id,
+        )
     with pytest.raises(TenantBoundaryError):
         repo.create_plotting_room_message(
             default.id,
@@ -2863,6 +3701,55 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
             "Wrong face.",
             author_character_id=gambit.id,
         )
+
+    hook_facet_assignment_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM character_plot_hook_facets
+        WHERE community_id = ? AND plot_hook_id = ? AND facet_id = ?
+        """,
+        (default.id, hook.id, x_men.id),
+    ).fetchone()["id"]
+    repo.connection.execute(
+        """
+        UPDATE character_plot_hook_facets
+        SET facet_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_x_men.id, default.id, hook_facet_assignment_id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE character_plot_hooks
+        SET character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, hook.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE character_plot_hook_interests
+        SET plot_hook_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_hook.id, default.id, interest.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("character_plot_hooks", hook.id)] == (
+        "plot hook character does not match community and membership"
+    )
+    assert issue_map[("character_plot_hook_interests", interest.id)] == (
+        "plot hook interest hook belongs to another community"
+    )
+    assert issue_map[("character_plot_hook_facets", hook_facet_assignment_id)] == (
+        "plot hook facet facet belongs to another community"
+    )
 
 
 def test_plotting_room_participants_are_unique_for_nullable_identity(
@@ -3214,6 +4101,121 @@ def test_thread_reads_are_membership_scoped(repo: ForumRepository) -> None:
     assert repo.get_thread_read_at(default.id, thread.id, other_membership.id) is None
 
 
+def test_thread_read_and_watch_boundaries_are_tenant_scoped(repo: ForumRepository) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-thread-state", "Hosted Thread State")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_membership = repo.create_membership(
+        default.id,
+        repo.create_user("thread-state@example.com", "hash").id,
+        default_role.id,
+        "thread-state",
+        "Thread State",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        repo.create_user("hosted-thread-state@example.com", "hash").id,
+        hosted_role.id,
+        "hosted-thread-state",
+        "Hosted Thread State",
+    )
+    default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "thread-state",
+        "Thread State",
+    )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-thread-state",
+        "Hosted Thread State",
+    )
+    default_board = repo.create_board(default.id, "thread-state", "Thread State")
+    hosted_board = repo.create_board(hosted.id, "thread-state", "Hosted Thread State")
+    default_thread = repo.create_thread(
+        default.id,
+        default_board.id,
+        default_character.id,
+        "thread-state",
+        "Thread State",
+    )
+    second_default_thread = repo.create_thread(
+        default.id,
+        default_board.id,
+        default_character.id,
+        "thread-state-two",
+        "Thread State Two",
+    )
+    hosted_thread = repo.create_thread(
+        hosted.id,
+        hosted_board.id,
+        hosted_character.id,
+        "hosted-thread-state",
+        "Hosted Thread State",
+    )
+
+    repo.mark_thread_read(default.id, default_thread.id, default_membership.id)
+    repo.mark_thread_read(default.id, second_default_thread.id, default_membership.id)
+    repo.watch_thread(default.id, default_thread.id, default_membership.id)
+    repo.watch_thread(default.id, second_default_thread.id, default_membership.id)
+
+    with pytest.raises(LookupError, match="thread not found"):
+        repo.unwatch_thread(default.id, hosted_thread.id, default_membership.id)
+    with pytest.raises(LookupError, match="membership not found"):
+        repo.unwatch_thread(default.id, default_thread.id, hosted_membership.id)
+    repo.unwatch_thread(default.id, default_thread.id, default_membership.id)
+    with pytest.raises(LookupError, match="thread watch not found"):
+        repo.get_thread_watch(default.id, default_thread.id, default_membership.id)
+
+    read_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM thread_reads
+        WHERE community_id = ? AND thread_id = ? AND membership_id = ?
+        """,
+        (default.id, second_default_thread.id, default_membership.id),
+    ).fetchone()["id"]
+    watch_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM thread_watches
+        WHERE community_id = ? AND thread_id = ? AND membership_id = ?
+        """,
+        (default.id, second_default_thread.id, default_membership.id),
+    ).fetchone()["id"]
+    repo.connection.execute(
+        """
+        UPDATE thread_reads
+        SET thread_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_thread.id, default.id, read_id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE thread_watches
+        SET membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_membership.id, default.id, watch_id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("thread_reads", read_id)] == (
+        "thread read thread belongs to another community"
+    )
+    assert issue_map[("thread_watches", watch_id)] == (
+        "thread watch membership belongs to another community"
+    )
+
+
 def test_post_revisions_are_scoped_by_community(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
@@ -3268,6 +4270,13 @@ def test_post_revisions_are_scoped_by_community(repo: ForumRepository) -> None:
     ] == ["Elsewhere."]
     assert default_revision.community_id == default.id
     assert hosted_revision.community_id == hosted.id
+    editor_revision = repo.create_post_revision(
+        default.id,
+        default_post.id,
+        default_membership.id,
+        "After.",
+        "After with a typo fix.",
+    )
 
     with pytest.raises(LookupError):
         repo.create_post_revision(
@@ -3277,3 +4286,41 @@ def test_post_revisions_are_scoped_by_community(repo: ForumRepository) -> None:
             "Wrong.",
             "Wrong.",
         )
+    with pytest.raises(LookupError):
+        repo.create_post_revision(
+            default.id,
+            default_post.id,
+            hosted_membership.id,
+            "Wrong.",
+            "Wrong.",
+        )
+
+    repo.connection.execute(
+        """
+        UPDATE post_revisions
+        SET post_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_post.id, default.id, default_revision.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE post_revisions
+        SET editor_membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_membership.id, default.id, editor_revision.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("post_revisions", default_revision.id)] == (
+        "post revision post belongs to another community"
+    )
+    assert issue_map[("post_revisions", editor_revision.id)] == (
+        "post revision editor membership belongs to another community"
+    )

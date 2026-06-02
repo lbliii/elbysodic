@@ -698,6 +698,8 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         return self.get_thread_watch(community_id, thread_id, membership_id)
 
     def unwatch_thread(self, community_id: int, thread_id: int, membership_id: int) -> None:
+        self.get_thread(community_id, thread_id)
+        self.get_membership(community_id, membership_id)
         self.connection.execute(
             """
             DELETE FROM thread_watches

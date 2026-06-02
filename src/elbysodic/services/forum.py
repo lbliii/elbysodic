@@ -6,6 +6,7 @@ import os
 import re
 import secrets
 import sqlite3
+import sys
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -495,18 +496,23 @@ class AppServices:
         if self._database is not None:
             repo_context = self._database.repository()
             repo = repo_context.__enter__()
-            identity_resolver = RequestIdentityResolver(
-                repo,
-                _default_request_identity(self._seed),
-                allow_development_identity=self._allow_development_identity,
-                require_session=self._require_session,
-            )
+            try:
+                identity_resolver = RequestIdentityResolver(
+                    repo,
+                    _default_request_identity(self._seed),
+                    allow_development_identity=self._allow_development_identity,
+                    require_session=self._require_session,
+                )
+                identity_context = identity_resolver.resolve(request)
+            except BaseException:
+                repo_context.__exit__(*sys.exc_info())
+                raise
             return AppServices(
                 repo,
                 self._seed,
                 database=self._database,
                 identity_resolver=identity_resolver,
-                identity_context=identity_resolver.resolve(request),
+                identity_context=identity_context,
                 allow_development_identity=self._allow_development_identity,
                 require_session=self._require_session,
                 repo_context=repo_context,
@@ -1391,6 +1397,13 @@ class AppServices:
         except PermissionError:
             viewer = None
         return _network_home(cards, viewer)
+
+    def can_manage_realm_home(self) -> bool:
+        viewer = self.viewer()
+        return policies.can_manage_navigation(
+            viewer.membership,
+            viewer.role,
+        ) or policies.can_manage_world(viewer.membership, viewer.role)
 
     def network_explore(self, query: str = "") -> NetworkExploreView:
         cards = self._public_catalog_cards()

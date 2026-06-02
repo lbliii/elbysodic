@@ -877,6 +877,7 @@ class ClaimsDirectory:
     groups: list[ClaimTypeDirectory]
     status_filter: str | None = None
     search_query: str = ""
+    can_manage: bool = False
 
     @property
     def claim_count(self) -> int:

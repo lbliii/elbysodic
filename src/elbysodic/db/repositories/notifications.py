@@ -516,28 +516,51 @@ class NotificationRepositoryMixin(CharacterRepositoryMixin):
         ).fetchone()
         return int(row["count"] if row is not None else 0)
 
-    def mark_notification_read(self, community_id: int, notification_id: int) -> Notification:
+    def mark_notification_read(
+        self,
+        community_id: int,
+        membership_id: int,
+        notification_id: int,
+    ) -> Notification:
         notification = self.get_notification(community_id, notification_id)
+        self.get_membership(community_id, membership_id)
+        if notification.membership_id != membership_id:
+            raise LookupError(
+                f"notification not found for membership {membership_id}: {notification_id}"
+            )
         if notification.read_at is None:
             self.connection.execute(
                 """
                 UPDATE notifications
                 SET read_at = ?
-                WHERE community_id = ? AND id = ?
+                WHERE community_id = ? AND membership_id = ? AND id = ?
                 """,
-                (_utc_now(), community_id, notification_id),
+                (_utc_now(), community_id, membership_id, notification_id),
             )
             self._commit()
         return self.get_notification(community_id, notification_id)
 
-    def mark_all_notifications_read(self, community_id: int, membership_id: int) -> None:
+    def mark_notifications_read(
+        self,
+        community_id: int,
+        membership_id: int,
+        notification_ids: list[int],
+    ) -> None:
+        if not notification_ids:
+            return
         self.get_membership(community_id, membership_id)
+        notification_ids_json = json.dumps(notification_ids)
         self.connection.execute(
             """
             UPDATE notifications
             SET read_at = COALESCE(read_at, ?)
-            WHERE community_id = ? AND membership_id = ?
+            WHERE community_id = ?
+              AND membership_id = ?
+              AND id IN (
+                  SELECT CAST(value AS INTEGER)
+                  FROM json_each(?)
+              )
             """,
-            (_utc_now(), community_id, membership_id),
+            (_utc_now(), community_id, membership_id, notification_ids_json),
         )
         self._commit()
