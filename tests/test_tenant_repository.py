@@ -1313,6 +1313,78 @@ def test_user_sessions_can_be_created_touched_and_revoked(repo: ForumRepository)
     assert revoked.revoked_at is not None
 
 
+def test_incomplete_command_submissions_can_be_discarded_for_retry(
+    repo: ForumRepository,
+) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "command-member", "Command Member")
+    membership = repo.create_membership(
+        community.id,
+        repo.create_user("command-retry@example.com", "hash").id,
+        role.id,
+        "command-member",
+        "Command Member",
+    )
+    token = token_hex(16)
+
+    assert repo.reserve_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+    )
+    assert not repo.reserve_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+    )
+    assert repo.discard_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+    )
+    assert (
+        repo.get_command_submission(
+            community.id,
+            membership.id,
+            command_key="reply:danger-room:sentinel-drill",
+            token=token,
+        )
+        is None
+    )
+    assert repo.reserve_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+    )
+    repo.complete_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+        result_path="/boards/danger-room/threads/sentinel-drill#post-4",
+    )
+
+    assert not repo.discard_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+    )
+    completed = repo.get_command_submission(
+        community.id,
+        membership.id,
+        command_key="reply:danger-room:sentinel-drill",
+        token=token,
+    )
+
+    assert completed is not None
+    assert completed.result_path == "/boards/danger-room/threads/sentinel-drill#post-4"
+
+
 def test_membership_role_integrity_issues_detect_cross_community_roles(
     repo: ForumRepository,
 ) -> None:

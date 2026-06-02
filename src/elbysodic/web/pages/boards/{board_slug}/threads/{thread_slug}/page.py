@@ -118,6 +118,7 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
     try:
         post = services.reply_to_thread(board_slug, thread_slug, character_id, body)
     except (LookupError, PermissionError, ValueError) as exc:
+        services.discard_command(command_key, key)
         return _render_thread(
             request,
             board_slug,
@@ -126,6 +127,9 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             body=body,
             selected_character_id=character_id,
         )
+    except Exception:
+        services.discard_command(command_key, key)
+        raise
 
     result_path = f"{request.path}#post-{post.post_number}"
     services.complete_command(command_key, key, result_path)

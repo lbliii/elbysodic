@@ -2660,6 +2660,29 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         self._commit()
 
+    def discard_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> bool:
+        self.get_membership(community_id, membership_id)
+        cursor = self.connection.execute(
+            """
+            DELETE FROM command_submissions
+            WHERE community_id = ?
+                AND membership_id = ?
+                AND command_key = ?
+                AND token_hash = ?
+                AND result_path IS NULL
+            """,
+            (community_id, membership_id, command_key, _command_token_hash(token)),
+        )
+        self._commit()
+        return cursor.rowcount > 0
+
     def search_memberships(
         self,
         community_id: int,
