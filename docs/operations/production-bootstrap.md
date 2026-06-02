@@ -13,8 +13,9 @@ production bootstrap creates the first real director identity and realm.
 - `ELBYSODIC_SECRET_KEY` is present and at least 32 characters.
 - Demo mode is off for production unless the session is explicitly a demo.
 - A fresh backup exists, or the database is confirmed empty.
-- Studio Operations shows the expected environment, database path, schema
-  version, migration ledger, realm count, and launch status.
+- Studio Operations shows the expected environment, database path, journal
+  mode, integrity check, schema version, migration ledger, realm count, and
+  launch status.
 - The first realm name, slug, director email, director username, and director
   display name have been reviewed for typos.
 
@@ -22,6 +23,8 @@ production bootstrap creates the first real director identity and realm.
 
 - The seed command or Studio Operations points at a non-volume path such as
   `var/elbysodic.sqlite3`.
+- Studio Operations reports a filesystem SQLite journal mode other than `wal`
+  or an integrity check other than `ok`.
 - More than one Railway replica is active while SQLite is the backing store.
 - The migration ledger is behind the app schema version.
 - The realm slug is uncertain or conflicts with planned host routing.
@@ -42,6 +45,8 @@ Production bootstrap:
 - App URL:
 - Volume path:
 - Database path:
+- Journal mode:
+- Integrity check:
 - Schema version:
 - Migration ledger:
 - Replica count:
@@ -66,6 +71,8 @@ Production bootstrap:
 - App URL: https://elbysodic-staging.up.railway.app
 - Volume path: /app/var
 - Database path: not inspected from app runtime in this run
+- Journal mode: not inspected from app runtime in this run
+- Integrity check: not inspected from app runtime in this run
 - Schema version: not inspected from app runtime in this run
 - Migration ledger: not inspected from app runtime in this run
 - Replica count: not inspected from app runtime in this run

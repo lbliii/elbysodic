@@ -237,6 +237,14 @@ def test_service_raw_sql_stays_limited_to_lifecycle_and_operations_diagnostics()
         ),
         (
             "src/elbysodic/services/operations.py",
+            'journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]',
+        ),
+        (
+            "src/elbysodic/services/operations.py",
+            'integrity_check = connection.execute("PRAGMA integrity_check").fetchone()[0]',
+        ),
+        (
+            "src/elbysodic/services/operations.py",
             'user_version = connection.execute("PRAGMA user_version").fetchone()[0]',
         ),
         (

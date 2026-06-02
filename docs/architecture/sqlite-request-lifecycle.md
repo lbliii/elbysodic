@@ -19,6 +19,9 @@ and identity safety contract, not as incidental plumbing.
   new connection would create an empty database.
 - `connect()` owns SQLite pragmas: foreign keys, busy timeout, and WAL for
   filesystem databases.
+- Studio Operations reads journal mode and `PRAGMA integrity_check` through the
+  operations service read model so director/operator diagnostics do not drift
+  into page-local SQL or ordinary member surfaces.
 - Repository list/read methods must not perform incidental writes or commits.
   Defaults and reconciliation belong to schema creation, community creation,
   migrations, seed/bootstrap, or explicit maintenance workflows.

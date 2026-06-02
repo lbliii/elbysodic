@@ -19,6 +19,8 @@ Railway staging smoke:
 - Railway project/service/environment: intuitive-friendship / elbysodic / staging
 - Volume path: /app/var, Railway status reported elbysodic-volume mounted
 - Database path: not inspected from app runtime in this run
+- Journal mode: not inspected from app runtime in this run
+- Integrity check: not inspected from app runtime in this run
 - Replica count: not inspected from app runtime in this run
 - Demo mode: not inspected from app runtime in this run
 - Public GETs: `/health` 200, `/` 200, `/network` 200
@@ -41,6 +43,8 @@ Railway production smoke:
 - Railway project/service/environment: unavailable locally
 - Volume path: not tested
 - Database path: not tested
+- Journal mode: not tested
+- Integrity check: not tested
 - Replica count: not tested
 - Demo mode: not tested
 - Account tested: not tested
@@ -68,6 +72,8 @@ Railway production smoke:
 - Railway project/service/environment:
 - Volume path:
 - Database path:
+- Journal mode:
+- Integrity check:
 - Replica count:
 - Demo mode:
 - Account tested:
@@ -95,7 +101,8 @@ Railway production smoke:
 - Logout revokes the session; replaying the stale session cannot open Studio.
 - Seed media under `/elbysodic-static/seed-media/...` returns `200`.
 - Studio Operations shows one replica, the expected volume-backed database
-  path, current schema version, migration ledger, and launch status.
+  path, WAL journal mode, `ok` integrity check, current schema version,
+  migration ledger, and launch status.
 
 ## First Run Notes
 

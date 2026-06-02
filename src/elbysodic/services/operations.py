@@ -87,6 +87,8 @@ class OperationsInspection:
     environment: str
     secure_cookies: bool
     database_path: str
+    journal_mode: str
+    integrity_check: str
     sqlite_user_version: int
     current_schema_version: int
     latest_migration_version: int
@@ -364,6 +366,8 @@ def operations_inspection(
     migration_row = connection.execute(
         "SELECT MAX(version) AS version FROM schema_migrations"
     ).fetchone()
+    journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+    integrity_check = connection.execute("PRAGMA integrity_check").fetchone()[0]
     user_version = connection.execute("PRAGMA user_version").fetchone()[0]
     community_count = connection.execute("SELECT COUNT(*) AS count FROM communities").fetchone()
     try:
@@ -375,6 +379,8 @@ def operations_inspection(
         environment=config.environment,
         secure_cookies=config.secure_cookies,
         database_path=str(database_row["file"] or ":memory:"),
+        journal_mode=str(journal_mode),
+        integrity_check=str(integrity_check),
         sqlite_user_version=int(user_version),
         current_schema_version=CURRENT_SCHEMA_VERSION,
         latest_migration_version=int(migration_row["version"] or 0),
