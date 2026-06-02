@@ -49,6 +49,9 @@ tone, genre, pressure, access, pace, and roster shape.
 
 These are public catalog fields. They should be owned by service read models
 and repository methods, not by templates or slug/name heuristics.
+Request-access hrefs are also read-model posture, not template string building:
+templates may suppress the action for the current member, but they should not
+infer public access paths from private membership state.
 
 | Field | User Question It Answers | Product State |
 | --- | --- | --- |
