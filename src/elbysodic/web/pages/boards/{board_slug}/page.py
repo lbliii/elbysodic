@@ -54,6 +54,7 @@ def get(request: Request, board_slug: str) -> Page:
         filter_options=_filter_options(board_page.board.slug, active_filter),
         next_unread_thread=board_page.next_unread_thread,
         can_start_thread=board_page.can_start_thread,
+        can_manage_board=board_page.can_manage_board,
     )
 
 

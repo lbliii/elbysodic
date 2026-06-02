@@ -48,7 +48,7 @@ Use these layers when adding or moving CSS:
   pickers, scene setup fields, draft status, and post style previews. Rendered
   post shells and scene cast displays stay in `45-posts-scenes.css`.
 - **studio**: Director Studio, launch, operations, intake, appearance editor,
-  navigation composer, board taxonomy, and director workflow rooms.
+  navigation composer, board map, and director workflow rooms.
 - **legacy-ledger**: selectors that still need markup work, component
   extraction, or Chirp adoption. The ledger should shrink over time.
 
@@ -127,7 +127,7 @@ The deep browser pass should keep covering these CSS ownership slices:
 | `41-48` product families | board index/detail, thread list/detail, members/roster, claims, wanted, world, Network catalog |
 | `47-network-catalog.css` | `/network`, `/network?q=...`, realm entry actions, application starter |
 | `49-composer.css` | new thread, reply composer, post edit, scene setup/cast mention picker, post style preview |
-| `60-studio.css` | Studio overview, launch, operations, intake, appearance, board taxonomy |
+| `60-studio.css` | Studio overview, launch, operations, intake, appearance, board map |
 
 When a browser failure appears after CSS movement, first check whether the
 selector lives in the same layer as the markup flow above. Cross-layer selectors

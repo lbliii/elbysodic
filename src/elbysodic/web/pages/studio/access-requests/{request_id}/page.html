@@ -20,13 +20,17 @@
     <header class="chirpui-cluster chirpui-cluster--between">
       <div>
         <p class="elbysodic-section-kicker">Writer entry</p>
-        <h1>{{ item.request.display_name or item.request.email }}</h1>
-        <p class="elbysodic-copy-meta">{{ item.request.email }}</p>
+        <h1>{{ item.display_label }}</h1>
+        <p class="elbysodic-copy-meta">{{ item.contact_label }}</p>
       </div>
       {{ badge(item.status_label, variant="success" if item.request.status == "invited" else "muted") }}
     </header>
 
     <dl class="elbysodic-definition-grid">
+      <div>
+        <dt>Request source</dt>
+        <dd>{{ item.account_link_label }}</dd>
+      </div>
       <div>
         <dt>Status</dt>
         <dd>{{ item.status_label }}</dd>

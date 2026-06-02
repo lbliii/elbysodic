@@ -1,6 +1,7 @@
 {% imports %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/access.html" import product_identity %}
 {% end %}
 
 {% block page_root %}
@@ -9,12 +10,7 @@
 {% block page_content %}
 {% call container(max_width="42rem") %}
 {% call stack(gap="lg") %}
-  <div class="elbysodic-product-identity">
-    <img class="elbysodic-product-identity__mark"
-         src="/elbysodic-static/brand/elbysodic-mark.svg"
-         alt="">
-    <span class="elbysodic-product-identity__name">Elbysodic</span>
-  </div>
+  {{ product_identity() }}
   {% call section_header("Accept invitation") %}
   Join {{ community.name }} with the writer identity you will use here.
   {% end %}

@@ -103,10 +103,19 @@ def test_shell_navigation_builds_inner_sections_from_shared_model() -> None:
         "roster",
         "plotting",
     ]
-    assert [(section.key, section.label) for section in staff.sidebar_sections[:2]] == [
+    assert [(section.key, section.label) for section in staff.sidebar_sections] == [
         ("studio", "In Studio"),
-        ("production", "Production"),
     ]
+    assert [item.key for item in staff.sidebar_sections[0].items] == [
+        "operations",
+        "launch",
+        "discovery",
+        "structure",
+        "intake",
+        "appearance",
+        "content",
+    ]
+    assert all(item.href.startswith("/studio") for item in staff.sidebar_sections[0].items)
 
 
 def _viewer(*, is_admin: bool) -> SimpleNamespace:

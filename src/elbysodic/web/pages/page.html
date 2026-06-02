@@ -2,6 +2,7 @@
   {% from "chirpui/layout.html" import container, stack %}
   {% from "chirpui/stat.html" import stat %}
   {% from "_components/boards.html" import board_signal, community_board_row %}
+  {% from "_components/director_controls.html" import director_context_panel %}
   {% from "_components/realm_gateway.html" import realm_gateway_home %}
   {% from "_components/thread_summary.html" import activity_item, activity_log_item %}
 {% end %}
@@ -23,7 +24,7 @@
 {% call stack(gap="lg") %}
   {% set home_community = viewer.community if viewer else public_program.community %}
   {% if realm_gateway %}
-  {{ realm_gateway_home(realm_gateway, viewer, account_visitor | default(none)) }}
+  {{ realm_gateway_home(realm_gateway, viewer, account_visitor | default(none), can_manage_home | default(false)) }}
   {% else %}
   {% set hero_treatment = home_community.world_hero_treatment or "split" %}
   {% set hero_uses_media = home_community.world_hero_image_url and hero_treatment != "text" %}
@@ -72,6 +73,13 @@
     </figure>
     {% end %}
   </section>
+  {% if can_manage_home | default(false) %}
+  {% call director_context_panel("Director controls", "Realm home controls", "Tune this home surface here; use Studio Structure only for cross-realm audit and bulk repair.") %}
+    <a class="chirpui-btn chirpui-btn--primary" href="/studio/structure#gateway-curation">Manage home spotlight</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/discovery">Edit discovery profile</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/appearance">Edit appearance</a>
+  {% end %}
+  {% end %}
   {% end %}
   {% if viewer and not realm_gateway %}
   {{ home_section_header("Locations", "In-character doors into the board's world, conflicts, and current event pressure.") }}

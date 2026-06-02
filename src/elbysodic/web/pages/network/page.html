@@ -229,6 +229,24 @@
 </a>
 {% end %}
 
+{% def network_access_posture(viewer=none, account_visitor=none, home=false) %}
+{% if viewer %}
+<section class="elbysodic-network-access-note" aria-label="Network access posture">
+  <strong>Signed in as {{ viewer.membership.display_name }} in {{ viewer.community.name }}</strong>
+  {% if home %}
+  <span>Your account is active; choose a realm card to enter, preview, or request access.</span>
+  {% else %}
+  <span>Explore cards stay public-preview safe; your current realm is marked when it appears.</span>
+  {% end %}
+</section>
+{% elif account_visitor %}
+<section class="elbysodic-network-access-note" aria-label="Network access posture">
+  <strong>{{ account_visitor.display_label }} is signed in</strong>
+  <span>Browse public previews first, then request access from the realm that fits.</span>
+</section>
+{% end %}
+{% end %}
+
 {% block page_root %}
 <div id="page-root" hx-boost="false">
 {% block page_root_inner %}
@@ -257,17 +275,7 @@
     </form>
   </section>
 
-  {% if viewer %}
-  <section class="elbysodic-network-access-note" aria-label="Network access posture">
-    <strong>Signed in as {{ viewer.membership.display_name }} in {{ viewer.community.name }}</strong>
-    <span>Explore cards stay public-preview safe; your current realm is marked when it appears.</span>
-  </section>
-  {% elif account_visitor %}
-  <section class="elbysodic-network-access-note" aria-label="Network access posture">
-    <strong>{{ account_visitor.display_label }} is signed in</strong>
-    <span>Browse public previews first, then request access from the realm that fits.</span>
-  </section>
-  {% end %}
+  {{ network_access_posture(viewer, account_visitor | default(none)) }}
 
   <section class="elbysodic-network-rail" aria-labelledby="explore-results-heading">
     <div class="elbysodic-network-rail__header">
@@ -333,6 +341,7 @@
   </section>
   {% else %}
   {{ home_showcase(featured) }}
+  {{ network_access_posture(viewer, account_visitor | default(none), home=true) }}
 
   <div class="elbysodic-network-home-stack">
     {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}

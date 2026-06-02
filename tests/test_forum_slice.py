@@ -475,7 +475,7 @@ def test_concurrent_rendered_get_navigation_stays_stable(tmp_path: Path) -> None
         services = create_services(path=tmp_path / "rapid-navigation.sqlite3")
         app = create_app(debug=False, services=services)
         routes = [
-            ("/network", "Studio Network"),
+            ("/network", "Find a realm that fits the story you want to write."),
             ("/c/rl-nyc/my/threads", "RL NYC"),
             ("/c/rl-small-town/boards/town-hall?filter=mine", "RL Small Town"),
             ("/c/jurassic-park-universe/world", "Jurassic Park Universe"),
@@ -663,7 +663,7 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
                 response = await client.get("/network")
 
         assert response.status == 200
-        assert "Studio Network" in response.text
+        assert "Find a realm that fits the story you want to write." in response.text
         assert "Hosted Program" in response.text
         assert trace.count <= 85
 
@@ -845,8 +845,10 @@ def test_tenant_prefixed_route_keeps_scoped_links_inside_prefix() -> None:
         assert (
             'name="next" value="/c/jurassic-park-universe/boards/paddock-twelve"' in response.text
         )
+        assert "/login?next=%2Fboards%2Fpaddock-twelve" not in response.text
         assert (
-            "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve" in response.text
+            "/login?next=%2Fc%2Fjurassic-park-universe%2Fboards%2Fpaddock-twelve"
+            not in response.text
         )
         assert 'href="/elbysodic-static/elbysodic-theme.css' in response.text
         assert 'href="/c/jurassic-park-universe/elbysodic-static' not in response.text
@@ -987,12 +989,20 @@ def test_shell_brand_navigation_uses_full_boundary_navigation() -> None:
             response = await client.get("/boards/cerebro")
 
         assert response.status == 200
-        brand_link = re.search(
-            r'<a href="/"[^>]*class="[^"]*elbysodic-community-brand[^"]*"[^>]*>',
+        realm_switcher = re.search(
+            r'<summary class="elbysodic-realm-switcher__summary"'
+            r'[^>]*aria-label="Realm switcher: X-Men Apocalypse"',
             response.text,
         )
-        assert brand_link is not None
-        assert 'hx-boost="false"' in brand_link.group(0)
+        assert realm_switcher is not None
+        product_home_link = re.search(
+            r'<a class="[^"]*elbysodic-realm-switcher__link[^"]*"'
+            r'\s+href="/"[^>]*data-elbysodic-global-link[^>]*hx-boost="false"',
+            response.text,
+        )
+        assert product_home_link is not None
+        assert "<strong>Elbysodic</strong>" in response.text
+        assert "<small>Network home</small>" in response.text
         assert re.search(
             r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"\s+href="/locations"'
             r'[^>]*aria-label="Locations"[^>]*hx-sync="#main:replace"',
@@ -1365,7 +1375,7 @@ def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
         assert "playing as Moira MacTaggert" in studio.text
-        assert "Save theme tokens" in studio.text
+        assert 'href="/studio/appearance"' in studio.text
         assert "Director Studio is visible as a preview" not in studio.text
 
     asyncio.run(run())
@@ -1430,7 +1440,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
         assert any(cookie.startswith("elbysodic_dev_identity=") for cookie in set_cookies)
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
-        assert "Save theme tokens" in studio.text
+        assert 'href="/studio/appearance"' in studio.text
 
     asyncio.run(run())
 
@@ -2813,9 +2823,9 @@ def test_studio_gateway_curation_updates_public_home_slots() -> None:
         app = create_app(debug=False, services=staff_services)
 
         async with TestClient(app) as client:
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/structure")
             save = await client.post(
-                "/studio",
+                "/studio/structure",
                 body=urlencode(
                     {
                         "intent": "gateway_curation",
@@ -2829,16 +2839,30 @@ def test_studio_gateway_curation_updates_public_home_slots() -> None:
                 ).encode(),
                 headers=_FORM,
             )
-            updated_studio = await client.get("/studio")
+            updated_studio = await client.get("/studio/structure")
             home = await client.get("/c/x-men-apocalypse")
 
         assert studio.status == 200
-        assert "Gateway curation" in studio.text
+        assert "Home spotlight audit" in studio.text
         assert "Danger Room" in studio.text
         assert "Human UN liaison for B-24 talks" in studio.text
         assert "B-24 Winter" in studio.text
+        assert "Selected spotlight" in studio.text
+        assert "Spotlight library" in studio.text
+        assert "Realm home preview" in studio.text
+        assert "Add to spotlight" in studio.text
+        assert "This is the cross-realm audit view." in studio.text
+        assert "data-elbysodic-spotlight-composer" in studio.text
+        assert "data-elbysodic-spotlight-selected-list" in studio.text
+        assert "data-elbysodic-spotlight-library-list" in studio.text
+        assert "data-elbysodic-spotlight-preview-list" in studio.text
+        assert "data-elbysodic-gateway-curation-list" in studio.text
+        assert "data-elbysodic-gateway-curation-item" in studio.text
+        assert "data-elbysodic-gateway-curation-position" in studio.text
+        assert "Board map audit and bulk repair" in studio.text
+        assert "Single-board edits belong on the board" in studio.text
         assert save.status == 302
-        assert _response_header(save, "location") == "/studio#gateway-curation"
+        assert _response_header(save, "location") == "/studio/structure#gateway-curation"
 
         slots = services.repo.list_community_gateway_slots(community.id)
         assert {(slot.slot_type, slot.target_id, slot.position) for slot in slots} >= {
@@ -2847,7 +2871,11 @@ def test_studio_gateway_curation_updates_public_home_slots() -> None:
             ("guidebook_material", material.id, 10),
         }
         assert re.search(
-            rf'name="scene_hub_target_id"\s+value="{board.id}"\s+checked',
+            rf'name="scene_hub_target_id"[^>]*value="{board.id}"[^>]*checked',
+            updated_studio.text,
+        )
+        assert re.search(
+            rf'name="scene_hub_position_{board.id}"[^>]*value="10"',
             updated_studio.text,
         )
         assert home.status == 200
@@ -2872,7 +2900,7 @@ def test_studio_gateway_curation_rejects_invalid_selected_order() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/structure",
                 body=urlencode(
                     {
                         "intent": "gateway_curation",
@@ -2884,7 +2912,7 @@ def test_studio_gateway_curation_rejects_invalid_selected_order() -> None:
             )
 
         assert response.status == 200
-        assert "gateway curation order must be a positive number" in response.text
+        assert "spotlight order must be a positive number" in response.text
         assert (
             services.repo.list_community_gateway_slots(
                 staff.community.id,
@@ -3015,7 +3043,7 @@ def test_root_renders_elbysodic_network_home_not_default_community() -> None:
         assert "/elbysodic-static/brand/elbysodic-favicon.svg" in root.text
         assert "/elbysodic-static/brand/elbysodic-mark-small.svg" in root.text
         assert '<span class="elbysodic-community-brand__name">Elbysodic</span>' in root.text
-        assert "Studio Network" in root.text
+        assert "Explore realms" in root.text
         assert "Featured realm" in root.text
         assert "Top 10 realms" in root.text
         assert "Premise engines" not in root.text
@@ -3066,6 +3094,11 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
                 '<span class="elbysodic-community-brand__name">X-Men Apocalypse</span>'
                 in index.text
             )
+            assert 'class="elbysodic-realm-switcher__summary"' in index.text
+            assert 'aria-label="Realm switcher: X-Men Apocalypse"' in index.text
+            assert "<strong>Elbysodic</strong>" in index.text
+            assert "<small>Network home</small>" in index.text
+            assert "<strong>Explore realms</strong>" in index.text
             assert 'data-rail-tooltip="Built on Elbysodic"' in index.text
             assert re.search(
                 r'<a class="elbysodic-primary-rail__link elbysodic-primary-rail__link--platform"\s+href="/"',
@@ -3588,6 +3621,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
         async with TestClient(app) as client:
             studio = await client.get("/studio")
             operations = await client.get("/studio/operations")
+            structure = await client.get("/studio/structure")
+            appearance = await client.get("/studio/appearance")
+            content = await client.get("/studio/content")
 
             assert studio.status == 200
             assert "Director Studio" in studio.text
@@ -3595,58 +3631,57 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Director attention" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
-            assert "Public discovery profile" not in studio.text
-            assert 'href="/studio/discovery"' not in studio.text
-            assert "Studio rooms" not in studio.text
-            assert 'id="chirp-shell-actions"' in studio.text
-            assert 'href="/studio/operations"' not in _page_content(studio.text)
+            assert "Studio rooms" in studio.text
+            assert "Operations" in studio.text
+            assert "Discovery profile" in studio.text
+            assert "Structure" in studio.text
+            assert "Intake" in studio.text
+            assert "Appearance" in studio.text
+            assert "Content" in studio.text
+            assert 'href="/studio/operations"' in studio.text
+            assert 'href="/studio/launch"' in studio.text
+            assert 'href="/studio/discovery"' in studio.text
+            assert 'href="/studio/structure"' in studio.text
             assert 'href="/studio/intake"' in studio.text
-            assert 'href="/wanted"' in studio.text
-            assert 'href="/studio/launch"' not in _page_content(studio.text)
+            assert 'href="/studio/appearance"' in studio.text
+            assert 'href="/studio/content"' in studio.text
+            assert 'id="chirp-shell-actions"' in studio.text
             assert "Daily director console" not in studio.text
-            assert "Realm opening checklist" not in studio.text
-            assert 'href="#world-structure"' not in studio.text
-            assert 'href="#navigation"' not in studio.text
-            assert 'href="#identity-appearance"' not in studio.text
-            assert 'href="#casting-applications"' not in studio.text
-            assert 'href="#continuity-events"' not in studio.text
-            assert 'id="world-structure"' in studio.text
-            assert 'id="navigation"' in studio.text
-            assert 'id="identity-appearance"' in studio.text
-            assert 'id="casting-applications"' in studio.text
-            assert 'id="continuity-events"' in studio.text
-            assert "World structure" in studio.text
-            assert "Navigation composer" in studio.text
-            assert "Identity and appearance" in studio.text
-            assert "World Bible" in studio.text
-            assert "Location Studio" in studio.text
-            assert "Event Studio" in studio.text
-            assert "Applications and hooks" in studio.text
-            assert "Board taxonomy" in studio.text
-            assert "Navigation composer" in studio.text
-            assert "Sidebar section settings" in studio.text
-            assert "Navigation Health" in studio.text
-            assert "Navigation is coherent right now." in studio.text
-            assert "World sidebar" in studio.text
-            assert "Desk sidebar" in studio.text
-            assert "Studio sidebar" in studio.text
-            assert "Casting sidebar" in studio.text
-            assert "App-owned" in studio.text
-            assert "Board-derived" in studio.text
-            assert "Material-derived" in studio.text
-            assert "Identity-derived" in studio.text
-            assert "Wanted-derived" in studio.text
-            assert "Community board" in studio.text
-            assert "Sublocation" in studio.text
-            assert "Announcements" in studio.text
-            assert "Classify each board" in studio.text
-            assert 'href="/studio#board-taxonomy"' in studio.text
-            assert 'href="/studio#navigation-composer"' in studio.text
-            assert 'href="/studio/boards/announcements"' in studio.text
-            assert 'href="/world/b-24-winter"' in studio.text
-            assert 'href="/applications"' in studio.text
-            assert 'href="/wanted"' in studio.text
-            assert "Current event" in studio.text
+            assert 'id="world-structure"' not in _page_content(studio.text)
+            assert 'id="navigation"' not in _page_content(studio.text)
+            assert 'id="identity-appearance"' not in _page_content(studio.text)
+            assert 'id="casting-applications"' not in _page_content(studio.text)
+            assert 'id="continuity-events"' not in _page_content(studio.text)
+            assert structure.status == 200
+            assert "data-elbysodic-spotlight-composer" not in structure.text
+            assert "Board map" in structure.text
+            assert "Board map audit" in structure.text
+            assert "Sidebar audit" in structure.text
+            assert "Navigation Health" in structure.text
+            assert "Check the sidebars people will actually see" in structure.text
+            assert "Goal</strong>" in structure.text
+            assert "Help visitors move from the realm overview" in structure.text
+            assert "Keep director production rooms and staff boards separate" in structure.text
+            assert "Fixed route" in structure.text
+            assert "App-owned" not in structure.text
+            assert "World sidebar" in structure.text
+            assert "Desk sidebar" in structure.text
+            assert "Studio sidebar" in structure.text
+            assert "Casting sidebar" in structure.text
+            assert "Announcements" in structure.text
+            assert 'href="/studio/boards/announcements"' in structure.text
+            assert appearance.status == 200
+            assert "Identity and appearance" in appearance.text
+            assert "Inherited accents" in appearance.text
+            assert content.status == 200
+            assert "World Bible" in content.text
+            assert "Location Studio" in content.text
+            assert "Event Studio" in content.text
+            assert "Applications and hooks" in content.text
+            assert 'href="/world/b-24-winter"' in content.text
+            assert 'href="/applications"' in content.text
+            assert 'href="/wanted"' in content.text
+            assert "Current event" in content.text
             assert operations.status == 200
             assert "Director desk" in operations.text
             assert "What needs a director?" in operations.text
@@ -3681,6 +3716,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Open realm" in launch.text
         assert "Open the realm with the writing surface intact." in launch.text
         assert "Opening checklist" in launch.text
+        assert 'class="elbysodic-launch-checklist"' in launch.text
+        assert "elbysodic-launch-checklist__item--ready" in launch.text
+        assert "elbysodic-launch-checklist__copy" in launch.text
         assert "Realm identity" in launch.text
         assert "Scene hubs" in launch.text
         assert "Director materials" in launch.text
@@ -3690,6 +3728,53 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Invite-only before public self-serve." in launch.text
         assert "Open Studio" not in _page_content(launch.text)
         assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
+
+    asyncio.run(run())
+
+
+def test_director_context_controls_live_on_home_and_board_surfaces() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        staff_app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(staff_app) as client:
+            home = await client.get("/c/x-men-apocalypse")
+            board = await client.get("/boards/xavier-institute")
+
+        writer = resolve_seed_persona(services.repo, "xmen_writer")
+        writer_app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(writer.community, writer.user, writer.membership, writer.character),
+            ),
+        )
+        async with TestClient(writer_app) as client:
+            writer_home = await client.get("/c/x-men-apocalypse")
+            writer_board = await client.get("/boards/xavier-institute")
+
+        assert home.status == 200
+        assert "Realm home controls" in home.text
+        assert "/studio/structure#gateway-curation" in home.text
+        assert "/studio/discovery" in home.text
+        assert board.status == 200
+        assert "Manage place" in board.text
+        assert "Manage this place" in board.text
+        assert "/studio/boards/xavier-institute" in board.text
+        assert "/studio/structure#board-taxonomy" in board.text
+
+        assert writer_home.status == 200
+        assert "Realm home controls" not in writer_home.text
+        assert writer_board.status == 200
+        assert "Manage this place" not in writer_board.text
+        assert "/studio/boards/xavier-institute" not in writer_board.text
 
     asyncio.run(run())
 
@@ -3799,6 +3884,16 @@ def test_studio_launch_moderates_access_requests() -> None:
         assert "Exchange student" in launch.text
         assert "Mark reviewed" in launch.text
         assert "Decline request" in launch.text
+        assert "elbysodic-studio-actions" in launch.text
+        assert "elbysodic-network-card__actions" not in launch.text
+        assert (
+            launch.text.count('class="chirpui-field chirpui-field--outlined elbysodic-form-field"')
+            >= 4
+        )
+        assert '<input class="chirpui-field__input" name="scene_hub_name"' in launch.text
+        assert '<textarea class="chirpui-field__input" name="premise_summary"' in launch.text
+        assert '<textarea class="chirpui-field__input" name="application_summary"' in launch.text
+        assert '<input class="chirpui-field__input" name="email" type="email"' in launch.text
         assert reviewed.status == 200
         assert "was reviewed" in reviewed.text
         assert "Reviewed" in launch_after_review.text
@@ -3875,6 +3970,43 @@ def test_director_reads_access_request_detail() -> None:
         assert "Secret transfer" in detail.text
         assert "PRIVATE ACCESS NOTE" in detail.text
         assert "Create invitation" in detail.text
+
+    asyncio.run(run())
+
+
+def test_director_access_request_queue_labels_linked_accounts_without_email() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        account = services.repo.create_user("linked-account@example.com", "hash")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email=account.email,
+            display_name="Linked Account Prospect",
+            face_concept="Nocturne exchange student",
+            wanted_hook="Danger Room opening",
+            notes="Already has an Elbysodic account.",
+            account_user_id=account.id,
+        )
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
+
+        async with TestClient(app) as client:
+            launch = await client.get("/studio/launch")
+            detail = await client.get(f"/studio/access-requests/{access_request.id}")
+
+        assert launch.status == 200
+        assert detail.status == 200
+        for response in (launch, detail):
+            assert "Linked Account Prospect" in response.text
+            assert "Linked Elbysodic account" in response.text
+            assert "Elbysodic account on file" in response.text
+            assert "linked-account@example.com" not in response.text
 
     asyncio.run(run())
 
@@ -4053,9 +4185,7 @@ def test_studio_launch_invites_writer_from_access_request() -> None:
         assert launch.status == 200
         assert "Create invitation" in launch.text
         assert invited.status == 200
-        assert "Invitation created from access request for invite-prospect@example.com." in (
-            invited.text
-        )
+        assert "Invitation created from access request for Invite Prospect." in (invited.text)
         assert "/invite/" in invited.text
         assert updated.status == "invited"
         assert updated.invitation_id is not None
@@ -4262,6 +4392,10 @@ def test_director_can_update_discovery_profile_from_studio() -> None:
         assert editor.status == 200
         assert "Discovery profile" in editor.text
         assert "X-Men Apocalypse" in editor.text
+        assert "data-elbysodic-discovery-preview-form" in editor.text
+        assert "data-elbysodic-discovery-preview-card" in editor.text
+        assert "data-elbysodic-preview-summary" in editor.text
+        assert "data-elbysodic-preview-tags" in editor.text
         assert updated.status == 302
         assert _response_header(updated, "location") == "/studio/discovery"
         assert restored.status == 200
@@ -4948,7 +5082,7 @@ def test_director_studio_updates_sidebar_section_language() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/structure",
                 body=urlencode(
                     {
                         "intent": "sidebar_section",
@@ -4981,7 +5115,7 @@ def test_director_studio_updates_sidebar_section_language() -> None:
                 re.S,
             )
 
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/structure")
             assert studio.status == 200
             assert "playable map language" in studio.text
             assert "Realms" in studio.text
@@ -5110,7 +5244,7 @@ def test_director_studio_updates_board_taxonomy() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/structure",
                 body=urlencode(
                     {
                         "intent": "board_taxonomy",
@@ -5133,7 +5267,7 @@ def test_director_studio_updates_board_taxonomy() -> None:
             assert updated.show_in_navigation is True
 
             invalid = await client.post(
-                "/studio",
+                "/studio/structure",
                 body=urlencode(
                     {
                         "intent": "board_taxonomy",
@@ -5170,7 +5304,7 @@ def test_director_studio_hides_board_from_navigation_without_hiding_route() -> N
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/structure",
                 body=urlencode(
                     {
                         "intent": "board_taxonomy",
@@ -5472,13 +5606,13 @@ def test_board_sidebar_section_controls_direct_board_sidebar_realm() -> None:
             board_page = await client.get("/boards/applications")
 
             assert board_page.status == 200
-            assert 'href="/studio#board-taxonomy"' in board_page.text
+            assert 'href="/studio/structure"' in board_page.text
             assert re.search(
                 r'<a class="[^"]*elbysodic-sidebar-link[^"]*"'
                 r'[^>]*href="/boards/applications"[^>]*aria-current="page"',
                 board_page.text,
             )
-            assert "Board taxonomy" in board_page.text
+            assert "Structure" in board_page.text
 
     asyncio.run(run())
 
@@ -5552,7 +5686,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Production" in studio.text
-            assert "Wanted board" in studio.text
+            assert "Studio rooms" in studio.text
             assert "World Map" not in studio.text
             assert 'class="chirpui-sidebar__section-title">In Studio</span>' not in studio.text
             assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
@@ -5583,7 +5717,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
         assert staff_studio.status == 200
         assert 'aria-label="Studio"' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">In Studio</span>' in staff_studio.text
-        assert 'class="chirpui-sidebar__section-title">Production</span>' in staff_studio.text
+        assert 'class="chirpui-sidebar__section-title">Production</span>' not in staff_studio.text
 
     asyncio.run(run())
 
@@ -5595,8 +5729,8 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
-            assert "elbysodic-theme.css?v=sidebar-reexpand-1" in world.text
-            assert "elbysodic-shell.js?v=sidebar-cookie-2" in world.text
+            assert "elbysodic-theme.css?v=sticky-topbar-1" in world.text
+            assert "elbysodic-shell.js?v=sidebar-rail-toggle-1" in world.text
             assert "elbysodic-composer.js?v=scene-context-inspector-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
             assert 'aria-label="Primary community rooms"' in world.text
@@ -5618,13 +5752,22 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
 
             stylesheet_text = await _stylesheet_text_with_imports(client)
             assert "--elbysodic-primary-rail-width" in stylesheet_text
+            assert ".chirpui-app-shell__topbar" in stylesheet_text
+            assert "position: sticky;" in stylesheet_text
             assert '.elbysodic-primary-rail__link[aria-current="page"]' in stylesheet_text
+            assert ".elbysodic-primary-rail__toggle" not in stylesheet_text
             assert ".elbysodic-app-shell--sidebar-hidden .chirpui-app-shell" in stylesheet_text
+            assert ".elbysodic-app-shell--sidebar-hidden.chirpui-app-shell" in stylesheet_text
+            assert "@media (min-width: 48.001rem) and (max-width: 72rem)" in stylesheet_text
+            assert (
+                "--chirpui-sidebar-width: var(--elbysodic-primary-rail-width);" in stylesheet_text
+            )
 
             script = await client.get("/elbysodic-static/elbysodic-shell.js")
             assert script.status == 200
             assert 'const COOKIE_NAME = "elbysodic_sidebar_hidden_v2";' in script.text
             assert 'document.getElementById("elbysodic-sidebar-cookie-state")' in script.text
+            assert 'querySelectorAll("[data-elbysodic-sidebar-toggle]")' in script.text
             assert "serverStyle.disabled = !hidden" in script.text
             assert "document.documentElement.classList.toggle(HIDDEN_CLASS, hidden)" in script.text
             assert 'window.localStorage.removeItem("chirpui-sidebar-collapsed")' in script.text
@@ -5826,7 +5969,7 @@ def test_topbar_marks_active_community_mode() -> None:
                 claims.text,
             )
 
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/content")
             assert studio.status == 200
             assert not re.search(
                 r'<a class="[^"]*elbysodic-primary-rail__link[^"]*"'
@@ -6897,7 +7040,7 @@ def test_directors_can_publish_draft_materials_from_studio_queue() -> None:
         member_app = create_app(debug=False, services=member_services)
         async with TestClient(member_app) as member_client:
             forbidden = await member_client.post(
-                "/studio",
+                "/studio/content",
                 body=urlencode(
                     {
                         "intent": "material_status",
@@ -6920,13 +7063,13 @@ def test_directors_can_publish_draft_materials_from_studio_queue() -> None:
         )
         app = create_app(debug=False, services=admin_services)
         async with TestClient(app) as client:
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/content")
             assert studio.status == 200
             assert "New Canon Pulse" in studio.text
             assert "Publish as current" in studio.text
 
             response = await client.post(
-                "/studio",
+                "/studio/content",
                 body=urlencode(
                     {
                         "intent": "material_status",
@@ -6938,10 +7081,10 @@ def test_directors_can_publish_draft_materials_from_studio_queue() -> None:
                 headers=_FORM,
             )
             assert response.status == 302
-            assert _response_header(response, "location") == "/studio#continuity-events"
+            assert _response_header(response, "location") == "/studio/content#continuity-events"
 
             world = await client.get("/world/new-canon-pulse")
-            studio_after = await client.get("/studio")
+            studio_after = await client.get("/studio/content")
 
         updated = repo.get_material_by_slug(community.id, draft_event.slug)
         old_event = repo.get_material_by_slug(community.id, "b-24-winter")
@@ -7943,7 +8086,7 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
             magneto_claims = await client.get("/claims?q=magneto")
             claimed_brotherhood = await client.get("/claims?status=claimed&q=brotherhood")
             no_results = await client.get("/claims?q=not-a-real-claim")
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/content")
 
         assert claims.status == 200
         assert "What is claimed, reserved, and open." in claims.text
@@ -10368,7 +10511,7 @@ def test_studio_post_style_policy_filters_character_controls() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/appearance",
                 body=urlencode(
                     {
                         "intent": "post_style_policy",
@@ -10426,13 +10569,13 @@ def test_studio_can_set_identity_accent_source() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/appearance",
                 body=f"identity_accent_facet_group_id={species.id}".encode(),
                 headers=_FORM,
             )
 
             assert response.status == 302
-            assert dict(response.headers)["location"] == "/studio"
+            assert dict(response.headers)["location"] == "/studio/appearance#identity-appearance"
             assert repo.get_community(community.id).identity_accent_facet_group_id == species.id
 
     asyncio.run(run())
@@ -10493,7 +10636,7 @@ def test_director_studio_updates_default_theme_tokens() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/appearance",
                 body=urlencode(body).encode(),
                 headers=_FORM,
             )
@@ -10501,7 +10644,7 @@ def test_director_studio_updates_default_theme_tokens() -> None:
 
         theme = repo.get_default_theme(community.id)
         assert response.status == 302
-        assert _response_header(response, "location") == "/studio#appearance-theme"
+        assert _response_header(response, "location") == "/studio/appearance#appearance-theme"
         assert theme is not None
         assert theme.slug == "gothic-folk-horror"
         assert theme.name == "Gothic Folk Horror"
@@ -10574,7 +10717,7 @@ def test_director_studio_surfaces_theme_health_warnings() -> None:
         app = create_app(debug=False, services=admin_services)
 
         async with TestClient(app) as client:
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/appearance")
 
         assert studio.status == 200
         assert "Theme Health" in studio.text
@@ -10601,7 +10744,7 @@ def test_director_studio_updates_world_hero_media() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/appearance",
                 body=urlencode(
                     {
                         "intent": "community_media",
@@ -10618,11 +10761,11 @@ def test_director_studio_updates_world_hero_media() -> None:
                 headers=_FORM,
             )
             home = await client.get("/c/x-men-apocalypse")
-            studio = await client.get("/studio")
+            studio = await client.get("/studio/appearance")
 
         updated = repo.get_community(community.id)
         assert response.status == 302
-        assert _response_header(response, "location") == "/studio#appearance-media"
+        assert _response_header(response, "location") == "/studio/appearance#appearance-media"
         assert updated.world_hero_image_url == "https://example.test/world.jpg"
         assert updated.world_hero_treatment == "background"
         assert updated.world_hero_focal_point == "top"
@@ -10656,7 +10799,7 @@ def test_director_studio_rejects_unsupported_hero_treatment() -> None:
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/studio",
+                "/studio/appearance",
                 body=urlencode(
                     {
                         "intent": "community_media",

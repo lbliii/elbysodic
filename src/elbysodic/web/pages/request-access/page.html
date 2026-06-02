@@ -1,87 +1,108 @@
 {% imports %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "_components/access.html" import access_account_notice, product_identity %}
 {% end %}
 
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="42rem") %}
+{% call container(max_width="56rem") %}
 {% call stack(gap="lg") %}
-  <div class="elbysodic-product-identity">
-    <img class="elbysodic-product-identity__mark"
-         src="/elbysodic-static/brand/elbysodic-mark.svg"
-         alt="">
-    <span class="elbysodic-product-identity__name">Elbysodic</span>
-  </div>
-  {% call section_header("Request access") %}
-  {% if community is defined and community %}
-  {{ community.name }} is invite-only while its director controls first entry.
-  {% else %}
-  Elbysodic is invite-only while the first realm opens.
-  {% end %}
-  {% end %}
+  <header class="elbysodic-access-heading">
+    {{ product_identity() }}
+    <div>
+      <p class="elbysodic-section-kicker">
+        {% if community is defined and community %}{{ community.name }}{% else %}Elbysodic{% end %}
+      </p>
+      <h1>Request access</h1>
+      <p>
+        {% if community is defined and community %}
+        {{ community.name }} is invite-only while its director controls the roster gate.
+        {% else %}
+        Elbysodic is invite-only while the first realm opens.
+        {% end %}
+      </p>
+    </div>
+  </header>
 
   {% call surface(variant="elevated") %}
   <div class="elbysodic-access-panel">
-    <p class="elbysodic-section-kicker">Invite-only</p>
-    <h1>Access opens through a director invitation.</h1>
-    <p>
-      Public registration is closed for now. A director sends invitations so writer
-      names, roles, roster ownership, and first faces start in the right realm.
-    </p>
+    <div class="elbysodic-access-panel__intro">
+      <p class="elbysodic-section-kicker">Invite-only</p>
+      <h2>Access opens through a director invitation.</h2>
+      <p>
+        Directors gate first entry so writer names, roles, roster ownership, and
+        first faces start in the right realm.
+      </p>
+    </div>
     {% if submitted_email %}
     <div class="elbysodic-quiet-empty" role="status">
+      {% if submitted_account | default(false) %}
+      Access request received for your Elbysodic account. A director can review
+      it from Studio Launch before opening the roster gate.
+      {% else %}
       Access request received for {{ submitted_email }}. A director can review it
       from Studio Launch before sending an invitation.
+      {% end %}
     </div>
     {% end %}
     {% if error %}
     <p class="elbysodic-form-error" role="alert">{{ error }}</p>
     {% end %}
+    {{ access_account_notice(account_visitor | default(none), community if community is defined else none) }}
     {% if community is defined and community %}
-    <form class="chirpui-stack chirpui-stack--sm" method="post" action="/request-access" hx-boost="false">
+    <form class="elbysodic-access-form" method="post" action="/request-access" hx-boost="false">
       {{ csrf_field() }}
       <input type="hidden" name="community_slug" value="{{ community.slug }}">
-      <label class="chirpui-field">
+      {% if not (account_visitor | default(none)) %}
+      <label class="chirpui-field elbysodic-access-field">
         <span>Writer email</span>
         <input name="email"
                type="email"
+               class="chirpui-field__input"
                value="{{ form.email }}"
                autocomplete="email"
                required>
       </label>
-      <label class="chirpui-field">
+      {% end %}
+      <label class="chirpui-field elbysodic-access-field">
         <span>Writer name</span>
         <input name="display_name"
+               class="chirpui-field__input"
                value="{{ form.display_name }}"
                autocomplete="name"
                placeholder="The name directors should recognize">
       </label>
-      <label class="chirpui-field">
+      <label class="chirpui-field elbysodic-access-field">
         <span>Face concept</span>
         <input name="face_concept"
+               class="chirpui-field__input"
                value="{{ form.face_concept }}"
                maxlength="500"
                placeholder="Archivist, rebel heir, forbidden envoy">
       </label>
-      <label class="chirpui-field">
+      <label class="chirpui-field elbysodic-access-field">
         <span>Wanted hook or way in</span>
         <input name="wanted_hook"
+               class="chirpui-field__input"
                value="{{ form.wanted_hook }}"
                maxlength="240"
                placeholder="Archive thief, opening pressure, town politics">
       </label>
-      <label class="chirpui-field">
+      <label class="chirpui-field elbysodic-access-field elbysodic-access-field--wide">
         <span>Notes for directors</span>
         <textarea name="notes"
+                  class="chirpui-field__input"
                   rows="4"
                   maxlength="2000"
                   placeholder="Availability, boundaries, prior invite context, or what you want to write">{{ form.notes }}</textarea>
       </label>
-      <div class="elbysodic-access-panel__actions">
-        <button class="chirpui-btn chirpui-btn--primary" type="submit">Send access request</button>
+      <div class="elbysodic-access-form__actions">
+        <button class="chirpui-btn chirpui-btn--primary" type="submit">
+          {% if account_visitor | default(none) %}Request access with this account{% else %}Send access request{% end %}
+        </button>
       </div>
     </form>
     {% else %}
@@ -90,14 +111,23 @@
       know which roster and first-face lane you mean.
     </p>
     {% end %}
-    <div class="elbysodic-access-panel__actions">
-      {% if account_visitor | default(none) %}
-      <a class="chirpui-btn chirpui-btn--primary" href="/network" data-elbysodic-global-link>Browse your realms</a>
-      {% else %}
-      <a class="chirpui-btn chirpui-btn--primary" href="/login?next=/">Log in</a>
-      {% end %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/network">Explore realms</a>
-    </div>
+    <footer class="elbysodic-access-panel__footer">
+      <span>
+        {% if account_visitor | default(none) %}
+        Want a different realm?
+        {% else %}
+        Already have an Elbysodic account?
+        {% end %}
+      </span>
+      <div class="elbysodic-access-panel__actions">
+        {% if account_visitor | default(none) %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/network" data-elbysodic-global-link>Browse your realms</a>
+        {% else %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/login?next={{ current_path or "/" }}">Log in with Elbysodic</a>
+        {% end %}
+        <a class="chirpui-btn chirpui-btn--secondary" href="/network">Explore realms</a>
+      </div>
+    </footer>
   </div>
   {% end %}
 {% end %}

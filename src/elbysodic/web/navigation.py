@@ -535,8 +535,23 @@ def _studio_sections(
                 key="launch",
                 label="Launch",
                 href="/studio/launch",
-                active=_path_in(state.path, "/studio/launch"),
+                active=_path_in(state.path, "/studio/launch")
+                or _path_in(state.path, "/studio/access-requests"),
                 icon_id="launch",
+            ),
+            ShellNavItem(
+                key="discovery",
+                label="Discovery profile",
+                href="/studio/discovery",
+                active=_path_in(state.path, "/studio/discovery"),
+                icon_id="discovery",
+            ),
+            ShellNavItem(
+                key="structure",
+                label="Structure",
+                href="/studio/structure",
+                active=_path_in(state.path, "/studio/structure"),
+                icon_id="boards",
             ),
             ShellNavItem(
                 key="intake",
@@ -546,74 +561,23 @@ def _studio_sections(
                 icon_id="intake",
             ),
             ShellNavItem(
-                key="board-taxonomy",
-                label="Board taxonomy",
-                href="/studio#board-taxonomy",
-                active=False,
-                icon_id="boards",
+                key="appearance",
+                label="Appearance",
+                href="/studio/appearance",
+                active=_path_in(state.path, "/studio/appearance"),
+                icon_id="appearance",
             ),
             ShellNavItem(
-                key="navigation-composer",
-                label="Navigation composer",
-                href="/studio#navigation-composer",
-                active=False,
-                icon_id="navigation",
-            ),
-            ShellNavItem(
-                key="guidebook",
-                label="Guidebook",
-                href="/world",
-                active=False,
-                icon_id="guidebook",
-            ),
-            ShellNavItem(
-                key="world-home",
-                label="World Home",
-                href="/",
-                active=False,
-                icon_id="home",
+                key="content",
+                label="Content",
+                href="/studio/content",
+                active=_path_in(state.path, "/studio/content"),
+                icon_id="materials",
             ),
         ]
     )
-    production_items: list[ShellNavItem] = [
-        ShellNavItem(
-            key="applications-production",
-            label="Production",
-            href="/applications",
-            active=state.applications_active,
-            icon_id="operations",
-        ),
-        ShellNavItem(
-            key="applications",
-            label="Applications",
-            href="/applications",
-            active=state.applications_active,
-            icon_id="applications",
-        ),
-        ShellNavItem(
-            key="wanted",
-            label="Wanted board",
-            href="/wanted",
-            active=state.wanted_active,
-            icon_id="wanted",
-        ),
-        ShellNavItem(
-            key="casting",
-            label="Casting desk",
-            href="/casting",
-            active=state.casting_active,
-            icon_id="casting",
-        ),
-        ShellNavItem(
-            key="claims",
-            label="Claims",
-            href="/claims",
-            active=state.claims_active,
-            icon_id="claims",
-        ),
-    ]
     if viewer:
-        production_items.extend(
+        studio_items.extend(
             _board_shell_item(item.board, item.unread_thread_count, current_board=board)
             for item in viewer.studio_navigation_boards
         )
@@ -624,23 +588,7 @@ def _studio_sections(
             source="studio",
             items=tuple(studio_items),
         ),
-        ShellNavSection(
-            key="production",
-            label="Production",
-            source="studio",
-            items=tuple(production_items),
-        ),
     ]
-    current_event = getattr(studio, "current_event", None)
-    if current_event is not None:
-        sections.append(
-            ShellNavSection(
-                key="current-event",
-                label="Current Event",
-                source="studio",
-                items=(_material_item(current_event),),
-            )
-        )
     return tuple(sections)
 
 

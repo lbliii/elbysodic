@@ -174,8 +174,8 @@ def test_production_seed_password_requires_demo_mode(monkeypatch) -> None:
             )
 
         assert response.status == 200
-        assert "Access is invite-only for this launch" in page.text
-        assert "public registration is not open" in page.text
+        assert "Already have an account?" in page.text
+        assert "linked account request" in page.text
         assert "Invite/demo accounts use password" not in page.text
         assert "email or password is incorrect" in response.text
         assert "elbysodic_session=" not in "\n".join(_response_headers(response, "set-cookie"))
@@ -241,7 +241,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Staff in X-Men Apocalypse" not in login.text
         assert request_access.status == 200
         assert "Access opens through a director invitation." in request_access.text
-        assert "Public registration is closed for now." in request_access.text
+        assert "Directors gate first entry" in request_access.text
         assert "_csrf_token" not in request_access.text
         assert "chirpui-sidebar__section-title" not in request_access.text
         assert studio.status == 302
@@ -335,7 +335,6 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
                 body=urlencode(
                     {
                         "community_slug": "afterlight-accord",
-                        "email": "moira@example.com",
                         "display_name": "Moira",
                         "face_concept": "Archivist with a sealed branch",
                         "wanted_hook": "Archive thief",
@@ -377,10 +376,13 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
         assert 'href="/c/afterlight-accord/request-access"' in wanted_detail.text
         assert 'href="/network"' in wanted_detail.text
         assert "Access opens through a director invitation." in request_access.text
-        assert "Writer email" in request_access.text
+        assert "Existing Elbysodic account" in request_access.text
+        assert "Request access with this account" in request_access.text
+        assert "Writer email" not in request_access.text
         assert "Face concept" in request_access.text
         assert request_access_post.status == 200
-        assert "Access request received for moira@example.com" in request_access_post.text
+        assert "Access request received for your Elbysodic account" in request_access_post.text
+        assert "Access request received for moira@example.com" not in request_access_post.text
         access_requests = services.repo.list_community_access_requests(
             services.repo.get_community_by_slug("afterlight-accord").id
         )
@@ -604,14 +606,25 @@ def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch
 
         async with TestClient(app) as client:
             _login, cookies = await _production_login(client, email="writer@example.com")
+            root = await client.get("/", headers={"Cookie": _cookie_header(cookies)})
             network = await client.get(
                 "/network?q=x-men",
                 headers={"Cookie": _cookie_header(cookies)},
             )
 
+        assert root.status == 200
+        assert "Signed in as Lane in X-Men Apocalypse" in root.text
+        assert (
+            "Your account is active; choose a realm card to enter, preview, or request access."
+            in (root.text)
+        )
+        assert "Log in" not in root.text
+        assert "Log out" in root.text
         assert network.status == 200
         assert "Signed in as Lane in X-Men Apocalypse" in network.text
         assert "Explore cards stay public-preview safe" in network.text
+        assert "Log in" not in network.text
+        assert "Log out" in network.text
         assert "current membership" in network.text
         assert 'href="/c/x-men-apocalypse/request-access"' not in network.text
         assert "Staff in X-Men Apocalypse" not in network.text

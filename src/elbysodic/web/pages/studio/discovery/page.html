@@ -64,7 +64,7 @@
 
   <section class="elbysodic-network-two-up" aria-label="Discovery editor">
     {% call surface(variant="elevated") %}
-    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false">
+    <form class="chirpui-stack chirpui-stack--md" method="post" hx-boost="false" data-elbysodic-discovery-preview-form>
       {{ csrf_field() }}
       <div>
         <p class="elbysodic-kicker">Network listing</p>
@@ -115,14 +115,12 @@
         <h2>Network card</h2>
         <p class="elbysodic-copy-section">This is how the realm appears in Network Explore.</p>
       </div>
-      {{ program_card(editor.preview_card) }}
-      {% if editor.tags %}
-      <div class="elbysodic-network-discovery-band">
+      {{ program_card(editor.preview_card, preview=true) }}
+      <div class="elbysodic-network-discovery-band" data-elbysodic-preview-tags {% if not editor.tags %}hidden{% end %}>
         {% for tag in editor.tags %}
         <a href="/network?q={{ tag.tag_key }}">{{ tag.label }}</a>
         {% end %}
       </div>
-      {% end %}
     </section>
   </section>
 {% end %}

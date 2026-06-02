@@ -68,7 +68,7 @@ Use this contract before adding or expanding a hub:
   roster, applications, casting, discovery, or inbox as persistent shortcuts.
 - **Studio** answers: what needs a director now? It can surface launch
   blockers, review queues, production health, navigation warnings, and current
-  publishing work. It should not also be the full board taxonomy editor,
+  publishing work. It should not also be the full board map editor,
   navigation composer, appearance editor, casting desk, and continuity editor
   unless those are the current director job.
 - **Community home** answers: where am I in the world? It should orient around
@@ -89,9 +89,19 @@ Scoped pages own durable workflows:
 - `/plotting` owns planning rooms and interest handoffs.
 - `/studio/operations` owns daily director production work.
 - `/studio/launch` owns launch readiness and setup sequencing.
-- Future Studio routes should own appearance, navigation, board taxonomy,
-  materials, and casting/review work before those editors are removed from the
-  Studio home.
+- `/studio/discovery` owns the Writer Network listing and public fit signals.
+- `/studio/structure` owns the audit view for Public Home Spotlight, board
+  map, sidebar language, and navigation health. Object-local surfaces own the
+  first edit path: realm home controls manage the home spotlight, and board or
+  location pages expose permitted board/place controls. Studio Structure keeps
+  the selected sequence, candidate library, preview, and bulk repair tools for
+  directors who need to scan the whole realm at once.
+- `/studio/intake` owns application fields, claims, reserves, and Program
+  Blueprint preview.
+- `/studio/appearance` owns theme tokens, realm media, identity accents, and
+  post style vocabulary.
+- `/studio/content` owns guidebook drafts, current event pressure, wanted-hook
+  context, and location coverage.
 
 A hub section should pass at least one test:
 

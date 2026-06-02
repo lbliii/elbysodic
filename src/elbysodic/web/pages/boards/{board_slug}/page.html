@@ -2,6 +2,7 @@
   {% from "chirpui/breadcrumbs.html" import breadcrumbs %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
+  {% from "_components/director_controls.html" import director_action_menu, director_context_panel %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
   {% from "_components/ui.html" import empty_policy_block, event_bridge, inline_nav, inline_nav_link %}
@@ -42,6 +43,13 @@
     {% if can_start_thread %}
     <a class="chirpui-btn chirpui-btn--primary elbysodic-place-action" href="/boards/{{ board.slug }}/threads/new">Start scene here</a>
     {% end %}
+    {% if can_manage_board %}
+    {% call director_action_menu("Manage " ~ ("place" if is_location_board else "board"), "Directors only") %}
+      <a href="/studio/boards/{{ board.slug }}">Edit {{ "place" if is_location_board else "board" }} details</a>
+      <a href="/studio/structure#board-taxonomy">Review board map</a>
+      <a href="/studio/structure#navigation-composer">Check sidebar health</a>
+    {% end %}
+    {% end %}
     </div>
   </div>
 
@@ -75,6 +83,13 @@
       </div>
     </div>
   </section>
+
+  {% if can_manage_board %}
+  {% call director_context_panel("Director controls", "Manage this " ~ ("place" if is_location_board else "board"), "Edit identity, parent/sub-forum placement, sidebar visibility, and media from this object. Studio Structure is the audit view when many boards need review.", "elbysodic-director-context--compact") %}
+    <a class="chirpui-btn chirpui-btn--primary" href="/studio/boards/{{ board.slug }}">Edit {{ board.name }}</a>
+    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/structure#board-taxonomy">Open board map audit</a>
+  {% end %}
+  {% end %}
 
   {% if is_location_board %}
   <section class="elbysodic-location-compass" aria-label="{{ board.name }} throughline">
@@ -145,6 +160,9 @@
       <p class="elbysodic-kicker">Sublocations</p>
       <h2>Choose a door inside {{ board.name }}</h2>
       <p class="elbysodic-copy-section">Rooms, districts, and pressure points that make this location playable.</p>
+      {% if can_manage_board %}
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/boards/{{ board.slug }}">Edit location doors</a>
+      {% end %}
     </header>
     <div class="elbysodic-subboard-grid">
       {% for summary in subboards %}
