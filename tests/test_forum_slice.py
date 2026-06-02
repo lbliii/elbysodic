@@ -7738,6 +7738,27 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
     asyncio.run(run())
 
 
+def test_public_wanted_routes_hide_non_open_hooks() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        community = repo.get_community_by_slug("x-men-apocalypse")
+        wanted = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        repo.update_wanted_ad_status(community.id, wanted.id, "filled")
+        app = create_app(debug=False, services=AppServices(repo, None))
+
+        async with TestClient(app) as client:
+            public_board = await client.get("/c/x-men-apocalypse/wanted")
+            public_detail = await client.get("/c/x-men-apocalypse/wanted/human-un-liaison-for-b24")
+
+        assert public_board.status == 200
+        assert "Human UN liaison for B-24 talks" not in public_board.text
+        assert public_detail.status == 404
+        assert "Human UN liaison for B-24 talks" not in public_detail.text
+
+    asyncio.run(run())
+
+
 def test_handoff_desks_collapse_empty_work_sections() -> None:
     async def run() -> None:
         app = _app()
