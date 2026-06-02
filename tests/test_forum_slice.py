@@ -3930,7 +3930,7 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
             "activation-watch",
             "Activation Watch",
         )
-        services.repo.create_community_access_request(
+        access_request = services.repo.create_community_access_request(
             staff.community.id,
             email="prospect@example.com",
             display_name="Prospect",
@@ -3938,24 +3938,31 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
             wanted_hook="Danger Room opening",
             notes="Needs an invitation.",
         )
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        )
         app = create_app(
             debug=False,
-            services=AppServices(
-                services.repo,
-                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
-            ),
+            services=staff_services,
         )
 
+        operations_model = staff_services.director_operations()
         async with TestClient(app) as client:
             operations = await client.get("/studio/operations")
 
+        assert [(lane.label, lane.href) for lane in operations_model.lanes] == [
+            ("Needs decision", f"/studio/access-requests/{access_request.id}")
+        ]
         assert operations.status == 200
         assert "Writer activation" in operations.text
         assert "Operations attention lanes" in operations.text
         assert "Needs decision" in operations.text
+        assert f'href="/studio/access-requests/{access_request.id}"' in operations.text
+        assert 'href="#director-operation-signals"' not in operations.text
         assert "Queues that should move before writers stall." in operations.text
-        assert "Blocked" in operations.text
-        assert "Watching" in operations.text
+        assert "<em>Blocked</em>" not in operations.text
+        assert "<em>Watching</em>" not in operations.text
         assert "Operations queue shortcuts" in operations.text
         assert 'href="/applications"' in operations.text
         assert 'href="/casting"' in operations.text
