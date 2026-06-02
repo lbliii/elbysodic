@@ -4050,6 +4050,7 @@ def test_studio_launch_moderates_access_requests() -> None:
 
 def test_access_request_submission_reuses_open_request_for_email() -> None:
     services = create_services(path=":memory:")
+    account = services.repo.create_user("prospect@example.com", "hash")
 
     first = services.create_access_request(
         "afterlight-accord",
@@ -4066,13 +4067,17 @@ def test_access_request_submission_reuses_open_request_for_email() -> None:
         face_concept="Forbidden envoy",
         wanted_hook="Transit gate",
         notes="Second note.",
+        account_user_id=account.id,
     )
     community = services.repo.get_community_by_slug("afterlight-accord")
 
-    assert second == first
-    assert services.repo.list_community_access_requests(community.id) == [first]
-    assert first.email == "prospect@example.com"
-    assert first.display_name == "Prospect One"
+    assert second.id == first.id
+    assert second.account_user_id == account.id
+    assert services.repo.list_community_access_requests(community.id) == [second]
+    assert second.email == "prospect@example.com"
+    assert second.display_name == "Prospect One"
+    with pytest.raises(LookupError):
+        services.repo.get_membership_for_user(community.id, account.id)
 
 
 def test_director_reads_access_request_detail() -> None:

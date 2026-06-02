@@ -1132,6 +1132,30 @@ class IdentityRepositoryMixin(RepositoryBase):
         )
         return None if row is None else _community_access_request_from_row(row)
 
+    def link_community_access_request_account_user(
+        self,
+        community_id: int,
+        request_id: int,
+        account_user_id: int,
+    ) -> CommunityAccessRequest:
+        access_request = self.get_community_access_request(community_id, request_id)
+        self.get_user(account_user_id)
+        if access_request.account_user_id is not None:
+            if access_request.account_user_id != account_user_id:
+                raise PermissionError("access request is already linked to another account")
+            return access_request
+        self.connection.execute(
+            """
+            UPDATE community_access_requests
+            SET account_user_id = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (account_user_id, _utc_now(), community_id, request_id),
+        )
+        self._commit()
+        return self.get_community_access_request(community_id, request_id)
+
     def update_community_access_request_status(
         self,
         community_id: int,
