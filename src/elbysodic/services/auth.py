@@ -21,6 +21,7 @@ SEED_LOGIN_PHRASE = "password"
 ENVIRONMENT_ENV = "ELBYSODIC_ENV"
 DEMO_MODE_ENV = "ELBYSODIC_DEMO_MODE"
 PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
+MIN_PRODUCTION_SECRET_KEY_LENGTH = 32
 
 
 class AuthRepository(Protocol):
@@ -67,6 +68,70 @@ class LoginSession:
     expires_at: str
 
 
+@dataclass(frozen=True, slots=True)
+class AuthTrustPosture:
+    environment: str
+    production: bool
+    demo_mode_enabled: bool
+    seed_passwords_enabled: bool
+    secret_key_configured: bool
+    secret_key_meets_minimum: bool
+    session_cookie_name: str
+    session_ttl_days: int
+    development_identity_allowed: bool
+    session_required_for_app_routes: bool
+
+    @property
+    def warnings(self) -> tuple[str, ...]:
+        warnings: list[str] = []
+        if self.production and not self.secret_key_meets_minimum:
+            warnings.append("production secret key is missing or too short")
+        if self.production and self.demo_mode_enabled:
+            warnings.append("production demo mode accepts seeded demo passwords")
+        if not self.production and self.development_identity_allowed:
+            warnings.append("development identity shortcuts are enabled")
+        return tuple(warnings)
+
+
+def auth_trust_posture() -> AuthTrustPosture:
+    env = (os.environ.get(ENVIRONMENT_ENV) or "development").strip().lower()
+    production = env in PRODUCTION_ENVS
+    demo_mode = _truthy_env(os.environ.get(DEMO_MODE_ENV))
+    secret_key = (os.environ.get("ELBYSODIC_SECRET_KEY") or "").strip()
+    return AuthTrustPosture(
+        environment=env,
+        production=production,
+        demo_mode_enabled=demo_mode,
+        seed_passwords_enabled=seed_passwords_enabled(),
+        secret_key_configured=bool(secret_key),
+        secret_key_meets_minimum=len(secret_key) >= MIN_PRODUCTION_SECRET_KEY_LENGTH,
+        session_cookie_name=SESSION_COOKIE,
+        session_ttl_days=SESSION_TTL.days,
+        development_identity_allowed=not production,
+        session_required_for_app_routes=production,
+    )
+
+
+def format_auth_trust_posture(posture: AuthTrustPosture) -> str:
+    lines = [
+        "auth trust posture",
+        f"environment: {posture.environment}",
+        f"production: {_yes_no(posture.production)}",
+        f"demo_mode_enabled: {_yes_no(posture.demo_mode_enabled)}",
+        f"seed_passwords_enabled: {_yes_no(posture.seed_passwords_enabled)}",
+        f"secret_key_configured: {_yes_no(posture.secret_key_configured)}",
+        f"secret_key_meets_minimum: {_yes_no(posture.secret_key_meets_minimum)}",
+        f"session_cookie: {posture.session_cookie_name}",
+        f"session_ttl_days: {posture.session_ttl_days}",
+        f"development_identity_allowed: {_yes_no(posture.development_identity_allowed)}",
+        f"session_required_for_app_routes: {_yes_no(posture.session_required_for_app_routes)}",
+    ]
+    if posture.warnings:
+        lines.append("warnings:")
+        lines.extend(f"- {warning}" for warning in posture.warnings)
+    return "\n".join(lines) + "\n"
+
+
 def hash_password(password: str, *, salt: str | None = None) -> str:
     normalized_salt = salt or secrets.token_urlsafe(16)
     derived = hashlib.pbkdf2_hmac(
@@ -106,8 +171,7 @@ def seed_passwords_enabled() -> bool:
     env = (os.environ.get(ENVIRONMENT_ENV) or "development").strip().lower()
     if env not in PRODUCTION_ENVS:
         return True
-    configured = (os.environ.get(DEMO_MODE_ENV) or "").strip().lower()
-    return configured in {"1", "true", "yes", "on"}
+    return _truthy_env(os.environ.get(DEMO_MODE_ENV))
 
 
 def create_login_session(repo: AuthRepository, email: str, password: str) -> LoginSession:
@@ -166,3 +230,11 @@ def session_for_session_token(
         if expires_at <= datetime.now(UTC):
             return None
     return repo.touch_user_session(session.id)
+
+
+def _truthy_env(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _yes_no(value: bool) -> str:
+    return "yes" if value else "no"

@@ -85,6 +85,13 @@ Production request identity is session-backed:
 - logout revokes the stored session and clears its selected community and
   membership so stale cookies cannot carry forward active realm identity state
 
+`auth_trust_posture()` in `src/elbysodic/services/auth.py` provides a redacted
+operations diagnostic for this posture. It reports environment, production
+mode, demo-mode seed password posture, secret-key presence/minimum status,
+session cookie name, session TTL, development identity availability, and
+session-required status without exposing secret values, token hashes, raw
+cookies, account emails, membership names, or private identity state.
+
 The logged-out `/` and `/network` surfaces use public catalog read models.
 They can show realm names, public premise or current-event summaries, public
 media, roster counts, and wanted-hook counts. They must not render membership

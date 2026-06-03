@@ -12,6 +12,8 @@ production bootstrap creates the first real director identity and realm.
 - `ELBYSODIC_ENV=production` or `staging` is intentional for the target.
 - `ELBYSODIC_SECRET_KEY` is present and at least 32 characters.
 - Demo mode is off for production unless the session is explicitly a demo.
+- The redacted auth trust posture reports the expected production, demo-mode,
+  secret-key minimum, session cookie, and session-required settings.
 - A fresh backup exists, or the database is confirmed empty.
 - Studio Operations shows the expected environment, database path, journal
   mode, integrity check, schema version, migration ledger, realm count, and
@@ -49,6 +51,7 @@ Production bootstrap:
 - Integrity check:
 - Schema version:
 - Migration ledger:
+- Auth trust posture:
 - Replica count:
 - Existing realm count before:
 - Realm name:
