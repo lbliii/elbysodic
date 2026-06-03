@@ -10117,6 +10117,46 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
     asyncio.run(run())
 
 
+def test_reply_notification_failure_rolls_back_post(monkeypatch: pytest.MonkeyPatch) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    services.watch_thread("plotting", "open-thread-roster")
+    board = repo.get_board_by_slug(services.seed.community.id, "plotting")
+    thread = repo.get_thread_by_slug(
+        services.seed.community.id,
+        board.id,
+        "open-thread-roster",
+    )
+    before_posts = repo.list_posts(services.seed.community.id, thread.id)
+    outsider_services, outsider_character_id = _outsider_services(
+        services,
+        prefix="rollback-notify",
+    )
+
+    def fail_create_notification(*args: object, **kwargs: object) -> object:
+        raise RuntimeError("notification fanout failed")
+
+    monkeypatch.setattr(repo, "create_notification", fail_create_notification)
+    with pytest.raises(RuntimeError, match="notification fanout failed"):
+        outsider_services.reply_to_thread(
+            "plotting",
+            "open-thread-roster",
+            outsider_character_id,
+            "This reply should roll back with notification fanout.",
+        )
+
+    after_posts = repo.list_posts(services.seed.community.id, thread.id)
+
+    assert [post.id for post in after_posts] == [post.id for post in before_posts]
+    assert (
+        repo.count_unread_notifications(
+            services.seed.community.id,
+            services.seed.membership.id,
+        )
+        == 0
+    )
+
+
 def test_notification_inbox_limit_applies_after_visibility_filtering() -> None:
     async def run() -> None:
         app = _app()
