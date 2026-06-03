@@ -262,6 +262,19 @@ thread between visible boards.
 Moving a thread must not rewrite post history, revisions, read state, watches,
 or notification targets.
 
+## Community Export
+
+Community export currently starts as an internal service-owned manifest, not a
+public CLI, API, or self-serve UI. The manifest is scoped to one community and
+summarizes counts, ownership edges, stable source links, and redaction rules
+through tenant-aware repository methods.
+
+The export contract preserves membership ownership and character authorship as
+separate facts. It deliberately excludes global login users, password hashes,
+sessions, token hashes, raw invite tokens, and private access-request notes from
+the general community archive manifest. Director-only detail export can be
+designed later if those private workflow records need a separate archive path.
+
 ## Continuity Graph
 
 Continuity Graph is not yet a persistence primitive in this repo. Existing

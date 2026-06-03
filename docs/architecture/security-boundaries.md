@@ -138,6 +138,14 @@ actor membership, status transition, optional invitation id, and timestamp.
 Submitted, account-linked, reviewed, invited, and declined events are staff
 workflow history, not public preview data.
 
+Community export manifests are director-only backend read models. They may count
+community-scoped workflow rows and preserve source links, membership ownership,
+and character authorship, but the general manifest excludes global users,
+password hashes, session state, token hashes, raw invitation tokens, and private
+access-request notes. A future detail export for staff workflow records needs a
+separate privacy review before it can include applicant emails, notes, or
+invitation audit material.
+
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global
 login user plus a community-local director membership in the same transaction.
