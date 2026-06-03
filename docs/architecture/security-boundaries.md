@@ -175,6 +175,13 @@ Production mutating requests are protected by Chirp session-backed CSRF.
 Rendered POST form templates include the active CSRF field explicitly, and
 unsafe methods are rejected when the token is missing or invalid.
 
+Notification inbox rows, shell counts, redirects, and mark-read actions are
+also privacy boundaries. Each supported notification kind must use the
+service-owned target contract for required fields and visibility. A notification
+delivered to the right membership is still treated as inaccessible when its
+target is private, belongs to another community, lacks the required target
+fields, or resolves to a row the membership cannot view.
+
 Production responses also set a Content Security Policy sized to the current
 server-rendered Chirp and Chirp-UI stack. The policy keeps framing, object,
 base URI, image, and connection boundaries narrow, while allowing inline styles

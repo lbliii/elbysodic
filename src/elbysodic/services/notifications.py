@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Protocol
 
 from elbysodic.domain.models import (
@@ -23,6 +24,112 @@ from elbysodic.services import policies
 from elbysodic.services.posts import PostViewRepository, post_view
 from elbysodic.services.read_models import ForumView, NotificationInbox, NotificationItem
 from elbysodic.services.timestamps import timestamp_label
+
+
+@dataclass(frozen=True, slots=True)
+class NotificationTargetContract:
+    kind: str
+    label: str
+    target_family: str
+    required_fields: tuple[str, ...]
+    visibility_rule: str
+
+
+NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
+    NotificationTargetContract(
+        kind="mention",
+        label="Mention",
+        target_family="thread_post",
+        required_fields=("thread_id", "post_id"),
+        visibility_rule="viewer can read the target board",
+    ),
+    NotificationTargetContract(
+        kind="thread_reply",
+        label="Watched thread",
+        target_family="thread_post",
+        required_fields=("thread_id", "post_id"),
+        visibility_rule="viewer can read the target board",
+    ),
+    NotificationTargetContract(
+        kind="wanted_interest",
+        label="Wanted interest",
+        target_family="wanted_interest",
+        required_fields=("wanted_ad_id", "wanted_ad_interest_id"),
+        visibility_rule="viewer is interested writer, hook creator, or casting-capable staff",
+    ),
+    NotificationTargetContract(
+        kind="wanted_reserved",
+        label="Wanted reserved",
+        target_family="wanted_hook",
+        required_fields=("wanted_ad_id",),
+        visibility_rule="viewer can read the wanted hook",
+    ),
+    NotificationTargetContract(
+        kind="reserve_created",
+        label="Reserve created",
+        target_family="wanted_hook",
+        required_fields=("wanted_ad_id",),
+        visibility_rule="viewer can read the wanted hook",
+    ),
+    NotificationTargetContract(
+        kind="plot_hook_interest",
+        label="Plot hook interest",
+        target_family="plot_hook",
+        required_fields=("character_plot_hook_id",),
+        visibility_rule="viewer is hook author or casting-capable staff",
+    ),
+    NotificationTargetContract(
+        kind="plotting_room_created",
+        label="Plotting room",
+        target_family="plotting_room",
+        required_fields=("plotting_room_id",),
+        visibility_rule="viewer is room owner, participant, or casting-capable staff",
+    ),
+    NotificationTargetContract(
+        kind="plotting_room_threaded",
+        label="Scene started",
+        target_family="plotting_room",
+        required_fields=("plotting_room_id",),
+        visibility_rule="viewer is room owner, participant, or casting-capable staff",
+    ),
+    NotificationTargetContract(
+        kind="application_submitted",
+        label="Application submitted",
+        target_family="character_application",
+        required_fields=("character_id",),
+        visibility_rule="viewer owns character or is casting-capable staff",
+    ),
+    NotificationTargetContract(
+        kind="application_accepted",
+        label="Application accepted",
+        target_family="character_application",
+        required_fields=("character_id",),
+        visibility_rule="viewer owns character or is casting-capable staff",
+    ),
+    NotificationTargetContract(
+        kind="application_revision_requested",
+        label="Revisions requested",
+        target_family="character_application",
+        required_fields=("character_id",),
+        visibility_rule="viewer owns character or is casting-capable staff",
+    ),
+)
+NOTIFICATION_TARGET_CONTRACTS_BY_KIND = {
+    contract.kind: contract for contract in NOTIFICATION_TARGET_CONTRACTS
+}
+
+
+def notification_target_contract(kind: str) -> NotificationTargetContract | None:
+    return NOTIFICATION_TARGET_CONTRACTS_BY_KIND.get(kind)
+
+
+def notification_has_required_target(notification: Notification) -> bool:
+    contract = notification_target_contract(notification.kind)
+    if contract is None:
+        return True
+    return all(
+        getattr(notification, field_name) is not None for field_name in contract.required_fields
+    )
 
 
 class NotificationRepository(PostViewRepository, Protocol):
@@ -472,6 +579,8 @@ def _can_view_notification_target(
     role: Role | None,
     notification: Notification,
 ) -> bool:
+    if not notification_has_required_target(notification):
+        return False
     try:
         if notification.thread_id is not None:
             thread = repo.get_thread(community_id, notification.thread_id)
@@ -541,31 +650,10 @@ def _can_view_wanted_interest_notification(
 
 
 def notification_label(kind: str) -> str:
-    match kind:
-        case "mention":
-            return "Mention"
-        case "thread_reply":
-            return "Watched thread"
-        case "wanted_interest":
-            return "Wanted interest"
-        case "plot_hook_interest":
-            return "Plot hook interest"
-        case "plotting_room_created":
-            return "Plotting room"
-        case "plotting_room_threaded":
-            return "Scene started"
-        case "wanted_reserved":
-            return "Wanted reserved"
-        case "reserve_created":
-            return "Reserve created"
-        case "application_submitted":
-            return "Application submitted"
-        case "application_accepted":
-            return "Application accepted"
-        case "application_revision_requested":
-            return "Revisions requested"
-        case _:
-            return "Notification"
+    contract = NOTIFICATION_TARGET_CONTRACTS_BY_KIND.get(kind)
+    if contract is None:
+        return "Notification"
+    return contract.label
 
 
 def mentioned_membership_ids(

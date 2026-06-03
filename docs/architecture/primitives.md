@@ -113,14 +113,18 @@ thread_watches.membership_id
 Starting or replying to a thread auto-watches it for the posting membership.
 Watches can also be toggled from the thread page.
 
-Notifications are community-scoped and delivered to memberships. The first
-implemented notification kinds are:
+Notifications are community-scoped and delivered to memberships. Implemented
+notification target families include:
 
-- `thread_reply` for replies to watched threads.
-- `mention` for simple `@Character` mentions.
+- watched-thread replies and `@Character` or writer mentions that target posts
+- wanted interest and reserve updates that target wanted hooks or interest rows
+- character plot-hook, plotting-room, and scene-started updates
+- character application updates for applicant and casting workflows
 
-Notification targets point at posts so the inbox can jump directly to the
-relevant beat.
+Notification kinds register their target family and required target fields in
+the service layer. The same contract gates shell counts, inbox rows, open
+redirects, and mark-read flows so stale or malformed rows cannot reveal private
+room titles, wanted notes, application state, or cross-community targets.
 
 Mention parsing supports both character and writer handles. Character mentions
 are story-facing and should resolve to character profiles. Writer mentions are
