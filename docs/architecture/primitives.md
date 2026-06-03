@@ -238,9 +238,12 @@ one shared host. Canonical shared-host community links use
 wanted, character, or thread slugs are looked up.
 
 `/` and `/network` are platform/network surfaces, not one community's world
-home. Current `/network` search is a logged-in directory filter; a production
-public catalog/search contract still needs a service read model that separates
-safe public program data from signed-in continuation lanes.
+home. Public catalog/search uses `PublicCatalogCard` read models that carry
+only public realm profile, published material, safe counts, discovery tags, and
+entry posture. Signed-in continuation stays in separate Network return-path or
+Studio network read models so active faces, staff role, unread notifications,
+applications, plotting rooms, and membership identity cannot contaminate public
+realm cards.
 
 ## Program Blueprints
 
