@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 import pytest
 
 from elbysodic.blueprints import (
@@ -969,6 +972,145 @@ wanted:
         "Skipped live collisions need explicit update mode before apply: "
         "face: Rogue, wanted hook: Iceman winter rescue specialist."
     ) in readiness.items
+
+
+def test_program_blueprint_apply_rejects_non_staff_before_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    writer = repo.get_membership_by_username(seed.community.id, "starlane")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(writer.user_id),
+            writer,
+            repo.get_character_by_slug(seed.community.id, "rogue"),
+        ),
+    )
+
+    def fail_transaction() -> Iterator[None]:
+        raise AssertionError("apply should not enter a transaction")
+        yield
+
+    monkeypatch.setattr(repo, "transaction", fail_transaction)
+
+    with pytest.raises(PermissionError, match="cannot preview program blueprints"):
+        services.apply_program_blueprint_preview(
+            _transaction_probe_blueprint_source(),
+            "stale-preview",
+        )
+
+
+def test_program_blueprint_apply_rejects_stale_fingerprint_before_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+
+    def fail_transaction() -> Iterator[None]:
+        raise AssertionError("stale apply should not enter a transaction")
+        yield
+
+    monkeypatch.setattr(repo, "transaction", fail_transaction)
+
+    with pytest.raises(ValueError, match="preview changed"):
+        services.apply_program_blueprint_preview(
+            _transaction_probe_blueprint_source(),
+            "stale-preview",
+        )
+
+
+def test_program_blueprint_apply_gate_rolls_back_transaction_probe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    source = _transaction_probe_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+    assert preview.preview_fingerprint
+    original_transaction = repo.transaction
+    entered = False
+
+    @contextmanager
+    def transaction_with_probe() -> Iterator[None]:
+        nonlocal entered
+        with original_transaction():
+            entered = True
+            repo.connection.execute(
+                """
+                INSERT INTO communities (slug, name, created_at, updated_at)
+                VALUES ('blueprint-rollback-probe', 'Blueprint Rollback Probe',
+                        '2026-01-01T00:00:00+00:00', '2026-01-01T00:00:00+00:00')
+                """
+            )
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_with_probe)
+
+    with pytest.raises(ValueError, match="apply remains gated"):
+        services.apply_program_blueprint_preview(source, preview.preview_fingerprint)
+
+    assert entered
+    assert not repo.connection.in_transaction
+    with pytest.raises(LookupError):
+        repo.get_community_by_slug("blueprint-rollback-probe")
+
+
+def _transaction_probe_blueprint_source() -> str:
+    return """
+elbysodic_blueprint: 1
+program:
+  slug: rl-small-town-preview
+  name: RL Small Town Preview
+  role:
+    slug: director
+    name: Director
+    is_admin: true
+characters:
+  - slug: june-calloway
+    name: June Calloway
+    summary: Florist and town council note-taker.
+boards:
+  - slug: main-street
+    name: Main Street
+    kind: location
+    tagline: One stoplight, twelve opinions.
+    description: The town's public spine.
+materials:
+  - slug: premise
+    title: Premise
+    type: premise
+    summary: A small-town ensemble.
+    body: Founder's Week should be a cozy pressure cooker.
+"""
 
 
 def test_seed_hydrates_blueprint_board_media_fields(monkeypatch: pytest.MonkeyPatch) -> None:
