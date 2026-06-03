@@ -77,6 +77,17 @@ class OperationsShortcut:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationsParityRow:
+    label: str
+    count: int
+    list_href: str
+    first_action_href: str
+    action_scope: str
+    notification_scope: str
+    diagnostic_scope: str
+
+
+@dataclass(frozen=True, slots=True)
 class OperationsInspectionConfig:
     environment: str
     secure_cookies: bool
@@ -104,6 +115,7 @@ class DirectorOperations:
     shortcuts: list[OperationsShortcut]
     ready_applications: list[ApplicationCharacterView]
     blocked_applications: list[ApplicationCharacterView]
+    parity_rows: list[OperationsParityRow]
     can_manage: bool
     inspection: OperationsInspection | None
 
@@ -283,6 +295,14 @@ def director_operations(
         shortcuts=_operations_shortcuts(studio, casting, plotting, writer_access_requests),
         ready_applications=ready_applications,
         blocked_applications=blocked_applications,
+        parity_rows=_operations_parity_rows(
+            studio,
+            casting,
+            plotting,
+            writer_access_requests,
+            unread_notification_count=unread_notification_count,
+            inspection=inspection,
+        ),
         can_manage=studio.can_manage,
         inspection=inspection,
     )
@@ -367,6 +387,87 @@ def _operations_lanes(cards: list[OperationsCard]) -> list[OperationsLane]:
             )
         )
     return lanes
+
+
+def _operations_parity_rows(
+    studio: DirectorStudio,
+    casting: CastingDesk,
+    plotting: PlottingDesk,
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
+    *,
+    unread_notification_count: int,
+    inspection: OperationsInspection | None,
+) -> list[OperationsParityRow]:
+    launch_count = (
+        0 if studio.launch_readiness.is_ready else studio.launch_readiness.missing_required_count
+    )
+    launch_href = "/studio/launch#access-requests" if writer_access_requests else "/studio/launch"
+    return [
+        OperationsParityRow(
+            label="Applications",
+            count=len(studio.applications.review_queue),
+            list_href="/applications",
+            first_action_href=(
+                _application_review_href(studio.applications.review_queue[0])
+                if studio.applications.review_queue
+                else "/applications"
+            ),
+            action_scope="application review capability",
+            notification_scope="membership inbox only",
+            diagnostic_scope="queue names hidden from non-staff",
+        ),
+        OperationsParityRow(
+            label="Casting",
+            count=len(casting.active_reserves) + len(casting.wanted_with_interest),
+            list_href="/casting",
+            first_action_href="/casting",
+            action_scope="casting capability",
+            notification_scope="wanted and plotting targets rechecked",
+            diagnostic_scope="private notes stay out of Operations cards",
+        ),
+        OperationsParityRow(
+            label="Plotting",
+            count=len(plotting.wanted_ready_interests),
+            list_href="/plotting#interest-inbox",
+            first_action_href="/plotting#interest-inbox",
+            action_scope="participant or casting capability",
+            notification_scope="room targets rechecked before unread counts",
+            diagnostic_scope="room messages stay out of Operations cards",
+        ),
+        OperationsParityRow(
+            label="Launch",
+            count=launch_count + len(writer_access_requests),
+            list_href=launch_href,
+            first_action_href=(
+                _writer_activation_href(writer_access_requests)
+                if writer_access_requests
+                else _first_required_launch_gap_href(studio) or "/studio/launch"
+            ),
+            action_scope="director launch capability",
+            notification_scope="access requests are Studio-only, not inbox-global",
+            diagnostic_scope="request notes stay in access-request detail",
+        ),
+        OperationsParityRow(
+            label="Notifications",
+            count=unread_notification_count,
+            list_href="/notifications",
+            first_action_href="/notifications",
+            action_scope="membership-scoped inbox",
+            notification_scope="own visible unread targets only",
+            diagnostic_scope="hidden targets do not affect visible page windows",
+        ),
+        OperationsParityRow(
+            label="Runtime diagnostics",
+            count=1 if inspection is not None else 0,
+            list_href="/studio/operations#hosted-inspection-heading",
+            first_action_href="/studio/operations#hosted-inspection-heading",
+            action_scope="director operations capability",
+            notification_scope="not notification-backed",
+            diagnostic_scope=(
+                "visible to managers only" if inspection is not None else "hidden from this viewer"
+            ),
+        ),
+    ]
 
 
 def operations_inspection(
