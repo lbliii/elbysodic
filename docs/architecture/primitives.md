@@ -283,9 +283,11 @@ designed later if those private workflow records need a separate archive path.
 ## Continuity Graph
 
 Continuity Graph is not yet a persistence primitive in this repo. Existing
-world materials and wanted-hook vocabulary can refer to canon, but reviewed
-continuity records, scene outcome proposals, source citations, affected-object
-links, review events, and public canon read models remain gated by
+world materials and wanted-hook vocabulary can refer to canon, and
+`src/elbysodic/domain/continuity.py` names schema-neutral draft primitives for
+manual proposals, source citations, affected objects, review events, lifecycle
+state, and approved canon entries. Storage, services, notifications, rendered
+surfaces, and public canon read models remain gated by
 `docs/architecture/continuity-graph-readiness.md`.
 
 The first approved slice must be manual, source-linked, and reviewed. It must
