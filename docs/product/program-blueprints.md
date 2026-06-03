@@ -304,7 +304,10 @@ for Studio intake, plus the privileged seed-data source used by development
 fixtures.
 Studio may accept an apply-shaped POST only as a guarded no-op: it must re-run
 preview, reject stale fingerprints, enter the transaction boundary, and return
-that apply is still gated without writing rows.
+that apply is still gated without writing rows. The readiness review shown with
+that gate is diff-aware: it summarizes create, update, skip, blocked, and
+warning counts, and it names skipped live face or wanted-hook collisions that
+need explicit update semantics before real apply can be enabled.
 
 ## Hydration Gate
 
@@ -316,6 +319,8 @@ Keep apply disabled until the hydrator has an explicit service-layer plan for:
 - rollback behavior when a later object fails after earlier objects validate
 - tenant tests that prove every created object stays in the selected community
 - a dry-run diff that names create, update, and skipped objects before mutation
+- an apply readiness review that derives from the accepted diff instead of a
+  generic checklist
 
 Until those pieces exist, Studio intake should keep saying that preview is a
 hydration gate, not a launch button.
