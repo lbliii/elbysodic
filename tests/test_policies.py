@@ -63,6 +63,17 @@ def test_admin_role_grants_named_capabilities(
     assert policies.can_manage_applications(membership, admin_role)
 
 
+@pytest.mark.parametrize("capability", sorted(policies.ADMIN_CAPABILITIES))
+def test_named_capability_helpers_stay_registered(
+    capability: policies.Capability,
+    membership: CommunityMembership,
+    admin_role: Role,
+) -> None:
+    helper = getattr(policies, f"can_{capability}")
+
+    assert helper(membership, admin_role) is True
+
+
 def test_page_handlers_and_services_do_not_check_admin_flag_directly() -> None:
     checked_paths = [
         *Path("src/elbysodic/web/pages").rglob("page.py"),
@@ -91,6 +102,65 @@ def test_capabilities_require_active_membership_and_matching_role(
     assert not policies.can_manage_world(inactive, admin_role)
     assert not policies.can_manage_world(membership, wrong_community_role)
     assert not policies.can_manage_world(membership, wrong_role_id)
+
+
+@pytest.mark.parametrize(
+    ("membership_updates", "role_updates", "expected_reason"),
+    [
+        ({}, None, "missing_role"),
+        ({"is_active": False}, {}, "inactive_membership"),
+        ({}, {"community_id": 2}, "role_community_mismatch"),
+        ({}, {"id": 99}, "role_not_assigned"),
+        ({}, {"is_admin": False}, "role_lacks_staff_power"),
+    ],
+)
+def test_capability_denial_diagnostics_are_safe_and_specific(
+    membership_updates: dict[str, object],
+    role_updates: dict[str, object] | None,
+    expected_reason: policies.CapabilityDenialReason,
+    membership: CommunityMembership,
+    admin_role: Role,
+) -> None:
+    scoped_membership = replace(membership, **membership_updates)
+    role = None if role_updates is None else replace(admin_role, **role_updates)
+
+    diagnostic = policies.explain_capability(scoped_membership, role, "manage_world")
+
+    assert diagnostic.allowed is False
+    assert diagnostic.capability == "manage_world"
+    assert diagnostic.reason == expected_reason
+    assert scoped_membership.username not in diagnostic.message
+    assert scoped_membership.display_name not in diagnostic.message
+    if role is not None:
+        assert role.name not in diagnostic.message
+        assert role.slug not in diagnostic.message
+
+
+def test_capability_diagnostics_report_allowed_without_target_details(
+    membership: CommunityMembership,
+    admin_role: Role,
+) -> None:
+    diagnostic = policies.explain_capability(membership, admin_role, "manage_casting")
+
+    assert diagnostic.allowed is True
+    assert diagnostic.capability == "manage_casting"
+    assert diagnostic.reason == "allowed"
+    assert membership.username not in diagnostic.message
+    assert admin_role.name not in diagnostic.message
+
+
+def test_same_global_user_can_have_different_capabilities_per_community(
+    membership: CommunityMembership,
+    admin_role: Role,
+) -> None:
+    staffed_membership = replace(membership, community_id=2, role_id=40)
+    staffed_role = replace(admin_role, id=40, community_id=2, slug="director", is_admin=True)
+    writer_membership = replace(membership, community_id=3, role_id=41)
+    writer_role = replace(admin_role, id=41, community_id=3, slug="member", is_admin=False)
+
+    assert staffed_membership.user_id == writer_membership.user_id
+    assert policies.can_manage_applications(staffed_membership, staffed_role)
+    assert not policies.can_manage_applications(writer_membership, writer_role)
 
 
 def test_private_board_and_locked_thread_use_named_capabilities(
