@@ -58,6 +58,11 @@ Commands that create posts, scenes, rooms, reserves, claims, applications,
 notifications, or identity transitions need either idempotency or a deliberate
 duplicate policy.
 
+The current rollback and duplicate-submit coverage map lives in
+`docs/architecture/transactional-workflow-coverage.md`. Update it when a
+workflow gains new side effects, a test moves, or a remaining gap becomes
+covered proof.
+
 High-risk multi-row commands should put story-visible and attention-visible
 side effects in one service transaction. Replying to a thread creates the post,
 fanout notifications, watch state, and read marker inside one transaction so a

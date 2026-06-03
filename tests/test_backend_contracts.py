@@ -198,6 +198,22 @@ def test_web_page_handlers_do_not_make_policy_decisions_directly() -> None:
     assert offenders == []
 
 
+def test_transactional_workflow_coverage_map_references_existing_proof() -> None:
+    coverage = (
+        REPO_ROOT / "docs" / "architecture" / "transactional-workflow-coverage.md"
+    ).read_text(encoding="utf-8")
+    proof_references = sorted(set(re.findall(r"`(tests/[^`]+\.py::test_[^`]+)`", coverage)))
+
+    assert len(proof_references) >= 18
+    assert "## Remaining Gaps" in coverage
+    assert "uv run pytest tests/test_forum_slice.py" in coverage
+    for reference in proof_references:
+        path_text, _, test_name = reference.partition("::")
+        test_path = REPO_ROOT / path_text
+        assert test_path.exists(), reference
+        assert f"def {test_name}" in test_path.read_text(encoding="utf-8"), reference
+
+
 def test_critical_rendered_pages_use_named_service_surface_contracts() -> None:
     missing: list[str] = []
     for contract in SURFACE_CONTRACTS:
