@@ -861,7 +861,9 @@ class IdentityRepositoryMixin(RepositoryBase):
         self.connection.execute(
             """
             UPDATE user_sessions
-            SET revoked_at = COALESCE(revoked_at, ?)
+            SET revoked_at = COALESCE(revoked_at, ?),
+                selected_community_id = NULL,
+                selected_membership_id = NULL
             WHERE token_hash = ?
             """,
             (_utc_now(), token_hash),
@@ -1131,6 +1133,30 @@ class IdentityRepositoryMixin(RepositoryBase):
             (community_id, email),
         )
         return None if row is None else _community_access_request_from_row(row)
+
+    def link_community_access_request_account_user(
+        self,
+        community_id: int,
+        request_id: int,
+        account_user_id: int,
+    ) -> CommunityAccessRequest:
+        access_request = self.get_community_access_request(community_id, request_id)
+        self.get_user(account_user_id)
+        if access_request.account_user_id is not None:
+            if access_request.account_user_id != account_user_id:
+                raise PermissionError("access request is already linked to another account")
+            return access_request
+        self.connection.execute(
+            """
+            UPDATE community_access_requests
+            SET account_user_id = ?,
+                updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (account_user_id, _utc_now(), community_id, request_id),
+        )
+        self._commit()
+        return self.get_community_access_request(community_id, request_id)
 
     def update_community_access_request_status(
         self,
@@ -1626,6 +1652,70 @@ class IdentityRepositoryMixin(RepositoryBase):
                         board.parent_board_id = board.id
                         OR parent.id IS NULL
                     )
+
+                UNION ALL
+
+                SELECT
+                    'community_memberships' AS table_name,
+                    membership.id AS row_id,
+                    membership.community_id,
+                    CASE
+                        WHEN role.id IS NULL THEN 'membership role belongs to another community'
+                        WHEN default_character.id IS NULL
+                            AND membership.default_character_id IS NOT NULL
+                            THEN 'membership default face belongs to another community'
+                        WHEN default_character.membership_id != membership.id
+                            THEN 'membership default face does not belong to membership'
+                        ELSE 'membership tenant pair is invalid'
+                    END AS reason
+                FROM community_memberships AS membership
+                LEFT JOIN roles AS role
+                    ON role.id = membership.role_id
+                    AND role.community_id = membership.community_id
+                LEFT JOIN characters AS default_character
+                    ON default_character.id = membership.default_character_id
+                    AND default_character.community_id = membership.community_id
+                WHERE role.id IS NULL
+                    OR (
+                        membership.default_character_id IS NOT NULL
+                        AND (
+                            default_character.id IS NULL
+                            OR default_character.membership_id != membership.id
+                        )
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'characters' AS table_name,
+                    character.id AS row_id,
+                    character.community_id,
+                    CASE
+                        WHEN membership.id IS NULL THEN 'character membership belongs to another community'
+                        ELSE 'character tenant pair is invalid'
+                    END AS reason
+                FROM characters AS character
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = character.membership_id
+                    AND membership.community_id = character.community_id
+                WHERE membership.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'command_submissions' AS table_name,
+                    command_submission.id AS row_id,
+                    command_submission.community_id,
+                    CASE
+                        WHEN membership.id IS NULL
+                            THEN 'command submission membership belongs to another community'
+                        ELSE 'command submission tenant pair is invalid'
+                    END AS reason
+                FROM command_submissions AS command_submission
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = command_submission.membership_id
+                    AND membership.community_id = command_submission.community_id
+                WHERE membership.id IS NULL
 
                 UNION ALL
 
@@ -2659,6 +2749,29 @@ class IdentityRepositoryMixin(RepositoryBase):
             ),
         )
         self._commit()
+
+    def discard_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> bool:
+        self.get_membership(community_id, membership_id)
+        cursor = self.connection.execute(
+            """
+            DELETE FROM command_submissions
+            WHERE community_id = ?
+                AND membership_id = ?
+                AND command_key = ?
+                AND token_hash = ?
+                AND result_path IS NULL
+            """,
+            (community_id, membership_id, command_key, _command_token_hash(token)),
+        )
+        self._commit()
+        return cursor.rowcount > 0
 
     def search_memberships(
         self,

@@ -820,6 +820,17 @@ class AppServices:
             result_path=result_path,
         )
 
+    def discard_command(self, command_key: str, token: str) -> None:
+        if not token:
+            return
+        viewer = self.viewer()
+        self.repo.discard_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+        )
+
     def recovery_view(self, *, kind: RecoveryKind, slug: str) -> RecoveryView:
         return _recovery_view(self.repo, self.viewer(), kind=kind, slug=slug)
 
@@ -1039,6 +1050,12 @@ class AppServices:
             email=clean_email[:240],
         )
         if existing is not None:
+            if account_user_id is not None and existing.account_user_id is None:
+                return self.repo.link_community_access_request_account_user(
+                    community.id,
+                    existing.id,
+                    account_user_id,
+                )
             return existing
         return self.repo.create_community_access_request(
             community.id,

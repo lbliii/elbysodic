@@ -10,6 +10,7 @@ from chirp.testing import TestClient
 
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.services import create_services
+from elbysodic.services.auth import session_token_hash
 from elbysodic.services.network import search_studio_network
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
@@ -393,6 +394,64 @@ def test_production_signed_in_non_member_sees_account_posture_on_public_realm(
             access_requests[0].account_user_id
             == services.repo.get_user_by_email("moira@example.com").id
         )
+
+    asyncio.run(run())
+
+
+def test_production_signed_in_duplicate_access_request_links_existing_record(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("afterlight-accord")
+        existing = services.repo.create_community_access_request(
+            community.id,
+            email="moira@example.com",
+            display_name="Anonymous Moira",
+            face_concept="Archivist with a sealed branch",
+            wanted_hook="Archive thief",
+            notes="Submitted before logging in.",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="moira@example.com")
+            request_access = await client.get(
+                "/c/afterlight-accord/request-access",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            request_cookies = {**cookies, **_cookie_values(request_access)}
+            response = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "community_slug": "afterlight-accord",
+                        "display_name": "Moira",
+                        "face_concept": "Archivist with a sealed branch",
+                        "wanted_hook": "Archive thief",
+                        "notes": "Link this request to my account.",
+                        "_csrf_token": _csrf_token(request_access.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(request_cookies)},
+            )
+
+        requests = [
+            item
+            for item in services.repo.list_community_access_requests(community.id)
+            if item.email == "moira@example.com"
+        ]
+        moira = services.repo.get_user_by_email("moira@example.com")
+
+        assert response.status == 200
+        assert "Access request received for your Elbysodic account" in response.text
+        assert len(requests) == 1
+        assert requests[0].id == existing.id
+        assert requests[0].account_user_id == moira.id
+        assert requests[0].display_name == "Anonymous Moira"
+        with pytest.raises(LookupError):
+            services.repo.get_membership_for_user(community.id, moira.id)
 
     asyncio.run(run())
 
@@ -1037,6 +1096,9 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
                 "/studio",
                 headers={"Cookie": f"elbysodic_session={original_session}"},
             )
+            revoked_session = services.repo.get_user_session_by_token_hash(
+                session_token_hash(original_session)
+            )
 
         assert health.status == 200
         assert public_root.status == 200
@@ -1084,6 +1146,9 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert dict(studio_after_logout.headers)["location"] == "/login?next=/studio"
         assert studio_with_stale_session.status == 302
         assert dict(studio_with_stale_session.headers)["location"] == "/login?next=/studio"
+        assert revoked_session.revoked_at is not None
+        assert revoked_session.selected_community_id is None
+        assert revoked_session.selected_membership_id is None
 
     asyncio.run(run())
 
