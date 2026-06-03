@@ -215,3 +215,11 @@ family, identity shape, or user-visible scoped data surface.
 
 Use `docs/architecture/seed-personas.md` when a test or browser QA pass needs a
 stable seeded account, membership, role, and active-face combination.
+
+## Continuity Graph Gate
+
+Continuity Graph schema, services, routes, notifications, and export behavior
+must satisfy `docs/architecture/continuity-graph-readiness.md` before shipping.
+Until that gate moves with implementation proof, there should be no public
+continuity route family and no automatic canon publication from thread text,
+plotting-room notes, application review, staff notes, or access-request notes.
