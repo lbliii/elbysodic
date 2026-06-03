@@ -779,6 +779,10 @@ def test_access_request_account_linking_preserves_existing_open_request(
     assert linked.account_user_id == user.id
     assert linked_again == linked
     assert repo.list_community_access_requests(default.id) == [linked]
+    assert [
+        event.event_type
+        for event in repo.list_community_access_request_events(default.id, linked.id)
+    ] == ["submitted", "account_linked"]
     assert (
         repo.find_open_community_access_request(default.id, email="linked-request@example.com")
         == linked

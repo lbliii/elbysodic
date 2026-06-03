@@ -37,7 +37,8 @@ replica, and explicit smoke evidence before writers are invited.
 - Confirm expired, revoked, and accepted links do not grant access.
 - If a prospect submitted request-access before logging in, a later signed-in
   duplicate for the same email should link that account to the existing open
-  request instead of creating a second queue item or granting membership.
+  request instead of creating a second queue item or granting membership. Studio
+  records that account-link event in the director-visible request history.
 
 ### Invitation Delivery Policy
 

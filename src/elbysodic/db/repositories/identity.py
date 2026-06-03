@@ -1146,16 +1146,23 @@ class IdentityRepositoryMixin(RepositoryBase):
             if access_request.account_user_id != account_user_id:
                 raise PermissionError("access request is already linked to another account")
             return access_request
-        self.connection.execute(
-            """
-            UPDATE community_access_requests
-            SET account_user_id = ?,
-                updated_at = ?
-            WHERE community_id = ? AND id = ?
-            """,
-            (account_user_id, _utc_now(), community_id, request_id),
-        )
-        self._commit()
+        with self.transaction():
+            self.connection.execute(
+                """
+                UPDATE community_access_requests
+                SET account_user_id = ?,
+                    updated_at = ?
+                WHERE community_id = ? AND id = ?
+                """,
+                (account_user_id, _utc_now(), community_id, request_id),
+            )
+            self.create_community_access_request_event(
+                community_id,
+                request_id,
+                event_type="account_linked",
+                from_status=access_request.status,
+                to_status=access_request.status,
+            )
         return self.get_community_access_request(community_id, request_id)
 
     def update_community_access_request_status(
@@ -1212,7 +1219,13 @@ class IdentityRepositoryMixin(RepositoryBase):
         actor_membership_id: int | None = None,
         invitation_id: int | None = None,
     ) -> CommunityAccessRequestEvent:
-        if event_type not in {"submitted", "reviewed", "invited", "declined"}:
+        if event_type not in {
+            "account_linked",
+            "submitted",
+            "reviewed",
+            "invited",
+            "declined",
+        }:
             raise ValueError("access request event type is not supported")
         access_request = self.get_community_access_request(community_id, request_id)
         if actor_membership_id is not None:
