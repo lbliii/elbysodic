@@ -17,8 +17,10 @@ High-risk tenant-paired rows include:
 - boards, threads, posts, and public authorship
 - command submissions and the membership that reserved the command
 - applications and review events
+- realm interaction definitions, responses, answers, and options
 - wanted hooks, interests, reserves, and claims
-- plotting rooms, participants, and messages
+- plotting rooms, source interests, target scenes, participants, and messages
+- reactions, reads, watches, and thread participants
 - notifications and sidebar counts
 - user-session selected membership
 
@@ -36,7 +38,10 @@ operations surface for old data, migrations, imports, and local demo databases.
 `ForumRepository.list_tenant_pair_integrity_issues()` is the shared repository
 diagnostic for tenant-paired creative and workflow rows, including membership
 roles, default faces, character ownership, command submissions, authorship,
-claims, plotting, thread state, and notifications.
+claims, realm interactions, plotting rooms, reactions, thread state, and
+notifications. Diagnostic rows report ids, table names, tenant ids, and
+content-free relationship reasons so operators can plan repair work without
+exposing private posts, room notes, application answers, or staff-only details.
 
 ## Session Selection
 

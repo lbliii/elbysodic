@@ -53,6 +53,13 @@ This applies to non-thread primitives too. A wanted hook, facet, material,
 claim, reserve, or application in one community must not be addressable through
 another community's resolver or service layer.
 
+Tenant-pair diagnostics cover stored workflow rows that join community-local
+objects, including plotting-room source interests and target scenes, realm
+interaction questions/options, reactions, thread reads/watches, notifications,
+and authorship rows. These diagnostics exist for operations and migration
+repair planning; repository and service methods still enforce tenant scope
+before normal writes.
+
 ## Route And Link Contract
 
 On shared hosts, `/` and `/network` are platform/network surfaces. A

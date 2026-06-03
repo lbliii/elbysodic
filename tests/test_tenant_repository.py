@@ -2164,6 +2164,18 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
         "hosted-library",
         "The hosted library",
     )
+    stray_question = repo.create_realm_interaction_question(
+        default.id,
+        interaction.id,
+        "Which quiet corner should be diagnosed?",
+        is_required=False,
+    )
+    stray_option = repo.create_realm_interaction_option(
+        default.id,
+        stray_question.id,
+        "quiet-corner",
+        "A quiet corner",
+    )
 
     response = repo.submit_realm_interaction_response(
         default.id,
@@ -2248,6 +2260,22 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
         """,
         (hosted_option.id, default.id, answer_id),
     )
+    repo.connection.execute(
+        """
+        UPDATE realm_interaction_questions
+        SET interaction_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_interaction.id, default.id, stray_question.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE realm_interaction_options
+        SET question_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_question.id, default.id, stray_option.id),
+    )
     repo.connection.commit()
 
     issue_map = {
@@ -2260,6 +2288,156 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
     )
     assert issue_map[("realm_interaction_answers", answer_id)] == (
         "realm interaction answer option does not match question"
+    )
+    assert issue_map[("realm_interaction_questions", stray_question.id)] == (
+        "realm interaction question interaction belongs to another community"
+    )
+    assert issue_map[("realm_interaction_options", stray_option.id)] == (
+        "realm interaction option question belongs to another community"
+    )
+
+
+def test_plotting_room_integrity_detects_source_owner_and_target_drift(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-plotting-room-integrity", "Hosted Plotting Room")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    owner = repo.create_membership(
+        default.id,
+        repo.create_user("plot-room-owner@example.com", "hash").id,
+        default_role.id,
+        "plot-room-owner",
+        "Plot Room Owner",
+    )
+    prospect = repo.create_membership(
+        default.id,
+        repo.create_user("plot-room-prospect@example.com", "hash").id,
+        default_role.id,
+        "plot-room-prospect",
+        "Plot Room Prospect",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        repo.create_user("hosted-plot-room@example.com", "hash").id,
+        hosted_role.id,
+        "hosted-plot-room",
+        "Hosted Plot Room",
+    )
+    owner_character = repo.create_character(
+        default.id,
+        owner.id,
+        "plot-room-owner",
+        "Plot Room Owner",
+    )
+    prospect_character = repo.create_character(
+        default.id,
+        prospect.id,
+        "plot-room-prospect",
+        "Plot Room Prospect",
+    )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-plot-room",
+        "Hosted Plot Room",
+    )
+    default_board = repo.create_board(default.id, "plot-room", "Plot Room")
+    hosted_board = repo.create_board(hosted.id, "plot-room", "Hosted Plot Room")
+    default_thread = repo.create_thread(
+        default.id,
+        default_board.id,
+        owner_character.id,
+        "plot-room",
+        "Plot Room",
+    )
+    hosted_thread = repo.create_thread(
+        hosted.id,
+        hosted_board.id,
+        hosted_character.id,
+        "hosted-plot-room",
+        "Hosted Plot Room",
+    )
+    hosted_wanted = repo.create_wanted_ad(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-plot-room",
+        "Hosted Plot Room",
+        creator_character_id=hosted_character.id,
+    )
+    hosted_interest = repo.create_wanted_ad_interest(
+        hosted.id,
+        hosted_wanted.id,
+        hosted_membership.id,
+        hosted_character.id,
+    )
+    rooms = []
+    for index, room_title in enumerate(("Owner drift", "Source drift", "Target drift"), start=1):
+        wanted = repo.create_wanted_ad(
+            default.id,
+            owner.id,
+            f"plot-room-{index}",
+            room_title,
+            creator_character_id=owner_character.id,
+        )
+        interest = repo.create_wanted_ad_interest(
+            default.id,
+            wanted.id,
+            prospect.id,
+            prospect_character.id,
+        )
+        rooms.append(
+            repo.create_plotting_room(
+                default.id,
+                owner.id,
+                room_title,
+                source_wanted_ad_id=wanted.id,
+                source_wanted_ad_interest_id=interest.id,
+            )
+        )
+    owner_room, source_room, target_room = rooms
+
+    repo.connection.execute(
+        """
+        UPDATE plotting_rooms
+        SET owner_membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_membership.id, default.id, owner_room.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE plotting_rooms
+        SET source_wanted_ad_interest_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_interest.id, default.id, source_room.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE plotting_rooms
+        SET target_thread_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_thread.id, default.id, target_room.id),
+    )
+    repo.connection.commit()
+
+    assert repo.get_thread(default.id, default_thread.id).id == default_thread.id
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("plotting_rooms", owner_room.id)] == (
+        "plotting room owner membership belongs to another community"
+    )
+    assert issue_map[("plotting_rooms", source_room.id)] == (
+        "plotting room wanted interest does not match source wanted hook"
+    )
+    assert issue_map[("plotting_rooms", target_room.id)] == (
+        "plotting room target thread belongs to another community"
     )
 
 
@@ -4441,11 +4619,45 @@ def test_thread_read_and_watch_boundaries_are_tenant_scoped(repo: ForumRepositor
         "hosted-thread-state",
         "Hosted Thread State",
     )
+    second_default_post = repo.create_post(
+        default.id,
+        second_default_thread.id,
+        default_character.id,
+        "Second reaction target.",
+    )
+    hosted_post = repo.create_post(
+        hosted.id,
+        hosted_thread.id,
+        hosted_character.id,
+        "Hosted reaction target.",
+    )
 
     repo.mark_thread_read(default.id, default_thread.id, default_membership.id)
     repo.mark_thread_read(default.id, second_default_thread.id, default_membership.id)
     repo.watch_thread(default.id, default_thread.id, default_membership.id)
     repo.watch_thread(default.id, second_default_thread.id, default_membership.id)
+    repo.connection.execute(
+        """
+        INSERT INTO reactions (community_id, post_id, membership_id, reaction_key, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (default.id, hosted_post.id, default_membership.id, "spark", "2026-01-01T00:00:00+00:00"),
+    )
+    reaction_post_id = repo.connection.execute("SELECT last_insert_rowid()").fetchone()[0]
+    repo.connection.execute(
+        """
+        INSERT INTO reactions (community_id, post_id, membership_id, reaction_key, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            default.id,
+            second_default_post.id,
+            hosted_membership.id,
+            "watching",
+            "2026-01-01T00:00:01+00:00",
+        ),
+    )
+    reaction_membership_id = repo.connection.execute("SELECT last_insert_rowid()").fetchone()[0]
 
     with pytest.raises(LookupError, match="thread not found"):
         repo.unwatch_thread(default.id, hosted_thread.id, default_membership.id)
@@ -4499,6 +4711,12 @@ def test_thread_read_and_watch_boundaries_are_tenant_scoped(repo: ForumRepositor
     )
     assert issue_map[("thread_watches", watch_id)] == (
         "thread watch membership belongs to another community"
+    )
+    assert issue_map[("reactions", reaction_post_id)] == (
+        "reaction post belongs to another community"
+    )
+    assert issue_map[("reactions", reaction_membership_id)] == (
+        "reaction membership belongs to another community"
     )
 
 

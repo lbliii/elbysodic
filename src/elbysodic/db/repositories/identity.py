@@ -2426,6 +2426,40 @@ class IdentityRepositoryMixin(RepositoryBase):
                 UNION ALL
 
                 SELECT
+                    'realm_interaction_questions' AS table_name,
+                    question.id AS row_id,
+                    question.community_id,
+                    CASE
+                        WHEN interaction.id IS NULL
+                            THEN 'realm interaction question interaction belongs to another community'
+                        ELSE 'realm interaction question tenant pair is invalid'
+                    END AS reason
+                FROM realm_interaction_questions AS question
+                LEFT JOIN realm_interactions AS interaction
+                    ON interaction.id = question.interaction_id
+                    AND interaction.community_id = question.community_id
+                WHERE interaction.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'realm_interaction_options' AS table_name,
+                    option.id AS row_id,
+                    option.community_id,
+                    CASE
+                        WHEN question.id IS NULL
+                            THEN 'realm interaction option question belongs to another community'
+                        ELSE 'realm interaction option tenant pair is invalid'
+                    END AS reason
+                FROM realm_interaction_options AS option
+                LEFT JOIN realm_interaction_questions AS question
+                    ON question.id = option.question_id
+                    AND question.community_id = option.community_id
+                WHERE question.id IS NULL
+
+                UNION ALL
+
+                SELECT
                     'realm_interaction_responses' AS table_name,
                     response.id AS row_id,
                     response.community_id,
@@ -2487,6 +2521,27 @@ class IdentityRepositoryMixin(RepositoryBase):
                         answer.option_id IS NOT NULL
                         AND option.id IS NULL
                     )
+
+                UNION ALL
+
+                SELECT
+                    'reactions' AS table_name,
+                    reaction.id AS row_id,
+                    reaction.community_id,
+                    CASE
+                        WHEN post.id IS NULL THEN 'reaction post belongs to another community'
+                        WHEN membership.id IS NULL THEN 'reaction membership belongs to another community'
+                        ELSE 'reaction tenant pair is invalid'
+                    END AS reason
+                FROM reactions AS reaction
+                LEFT JOIN posts AS post
+                    ON post.id = reaction.post_id
+                    AND post.community_id = reaction.community_id
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = reaction.membership_id
+                    AND membership.community_id = reaction.community_id
+                WHERE post.id IS NULL
+                    OR membership.id IS NULL
 
                 UNION ALL
 
@@ -2591,6 +2646,153 @@ class IdentityRepositoryMixin(RepositoryBase):
                     OR (
                         notification.character_id IS NOT NULL
                         AND target_character.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'plotting_rooms' AS table_name,
+                    room.id AS row_id,
+                    room.community_id,
+                    CASE
+                        WHEN owner.id IS NULL
+                            THEN 'plotting room owner membership belongs to another community'
+                        WHEN (
+                                room.source_plot_hook_id IS NULL
+                                AND room.source_plot_hook_interest_id IS NULL
+                                AND room.source_wanted_ad_id IS NULL
+                                AND room.source_wanted_ad_interest_id IS NULL
+                            )
+                            THEN 'plotting room source is missing'
+                        WHEN (
+                                (
+                                    room.source_plot_hook_id IS NOT NULL
+                                    OR room.source_plot_hook_interest_id IS NOT NULL
+                                )
+                                AND (
+                                    room.source_wanted_ad_id IS NOT NULL
+                                    OR room.source_wanted_ad_interest_id IS NOT NULL
+                                )
+                            )
+                            THEN 'plotting room has multiple source families'
+                        WHEN (
+                                room.source_plot_hook_id IS NULL
+                                AND room.source_plot_hook_interest_id IS NOT NULL
+                            )
+                            OR (
+                                room.source_plot_hook_id IS NOT NULL
+                                AND room.source_plot_hook_interest_id IS NULL
+                            )
+                            THEN 'plotting room plot source is incomplete'
+                        WHEN (
+                                room.source_wanted_ad_id IS NULL
+                                AND room.source_wanted_ad_interest_id IS NOT NULL
+                            )
+                            OR (
+                                room.source_wanted_ad_id IS NOT NULL
+                                AND room.source_wanted_ad_interest_id IS NULL
+                            )
+                            THEN 'plotting room wanted source is incomplete'
+                        WHEN hook.id IS NULL
+                            AND room.source_plot_hook_id IS NOT NULL
+                            THEN 'plotting room source plot hook belongs to another community'
+                        WHEN hook_interest.id IS NULL
+                            AND room.source_plot_hook_interest_id IS NOT NULL
+                            THEN 'plotting room plot hook interest does not match source hook'
+                        WHEN wanted.id IS NULL
+                            AND room.source_wanted_ad_id IS NOT NULL
+                            THEN 'plotting room source wanted hook belongs to another community'
+                        WHEN wanted_interest.id IS NULL
+                            AND room.source_wanted_ad_interest_id IS NOT NULL
+                            THEN 'plotting room wanted interest does not match source wanted hook'
+                        WHEN target_board.id IS NULL
+                            AND room.target_board_id IS NOT NULL
+                            THEN 'plotting room target board belongs to another community'
+                        WHEN target_thread.id IS NULL
+                            AND room.target_thread_id IS NOT NULL
+                            THEN 'plotting room target thread belongs to another community'
+                        ELSE 'plotting room tenant pair is invalid'
+                    END AS reason
+                FROM plotting_rooms AS room
+                LEFT JOIN community_memberships AS owner
+                    ON owner.id = room.owner_membership_id
+                    AND owner.community_id = room.community_id
+                LEFT JOIN character_plot_hooks AS hook
+                    ON hook.id = room.source_plot_hook_id
+                    AND hook.community_id = room.community_id
+                LEFT JOIN character_plot_hook_interests AS hook_interest
+                    ON hook_interest.id = room.source_plot_hook_interest_id
+                    AND hook_interest.community_id = room.community_id
+                    AND hook_interest.plot_hook_id = room.source_plot_hook_id
+                LEFT JOIN wanted_ads AS wanted
+                    ON wanted.id = room.source_wanted_ad_id
+                    AND wanted.community_id = room.community_id
+                LEFT JOIN wanted_ad_interests AS wanted_interest
+                    ON wanted_interest.id = room.source_wanted_ad_interest_id
+                    AND wanted_interest.community_id = room.community_id
+                    AND wanted_interest.wanted_ad_id = room.source_wanted_ad_id
+                LEFT JOIN boards AS target_board
+                    ON target_board.id = room.target_board_id
+                    AND target_board.community_id = room.community_id
+                LEFT JOIN threads AS target_thread
+                    ON target_thread.id = room.target_thread_id
+                    AND target_thread.community_id = room.community_id
+                WHERE owner.id IS NULL
+                    OR (
+                        room.source_plot_hook_id IS NULL
+                        AND room.source_plot_hook_interest_id IS NULL
+                        AND room.source_wanted_ad_id IS NULL
+                        AND room.source_wanted_ad_interest_id IS NULL
+                    )
+                    OR (
+                        (
+                            room.source_plot_hook_id IS NOT NULL
+                            OR room.source_plot_hook_interest_id IS NOT NULL
+                        )
+                        AND (
+                            room.source_wanted_ad_id IS NOT NULL
+                            OR room.source_wanted_ad_interest_id IS NOT NULL
+                        )
+                    )
+                    OR (
+                        room.source_plot_hook_id IS NULL
+                        AND room.source_plot_hook_interest_id IS NOT NULL
+                    )
+                    OR (
+                        room.source_plot_hook_id IS NOT NULL
+                        AND room.source_plot_hook_interest_id IS NULL
+                    )
+                    OR (
+                        room.source_wanted_ad_id IS NULL
+                        AND room.source_wanted_ad_interest_id IS NOT NULL
+                    )
+                    OR (
+                        room.source_wanted_ad_id IS NOT NULL
+                        AND room.source_wanted_ad_interest_id IS NULL
+                    )
+                    OR (
+                        room.source_plot_hook_id IS NOT NULL
+                        AND hook.id IS NULL
+                    )
+                    OR (
+                        room.source_plot_hook_interest_id IS NOT NULL
+                        AND hook_interest.id IS NULL
+                    )
+                    OR (
+                        room.source_wanted_ad_id IS NOT NULL
+                        AND wanted.id IS NULL
+                    )
+                    OR (
+                        room.source_wanted_ad_interest_id IS NOT NULL
+                        AND wanted_interest.id IS NULL
+                    )
+                    OR (
+                        room.target_board_id IS NOT NULL
+                        AND target_board.id IS NULL
+                    )
+                    OR (
+                        room.target_thread_id IS NOT NULL
+                        AND target_thread.id IS NULL
                     )
 
                 UNION ALL

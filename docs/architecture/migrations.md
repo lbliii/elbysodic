@@ -51,6 +51,11 @@ Tables that join community-scoped objects should either store `community_id`
 directly or enforce the community boundary in repository write methods before
 inserting rows.
 
+Before adding stricter tenant-pair constraints or triggers, add or expand the
+repository integrity diagnostic for the affected row family and prove it with a
+corrupt legacy-row test. The migration should then either repair, clear, or
+explicitly reject those diagnosed rows before the new constraint is installed.
+
 Partial unique indexes are preferred when a workflow allows one of several
 identity shapes, such as character-backed interest and prospective-character
 interest. Do not rely on nullable columns inside a broad unique constraint to
