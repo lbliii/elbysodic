@@ -187,8 +187,7 @@ def public_wanted_board(repo: CastingReadRepository, community_id: int) -> Wante
     return WantedBoard(
         open_ads=[
             public_wanted_ad_summary(repo, community_id, wanted_ad)
-            for wanted_ad in repo.list_wanted_ads(community_id, status=None)
-            if wanted_ad.status != "archived"
+            for wanted_ad in repo.list_wanted_ads(community_id, status="open")
         ]
     )
 
@@ -366,7 +365,7 @@ def public_read_wanted_ad(
     wanted_slug: str,
 ) -> WantedAdDetail:
     wanted_ad = repo.get_wanted_ad_by_slug(community_id, wanted_slug)
-    if wanted_ad.status == "archived":
+    if wanted_ad.status != "open":
         raise LookupError(f"wanted ad not found in community {community_id}: {wanted_slug}")
     facets = facet_tags(
         repo,
