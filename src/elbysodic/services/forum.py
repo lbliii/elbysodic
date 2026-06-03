@@ -5068,12 +5068,15 @@ def _access_request_activity_item(
     event: CommunityAccessRequestEvent,
 ) -> AccessRequestActivityItem:
     labels = {
+        "account_linked": "Account linked",
         "submitted": "Requested access",
         "reviewed": "Marked for review",
         "invited": "Invitation created",
         "declined": "Request declined",
     }
     detail = f"{_access_request_status_label(event.from_status)} to {event.to_status.title()}"
+    if event.event_type == "account_linked":
+        detail = "Existing request linked to an Elbysodic account"
     if event.event_type == "submitted":
         detail = "Entered the access queue"
     if event.invitation_id is not None:

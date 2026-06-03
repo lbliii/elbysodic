@@ -122,7 +122,9 @@ Duplicate open access requests are deduplicated by email inside one community.
 If a later duplicate arrives from a signed-in account for the same email, the
 existing anonymous request may link `account_user_id`; it must not create a
 second request or grant membership, role, face, invite, reserve, claim, session,
-or active-face state.
+or active-face state. The account-link event is recorded for director-visible
+history, but it does not change request status or expose private request details
+to the applicant or public preview.
 
 The access-request lifecycle is `pending -> reviewed -> invited` or
 `pending/reviewed -> declined`. An invited request may link to the invitation
@@ -133,7 +135,8 @@ access request remains the audit trail for why the invite was issued.
 Director-visible access-request activity events are stored in
 `community_access_request_events` with `community_id`, request id, optional
 actor membership, status transition, optional invitation id, and timestamp.
-These events are staff workflow history, not public preview data.
+Submitted, account-linked, reviewed, invited, and declined events are staff
+workflow history, not public preview data.
 
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global

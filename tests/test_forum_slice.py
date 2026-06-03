@@ -4228,6 +4228,12 @@ def test_access_request_detail_shows_activity_history() -> None:
             wanted_hook="Activity opening",
             notes="Ready for review.",
         )
+        account = services.repo.create_user("activity-prospect@example.com", "hash")
+        services.repo.link_community_access_request_account_user(
+            staff.community.id,
+            access_request.id,
+            account.id,
+        )
         app = create_app(
             debug=False,
             services=AppServices(
@@ -4265,8 +4271,15 @@ def test_access_request_detail_shows_activity_history() -> None:
         )
         assert reviewed.status == 200
         assert invited.status == 200
-        assert [event.event_type for event in events] == ["submitted", "reviewed", "invited"]
+        assert [event.event_type for event in events] == [
+            "submitted",
+            "account_linked",
+            "reviewed",
+            "invited",
+        ]
         assert "Requested access" in detail.text
+        assert "Account linked" in detail.text
+        assert "Existing request linked to an Elbysodic account" in detail.text
         assert "Marked for review" in detail.text
         assert "Invitation created" in detail.text
         assert f"with invitation #{events[-1].invitation_id}" in detail.text
