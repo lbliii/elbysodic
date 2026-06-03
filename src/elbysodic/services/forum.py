@@ -143,6 +143,8 @@ from elbysodic.services.claims import (
 )
 from elbysodic.services.claims import claims_directory as _claims_directory
 from elbysodic.services.discovery import discover_plots as _discover_plots
+from elbysodic.services.exports import CommunityExportManifest
+from elbysodic.services.exports import community_export_manifest as _community_export_manifest
 from elbysodic.services.facets import (
     current_character_facet_ids as _current_character_facet_ids,
 )
@@ -1534,6 +1536,9 @@ class AppServices:
             preview_card=preview_card,
             choice_groups=discovery_profile_choice_groups(),
         )
+
+    def community_export_manifest(self) -> CommunityExportManifest:
+        return _community_export_manifest(self.repo, self.viewer())
 
     def update_discovery_profile(
         self,
