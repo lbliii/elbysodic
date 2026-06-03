@@ -74,6 +74,23 @@ def test_named_capability_helpers_stay_registered(
     assert helper(membership, admin_role) is True
 
 
+def test_staff_capability_contracts_cover_named_helpers(
+    membership: CommunityMembership,
+    admin_role: Role,
+) -> None:
+    contracts = policies.staff_capability_contracts()
+
+    assert {contract.capability for contract in contracts} == policies.ADMIN_CAPABILITIES
+    for contract in contracts:
+        helper = getattr(policies, contract.helper_name)
+        assert helper(membership, admin_role) is True
+        assert contract.storage_contract == "roles.is_admin grants every V1 staff capability"
+        assert "membership" in contract.actor_contract
+        assert "global user" not in contract.actor_contract
+        assert contract.protected_workflows
+        assert contract.audit_event_candidates
+
+
 def test_page_handlers_and_services_do_not_check_admin_flag_directly() -> None:
     checked_paths = [
         *Path("src/elbysodic/web/pages").rglob("page.py"),

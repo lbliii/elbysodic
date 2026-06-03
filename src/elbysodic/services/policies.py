@@ -44,6 +44,113 @@ class CapabilityDiagnostic:
     message: str
 
 
+@dataclass(frozen=True, slots=True)
+class StaffCapabilityContract:
+    capability: Capability
+    helper_name: str
+    storage_contract: str
+    actor_contract: str
+    protected_workflows: tuple[str, ...]
+    audit_event_candidates: tuple[str, ...]
+
+
+STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
+    "manage_applications": StaffCapabilityContract(
+        capability="manage_applications",
+        helper_name="can_manage_applications",
+        storage_contract="roles.is_admin grants every V1 staff capability",
+        actor_contract="community membership actor; optional public character context",
+        protected_workflows=(
+            "application review queue",
+            "application approval and revision requests",
+            "claim conflict resolution during review",
+        ),
+        audit_event_candidates=(
+            "application_reviewed",
+            "application_approved",
+            "application_revision_requested",
+        ),
+    ),
+    "manage_casting": StaffCapabilityContract(
+        capability="manage_casting",
+        helper_name="can_manage_casting",
+        storage_contract="roles.is_admin grants every V1 staff capability",
+        actor_contract="community membership actor; optional public character context",
+        protected_workflows=(
+            "claims directory maintenance",
+            "reserve lifecycle movement",
+            "wanted-hook interest handoff",
+            "plotting room staff recovery",
+        ),
+        audit_event_candidates=(
+            "claim_updated",
+            "reserve_updated",
+            "wanted_interest_handoff",
+            "plotting_room_recovered",
+        ),
+    ),
+    "manage_navigation": StaffCapabilityContract(
+        capability="manage_navigation",
+        helper_name="can_manage_navigation",
+        storage_contract="roles.is_admin grants every V1 staff capability",
+        actor_contract="community membership actor",
+        protected_workflows=(
+            "board structure editing",
+            "sidebar section configuration",
+            "public gateway slot curation",
+        ),
+        audit_event_candidates=(
+            "board_updated",
+            "sidebar_section_updated",
+            "gateway_slot_updated",
+        ),
+    ),
+    "manage_threads": StaffCapabilityContract(
+        capability="manage_threads",
+        helper_name="can_manage_threads",
+        storage_contract="roles.is_admin grants every V1 staff capability",
+        actor_contract="community membership actor; optional public character context",
+        protected_workflows=(
+            "private board access",
+            "locked thread replies",
+            "thread moderation",
+            "post edit moderation",
+        ),
+        audit_event_candidates=(
+            "thread_locked",
+            "thread_moved",
+            "thread_status_updated",
+            "post_moderated",
+        ),
+    ),
+    "manage_world": StaffCapabilityContract(
+        capability="manage_world",
+        helper_name="can_manage_world",
+        storage_contract="roles.is_admin grants every V1 staff capability",
+        actor_contract="community membership actor",
+        protected_workflows=(
+            "Studio structure and launch management",
+            "material and appearance editing",
+            "Program Blueprint apply",
+            "community export manifest",
+            "operations inspection",
+        ),
+        audit_event_candidates=(
+            "material_updated",
+            "appearance_updated",
+            "blueprint_applied",
+            "community_export_created",
+        ),
+    ),
+}
+
+
+def staff_capability_contracts() -> tuple[StaffCapabilityContract, ...]:
+    return tuple(
+        STAFF_CAPABILITY_CONTRACTS[capability] for capability in sorted(ADMIN_CAPABILITIES)
+    )
+
+
 def has_capability(
     membership: CommunityMembership,
     role: Role | None,
