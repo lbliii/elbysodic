@@ -1885,6 +1885,12 @@ class StudioNetworkProgramView:
         return _program_href(self, "/applications/new")
 
     @property
+    def request_access_href(self) -> str:
+        if self.community.launch_status != "public-preview":
+            return ""
+        return _program_href(self, "/request-access")
+
+    @property
     def launch_status_label(self) -> str:
         return self.community.launch_status.replace("-", " ").title()
 
@@ -2161,6 +2167,12 @@ class PublicCatalogCard:
         if self.community.launch_status == "invite-only":
             return "Invite-only"
         return "Backstage"
+
+    @property
+    def request_access_href(self) -> str:
+        if self.community.launch_status != "public-preview":
+            return ""
+        return f"{self.entry_href}/request-access"
 
     @property
     def application_posture_label(self) -> str:

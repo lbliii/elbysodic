@@ -823,6 +823,7 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         assert not hasattr(card, "unread_notification_count")
         assert not hasattr(card, "plotting_room_count")
         assert card.invite_posture_label == "Public preview"
+        assert card.request_access_href == f"/c/{card.community.slug}/request-access"
 
 
 def test_public_network_explore_keeps_filters_below_results() -> None:
