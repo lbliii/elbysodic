@@ -152,6 +152,11 @@ other realm. Studio invitation management may list invitation state and revoke
 pending invites, but only the creation response renders the raw invite link
 because stored invitations retain token hashes.
 
+When an existing global account accepts an invitation for another community,
+the new membership and optional first face are local to the invited community.
+Existing memberships, default faces, roles, and active-face state in other
+communities must not be changed by the invite acceptance flow.
+
 Invitation delivery is copy-only until a sender policy exists. "Resend" means
 reissue, not recover: a director revokes the pending invitation and creates a
 fresh token for the same email. Accepted, revoked, or expired invitations do

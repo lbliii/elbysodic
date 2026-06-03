@@ -22,6 +22,7 @@ from elbysodic.db.seed import DemoSeed, resolve_seed_persona, seed_demo_forum
 from elbysodic.domain import Community, Thread
 from elbysodic.services import AppServices, create_services, default_database_path
 from elbysodic.services.access import TENANT_SLUG_CACHE_KEY
+from elbysodic.services.auth import hash_password
 from elbysodic.services.notifications import (
     count_visible_unread_notifications,
     mark_all_notifications_read,
@@ -4965,6 +4966,59 @@ def test_invitation_acceptance_uses_writer_activation_handoff() -> None:
     assert accepted.activation.stage == "needs_face"
     assert accepted.activation.primary_href == "/applications/new"
     assert accepted.next_path == "/c/x-men-apocalypse/applications/new"
+
+
+def test_invitation_acceptance_keeps_existing_account_memberships_local() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    hp = repo.get_community_by_slug("hp-universe")
+    hp_role = repo.create_role(hp.id, "cross-realm-member", "Cross Realm Member")
+    invite_password = "writer-" + "password"
+    user = repo.create_user("cross-realm-invite@example.com", hash_password(invite_password))
+    hp_membership = repo.create_membership(
+        hp.id,
+        user.id,
+        hp_role.id,
+        "cross-realm-hp",
+        "Cross Realm HP",
+    )
+    hp_character = repo.create_character(
+        hp.id,
+        hp_membership.id,
+        "cross-realm-hp-face",
+        "Cross Realm HP Face",
+        make_default=True,
+    )
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    created = staff_services.create_writer_invitation("cross-realm-invite@example.com")
+
+    accepted = staff_services.accept_invitation(
+        created.token,
+        username="cross-realm-xmen",
+        display_name="Cross Realm X-Men",
+        password=invite_password,
+        first_face_name="Cross Realm X-Men Face",
+    )
+
+    xmen_membership = repo.get_membership_for_user(staff.community.id, user.id)
+    xmen_character = repo.get_character_by_slug(staff.community.id, "cross-realm-x-men-face")
+    refreshed_hp_membership = repo.get_membership(hp.id, hp_membership.id)
+
+    assert accepted.identity.user_id == user.id
+    assert accepted.identity.community_id == staff.community.id
+    assert accepted.identity.membership_id == xmen_membership.id
+    assert accepted.first_character == xmen_character
+    assert accepted.next_path == "/c/x-men-apocalypse/desk"
+    assert xmen_membership.user_id == user.id
+    assert xmen_membership.default_character_id == xmen_character.id
+    assert xmen_character.membership_id == xmen_membership.id
+    assert refreshed_hp_membership.default_character_id == hp_character.id
+    assert repo.get_character(hp.id, hp_character.id).membership_id == hp_membership.id
+    assert repo.list_community_invitations(staff.community.id)[0].accepted_user_id == user.id
 
 
 def test_realm_launch_room_requires_director_membership() -> None:

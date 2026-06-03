@@ -35,6 +35,9 @@ replica, and explicit smoke evidence before writers are invited.
   pending, use `Reissue invitation` to revoke it and create a fresh invitation
   for the same email.
 - Confirm expired, revoked, and accepted links do not grant access.
+- When inviting an existing Elbysodic account into another realm, acceptance
+  reuses the global account but creates membership and any first face only in
+  the invited realm.
 - If a prospect submitted request-access before logging in, a later signed-in
   duplicate for the same email should link that account to the existing open
   request instead of creating a second queue item or granting membership.
