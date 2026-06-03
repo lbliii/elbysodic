@@ -9,6 +9,10 @@ it is not a schema design and it does not authorize automatic canon.
 
 - No Continuity Graph schema tables exist yet.
 - No public continuity or canon route family exists yet.
+- Schema-neutral domain vocabulary exists in
+  `src/elbysodic/domain/continuity.py` for manual proposals, source
+  citations, affected objects, review events, lifecycle state, visibility, and
+  approved canon entry drafts.
 - Existing world materials, wanted-hook types, and scene-context labels may use
   "canon" vocabulary, but they are not reviewed Continuity Graph records.
 - Program, plotting, claims, applications, and notifications already carry
