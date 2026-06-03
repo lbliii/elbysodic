@@ -54,6 +54,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             participant_ids=participant_ids,
         )
     except (LookupError, PermissionError, ValueError) as exc:
+        services.discard_command(command_key, key)
         return _render_form(
             request,
             board_slug,
@@ -68,6 +69,9 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             posting_mode=posting_mode,
             body=body,
         )
+    except Exception:
+        services.discard_command(command_key, key)
+        raise
 
     result_path = (
         f"/boards/{board_slug}/threads/{created.thread.slug}#post-{created.post.post_number}"

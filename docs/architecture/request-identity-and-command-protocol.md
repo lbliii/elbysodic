@@ -58,6 +58,12 @@ Commands that create posts, scenes, rooms, reserves, claims, applications,
 notifications, or identity transitions need either idempotency or a deliberate
 duplicate policy.
 
+When a command-token form reserves a server idempotency key and then fails
+before producing the canonical result path, the incomplete reservation must be
+discarded. Validation errors, stale actor failures, and rolled-back service
+exceptions should let the same rendered key retry the corrected command instead
+of becoming a permanent no-result duplicate.
+
 Chirp `_actions.py` dispatch may be used as transport plumbing for command
 routing only after the action path preserves request-scoped services. Elbysodic
 commands must still resolve tenant, membership, active face, and staff power

@@ -11692,6 +11692,59 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
     asyncio.run(run())
 
 
+def test_start_thread_validation_error_discards_idempotency_reservation() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        character = services.viewer().current_character
+        assert character is not None
+
+        async with TestClient(app) as client:
+            form = await client.get("/boards/danger-room/threads/new")
+            key = _input_value(form.text, "idempotency_key")
+            invalid = await client.post(
+                "/boards/danger-room/threads/new",
+                body=urlencode(
+                    {
+                        "character_id": character.id,
+                        "title": "",
+                        "body": "This body should not reserve the command forever.",
+                        "idempotency_key": key,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            corrected = await client.post(
+                "/boards/danger-room/threads/new",
+                body=urlencode(
+                    {
+                        "character_id": character.id,
+                        "title": "Retryable Scene Command",
+                        "body": "The corrected scene can reuse the rendered key.",
+                        "idempotency_key": key,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert invalid.status == 200
+        assert "thread title is required" in invalid.text
+        assert corrected.status == 302
+        assert dict(corrected.headers)["location"].startswith(
+            "/boards/danger-room/threads/retryable-scene-command#post-"
+        )
+        board = services.repo.get_board_by_slug(services.seed.community.id, "danger-room")
+        thread = services.repo.get_thread_by_slug(
+            services.seed.community.id,
+            board.id,
+            "retryable-scene-command",
+        )
+        posts = services.repo.list_posts(services.seed.community.id, thread.id)
+        assert [post.body for post in posts] == ["The corrected scene can reuse the rendered key."]
+
+    asyncio.run(run())
+
+
 def test_reply_idempotency_key_prevents_duplicate_posts() -> None:
     async def run() -> None:
         app = _app()
@@ -11740,6 +11793,55 @@ def test_reply_idempotency_key_prevents_duplicate_posts() -> None:
         posts = repo.list_posts(community.id, thread.id)
         assert len(posts) == before_count + 1
         assert posts[-1].body == "Rogue checks the duplicate-submit guard."
+
+    asyncio.run(run())
+
+
+def test_reply_validation_error_discards_idempotency_reservation() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        board = repo.get_board_by_slug(community.id, "danger-room")
+        thread = repo.get_thread_by_slug(community.id, board.id, "sentinel-drill")
+        character = services.viewer().current_character
+        assert character is not None
+        before_count = len(repo.list_posts(community.id, thread.id))
+
+        async with TestClient(app) as client:
+            page = await client.get("/boards/danger-room/threads/sentinel-drill")
+            key = _input_value(page.text, "idempotency_key")
+            invalid = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "body": "",
+                        "idempotency_key": key,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            corrected = await client.post(
+                "/boards/danger-room/threads/sentinel-drill",
+                body=urlencode(
+                    {
+                        "character_id": str(character.id),
+                        "body": "Rogue retries after a validation miss.",
+                        "idempotency_key": key,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert invalid.status == 200
+        assert "reply body is required" in invalid.text
+        assert corrected.status == 302
+        assert dict(corrected.headers)["location"].endswith(f"#post-{before_count + 1}")
+        posts = repo.list_posts(community.id, thread.id)
+        assert len(posts) == before_count + 1
+        assert posts[-1].body == "Rogue retries after a validation miss."
 
     asyncio.run(run())
 

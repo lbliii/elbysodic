@@ -820,6 +820,17 @@ class AppServices:
             result_path=result_path,
         )
 
+    def discard_command(self, command_key: str, token: str) -> None:
+        if not token:
+            return
+        viewer = self.viewer()
+        self.repo.discard_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key=command_key,
+            token=token,
+        )
+
     def recovery_view(self, *, kind: RecoveryKind, slug: str) -> RecoveryView:
         return _recovery_view(self.repo, self.viewer(), kind=kind, slug=slug)
 
