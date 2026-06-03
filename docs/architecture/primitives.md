@@ -249,6 +249,20 @@ thread between visible boards.
 Moving a thread must not rewrite post history, revisions, read state, watches,
 or notification targets.
 
+## Continuity Graph
+
+Continuity Graph is not yet a persistence primitive in this repo. Existing
+world materials and wanted-hook vocabulary can refer to canon, but reviewed
+continuity records, scene outcome proposals, source citations, affected-object
+links, review events, and public canon read models remain gated by
+`docs/architecture/continuity-graph-readiness.md`.
+
+The first approved slice must be manual, source-linked, and reviewed. It must
+keep staff membership review authority separate from public character context,
+and it must prove that private scenes, plotting rooms, applications, staff
+notes, access-request notes, and unreviewed summaries cannot become public
+canon.
+
 ## Invariants
 
 - No global characters.

@@ -93,7 +93,8 @@ It will own:
 
 Continuity Graph is intentionally deferred behind production trust, rendered
 privacy, transaction, and source-link proof. The first slice should be manual
-scene outcomes, not automatic canon publication.
+scene outcomes, not automatic canon publication. The backend readiness gate
+lives in `docs/architecture/continuity-graph-readiness.md`.
 
 ## Strategic Sequencing
 
