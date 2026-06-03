@@ -27,6 +27,7 @@ from elbysodic.services.notifications import (
     mark_all_notifications_read,
     visible_unread_notification_counts,
 )
+from elbysodic.services.operations import OperationsInspectionConfig, operations_inspection
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, scope_response_urls
@@ -5069,12 +5070,17 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "0 ready apps" in member_operations.text
         assert "Live check" not in member_operations.text
         assert "Database path" not in member_operations.text
+        assert "Journal mode" not in member_operations.text
+        assert "Integrity check" not in member_operations.text
         assert staff_operations.status == 200
         assert "Privacy Queue Face - ready" in staff_operations.text
         assert "ready apps" in staff_operations.text
         assert "Live check" in staff_operations.text
         assert "Runtime and persistence" in staff_operations.text
         assert "Database path" in staff_operations.text
+        assert "Journal mode" in staff_operations.text
+        assert "Integrity check" in staff_operations.text
+        assert "ok" in staff_operations.text
         assert "Schema" in staff_operations.text
         assert "Opening" in staff_operations.text
 
@@ -12323,6 +12329,24 @@ def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: P
     assert restored_material.title == "B-24 Winter Custom Briefing"
     assert restored_material.summary == "Director-edited event summary."
     assert restored_material.body == "Director-edited event body."
+
+
+def test_file_backed_operations_inspection_reports_wal_and_integrity(
+    tmp_path: Path,
+) -> None:
+    services = create_services(path=tmp_path / "elbysodic.sqlite3")
+
+    inspection = operations_inspection(
+        services.repo,
+        services.viewer(),
+        OperationsInspectionConfig(environment="test", secure_cookies=True),
+    )
+
+    assert inspection.database_path.endswith("elbysodic.sqlite3")
+    assert inspection.journal_mode.lower() == "wal"
+    assert inspection.integrity_check == "ok"
+    assert inspection.latest_migration_version == inspection.current_schema_version
+    assert inspection.community_count > 0
 
 
 def test_composer_pages_point_empty_roster_to_character_setup() -> None:

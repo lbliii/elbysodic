@@ -44,6 +44,13 @@ free, then archive or remove the checkout.
 
 ## Persistence Checks
 
+Studio Operations exposes the runtime inspection only to members who can manage
+the realm. Use it to confirm the app is pointed at the expected database file,
+the SQLite journal mode, the integrity check result, schema/user version,
+migration ledger, realm count, and launch status. The journal mode should be
+`wal` for filesystem-backed Railway and local production-like databases, and
+the integrity check should report `ok`.
+
 Before sharing a URL, prove these survive restart or redeploy:
 
 - writer posts
@@ -89,6 +96,12 @@ elbysodic dev db backup --db-path /app/var/elbysodic.sqlite3 \
 file. `backup` uses SQLite's online backup API and verifies
 `PRAGMA integrity_check` on the copied database before reporting success. It
 will not overwrite an existing backup unless `--overwrite` is passed.
+
+After a restore, open the restored file with Elbysodic services or Studio
+Operations and verify service readback for the realm plus the same `wal` journal
+mode, `ok` integrity check, schema version, migration ledger, and realm count
+expected for the source environment. Do not paste secrets, session cookies,
+reset links, or raw credentials into the drill record.
 
 ## Backup/Restore Drill Record
 
