@@ -90,6 +90,22 @@
   {{ empty_policy_block("No director operations need attention right now.", "Applications, claim conflicts, reserves, wanted movement, ready-for-scene handoffs, drafts, and health warnings will appear here when they need movement.", "Operations clear") }}
   {% end %}
 
+  {% call surface(variant="elevated") %}
+  <section class="elbysodic-operations-panel" aria-labelledby="operations-parity-heading">
+    <p class="elbysodic-section-kicker">Parity check</p>
+    <h2 id="operations-parity-heading">Queue contracts</h2>
+    <ul class="elbysodic-operations-list">
+      {% for row in operations.parity_rows %}
+      <li>
+        <a class="chirpui-link" href="{{ row.first_action_href }}">{{ row.label }}</a>
+        <span>{{ row.count }} - list <a class="chirpui-link" href="{{ row.list_href }}">source</a></span>
+        <small>{{ row.action_scope }} - {{ row.notification_scope }} - {{ row.diagnostic_scope }}</small>
+      </li>
+      {% end %}
+    </ul>
+  </section>
+  {% end %}
+
   {% if operations.inspection %}
   {% call surface(variant="elevated") %}
   <section class="elbysodic-operations-panel" aria-labelledby="hosted-inspection-heading">
