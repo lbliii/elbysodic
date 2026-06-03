@@ -117,6 +117,22 @@ threads/posts, sessions, and workflow rows. The formatted report is redacted:
 record counts and statuses only, not emails, token hashes, session tokens,
 private notes, post bodies, application answers, or credentials.
 
+For an ordered non-mutating restore plan, derive the plan from the same
+restore-check result:
+
+```bash
+uv run python -c "from pathlib import Path; from elbysodic.services.operations import format_restore_plan_report, restore_check_database, restore_plan_from_check; result = restore_check_database(Path('/app/var/elbysodic-backup.sqlite3')); print(format_restore_plan_report(restore_plan_from_check(result)))"
+```
+
+The restore plan is also read-only. It separates safe checks from steps that
+require human confirmation before any repair, import, destructive restore, or
+cutover. It covers tenant roots, membership and character readback, workflow
+rows such as sessions, invitations, access requests, plotting rooms, and
+notifications, plus explicit review steps for claims/reserves, wanted hooks,
+continuity source links, export privacy, and auth/session posture. A blocked
+plan means operators should not mutate or restore the candidate until the named
+failure is understood.
+
 ## Backup/Restore Drill Record
 
 Latest known staging drill:
