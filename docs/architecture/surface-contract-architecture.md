@@ -31,6 +31,14 @@ For each rendered surface, record or make obvious:
 - expected empty states, recovery states, and forbidden states
 - rendered tests and docs collateral
 
+The executable registry lives in
+`src/elbysodic/web/surface_contracts.py`. It is intentionally lightweight:
+each entry names the route family, handler path, route-facing service call,
+read model family, required viewer modes, parity dimensions, and the rendered
+privacy matrix label. Backend contract tests read the registry so critical
+page handlers keep calling named service methods and the privacy matrix stays
+connected to the code.
+
 ## Rules
 
 - Public pages render public read models. They can show published public realm
@@ -136,6 +144,11 @@ The lightest acceptable proof depends on risk:
 These repeated surfaces should stay tied to one route-facing service method.
 When a row changes, update the rendered route privacy matrix and add proof for
 both visible and absent state.
+
+The rows below are prose summaries of the executable registry. Add or update a
+registry entry when a route family gains shell counts, page lists, detail
+views, action availability, notification visibility, recovery behavior, or
+diagnostics that can expose scoped state.
 
 | Surface | Service Contract | Shell Count | Page List | Detail View | Action Availability | Notification Visibility | Current Proof |
 | --- | --- | --- | --- | --- | --- | --- | --- |
