@@ -58,6 +58,13 @@ Commands that create posts, scenes, rooms, reserves, claims, applications,
 notifications, or identity transitions need either idempotency or a deliberate
 duplicate policy.
 
+High-risk multi-row commands should put story-visible and attention-visible
+side effects in one service transaction. Replying to a thread creates the post,
+fanout notifications, watch state, and read marker inside one transaction so a
+late notification/watch failure cannot leave a stranded reply. Starting a thread
+similarly keeps thread, participants, opening post, watch, and read marker
+together.
+
 When a command-token form reserves a server idempotency key and then fails
 before producing the canonical result path, the incomplete reservation must be
 discarded. Validation errors, stale actor failures, and rolled-back service

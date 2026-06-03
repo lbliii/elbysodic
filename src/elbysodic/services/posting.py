@@ -346,10 +346,11 @@ def reply_to_thread(
     cleaned = body.strip()
     if not cleaned:
         raise ValueError("reply body is required")
-    post = repo.create_post(viewer.community.id, thread.id, character.id, cleaned)
-    notify_post_created(repo, viewer, thread, post)
-    repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
-    repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
+    with repo.transaction():
+        post = repo.create_post(viewer.community.id, thread.id, character.id, cleaned)
+        notify_post_created(repo, viewer, thread, post)
+        repo.watch_thread(viewer.community.id, thread.id, viewer.membership.id)
+        repo.mark_thread_read(viewer.community.id, thread.id, viewer.membership.id)
     return post
 
 
