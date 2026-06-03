@@ -52,6 +52,9 @@ and repository methods, not by templates or slug/name heuristics.
 Request-access hrefs are also read-model posture, not template string building:
 templates may suppress the action for the current member, but they should not
 infer public access paths from private membership state.
+Public catalog helpers accept only `PublicCatalogCard` read models and reject
+membership-bearing Studio Network rows, which keeps staff role, active face,
+unread count, application, and plotting-room state out of browse/search cards.
 
 | Field | User Question It Answers | Product State |
 | --- | --- | --- |

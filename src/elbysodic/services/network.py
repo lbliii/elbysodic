@@ -130,6 +130,17 @@ DISCOVERY_PROFILE_CHOICE_LABELS: dict[str, str] = {
     "forum_adjunct": "Forum adjunct",
 }
 
+PUBLIC_CATALOG_CARD_FIELDS: tuple[str, ...] = tuple(PublicCatalogCard.__dataclass_fields__.keys())
+PUBLIC_CATALOG_FORBIDDEN_VIEWER_FIELDS: tuple[str, ...] = (
+    "membership",
+    "role",
+    "current_character",
+    "application_count",
+    "plotting_room_count",
+    "unread_notification_count",
+    "is_current",
+)
+
 
 class NetworkMembershipContext(Protocol):
     community: Community
@@ -362,6 +373,7 @@ def public_studio_network(repo: NetworkCatalogRepository) -> StudioNetworkDirect
 
 
 def network_home(cards: list[PublicCatalogCard], viewer: ForumView | None) -> NetworkHomeView:
+    cards = ensure_public_catalog_cards(cards, surface="network_home")
     return_path = None
     if viewer is not None:
         return_path = NetworkReturnPath(
@@ -425,6 +437,7 @@ def _premise_slice_title(value: str) -> str:
 
 
 def network_explore(cards: list[PublicCatalogCard], query: str = "") -> NetworkExploreView:
+    cards = ensure_public_catalog_cards(cards, surface="network_explore")
     return NetworkExploreView(
         query=query.strip(),
         browse_facets=network_browse_facets(cards),
@@ -514,10 +527,34 @@ def search_public_catalog(
 ) -> list[PublicCatalogCard]:
     """Return public catalog cards matching a public discovery query."""
 
+    cards = ensure_public_catalog_cards(cards, surface="search_public_catalog")
     normalized_query = query.strip().lower()
     if not normalized_query:
         return list(cards)
     return [card for card in cards if normalized_query in _public_catalog_search_text(card)]
+
+
+def ensure_public_catalog_cards(
+    cards: Sequence[object],
+    *,
+    surface: str,
+) -> list[PublicCatalogCard]:
+    public_cards: list[PublicCatalogCard] = []
+    for card in cards:
+        if not isinstance(card, PublicCatalogCard):
+            raise TypeError(f"{surface} requires PublicCatalogCard read models")
+        leaked_fields = [
+            field_name
+            for field_name in PUBLIC_CATALOG_FORBIDDEN_VIEWER_FIELDS
+            if hasattr(card, field_name)
+        ]
+        if leaked_fields:
+            raise ValueError(
+                f"{surface} public catalog card includes viewer-only fields: "
+                f"{', '.join(leaked_fields)}"
+            )
+        public_cards.append(card)
+    return public_cards
 
 
 def _cards_matching_discovery(

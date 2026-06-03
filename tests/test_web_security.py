@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from pathlib import Path
+from typing import Any, cast
 from urllib.parse import urlencode
 
 import pytest
@@ -11,7 +12,12 @@ from chirp.testing import TestClient
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.services import create_services
 from elbysodic.services.auth import session_token_hash
-from elbysodic.services.network import search_studio_network
+from elbysodic.services.network import (
+    network_explore,
+    network_home,
+    search_public_catalog,
+    search_studio_network,
+)
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 
@@ -824,6 +830,19 @@ def test_network_read_models_split_public_cards_from_viewer_state() -> None:
         assert not hasattr(card, "plotting_room_count")
         assert card.invite_posture_label == "Public preview"
         assert card.request_access_href == f"/c/{card.community.slug}/request-access"
+
+
+def test_public_catalog_helpers_reject_member_network_read_models() -> None:
+    services = create_services(path=":memory:")
+    member_program = services.studio_network().programs[0]
+    wrong_cards = cast(Any, [member_program])
+
+    with pytest.raises(TypeError, match="network_home requires PublicCatalogCard"):
+        network_home(wrong_cards, None)
+    with pytest.raises(TypeError, match="network_explore requires PublicCatalogCard"):
+        network_explore(wrong_cards, "wanted")
+    with pytest.raises(TypeError, match="search_public_catalog requires PublicCatalogCard"):
+        search_public_catalog(wrong_cards, "wanted")
 
 
 def test_public_network_explore_keeps_filters_below_results() -> None:
