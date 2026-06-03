@@ -3949,12 +3949,17 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         )
 
         operations_model = staff_services.director_operations()
+        parity = {row.label: row for row in operations_model.parity_rows}
         async with TestClient(app) as client:
             operations = await client.get("/studio/operations")
 
         assert [(lane.label, lane.href) for lane in operations_model.lanes] == [
             ("Needs decision", f"/studio/access-requests/{access_request.id}")
         ]
+        assert parity["Launch"].first_action_href == f"/studio/access-requests/{access_request.id}"
+        assert parity["Launch"].list_href == "/studio/launch#access-requests"
+        assert parity["Notifications"].count == staff_services.viewer().unread_notification_count
+        assert parity["Runtime diagnostics"].diagnostic_scope == "hidden from this viewer"
         assert operations.status == 200
         assert "Writer activation" in operations.text
         assert "Operations attention lanes" in operations.text
@@ -3969,6 +3974,11 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert 'href="/casting"' in operations.text
         assert 'href="/plotting#interest-inbox"' in operations.text
         assert 'href="/studio/launch#access-requests"' in operations.text
+        assert "Queue contracts" in operations.text
+        assert f'href="/studio/access-requests/{access_request.id}"' in operations.text
+        assert "director launch capability" in operations.text
+        assert "own visible unread targets only" in operations.text
+        assert "hidden targets do not affect visible page windows" in operations.text
         assert "1 access request(s)" in operations.text
         assert "Prospect - Transfer student" in operations.text
         assert "accepted member(s) without faces" in operations.text
@@ -5068,6 +5078,8 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Privacy Queue Face" not in member_operations.text
         assert "Private application body should not leak" not in member_operations.text
         assert "0 ready apps" in member_operations.text
+        assert "Queue contracts" in member_operations.text
+        assert "queue names hidden from non-staff" in member_operations.text
         assert "Live check" not in member_operations.text
         assert "Database path" not in member_operations.text
         assert "Journal mode" not in member_operations.text
@@ -5081,6 +5093,8 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Journal mode" in staff_operations.text
         assert "Integrity check" in staff_operations.text
         assert "ok" in staff_operations.text
+        assert "Queue contracts" in staff_operations.text
+        assert "visible to managers only" in staff_operations.text
         assert "Schema" in staff_operations.text
         assert "Opening" in staff_operations.text
 

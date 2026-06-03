@@ -308,6 +308,9 @@ that apply is still gated without writing rows. The readiness review shown with
 that gate is diff-aware: it summarizes create, update, skip, blocked, and
 warning counts, and it names skipped live face or wanted-hook collisions that
 need explicit update semantics before real apply can be enabled.
+Regression proof covers the current gate order: non-staff and stale-preview
+attempts do not enter a transaction, while accepted gated attempts enter the
+transaction boundary and roll back any probe writes when apply remains disabled.
 
 ## Hydration Gate
 

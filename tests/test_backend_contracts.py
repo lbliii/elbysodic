@@ -10,6 +10,7 @@ import pytest
 from elbysodic.db import ForumRepository, connect
 from elbysodic.services import create_services
 from elbysodic.web.state import close_request_services, configure_services, get_services
+from elbysodic.web.surface_contracts import SURFACE_CONTRACTS
 
 REPO_ROOT = Path(__file__).parents[1]
 WEB_DIR = REPO_ROOT / "src" / "elbysodic" / "web"
@@ -198,23 +199,47 @@ def test_web_page_handlers_do_not_make_policy_decisions_directly() -> None:
 
 
 def test_critical_rendered_pages_use_named_service_surface_contracts() -> None:
-    expected_calls = {
-        "src/elbysodic/web/pages/page.py": "services.realm_home()",
-        "src/elbysodic/web/pages/claims/page.py": "services.claims_page(",
-        "src/elbysodic/web/pages/characters/page.py": "services.character_roster_page(",
-        "src/elbysodic/web/pages/notifications/page.py": "services.notification_center()",
-        "src/elbysodic/web/pages/wanted/page.py": "services.wanted_ads()",
-        "src/elbysodic/web/pages/boards/{board_slug}/page.py": "services.board_page(",
-        "src/elbysodic/web/pages/studio/page.py": "services.director_studio()",
-    }
-
     missing: list[str] = []
-    for relative_path, service_call in expected_calls.items():
-        source = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
-        if service_call not in source:
-            missing.append(f"{relative_path}: {service_call}")
+    for contract in SURFACE_CONTRACTS:
+        source = (REPO_ROOT / contract.page_path).read_text(encoding="utf-8")
+        missing.extend(
+            f"{contract.key}: {contract.page_path}: {service_call}"
+            for service_call in contract.service_calls
+            if service_call not in source
+        )
 
     assert missing == []
+
+
+def test_rendered_surface_contract_registry_is_complete_enough() -> None:
+    privacy_matrix = (REPO_ROOT / "docs/architecture/rendered-route-privacy-matrix.md").read_text(
+        encoding="utf-8"
+    )
+    keys = [contract.key for contract in SURFACE_CONTRACTS]
+    missing_paths = [
+        contract.page_path
+        for contract in SURFACE_CONTRACTS
+        if not (REPO_ROOT / contract.page_path).exists()
+    ]
+    incomplete = [
+        contract.key
+        for contract in SURFACE_CONTRACTS
+        if not contract.service_calls
+        or not contract.read_models
+        or not contract.viewer_modes
+        or not contract.dimensions
+    ]
+    missing_matrix_labels = [
+        contract.key
+        for contract in SURFACE_CONTRACTS
+        if contract.privacy_matrix_label not in privacy_matrix
+    ]
+
+    assert len(keys) == len(set(keys))
+    assert len(SURFACE_CONTRACTS) >= 10
+    assert missing_paths == []
+    assert incomplete == []
+    assert missing_matrix_labels == []
 
 
 def test_service_raw_sql_stays_limited_to_lifecycle_and_operations_diagnostics() -> None:

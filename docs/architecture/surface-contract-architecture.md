@@ -31,6 +31,14 @@ For each rendered surface, record or make obvious:
 - expected empty states, recovery states, and forbidden states
 - rendered tests and docs collateral
 
+The executable registry lives in
+`src/elbysodic/web/surface_contracts.py`. It is intentionally lightweight:
+each entry names the route family, handler path, route-facing service call,
+read model family, required viewer modes, parity dimensions, and the rendered
+privacy matrix label. Backend contract tests read the registry so critical
+page handlers keep calling named service methods and the privacy matrix stays
+connected to the code.
+
 ## Rules
 
 - Public pages render public read models. They can show published public realm
@@ -137,6 +145,11 @@ These repeated surfaces should stay tied to one route-facing service method.
 When a row changes, update the rendered route privacy matrix and add proof for
 both visible and absent state.
 
+The rows below are prose summaries of the executable registry. Add or update a
+registry entry when a route family gains shell counts, page lists, detail
+views, action availability, notification visibility, recovery behavior, or
+diagnostics that can expose scoped state.
+
 | Surface | Service Contract | Shell Count | Page List | Detail View | Action Availability | Notification Visibility | Current Proof |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Realm home | `AppServices.realm_home()` for member state; `public_realm_gateway()` for public previews | `ForumView.unread_notification_count` and identity options remain viewer-scoped | Location, community, attention, and activity lists are service-filtered | Gateway continuation is viewer-scoped; public preview omits member state | Director controls use `can_manage_home` from the service | No notification rows render on public/member home beyond scoped shell counts | `test_rendered_surface_contract_parity_across_realm_viewers`; production public preview tests |
@@ -144,4 +157,4 @@ both visible and absent state.
 | Roster and face pages | `AppServices.character_roster_page()` and `character_profile()` | Identity options may show switchable same-account realms, but page lists stay current-community scoped | Roster cards come from `CharacterRosterDashboard` | Character profiles reject inactive owners and cross-community slugs through service recovery | Add-face and style controls render only for the current membership surface | Character-targeted notifications are filtered by ownership or casting capability | roster/profile community-scope tests; rendered parity test |
 | Thread and posting | `AppServices.board_page()`, `read_thread()`, and posting service methods | Board and unread counts are policy-filtered | Board thread filters use service-owned membership, roster, and board visibility | `ThreadView` owns cast, post views, watch/read state, and composer posture | Composer and staff controls derive from read-model capability flags | Watched-thread and mention notifications link only to visible targets after satisfying the registered target contract | thread filter, posting, notification, and rendered parity tests |
 | Wanted and plotting | `wanted_ads()`, `read_wanted_ad()`, `plotting_desk()`, and `read_plotting_room()` | Wanted navigation stays public/member safe | Wanted lists split public open hooks from member/staff backstage state | Wanted detail owns interest notes, room links, reserves, and scene handoffs | Interest, reserve, and plotting-room actions are owner/staff/member scoped | Wanted and plotting notifications hide inaccessible notes and room titles, and new target kinds must declare required fields in the notification registry | wanted privacy, plotting notification, and rendered parity tests |
-| Staff and director queues | `director_studio()`, `director_operations()`, `applications_desk()`, and `casting_desk()` | Studio counts are capability-scoped | Queue rows, first-action lane links, and production health come from service read models | Review rooms and operations details enforce staff capability before rendering | Mutating forms stay behind policy-backed service methods | Staff still sees only its own inbox, not a global notification feed | Studio launch/discovery/operations tests; rendered parity test |
+| Staff and director queues | `director_studio()`, `director_operations()`, `applications_desk()`, and `casting_desk()` | Studio counts are capability-scoped | Queue rows, first-action lane links, production health, and Operations queue contract rows come from service read models | Review rooms and operations details enforce staff capability before rendering | Mutating forms stay behind policy-backed service methods | Staff still sees only its own inbox, not a global notification feed; Operations parity rows name notification scope without exposing private targets | Studio launch/discovery/operations tests; rendered parity test |
