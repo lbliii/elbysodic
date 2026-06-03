@@ -277,6 +277,17 @@ elbysodic dev db backup --output var/elbysodic-backup.sqlite3
 `backup` uses SQLite's online backup API and refuses to overwrite an existing
 file unless `--overwrite` is passed.
 
+To verify a copied database without restoring it destructively, run the
+read-only restore-check service against the candidate file:
+
+```bash
+uv run python -c "from pathlib import Path; from elbysodic.services.operations import format_restore_check_report, restore_check_database; print(format_restore_check_report(restore_check_database(Path('var/elbysodic-backup.sqlite3'))))"
+```
+
+The report includes integrity, schema/migration versions, core counts, and
+service readback status. It deliberately omits emails, token hashes, session
+tokens, post bodies, private notes, and credentials.
+
 Before handing off a branch, run the developer gate:
 
 ```bash

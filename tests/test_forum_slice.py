@@ -28,7 +28,12 @@ from elbysodic.services.notifications import (
     mark_all_notifications_read,
     visible_unread_notification_counts,
 )
-from elbysodic.services.operations import OperationsInspectionConfig, operations_inspection
+from elbysodic.services.operations import (
+    OperationsInspectionConfig,
+    format_restore_check_report,
+    operations_inspection,
+    restore_check_database,
+)
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, scope_response_urls
@@ -12468,6 +12473,84 @@ def test_file_backed_operations_inspection_reports_wal_and_integrity(
     assert inspection.integrity_check == "ok"
     assert inspection.latest_migration_version == inspection.current_schema_version
     assert inspection.community_count > 0
+
+
+def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path) -> None:
+    db_path = tmp_path / "restore-check.sqlite3"
+    services = create_services(path=db_path)
+    repo = services.repo
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    secret_user = repo.create_user("secret-restore@example.com", "secret-password-hash")
+    repo.create_user_session(
+        secret_user.id,
+        "secret-session-token",
+        expires_at="2026-06-01T00:00:00+00:00",
+    )
+    repo.create_material(
+        viewer.community.id,
+        "private-restore-note",
+        "Private Restore Note",
+        material_type="guide",
+        summary="Do not emit this summary.",
+        body="Do not emit this material body.",
+        status="draft",
+    )
+    services.start_thread(
+        board_slug="danger-room",
+        character_id=viewer.current_character.id,
+        title="Restore Check Scene",
+        body="Do not emit this post body.",
+    )
+    services.close()
+
+    result = restore_check_database(db_path)
+    report = format_restore_check_report(result)
+
+    assert result.ok is True
+    assert result.opened_read_only is True
+    assert result.integrity_check == "ok"
+    assert result.sqlite_user_version == result.current_schema_version
+    assert result.latest_migration_version == result.current_schema_version
+    assert result.community_count > 0
+    assert "restore-check ok" in report
+    assert "- users:" in report
+    assert "- thread rows: ok" in report
+    assert "secret-restore@example.com" not in report
+    assert "secret-password-hash" not in report
+    assert "secret-session-token" not in report
+    assert "Do not emit this summary." not in report
+    assert "Do not emit this material body." not in report
+    assert "Do not emit this post body." not in report
+
+
+def test_restore_check_database_reports_wrong_database_failure(tmp_path: Path) -> None:
+    db_path = tmp_path / "wrong.sqlite3"
+    connection = sqlite3.connect(db_path)
+    try:
+        connection.execute("CREATE TABLE users (email TEXT)")
+        connection.execute("INSERT INTO users (email) VALUES ('wrong@example.com')")
+        connection.commit()
+    finally:
+        connection.close()
+
+    result = restore_check_database(db_path)
+    report = format_restore_check_report(result)
+
+    assert result.ok is False
+    assert "restore-check failed" in report
+    assert "missing table: communities" in result.failures
+    assert "migration ledger unavailable" in "\n".join(result.failures)
+    assert "no communities found" in result.failures
+    assert "wrong@example.com" not in report
+
+
+def test_restore_check_database_requires_filesystem_path(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="filesystem database path"):
+        restore_check_database(Path(":memory:"))
+
+    with pytest.raises(FileNotFoundError):
+        restore_check_database(tmp_path / "missing.sqlite3")
 
 
 def test_composer_pages_point_empty_roster_to_character_setup() -> None:

@@ -103,6 +103,20 @@ mode, `ok` integrity check, schema version, migration ledger, and realm count
 expected for the source environment. Do not paste secrets, session cookies,
 reset links, or raw credentials into the drill record.
 
+For a copied candidate database, run the read-only restore-check service before
+any destructive restore step:
+
+```bash
+uv run python -c "from pathlib import Path; from elbysodic.services.operations import format_restore_check_report, restore_check_database; print(format_restore_check_report(restore_check_database(Path('/app/var/elbysodic-backup.sqlite3'))))"
+```
+
+The restore-check opens the file read-only, runs `PRAGMA integrity_check`,
+`PRAGMA foreign_key_check`, schema and migration version checks, core row
+counts, and service readback for communities, memberships, boards/materials,
+threads/posts, sessions, and workflow rows. The formatted report is redacted:
+record counts and statuses only, not emails, token hashes, session tokens,
+private notes, post bodies, application answers, or credentials.
+
 ## Backup/Restore Drill Record
 
 Latest known staging drill:
