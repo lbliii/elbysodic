@@ -77,6 +77,8 @@ Staging smoke should include:
 - At least one seed media URL, such as
   `/elbysodic-static/seed-media/xmen-hero.svg`, returns `200`.
 - A restart preserves database row counts and rendered seeded realms.
+- A copied staging database reports `restore-check ok` through the read-only
+  restore-check service before any destructive restore rehearsal.
 - Demo login works for the intended seed account policy.
 
 Known follow-up: `HEAD` requests to some app and static routes can currently

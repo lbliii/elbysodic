@@ -251,9 +251,31 @@ def test_service_raw_sql_stays_limited_to_lifecycle_and_operations_diagnostics()
             "src/elbysodic/services/operations.py",
             'community_count = connection.execute("SELECT COUNT(*) AS count FROM communities").fetchone()',
         ),
+        (
+            "src/elbysodic/services/operations.py",
+            'connection.execute("PRAGMA query_only = ON")',
+        ),
+        (
+            "src/elbysodic/services/operations.py",
+            'row = connection.execute("PRAGMA integrity_check").fetchone()',
+        ),
+        (
+            "src/elbysodic/services/operations.py",
+            'return len(connection.execute("PRAGMA foreign_key_check").fetchall())',
+        ),
+        (
+            "src/elbysodic/services/operations.py",
+            'row = connection.execute(f"PRAGMA {pragma_name}").fetchone()',
+        ),
+        (
+            "src/elbysodic/services/operations.py",
+            'row = connection.execute("SELECT MAX(version) AS version FROM schema_migrations").fetchone()',
+        ),
     }
     prefix_allowed = {
         ("src/elbysodic/services/operations.py", "migration_row = connection.execute("),
+        ("src/elbysodic/services/operations.py", "rows = connection.execute("),
+        ("src/elbysodic/services/operations.py", "row = connection.execute("),
     }
     offenders: list[str] = []
 
