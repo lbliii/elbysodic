@@ -750,6 +750,47 @@ def test_community_access_request_status_transitions(repo: ForumRepository) -> N
         )
 
 
+def test_access_request_account_linking_preserves_existing_open_request(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    user = repo.create_user("linked-request@example.com", "hash")
+    access_request = repo.create_community_access_request(
+        default.id,
+        email="linked-request@example.com",
+        display_name="Anonymous Prospect",
+        face_concept="Archive thief",
+        wanted_hook="Sealed branch",
+        notes="Submitted before logging in.",
+    )
+
+    linked = repo.link_community_access_request_account_user(
+        default.id,
+        access_request.id,
+        user.id,
+    )
+    linked_again = repo.link_community_access_request_account_user(
+        default.id,
+        access_request.id,
+        user.id,
+    )
+
+    assert linked.id == access_request.id
+    assert linked.account_user_id == user.id
+    assert linked_again == linked
+    assert repo.list_community_access_requests(default.id) == [linked]
+    assert (
+        repo.find_open_community_access_request(default.id, email="linked-request@example.com")
+        == linked
+    )
+    with pytest.raises(PermissionError, match="already linked"):
+        repo.link_community_access_request_account_user(
+            default.id,
+            access_request.id,
+            repo.create_user("other-linked-request@example.com", "hash").id,
+        )
+
+
 def test_discovery_profiles_and_tags_are_tenant_scoped(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("discovery-hosted", "Discovery Hosted")

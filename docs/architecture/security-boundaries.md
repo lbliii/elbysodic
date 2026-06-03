@@ -109,6 +109,12 @@ active-face state. Public realm previews may submit a request and show
 account-vs-anonymous posture, but only director-capable memberships in the same
 community can list or inspect request details.
 
+Duplicate open access requests are deduplicated by email inside one community.
+If a later duplicate arrives from a signed-in account for the same email, the
+existing anonymous request may link `account_user_id`; it must not create a
+second request or grant membership, role, face, invite, reserve, claim, session,
+or active-face state.
+
 The access-request lifecycle is `pending -> reviewed -> invited` or
 `pending/reviewed -> declined`. An invited request may link to the invitation
 row that was created from it, but the raw invite token is still shown only at

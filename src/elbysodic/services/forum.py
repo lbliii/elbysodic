@@ -1050,6 +1050,12 @@ class AppServices:
             email=clean_email[:240],
         )
         if existing is not None:
+            if account_user_id is not None and existing.account_user_id is None:
+                return self.repo.link_community_access_request_account_user(
+                    community.id,
+                    existing.id,
+                    account_user_id,
+                )
             return existing
         return self.repo.create_community_access_request(
             community.id,
