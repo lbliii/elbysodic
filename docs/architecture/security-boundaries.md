@@ -66,6 +66,12 @@ become product-visible. Even while storage is coarse, page handlers and
 workflow services should still depend on named policy helpers rather than the
 storage flag.
 
+`src/elbysodic/services/policies.py` owns the current staff capability contract
+registry. Each entry names the helper, V1 storage shorthand, membership actor
+contract, protected workflow families, and candidate audit-event actions for
+future storage. This is an audit map, not a role editor: it must not introduce
+global user staff power, page-local checks, or public audit output.
+
 ## Production Request Identity
 
 Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.

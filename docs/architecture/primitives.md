@@ -24,6 +24,11 @@ capabilities through an admin role, but the product contract remains
 capability-shaped so a future partial-staff role can be added without teaching
 pages to read storage flags directly.
 
+The service policy module keeps an executable capability contract registry for
+the current staff surface. It names protected workflow families and future
+audit-event candidates while preserving the V1 storage shorthand until
+community-scoped capability and audit tables are approved.
+
 `Character` is the public posting identity. Characters are not global. A
 character belongs to exactly one membership in exactly one community.
 
