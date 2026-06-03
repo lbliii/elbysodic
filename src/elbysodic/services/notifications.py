@@ -115,12 +115,15 @@ def notification_inbox(
     *,
     limit: int = 50,
 ) -> NotificationInbox:
-    items: list[NotificationItem] = []
-    for notification in repo.list_notifications(
+    visible_notifications = _visible_notifications_for_membership(
+        repo,
         viewer.community.id,
-        viewer.membership.id,
+        viewer.membership,
+        viewer.role,
         limit=limit,
-    ):
+    )
+    items: list[NotificationItem] = []
+    for notification in visible_notifications:
         item = notification_item(repo, viewer, notification)
         if item is not None:
             items.append(item)
@@ -214,6 +217,32 @@ def _unread_notifications_for_membership(
         (community_id, membership_id),
         [],
     )
+
+
+def _visible_notifications_for_membership(
+    repo: NotificationRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    role: Role | None,
+    *,
+    limit: int,
+) -> list[Notification]:
+    if limit <= 0:
+        return []
+    visible: list[Notification] = []
+    inspected_count = 0
+    offset_limit = limit
+    while True:
+        page = repo.list_notifications(community_id, membership.id, limit=offset_limit)
+        for notification in page[inspected_count:]:
+            if _can_view_notification_target(repo, community_id, membership, role, notification):
+                visible.append(notification)
+                if len(visible) >= limit:
+                    return visible
+        inspected_count = len(page)
+        if len(page) < offset_limit:
+            return visible
+        offset_limit *= 2
 
 
 def notify_post_created(

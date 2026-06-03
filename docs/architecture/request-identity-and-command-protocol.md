@@ -98,3 +98,12 @@ Identity-switch `next` recovery applies the same rule to stale community paths.
 Character, application, wanted, world-material, plotting-room, board, and
 thread destinations must either remain valid inside the selected realm or fall
 back to a safe local hub for that route family.
+
+## Notification Read Models
+
+Notification counts and inbox rows are service-owned read models for the
+resolved membership. Counts, page lists, mark-all behavior, and open redirects
+must run notification targets through the same visibility policy before they
+render or mutate state. Page limits apply after filtering inaccessible targets
+so private, staff, stale, or forged notification rows cannot hide older visible
+obligations while the shell still reports unread work.
