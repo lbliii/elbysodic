@@ -1346,6 +1346,157 @@ def test_membership_role_integrity_issues_detect_cross_community_roles(
     assert issues[0].membership_id == membership.id
     assert issues[0].role_id == default_role.id
 
+    tenant_issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert tenant_issue_map[("community_memberships", membership.id)] == (
+        "membership role belongs to another community"
+    )
+
+
+def test_identity_root_tenant_pair_integrity_detects_face_and_owner_drift(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-identity-roots", "Hosted Identity Roots")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_user = repo.create_user("identity-roots@example.com", "hash")
+    other_default_user = repo.create_user("identity-roots-other@example.com", "hash")
+    hosted_user = repo.create_user("hosted-identity-roots@example.com", "hash")
+    default_membership = repo.create_membership(
+        default.id,
+        default_user.id,
+        default_role.id,
+        "identity-roots",
+        "Identity Roots",
+    )
+    other_default_membership = repo.create_membership(
+        default.id,
+        other_default_user.id,
+        default_role.id,
+        "identity-roots-other",
+        "Identity Roots Other",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "hosted-identity-roots",
+        "Hosted Identity Roots",
+    )
+    default_character = repo.create_character(
+        default.id,
+        default_membership.id,
+        "identity-roots",
+        "Identity Roots",
+    )
+    hosted_character = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "hosted-identity-roots",
+        "Hosted Identity Roots",
+    )
+
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET default_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_character.id, default.id, default_membership.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET default_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (default_character.id, default.id, other_default_membership.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE characters
+        SET membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (default_membership.id, hosted.id, hosted_character.id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("community_memberships", default_membership.id)] == (
+        "membership default face belongs to another community"
+    )
+    assert issue_map[("community_memberships", other_default_membership.id)] == (
+        "membership default face does not belong to membership"
+    )
+    assert issue_map[("characters", hosted_character.id)] == (
+        "character membership belongs to another community"
+    )
+
+
+def test_command_submissions_are_reported_by_tenant_pair_integrity(
+    repo: ForumRepository,
+) -> None:
+    default = repo.get_community(1)
+    hosted = repo.create_community("hosted-command-integrity", "Hosted Command Integrity")
+    default_role = repo.create_role(default.id, "member", "Member")
+    hosted_role = repo.create_role(hosted.id, "member", "Member")
+    default_membership = repo.create_membership(
+        default.id,
+        repo.create_user("command-integrity@example.com", "hash").id,
+        default_role.id,
+        "command-integrity",
+        "Command Integrity",
+    )
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        repo.create_user("hosted-command-integrity@example.com", "hash").id,
+        hosted_role.id,
+        "hosted-command-integrity",
+        "Hosted Command Integrity",
+    )
+    assert repo.reserve_command_submission(
+        default.id,
+        default_membership.id,
+        command_key="thread:reply",
+        token=token_hex(16),
+    )
+    command_submission_id = repo.connection.execute(
+        """
+        SELECT id
+        FROM command_submissions
+        WHERE community_id = ? AND membership_id = ?
+        """,
+        (default.id, default_membership.id),
+    ).fetchone()["id"]
+
+    repo.connection.execute(
+        """
+        UPDATE command_submissions
+        SET membership_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hosted_membership.id, default.id, command_submission_id),
+    )
+    repo.connection.commit()
+
+    issue_map = {
+        (issue.table_name, issue.row_id): issue.reason
+        for issue in repo.list_tenant_pair_integrity_issues()
+    }
+
+    assert issue_map[("command_submissions", command_submission_id)] == (
+        "command submission membership belongs to another community"
+    )
+
 
 def test_session_identity_integrity_issues_detect_cross_community_selection(
     repo: ForumRepository,

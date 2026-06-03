@@ -1630,6 +1630,70 @@ class IdentityRepositoryMixin(RepositoryBase):
                 UNION ALL
 
                 SELECT
+                    'community_memberships' AS table_name,
+                    membership.id AS row_id,
+                    membership.community_id,
+                    CASE
+                        WHEN role.id IS NULL THEN 'membership role belongs to another community'
+                        WHEN default_character.id IS NULL
+                            AND membership.default_character_id IS NOT NULL
+                            THEN 'membership default face belongs to another community'
+                        WHEN default_character.membership_id != membership.id
+                            THEN 'membership default face does not belong to membership'
+                        ELSE 'membership tenant pair is invalid'
+                    END AS reason
+                FROM community_memberships AS membership
+                LEFT JOIN roles AS role
+                    ON role.id = membership.role_id
+                    AND role.community_id = membership.community_id
+                LEFT JOIN characters AS default_character
+                    ON default_character.id = membership.default_character_id
+                    AND default_character.community_id = membership.community_id
+                WHERE role.id IS NULL
+                    OR (
+                        membership.default_character_id IS NOT NULL
+                        AND (
+                            default_character.id IS NULL
+                            OR default_character.membership_id != membership.id
+                        )
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'characters' AS table_name,
+                    character.id AS row_id,
+                    character.community_id,
+                    CASE
+                        WHEN membership.id IS NULL THEN 'character membership belongs to another community'
+                        ELSE 'character tenant pair is invalid'
+                    END AS reason
+                FROM characters AS character
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = character.membership_id
+                    AND membership.community_id = character.community_id
+                WHERE membership.id IS NULL
+
+                UNION ALL
+
+                SELECT
+                    'command_submissions' AS table_name,
+                    command_submission.id AS row_id,
+                    command_submission.community_id,
+                    CASE
+                        WHEN membership.id IS NULL
+                            THEN 'command submission membership belongs to another community'
+                        ELSE 'command submission tenant pair is invalid'
+                    END AS reason
+                FROM command_submissions AS command_submission
+                LEFT JOIN community_memberships AS membership
+                    ON membership.id = command_submission.membership_id
+                    AND membership.community_id = command_submission.community_id
+                WHERE membership.id IS NULL
+
+                UNION ALL
+
+                SELECT
                     'threads' AS table_name,
                     thread.id AS row_id,
                     thread.community_id,
