@@ -22,6 +22,7 @@ from elbysodic.services.read_models import (
     CastingDesk,
     DirectorStudio,
     ForumView,
+    NavigationHealthWarning,
     PlottingDesk,
 )
 
@@ -149,7 +150,7 @@ def director_operations(
                 title="Review queue",
                 summary="Submitted faces waiting for director movement.",
                 count=len(studio.applications.review_queue),
-                href="/applications",
+                href=_application_review_href(studio.applications.review_queue[0]),
                 cta="Open applications",
                 variant="attention",
                 items=tuple(
@@ -165,7 +166,7 @@ def director_operations(
                 title="Claim conflicts",
                 summary="Mapped application claims that need resolution before acceptance.",
                 count=len(conflicted_applications),
-                href="/applications",
+                href=_application_review_href(conflicted_applications[0]),
                 cta="Review conflicts",
                 variant="warning",
                 items=tuple(
@@ -234,7 +235,7 @@ def director_operations(
                 title="Production health",
                 summary="Sidebar, board map, and route-shape notes.",
                 count=len(studio.navigation_warnings),
-                href="/studio/structure#navigation",
+                href=_navigation_warning_href(studio.navigation_warnings[0]),
                 cta="Open navigation studio",
                 variant="warning",
                 items=tuple(warning.title for warning in studio.navigation_warnings[:4]),
@@ -259,7 +260,7 @@ def director_operations(
                 title="Community builder checklist",
                 summary="Director-owned surfaces a real program needs before writers arrive.",
                 count=studio.launch_readiness.missing_required_count,
-                href="/studio/launch",
+                href=_first_required_launch_gap_href(studio) or "/studio/launch",
                 cta="Open launch room",
                 variant="attention",
                 items=tuple(
@@ -326,32 +327,44 @@ def _operations_shortcuts(
 def _operations_lanes(cards: list[OperationsCard]) -> list[OperationsLane]:
     if not cards:
         return []
-    attention_count = sum(card.count for card in cards if card.variant == "attention")
-    warning_count = sum(card.count for card in cards if card.variant == "warning")
-    watch_count = sum(card.count for card in cards if card.variant not in {"attention", "warning"})
-    return [
-        OperationsLane(
-            label="Needs decision",
-            summary="Queues that should move before writers stall.",
-            count=attention_count,
-            href="#director-operation-signals",
-            variant="attention",
+    lanes: list[OperationsLane] = []
+    lane_specs = (
+        (
+            "attention",
+            "Needs decision",
+            "Queues that should move before writers stall.",
         ),
-        OperationsLane(
-            label="Blocked",
-            summary="Claim, navigation, or production conflicts to resolve.",
-            count=warning_count,
-            href="#director-operation-signals",
-            variant="warning",
+        (
+            "warning",
+            "Blocked",
+            "Claim, navigation, or production conflicts to resolve.",
         ),
-        OperationsLane(
-            label="Watching",
-            summary="Active reserves, drafts, and signals worth keeping warm.",
-            count=watch_count,
-            href="#director-operation-signals",
-            variant="status",
+        (
+            "status",
+            "Watching",
+            "Active reserves, drafts, and signals worth keeping warm.",
         ),
-    ]
+    )
+    for variant, label, summary in lane_specs:
+        matching_cards = [
+            card
+            for card in cards
+            if card.variant == variant
+            or (variant == "status" and card.variant not in {"attention", "warning"})
+        ]
+        count = sum(card.count for card in matching_cards)
+        if count == 0:
+            continue
+        lanes.append(
+            OperationsLane(
+                label=label,
+                summary=summary,
+                count=count,
+                href=matching_cards[0].href,
+                variant=variant,
+            )
+        )
+    return lanes
 
 
 def operations_inspection(
@@ -449,7 +462,7 @@ def _writer_activation_card(
                 len(plotting.wanted_ready_interests),
             )
         ),
-        href="/studio/launch#access-requests" if writer_access_requests else "/studio/launch",
+        href=_writer_activation_href(writer_access_requests),
         cta="Open launch room",
         variant="attention",
         items=tuple(activation_items[:4]),
@@ -463,6 +476,31 @@ def _access_request_item_label(access_request: CommunityAccessRequest) -> str:
     if access_request.wanted_hook:
         return f"{writer} - {access_request.wanted_hook}"
     return writer
+
+
+def _writer_activation_href(
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
+) -> str:
+    if writer_access_requests:
+        return f"/studio/access-requests/{writer_access_requests[0].request.id}"
+    return "/studio/launch"
+
+
+def _application_review_href(application: ApplicationCharacterView) -> str:
+    return f"/applications/{application.character.slug}"
+
+
+def _navigation_warning_href(warning: NavigationHealthWarning) -> str:
+    if warning.href:
+        return warning.href
+    return "/studio/structure#navigation"
+
+
+def _first_required_launch_gap_href(studio: DirectorStudio) -> str | None:
+    for item in studio.launch_readiness.items:
+        if item.is_required and not item.is_complete:
+            return item.href
+    return None
 
 
 def _unique_applications(
