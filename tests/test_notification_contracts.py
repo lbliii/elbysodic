@@ -56,6 +56,8 @@ def test_notification_target_contracts_name_visibility_rules() -> None:
         assert contract.target_family == target_family
         assert contract.required_fields == required_fields
         assert contract.visibility_rule
+        assert contract.redirect_behavior
+        assert contract.fallback_behavior
 
 
 def test_registered_notification_requires_declared_target_fields() -> None:
@@ -69,11 +71,11 @@ def test_registered_notification_requires_declared_target_fields() -> None:
     assert not notification_has_required_target(replace(notification, post_id=None))
 
 
-def test_unknown_notification_kind_keeps_legacy_fallback_target_behavior() -> None:
+def test_unknown_notification_kind_is_inaccessible_to_service_surfaces() -> None:
     notification = _notification(kind="legacy_kind")
 
     assert notification_target_contract(notification.kind) is None
-    assert notification_has_required_target(notification)
+    assert not notification_has_required_target(notification)
 
 
 def test_registered_notification_with_missing_target_does_not_render_or_mark_read() -> None:
@@ -118,6 +120,33 @@ def test_registered_notification_with_missing_target_does_not_render_or_mark_rea
     services.mark_all_notifications_read()
 
     assert repo.get_notification(viewer.community.id, notification_id).read_at is None
+
+
+def test_unregistered_notification_kind_does_not_render_count_open_or_mark_read() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    notification = repo.create_notification(
+        viewer.community.id,
+        viewer.membership.id,
+        kind="legacy_character",
+        character_id=viewer.current_character.id,
+        actor_membership_id=viewer.membership.id,
+        actor_character_id=viewer.current_character.id,
+    )
+
+    inbox = services.notifications()
+
+    assert inbox.unread_count == 0
+    assert inbox.items == []
+    with pytest.raises(LookupError, match="notification target not found"):
+        services.open_notification(notification.id)
+    assert repo.get_notification(viewer.community.id, notification.id).read_at is None
+
+    services.mark_all_notifications_read()
+
+    assert repo.get_notification(viewer.community.id, notification.id).read_at is None
 
 
 def _notification(

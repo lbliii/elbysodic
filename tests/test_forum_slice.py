@@ -714,7 +714,7 @@ def test_visible_unread_notification_counts_use_batched_membership_query() -> No
         repo.create_notification(
             community_id,
             membership.id,
-            kind="character",
+            kind="application_accepted",
             character_id=character_id,
             actor_membership_id=membership.id,
             actor_character_id=character_id,
@@ -768,7 +768,7 @@ def test_mark_all_notifications_read_has_no_visible_count_cap() -> None:
             repo.create_notification(
                 viewer.community.id,
                 viewer.membership.id,
-                kind="character",
+                kind="application_accepted",
                 character_id=services.seed.default_character.id,
                 actor_membership_id=viewer.membership.id,
                 actor_character_id=services.seed.default_character.id,
@@ -776,7 +776,7 @@ def test_mark_all_notifications_read_has_no_visible_count_cap() -> None:
         hidden_notification = repo.create_notification(
             viewer.community.id,
             viewer.membership.id,
-            kind="character",
+            kind="application_accepted",
             character_id=hidden_character.id,
             actor_membership_id=other_membership.id,
             actor_character_id=hidden_character.id,

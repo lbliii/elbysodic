@@ -117,8 +117,9 @@ obligations while the shell still reports unread work.
 
 Each supported notification kind is registered in the service-owned target
 contract table with its label, target family, required target fields, and
-visibility rule. New kinds must add a contract entry and proof before they can
-contribute to shell counts, inbox rows, redirects, or mark-read behavior. Rows
-with missing required target fields are treated as inaccessible even when they
-belong to the resolved membership, which protects rendered pages from legacy or
-damaged notification data.
+visibility, redirect, and fallback behavior. New kinds must add a contract
+entry and proof before they can contribute to shell counts, inbox rows,
+redirects, or mark-read behavior. Rows with an unregistered kind or missing
+required target fields are treated as inaccessible even when they belong to the
+resolved membership, which protects rendered pages from legacy or damaged
+notification data.
