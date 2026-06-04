@@ -117,6 +117,15 @@ threads/posts, sessions, and workflow rows. The formatted report is redacted:
 record counts and statuses only, not emails, token hashes, session tokens,
 private notes, post bodies, application answers, or credentials.
 
+For tenant-boundary incidents, migration rehearsals, imported data, or
+pre-launch checks, use the read-only tenant integrity audit service before any
+manual repair. The service groups findings by community and severity, names the
+affected table/domain/row id, and reports content-free reasons and remediation
+hints. Director-scoped reads are limited to the current realm; the general
+operator report is still a backend service contract, not an approved public CLI
+or route. Do not treat the audit as a repair command: fix or remove invalid
+rows through a reviewed migration or narrowly scoped repository repair plan.
+
 ## Backup/Restore Drill Record
 
 Latest known staging drill:
