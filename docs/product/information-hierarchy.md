@@ -10,6 +10,10 @@ This document explains what repeated concepts mean visually. Use
 compact, editable, or collapsed a control should be.
 Use `docs/product/navigation-menus.md` when deciding route placement, topbar
 realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
+Use `docs/product/invite-to-first-face-onboarding-journey.md` before changing
+request-access, invitation acceptance, faceless-member continuation,
+first-face application, claims/reserves, wanted, or first-scene onboarding
+handoffs.
 Use `docs/product/paragraph-rhythm.md` before adding or changing paragraph
 output; Elbysodic is a text-first app, so prose, summaries, helper copy, and
 metadata need distinct paragraph roles.
