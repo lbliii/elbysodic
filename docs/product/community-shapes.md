@@ -55,6 +55,9 @@ infer public access paths from private membership state.
 Public catalog helpers accept only `PublicCatalogCard` read models and reject
 membership-bearing Studio Network rows, which keeps staff role, active face,
 unread count, application, and plotting-room state out of browse/search cards.
+The allowed search signals, excluded private signals, viewer modes, and batching
+requirements are pinned in
+`docs/architecture/public-catalog-privacy-contract.md`.
 
 | Field | User Question It Answers | Product State |
 | --- | --- | --- |

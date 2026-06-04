@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Protocol
+from dataclasses import dataclass
+from typing import Literal, Protocol
 from urllib.parse import quote_plus
 
 from elbysodic.domain.context import RequestIdentityContext
@@ -139,6 +140,79 @@ PUBLIC_CATALOG_FORBIDDEN_VIEWER_FIELDS: tuple[str, ...] = (
     "plotting_room_count",
     "unread_notification_count",
     "is_current",
+)
+
+type PublicCatalogViewerMode = Literal[
+    "signed_out",
+    "account_visitor",
+    "same_community_member",
+    "staff",
+    "inactive_member",
+    "cross_community_viewer",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class PublicCatalogPrivacyContract:
+    card_fields: tuple[str, ...]
+    searchable_signals: tuple[str, ...]
+    excluded_signals: tuple[str, ...]
+    viewer_modes: tuple[PublicCatalogViewerMode, ...]
+    batching_contract: tuple[str, ...]
+
+
+PUBLIC_CATALOG_PRIVACY_CONTRACT = PublicCatalogPrivacyContract(
+    card_fields=PUBLIC_CATALOG_CARD_FIELDS,
+    searchable_signals=(
+        "community_name",
+        "published_premise_title",
+        "published_premise_summary",
+        "published_current_event_title",
+        "published_current_event_summary",
+        "public_discovery_profile",
+        "public_discovery_tags",
+        "open_wanted_count",
+        "published_application_material_count",
+        "public_claim_type_count",
+        "public_theme_preview",
+        "request_access_href",
+        "invite_posture_label",
+    ),
+    excluded_signals=(
+        "membership",
+        "role",
+        "current_character",
+        "active_face",
+        "unread_notification_count",
+        "application_count",
+        "plotting_room_count",
+        "staff_queue",
+        "staff_signal",
+        "private_note",
+        "private_count",
+        "draft_material",
+        "draft_application",
+        "private_plotting_room",
+        "backstage_realm",
+        "cross_community_private_state",
+        "is_current",
+    ),
+    viewer_modes=(
+        "signed_out",
+        "account_visitor",
+        "same_community_member",
+        "staff",
+        "inactive_member",
+        "cross_community_viewer",
+    ),
+    batching_contract=(
+        "list_materials_for_communities",
+        "list_discovery_profiles_for_communities",
+        "list_discovery_tags_for_communities",
+        "network_program_counts",
+        "public_scene_hub_community_ids",
+        "default_themes_for_communities",
+    ),
 )
 
 
