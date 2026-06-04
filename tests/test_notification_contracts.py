@@ -4,13 +4,16 @@ from dataclasses import replace
 
 import pytest
 
+from elbysodic.db.seed import resolve_seed_persona
 from elbysodic.domain.models import Notification
-from elbysodic.services import create_services
+from elbysodic.services import AppServices, create_services
 from elbysodic.services.notifications import (
     NOTIFICATION_TARGET_CONTRACTS,
     notification_has_required_target,
     notification_label,
     notification_target_contract,
+    notification_target_is_deliverable,
+    notify_post_created,
 )
 
 
@@ -147,6 +150,91 @@ def test_unregistered_notification_kind_does_not_render_count_open_or_mark_read(
     services.mark_all_notifications_read()
 
     assert repo.get_notification(viewer.community.id, notification.id).read_at is None
+
+
+def test_post_notification_creation_skips_memberships_that_cannot_view_target() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    writer = services.seed
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    outsider = resolve_seed_persona(repo, "xmen_outsider")
+    assert writer.default_character is not None
+    assert staff.character is not None
+    private_board = repo.create_board(
+        writer.community.id,
+        "notification-private-target",
+        "Notification Private Target",
+        is_private=True,
+    )
+    private_thread = repo.create_thread(
+        writer.community.id,
+        private_board.id,
+        writer.default_character.id,
+        "notification-private-thread",
+        "Notification private thread",
+    )
+    repo.watch_thread(writer.community.id, private_thread.id, outsider.membership.id)
+    repo.watch_thread(writer.community.id, private_thread.id, staff.membership.id)
+    post = repo.create_post(
+        writer.community.id,
+        private_thread.id,
+        writer.default_character.id,
+        "A private reply should notify only viewers who can enter the room.",
+    )
+    writer_services = AppServices(repo, writer)
+
+    notify_post_created(repo, writer_services.viewer(), private_thread, post)
+
+    outsider_notifications = repo.list_notifications(
+        writer.community.id,
+        outsider.membership.id,
+    )
+    staff_notifications = repo.list_notifications(writer.community.id, staff.membership.id)
+    assert outsider_notifications == []
+    assert [notification.kind for notification in staff_notifications] == ["thread_reply"]
+
+
+def test_notification_delivery_helper_rejects_inactive_or_malformed_targets() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    inactive = resolve_seed_persona(repo, "xmen_inactive")
+    writer = services.seed
+    assert writer.default_character is not None
+    board = repo.get_board_by_slug(writer.community.id, "danger-room")
+    thread = repo.create_thread(
+        writer.community.id,
+        board.id,
+        writer.default_character.id,
+        "notification-delivery-helper",
+        "Notification delivery helper",
+    )
+    post = repo.create_post(
+        writer.community.id,
+        thread.id,
+        writer.default_character.id,
+        "A public target with an inactive watcher.",
+    )
+
+    assert not notification_target_is_deliverable(
+        repo,
+        writer.community.id,
+        inactive.membership.id,
+        kind="thread_reply",
+        thread_id=thread.id,
+        post_id=post.id,
+        actor_membership_id=writer.membership.id,
+        actor_character_id=writer.default_character.id,
+    )
+    assert not notification_target_is_deliverable(
+        repo,
+        writer.community.id,
+        writer.membership.id,
+        kind="thread_reply",
+        thread_id=thread.id,
+        post_id=None,
+        actor_membership_id=writer.membership.id,
+        actor_character_id=writer.default_character.id,
+    )
 
 
 def _notification(
