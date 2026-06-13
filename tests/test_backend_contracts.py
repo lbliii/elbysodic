@@ -199,6 +199,32 @@ def test_web_page_handlers_do_not_make_policy_decisions_directly() -> None:
     assert offenders == []
 
 
+def test_steward_regression_pack_maps_concerns_to_existing_gates() -> None:
+    regression_map = (REPO_ROOT / "docs" / "architecture" / "steward-regression-pack.md").read_text(
+        encoding="utf-8"
+    )
+    required_sections = (
+        "## Tenancy And Data Integrity",
+        "## Identity And Auth Posture",
+        "## Rendered Surface Contracts",
+        "## Notification Target Visibility",
+        "## Transactional Workflows",
+        "## Export, Restore, And Operations",
+        "## Continuity Readiness",
+        "## Blueprint Import And Apply",
+        "## Not-Now Gaps",
+    )
+    referenced_test_files = set(re.findall(r"`(tests/[^`]+\.py)`", regression_map))
+
+    for section in required_sections:
+        assert section in regression_map
+    assert len(referenced_test_files) >= 10
+    assert all((REPO_ROOT / path).exists() for path in referenced_test_files)
+    assert "uv run pytest" in regression_map
+    assert "uv run ruff check ." in regression_map
+    assert "uv run ty check src/elbysodic/ tests/" in regression_map
+
+
 def test_critical_rendered_pages_use_named_service_surface_contracts() -> None:
     missing: list[str] = []
     for contract in SURFACE_CONTRACTS:
