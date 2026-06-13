@@ -18,7 +18,7 @@ from chirp.testing import TestClient
 
 from elbysodic import cli
 from elbysodic.db import ForumRepository, connect, create_schema
-from elbysodic.services import AppServices, initialize_database
+from elbysodic.services import AppServices, create_services, initialize_database
 from elbysodic.web import app as web_app
 
 RAILWAY_HOST = ".".join(("0", "0", "0", "0"))
@@ -606,6 +606,44 @@ def test_initialize_database_leaves_demo_seed_explicit(tmp_path) -> None:
         connection.close()
 
     assert seeded_community_count > 0
+
+
+def test_staging_auto_seed_demo_seeds_volume_backed_database(monkeypatch, tmp_path) -> None:
+    db_path = tmp_path / "staging" / "elbysodic.sqlite3"
+    monkeypatch.setenv("ELBYSODIC_ENV", "staging")
+    monkeypatch.setenv("ELBYSODIC_DEMO_MODE", "1")
+    monkeypatch.setenv("ELBYSODIC_AUTO_SEED_DEMO", "1")
+
+    services = create_services(db_path, seed_demo=False)
+    try:
+        communities = services.repo.list_communities()
+    finally:
+        services.close()
+
+    assert db_path.exists()
+    assert {community.slug for community in communities} >= {
+        "x-men-apocalypse",
+        "jurassic-park-universe",
+        "afterlight-accord",
+    }
+
+
+def test_auto_seed_demo_fails_closed_outside_staging(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "production")
+    monkeypatch.setenv("ELBYSODIC_DEMO_MODE", "1")
+    monkeypatch.setenv("ELBYSODIC_AUTO_SEED_DEMO", "1")
+
+    with pytest.raises(RuntimeError, match="ELBYSODIC_AUTO_SEED_DEMO"):
+        create_services(tmp_path / "production.sqlite3", seed_demo=False)
+
+
+def test_auto_seed_demo_requires_demo_mode(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "staging")
+    monkeypatch.delenv("ELBYSODIC_DEMO_MODE", raising=False)
+    monkeypatch.setenv("ELBYSODIC_AUTO_SEED_DEMO", "1")
+
+    with pytest.raises(RuntimeError, match="ELBYSODIC_DEMO_MODE"):
+        create_services(tmp_path / "staging.sqlite3", seed_demo=False)
 
 
 def test_initialize_database_repairs_partial_demo_seed(tmp_path) -> None:

@@ -367,10 +367,14 @@ from elbysodic.services.timestamps import timestamp_key as _timestamp_key
 DEFAULT_DATABASE_PATH = Path("var/elbysodic.sqlite3")
 DATABASE_PATH_ENV = "ELBYSODIC_DB_PATH"
 RAILWAY_VOLUME_MOUNT_PATH_ENV = "RAILWAY_VOLUME_MOUNT_PATH"
+APP_ENV_ENV = "ELBYSODIC_ENV"
+DEMO_MODE_ENV = "ELBYSODIC_DEMO_MODE"
+AUTO_SEED_DEMO_ENV = "ELBYSODIC_AUTO_SEED_DEMO"
 HERO_TREATMENTS = frozenset({"split", "background", "poster", "text"})
 HERO_FOCAL_POINTS = frozenset({"center", "top", "bottom", "left", "right"})
 HERO_OVERLAYS = frozenset({"none", "light", "medium", "heavy"})
 HERO_HEIGHTS = frozenset({"compact", "standard", "immersive"})
+TRUTHY_ENV_VALUES = frozenset({"1", "true", "yes", "on"})
 
 
 def _load_viewer_role(
@@ -3601,7 +3605,10 @@ def create_services(path: str | Path | None = None, *, seed_demo: bool = True) -
     connection = connect(database_path, check_same_thread=False)
     create_schema(connection)
     repo = ForumRepository(connection)
-    seed = seed_demo_forum(repo) if seed_demo else None
+    auto_seed_demo = _auto_seed_demo_enabled()
+    seed = seed_demo_forum(repo) if seed_demo or auto_seed_demo else None
+    if auto_seed_demo:
+        sys.stderr.write(f"auto-seeded staging demo data at {database_path}\n")
     database = None if database_path == ":memory:" else Database(database_path)
     return AppServices(repo, seed, database=database, owns_repo=True)
 
@@ -3665,6 +3672,21 @@ def default_database_path() -> Path:
     if railway_volume:
         return Path(railway_volume) / "elbysodic.sqlite3"
     return DEFAULT_DATABASE_PATH
+
+
+def _auto_seed_demo_enabled() -> bool:
+    if not _truthy_env(AUTO_SEED_DEMO_ENV):
+        return False
+    app_env = (os.environ.get(APP_ENV_ENV) or "development").strip().lower()
+    if app_env != "staging":
+        raise RuntimeError(f"{AUTO_SEED_DEMO_ENV} is only supported when {APP_ENV_ENV}=staging")
+    if not _truthy_env(DEMO_MODE_ENV):
+        raise RuntimeError(f"{AUTO_SEED_DEMO_ENV} requires {DEMO_MODE_ENV}=1")
+    return True
+
+
+def _truthy_env(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in TRUTHY_ENV_VALUES
 
 
 def _resolve_database_path(path: str | Path | None) -> str | Path:

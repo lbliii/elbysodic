@@ -337,6 +337,13 @@ Set these Railway variables before sharing the app:
 - `ELBYSODIC_SECRET_KEY` to a random value of at least 32 characters
 - `ELBYSODIC_DEMO_MODE=1` only when seeded demo credentials should work
 
+For the shared staging demo, set `ELBYSODIC_ENV=staging`,
+`ELBYSODIC_DEMO_MODE=1`, `ELBYSODIC_AUTO_SEED_DEMO=1`, and
+`ELBYSODIC_DB_PATH=/app/var/elbysodic.sqlite3`. This lets staging self-heal
+missing demo rows on startup while still requiring demo mode and the
+volume-backed database path. Do not set `ELBYSODIC_AUTO_SEED_DEMO` in
+production.
+
 `ELBYSODIC_ALLOWED_HOSTS` is optional for Railway because production defaults
 allow Railway domains. Set it only after confirming the exact public or custom
 host list; values are comma-separated hostnames without `https://`.
