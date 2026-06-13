@@ -30,9 +30,14 @@ from elbysodic.services.notifications import (
 )
 from elbysodic.services.operations import (
     OperationsInspectionConfig,
+    RestoreCheckCount,
+    RestoreCheckReadback,
+    RestoreCheckResult,
     format_restore_check_report,
+    format_restore_plan_report,
     operations_inspection,
     restore_check_database,
+    restore_plan_from_check,
 )
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
@@ -12522,6 +12527,92 @@ def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path
     assert "Do not emit this summary." not in report
     assert "Do not emit this material body." not in report
     assert "Do not emit this post body." not in report
+
+
+def test_restore_plan_from_check_orders_read_only_operator_steps(tmp_path: Path) -> None:
+    db_path = tmp_path / "restore-plan.sqlite3"
+    services = create_services(path=db_path)
+    repo = services.repo
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    secret_user = repo.create_user("secret-plan@example.com", "secret-password-hash")
+    repo.create_user_session(secret_user.id, "secret-plan-token")
+    services.start_thread(
+        board_slug="danger-room",
+        character_id=viewer.current_character.id,
+        title="Restore Plan Scene",
+        body="Do not emit this restore plan body.",
+    )
+    services.close()
+
+    result = restore_check_database(db_path)
+    plan = restore_plan_from_check(result)
+    report = format_restore_plan_report(plan)
+
+    assert plan.status == "ready"
+    assert plan.blockers == ()
+    assert plan.steps == tuple(
+        sorted(plan.steps, key=lambda step: (step.order, step.domain, step.title))
+    )
+    assert plan.human_confirmation_steps
+    assert {step.domain for step in plan.human_confirmation_steps} >= {
+        "auth posture",
+        "claims/reserves",
+        "continuity",
+        "export",
+        "wanted",
+    }
+    assert "restore-plan ready" in report
+    assert "secret-plan@example.com" not in report
+    assert "secret-password-hash" not in report
+    assert "secret-plan-token" not in report
+    assert "Do not emit this restore plan body." not in report
+
+
+def test_restore_plan_from_check_maps_blockers_to_sensitive_domains() -> None:
+    result = RestoreCheckResult(
+        database_path="/private/tmp/candidate.sqlite3",
+        opened_read_only=True,
+        integrity_check="ok",
+        foreign_key_violations=0,
+        journal_mode="wal",
+        sqlite_user_version=1,
+        current_schema_version=2,
+        latest_migration_version=1,
+        community_count=0,
+        core_counts=(
+            RestoreCheckCount("notifications", "notifications", 2),
+            RestoreCheckCount("sessions", "user_sessions", 1),
+        ),
+        readback_checks=(
+            RestoreCheckReadback("memberships", "failed", "membership ownership missing"),
+            RestoreCheckReadback("characters", "failed", "character ownership drift detected"),
+        ),
+        failures=(
+            "no communities found",
+            "orphaned notification target found",
+            "continuity source gap detected",
+            "export manifest unavailable",
+            "auth session posture needs review",
+        ),
+    )
+
+    plan = restore_plan_from_check(result)
+    blockers_by_domain = {step.domain for step in plan.blockers}
+
+    assert plan.status == "blocked"
+    assert blockers_by_domain >= {
+        "auth posture",
+        "character",
+        "community",
+        "continuity",
+        "export",
+        "membership",
+        "notification",
+        "schema",
+    }
+    assert all(step.human_confirmation_required for step in plan.blockers)
+    assert "restore-plan blocked" in format_restore_plan_report(plan)
 
 
 def test_restore_check_database_reports_wrong_database_failure(tmp_path: Path) -> None:
