@@ -198,6 +198,33 @@ class RestoreCheckResult:
 
 
 @dataclass(frozen=True, slots=True)
+class RestorePlanStep:
+    order: int
+    severity: str
+    domain: str
+    title: str
+    detail: str
+    risk: str
+    human_confirmation_required: bool
+    source: str
+
+
+@dataclass(frozen=True, slots=True)
+class RestorePlan:
+    database_path: str
+    status: str
+    steps: tuple[RestorePlanStep, ...]
+
+    @property
+    def blockers(self) -> tuple[RestorePlanStep, ...]:
+        return tuple(step for step in self.steps if step.severity == "blocker")
+
+    @property
+    def human_confirmation_steps(self) -> tuple[RestorePlanStep, ...]:
+        return tuple(step for step in self.steps if step.human_confirmation_required)
+
+
+@dataclass(frozen=True, slots=True)
 class DirectorOperations:
     cards: list[OperationsCard]
     lanes: list[OperationsLane]
@@ -638,6 +665,43 @@ def format_restore_check_report(result: RestoreCheckResult) -> str:
     return "\n".join(lines) + "\n"
 
 
+def restore_plan_from_check(result: RestoreCheckResult) -> RestorePlan:
+    """Build a deterministic, read-only operator plan from restore-check output."""
+
+    steps: list[RestorePlanStep] = []
+    _append_restore_plan_preflight_steps(steps, result)
+    _append_restore_plan_readback_steps(steps, result)
+    _append_restore_plan_workflow_steps(steps, result)
+    _append_restore_plan_failure_steps(steps, result)
+    _append_restore_plan_confirmation_steps(steps, result)
+    blockers = [step for step in steps if step.severity == "blocker"]
+    status = "ready" if result.ok and not blockers else "blocked" if blockers else "review"
+    return RestorePlan(
+        database_path=result.database_path,
+        status=status,
+        steps=tuple(sorted(steps, key=lambda step: (step.order, step.domain, step.title))),
+    )
+
+
+def format_restore_plan_report(plan: RestorePlan) -> str:
+    lines = [
+        f"restore-plan {plan.status}",
+        f"database: {plan.database_path}",
+        f"steps: {len(plan.steps)}",
+        f"blockers: {len(plan.blockers)}",
+        f"human_confirmation: {len(plan.human_confirmation_steps)}",
+    ]
+    for step in plan.steps:
+        confirmation = "human-confirmation" if step.human_confirmation_required else "read-only"
+        lines.append(
+            f"- [{step.severity}] {step.order} {step.domain}: {step.title} ({confirmation})"
+        )
+        lines.append(f"  detail: {step.detail}")
+        lines.append(f"  risk: {step.risk}")
+        lines.append(f"  source: {step.source}")
+    return "\n".join(lines) + "\n"
+
+
 def _restore_check_connection(
     connection: sqlite3.Connection,
     path: Path,
@@ -688,6 +752,243 @@ def _restore_check_connection(
         readback_checks=tuple(readback_checks),
         failures=tuple(failures),
     )
+
+
+def _append_restore_plan_preflight_steps(
+    steps: list[RestorePlanStep],
+    result: RestoreCheckResult,
+) -> None:
+    _append_step(
+        steps,
+        10,
+        "ok" if result.opened_read_only else "blocker",
+        "operations",
+        "Open candidate database read-only",
+        "Restore planning must inspect the backup without changing it.",
+        "A writable inspection can mutate or lock a candidate backup during an incident.",
+        not result.opened_read_only,
+        "restore_check.opened_read_only",
+    )
+    _append_step(
+        steps,
+        20,
+        "ok" if result.integrity_check == "ok" else "blocker",
+        "storage",
+        "Verify SQLite integrity",
+        f"PRAGMA integrity_check returned {result.integrity_check}.",
+        "A failed integrity check can make later row-level conclusions unreliable.",
+        result.integrity_check != "ok",
+        "restore_check.integrity_check",
+    )
+    _append_step(
+        steps,
+        30,
+        "ok" if result.foreign_key_violations == 0 else "blocker",
+        "storage",
+        "Verify foreign-key integrity",
+        f"PRAGMA foreign_key_check reported {result.foreign_key_violations} violation(s).",
+        "Foreign-key violations can attach objects to missing or wrong tenant roots.",
+        result.foreign_key_violations != 0,
+        "restore_check.foreign_key_violations",
+    )
+    schema_ok = (
+        result.sqlite_user_version == result.current_schema_version
+        and result.latest_migration_version == result.current_schema_version
+    )
+    _append_step(
+        steps,
+        40,
+        "ok" if schema_ok else "blocker",
+        "schema",
+        "Verify schema and migration ledger",
+        (
+            f"user_version={result.sqlite_user_version}; "
+            f"latest_migration={result.latest_migration_version}; "
+            f"current={result.current_schema_version}."
+        ),
+        "Schema drift can make restore checks read the wrong columns or miss repaired rows.",
+        not schema_ok,
+        "restore_check.schema_versions",
+    )
+    _append_step(
+        steps,
+        50,
+        "ok" if result.community_count > 0 else "blocker",
+        "community",
+        "Verify tenant roots",
+        f"Candidate contains {result.community_count} community row(s).",
+        "A restore without tenant roots cannot safely recover memberships, faces, or story rows.",
+        result.community_count == 0,
+        "restore_check.community_count",
+    )
+
+
+def _append_restore_plan_readback_steps(
+    steps: list[RestorePlanStep],
+    result: RestoreCheckResult,
+) -> None:
+    for offset, check in enumerate(result.readback_checks, start=1):
+        _append_step(
+            steps,
+            60 + offset,
+            "ok" if check.status == "ok" else "blocker",
+            _restore_plan_domain_for_text(check.label),
+            f"Read back {check.label}",
+            check.detail,
+            "Service readback failure means operators should not trust raw table counts alone.",
+            check.status != "ok",
+            f"restore_check.readback.{check.label}",
+        )
+
+
+def _append_restore_plan_workflow_steps(
+    steps: list[RestorePlanStep],
+    result: RestoreCheckResult,
+) -> None:
+    counts = {count.table_name: count.count for count in result.core_counts}
+    workflow_domains = (
+        ("auth posture", "user_sessions", "Review session rows before reuse"),
+        ("commands", "command_submissions", "Review command submission reservations"),
+        ("invitations", "community_invitations", "Review invitation token posture"),
+        ("access requests", "community_access_requests", "Review access-request staff context"),
+        ("plotting", "plotting_rooms", "Review plotting room continuity"),
+        ("notification", "notifications", "Review notification targets"),
+    )
+    for offset, (domain, table_name, title) in enumerate(workflow_domains, start=1):
+        count = counts.get(table_name)
+        severity = "info" if count is not None else "warning"
+        detail = (
+            f"{table_name} has {count} row(s) in the candidate."
+            if count is not None
+            else f"{table_name} was not counted by restore-check."
+        )
+        _append_step(
+            steps,
+            80 + offset,
+            severity,
+            domain,
+            title,
+            detail,
+            "Workflow rows can carry private notes, tokens, redirects, or stale command state.",
+            False,
+            f"restore_check.counts.{table_name}",
+        )
+
+
+def _append_restore_plan_failure_steps(
+    steps: list[RestorePlanStep],
+    result: RestoreCheckResult,
+) -> None:
+    for offset, failure in enumerate(result.failures, start=1):
+        _append_step(
+            steps,
+            120 + offset,
+            "blocker",
+            _restore_plan_domain_for_text(failure),
+            "Resolve restore-check failure",
+            failure,
+            "Restore-check failures must be understood before any import, repair, or cutover.",
+            True,
+            "restore_check.failures",
+        )
+
+
+def _append_restore_plan_confirmation_steps(
+    steps: list[RestorePlanStep],
+    result: RestoreCheckResult,
+) -> None:
+    dependency_steps = (
+        (
+            "claims/reserves",
+            "Plan claim and reserve ownership review",
+            "Check claim and reserve ownership before any repair that touches first-face or casting state.",
+        ),
+        (
+            "wanted",
+            "Plan wanted hook and interest review",
+            "Check wanted availability, private interest notes, and plotting handoffs before repair.",
+        ),
+        (
+            "continuity",
+            "Plan continuity source review",
+            "Continuity source links are not a public restore surface yet; inspect source visibility before repair.",
+        ),
+        (
+            "export",
+            "Plan export privacy review",
+            "Compare export expectations before restoring data that may omit sessions, token hashes, or private notes.",
+        ),
+        (
+            "auth posture",
+            "Plan auth and session cutover review",
+            "Decide whether sessions, demo-mode posture, and invite-only access should survive the restore.",
+        ),
+    )
+    severity = "warning" if result.ok else "blocker"
+    for offset, (domain, title, detail) in enumerate(dependency_steps, start=1):
+        _append_step(
+            steps,
+            200 + offset,
+            severity,
+            domain,
+            title,
+            detail,
+            "These domains can expose private, staff, token, or cross-community state after cutover.",
+            True,
+            "restore_plan.human_confirmation",
+        )
+
+
+def _append_step(
+    steps: list[RestorePlanStep],
+    order: int,
+    severity: str,
+    domain: str,
+    title: str,
+    detail: str,
+    risk: str,
+    human_confirmation_required: bool,
+    source: str,
+) -> None:
+    steps.append(
+        RestorePlanStep(
+            order=order,
+            severity=severity,
+            domain=domain,
+            title=title,
+            detail=detail,
+            risk=risk,
+            human_confirmation_required=human_confirmation_required,
+            source=source,
+        )
+    )
+
+
+def _restore_plan_domain_for_text(text: str) -> str:
+    normalized = text.lower()
+    if "communit" in normalized:
+        return "community"
+    if "membership" in normalized or "member" in normalized:
+        return "membership"
+    if "character" in normalized or "face" in normalized:
+        return "character"
+    if "claim" in normalized or "reserve" in normalized:
+        return "claims/reserves"
+    if "wanted" in normalized:
+        return "wanted"
+    if "notification" in normalized:
+        return "notification"
+    if "continuity" in normalized or "source" in normalized:
+        return "continuity"
+    if "export" in normalized:
+        return "export"
+    if "session" in normalized or "auth" in normalized or "user" in normalized:
+        return "auth posture"
+    if "schema" in normalized or "migration" in normalized or "table" in normalized:
+        return "schema"
+    if "foreign" in normalized or "integrity" in normalized:
+        return "storage"
+    return "operations"
 
 
 def _restore_check_table_names(connection: sqlite3.Connection) -> set[str]:
