@@ -175,8 +175,11 @@ PUBLIC_CATALOG_PRIVACY_CONTRACT = PublicCatalogPrivacyContract(
         "published_application_material_count",
         "public_claim_type_count",
         "public_theme_preview",
+        "latest_public_activity_at",
+        "activity_freshness_label",
         "request_access_href",
         "invite_posture_label",
+        "access_posture_label",
     ),
     excluded_signals=(
         "membership",
@@ -295,7 +298,7 @@ class NetworkCatalogRepository(
     def network_program_counts(
         self,
         community_ids: list[int],
-    ) -> dict[int, dict[str, int]]: ...
+    ) -> dict[int, dict[str, int | str]]: ...
 
     def public_scene_hub_community_ids(self, community_ids: list[int]) -> set[int]: ...
 
@@ -354,10 +357,13 @@ def studio_network(
                     facet_groups_by_community.get(community.id, []),
                     material_facets,
                 ),
-                roster_count=counts.get("roster_count", 0),
-                open_wanted_count=counts.get("open_wanted_count", 0),
-                application_material_count=counts.get("application_material_count", 0),
-                claim_type_count=counts.get("claim_type_count", 0),
+                roster_count=_network_count(counts, "roster_count"),
+                open_wanted_count=_network_count(counts, "open_wanted_count"),
+                application_material_count=_network_count(
+                    counts,
+                    "application_material_count",
+                ),
+                claim_type_count=_network_count(counts, "claim_type_count"),
                 application_count=membership_counts.get(
                     (
                         "reviewable_application_count"
@@ -372,6 +378,10 @@ def studio_network(
                 is_current=(
                     community.id == identity.community_id
                     and membership.id == identity.membership_id
+                ),
+                latest_public_activity_at=_network_count_text(
+                    counts,
+                    "latest_public_activity_at",
                 ),
             )
         )
@@ -432,15 +442,22 @@ def public_studio_network(repo: NetworkCatalogRepository) -> StudioNetworkDirect
                     facet_groups_by_community.get(community.id, []),
                     material_facets,
                 ),
-                roster_count=counts.get("roster_count", 0),
-                open_wanted_count=counts.get("open_wanted_count", 0),
-                application_material_count=counts.get("application_material_count", 0),
-                claim_type_count=counts.get("claim_type_count", 0),
+                roster_count=_network_count(counts, "roster_count"),
+                open_wanted_count=_network_count(counts, "open_wanted_count"),
+                application_material_count=_network_count(
+                    counts,
+                    "application_material_count",
+                ),
+                claim_type_count=_network_count(counts, "claim_type_count"),
                 application_count=0,
                 plotting_room_count=0,
                 unread_notification_count=0,
                 theme_preview=network_theme_preview(theme),
                 is_current=False,
+                latest_public_activity_at=_network_count_text(
+                    counts,
+                    "latest_public_activity_at",
+                ),
             )
         )
     return StudioNetworkDirectory(programs=programs)
@@ -544,6 +561,7 @@ def public_studio_program(
     materials = repo.list_materials(community.id, status="published")
     wanted_ads = repo.list_wanted_ads(community.id, status=None)
     community_characters = repo.list_community_characters(community.id)
+    counts = repo.network_program_counts([community.id]).get(community.id, {})
     theme = community_theme_view(repo.get_default_theme(community.id))
     return StudioNetworkProgramView(
         community=community,
@@ -568,6 +586,7 @@ def public_studio_program(
         unread_notification_count=0,
         theme_preview=network_theme_preview(theme),
         is_current=False,
+        latest_public_activity_at=_network_count_text(counts, "latest_public_activity_at"),
     )
 
 
@@ -577,6 +596,19 @@ def public_preview_community(repo: NetworkCatalogRepository, community_slug: str
     if not is_public_network_ready(repo, community, materials):
         raise LookupError(f"community not available for public preview: {community_slug}")
     return community
+
+
+def _network_count(counts: dict[str, int | str], key: str) -> int:
+    value = counts.get(key, 0)
+    if isinstance(value, int):
+        return value
+    if not value:
+        return 0
+    return int(value)
+
+
+def _network_count_text(counts: dict[str, int | str], key: str) -> str:
+    return str(counts.get(key, "") or "")
 
 
 def search_studio_network(
@@ -722,6 +754,7 @@ def public_catalog_card_from_program(
         application_material_count=program.application_material_count,
         claim_type_count=program.claim_type_count,
         theme_preview=program.theme_preview,
+        latest_public_activity_at=program.latest_public_activity_at,
     )
 
 
@@ -959,6 +992,12 @@ def _public_catalog_search_text(card: PublicCatalogCard) -> str:
         catalog_keywords.append("application applications first face")
     if card.current_event:
         catalog_keywords.append("event current event current chapter")
+    catalog_keywords.extend(
+        [
+            card.access_posture_label,
+            card.activity_freshness_label,
+        ]
+    )
     profile = card.discovery_profile
     if profile is not None:
         catalog_keywords.extend(

@@ -37,13 +37,21 @@ signals:
 - `published_application_material_count`
 - `public_claim_type_count`
 - `public_theme_preview`
+- `latest_public_activity_at`
+- `activity_freshness_label`
 - `request_access_href`
 - `invite_posture_label`
+- `access_posture_label`
 
 These fields answer public fit questions: premise, play engine, lore aperture,
-access posture, first-face/application posture, age/content rating, activity
-pace, roster posture, current chapter, wanted pressure, and public entry path.
-They are editorial discovery signals, not generic marketplace metrics.
+access posture, request posture, first-face/application posture,
+age/content rating, activity pace, public-safe freshness, roster posture,
+current chapter, wanted pressure, and public entry path. Freshness is derived
+only from published materials, open wanted hooks, and scene activity on public
+boards with non-private threads. It must not use private boards, private
+threads, unread state, staff queues, plotting rooms, active faces, or
+applications. These fields are editorial discovery signals, not generic
+marketplace metrics.
 
 ## Excluded Signals
 
