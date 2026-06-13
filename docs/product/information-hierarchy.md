@@ -10,6 +10,10 @@ This document explains what repeated concepts mean visually. Use
 compact, editable, or collapsed a control should be.
 Use `docs/product/navigation-menus.md` when deciding route placement, topbar
 realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
+Use `docs/product/invite-to-first-face-onboarding-journey.md` before changing
+request-access, invitation acceptance, faceless-member continuation,
+first-face application, claims/reserves, wanted, or first-scene onboarding
+handoffs.
 Use `docs/product/director-realm-opening-front-end.md` before changing no-realm
 states, Studio Launch, opening checklist, invitation management, public-preview
 readiness, or director realm-opening handoffs.
