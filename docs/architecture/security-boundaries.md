@@ -209,7 +209,10 @@ also privacy boundaries. Each supported notification kind must use the
 service-owned target contract for required fields and visibility. A notification
 delivered to the right membership is still treated as inaccessible when its
 target is private, belongs to another community, lacks the required target
-fields, or resolves to a row the membership cannot view.
+fields, or resolves to a row the membership cannot view. Post mention and
+watched-thread fanout also runs that target contract before inserting
+notifications, so inactive members and memberships that cannot enter the target
+board do not receive rows merely to be filtered later.
 
 Production responses also set a Content Security Policy sized to the current
 server-rendered Chirp and Chirp-UI stack. The policy keeps framing, object,
