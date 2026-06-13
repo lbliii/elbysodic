@@ -156,13 +156,17 @@ def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     assert user_version == CURRENT_SCHEMA_VERSION
 
 
-def test_fresh_schema_indexes_match_ordered_migration_indexes() -> None:
+def test_fresh_schema_matches_upgraded_schema_shape() -> None:
     fresh = connect()
     create_schema(fresh)
 
     upgraded = connect()
     create_schema(upgraded)
+    upgraded.execute("DROP TRIGGER IF EXISTS trg_user_sessions_selected_identity_insert")
+    upgraded.execute("DROP TRIGGER IF EXISTS trg_user_sessions_selected_identity_update")
     upgraded.execute("DROP INDEX IF EXISTS idx_user_sessions_user")
+    upgraded.execute("DROP INDEX IF EXISTS idx_community_access_request_events_request")
+    upgraded.execute("DROP TABLE IF EXISTS community_access_request_events")
     upgraded.execute("DELETE FROM schema_migrations")
     upgraded.execute(
         """
@@ -175,7 +179,25 @@ def test_fresh_schema_indexes_match_ordered_migration_indexes() -> None:
     upgraded.commit()
     create_schema(upgraded)
 
-    assert _index_names(fresh) == _index_names(upgraded)
+    fresh_shape = _schema_shape(fresh)
+    upgraded_shape = _schema_shape(upgraded)
+    fresh_latest = _latest_migration_record(fresh)
+    upgraded_latest = _latest_migration_record(upgraded)
+    upgraded_migrations = upgraded.execute(
+        "SELECT version, name FROM schema_migrations ORDER BY version"
+    ).fetchall()
+
+    assert fresh_shape == upgraded_shape
+    assert fresh.execute("PRAGMA user_version").fetchone()[0] == CURRENT_SCHEMA_VERSION
+    assert upgraded.execute("PRAGMA user_version").fetchone()[0] == CURRENT_SCHEMA_VERSION
+    assert fresh_latest["version"] == CURRENT_SCHEMA_VERSION
+    assert upgraded_latest["version"] == CURRENT_SCHEMA_VERSION
+    assert [row["version"] for row in upgraded_migrations] == list(
+        range(1, CURRENT_SCHEMA_VERSION + 1)
+    )
+    assert [row["name"] for row in upgraded_migrations][1:] == [
+        migration.name for migration in MIGRATIONS
+    ]
 
 
 def _index_names(connection: sqlite3.Connection) -> set[str]:
@@ -189,6 +211,138 @@ def _index_names(connection: sqlite3.Connection) -> set[str]:
         """
     ).fetchall()
     return {row["name"] for row in rows}
+
+
+def _latest_migration_record(connection: sqlite3.Connection) -> sqlite3.Row:
+    row = connection.execute(
+        """
+        SELECT version, name
+        FROM schema_migrations
+        ORDER BY version DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    assert row is not None
+    return row
+
+
+def _schema_shape(connection: sqlite3.Connection) -> dict[str, object]:
+    table_names = _schema_object_names(connection, "table")
+    return {
+        "tables": {
+            name: {
+                "columns": _table_columns(connection, name),
+                "foreign_keys": _foreign_keys(connection, name),
+            }
+            for name in table_names
+        },
+        "indexes": _indexes(connection),
+        "triggers": _triggers(connection),
+    }
+
+
+def _schema_object_names(connection: sqlite3.Connection, object_type: str) -> list[str]:
+    rows = connection.execute(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type = ?
+            AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+        """,
+        (object_type,),
+    ).fetchall()
+    return [row["name"] for row in rows]
+
+
+def _table_columns(connection: sqlite3.Connection, table_name: str) -> list[tuple[object, ...]]:
+    rows = connection.execute(f"PRAGMA table_xinfo({table_name})").fetchall()
+    return [
+        (
+            row["cid"],
+            row["name"],
+            row["type"],
+            row["notnull"],
+            row["dflt_value"],
+            row["pk"],
+            row["hidden"],
+        )
+        for row in rows
+    ]
+
+
+def _foreign_keys(connection: sqlite3.Connection, table_name: str) -> list[tuple[object, ...]]:
+    rows = connection.execute(f"PRAGMA foreign_key_list({table_name})").fetchall()
+    return [
+        (
+            row["id"],
+            row["seq"],
+            row["table"],
+            row["from"],
+            row["to"],
+            row["on_update"],
+            row["on_delete"],
+            row["match"],
+        )
+        for row in rows
+    ]
+
+
+def _indexes(connection: sqlite3.Connection) -> dict[str, object]:
+    rows = connection.execute(
+        """
+        SELECT name, tbl_name, sql
+        FROM sqlite_master
+        WHERE type = 'index'
+            AND name NOT LIKE 'sqlite_autoindex_%'
+        ORDER BY name
+        """
+    ).fetchall()
+    return {
+        row["name"]: {
+            "table": row["tbl_name"],
+            "sql": _normalize_sql(row["sql"]),
+            "columns": _index_columns(connection, row["name"]),
+        }
+        for row in rows
+    }
+
+
+def _index_columns(connection: sqlite3.Connection, index_name: str) -> list[tuple[object, ...]]:
+    rows = connection.execute(f"PRAGMA index_xinfo({index_name})").fetchall()
+    return [
+        (
+            row["seqno"],
+            row["cid"],
+            row["name"],
+            row["desc"],
+            row["coll"],
+            row["key"],
+        )
+        for row in rows
+    ]
+
+
+def _triggers(connection: sqlite3.Connection) -> dict[str, object]:
+    rows = connection.execute(
+        """
+        SELECT name, tbl_name, sql
+        FROM sqlite_master
+        WHERE type = 'trigger'
+        ORDER BY name
+        """
+    ).fetchall()
+    return {
+        row["name"]: {
+            "table": row["tbl_name"],
+            "sql": _normalize_sql(row["sql"]),
+        }
+        for row in rows
+    }
+
+
+def _normalize_sql(sql: str | None) -> str:
+    return " ".join((sql or "").split())
 
 
 def test_schema_migrates_community_invitations_from_version_14() -> None:
