@@ -159,6 +159,21 @@ access-request notes. A future detail export for staff workflow records needs a
 separate privacy review before it can include applicant emails, notes, or
 invitation audit material.
 
+The export service also owns privacy profiles for four archive tiers. A public
+export profile is limited to public-safe realm identity, approved roster,
+non-archived wanted hooks, claimed public casting values, and published material
+metadata. A member profile may add member-visible threads and posts, but not
+staff queues, private notes, another writer's private records, draft materials,
+notification rows, inactive identities, or cross-community records. A staff
+profile may include current-community operational state only for workflows the
+staff capability covers; it still excludes global auth material, sessions, raw
+invite tokens, notification rows, and other communities. A director archive
+profile names sensitive domains such as membership state, roles, inactive
+identities, draft materials, private plotting rooms, invitation state,
+notification rows, and staff queues, while still excluding global users,
+password hashes, sessions, raw invite tokens, applicant private notes, and
+cross-community rows.
+
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global
 login user plus a community-local director membership in the same transaction.
