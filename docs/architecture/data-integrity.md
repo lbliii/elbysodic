@@ -43,6 +43,16 @@ notifications. Diagnostic rows report ids, table names, tenant ids, and
 content-free relationship reasons so operators can plan repair work without
 exposing private posts, room notes, application answers, or staff-only details.
 
+`src/elbysodic/services/tenant_integrity.py` wraps those repository diagnostics
+as a read-only service report. The report groups findings by `community_id` and
+severity, preserves table/domain/row ids for repair planning, and keeps output
+free of post bodies, private notes, applicant emails, room notes, and account
+secrets. Director-scoped reads filter to the current community through
+`tenant_integrity_audit_for_viewer`; ordinary members, inactive memberships,
+public visitors, and staff from another community must not see a realm's audit
+findings. CLI exposure and nonzero-exit behavior remain deferred until the
+operator command shape is approved.
+
 ## Session Selection
 
 A persisted selected session identity must identify one active membership owned

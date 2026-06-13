@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Literal, Protocol
 
 from elbysodic.domain.models import (
     Board,
@@ -26,15 +26,38 @@ from elbysodic.domain.models import (
 from elbysodic.services import policies
 from elbysodic.services.read_models import ForumView
 
+type CommunityExportPrivacyTier = Literal["public", "member", "staff", "director_archive"]
+
+
+@dataclass(frozen=True, slots=True)
+class CommunityExportDomain:
+    community_id: int
+    name: str
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class CommunityExportProfile:
+    community_id: int
+    community_slug: str
+    tier: CommunityExportPrivacyTier
+    label: str
+    audience: str
+    included_domains: tuple[CommunityExportDomain, ...]
+    excluded_domains: tuple[CommunityExportDomain, ...]
+    sensitive_domains: tuple[CommunityExportDomain, ...]
+
 
 @dataclass(frozen=True, slots=True)
 class CommunityExportCount:
+    community_id: int
     label: str
     count: int
 
 
 @dataclass(frozen=True, slots=True)
 class CommunityExportOwnership:
+    community_id: int
     kind: str
     record_id: int
     membership_id: int | None
@@ -44,6 +67,7 @@ class CommunityExportOwnership:
 
 @dataclass(frozen=True, slots=True)
 class CommunityExportSourceLink:
+    community_id: int
     kind: str
     record_id: int
     href: str
@@ -52,6 +76,7 @@ class CommunityExportSourceLink:
 
 @dataclass(frozen=True, slots=True)
 class CommunityExportRedaction:
+    community_id: int
     scope: str
     reason: str
 
@@ -65,6 +90,7 @@ class CommunityExportManifest:
     ownership: tuple[CommunityExportOwnership, ...]
     source_links: tuple[CommunityExportSourceLink, ...]
     redactions: tuple[CommunityExportRedaction, ...]
+    privacy_profiles: tuple[CommunityExportProfile, ...]
 
 
 class CommunityExportRepository(Protocol):
@@ -167,25 +193,26 @@ def community_export_manifest(
         community_slug=community.slug,
         community_name=community.name,
         counts=(
-            CommunityExportCount("memberships", len(memberships)),
-            CommunityExportCount("roles", len({role.id for role in roles.values()})),
-            CommunityExportCount("characters", len(characters)),
-            CommunityExportCount("boards", len(boards)),
-            CommunityExportCount("threads", len(threads)),
-            CommunityExportCount("posts", len(posts)),
-            CommunityExportCount("materials", len(materials)),
-            CommunityExportCount("claim_types", len(claim_types)),
-            CommunityExportCount("claims", len(claims)),
-            CommunityExportCount("reserves", len(reserves)),
-            CommunityExportCount("wanted_ads", len(wanted_ads)),
-            CommunityExportCount("plot_hooks", len(plot_hooks)),
-            CommunityExportCount("plotting_rooms", len(plotting_rooms)),
-            CommunityExportCount("access_requests", len(access_requests)),
-            CommunityExportCount("invitations", len(invitations)),
+            CommunityExportCount(community.id, "memberships", len(memberships)),
+            CommunityExportCount(community.id, "roles", len({role.id for role in roles.values()})),
+            CommunityExportCount(community.id, "characters", len(characters)),
+            CommunityExportCount(community.id, "boards", len(boards)),
+            CommunityExportCount(community.id, "threads", len(threads)),
+            CommunityExportCount(community.id, "posts", len(posts)),
+            CommunityExportCount(community.id, "materials", len(materials)),
+            CommunityExportCount(community.id, "claim_types", len(claim_types)),
+            CommunityExportCount(community.id, "claims", len(claims)),
+            CommunityExportCount(community.id, "reserves", len(reserves)),
+            CommunityExportCount(community.id, "wanted_ads", len(wanted_ads)),
+            CommunityExportCount(community.id, "plot_hooks", len(plot_hooks)),
+            CommunityExportCount(community.id, "plotting_rooms", len(plotting_rooms)),
+            CommunityExportCount(community.id, "access_requests", len(access_requests)),
+            CommunityExportCount(community.id, "invitations", len(invitations)),
         ),
         ownership=(
             *(
                 CommunityExportOwnership(
+                    community.id,
                     "character",
                     character.id,
                     character.membership_id,
@@ -196,6 +223,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportOwnership(
+                    community.id,
                     "post",
                     post.id,
                     post.author_membership_id,
@@ -206,6 +234,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportOwnership(
+                    community.id,
                     "wanted_ad",
                     wanted_ad.id,
                     wanted_ad.creator_membership_id,
@@ -216,6 +245,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportOwnership(
+                    community.id,
                     "plot_hook",
                     plot_hook.id,
                     plot_hook.author_membership_id,
@@ -226,6 +256,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportOwnership(
+                    community.id,
                     "plotting_room",
                     room.id,
                     room.owner_membership_id,
@@ -238,6 +269,7 @@ def community_export_manifest(
         source_links=(
             *(
                 CommunityExportSourceLink(
+                    community.id,
                     "board",
                     board.id,
                     f"/c/{community.slug}/boards/{board.slug}",
@@ -247,6 +279,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportSourceLink(
+                    community.id,
                     "thread",
                     thread.id,
                     f"/c/{community.slug}/boards/{_board_slug(boards, thread.board_id)}/threads/{thread.slug}",
@@ -256,6 +289,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportSourceLink(
+                    community.id,
                     "material",
                     material.id,
                     f"/c/{community.slug}/world/{material.slug}",
@@ -265,6 +299,7 @@ def community_export_manifest(
             ),
             *(
                 CommunityExportSourceLink(
+                    community.id,
                     "wanted_ad",
                     wanted_ad.id,
                     f"/c/{community.slug}/wanted/{wanted_ad.slug}",
@@ -275,22 +310,27 @@ def community_export_manifest(
         ),
         redactions=(
             CommunityExportRedaction(
+                community.id,
                 "global_users",
                 "global login accounts and password hashes are outside one community export",
             ),
             CommunityExportRedaction(
+                community.id,
                 "sessions",
                 "session cookies, token hashes, and selected identity state are never archived",
             ),
             CommunityExportRedaction(
+                community.id,
                 "invitations",
                 "raw invite tokens are unavailable after creation because only token hashes are stored",
             ),
             CommunityExportRedaction(
+                community.id,
                 "access_requests",
                 "private request notes and applicant emails require a director-only detail export",
             ),
         ),
+        privacy_profiles=_community_export_profiles(community),
     )
 
 
@@ -299,3 +339,235 @@ def _board_slug(boards: list[Board], board_id: int) -> str:
         if board.id == board_id:
             return board.slug
     return "missing-board"
+
+
+def _community_export_profiles(community: Community) -> tuple[CommunityExportProfile, ...]:
+    return (
+        CommunityExportProfile(
+            community.id,
+            community.slug,
+            "public",
+            "Public realm export",
+            "signed-out visitors and off-site public archive readers",
+            included_domains=_domains(
+                community.id,
+                (
+                    ("realm_profile", "public community name, slug, premise, and entry posture"),
+                    ("published_roster", "approved public faces and roster labels"),
+                    ("open_wanted_hooks", "public wanted hooks that are not archived"),
+                    (
+                        "claimed_claims",
+                        "claimed public casting values without private review notes",
+                    ),
+                    (
+                        "published_material_metadata",
+                        "published guidebook titles, slugs, and summaries",
+                    ),
+                ),
+            ),
+            excluded_domains=_domains(
+                community.id,
+                (
+                    ("member_identities", "membership names and active-face state are not public"),
+                    (
+                        "private_notes",
+                        "writer, applicant, and staff notes are not public archive data",
+                    ),
+                    ("staff_queues", "operations and review queues require staff capability"),
+                    (
+                        "inactive_identities",
+                        "inactive memberships and faces stay outside public export",
+                    ),
+                    ("draft_materials", "draft guidebook and event materials stay inside Studio"),
+                    ("notification_rows", "membership inbox rows are private operational state"),
+                    ("cross_community_records", "export rows must belong to this community only"),
+                ),
+            ),
+            sensitive_domains=(),
+        ),
+        CommunityExportProfile(
+            community.id,
+            community.slug,
+            "member",
+            "Member-visible realm export",
+            "active members inside this community",
+            included_domains=_domains(
+                community.id,
+                (
+                    ("realm_profile", "community identity and member navigation context"),
+                    ("published_roster", "approved public faces and roster labels"),
+                    (
+                        "member_visible_threads",
+                        "threads visible to the member's current membership",
+                    ),
+                    ("member_visible_posts", "posts visible to the member's current membership"),
+                    ("open_wanted_hooks", "member-visible wanted hooks and public hook context"),
+                    (
+                        "claimed_claims",
+                        "member-visible casting values without private review notes",
+                    ),
+                    (
+                        "published_material_metadata",
+                        "published guidebook titles, slugs, and summaries",
+                    ),
+                ),
+            ),
+            excluded_domains=_domains(
+                community.id,
+                (
+                    (
+                        "other_writer_private_records",
+                        "member exports cannot include another writer's drafts or notes",
+                    ),
+                    (
+                        "private_notes",
+                        "writer, applicant, and staff notes stay out of member exports",
+                    ),
+                    ("staff_queues", "operations and review queues require staff capability"),
+                    (
+                        "inactive_identities",
+                        "inactive memberships and faces are not member export data",
+                    ),
+                    ("draft_materials", "draft guidebook and event materials stay inside Studio"),
+                    ("notification_rows", "membership inbox rows need a separate privacy contract"),
+                    ("cross_community_records", "export rows must belong to this community only"),
+                ),
+            ),
+            sensitive_domains=(),
+        ),
+        CommunityExportProfile(
+            community.id,
+            community.slug,
+            "staff",
+            "Staff operations export",
+            "staff with current-community capability for the included workflow",
+            included_domains=_domains(
+                community.id,
+                (
+                    ("realm_profile", "community identity for the current realm only"),
+                    ("memberships", "community-local membership records for staff workflow review"),
+                    ("roles", "community-local role assignments used by staff workflows"),
+                    ("characters", "current-community faces and application posture"),
+                    ("boards_threads_posts", "community boards, threads, posts, and authorship"),
+                    ("materials", "published and draft director materials visible to staff"),
+                    ("claims_reserves_wanted", "claim, reserve, and wanted-hook workflow state"),
+                    ("plot_hooks_plotting_rooms", "plotting and handoff spaces visible to staff"),
+                    ("staff_queues", "operations queues visible to current-community staff"),
+                ),
+            ),
+            excluded_domains=_domains(
+                community.id,
+                (
+                    (
+                        "global_users",
+                        "global login accounts and password hashes are outside one community export",
+                    ),
+                    (
+                        "sessions",
+                        "session cookies, token hashes, and selected identity state are never archived",
+                    ),
+                    ("raw_invitation_tokens", "only token hashes are stored after creation"),
+                    ("notification_rows", "membership inbox rows require director archive review"),
+                    ("cross_community_records", "export rows must belong to this community only"),
+                ),
+            ),
+            sensitive_domains=_domains(
+                community.id,
+                (
+                    (
+                        "memberships",
+                        "membership state can reveal writer identity inside this community",
+                    ),
+                    ("roles", "role assignments expose current staff posture"),
+                    ("draft_materials", "draft guidebook and event materials are staff-only"),
+                    ("staff_queues", "operations queues can reveal private workflow state"),
+                ),
+            ),
+        ),
+        CommunityExportProfile(
+            community.id,
+            community.slug,
+            "director_archive",
+            "Director archive export",
+            "directors preserving one complete community archive",
+            included_domains=_domains(
+                community.id,
+                (
+                    ("realm_profile", "community identity for the current realm only"),
+                    ("memberships", "community-local writer identities and active state"),
+                    ("roles", "community-local staff role assignments"),
+                    ("characters", "public faces owned by memberships in this community"),
+                    (
+                        "boards_threads_posts",
+                        "community boards, scenes, threads, posts, and authorship",
+                    ),
+                    ("materials", "published and draft director materials"),
+                    ("claims_reserves_wanted", "claim, reserve, and wanted-hook workflow state"),
+                    ("plot_hooks_plotting_rooms", "plotter hooks and private handoff room state"),
+                    (
+                        "access_request_metadata",
+                        "request lifecycle records without applicant emails or private notes",
+                    ),
+                    ("invitations", "invitation state without raw invite tokens"),
+                    (
+                        "notification_rows",
+                        "community-scoped membership inbox rows after target visibility review",
+                    ),
+                    ("staff_queues", "operations, review, and continuation queues"),
+                ),
+            ),
+            excluded_domains=_domains(
+                community.id,
+                (
+                    (
+                        "global_users",
+                        "global login accounts and password hashes are outside one community export",
+                    ),
+                    (
+                        "sessions",
+                        "session cookies, token hashes, and selected identity state are never archived",
+                    ),
+                    (
+                        "password_hashes",
+                        "password hashes are global auth material, not realm archive material",
+                    ),
+                    ("raw_invitation_tokens", "only token hashes are stored after creation"),
+                    (
+                        "applicant_private_notes",
+                        "notes and applicant emails need a detail-export privacy review",
+                    ),
+                    ("cross_community_records", "export rows must belong to this community only"),
+                ),
+            ),
+            sensitive_domains=_domains(
+                community.id,
+                (
+                    (
+                        "memberships",
+                        "membership state can reveal writer identity inside this community",
+                    ),
+                    ("roles", "role assignments expose current staff posture"),
+                    (
+                        "inactive_identities",
+                        "inactive memberships and faces remain sensitive archive material",
+                    ),
+                    ("draft_materials", "draft guidebook and event materials are not public"),
+                    ("private_plotting_rooms", "handoff rooms can expose private plotting context"),
+                    ("access_request_metadata", "request lifecycle can expose applicant history"),
+                    ("invitations", "invitation state is staff workflow history"),
+                    (
+                        "notification_rows",
+                        "inbox rows can reveal private targets and counterparties",
+                    ),
+                    ("staff_queues", "operations queues can reveal private workflow state"),
+                ),
+            ),
+        ),
+    )
+
+
+def _domains(
+    community_id: int,
+    domains: tuple[tuple[str, str], ...],
+) -> tuple[CommunityExportDomain, ...]:
+    return tuple(CommunityExportDomain(community_id, name, reason) for name, reason in domains)

@@ -35,9 +35,18 @@ The executable registry lives in
 `src/elbysodic/web/surface_contracts.py`. It is intentionally lightweight:
 each entry names the route family, handler path, route-facing service call,
 read model family, required viewer modes, parity dimensions, and the rendered
-privacy matrix label. Backend contract tests read the registry so critical
-page handlers keep calling named service methods and the privacy matrix stays
-connected to the code.
+privacy matrix label. Each entry also names proof references, usually focused
+rendered privacy tests or supporting contract tests. Backend contract tests run
+the registry drift gate so critical page handlers keep calling named service
+methods, proof remains discoverable, and the privacy matrix stays connected to
+the code.
+
+The drift gate is read-only. It does not replace rendered privacy tests or
+service tests; it fails when the registry loses required fields, points at a
+missing page/service call, references a privacy matrix label that no longer
+exists, or names proof that is no longer present. When adding or changing a
+critical rendered surface, update the registry, privacy matrix row, and proof
+references in the same change.
 
 ## Rules
 
@@ -138,6 +147,12 @@ The lightest acceptable proof depends on risk:
 - public discovery change: proof that drafts, backstage realms, member state,
   active faces, unread counts, staff signals, and mutating forms stay out of
   public output
+
+The surface contract drift gate complements those tests by checking that every
+critical registry entry still names its service/read-model owner, viewer modes,
+parity dimensions, privacy matrix label, and proof references. A passing drift
+gate means the contracts are wired together; it does not prove the rendered
+state is correct by itself.
 
 ## Critical Surface Matrix
 
