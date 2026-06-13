@@ -46,7 +46,7 @@ async def _accept_invitation_without_face(page: Page, base_url: str, invite_path
     await page.get_by_label("Password").fill("activation-password")
     await page.get_by_role("button", name="Enter realm").click()
     await page.wait_for_url(f"**{COMMUNITY_PATH}/applications/new")
-    await page.get_by_text("Start Application").wait_for()
+    await page.get_by_role("button", name="Create draft face").wait_for()
     await page.goto(urljoin(base_url, f"{COMMUNITY_PATH}/desk"), wait_until="domcontentloaded")
     await page.get_by_text("Start with a first face").wait_for()
 

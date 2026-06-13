@@ -33,6 +33,8 @@ class NotificationTargetContract:
     target_family: str
     required_fields: tuple[str, ...]
     visibility_rule: str
+    redirect_behavior: str
+    fallback_behavior: str
 
 
 NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
@@ -42,6 +44,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="thread_post",
         required_fields=("thread_id", "post_id"),
         visibility_rule="viewer can read the target board",
+        redirect_behavior="open the visible thread at the target post anchor",
+        fallback_behavior="hide, keep unread, and refuse open when thread, post, or board is missing",
     ),
     NotificationTargetContract(
         kind="thread_reply",
@@ -49,6 +53,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="thread_post",
         required_fields=("thread_id", "post_id"),
         visibility_rule="viewer can read the target board",
+        redirect_behavior="open the visible thread at the target post anchor",
+        fallback_behavior="hide, keep unread, and refuse open when thread, post, or board is missing",
     ),
     NotificationTargetContract(
         kind="wanted_interest",
@@ -56,6 +62,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="wanted_interest",
         required_fields=("wanted_ad_id", "wanted_ad_interest_id"),
         visibility_rule="viewer is interested writer, hook creator, or casting-capable staff",
+        redirect_behavior="open the wanted hook detail when the interest is visible",
+        fallback_behavior="hide private notes, keep unread, and refuse open when hook or interest is missing",
     ),
     NotificationTargetContract(
         kind="wanted_reserved",
@@ -63,6 +71,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="wanted_hook",
         required_fields=("wanted_ad_id",),
         visibility_rule="viewer can read the wanted hook",
+        redirect_behavior="open the wanted hook detail",
+        fallback_behavior="hide, keep unread, and refuse open when hook is missing",
     ),
     NotificationTargetContract(
         kind="reserve_created",
@@ -70,6 +80,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="wanted_hook",
         required_fields=("wanted_ad_id",),
         visibility_rule="viewer can read the wanted hook",
+        redirect_behavior="open the wanted hook detail",
+        fallback_behavior="hide, keep unread, and refuse open when hook is missing",
     ),
     NotificationTargetContract(
         kind="plot_hook_interest",
@@ -77,6 +89,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="plot_hook",
         required_fields=("character_plot_hook_id",),
         visibility_rule="viewer is hook author or casting-capable staff",
+        redirect_behavior="open the character plot hook detail",
+        fallback_behavior="hide, keep unread, and refuse open when plot hook or face is missing",
     ),
     NotificationTargetContract(
         kind="plotting_room_created",
@@ -84,6 +98,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="plotting_room",
         required_fields=("plotting_room_id",),
         visibility_rule="viewer is room owner, participant, or casting-capable staff",
+        redirect_behavior="open the plotting room",
+        fallback_behavior="hide room title, keep unread, and refuse open when room is missing",
     ),
     NotificationTargetContract(
         kind="plotting_room_threaded",
@@ -91,6 +107,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="plotting_room",
         required_fields=("plotting_room_id",),
         visibility_rule="viewer is room owner, participant, or casting-capable staff",
+        redirect_behavior="open the plotting room",
+        fallback_behavior="hide room title, keep unread, and refuse open when room is missing",
     ),
     NotificationTargetContract(
         kind="application_submitted",
@@ -98,6 +116,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="character_application",
         required_fields=("character_id",),
         visibility_rule="viewer owns character or is casting-capable staff",
+        redirect_behavior="open the character application room",
+        fallback_behavior="hide, keep unread, and refuse open when character is missing",
     ),
     NotificationTargetContract(
         kind="application_accepted",
@@ -105,6 +125,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="character_application",
         required_fields=("character_id",),
         visibility_rule="viewer owns character or is casting-capable staff",
+        redirect_behavior="open the character application room",
+        fallback_behavior="hide, keep unread, and refuse open when character is missing",
     ),
     NotificationTargetContract(
         kind="application_revision_requested",
@@ -112,6 +134,8 @@ NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
         target_family="character_application",
         required_fields=("character_id",),
         visibility_rule="viewer owns character or is casting-capable staff",
+        redirect_behavior="open the character application room",
+        fallback_behavior="hide, keep unread, and refuse open when character is missing",
     ),
 )
 NOTIFICATION_TARGET_CONTRACTS_BY_KIND = {
@@ -126,13 +150,17 @@ def notification_target_contract(kind: str) -> NotificationTargetContract | None
 def notification_has_required_target(notification: Notification) -> bool:
     contract = notification_target_contract(notification.kind)
     if contract is None:
-        return True
+        return False
     return all(
         getattr(notification, field_name) is not None for field_name in contract.required_fields
     )
 
 
 class NotificationRepository(PostViewRepository, Protocol):
+    def get_membership(self, community_id: int, membership_id: int) -> CommunityMembership: ...
+
+    def get_role(self, community_id: int, role_id: int) -> Role: ...
+
     def get_board(self, community_id: int, board_id: int) -> Board: ...
 
     def get_thread(self, community_id: int, thread_id: int) -> Thread: ...
@@ -362,7 +390,16 @@ def notify_post_created(
     watch_memberships = set(repo.list_thread_watch_membership_ids(viewer.community.id, thread.id))
     actor_membership_id = viewer.membership.id
     for membership_id in mentioned_memberships:
-        if membership_id != actor_membership_id:
+        if membership_id != actor_membership_id and notification_target_is_deliverable(
+            repo,
+            viewer.community.id,
+            membership_id,
+            kind="mention",
+            thread_id=thread.id,
+            post_id=post.id,
+            actor_membership_id=actor_membership_id,
+            actor_character_id=post.author_character_id,
+        ):
             repo.create_notification(
                 viewer.community.id,
                 membership_id,
@@ -373,7 +410,16 @@ def notify_post_created(
                 actor_character_id=post.author_character_id,
             )
     for membership_id in watch_memberships - mentioned_memberships:
-        if membership_id != actor_membership_id:
+        if membership_id != actor_membership_id and notification_target_is_deliverable(
+            repo,
+            viewer.community.id,
+            membership_id,
+            kind="thread_reply",
+            thread_id=thread.id,
+            post_id=post.id,
+            actor_membership_id=actor_membership_id,
+            actor_character_id=post.author_character_id,
+        ):
             repo.create_notification(
                 viewer.community.id,
                 membership_id,
@@ -385,11 +431,58 @@ def notify_post_created(
             )
 
 
+def notification_target_is_deliverable(
+    repo: NotificationRepository,
+    community_id: int,
+    membership_id: int,
+    *,
+    kind: str,
+    thread_id: int | None = None,
+    post_id: int | None = None,
+    wanted_ad_id: int | None = None,
+    wanted_ad_interest_id: int | None = None,
+    character_plot_hook_id: int | None = None,
+    plotting_room_id: int | None = None,
+    character_id: int | None = None,
+    actor_membership_id: int,
+    actor_character_id: int | None,
+) -> bool:
+    try:
+        membership = repo.get_membership(community_id, membership_id)
+        role = repo.get_role(community_id, membership.role_id)
+    except LookupError:
+        return False
+    if not membership.is_active:
+        return False
+    notification = Notification(
+        id=0,
+        community_id=community_id,
+        membership_id=membership_id,
+        kind=kind,
+        thread_id=thread_id,
+        post_id=post_id,
+        wanted_ad_id=wanted_ad_id,
+        wanted_ad_interest_id=wanted_ad_interest_id,
+        character_plot_hook_id=character_plot_hook_id,
+        plotting_room_id=plotting_room_id,
+        character_id=character_id,
+        actor_membership_id=actor_membership_id,
+        actor_character_id=actor_character_id,
+        read_at=None,
+        created_at="",
+    )
+    return _can_view_notification_target(repo, community_id, membership, role, notification)
+
+
 def notification_item(
     repo: NotificationRepository,
     viewer: ForumView,
     notification: Notification,
 ) -> NotificationItem | None:
+    if notification_target_contract(
+        notification.kind
+    ) is None or not notification_has_required_target(notification):
+        return None
     actor_membership = repo.get_membership(
         viewer.community.id,
         notification.actor_membership_id,
@@ -579,7 +672,8 @@ def _can_view_notification_target(
     role: Role | None,
     notification: Notification,
 ) -> bool:
-    if not notification_has_required_target(notification):
+    contract = notification_target_contract(notification.kind)
+    if contract is None or not notification_has_required_target(notification):
         return False
     try:
         if notification.thread_id is not None:

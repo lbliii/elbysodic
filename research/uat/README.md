@@ -22,6 +22,13 @@ research/uat/
   observed/
 ```
 
+Reusable onboarding protocols:
+
+- `protocols/public-realm-preview.md`
+- `protocols/first-face-onboarding.md`
+- `protocols/wanted-to-plotting-handoff.md`
+- `protocols/onboarding-regression-pack.md`
+
 ## What Counts As A Task
 
 Good UAT tasks are concrete:
