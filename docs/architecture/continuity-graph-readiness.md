@@ -43,6 +43,63 @@ The first real backend slice should be manual and reviewed:
   cited source and affected target
 - export rows scoped to one community and preserving source provenance
 
+## Manual Source Visibility Matrix
+
+The first slice may cite only explicit same-community scene sources and
+explicit same-community affected objects. Source citations are limited to:
+
+- `thread` / `scene`: a same-community thread the viewer can already read.
+- `post`: a same-community post with an explicit `source_thread_id`; malformed
+  post/thread pairs stay hidden.
+
+Affected-object links are explicit reviewer-visible relationships, not inferred
+from prose. The first slice may link same-community characters, published or
+staff-visible materials, boards/locations, wanted hooks, claims, reserves, and
+future typed continuity targets only after the same visibility gate can prove
+the viewer may see that object name.
+
+Visibility decisions are service-owned before rendering. Templates must receive
+already-redacted read models; they must not decide whether to hide a cited
+scene title, post excerpt, affected object name, review state, or notification
+target.
+
+| Viewer mode | Proposal title | Cited scene title | Post excerpt | Affected object names | Review state | Notifications |
+| --- | --- | --- | --- | --- | --- | --- |
+| Source participant | Own draft/submitted proposal titles and approved visible titles. | Visible when the participant can already read the source scene. | Visible only for the cited post the participant can already read; excerpt length is service-capped. | Visible only for affected objects the participant can already read or owns. | Own proposal lifecycle and applicant-visible revision notes only. | May receive proposal movement notifications for visible sources and affected objects. |
+| Unrelated active member | Approved member/public titles only; no draft/submitted proposal titles unless they own an affected object and the service grants a visible handoff. | Public/member-readable scene titles only. | Public/member-readable cited post excerpt only; private scenes and posts are redacted. | Public/member-readable affected names only. | Approved/public state only; no staff notes, reviewer checklist, or private revision context. | Only if they own or are responsible for a visible affected object; notification copy must omit hidden source titles. |
+| Staff/director | Draft, submitted, revision, approved, rejected, and archived titles inside the current community. | Visible for current-community sources staff can already review. | Visible for current-community sources staff can already review; service-capped excerpt. | Visible for current-community objects staff can already review. | Full review state, reviewer notes, checklist, and audit events. | May receive review queue notifications with visible source and affected-object labels only. |
+| Inactive member | Hidden. | Hidden. | Hidden. | Hidden. | Hidden; route recovery must not confirm private proposal existence. | None. |
+| Public visitor | Approved public canon title only after a future public canon route is explicitly approved. | Public scene title only after public continuity routes are approved. | No excerpt in the first backend slice. | Public affected object names only after public continuity routes are approved. | Public approved state only; no draft, review, or revision state. | None. |
+| Signed-in account visitor without local membership | Same as public visitor; account identity does not grant community continuity access. | Same as public visitor. | No excerpt in the first backend slice. | Same as public visitor. | Same as public visitor. | None. |
+| Cross-community viewer | Hidden. | Hidden. | Hidden. | Hidden. | Hidden; no title or object-name confirmation. | None. |
+
+Notification targeting must be computed from visible source and affected-object
+read models. A target is eligible only when all of these are true:
+
+- the target is an active membership in the proposal community
+- the target can already see the cited source label and affected object label
+- the target is the proposal author, a source participant, an affected-object
+  owner/responsible staff member, or a staff/director reviewer
+
+Export behavior for the first slice must include only one community's
+continuity rows, source citations, affected-object links, review events, and
+approved canon entries. Exports may include hidden source identifiers for
+provenance inside that community archive, but public preview exports must not
+include private post excerpts, staff notes, reviewer checklist content, access
+request details, or cross-community identifiers.
+
+## First Implementation Test Matrix Placeholders
+
+The first schema/service PR must add or extend tests that cover at least these
+placeholders before any continuity route renders:
+
+- `test_continuity_proposal_sources_reject_cross_community_threads_posts_and_objects`
+- `test_continuity_proposal_source_visibility_matrix_redacts_private_titles_and_excerpts`
+- `test_continuity_review_authority_requires_active_staff_or_director_membership`
+- `test_continuity_notifications_filter_targets_by_source_and_affected_object_visibility`
+- `test_continuity_export_stays_single_community_and_redacts_private_review_material`
+- `test_continuity_routes_render_redacted_read_models_without_template_owned_filtering`
+
 ## Must Not Ship First
 
 - AI-generated canon
@@ -91,6 +148,10 @@ Stop for human review before:
 - changing thread, post, material, wanted, claim, reserve, plotting, or
   notification visibility to support continuity
 - adding review/audit event storage
+- adding notification fan-out, notification copy, or unread-count behavior for
+  continuity proposals
+- adding export/import rows, public preview exports, archive files, or
+  provenance redaction behavior for continuity proposals
 - adding AI or automatic summary generation
 
 ## Steward Notes
