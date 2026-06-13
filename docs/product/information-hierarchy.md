@@ -13,6 +13,9 @@ realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
 Use `docs/product/director-realm-opening-front-end.md` before changing no-realm
 states, Studio Launch, opening checklist, invitation management, public-preview
 readiness, or director realm-opening handoffs.
+Use `docs/product/auth-entry-session-recovery-ux.md` before changing login,
+logout, request-access, account visitor, membership switching, stale session,
+inactive membership, or cross-community recovery surfaces.
 Use `docs/product/paragraph-rhythm.md` before adding or changing paragraph
 output; Elbysodic is a text-first app, so prose, summaries, helper copy, and
 metadata need distinct paragraph roles.
@@ -27,6 +30,9 @@ current Jcink/PBP, layered-context, editorial-discovery, and technicolor
 futurism synthesis should shape a surface.
 Use `docs/product/surface-quality-bar.md` before turning product data into
 visible cards, badges, metrics, helper copy, or public/editorial page sections.
+Use `docs/product/front-end-surface-conversion-pack.md` when changing
+auth/access, onboarding, public preview, Desk, Studio, applications,
+claims/reserves, wanted, composer, or shell-adjacent surfaces.
 Use `design/composition-bible.md` when deciding whether the surface should be
 open layout, compact rows, story-object cards, or an elevated command panel.
 
@@ -249,6 +255,10 @@ names that describe the writer/director job they support.
 
 Current promoted component shapes:
 
+- `product_identity` and `access_account_notice`: account and realm-access
+  posture for login, request access, invite acceptance, and account visitors.
+  These components never imply a local membership, active face, unread count,
+  staff control, or community shell.
 - `local_rail`: in-page navigation for dense rooms such as Writer Desk, Studio,
   character hubs, and application/casting surfaces. It moves within the current
   route; it is not a sidebar substitute and should not carry global active

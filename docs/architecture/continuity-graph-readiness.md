@@ -18,6 +18,11 @@ it is not a schema design and it does not authorize automatic canon.
 - Program, plotting, claims, applications, and notifications already carry
   source links in specific workflows. They are examples to inspect, not a
   generic continuity primitive.
+- `src/elbysodic/services/continuity.py` owns a schema-neutral source
+  visibility gate for future continuity read models. It resolves board,
+  location, scene/thread, post, character, material, wanted-hook, claim, and
+  reserve references through tenant-aware repository methods and returns
+  redacted visible/hidden results before any route or stored proposal exists.
 
 ## First Implementable Slice
 
@@ -64,6 +69,17 @@ must include proof for:
   links from unauthorized memberships
 - export behavior that includes only one community's continuity rows and
   citations
+
+The source visibility gate is intentionally conservative. Public and member
+viewers may see only sources they can already read: public locations, visible
+scenes/posts, accepted faces, published materials, open wanted hooks, and
+public claimed claims. Private scene participants can see their own private
+scene/post references inside otherwise visible locations. Staff/director
+capabilities can reveal review-only source labels for current-community
+workflow records, but inactive viewers, cross-community viewers, malformed
+post/thread pairs, private boards, draft materials, private claims, reserves,
+and other writers' private records return redacted hidden statuses unless the
+viewer already owns or can review that source.
 
 ## Stop-And-Ask Points
 

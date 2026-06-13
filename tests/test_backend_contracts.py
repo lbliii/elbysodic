@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
@@ -10,7 +11,7 @@ import pytest
 from elbysodic.db import ForumRepository, connect
 from elbysodic.services import create_services
 from elbysodic.web.state import close_request_services, configure_services, get_services
-from elbysodic.web.surface_contracts import SURFACE_CONTRACTS
+from elbysodic.web.surface_contracts import SURFACE_CONTRACTS, validate_surface_contracts
 
 REPO_ROOT = Path(__file__).parents[1]
 WEB_DIR = REPO_ROOT / "src" / "elbysodic" / "web"
@@ -198,6 +199,48 @@ def test_web_page_handlers_do_not_make_policy_decisions_directly() -> None:
     assert offenders == []
 
 
+def test_transactional_workflow_coverage_map_references_existing_proof() -> None:
+    coverage = (
+        REPO_ROOT / "docs" / "architecture" / "transactional-workflow-coverage.md"
+    ).read_text(encoding="utf-8")
+    proof_references = sorted(set(re.findall(r"`(tests/[^`]+\.py::test_[^`]+)`", coverage)))
+
+    assert len(proof_references) >= 18
+    assert "## Remaining Gaps" in coverage
+    assert "uv run pytest tests/test_forum_slice.py" in coverage
+    for reference in proof_references:
+        path_text, _, test_name = reference.partition("::")
+        test_path = REPO_ROOT / path_text
+        assert test_path.exists(), reference
+        assert f"def {test_name}" in test_path.read_text(encoding="utf-8"), reference
+
+
+def test_steward_regression_pack_maps_concerns_to_existing_gates() -> None:
+    regression_map = (REPO_ROOT / "docs" / "architecture" / "steward-regression-pack.md").read_text(
+        encoding="utf-8"
+    )
+    required_sections = (
+        "## Tenancy And Data Integrity",
+        "## Identity And Auth Posture",
+        "## Rendered Surface Contracts",
+        "## Notification Target Visibility",
+        "## Transactional Workflows",
+        "## Export, Restore, And Operations",
+        "## Continuity Readiness",
+        "## Blueprint Import And Apply",
+        "## Not-Now Gaps",
+    )
+    referenced_test_files = set(re.findall(r"`(tests/[^`]+\.py)`", regression_map))
+
+    for section in required_sections:
+        assert section in regression_map
+    assert len(referenced_test_files) >= 10
+    assert all((REPO_ROOT / path).exists() for path in referenced_test_files)
+    assert "uv run pytest" in regression_map
+    assert "uv run ruff check ." in regression_map
+    assert "uv run ty check src/elbysodic/ tests/" in regression_map
+
+
 def test_critical_rendered_pages_use_named_service_surface_contracts() -> None:
     missing: list[str] = []
     for contract in SURFACE_CONTRACTS:
@@ -211,35 +254,59 @@ def test_critical_rendered_pages_use_named_service_surface_contracts() -> None:
     assert missing == []
 
 
-def test_rendered_surface_contract_registry_is_complete_enough() -> None:
-    privacy_matrix = (REPO_ROOT / "docs/architecture/rendered-route-privacy-matrix.md").read_text(
-        encoding="utf-8"
-    )
+def test_rendered_surface_contract_registry_passes_drift_gate() -> None:
     keys = [contract.key for contract in SURFACE_CONTRACTS]
-    missing_paths = [
-        contract.page_path
-        for contract in SURFACE_CONTRACTS
-        if not (REPO_ROOT / contract.page_path).exists()
-    ]
-    incomplete = [
-        contract.key
-        for contract in SURFACE_CONTRACTS
-        if not contract.service_calls
-        or not contract.read_models
-        or not contract.viewer_modes
-        or not contract.dimensions
-    ]
-    missing_matrix_labels = [
-        contract.key
-        for contract in SURFACE_CONTRACTS
-        if contract.privacy_matrix_label not in privacy_matrix
-    ]
 
     assert len(keys) == len(set(keys))
     assert len(SURFACE_CONTRACTS) >= 10
-    assert missing_paths == []
-    assert incomplete == []
-    assert missing_matrix_labels == []
+    assert validate_surface_contracts(repo_root=REPO_ROOT) == ()
+
+
+@pytest.mark.parametrize(
+    ("broken_contract", "expected_code"),
+    [
+        (
+            replace(SURFACE_CONTRACTS[0], viewer_modes=()),
+            "missing_required_field",
+        ),
+        (
+            replace(SURFACE_CONTRACTS[0], dimensions=()),
+            "missing_required_field",
+        ),
+        (
+            replace(SURFACE_CONTRACTS[0], service_calls=("services.missing_surface()",)),
+            "missing_service_call",
+        ),
+        (
+            replace(SURFACE_CONTRACTS[0], privacy_matrix_label="/missing-surface"),
+            "missing_privacy_matrix_label",
+        ),
+        (
+            replace(SURFACE_CONTRACTS[0], proof_references=("tests/test_forum_slice.py::missing",)),
+            "missing_proof_symbol",
+        ),
+        (
+            replace(SURFACE_CONTRACTS[0], proof_references=("tests/test_missing_surface.py",)),
+            "missing_proof_reference",
+        ),
+    ],
+)
+def test_rendered_surface_contract_drift_gate_reports_missing_requirements(
+    broken_contract,
+    expected_code: str,
+) -> None:
+    issues = validate_surface_contracts((broken_contract,), repo_root=REPO_ROOT)
+
+    assert expected_code in {issue.code for issue in issues}
+
+
+def test_rendered_surface_contract_drift_gate_reports_duplicate_keys() -> None:
+    issues = validate_surface_contracts(
+        (SURFACE_CONTRACTS[0], SURFACE_CONTRACTS[0]),
+        repo_root=REPO_ROOT,
+    )
+
+    assert "duplicate_key" in {issue.code for issue in issues}
 
 
 def test_service_raw_sql_stays_limited_to_lifecycle_and_operations_diagnostics() -> None:

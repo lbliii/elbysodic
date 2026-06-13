@@ -280,6 +280,16 @@ sessions, token hashes, raw invite tokens, and private access-request notes from
 the general community archive manifest. Director-only detail export can be
 designed later if those private workflow records need a separate archive path.
 
+Export privacy profiles live with the service manifest. They define the allowed
+domain lists for public export, member export, staff operations export, and
+director archive export before any binary/archive artifact exists. Every profile
+and manifest section carries `community_id`, and every tier explicitly excludes
+cross-community records. Lower tiers keep private notes, staff queues, inactive
+identities, draft materials, notification rows, and other writers' private
+records out of export scope. The director archive profile names sensitive
+domains so operators can see which PBP workflow records require privacy review
+before preservation.
+
 ## Continuity Graph
 
 Continuity Graph is not yet a persistence primitive in this repo. Existing
