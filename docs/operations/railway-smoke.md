@@ -36,6 +36,7 @@ Required staging variables:
 
 - `ELBYSODIC_ENV=staging`
 - `ELBYSODIC_DEMO_MODE=1`
+- `ELBYSODIC_AUTO_SEED_DEMO=1`
 - `ELBYSODIC_SECRET_KEY=<staging-only random secret>`
 - `ELBYSODIC_DB_PATH=/app/var/elbysodic.sqlite3`
 
@@ -68,6 +69,13 @@ seeded /app/var/elbysodic.sqlite3
 
 If it reports `seeded var/elbysodic.sqlite3`, the app is still writing to the
 container filesystem and persistence is not proven.
+
+With `ELBYSODIC_AUTO_SEED_DEMO=1`, staging also runs the idempotent demo seed
+path during app startup. The flag is accepted only when
+`ELBYSODIC_ENV=staging` and `ELBYSODIC_DEMO_MODE=1`; using it outside staging
+is a configuration error. Keep the manual `railway ssh --service elbysodic
+elbysodic seed-demo` step available for immediate repair and for proving the
+database path printed by the seed command.
 
 Staging smoke should include:
 
@@ -140,6 +148,23 @@ production run so staging proof and production proof stay distinct.
 Latest known staging smoke:
 
 ```text
+Railway staging seed repair:
+- Date: 2026-06-13
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 598b31a9-b9cf-4253-9b25-09fc558df7bb
+- Commit: c165e0d469650a3487cb9f620130175ce8bc84e6
+- Volume path: /app/var
+- Database path: /app/var/elbysodic.sqlite3
+- Demo mode: on
+- Auto seed: ELBYSODIC_AUTO_SEED_DEMO=1 set for future staging deploys
+- Manual seed: `elbysodic seed-demo` reported `seeded /app/var/elbysodic.sqlite3`
+- Public GETs: /health, /network, /c/x-men-apocalypse, and
+  /elbysodic-static/seed-media/xmen-hero.svg returned 200
+- Restart persistence: not rerun in this repair pass
+- Result: staging seed data is restored on the volume-backed database; future
+  staging app startups can self-heal missing seed rows once this code is
+  deployed.
+
 Railway smoke:
 - Date: 2026-05-12
 - URL: https://elbysodic-staging.up.railway.app

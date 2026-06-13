@@ -18,6 +18,9 @@ chooses a different persistence backend.
   persistent database file.
 - Seed demo data intentionally with `elbysodic seed-demo`; app startup creates
   the schema but should not be treated as a demo reset.
+- Staging may set `ELBYSODIC_AUTO_SEED_DEMO=1` together with
+  `ELBYSODIC_ENV=staging` and `ELBYSODIC_DEMO_MODE=1` to self-heal missing
+  demo rows on startup. Do not enable auto-seeding in production.
 - Demo seeding is idempotent for interrupted local/staging setup. If a seed run
   is stopped partway through, rerun `elbysodic seed-demo` or
   `elbysodic dev preview` against the same database to repair the missing demo
