@@ -67,6 +67,13 @@ For each new rendered surface, decide whether it needs tests for:
 Keep assertions semantic. It is usually better to assert that a title, note, or
 control appears or does not appear than to snapshot large HTML sections.
 
+Critical route families also need an entry in
+`src/elbysodic/web/surface_contracts.py`. The registry row should name the
+route-facing service method, read-model family, viewer modes, parity dimensions,
+this matrix label, and proof references. The backend drift gate fails when those
+links disappear; rendered privacy tests still prove the actual visible and
+hidden state.
+
 ## Covered Regressions
 
 - Browser QA smoke and deep profiles passed on 2026-05-12 against a local seeded
