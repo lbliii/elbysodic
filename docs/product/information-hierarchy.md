@@ -10,6 +10,9 @@ This document explains what repeated concepts mean visually. Use
 compact, editable, or collapsed a control should be.
 Use `docs/product/navigation-menus.md` when deciding route placement, topbar
 realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
+Use `docs/product/director-realm-opening-front-end.md` before changing no-realm
+states, Studio Launch, opening checklist, invitation management, public-preview
+readiness, or director realm-opening handoffs.
 Use `docs/product/auth-entry-session-recovery-ux.md` before changing login,
 logout, request-access, account visitor, membership switching, stale session,
 inactive membership, or cross-community recovery surfaces.
