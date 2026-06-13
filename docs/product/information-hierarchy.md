@@ -10,6 +10,9 @@ This document explains what repeated concepts mean visually. Use
 compact, editable, or collapsed a control should be.
 Use `docs/product/navigation-menus.md` when deciding route placement, topbar
 realms, sidebar grouping, breadcrumbs, tabs, dropdowns, and active states.
+Use `docs/product/applicant-account-visitor-public-preview-handoff.md` before
+changing public preview, account visitor, request-access, wanted/application,
+faceless-member, applicant, inactive, or cross-community handoff states.
 Use `docs/product/invite-to-first-face-onboarding-journey.md` before changing
 request-access, invitation acceptance, faceless-member continuation,
 first-face application, claims/reserves, wanted, or first-scene onboarding
