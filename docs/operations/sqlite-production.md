@@ -132,9 +132,10 @@ require human confirmation before any repair, import, destructive restore, or
 cutover. It covers tenant roots, membership and character readback, workflow
 rows such as sessions, invitations, access requests, plotting rooms, and
 notifications, plus explicit review steps for claims/reserves, wanted hooks,
-continuity source links, export privacy, and auth/session posture. A blocked
-plan means operators should not mutate or restore the candidate until the named
-failure is understood.
+continuity source links, export privacy, and auth/session posture. Use the
+export boundary matrix in `docs/architecture/primitives.md` when restore drills
+need archive/export review. A blocked plan means operators should not mutate or
+restore the candidate until the named failure is understood.
 
 ## Restore-Check Operator Contract
 
