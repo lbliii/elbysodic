@@ -42,6 +42,32 @@ def test_auth_trust_posture_reports_production_demo_state_without_secret(
     assert "production_blocking: yes" in report
 
 
+def test_auth_trust_posture_allows_staging_demo_rehearsal_without_launch_blocker(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("ELBYSODIC_ENV", "staging")
+    monkeypatch.setenv("ELBYSODIC_DEMO_MODE", "1")
+    monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "staging-demo-secret-value-123456")
+
+    posture = auth_trust_posture()
+    report = format_auth_trust_posture(posture)
+
+    assert posture.production is True
+    assert posture.environment == "staging"
+    assert posture.demo_mode_enabled is True
+    assert posture.seed_passwords_enabled is True
+    assert posture.secret_key_meets_minimum is True
+    assert posture.session_required_for_app_routes is True
+    demo_diagnostic = _diagnostic(posture.diagnostics, "auth.demo_mode.seed_passwords")
+    assert demo_diagnostic.severity == "warning"
+    assert demo_diagnostic.production_blocking is False
+    assert demo_diagnostic.local_development_exception is True
+    assert "staging or seeded demo rehearsals" in demo_diagnostic.recommended_fix
+    assert "staging-demo-secret-value-123456" not in report
+    assert "[auth.demo_mode.seed_passwords] warning" in report
+    assert "production_blocking: no" in report
+
+
 def test_auth_trust_posture_reports_production_secret_warning(monkeypatch) -> None:
     monkeypatch.setenv("ELBYSODIC_ENV", "staging")
     monkeypatch.delenv("ELBYSODIC_DEMO_MODE", raising=False)
