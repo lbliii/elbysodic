@@ -429,6 +429,17 @@ def test_production_signed_in_duplicate_access_request_links_existing_record(
                 headers={"Cookie": _cookie_header(cookies)},
             )
             request_cookies = {**cookies, **_cookie_values(request_access)}
+            before_memberships = services.repo.list_memberships(community.id)
+            before_characters = services.repo.list_community_characters(community.id)
+            before_invitations = services.repo.list_community_invitations(community.id)
+            before_claims = services.repo.list_character_claims(community.id, status=None)
+            before_reserves = services.repo.list_character_reserves_for_community(
+                community.id,
+                status=None,
+            )
+            before_session_count = services.repo.connection.execute(
+                "SELECT COUNT(*) FROM user_sessions"
+            ).fetchone()[0]
             response = await client.post(
                 "/request-access",
                 body=urlencode(
@@ -457,6 +468,18 @@ def test_production_signed_in_duplicate_access_request_links_existing_record(
         assert requests[0].id == existing.id
         assert requests[0].account_user_id == moira.id
         assert requests[0].display_name == "Anonymous Moira"
+        assert services.repo.list_memberships(community.id) == before_memberships
+        assert services.repo.list_community_characters(community.id) == before_characters
+        assert services.repo.list_community_invitations(community.id) == before_invitations
+        assert services.repo.list_character_claims(community.id, status=None) == before_claims
+        assert (
+            services.repo.list_character_reserves_for_community(community.id, status=None)
+            == before_reserves
+        )
+        assert (
+            services.repo.connection.execute("SELECT COUNT(*) FROM user_sessions").fetchone()[0]
+            == before_session_count
+        )
         with pytest.raises(LookupError):
             services.repo.get_membership_for_user(community.id, moira.id)
 
