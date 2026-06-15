@@ -114,6 +114,11 @@ Identity-switch `next` recovery applies the same rule to stale community paths.
 Character, application, wanted, world-material, plotting-room, board, and
 thread destinations must either remain valid inside the selected realm or fall
 back to a safe local hub for that route family.
+Access-request recovery follows the lifecycle matrix in
+`docs/architecture/security-boundaries.md`: duplicate, account-link, replayed
+invite, decline, withdrawal, and expiry states cannot reveal request notes,
+invitation links, raw tokens, staff review state, or another community's
+request history.
 
 ## Notification Read Models
 

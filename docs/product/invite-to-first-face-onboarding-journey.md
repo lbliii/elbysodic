@@ -14,8 +14,10 @@ public preview -> request access or invitation -> local membership -> first face
 
 This guide does not define the backend lifecycle for access requests,
 invitations, membership creation, sessions, claims, reserves, or applications.
-Those stay in the existing backend issues. This guide defines what rendered
-pages must communicate while using those service-owned contracts.
+The access-request state and privacy matrix lives in
+`docs/architecture/security-boundaries.md`; other backend lifecycle work stays
+in the existing backend issues. This guide defines what rendered pages must
+communicate while using those service-owned contracts.
 
 ## Journey States
 

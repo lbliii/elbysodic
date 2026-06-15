@@ -42,6 +42,9 @@ replica, and explicit smoke evidence before writers are invited.
   duplicate for the same email should link that account to the existing open
   request instead of creating a second queue item or granting membership. Studio
   records that account-link event in the director-visible request history.
+- Use the access-request lifecycle matrix in
+  `docs/architecture/security-boundaries.md` before changing request review,
+  duplicate, invitation, withdrawal, expiry, or replay behavior.
 
 ### Invitation Delivery Policy
 
