@@ -45,12 +45,17 @@ def test_notification_labels_come_from_target_contracts() -> None:
 
 def test_notification_target_contracts_name_visibility_rules() -> None:
     expected = {
-        "thread_reply": ("thread_post", ("thread_id", "post_id")),
+        "application_accepted": ("character_application", ("character_id",)),
+        "application_revision_requested": ("character_application", ("character_id",)),
+        "application_submitted": ("character_application", ("character_id",)),
         "mention": ("thread_post", ("thread_id", "post_id")),
-        "wanted_interest": ("wanted_interest", ("wanted_ad_id", "wanted_ad_interest_id")),
         "plot_hook_interest": ("plot_hook", ("character_plot_hook_id",)),
         "plotting_room_created": ("plotting_room", ("plotting_room_id",)),
-        "application_submitted": ("character_application", ("character_id",)),
+        "plotting_room_threaded": ("plotting_room", ("plotting_room_id",)),
+        "reserve_created": ("wanted_hook", ("wanted_ad_id",)),
+        "thread_reply": ("thread_post", ("thread_id", "post_id")),
+        "wanted_interest": ("wanted_interest", ("wanted_ad_id", "wanted_ad_interest_id")),
+        "wanted_reserved": ("wanted_hook", ("wanted_ad_id",)),
     }
 
     for kind, (target_family, required_fields) in expected.items():
@@ -63,15 +68,26 @@ def test_notification_target_contracts_name_visibility_rules() -> None:
         assert contract.fallback_behavior
 
 
-def test_registered_notification_requires_declared_target_fields() -> None:
-    notification = _notification(
-        kind="thread_reply",
-        thread_id=10,
-        post_id=20,
-    )
+def test_registered_notifications_require_declared_target_fields() -> None:
+    field_values = {
+        "character_id": 10,
+        "character_plot_hook_id": 20,
+        "plotting_room_id": 30,
+        "post_id": 40,
+        "thread_id": 50,
+        "wanted_ad_id": 60,
+        "wanted_ad_interest_id": 70,
+    }
 
-    assert notification_has_required_target(notification)
-    assert not notification_has_required_target(replace(notification, post_id=None))
+    for contract in NOTIFICATION_TARGET_CONTRACTS:
+        notification = _notification(
+            kind=contract.kind,
+            **{field_name: field_values[field_name] for field_name in contract.required_fields},
+        )
+
+        assert notification_has_required_target(notification)
+        for field_name in contract.required_fields:
+            assert not notification_has_required_target(replace(notification, **{field_name: None}))
 
 
 def test_unknown_notification_kind_is_inaccessible_to_service_surfaces() -> None:
@@ -281,6 +297,11 @@ def _notification(
     kind: str,
     thread_id: int | None = None,
     post_id: int | None = None,
+    wanted_ad_id: int | None = None,
+    wanted_ad_interest_id: int | None = None,
+    character_plot_hook_id: int | None = None,
+    plotting_room_id: int | None = None,
+    character_id: int | None = None,
 ) -> Notification:
     return Notification(
         id=1,
@@ -289,11 +310,11 @@ def _notification(
         kind=kind,
         thread_id=thread_id,
         post_id=post_id,
-        wanted_ad_id=None,
-        wanted_ad_interest_id=None,
-        character_plot_hook_id=None,
-        plotting_room_id=None,
-        character_id=None,
+        wanted_ad_id=wanted_ad_id,
+        wanted_ad_interest_id=wanted_ad_interest_id,
+        character_plot_hook_id=character_plot_hook_id,
+        plotting_room_id=plotting_room_id,
+        character_id=character_id,
         actor_membership_id=3,
         actor_character_id=None,
         read_at=None,
