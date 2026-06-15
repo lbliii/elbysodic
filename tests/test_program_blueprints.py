@@ -906,6 +906,148 @@ materials:
     assert changed.preview_fingerprint != preview.preview_fingerprint
 
 
+def test_program_blueprint_apply_rejects_live_collision_stale_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    source = """
+elbysodic_blueprint: 1
+program:
+  slug: x-men-apocalypse
+  name: "X-Men: Apocalypse"
+  role:
+    slug: staff
+    name: Staff
+    is_admin: true
+characters:
+  - slug: blueprint-stale-face
+    name: Blueprint Stale Face
+    summary: A starter face used only for stale-preview proof.
+boards:
+  - slug: blueprint-stale-board
+    name: Blueprint Stale Board
+    kind: location
+    tagline: A scene hub added after preview.
+    description: Live board collision proof.
+materials:
+  - slug: blueprint-stale-premise
+    title: Blueprint Stale Premise
+    type: premise
+    summary: A premise added after preview.
+    body: Live material collision proof.
+wanted:
+  - slug: blueprint-stale-wanted
+    title: Blueprint Stale Wanted
+    type: plot_role
+    summary: A wanted hook added after preview.
+    body: Live wanted collision proof.
+    related_material: blueprint-stale-premise
+theme:
+  slug: blueprint-stale-theme
+  name: Blueprint Stale Theme
+  typography:
+    display: serif
+    body: serif
+    mono: mono
+  light:
+    bg: "#fbf5e8"
+    bg_subtle: "#eee3cf"
+    surface: "#fffaf0"
+    surface_elevated: "#f4ead7"
+    border: "#c8b89a"
+    text: "#2b2318"
+    text_muted: "#75684f"
+    accent: "#8d3f4a"
+    accent_hover: "#6e2f38"
+    accent_dim: "#c9878f"
+    accent_secondary: "#4f7c5b"
+    success: "#4f7c5b"
+    warning: "#a06d2a"
+    error: "#a64242"
+  dark:
+    bg: "#16130f"
+    bg_subtle: "#211c16"
+    surface: "#282219"
+    surface_elevated: "#332b1f"
+    border: "#675942"
+    text: "#f6eddf"
+    text_muted: "#c9b99e"
+    accent: "#e38991"
+    accent_hover: "#f0a7ad"
+    accent_dim: "#7d4248"
+    accent_secondary: "#91c49a"
+    success: "#91c49a"
+    warning: "#dbb168"
+    error: "#ee8d8d"
+  radius: md
+  density: calm
+  texture: paper
+"""
+
+    preview = services.preview_program_blueprint(source)
+    assert preview.is_valid
+    assert preview.preview_fingerprint
+
+    board = repo.create_board(
+        seed.community.id,
+        "blueprint-stale-board",
+        "Blueprint Stale Board",
+        description="Created after the first dry-run preview.",
+    )
+    material = repo.create_material(
+        seed.community.id,
+        "blueprint-stale-premise",
+        "Blueprint Stale Premise",
+        material_type="premise",
+        summary="Created after the first dry-run preview.",
+    )
+    repo.create_wanted_ad(
+        seed.community.id,
+        moira.id,
+        "blueprint-stale-wanted",
+        "Blueprint Stale Wanted",
+        related_material_id=material.id,
+    )
+    repo.create_theme(
+        seed.community.id,
+        "blueprint-stale-theme",
+        "Blueprint Stale Theme",
+        "{}",
+    )
+
+    changed = services.preview_program_blueprint(source)
+    changed_rows = {(row.section, row.slug): row for row in changed.diff_rows}
+
+    assert board.slug == "blueprint-stale-board"
+    assert changed.preview_fingerprint != preview.preview_fingerprint
+    assert changed_rows[("scene hub", "blueprint-stale-board")].action == "update"
+    assert changed_rows[("material", "blueprint-stale-premise")].action == "update"
+    assert changed_rows[("wanted hook", "blueprint-stale-wanted")].action == "skip"
+    assert changed_rows[("theme", "blueprint-stale-theme")].action == "update"
+
+    def fail_transaction() -> Iterator[None]:
+        raise AssertionError("stale collision apply should not enter a transaction")
+        yield
+
+    monkeypatch.setattr(repo, "transaction", fail_transaction)
+
+    with pytest.raises(ValueError, match="preview changed"):
+        services.apply_program_blueprint_preview(source, preview.preview_fingerprint)
+
+
 def test_program_blueprint_preview_scopes_existing_seed_collisions_by_section() -> None:
     connection = connect()
     create_schema(connection)
