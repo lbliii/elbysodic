@@ -4359,6 +4359,82 @@ def test_access_request_detail_denies_non_director() -> None:
     asyncio.run(run())
 
 
+def test_access_request_detail_denies_inactive_and_cross_community_director() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        inactive = resolve_seed_persona(services.repo, "xmen_inactive")
+        hp_director = resolve_seed_persona(services.repo, "hp_director")
+        account = services.repo.create_user("boundary-prospect@example.com", "hash")
+        access_request = services.repo.create_community_access_request(
+            staff.community.id,
+            email="boundary-prospect@example.com",
+            display_name="Boundary Prospect",
+            face_concept="Boundary transfer",
+            wanted_hook="Boundary opening",
+            notes="PRIVATE ACCESS NOTE: cross-viewer detail room only.",
+        )
+        services.repo.link_community_access_request_account_user(
+            staff.community.id,
+            access_request.id,
+            account.id,
+        )
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        )
+        staff_services.review_access_request(access_request.id)
+        created = staff_services.invite_access_request(access_request.id)
+
+        denied_viewers = [
+            (
+                inactive,
+                403,
+            ),
+            (
+                hp_director,
+                404,
+            ),
+        ]
+        responses = []
+        for persona, expected_status in denied_viewers:
+            app = create_app(
+                debug=False,
+                services=AppServices(
+                    services.repo,
+                    DemoSeed(
+                        persona.community,
+                        persona.user,
+                        persona.membership,
+                        persona.character,
+                    ),
+                ),
+            )
+            async with TestClient(app) as client:
+                response = await client.get(f"/studio/access-requests/{access_request.id}")
+            assert response.status == expected_status
+            responses.append(response)
+
+        for response in responses:
+            for hidden in (
+                "boundary-prospect@example.com",
+                "Boundary Prospect",
+                "Boundary transfer",
+                "Boundary opening",
+                "PRIVATE ACCESS NOTE",
+                "Linked Elbysodic account",
+                "Elbysodic account on file",
+                "Requested access",
+                "Account linked",
+                "Marked for review",
+                "Invitation created",
+                f"#{created.invitation.id} · Pending",
+            ):
+                assert hidden not in response.text
+
+    asyncio.run(run())
+
+
 def test_studio_launch_invites_writer_from_access_request() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
