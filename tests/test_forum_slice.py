@@ -12351,7 +12351,88 @@ def test_start_thread_rolls_back_when_late_write_fails(monkeypatch) -> None:
     viewer = services.viewer()
     assert viewer.current_character is not None
     board = services.repo.get_board_by_slug(viewer.community.id, "danger-room")
-    before = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
+
+    def thread_write_snapshot() -> dict[str, list[tuple[object, ...]]]:
+        connection = services.repo.connection
+        community_id = viewer.community.id
+        return {
+            "threads": [
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, board_id, author_membership_id, author_character_id, slug, title
+                    FROM threads
+                    WHERE community_id = ?
+                    ORDER BY id
+                    """,
+                    (community_id,),
+                ).fetchall()
+            ],
+            "posts": [
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, thread_id, post_number, author_membership_id,
+                           author_character_id, body
+                    FROM posts
+                    WHERE community_id = ?
+                    ORDER BY id
+                    """,
+                    (community_id,),
+                ).fetchall()
+            ],
+            "thread_participants": [
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, thread_id, character_id
+                    FROM thread_participants
+                    WHERE community_id = ?
+                    ORDER BY id
+                    """,
+                    (community_id,),
+                ).fetchall()
+            ],
+            "thread_watches": [
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, thread_id, membership_id
+                    FROM thread_watches
+                    WHERE community_id = ?
+                    ORDER BY id
+                    """,
+                    (community_id,),
+                ).fetchall()
+            ],
+            "thread_reads": [
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, thread_id, membership_id, read_at
+                    FROM thread_reads
+                    WHERE community_id = ?
+                    ORDER BY id
+                    """,
+                    (community_id,),
+                ).fetchall()
+            ],
+            "notifications": [
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, membership_id, kind, thread_id, post_id, actor_membership_id,
+                           actor_character_id
+                    FROM notifications
+                    WHERE community_id = ?
+                    ORDER BY id
+                    """,
+                    (community_id,),
+                ).fetchall()
+            ],
+        }
+
+    before = thread_write_snapshot()
 
     def fail_mark_thread_read(
         community_id: int,
@@ -12370,9 +12451,23 @@ def test_start_thread_rolls_back_when_late_write_fails(monkeypatch) -> None:
             body="This scene should not survive a failed read-state write.",
         )
 
-    after = [thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)]
+    after = thread_write_snapshot()
     assert after == before
-    assert "rollback-drill" not in after
+    assert not services.repo.connection.in_transaction
+    assert "rollback-drill" not in [
+        thread.slug for thread in services.repo.list_threads(viewer.community.id, board.id)
+    ]
+    assert "This scene should not survive a failed read-state write." not in {
+        row["body"]
+        for row in services.repo.connection.execute(
+            """
+            SELECT body
+            FROM posts
+            WHERE community_id = ?
+            """,
+            (viewer.community.id,),
+        )
+    }
 
 
 def test_repository_transaction_rolls_back_nested_mixin_writes() -> None:
