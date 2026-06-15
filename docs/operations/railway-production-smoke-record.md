@@ -10,6 +10,31 @@ Production smoke has not been run yet.
 ## Attempt Log
 
 ```text
+Chirp/Pounce 0.8 production-check adoption:
+- Date: 2026-06-15
+- Operator: Codex local workspace
+- Commit: b729c599
+- Local app check:
+  `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"`
+  passed with 52 routes, 283 templates, Chirp-UI 0.9, and no warnings.
+- Local Pounce 0.8 check:
+  `.venv/bin/pounce check --app elbysodic.web:create_app --host 127.0.0.1 --port 8765 --format plain`
+  passed: app import ok, config validation valid, and local port
+  `127.0.0.1:8765` available.
+- Live Railway Pounce check: not run. This still requires a
+  Railway-connected operator to run the same check in the target service
+  environment and record the target deployment, host, replica count, volume
+  path, database path, and one-replica SQLite posture.
+- Trusted proxy / forwarded-hop posture: deferred until the live Railway
+  topology is inspected. Do not set `trusted_proxies` or forwarded-hop
+  overrides from local assumptions.
+- Request body / upload / static streaming limits: no runtime override adopted
+  in this pass. Keep Chirp 0.8 defaults until an upload/media workflow or
+  Railway memory budget requires explicit product limits.
+- Result: local framework preflight is adopted; live Railway execution remains
+  an operator task inside the production smoke, not evidence that production
+  itself has passed.
+
 Railway staging smoke:
 - Date: 2026-05-19
 - Operator: Codex local workspace
