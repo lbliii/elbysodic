@@ -69,6 +69,17 @@ class LoginSession:
 
 
 @dataclass(frozen=True, slots=True)
+class AuthTrustDiagnostic:
+    code: str
+    severity: str
+    surface: str
+    message: str
+    recommended_fix: str
+    production_blocking: bool
+    local_development_exception: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class AuthTrustPosture:
     environment: str
     production: bool
@@ -83,14 +94,143 @@ class AuthTrustPosture:
 
     @property
     def warnings(self) -> tuple[str, ...]:
-        warnings: list[str] = []
+        return tuple(diagnostic.message for diagnostic in self.warning_diagnostics)
+
+    @property
+    def warning_diagnostics(self) -> tuple[AuthTrustDiagnostic, ...]:
+        return tuple(
+            diagnostic
+            for diagnostic in self.diagnostics
+            if diagnostic.severity in {"blocker", "warning"}
+            or diagnostic.code == "auth.development_identity.shortcuts"
+        )
+
+    @property
+    def diagnostics(self) -> tuple[AuthTrustDiagnostic, ...]:
+        diagnostics: list[AuthTrustDiagnostic] = []
+        production_launch = self.environment in {"production", "prod"}
         if self.production and not self.secret_key_meets_minimum:
-            warnings.append("production secret key is missing or too short")
+            diagnostics.append(
+                AuthTrustDiagnostic(
+                    code="auth.secret_key.too_short",
+                    severity="blocker",
+                    surface="session secret",
+                    message="production secret key is missing or too short",
+                    recommended_fix=(
+                        "Set ELBYSODIC_SECRET_KEY to a random value with at least "
+                        "32 characters before serving a shared environment."
+                    ),
+                    production_blocking=True,
+                )
+            )
+        else:
+            diagnostics.append(
+                AuthTrustDiagnostic(
+                    code="auth.secret_key.configured",
+                    severity="ok",
+                    surface="session secret",
+                    message="session secret posture is acceptable for this environment",
+                    recommended_fix="No action needed for the current environment.",
+                    production_blocking=False,
+                )
+            )
         if self.production and self.demo_mode_enabled:
-            warnings.append("production demo mode accepts seeded demo passwords")
+            diagnostics.append(
+                AuthTrustDiagnostic(
+                    code="auth.demo_mode.seed_passwords",
+                    severity="warning",
+                    surface="demo login",
+                    message="production demo mode accepts seeded demo passwords",
+                    recommended_fix=(
+                        "Unset ELBYSODIC_DEMO_MODE for a real production launch; keep it "
+                        "only for staging or seeded demo rehearsals."
+                    ),
+                    production_blocking=production_launch,
+                    local_development_exception=self.environment == "staging",
+                )
+            )
         if not self.production and self.development_identity_allowed:
-            warnings.append("development identity shortcuts are enabled")
-        return tuple(warnings)
+            diagnostics.append(
+                AuthTrustDiagnostic(
+                    code="auth.development_identity.shortcuts",
+                    severity="note",
+                    surface="local identity",
+                    message="development identity shortcuts are enabled",
+                    recommended_fix=(
+                        "Accept this only for local development; use production or staging "
+                        "environment mode before shared smoke runs."
+                    ),
+                    production_blocking=False,
+                    local_development_exception=True,
+                )
+            )
+        diagnostics.extend(
+            (
+                AuthTrustDiagnostic(
+                    code="auth.secure_cookies.expected",
+                    severity="ok" if self.production else "note",
+                    surface="session cookie",
+                    message=(
+                        "secure session cookies are expected in production-like app configuration"
+                        if self.production
+                        else "local development may use non-secure cookies"
+                    ),
+                    recommended_fix=(
+                        "Run shared deployments with ELBYSODIC_ENV=production or staging "
+                        "and debug disabled so session cookies are Secure, HttpOnly, and "
+                        "SameSite=Lax."
+                    ),
+                    production_blocking=False,
+                    local_development_exception=not self.production,
+                ),
+                AuthTrustDiagnostic(
+                    code="auth.csrf.configured",
+                    severity="ok",
+                    surface="mutating forms",
+                    message="server-rendered mutating forms use Chirp CSRF middleware",
+                    recommended_fix=(
+                        "Keep POST forms rendering csrf_field() and keep CSRF middleware "
+                        "enabled in the app factory."
+                    ),
+                    production_blocking=False,
+                ),
+                AuthTrustDiagnostic(
+                    code="auth.forwarded_headers.not_trusted",
+                    severity="ok",
+                    surface="request origin",
+                    message="login trust decisions do not depend on spoofable forwarded headers",
+                    recommended_fix=(
+                        "Do not add forwarded-header trust without pairing it with proxy "
+                        "configuration and security tests."
+                    ),
+                    production_blocking=False,
+                ),
+                AuthTrustDiagnostic(
+                    code="auth.invite_only.entry",
+                    severity="ok",
+                    surface="writer entry",
+                    message="public self-registration is not part of the current auth posture",
+                    recommended_fix=(
+                        "Keep new writer entry behind request-access and invitation flows "
+                        "until a separate registration policy is approved."
+                    ),
+                    production_blocking=False,
+                ),
+                AuthTrustDiagnostic(
+                    code="auth.deployment_environment",
+                    severity="ok",
+                    surface="deployment mode",
+                    message=f"auth posture evaluated for {self.environment or 'development'}",
+                    recommended_fix=(
+                        "Use ELBYSODIC_ENV=production for production and staging for "
+                        "shared seeded smoke rehearsals."
+                    ),
+                    production_blocking=False,
+                    local_development_exception=not self.production,
+                ),
+            )
+        )
+        return tuple(diagnostics)
 
 
 def auth_trust_posture() -> AuthTrustPosture:
@@ -128,7 +268,18 @@ def format_auth_trust_posture(posture: AuthTrustPosture) -> str:
     ]
     if posture.warnings:
         lines.append("warnings:")
-        lines.extend(f"- {warning}" for warning in posture.warnings)
+        lines.extend(
+            (
+                "- "
+                f"[{diagnostic.code}] {diagnostic.severity}; "
+                f"surface: {diagnostic.surface}; "
+                f"production_blocking: {_yes_no(diagnostic.production_blocking)}; "
+                f"local_dev_exception: {_yes_no(diagnostic.local_development_exception)}; "
+                f"message: {diagnostic.message}; "
+                f"fix: {diagnostic.recommended_fix}"
+            )
+            for diagnostic in posture.warning_diagnostics
+        )
     return "\n".join(lines) + "\n"
 
 

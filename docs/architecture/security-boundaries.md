@@ -96,7 +96,10 @@ operations diagnostic for this posture. It reports environment, production
 mode, demo-mode seed password posture, secret-key presence/minimum status,
 session cookie name, session TTL, development identity availability, and
 session-required status without exposing secret values, token hashes, raw
-cookies, account emails, membership names, or private identity state.
+cookies, account emails, membership names, or private identity state. Each
+warning also has a stable code, severity, affected surface, recommended fix,
+production-blocking flag, and local-development exception flag. The operator
+remediation guide lives in `docs/operations/auth-trust-posture.md`.
 
 The logged-out `/` and `/network` surfaces use public catalog read models.
 They can show realm names, public premise or current-event summaries, public

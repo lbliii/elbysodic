@@ -14,6 +14,9 @@ production bootstrap creates the first real director identity and realm.
 - Demo mode is off for production unless the session is explicitly a demo.
 - The redacted auth trust posture reports the expected production, demo-mode,
   secret-key minimum, session cookie, and session-required settings.
+- Auth trust warnings have been recorded by code, severity,
+  production-blocking status, and recommended fix using
+  `docs/operations/auth-trust-posture.md`.
 - A fresh backup exists, or the database is confirmed empty.
 - If a backup exists, the read-only restore-check service reports `restore-check
   ok` against the copied database without exposing secrets or private content.
@@ -39,6 +42,10 @@ production bootstrap creates the first real director identity and realm.
 ## Execution Record
 
 Record values, not secrets:
+Do not paste secrets, cookies, token hashes, passwords, raw invite tokens,
+account emails, membership names, or private notes. For auth posture, record
+only diagnostic codes, severity, production-blocking status, and recommended
+fixes.
 
 ```text
 Production bootstrap:
