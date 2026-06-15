@@ -4904,6 +4904,54 @@ def test_director_invites_writer_through_first_face_handoff() -> None:
     asyncio.run(run())
 
 
+def test_invitation_acceptance_rolls_back_when_session_creation_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    created = staff_services.create_writer_invitation("rollback-invite@example.com")
+    session_count_before = repo.connection.execute("SELECT COUNT(*) FROM user_sessions").fetchone()[
+        0
+    ]
+
+    def fail_session_creation(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("simulated invite session failure")
+
+    monkeypatch.setattr(staff_services, "_create_session_for_user", fail_session_creation)
+
+    with pytest.raises(RuntimeError, match="simulated invite session failure"):
+        staff_services.accept_invitation(
+            created.token,
+            username="rollback-invite",
+            display_name="Rollback Invite",
+            password="-".join(("writer", "password")),
+            first_face_name="Rollback Face",
+        )
+
+    invitation = repo.get_community_invitation(staff.community.id, created.invitation.id)
+    session_count_after = repo.connection.execute("SELECT COUNT(*) FROM user_sessions").fetchone()[
+        0
+    ]
+
+    assert invitation.status == "pending"
+    assert invitation.accepted_user_id is None
+    assert invitation.accepted_membership_id is None
+    assert invitation.accepted_at is None
+    assert session_count_after == session_count_before
+    with pytest.raises(LookupError):
+        repo.get_user_by_email("rollback-invite@example.com")
+    with pytest.raises(LookupError):
+        repo.get_membership_by_username(staff.community.id, "rollback-invite")
+    with pytest.raises(LookupError):
+        repo.get_character_by_slug(staff.community.id, "rollback-face")
+    assert not repo.connection.in_transaction
+
+
 def test_director_can_revoke_pending_writer_invitation() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
