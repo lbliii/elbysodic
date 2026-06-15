@@ -240,7 +240,8 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "HP Universe" in network.text
         assert "starlane" not in network.text
         assert "current realm" not in network.text
-        assert "Public preview" in network.text
+        assert "Request access open" in network.text
+        assert "Public activity " in network.text
         assert login.status == 200
         assert "_csrf_token" in login.text
         assert 'href="/request-access"' in login.text
@@ -630,7 +631,8 @@ def test_public_network_catalog_hides_membership_and_staff_signals(monkeypatch) 
             network = await client.get("/network?q=wanted")
 
         assert network.status == 200
-        assert "Public preview" in network.text
+        assert "Request access open" in network.text
+        assert "Public activity " in network.text
         assert "Application guide ready" in network.text
         assert "Claims configured" in network.text
         assert "Open Wanted" in network.text or "wanted hooks" in network.text

@@ -45,6 +45,7 @@ from elbysodic.domain.models import (
     WantedAdInterest,
 )
 from elbysodic.services.themes import ProgramThemeView, ThemeEditorView, ThemeHealthWarning
+from elbysodic.services.timestamps import relative_timestamp_label
 
 type BoardThreadFilter = Literal["all", "unread", "attention", "mine", "pinned", "locked"]
 type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "archived"]
@@ -1860,6 +1861,7 @@ class StudioNetworkProgramView:
     unread_notification_count: int
     theme_preview: StudioNetworkThemePreview
     is_current: bool
+    latest_public_activity_at: str = ""
 
     @property
     def is_authenticated(self) -> bool:
@@ -1889,6 +1891,22 @@ class StudioNetworkProgramView:
         if self.community.launch_status != "public-preview":
             return ""
         return _program_href(self, "/request-access")
+
+    @property
+    def access_posture_label(self) -> str:
+        if self.request_access_href:
+            return "Request access open"
+        if self.community.launch_status == "invite-only":
+            return "Invitation required"
+        if self.community.launch_status == "public-preview":
+            return "Public preview open"
+        return self.launch_status_label
+
+    @property
+    def activity_freshness_label(self) -> str:
+        if not self.latest_public_activity_at:
+            return "No public activity yet"
+        return f"Public activity {relative_timestamp_label(self.latest_public_activity_at)}"
 
     @property
     def launch_status_label(self) -> str:
@@ -2144,6 +2162,7 @@ class PublicCatalogCard:
     application_material_count: int
     claim_type_count: int
     theme_preview: StudioNetworkThemePreview
+    latest_public_activity_at: str = ""
 
     @property
     def entry_href(self) -> str:
@@ -2173,6 +2192,27 @@ class PublicCatalogCard:
         if self.community.launch_status != "public-preview":
             return ""
         return f"{self.entry_href}/request-access"
+
+    @property
+    def access_posture_label(self) -> str:
+        access_model = ""
+        if self.discovery_profile is not None:
+            access_model = self.discovery_profile.access_model
+        if access_model == "invite-only":
+            return "Invitation required"
+        if access_model == "interest-form":
+            return "Interest form open"
+        if access_model == "request-access" or self.request_access_href:
+            return "Request access open"
+        if self.community.launch_status == "public-preview":
+            return "Public preview open"
+        return self.invite_posture_label
+
+    @property
+    def activity_freshness_label(self) -> str:
+        if not self.latest_public_activity_at:
+            return "No public activity yet"
+        return f"Public activity {relative_timestamp_label(self.latest_public_activity_at)}"
 
     @property
     def application_posture_label(self) -> str:

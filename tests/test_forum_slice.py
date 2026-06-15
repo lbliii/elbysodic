@@ -2009,7 +2009,8 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Gaslight Ward" in response.text
         assert "Wayfarer Station" in response.text
         assert "your current realm is marked when it appears" in response.text
-        assert "Public preview" in response.text
+        assert "Request access open" in response.text
+        assert "Public activity " in response.text
         assert "Application guide ready" in response.text
         assert "Claims configured" in response.text
         assert "/applications/new" not in response.text

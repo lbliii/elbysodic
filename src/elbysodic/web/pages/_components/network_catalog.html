@@ -66,7 +66,7 @@ A realm ready for scenes, casting, and writer movement.
         {% if viewer and viewer.community.id == program.community.id %}
         {{ badge("current membership", variant="success") }}
         {% end %}
-        <span {% if preview %}data-elbysodic-preview-access{% end %}>{{ badge(program.invite_posture_label, variant="info") }}</span>
+        <span {% if preview %}data-elbysodic-preview-access{% end %}>{{ badge(program.access_posture_label, variant="info") }}</span>
         {% if program.discovery_profile and program.discovery_profile.activity_pace %}
         <span {% if preview %}data-elbysodic-preview-pace{% end %}>{{ badge(program.discovery_profile.activity_pace, variant="info") }}</span>
         {% end %}
@@ -74,7 +74,7 @@ A realm ready for scenes, casting, and writer movement.
     </header>
     <p class="elbysodic-copy-summary" {% if preview %}data-elbysodic-preview-summary{% end %}>{{ program_summary(program) }}</p>
     <p class="elbysodic-copy-meta">
-      {{ program.application_posture_label }} · {{ program.claims_posture_label }}
+      {{ program.access_posture_label }} · {{ program.application_posture_label }} · {{ program.claims_posture_label }} · {{ program.activity_freshness_label }}
     </p>
     {% if program.discovery_profile %}
     <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>

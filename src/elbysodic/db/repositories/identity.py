@@ -316,7 +316,7 @@ class IdentityRepositoryMixin(RepositoryBase):
         ).fetchall()
         return {int(row["membership_id"]): _role_from_row(row) for row in rows}
 
-    def network_program_counts(self, community_ids: list[int]) -> dict[int, dict[str, int]]:
+    def network_program_counts(self, community_ids: list[int]) -> dict[int, dict[str, int | str]]:
         if not community_ids:
             return {}
         rows = self.connection.execute(
@@ -344,7 +344,44 @@ class IdentityRepositoryMixin(RepositoryBase):
                     SELECT COUNT(*)
                     FROM claim_types
                     WHERE claim_types.community_id = communities.id
-                ) AS claim_type_count
+                ) AS claim_type_count,
+                MAX(
+                    COALESCE((
+                        SELECT MAX(materials.updated_at)
+                        FROM materials
+                        WHERE materials.community_id = communities.id
+                          AND materials.status = 'published'
+                    ), ''),
+                    COALESCE((
+                        SELECT MAX(wanted_ads.updated_at)
+                        FROM wanted_ads
+                        WHERE wanted_ads.community_id = communities.id
+                          AND wanted_ads.status = 'open'
+                    ), ''),
+                    COALESCE((
+                        SELECT MAX(threads.updated_at)
+                        FROM threads
+                        JOIN boards
+                          ON boards.community_id = threads.community_id
+                         AND boards.id = threads.board_id
+                        WHERE threads.community_id = communities.id
+                          AND boards.is_private = 0
+                          AND threads.status != 'private'
+                    ), ''),
+                    COALESCE((
+                        SELECT MAX(posts.updated_at)
+                        FROM posts
+                        JOIN threads
+                          ON threads.community_id = posts.community_id
+                         AND threads.id = posts.thread_id
+                        JOIN boards
+                          ON boards.community_id = threads.community_id
+                         AND boards.id = threads.board_id
+                        WHERE posts.community_id = communities.id
+                          AND boards.is_private = 0
+                          AND threads.status != 'private'
+                    ), '')
+                ) AS latest_public_activity_at
             FROM communities
             WHERE communities.id IN (SELECT value FROM json_each(?))
             """,
@@ -356,6 +393,7 @@ class IdentityRepositoryMixin(RepositoryBase):
                 "open_wanted_count": int(row["open_wanted_count"]),
                 "application_material_count": int(row["application_material_count"]),
                 "claim_type_count": int(row["claim_type_count"]),
+                "latest_public_activity_at": str(row["latest_public_activity_at"] or ""),
             }
             for row in rows
         }
