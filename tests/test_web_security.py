@@ -1273,6 +1273,47 @@ def test_production_membership_switch_is_session_bound(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_production_session_selected_inactive_membership_fails_closed(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+        services = get_services()
+        community = services.seed.community
+        writer = services.repo.get_user_by_email("writer@example.com")
+        membership = services.repo.get_membership_for_user(community.id, writer.id)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            active_studio = await client.get(
+                "/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            services.repo.connection.execute(
+                """
+                UPDATE community_memberships
+                SET is_active = 0
+                WHERE community_id = ? AND id = ?
+                """,
+                (community.id, membership.id),
+            )
+            services.repo.connection.commit()
+            inactive_studio = await client.get(
+                "/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert active_studio.status == 200
+        assert "Member in X-Men Apocalypse" in active_studio.text
+        assert inactive_studio.status == 403
+        assert "Member in X-Men Apocalypse" not in inactive_studio.text
+        assert "Staff in X-Men Apocalypse" not in inactive_studio.text
+        assert "playing as Rogue" not in inactive_studio.text
+
+    asyncio.run(run())
+
+
 def test_production_application_room_requires_csrf_and_accepts_rendered_token(
     monkeypatch,
 ) -> None:
