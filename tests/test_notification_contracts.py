@@ -4,11 +4,12 @@ from dataclasses import replace
 
 import pytest
 
-from elbysodic.db.seed import resolve_seed_persona
+from elbysodic.db.seed import DemoSeed, resolve_seed_persona
 from elbysodic.domain.models import Notification
 from elbysodic.services import AppServices, create_services
 from elbysodic.services.notifications import (
     NOTIFICATION_TARGET_CONTRACTS,
+    NotificationRepository,
     notification_has_required_target,
     notification_label,
     notification_target_contract,
@@ -292,6 +293,174 @@ def test_notification_delivery_helper_rejects_inactive_or_malformed_targets() ->
     )
 
 
+def test_application_notification_fanout_targets_resolve_through_contract() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    assert staff.character is not None
+    staff_services = AppServices(
+        repo,
+        DemoSeed(community, staff.user, staff.membership, staff.character),
+    )
+    accepted = services.create_character(
+        name="Notification Accepted Face",
+        summary="A face used to prove accepted application notification targeting.",
+        application_body="Staff can accept this notification proof face.",
+    )
+    revised = services.create_character(
+        name="Notification Revised Face",
+        summary="A face used to prove revision notification targeting.",
+        application_body="Staff can revise this notification proof face.",
+    )
+
+    services.submit_character_application(accepted.slug)
+    services.submit_character_application(revised.slug)
+    staff_services.accept_character_application(accepted.slug)
+    staff_services.request_character_application_revision(
+        revised.slug,
+        note="Please tighten the hook handoff.",
+    )
+
+    director_notification = _notification_for(
+        repo.list_notifications(community.id, staff.membership.id),
+        kind="application_submitted",
+        character_id=accepted.id,
+    )
+    accepted_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="application_accepted",
+        character_id=accepted.id,
+    )
+    revision_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="application_revision_requested",
+        character_id=revised.id,
+    )
+
+    _assert_deliverable(repo, director_notification)
+    _assert_deliverable(repo, accepted_notification)
+    _assert_deliverable(repo, revision_notification)
+
+
+def test_casting_and_plotting_notification_fanout_targets_resolve_through_contract() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    wanted = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+    creator = repo.get_membership(community.id, wanted.creator_membership_id)
+    creator_user = repo.get_user(creator.user_id)
+    assert wanted.creator_character_id is not None
+    creator_character = repo.get_character(community.id, wanted.creator_character_id)
+    creator_services = AppServices(
+        repo,
+        DemoSeed(community, creator_user, creator, creator_character),
+    )
+
+    interest = services.express_wanted_interest(wanted.slug)
+    reserved = creator_services.reserve_wanted_interest(wanted.slug, interest.id)
+    creator_services.create_reserve_for_wanted_interest(wanted.slug, interest.id)
+    room = creator_services.create_plotting_room_from_wanted_interest(wanted.slug, interest.id)
+    plotting_board = repo.get_board_by_slug(community.id, "plotting")
+    creator_services.create_thread_from_plotting_room(
+        room.id,
+        board_id=plotting_board.id,
+        character_id=creator_character.id,
+        title="Notification Contract Scene",
+        summary="A scene used to prove plotting-room threaded notification targeting.",
+        body="The room turns into a scene so notification targeting has a live thread.",
+    )
+
+    wanted_interest_notification = _notification_for(
+        repo.list_notifications(community.id, creator.id),
+        kind="wanted_interest",
+        wanted_ad_id=wanted.id,
+        wanted_ad_interest_id=interest.id,
+    )
+    wanted_reserved_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="wanted_reserved",
+        wanted_ad_id=wanted.id,
+        wanted_ad_interest_id=reserved.id,
+    )
+    reserve_created_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="reserve_created",
+        wanted_ad_id=wanted.id,
+        wanted_ad_interest_id=reserved.id,
+    )
+    room_created_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="plotting_room_created",
+        plotting_room_id=room.id,
+    )
+    room_threaded_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="plotting_room_threaded",
+        plotting_room_id=room.id,
+    )
+
+    assert services.seed.default_character is not None
+    hook = services.create_plot_hook(
+        services.seed.default_character.slug,
+        title="Notification Contract Hook",
+        hook_type="scene",
+        summary="A hook used to prove plot-hook notification targeting.",
+        body="This hook exists only for notification contract proof.",
+        facet_slugs=[],
+    )
+    member_role = repo.get_role_by_slug(community.id, "member")
+    outsider_user = repo.create_user("notification-contract-outsider@example.com", "hash")
+    outsider_membership = repo.create_membership(
+        community.id,
+        outsider_user.id,
+        member_role.id,
+        "notification-contract-outsider",
+        "Notification Contract Outsider",
+    )
+    outsider_character = repo.create_character(
+        community.id,
+        outsider_membership.id,
+        "notification-contract-outsider-face",
+        "Notification Contract Outsider Face",
+        application_status="accepted",
+    )
+    outsider_services = AppServices(
+        repo,
+        DemoSeed(community, outsider_user, outsider_membership, outsider_character),
+    )
+    hook_interest = outsider_services.express_plot_hook_interest(
+        services.seed.default_character.slug,
+        hook.slug,
+    )
+    hook_room = services.create_plotting_room_from_plot_hook_interest(
+        services.seed.default_character.slug,
+        hook.slug,
+        hook_interest.id,
+    )
+    plot_hook_interest_notification = _notification_for(
+        repo.list_notifications(community.id, services.seed.membership.id),
+        kind="plot_hook_interest",
+        character_plot_hook_id=hook.id,
+    )
+    plot_hook_room_notification = _notification_for(
+        repo.list_notifications(community.id, outsider_membership.id),
+        kind="plotting_room_created",
+        plotting_room_id=hook_room.id,
+    )
+
+    for notification in (
+        wanted_interest_notification,
+        wanted_reserved_notification,
+        reserve_created_notification,
+        room_created_notification,
+        room_threaded_notification,
+        plot_hook_interest_notification,
+        plot_hook_room_notification,
+    ):
+        _assert_deliverable(repo, notification)
+
+
 def _notification(
     *,
     kind: str,
@@ -319,4 +488,51 @@ def _notification(
         actor_character_id=None,
         read_at=None,
         created_at="2026-01-01T00:00:00+00:00",
+    )
+
+
+def _notification_for(
+    notifications: list[Notification],
+    *,
+    kind: str,
+    character_id: int | None = None,
+    character_plot_hook_id: int | None = None,
+    plotting_room_id: int | None = None,
+    wanted_ad_id: int | None = None,
+    wanted_ad_interest_id: int | None = None,
+) -> Notification:
+    for notification in notifications:
+        if (
+            notification.kind == kind
+            and (character_id is None or notification.character_id == character_id)
+            and (
+                character_plot_hook_id is None
+                or notification.character_plot_hook_id == character_plot_hook_id
+            )
+            and (plotting_room_id is None or notification.plotting_room_id == plotting_room_id)
+            and (wanted_ad_id is None or notification.wanted_ad_id == wanted_ad_id)
+            and (
+                wanted_ad_interest_id is None
+                or notification.wanted_ad_interest_id == wanted_ad_interest_id
+            )
+        ):
+            return notification
+    raise AssertionError(f"missing notification kind={kind}")
+
+
+def _assert_deliverable(repo: NotificationRepository, notification: Notification) -> None:
+    assert notification_target_is_deliverable(
+        repo,
+        notification.community_id,
+        notification.membership_id,
+        kind=notification.kind,
+        thread_id=notification.thread_id,
+        post_id=notification.post_id,
+        wanted_ad_id=notification.wanted_ad_id,
+        wanted_ad_interest_id=notification.wanted_ad_interest_id,
+        character_plot_hook_id=notification.character_plot_hook_id,
+        plotting_room_id=notification.plotting_room_id,
+        character_id=notification.character_id,
+        actor_membership_id=notification.actor_membership_id,
+        actor_character_id=notification.actor_character_id,
     )
