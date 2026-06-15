@@ -91,9 +91,10 @@ def test_staff_capability_contracts_cover_named_helpers(
         assert contract.audit_event_candidates
 
 
-def test_page_handlers_and_services_do_not_check_admin_flag_directly() -> None:
+def test_page_handlers_templates_and_services_do_not_check_admin_flag_directly() -> None:
     checked_paths = [
         *Path("src/elbysodic/web/pages").rglob("page.py"),
+        *Path("src/elbysodic/web/pages").rglob("*.html"),
         *(
             path
             for path in Path("src/elbysodic/services").glob("*.py")

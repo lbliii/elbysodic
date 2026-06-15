@@ -46,7 +46,7 @@
         </div>
         <div class="chirpui-cluster chirpui-cluster--sm">
           {{ badge("you", variant="success") if card.is_current_member else "" }}
-          {{ badge(card.role.name, variant="warning" if card.role.is_admin else "muted") }}
+          {{ badge(card.role.name, variant=card.role_badge_variant) }}
         </div>
       </div>
       <div class="elbysodic-command-panel__metrics elbysodic-member-card__metrics" aria-label="{{ card.membership.display_name }} writing totals">

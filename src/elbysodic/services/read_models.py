@@ -786,6 +786,7 @@ class ApplicationReviewRoom:
 class MemberDirectoryCard:
     membership: CommunityMembership
     role: Role
+    role_badge_variant: str
     roster: list[Character]
     default_character: Character | None
     known_for: list[Character]
@@ -963,6 +964,7 @@ class WriterCollaborator:
 class MemberProfile:
     membership: CommunityMembership
     role: Role
+    role_badge_variant: str
     roster: list[Character]
     default_character: Character | None
     known_for: list[Character]
