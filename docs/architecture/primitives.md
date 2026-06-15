@@ -290,6 +290,39 @@ records out of export scope. The director archive profile names sensitive
 domains so operators can see which PBP workflow records require privacy review
 before preservation.
 
+The export boundary matrix below is the planning contract for #81, #137, and
+#168. It does not approve a public CLI, API, UI, service API expansion,
+cross-community export mode, or privacy-boundary change without a separate
+review.
+
+| Manifest Section | Include | Exclude Or Redact | Provenance Fields |
+|---|---|---|---|
+| Realm profile | Current community name, slug, launch/export posture, public premise pointers, and archive tier. | Other communities, hosted network state, global user data, and deployment secrets. | `community_id`, `community_slug`, profile tier, source route where applicable. |
+| Membership ownership | Community-local memberships, roles, inactive state only for approved staff/director tiers, and ownership edges to faces and workflow records. | Global account emails unless a future detail export approves them, password hashes, sessions, selected identity state, and user-level staff power. | `community_id`, membership id, role id, status, owned record kind/id. |
+| Face authorship | Public faces, face ownership, post authorship, wanted/plotter authorship, and application posture for approved tiers. | Global characters, cross-community faces, another writer's private application draft outside the tier, and inactive faces in public/member tiers. | `community_id`, character id, owner membership id, public slug, authored record kind/id. |
+| Boards, scenes, threads, and posts | Community boards, visible scene/thread metadata, post ids, post numbers, author membership, and author face for approved tiers. | Private boards/posts outside the tier, unrelated communities, raw private queue state, and session/read cookies. | `/c/{community}/boards/{board}/threads/{thread}#post-*`, board id/slug, thread id/slug, post id/number. |
+| Director materials | Published material metadata for public/member tiers; draft director material only for staff/director archive tiers. | Draft bodies in lower tiers, external secrets, layout-breaking theme inputs, or raw uploaded credentials. | `/c/{community}/world/{material}`, material id/slug, status, source material type. |
+| Claims, reserves, and wanted hooks | Claim type/value state, reserve state, wanted hook state, creator membership, creator face, and public hook route according to tier. | Director notes, private reserve/support notes, expired/private state outside the tier, and cross-community claims. | `/c/{community}/wanted/{wanted}`, claim/reserve/wanted ids, membership id, character id where applicable. |
+| Plot hooks and plotting rooms | Plotter hooks and plotting-room state only for tiers allowed to see owner/participant/staff handoff context. | Private plotting notes for public/member tiers, nonparticipant room messages, hidden targets, and unrelated rooms. | Character hook route, plotting room id, owner membership id, participant ids when tier-approved. |
+| Access requests and invitations | Counts and lifecycle metadata only in director archive profile unless a future detail export approves more. Invitation state without raw tokens. | Applicant emails, private notes, face concepts, wanted-hook private interest text, token hashes, raw invite tokens, and account-link history outside director/staff review. | Request id, invitation id, status, event timestamps, `community_id`; no raw token or hash. |
+| Notifications and queues | Notification row counts and target families only after target visibility review in director archive profile. | Public/member notification rows, inaccessible target labels, private snippets, cross-community targets, and global inbox framing. | Notification id, target kind, target family, visible target route if approved by target contract. |
+| Continuity-ready source links | Stable source references for scenes, posts, materials, claims, reserves, wanted hooks, and future reviewed canon proposals. | Unreviewed summaries, private source text, staff notes, access-request notes, and automatic canon from private material. | Source family, `community_id`, source id, optional source thread id for posts, visibility status. |
+
+Export proof groups:
+
+| Proof Group | Required Coverage |
+|---|---|
+| Tenant scope | Two communities, same global user in multiple communities, and proof that export rows, links, counts, ownership edges, and redactions all carry one `community_id`. |
+| Auth redaction | Global users, password hashes, sessions, selected identity state, token hashes, raw invite tokens, cookies, and credentials are absent from rendered/serialized manifest output. |
+| Privacy tiers | Public, member, staff, and director archive profiles include only their allowed domains and name sensitive domains before detail export work starts. |
+| Ownership/authorship | Membership ownership and character authorship stay separate for faces, posts, wanted hooks, plot hooks, and plotting rooms. |
+| Staff workflow privacy | Access-request notes, applicant emails, invitation audit material, notification rows, staff queues, and private plotting rooms are excluded or marked sensitive according to tier. |
+| Provenance | Source links use tenant-prefixed routes or source-family references for posts, materials, claims, reserves, wanted hooks, and continuity-ready records. |
+
+Stop and ask before adding public export commands, public APIs, route surfaces,
+download formats, destructive import/restore behavior, cross-community export,
+or service API changes that alter which domains are included.
+
 ## Continuity Graph
 
 Continuity Graph is not yet a persistence primitive in this repo. Existing

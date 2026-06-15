@@ -111,7 +111,9 @@ Sequence work by trust, then daily usefulness, then network effects:
 5. Public discovery: service-owned NetworkHome/catalog read model, realm cards,
    public wanted pressure, and signed-out privacy proof.
 6. Appearance and portability: safe visual control, media slots, exports,
-   backups, restore drills, and alpha operations.
+   backups, restore drills, and alpha operations. Export work follows the
+   one-community boundary and redaction matrix in
+   `docs/architecture/primitives.md`.
 7. Continuity Graph: manual outcomes, source-linked canon proposals, review,
    public canon surfaces, and only later assisted drafting.
 

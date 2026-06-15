@@ -62,6 +62,10 @@ before normal writes.
 The row-family audit matrix in `docs/architecture/data-integrity.md` is the
 source of truth for which tenant pairings need diagnostics, negative tests,
 service proof, and later constraint work.
+Community export is also single-community by default: the export boundary
+matrix in `docs/architecture/primitives.md` names the allowed row families,
+redactions, and provenance fields before any future cross-community export mode
+can be proposed.
 
 ## Route And Link Contract
 

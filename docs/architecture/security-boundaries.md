@@ -213,7 +213,8 @@ profile names sensitive domains such as membership state, roles, inactive
 identities, draft materials, private plotting rooms, invitation state,
 notification rows, and staff queues, while still excluding global users,
 password hashes, sessions, raw invite tokens, applicant private notes, and
-cross-community rows.
+cross-community rows. The export inclusion, redaction, provenance, and proof
+matrix lives in `docs/architecture/primitives.md`.
 
 First-realm creation is not a public web permission. The current setup path is
 the operator-only `bootstrap-first-realm` CLI command, which creates a global
