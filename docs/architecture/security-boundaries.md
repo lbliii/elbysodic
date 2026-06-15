@@ -268,7 +268,9 @@ unsafe methods are rejected when the token is missing or invalid.
 
 Notification inbox rows, shell counts, redirects, and mark-read actions are
 also privacy boundaries. Each supported notification kind must use the
-service-owned target contract for required fields and visibility. A notification
+service-owned target contract for required fields and visibility. The
+target-kind matrix lives in
+`docs/architecture/request-identity-and-command-protocol.md`. A notification
 delivered to the right membership is still treated as inaccessible when its
 target is private, belongs to another community, lacks the required target
 fields, or resolves to a row the membership cannot view. Post mention and

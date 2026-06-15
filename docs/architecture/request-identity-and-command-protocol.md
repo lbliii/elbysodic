@@ -139,3 +139,54 @@ resolved membership, which protects rendered pages from legacy or damaged
 notification data. Creation-time fanout should use the same target contract
 before inserting rows; post mentions and watched-thread replies already skip
 inactive memberships and memberships that cannot view the target board.
+
+This matrix is the planning contract for #82, #140, and #170. It does not
+approve notification fanout changes, route redirects, privacy-rule changes, or
+public rendered contract changes without a separate review.
+
+| Kind | Target Family | Required Fields | Visible To | Label/Snippet Source | Href And Redirect | Hidden/Malformed Outcome |
+|---|---|---|---|---|---|---|
+| `mention` | thread post | `thread_id`, `post_id` | Memberships that can read the target board. | Thread title plus rendered post snippet; actor from membership/face. | Open target thread at the post anchor. | Hide from inbox/counts, keep unread, and refuse open when thread, post, or board is missing or private to the viewer. |
+| `thread_reply` | thread post | `thread_id`, `post_id` | Watched memberships that can read the target board. | Thread title plus rendered post snippet; actor from membership/face. | Open target thread at the post anchor. | Hide from inbox/counts, keep unread, and refuse open when thread, post, or board is missing or private to the viewer. |
+| `wanted_interest` | wanted interest | `wanted_ad_id`, `wanted_ad_interest_id` | Interested writer, hook creator, or casting-capable staff. | Wanted title plus safe interest snippet; private notes only for authorized viewers. | Open wanted hook detail. | Hide private note, hide from unauthorized inbox/counts, keep unread, and refuse open when hook or interest is missing. |
+| `wanted_reserved` | wanted hook | `wanted_ad_id` | Memberships that can read the wanted hook. | Wanted title plus reserve action snippet. | Open wanted hook detail. | Hide from inbox/counts, keep unread, and refuse open when hook is missing or inaccessible. |
+| `reserve_created` | wanted hook | `wanted_ad_id` | Memberships that can read the wanted hook. | Wanted title plus reserve-created snippet. | Open wanted hook detail. | Hide from inbox/counts, keep unread, and refuse open when hook is missing or inaccessible. |
+| `plot_hook_interest` | plot hook | `character_plot_hook_id` | Hook author or casting-capable staff. | Plot hook title plus interest snippet. | Open character plot hook detail. | Hide from inbox/counts, keep unread, and refuse open when plot hook or face is missing. |
+| `plotting_room_created` | plotting room | `plotting_room_id` | Room owner, participant, or casting-capable staff. | Plotting room title plus room-started snippet. | Open plotting room. | Hide room title, hide from inbox/counts, keep unread, and refuse open when room is missing or viewer cannot enter. |
+| `plotting_room_threaded` | plotting room | `plotting_room_id` | Room owner, participant, or casting-capable staff. | Plotting room title plus scene-started snippet. | Open plotting room. | Hide room title, hide from inbox/counts, keep unread, and refuse open when room is missing or viewer cannot enter. |
+| `application_submitted` | character application | `character_id` | Character owner or casting-capable staff. | Face name plus submitted-for-review snippet. | Open character application room. | Hide from inbox/counts, keep unread, and refuse open when face is missing or viewer cannot review/own it. |
+| `application_accepted` | character application | `character_id` | Character owner or casting-capable staff. | Face name plus accepted snippet. | Open character application room. | Hide from inbox/counts, keep unread, and refuse open when face is missing or viewer cannot review/own it. |
+| `application_revision_requested` | character application | `character_id` | Character owner or casting-capable staff. | Face name plus revision-requested snippet. | Open character application room. | Hide from inbox/counts, keep unread, and refuse open when face is missing or viewer cannot review/own it. |
+
+Resolver invariants:
+
+- Staff notification behavior remains membership-local; staff can see its own
+  inbox, not a global queue, unless a future staff queue explicitly owns a
+  target family.
+- Hidden, deleted, archived, private, cross-community, inactive,
+  wrong-membership, unregistered, and missing-field targets do not contribute
+  to visible unread counts, inbox rows, open redirects, or mark-read mutation.
+- Inbox limits apply after target visibility filtering so inaccessible rows
+  cannot crowd visible obligations out of the page.
+- Mark-all-read and open-notification actions may mark only notifications whose
+  target resolves through the same contract that rendered them.
+- Creation-time fanout should check deliverability before inserting rows; new
+  notification kinds must prove this or explicitly document why the kind is
+  stored first and filtered later.
+
+Required proof for future changes:
+
+- Service contract tests that every registered kind is unique, has required
+  fields, names visibility/redirect/fallback behavior, and rejects unregistered
+  or missing-field rows.
+- Service visibility tests for deleted, archived, private, cross-community,
+  inactive, faceless, owner, member, wrong-membership, and staff scenarios as
+  applicable to the target family.
+- Rendered tests for inbox rows, shell unread counts, open redirects,
+  mark-all-read, and mark-read behavior.
+- Fanout tests proving unauthorized or inactive memberships do not receive
+  obviously inaccessible rows when the target family can be checked before
+  insertion.
+- Docs collateral in `docs/architecture/rendered-route-privacy-matrix.md`,
+  `docs/architecture/security-boundaries.md`, and this protocol whenever a new
+  kind, target family, redirect behavior, or privacy rule is introduced.
