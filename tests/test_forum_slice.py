@@ -4098,10 +4098,41 @@ def test_studio_launch_moderates_access_requests() -> None:
         assert "was declined" in declined.text
         assert "Declined" in launch_after_decline.text
         assert "Mark reviewed" not in launch_after_decline.text
-        assert (
-            services.repo.get_community_access_request(staff.community.id, access_request.id).status
-            == "declined"
+        declined_request = services.repo.get_community_access_request(
+            staff.community.id,
+            access_request.id,
         )
+        events = services.repo.list_community_access_request_events(
+            staff.community.id,
+            access_request.id,
+        )
+        invitations = services.repo.list_community_invitations(staff.community.id)
+        assert declined_request.status == "declined"
+        assert declined_request.invitation_id is None
+        assert [event.event_type for event in events] == ["submitted", "reviewed", "declined"]
+        assert [(event.from_status, event.to_status) for event in events] == [
+            (None, "pending"),
+            ("pending", "reviewed"),
+            ("reviewed", "declined"),
+        ]
+        assert events[-1].actor_membership_id == staff.membership.id
+        assert events[-1].invitation_id is None
+        assert invitations == []
+
+        replayed_decline = AppServices(
+            services.repo,
+            DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+        ).decline_access_request(access_request.id)
+
+        assert replayed_decline == declined_request
+        assert (
+            services.repo.list_community_access_request_events(
+                staff.community.id,
+                access_request.id,
+            )
+            == events
+        )
+        assert services.repo.list_community_invitations(staff.community.id) == []
 
     asyncio.run(run())
 
