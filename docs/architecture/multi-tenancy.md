@@ -59,6 +59,9 @@ interaction questions/options, reactions, thread reads/watches, notifications,
 and authorship rows. These diagnostics exist for operations and migration
 repair planning; repository and service methods still enforce tenant scope
 before normal writes.
+The row-family audit matrix in `docs/architecture/data-integrity.md` is the
+source of truth for which tenant pairings need diagnostics, negative tests,
+service proof, and later constraint work.
 
 ## Route And Link Contract
 

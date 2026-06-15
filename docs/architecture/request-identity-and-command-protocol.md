@@ -62,6 +62,10 @@ The current rollback and duplicate-submit coverage map lives in
 `docs/architecture/transactional-workflow-coverage.md`. Update it when a
 workflow gains new side effects, a test moves, or a remaining gap becomes
 covered proof.
+The tenant integrity audit matrix in `docs/architecture/data-integrity.md`
+names the row families whose command protocol changes need service rollback,
+repository tenant-pair, rendered POST, and migration parity proof before they
+become stricter storage or public command contracts.
 
 High-risk multi-row commands should put story-visible and attention-visible
 side effects in one service transaction. Replying to a thread creates the post,
