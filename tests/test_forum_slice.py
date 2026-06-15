@@ -12792,6 +12792,36 @@ def test_restore_plan_from_check_orders_read_only_operator_steps(tmp_path: Path)
     assert "Do not emit this restore plan body." not in report
 
 
+def test_restore_plan_blocks_writable_restore_check_result() -> None:
+    result = RestoreCheckResult(
+        database_path="/private/tmp/candidate.sqlite3",
+        opened_read_only=False,
+        integrity_check="ok",
+        foreign_key_violations=0,
+        journal_mode="wal",
+        sqlite_user_version=1,
+        current_schema_version=1,
+        latest_migration_version=1,
+        community_count=1,
+        core_counts=(),
+        readback_checks=(RestoreCheckReadback("communities", "ok", "1 community row read back"),),
+        failures=(),
+    )
+
+    plan = restore_plan_from_check(result)
+    report = format_restore_plan_report(plan)
+    read_only_blockers = [
+        step for step in plan.blockers if step.source == "restore_check.opened_read_only"
+    ]
+
+    assert plan.status == "blocked"
+    assert len(read_only_blockers) == 1
+    assert read_only_blockers[0].title == "Open candidate database read-only"
+    assert read_only_blockers[0].human_confirmation_required is True
+    assert "restore-plan blocked" in report
+    assert "destructive restore command" not in report
+
+
 def test_restore_plan_from_check_maps_blockers_to_sensitive_domains() -> None:
     result = RestoreCheckResult(
         database_path="/private/tmp/candidate.sqlite3",
