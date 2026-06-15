@@ -127,7 +127,9 @@ Staging smoke should include:
   `/elbysodic-static/seed-media/xmen-hero.svg`, returns `200`.
 - A restart preserves database row counts and rendered seeded realms.
 - A copied staging database reports `restore-check ok` through the read-only
-  restore-check service before any destructive restore rehearsal.
+  restore-check service before any destructive restore rehearsal. Use the
+  operator contract in `docs/operations/sqlite-production.md` for accepted
+  inputs, redacted output, success criteria, and failure handling.
 - Demo login works for the intended seed account policy.
 
 Known follow-up: `HEAD` requests to some app and static routes can currently

@@ -19,7 +19,9 @@ production bootstrap creates the first real director identity and realm.
   `docs/operations/auth-trust-posture.md`.
 - A fresh backup exists, or the database is confirmed empty.
 - If a backup exists, the read-only restore-check service reports `restore-check
-  ok` against the copied database without exposing secrets or private content.
+  ok` against the copied database without exposing secrets or private content;
+  use the operator contract in `docs/operations/sqlite-production.md` when
+  recording the result.
 - Studio Operations shows the expected environment, database path, journal
   mode, integrity check, schema version, migration ledger, realm count, and
   launch status.
