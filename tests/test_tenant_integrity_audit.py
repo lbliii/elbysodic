@@ -101,6 +101,65 @@ def test_tenant_integrity_audit_groups_findings_by_community_and_severity() -> N
     assert any(finding.code == "membership_role_missing" for finding in report.findings)
 
 
+def test_tenant_integrity_audit_reports_default_face_drift_without_identity_text() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    writer = resolve_seed_persona(repo, "xmen_writer")
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    hp_director = resolve_seed_persona(repo, "hp_director")
+    assert writer.character is not None
+    assert staff.character is not None
+    assert hp_director.character is not None
+
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET default_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (hp_director.character.id, writer.community.id, writer.membership.id),
+    )
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET default_character_id = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (writer.character.id, writer.community.id, staff.membership.id),
+    )
+    repo.connection.commit()
+    before_changes = repo.connection.total_changes
+
+    report = tenant_integrity_audit(repo, community_id=writer.community.id)
+    formatted = format_tenant_integrity_audit_report(report)
+    membership_findings = {
+        finding.row_id: finding
+        for finding in report.findings
+        if finding.table_name == "community_memberships"
+    }
+
+    assert report.ok is False
+    assert report.severe_count >= 2
+    assert len(report.community_summaries) == 1
+    assert report.community_summaries[0].community_id == writer.community.id
+    assert report.community_summaries[0].high_count >= 2
+    assert membership_findings[writer.membership.id].code == "tenant_pair_invalid"
+    assert membership_findings[writer.membership.id].domain == "tenant_pairs"
+    assert membership_findings[writer.membership.id].reason == (
+        "membership default face belongs to another community"
+    )
+    assert membership_findings[staff.membership.id].reason == (
+        "membership default face does not belong to membership"
+    )
+    assert "Rogue" not in formatted
+    assert "Cyclops" not in formatted
+    assert "Harry" not in formatted
+    assert "starlane" not in formatted
+    assert "alex" not in formatted
+    assert "hp-universe" not in formatted
+    assert repo.connection.total_changes == before_changes
+
+
 def test_tenant_integrity_audit_for_viewer_is_capability_and_community_scoped() -> None:
     services = create_services(path=":memory:")
     repo = services.repo
