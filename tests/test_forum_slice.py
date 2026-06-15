@@ -13031,6 +13031,52 @@ def test_restore_check_database_reports_wrong_database_failure(tmp_path: Path) -
     assert "wrong@example.com" not in report
 
 
+def test_restore_check_database_reports_foreign_key_violation(tmp_path: Path) -> None:
+    db_path = tmp_path / "foreign-key-drift.sqlite3"
+    services = create_services(path=db_path)
+    services.close()
+    connection = sqlite3.connect(db_path)
+    try:
+        connection.execute("PRAGMA foreign_keys = OFF")
+        connection.execute(
+            """
+            INSERT INTO roles (
+                community_id,
+                slug,
+                name,
+                is_admin,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                999_999,
+                "orphan-role-secret",
+                "Should Not Leak",
+                0,
+                "2026-06-15T00:00:00Z",
+                "2026-06-15T00:00:00Z",
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    result = restore_check_database(db_path)
+    report = format_restore_check_report(result)
+    plan_report = format_restore_plan_report(restore_plan_from_check(result))
+    combined_report = f"{report}\n{plan_report}"
+
+    assert result.ok is False
+    assert result.foreign_key_violations > 0
+    assert "foreign_key_check reported" in "\n".join(result.failures)
+    assert "restore-check failed" in report
+    assert "restore-plan blocked" in plan_report
+    assert "orphan-role-secret" not in combined_report
+    assert "Should Not Leak" not in combined_report
+
+
 def test_restore_check_database_requires_filesystem_path(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="filesystem database path"):
         restore_check_database(Path(":memory:"))
