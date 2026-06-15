@@ -4490,6 +4490,48 @@ def test_studio_launch_invites_writer_from_access_request() -> None:
     asyncio.run(run())
 
 
+def test_access_request_invite_replay_fails_without_duplicate_invitation() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    request = services.repo.create_community_access_request(
+        staff.community.id,
+        email="replay-prospect@example.com",
+        display_name="Replay Prospect",
+        face_concept="Replay transfer",
+        wanted_hook="Replay opening",
+        notes="Should only receive one invitation.",
+    )
+    director_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    created = director_services.invite_access_request(request.id)
+    before_request = services.repo.get_community_access_request(staff.community.id, request.id)
+    before_invitations = services.repo.list_community_invitations(staff.community.id)
+    before_events = services.repo.list_community_access_request_events(
+        staff.community.id,
+        request.id,
+    )
+
+    with pytest.raises(ValueError, match="only pending or reviewed access requests"):
+        director_services.invite_access_request(request.id)
+
+    after_request = services.repo.get_community_access_request(staff.community.id, request.id)
+    after_invitations = services.repo.list_community_invitations(staff.community.id)
+    after_events = services.repo.list_community_access_request_events(
+        staff.community.id,
+        request.id,
+    )
+
+    assert before_request.status == "invited"
+    assert before_request.invitation_id == created.invitation.id
+    assert after_request == before_request
+    assert after_invitations == before_invitations
+    assert after_events == before_events
+    assert [event.event_type for event in after_events] == ["submitted", "invited"]
+
+
 def test_access_request_invitation_rolls_back_when_status_update_fails(monkeypatch) -> None:
     services = create_services(path=":memory:")
     staff = resolve_seed_persona(services.repo, "xmen_staff")
