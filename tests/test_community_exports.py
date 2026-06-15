@@ -305,6 +305,51 @@ def test_export_manifest_redacts_auth_material_and_cross_realm_shared_account() 
     assert "invite-export@example.com" not in rendered_manifest
 
 
+def test_export_manifest_omits_cross_realm_source_links() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    hp_director = resolve_seed_persona(repo, "hp_director")
+    hp = repo.get_community_by_slug("hp-universe")
+    hp_board = repo.create_board(
+        hp.id,
+        "hp-export-only-board",
+        "HP Export Only Board",
+        description="A cross-realm board that must not enter X-Men export provenance.",
+    )
+    hp_material = repo.create_material(
+        hp.id,
+        "hp-export-only-material",
+        "HP Export Only Material",
+        material_type="guide",
+        summary="A cross-realm guide that must not enter X-Men export provenance.",
+    )
+    hp_wanted = repo.create_wanted_ad(
+        hp.id,
+        hp_director.membership.id,
+        "hp-export-only-wanted",
+        "HP Export Only Wanted",
+    )
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    manifest = staff_services.community_export_manifest()
+    rendered_manifest = repr(manifest)
+
+    assert all(link.community_id == staff.community.id for link in manifest.source_links)
+    assert all(link.href.startswith("/c/x-men-apocalypse/") for link in manifest.source_links)
+    assert all(
+        link.record_id not in {hp_board.id, hp_material.id, hp_wanted.id}
+        for link in manifest.source_links
+    )
+    assert "/c/hp-universe/" not in rendered_manifest
+    assert "HP Export Only Board" not in rendered_manifest
+    assert "HP Export Only Material" not in rendered_manifest
+    assert "HP Export Only Wanted" not in rendered_manifest
+
+
 def test_member_cannot_create_community_export_manifest() -> None:
     services = create_services(path=":memory:")
 
