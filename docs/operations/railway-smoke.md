@@ -148,6 +148,47 @@ production run so staging proof and production proof stay distinct.
 Latest known staging smoke:
 
 ```text
+Railway smoke:
+- Date: 2026-06-15
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: ad3dcc24-06fc-4211-a5f1-f780c78c94dc
+- Commit: b6b4f5919a80cc6458e67aeb4b1309682dd89d05
+- Railway project: intuitive-friendship
+- Railway service: elbysodic
+- Railway environment: staging
+- Volume path: /app/var
+- Volume: elbysodic-volume, READY, about 59 MB used of 500 MB
+- Database path: /app/var/elbysodic.sqlite3
+- Replica count: 1
+- Demo mode: on for staging demo credentials
+- Variable proof: do not paste `railway variable list` output because Railway
+  CLI JSON and KV modes include raw values. Runtime evidence confirmed staging
+  posture: demo login worked, auto-seed ran only on staging/demo mode, and the
+  seed command printed the configured /app/var database path.
+- Account: seeded writer account class
+- Auto seed: startup log reported `auto-seeded staging demo data at /app/var/elbysodic.sqlite3`
+- Manual seed: `elbysodic seed-demo` reported `seeded /app/var/elbysodic.sqlite3`
+- Public GETs: /health, /, /network, /network?q=magic,
+  /c/x-men-apocalypse, and /elbysodic-static/seed-media/xmen-hero.svg
+  returned 200
+- Authenticated GETs: /c/x-men-apocalypse,
+  /c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill,
+  /c/x-men-apocalypse/wanted, /c/x-men-apocalypse/applications,
+  /c/x-men-apocalypse/plotting, /c/x-men-apocalypse/notifications, and
+  /c/x-men-apocalypse/studio returned 200
+- Write tested: CSRF-protected identity switch from X-Men Apocalypse member
+  Rogue to HP Universe director Rowan Ash returned 302 to /c/hp-universe
+- Restart persistence: passed after Railway service restart. Logs showed the
+  volume mounted and auto-seed ran at /app/var/elbysodic.sqlite3; the same
+  authenticated session then rendered HP Universe with Rowan Ash, and public
+  /network still rendered HP Universe, Jurassic Park Universe, RL NYC, and
+  X-Men Apocalypse.
+- Logout boundary: /logout returned 302 to /login, and protected /studio
+  redirected to /login?next=/studio after logout
+- Seed media: passed after restart
+- Result: staging is volume-backed, one-replica, seeded, demo-login capable,
+  and restart-persistent for the tested identity-switch write and seeded rows
+
 Railway staging seed repair:
 - Date: 2026-06-13
 - URL: https://elbysodic-staging.up.railway.app
