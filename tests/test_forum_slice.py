@@ -2329,6 +2329,23 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
         assert gateway.story_frame.cadence_label
         assert gateway.story_frame.writing_expectation
         assert gateway.story_frame.roster_posture
+        assert gateway.story_frame.audience_label == "Public visitor"
+        assert gateway.story_frame.audience_summary
+        assert gateway.story_frame.premise_stage_label
+        assert gateway.story_frame.featured_signal
+        assert gateway.story_frame.cast_signal
+        assert gateway.story_frame.places_signal
+        assert gateway.story_frame.wanted_pressure
+        assert gateway.story_frame.next_action.label == "Browse open calls"
+        assert {contract.mode for contract in gateway.story_frame.audience_contracts} == {
+            "public_visitor",
+            "account_visitor",
+            "member",
+            "staff",
+            "director",
+            "inactive_member",
+            "cross_community_viewer",
+        }
         assert gateway.premise_stage.title
         assert not gateway.premise_stage.title.lower().startswith(("current chapter:", "premise:"))
         assert gateway.premise_stage.summary
@@ -2627,6 +2644,12 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
     assert gateway.hero.primary_action.label == "Request access"
     assert gateway.hero.primary_action.href == "/c/quiet-harbor/request-access"
     assert gateway.hero.primary_action.is_hx_boost_safe is False
+    assert gateway.story_frame.audience_label == "Public visitor"
+    assert gateway.story_frame.next_action.label == "Request access"
+    assert gateway.story_frame.premise_stage_label == "Story promise: Quiet Harbor Premise"
+    assert gateway.story_frame.featured_signal == "Standing premise: Quiet Harbor Premise"
+    assert gateway.story_frame.places_signal == "1 public place in play."
+    assert gateway.story_frame.wanted_pressure == "No public wanted pressure is open right now."
     assert gateway.hero.secondary_action is not None
     assert gateway.hero.secondary_action.label == "Read premise"
     assert gateway.wanted_previews == ()
@@ -2656,6 +2679,11 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
 
             assert response.status == 200
             assert "Quiet Harbor Premise" in content
+            assert "Public visitor" in content
+            assert "Standing premise: Quiet Harbor Premise" in content
+            assert "1 public place in play." in content
+            assert "No public wanted pressure is open right now." in content
+            assert 'aria-label="Realm story frame"' in response.text
             assert "Locked Harbor" not in content
             assert "Director-only pressure" not in content
             assert "Main Street" in content
@@ -8480,10 +8508,13 @@ def test_rendered_surface_contract_parity_across_realm_viewers() -> None:
             member_thread = await client.get("/boards/danger-room/threads/sentinel-drill")
 
         async with TestClient(create_app(debug=False, services=staff_services)) as client:
+            staff_home = await client.get("/c/x-men-apocalypse")
             staff_claims = await client.get("/claims")
             staff_studio = await client.get("/studio")
 
         async with TestClient(create_app(debug=False, services=hp_services)) as client:
+            hp_home = await client.get("/c/x-men-apocalypse")
+            hp_own_home = await client.get(f"/c/{hp_director.community.slug}")
             hp_claims = await client.get("/claims")
             hp_roster = await client.get("/characters")
             hp_notifications = await client.get("/notifications")
@@ -8495,9 +8526,27 @@ def test_rendered_surface_contract_parity_across_realm_viewers() -> None:
 
         assert member_home.status == 200
         assert "playing as Rogue" in member_home.text
+        assert "Realm member" in _page_content(member_home.text)
+        assert "Continue writing from your Desk" in _page_content(member_home.text)
         assert 'href="/c/x-men-apocalypse/desk"' in member_home.text
         assert "Cross-Realm Only Face" not in member_home.text
         assert "HP DIRECTOR CONTRACT NOTE" not in member_home.text
+
+        staff_home_content = _page_content(staff_home.text)
+        assert staff_home.status == 200
+        assert "Staff" in staff_home_content or "Director" in staff_home_content
+        assert "Studio" in staff_home_content
+        assert "HP DIRECTOR CONTRACT NOTE" not in staff_home_content
+
+        hp_home_content = _page_content(hp_home.text)
+        assert hp_home.status == 200
+        assert "Cross-Realm Only Face" not in hp_home_content
+        assert "HP DIRECTOR CONTRACT NOTE" not in hp_home_content
+
+        hp_own_home_content = _page_content(hp_own_home.text)
+        assert hp_own_home.status == 200
+        assert "Director" in hp_own_home_content
+        assert "Manage home spotlight" in hp_own_home_content
 
         member_claims_content = _page_content(member_claims.text)
         assert member_claims.status == 200

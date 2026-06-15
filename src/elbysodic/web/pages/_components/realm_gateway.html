@@ -50,6 +50,35 @@
     <p class="elbysodic-copy-lead">{{ gateway.hero.lead }}</p>
     <p class="elbysodic-realm-gateway-fit">{{ gateway.story_frame.fit_summary }}</p>
     <p class="elbysodic-realm-gateway-writing">{{ gateway.story_frame.writing_expectation }}</p>
+    <dl class="elbysodic-realm-gateway-story-frame" aria-label="Realm story frame">
+      <div>
+        <dt>Audience</dt>
+        <dd>
+          <strong>{{ gateway.story_frame.audience_label }}</strong>
+          <span>{{ gateway.story_frame.audience_summary }}</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Now</dt>
+        <dd>{{ gateway.story_frame.featured_signal }}</dd>
+      </div>
+      <div>
+        <dt>Places</dt>
+        <dd>{{ gateway.story_frame.places_signal }}</dd>
+      </div>
+      <div>
+        <dt>Cast</dt>
+        <dd>{{ gateway.story_frame.cast_signal }}</dd>
+      </div>
+      <div>
+        <dt>Wanted</dt>
+        <dd>{{ gateway.story_frame.wanted_pressure }}</dd>
+      </div>
+      <div>
+        <dt>Next</dt>
+        <dd>{{ gateway.story_frame.next_action.label }}</dd>
+      </div>
+    </dl>
     <p class="elbysodic-realm-gateway-first-face">
       <strong>Start here</strong>
       <span>{{ gateway.hero.first_face_path }}</span>

@@ -90,6 +90,11 @@ Use this contract before adding or expanding a hub:
 - **Community home** answers: where am I in the world? It should orient around
   realm identity, playable locations, current activity, and reply pressure. It
   should not become a second Writer Desk or Studio dashboard.
+  Its top story frame is service-owned and audience-specific: public visitors,
+  signed-in account visitors, members, staff, directors, inactive members, and
+  cross-realm viewers should see the same public-safe premise, event/material,
+  cast, places, and wanted pressure, with only the next action and viewer
+  framing changing by access state.
 - **Character hub** answers: what is true and playable for this face? It can
   show profile identity, active hooks, recent scenes, tracker context, and
   character-specific actions. It should not repeat roster-wide work that the
