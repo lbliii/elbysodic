@@ -129,6 +129,18 @@
         <dd>{{ operations.inspection.database_path }}</dd>
       </div>
       <div>
+        <dt>Database directory</dt>
+        <dd>{{ operations.inspection.database_parent_path }} - {{ "present" if operations.inspection.database_parent_present else "missing" }}</dd>
+      </div>
+      <div>
+        <dt>Database file</dt>
+        <dd>{{ "present" if operations.inspection.database_file_present else "missing" }}</dd>
+      </div>
+      <div>
+        <dt>Volume mount</dt>
+        <dd>{{ operations.inspection.volume_mount_path }} - {{ "present" if operations.inspection.volume_mount_present else "not present" }}</dd>
+      </div>
+      <div>
         <dt>Journal mode</dt>
         <dd>{{ operations.inspection.journal_mode }}</dd>
       </div>
@@ -147,6 +159,18 @@
       <div>
         <dt>Realms</dt>
         <dd>{{ operations.inspection.community_count }}</dd>
+      </div>
+      <div>
+        <dt>Public-ready realms</dt>
+        <dd>{{ operations.inspection.public_ready_realm_count }}</dd>
+      </div>
+      <div>
+        <dt>Seed demo mode</dt>
+        <dd>{{ "enabled" if operations.inspection.demo_mode_enabled else "disabled" }}</dd>
+      </div>
+      <div>
+        <dt>Auto seed demo</dt>
+        <dd>{{ "enabled" if operations.inspection.auto_seed_demo_enabled else "disabled" }}</dd>
       </div>
       <div>
         <dt>Opening</dt>

@@ -5159,20 +5159,30 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "queue names hidden from non-staff" in member_operations.text
         assert "Live check" not in member_operations.text
         assert "Database path" not in member_operations.text
+        assert "Database directory" not in member_operations.text
+        assert "Volume mount" not in member_operations.text
         assert "Journal mode" not in member_operations.text
         assert "Integrity check" not in member_operations.text
+        assert "Public-ready realms" not in member_operations.text
+        assert "Seed demo mode" not in member_operations.text
         assert staff_operations.status == 200
         assert "Privacy Queue Face - ready" in staff_operations.text
         assert "ready apps" in staff_operations.text
         assert "Live check" in staff_operations.text
         assert "Runtime and persistence" in staff_operations.text
         assert "Database path" in staff_operations.text
+        assert "Database directory" in staff_operations.text
+        assert "Database file" in staff_operations.text
+        assert "Volume mount" in staff_operations.text
         assert "Journal mode" in staff_operations.text
         assert "Integrity check" in staff_operations.text
         assert "ok" in staff_operations.text
         assert "Queue contracts" in staff_operations.text
         assert "visible to managers only" in staff_operations.text
         assert "Schema" in staff_operations.text
+        assert "Public-ready realms" in staff_operations.text
+        assert "Seed demo mode" in staff_operations.text
+        assert "Auto seed demo" in staff_operations.text
         assert "Opening" in staff_operations.text
 
     asyncio.run(run())
@@ -12463,8 +12473,11 @@ def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: P
 
 
 def test_file_backed_operations_inspection_reports_wal_and_integrity(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.delenv("RAILWAY_VOLUME_MOUNT_PATH", raising=False)
+    monkeypatch.delenv("ELBYSODIC_AUTO_SEED_DEMO", raising=False)
     services = create_services(path=tmp_path / "elbysodic.sqlite3")
 
     inspection = operations_inspection(
@@ -12478,6 +12491,14 @@ def test_file_backed_operations_inspection_reports_wal_and_integrity(
     assert inspection.integrity_check == "ok"
     assert inspection.latest_migration_version == inspection.current_schema_version
     assert inspection.community_count > 0
+    assert inspection.public_ready_realm_count > 0
+    assert inspection.database_parent_path == str(tmp_path)
+    assert inspection.database_parent_present
+    assert inspection.database_file_present
+    assert inspection.volume_mount_path == "not configured"
+    assert not inspection.volume_mount_present
+    assert inspection.demo_mode_enabled
+    assert not inspection.auto_seed_demo_enabled
 
 
 def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path) -> None:

@@ -40,6 +40,7 @@ from elbysodic.services.read_models import (
     MaterialSummary,
     NetworkBrowseFacet,
     NetworkDiscoveryFilterGroup,
+    NetworkEmptyState,
     NetworkExploreLane,
     NetworkExploreView,
     NetworkHomeView,
@@ -512,12 +513,35 @@ def _premise_slice_title(value: str) -> str:
 
 def network_explore(cards: list[PublicCatalogCard], query: str = "") -> NetworkExploreView:
     cards = ensure_public_catalog_cards(cards, surface="network_explore")
+    normalized_query = query.strip()
     return NetworkExploreView(
-        query=query.strip(),
+        query=normalized_query,
         browse_facets=network_browse_facets(cards),
         filter_groups=network_filter_groups(cards),
         relationship_lanes=network_explore_lanes(cards),
-        results=search_public_catalog(cards, query),
+        results=search_public_catalog(cards, normalized_query),
+        empty_state=network_empty_state(query=normalized_query),
+    )
+
+
+def network_empty_state(*, query: str = "") -> NetworkEmptyState:
+    if query:
+        return NetworkEmptyState(
+            kicker="No search match",
+            title="No public realms match that search yet.",
+            summary=(
+                "The request completed, but no public-ready realm currently matches that "
+                "premise, pace, hook, roster, or chapter signal."
+            ),
+        )
+    return NetworkEmptyState(
+        kicker="No public-ready realms",
+        title="No public-ready realms are open yet.",
+        summary=(
+            "The request completed, but this database has no realm that is both public-preview "
+            "and ready for catalog discovery. Directors can confirm realm count, public-ready "
+            "count, seed posture, and database path from Studio Operations."
+        ),
     )
 
 

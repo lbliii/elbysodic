@@ -555,9 +555,9 @@ def test_production_empty_network_renders_launch_state(monkeypatch) -> None:
         assert root.status == 200
         assert network.status == 200
         for response in (root, network):
-            assert "Opening soon" in response.text
-            assert "The first realm is still preparing to open." in response.text
-            assert "wanted hooks, faces, scenes, and current events" in response.text
+            assert "No public-ready realms" in response.text
+            assert "No public-ready realms are open yet." in response.text
+            assert "The request completed, but this database has no realm" in response.text
             assert 'href="/request-access"' in response.text
             assert 'href="/login?next=/"' in response.text
             assert "No programs are available yet." not in response.text
@@ -600,8 +600,8 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         assert root.status == 200
         assert network.status == 200
         for response in (root, network):
-            assert "Opening soon" in response.text
-            assert "The first realm is still preparing to open." in response.text
+            assert "No public-ready realms" in response.text
+            assert "No public-ready realms are open yet." in response.text
             assert "Starter Realm" not in response.text
             assert "starter-realm" not in response.text
         assert direct_preview.status == 404
@@ -610,7 +610,7 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         assert "Starter Director" not in direct_world.text
         assert login.status == 302
         assert director_network.status == 200
-        assert "The first realm is still preparing to open." in director_network.text
+        assert "No public-ready realms are open yet." in director_network.text
         assert "Starter Director" in director_network.text
         assert "Director in Starter Realm" in director_network.text
         assert (

@@ -77,6 +77,47 @@ is a configuration error. Keep the manual `railway ssh --service elbysodic
 elbysodic seed-demo` step available for immediate repair and for proving the
 database path printed by the seed command.
 
+## Empty Catalog Diagnostics
+
+When `/network` renders "No public-ready realms are open yet.", treat the page
+as a successful public request with an empty catalog, not as proof that Railway
+is healthy. Open Studio Operations as a director and inspect the read-only
+Runtime and persistence panel:
+
+- `Database path`: should match `ELBYSODIC_DB_PATH`, normally
+  `/app/var/elbysodic.sqlite3` on staging.
+- `Database directory` and `Database file`: both should be present. A missing
+  directory points to a wrong volume mount or path; a missing file points to an
+  uninitialized database path.
+- `Volume mount`: should show the configured Railway mount path as present when
+  `RAILWAY_VOLUME_MOUNT_PATH` is set.
+- `Realms`: `0` means Railway is using an empty schema-only database or the
+  wrong path.
+- `Public-ready realms`: `0` with nonzero realms means the database has tenant
+  roots, but no realm is both `public-preview` and ready for catalog discovery.
+- `Seed demo mode`: disabled means seeded demo passwords are not available; on
+  staging, confirm `ELBYSODIC_DEMO_MODE=1`.
+- `Auto seed demo`: disabled on staging means an empty volume will not self-heal
+  on app startup; confirm `ELBYSODIC_AUTO_SEED_DEMO=1` before relying on
+  automatic repair.
+- `Schema` and `Migration ledger`: both should equal the current schema version.
+  A mismatch means the database is not at the expected migration state.
+
+Common diagnoses:
+
+- Empty schema-only DB: `Realms=0`, schema and migration ledger are current,
+  and the database file is present. Run the staging seed command against the
+  displayed database path.
+- Wrong volume path: `Database path` is `var/elbysodic.sqlite3` or another
+  container-local path instead of `/app/var/elbysodic.sqlite3`, or the displayed
+  directory/file is missing. Fix Railway variables or the mounted volume path,
+  then redeploy before seeding.
+- Unseeded volume: database directory and file are present, schema is current,
+  but `Realms=0`. Run `elbysodic seed-demo` for staging or bootstrap the first
+  realm for production.
+- Real no-public-realms launch state: `Realms>0` and `Public-ready realms=0`.
+  Use Studio Launch and public preview readiness checks instead of reseeding.
+
 Staging smoke should include:
 
 - `GET /health` returns `200`.
