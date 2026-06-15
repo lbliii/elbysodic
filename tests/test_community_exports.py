@@ -4,6 +4,7 @@ import pytest
 
 from elbysodic.db.seed import DemoSeed, resolve_seed_persona
 from elbysodic.services import AppServices, create_services
+from elbysodic.services.auth import session_token_hash
 from elbysodic.services.exports import (
     CommunityExportDomain,
     CommunityExportManifest,
@@ -220,6 +221,88 @@ def test_director_archive_profile_names_sensitive_domains_and_cross_tenant_exclu
     }.issubset(_domain_names(director.excluded_domains))
     assert "HP Archive Profile Prospect" not in rendered_director_profile
     assert "HP profile private note" not in rendered_director_profile
+
+
+def test_export_manifest_redacts_auth_material_and_cross_realm_shared_account() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    hp = repo.get_community_by_slug("hp-universe")
+    shared_user = repo.create_user("shared-export@example.com", "secret-export-password-hash")
+    xmen_role = repo.create_role(staff.community.id, "export-member", "Export Member")
+    hp_role = repo.create_role(hp.id, "export-member", "Export Member")
+    xmen_membership = repo.create_membership(
+        staff.community.id,
+        shared_user.id,
+        xmen_role.id,
+        "shared-export-xmen",
+        "Shared Export X-Men",
+    )
+    hp_membership = repo.create_membership(
+        hp.id,
+        shared_user.id,
+        hp_role.id,
+        "shared-export-hp",
+        "Shared Export HP",
+    )
+    xmen_character = repo.create_character(
+        staff.community.id,
+        xmen_membership.id,
+        "shared-export-xmen-face",
+        "Shared Export X-Men Face",
+    )
+    hp_character = repo.create_character(
+        hp.id,
+        hp_membership.id,
+        "shared-export-hp-face",
+        "Shared Export HP Face",
+    )
+    raw_session_token = "raw-session-token-for-export-redaction"
+    session_hash = session_token_hash(raw_session_token)
+    repo.create_user_session(
+        shared_user.id,
+        session_hash,
+        expires_at="2026-07-01T00:00:00+00:00",
+    )
+    raw_invite_token = "raw-invite-token-for-export-redaction"
+    invite_hash = session_token_hash(raw_invite_token)
+    repo.create_community_invitation(
+        staff.community.id,
+        email="invite-export@example.com",
+        role_id=xmen_role.id,
+        invited_by_membership_id=staff.membership.id,
+        token_hash=invite_hash,
+        expires_at="2026-07-01T00:00:00+00:00",
+    )
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    manifest = staff_services.community_export_manifest()
+    rendered_manifest = repr(manifest)
+
+    assert all(item.community_id == staff.community.id for item in manifest.counts)
+    assert all(item.community_id == staff.community.id for item in manifest.ownership)
+    assert all(link.community_id == staff.community.id for link in manifest.source_links)
+    assert all(redaction.community_id == staff.community.id for redaction in manifest.redactions)
+    assert any(
+        item.kind == "character"
+        and item.record_id == xmen_character.id
+        and item.membership_id == xmen_membership.id
+        and item.character_id == xmen_character.id
+        for item in manifest.ownership
+    )
+    assert all(item.record_id != hp_character.id for item in manifest.ownership)
+    assert "Shared Export X-Men Face" in rendered_manifest
+    assert "Shared Export HP Face" not in rendered_manifest
+    assert "shared-export@example.com" not in rendered_manifest
+    assert "secret-export-password-hash" not in rendered_manifest
+    assert raw_session_token not in rendered_manifest
+    assert session_hash not in rendered_manifest
+    assert raw_invite_token not in rendered_manifest
+    assert invite_hash not in rendered_manifest
+    assert "invite-export@example.com" not in rendered_manifest
 
 
 def test_member_cannot_create_community_export_manifest() -> None:
