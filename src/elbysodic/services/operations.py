@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -12,12 +13,16 @@ from typing import Protocol
 from elbysodic.db.migrations import CURRENT_SCHEMA_VERSION
 from elbysodic.domain.models import (
     Character,
+    Community,
     CommunityAccessRequest,
     CommunityInvitation,
     CommunityMembership,
+    Material,
     Role,
 )
 from elbysodic.services import policies
+from elbysodic.services.auth import seed_passwords_enabled
+from elbysodic.services.network import is_public_network_ready_from_batches
 from elbysodic.services.read_models import (
     ApplicationCharacterView,
     CastingDesk,
@@ -46,6 +51,17 @@ class OperationsRepository(Protocol):
     def list_community_characters(self, community_id: int) -> list[Character]: ...
 
     def list_memberships(self, community_id: int) -> list[CommunityMembership]: ...
+
+    def list_communities(self) -> list[Community]: ...
+
+    def list_materials_for_communities(
+        self,
+        community_ids: list[int],
+        *,
+        status: str | None = None,
+    ) -> dict[int, list[Material]]: ...
+
+    def public_scene_hub_community_ids(self, community_ids: list[int]) -> set[int]: ...
 
 
 class RestoreCheckRepository(OperationsRepository, Protocol):
@@ -152,6 +168,14 @@ class OperationsInspection:
     current_schema_version: int
     latest_migration_version: int
     community_count: int
+    public_ready_realm_count: int
+    database_parent_path: str
+    database_parent_present: bool
+    database_file_present: bool
+    volume_mount_path: str
+    volume_mount_present: bool
+    demo_mode_enabled: bool
+    auto_seed_demo_enabled: bool
     launch_status: str
 
 
@@ -599,7 +623,28 @@ def operations_inspection(
     journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
     integrity_check = connection.execute("PRAGMA integrity_check").fetchone()[0]
     user_version = connection.execute("PRAGMA user_version").fetchone()[0]
-    community_count = connection.execute("SELECT COUNT(*) AS count FROM communities").fetchone()
+    communities = repo.list_communities()
+    community_ids = [community.id for community in communities]
+    materials_by_community = repo.list_materials_for_communities(
+        community_ids,
+        status="published",
+    )
+    public_scene_hub_community_ids = repo.public_scene_hub_community_ids(community_ids)
+    public_ready_realm_count = sum(
+        1
+        for community in communities
+        if is_public_network_ready_from_batches(
+            community,
+            materials_by_community.get(community.id, []),
+            public_scene_hub_community_ids,
+        )
+    )
+    database_path = str(database_row["file"] or ":memory:")
+    database_file_path = Path(database_path) if database_path != ":memory:" else None
+    database_parent_path = (
+        str(database_file_path.parent) if database_file_path is not None else ":memory:"
+    )
+    volume_mount_path = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
     try:
         app_version = version("elbysodic")
     except PackageNotFoundError:
@@ -608,15 +653,29 @@ def operations_inspection(
         app_version=app_version,
         environment=config.environment,
         secure_cookies=config.secure_cookies,
-        database_path=str(database_row["file"] or ":memory:"),
+        database_path=database_path,
         journal_mode=str(journal_mode),
         integrity_check=str(integrity_check),
         sqlite_user_version=int(user_version),
         current_schema_version=CURRENT_SCHEMA_VERSION,
         latest_migration_version=int(migration_row["version"] or 0),
-        community_count=int(community_count["count"] if community_count is not None else 0),
+        community_count=len(communities),
+        public_ready_realm_count=public_ready_realm_count,
+        database_parent_path=database_parent_path,
+        database_parent_present=(
+            bool(database_file_path is not None and database_file_path.parent.exists())
+        ),
+        database_file_present=bool(database_file_path is not None and database_file_path.exists()),
+        volume_mount_path=volume_mount_path or "not configured",
+        volume_mount_present=bool(volume_mount_path and Path(volume_mount_path).exists()),
+        demo_mode_enabled=seed_passwords_enabled(),
+        auto_seed_demo_enabled=_truthy_env("ELBYSODIC_AUTO_SEED_DEMO"),
         launch_status=viewer.community.launch_status,
     )
+
+
+def _truthy_env(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def restore_check_database(path: Path) -> RestoreCheckResult:

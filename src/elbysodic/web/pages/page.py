@@ -7,6 +7,7 @@ from chirp.http.request import Request
 from chirp.templating.returns import Page
 
 from elbysodic.services.forum import AppServices
+from elbysodic.services.network import network_empty_state
 from elbysodic.services.read_models import ForumView
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_tenant_slug
@@ -31,6 +32,7 @@ def get(request: Request) -> Page:
             relationship_lanes=[],
             return_path=network_home.return_path,
             explore_programs=[],
+            network_empty_state=network_empty_state(),
             viewer=viewer,
             account_visitor=None if viewer is not None else services.account_visitor(request),
             show_community_shell=False,

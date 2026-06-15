@@ -310,7 +310,11 @@
     </div>
     {% else %}
     {% call surface(variant="elevated") %}
-    <p class="elbysodic-empty-state">No reachable realms match that search yet.</p>
+    <div class="elbysodic-network-empty">
+      <p class="elbysodic-section-kicker">{{ network_empty_state.kicker }}</p>
+      <h2>{{ network_empty_state.title }}</h2>
+      <p class="elbysodic-empty-state">{{ network_empty_state.summary }}</p>
+    </div>
     {% end %}
     {% end %}
   </section>
@@ -353,16 +357,13 @@
   {% end %}
   {% else %}
   {% call section_header("Studio Network") %}
-  This Elbysodic studio has not opened its first play-by-post realm yet.
+  The public catalog request completed without public-ready realms.
   {% end %}
   {% call surface(variant="elevated") %}
   <div class="elbysodic-network-empty">
-    <p class="elbysodic-section-kicker">Opening soon</p>
-    <h2>The first realm is still preparing to open.</h2>
-    <p class="elbysodic-empty-state">
-      Once a director opens a realm, this studio network will show public worlds,
-      wanted hooks, faces, scenes, and current events here.
-    </p>
+    <p class="elbysodic-section-kicker">{{ network_empty_state.kicker }}</p>
+    <h2>{{ network_empty_state.title }}</h2>
+    <p class="elbysodic-empty-state">{{ network_empty_state.summary }}</p>
     <div class="elbysodic-network-empty__actions">
       <a class="chirpui-btn chirpui-btn--primary" href="/login?next=/">Log in</a>
     </div>

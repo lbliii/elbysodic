@@ -31,6 +31,7 @@ def get(request: Request) -> Page:
         viewer=viewer,
         account_visitor=None if viewer is not None else services.account_visitor(request),
         explore_programs=network_explore.results,
+        network_empty_state=network_explore.empty_state,
         show_community_shell=False,
     )
 

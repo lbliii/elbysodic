@@ -2270,6 +2270,13 @@ class NetworkExploreLane:
 
 
 @dataclass(frozen=True, slots=True)
+class NetworkEmptyState:
+    kicker: str
+    title: str
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
 class NetworkReturnPath:
     desk_href: str
     notification_href: str
@@ -2292,6 +2299,7 @@ class NetworkExploreView:
     filter_groups: list[NetworkDiscoveryFilterGroup]
     relationship_lanes: list[NetworkExploreLane]
     results: list[PublicCatalogCard]
+    empty_state: NetworkEmptyState
 
 
 @dataclass(frozen=True, slots=True)
