@@ -142,17 +142,55 @@ or active-face state. The account-link event is recorded for director-visible
 history, but it does not change request status or expose private request details
 to the applicant or public preview.
 
-The access-request lifecycle is `pending -> reviewed -> invited` or
-`pending/reviewed -> declined`. An invited request may link to the invitation
-row that was created from it, but the raw invite token is still shown only at
-creation time because stored invitations retain token hashes. A lost link
-requires revoking the pending invitation and creating a fresh one; the original
-access request remains the audit trail for why the invite was issued.
+The access-request lifecycle is service-owned and director-private. It is the
+planning contract for #107, #86, #57, and #139, not approval to add schema,
+routes, token behavior, or privacy-boundary changes without a separate review.
+Access requests are interest records; only explicit invitation acceptance can
+create or reuse a global `User`, create `CommunityMembership`, create a first
+face, select session identity, or hand the writer into first-face/application
+work.
+
+| State | Entry Transition | Allowed Next Transitions | Idempotency And Replay | Visibility |
+|---|---|---|---|---|
+| `submitted` / `pending` | Public or account visitor submits request access for one community. | Account link, director review, decline, invite, withdraw or expire when implemented. | Duplicate open request for the same community/email returns or links the existing record; it does not create membership, role, face, invite, reserve, claim, session, or active-face state. | Public/account visitor may see receipt posture only; same-community directors may inspect details. |
+| `account_linked` | Signed-in account submits or claims a duplicate request for the same email. | Review, decline, invite, withdraw or expire when implemented. | Repeated account-link attempts are no-ops when linked to the same user; wrong-account or cross-community attempts must fail without exposing another request. | Applicant still cannot see review notes, invite linkage, staff history, or other applicant data. |
+| `reviewed` | Director marks the request reviewed or records director-only context. | Invite, decline, withdraw or expire when implemented. | Re-review updates director workflow state only through an approved service transition; it must not send or recover an invite token. | Director-only; hidden from public, account visitors, ordinary members, inactive members, and other communities. |
+| `invited` | Director creates an invitation from the request. | Invite acceptance through `/invite/{token}`, revoke/reissue while pending, or expire when implemented. | Replayed invite creation should reuse the existing linked invitation or require explicit reissue; raw invite token is visible only at creation/reissue. | Directors may see linked invitation state; applicant never sees the raw token from request status. |
+| `accepted` | Invitation token is accepted and creates/reuses account plus local membership. | First-face or application handoff. | Replaying the accepted token fails without exposing Studio, staff queues, or membership internals. | Writer sees the invited realm membership path; access-request notes and director review history remain staff-only. |
+| `declined` | Director declines the request. | Reopen only through a separately approved transition. | Duplicate submissions after decline follow the approved duplicate/reopen policy; they must not reveal prior notes or invitation state. | Applicant may see generic closed or received posture if surfaced; director details stay private. |
+| `withdrawn` | Applicant withdraws interest when that route exists. | Reopen through a new request or approved recovery path. | Replayed withdraw is a no-op; director history remains audit-only. | Public/account view must not expose director notes or staff state. |
+| `expired` | System or director expiry closes stale interest when implemented. | New request or explicit director reactivation. | Replayed links and stale actions fail closed. | Expiry reason is director-private unless a public-safe receipt state is approved. |
+
+Visibility rules:
+
+| Viewer | May See | Must Not See |
+|---|---|---|
+| Public visitor | Public request-access form, receipt posture, and realm-safe entry copy. | Applicant email from another request, private notes, review state, invitation link, account-link history, staff queues, or membership state. |
+| Account visitor | Account-linked request posture for their own submitted email in the current community. | Director notes, invite linkage, raw token, another account's request, or local membership controls before invitation acceptance. |
+| Ordinary member | Public-safe preview and member shell for their own realm. | Request queue, applicant notes, invitation state, account-link history, or director review state. |
+| Inactive member | Public-safe preview or recovery copy only. | Request queue, switch options, private request data, staff controls, or local entry grants. |
+| Director/staff with capability | Current-community request details, lifecycle history, duplicate/account-link context, and linked invitation state. | Raw invite token after creation/reissue, token hashes, passwords, sessions, other-community requests, or unrelated applicant data. |
+| Cross-community staff/director | Nothing beyond public-safe preview for the target realm. | Request existence, applicant email, notes, review state, linked invitation, lifecycle history, or counts. |
+
+Transition proof required before implementation:
+
+- Service tests for legal transitions, duplicate email recovery,
+  same-account idempotency, wrong-account replay, stale invite replay, decline,
+  withdrawal, and expiry once those states become behavior.
+- Rendered privacy tests for public visitor, account visitor, ordinary member,
+  inactive member, same-community director, and cross-community staff/director
+  if any route or read model changes.
+- Security tests proving raw tokens appear only in creation/reissue responses
+  and token hashes, private notes, applicant emails, and staff review history do
+  not leak through public/account/member surfaces.
+- Repository tests proving request, event, invitation, actor membership, and
+  account link rows remain scoped to the same `community_id`.
+
 Director-visible access-request activity events are stored in
 `community_access_request_events` with `community_id`, request id, optional
 actor membership, status transition, optional invitation id, and timestamp.
-Submitted, account-linked, reviewed, invited, and declined events are staff
-workflow history, not public preview data.
+Submitted, account-linked, reviewed, invited, accepted, declined, withdrawn,
+and expired events are staff workflow history, not public preview data.
 
 Community export manifests are director-only backend read models. They may count
 community-scoped workflow rows and preserve source links, membership ownership,

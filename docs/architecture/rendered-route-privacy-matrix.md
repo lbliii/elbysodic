@@ -89,6 +89,8 @@ hidden state.
   creation. Public and account-visitor previews must not reveal request notes,
   email addresses, face concepts, wanted-hook interest, invitation links, or
   review state; same-community directors inspect and act on them from Studio.
+  The lifecycle and visibility matrix lives in
+  `docs/architecture/security-boundaries.md`.
 - Inactive memberships are absent from `/members`, `/members/{username}`, and
   direct character profile routes, and recovery does not offer cross-realm
   switches for inactive faces.
