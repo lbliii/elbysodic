@@ -80,7 +80,8 @@ Stay invite-only unless all are true:
 
 - backup/restore has been rehearsed recently
 - the copied backup reports `restore-check ok` without leaking secrets or
-  private content
+  private content, following the operator contract in
+  `docs/operations/sqlite-production.md`
 - notification/sidebar privacy tests are green
 - public catalog copy is intentional
 - signed-out preview routes expose only published public content

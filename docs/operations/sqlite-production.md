@@ -136,6 +136,52 @@ continuity source links, export privacy, and auth/session posture. A blocked
 plan means operators should not mutate or restore the candidate until the named
 failure is understood.
 
+## Restore-Check Operator Contract
+
+The restore-check contract is a read-only service contract. Until a dedicated
+CLI command is approved, run it through the Python service entrypoint above and
+record only the redacted report. Adding or changing a public CLI command,
+deployment setting, destructive restore command, or repair workflow needs human
+approval before implementation.
+
+Inputs:
+
+| Input | Contract |
+|---|---|
+| Candidate path | Must be a filesystem SQLite path, not `:memory:`. |
+| Open mode | Must open the candidate read-only with `query_only` enabled. |
+| Source environment | Record local, staging, or production context without secrets. |
+| Backup metadata | Record source path, backup path, timestamp, schema version, migration version, core counts, and result when available. |
+
+Success criteria:
+
+| Check | Expected result |
+|---|---|
+| SQLite integrity | `PRAGMA integrity_check` returns `ok`. |
+| Foreign keys | `PRAGMA foreign_key_check` reports `0` violations. |
+| Schema version | SQLite `user_version`, current schema version, and latest migration version match. |
+| Realm roots | At least one community is present for a non-empty backup. |
+| Service readback | Communities, memberships, boards/materials, threads/posts, sessions, command submissions, invitations, access requests, plotting rooms, and notifications read through service/repository contracts. |
+| Restore plan | The derived restore plan has no blockers before a destructive restore is considered. |
+
+Failure modes to record:
+
+| Failure | Operator response |
+|---|---|
+| Missing file or inaccessible path | Stop; confirm volume mount, copied path, and operator permissions. |
+| In-memory path | Stop; restore-check requires a copied filesystem database. |
+| Integrity failure | Stop; do not trust row-level readback until the SQLite failure is understood. |
+| Foreign-key violation | Stop; treat as tenant or persistence integrity risk. |
+| Schema or migration mismatch | Stop; align app code, migrations, and candidate database before restore. |
+| Empty or wrong database | Stop; confirm the source path and backup timestamp before any cutover. |
+| Service readback failure | Stop; inspect the named domain and keep the candidate out of production. |
+
+Redaction rules:
+
+| Never record | Acceptable record |
+|---|---|
+| Secret keys, cookies, session tokens, token hashes, passwords, raw invite tokens, reset links, credentials, private notes, post bodies, application answers, private material bodies, or applicant emails. | Status, counts, schema and migration versions, journal mode, integrity result, foreign-key violation count, readback labels, blocker labels, and non-secret file paths. |
+
 For tenant-boundary incidents, migration rehearsals, imported data, or
 pre-launch checks, use the read-only tenant integrity audit service before any
 manual repair. The service groups findings by community and severity, names the
