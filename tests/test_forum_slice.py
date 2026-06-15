@@ -12827,6 +12827,11 @@ def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path
     repo = services.repo
     viewer = services.viewer()
     assert viewer.current_character is not None
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
     secret_user = repo.create_user("secret-restore@example.com", "secret-password-hash")
     repo.create_user_session(
         secret_user.id,
@@ -12848,10 +12853,21 @@ def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path
         title="Restore Check Scene",
         body="Do not emit this post body.",
     )
+    repo.create_community_access_request(
+        viewer.community.id,
+        email="secret-request@example.com",
+        display_name="Secret Requester",
+        face_concept="Do not emit this face concept.",
+        wanted_hook="Do not emit this wanted hook.",
+        notes="Do not emit this private access-request note.",
+    )
+    invitation = staff_services.create_writer_invitation("secret-invite@example.com")
     services.close()
 
     result = restore_check_database(db_path)
     report = format_restore_check_report(result)
+    plan_report = format_restore_plan_report(restore_plan_from_check(result))
+    combined_report = f"{report}\n{plan_report}"
 
     assert result.ok is True
     assert result.opened_read_only is True
@@ -12862,12 +12878,20 @@ def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path
     assert "restore-check ok" in report
     assert "- users:" in report
     assert "- thread rows: ok" in report
-    assert "secret-restore@example.com" not in report
-    assert "secret-password-hash" not in report
-    assert "secret-session-token" not in report
-    assert "Do not emit this summary." not in report
-    assert "Do not emit this material body." not in report
-    assert "Do not emit this post body." not in report
+    assert "secret-restore@example.com" not in combined_report
+    assert "secret-password-hash" not in combined_report
+    assert "secret-session-token" not in combined_report
+    assert "secret-request@example.com" not in combined_report
+    assert "Secret Requester" not in combined_report
+    assert "Do not emit this face concept." not in combined_report
+    assert "Do not emit this wanted hook." not in combined_report
+    assert "Do not emit this private access-request note." not in combined_report
+    assert "secret-invite@example.com" not in combined_report
+    assert invitation.token not in combined_report
+    assert invitation.invitation.token_hash not in combined_report
+    assert "Do not emit this summary." not in combined_report
+    assert "Do not emit this material body." not in combined_report
+    assert "Do not emit this post body." not in combined_report
 
 
 def test_restore_plan_from_check_orders_read_only_operator_steps(tmp_path: Path) -> None:
