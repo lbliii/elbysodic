@@ -170,12 +170,14 @@ def member_profile(repo: IdentityRepository, viewer: ForumView, username: str) -
     membership = repo.get_membership_by_username(viewer.community.id, username)
     if not membership.is_active:
         raise LookupError(f"membership not found in community {viewer.community.id}: {username}")
+    role = repo.get_role(viewer.community.id, membership.role_id)
     roster = repo.list_characters(viewer.community.id, membership.id)
     roster_ids = {character.id for character in roster}
     active_threads = thread_obligations(repo, viewer, roster_ids)
     return MemberProfile(
         membership=membership,
-        role=repo.get_role(viewer.community.id, membership.role_id),
+        role=role,
+        role_badge_variant=_role_badge_variant(membership, role),
         roster=roster,
         default_character=default_character(roster, membership.default_character_id),
         known_for=known_for_characters(repo, viewer, roster, limit=3),
@@ -288,13 +290,15 @@ def member_directory_card(
     viewer: ForumView,
     membership: CommunityMembership,
 ) -> MemberDirectoryCard:
+    role = repo.get_role(viewer.community.id, membership.role_id)
     roster = repo.list_characters(viewer.community.id, membership.id)
     roster_ids = {character.id for character in roster}
     active_threads = thread_obligations(repo, viewer, roster_ids)
     latest_posts = recent_character_posts(repo, viewer, roster_ids, limit=1)
     return MemberDirectoryCard(
         membership=membership,
-        role=repo.get_role(viewer.community.id, membership.role_id),
+        role=role,
+        role_badge_variant=_role_badge_variant(membership, role),
         roster=roster,
         default_character=default_character(roster, membership.default_character_id),
         known_for=known_for_characters(repo, viewer, roster, limit=2),
@@ -303,6 +307,15 @@ def member_directory_card(
         latest_post=latest_posts[0] if latest_posts else None,
         is_current_member=membership.id == viewer.membership.id,
     )
+
+
+def _role_badge_variant(membership: CommunityMembership, role: Role) -> str:
+    if any(
+        policies.has_capability(membership, role, capability)
+        for capability in policies.ADMIN_CAPABILITIES
+    ):
+        return "warning"
+    return "muted"
 
 
 def default_character(
