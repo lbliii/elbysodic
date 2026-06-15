@@ -152,6 +152,45 @@ def test_unregistered_notification_kind_does_not_render_count_open_or_mark_read(
     assert repo.get_notification(viewer.community.id, notification.id).read_at is None
 
 
+def test_wrong_membership_application_target_does_not_render_count_open_or_mark_read() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    writer = services.seed
+    outsider = resolve_seed_persona(repo, "xmen_outsider")
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    assert writer.default_character is not None
+    assert staff.character is not None
+    outsider_services = AppServices(
+        repo,
+        replace(
+            writer,
+            user=outsider.user,
+            membership=outsider.membership,
+            default_character=outsider.character,
+        ),
+    )
+    notification = repo.create_notification(
+        writer.community.id,
+        outsider.membership.id,
+        kind="application_revision_requested",
+        character_id=writer.default_character.id,
+        actor_membership_id=staff.membership.id,
+        actor_character_id=staff.character.id,
+    )
+
+    inbox = outsider_services.notifications()
+
+    assert inbox.unread_count == 0
+    assert all(item.notification.id != notification.id for item in inbox.items)
+    with pytest.raises(LookupError, match="notification target not found"):
+        outsider_services.open_notification(notification.id)
+    assert repo.get_notification(writer.community.id, notification.id).read_at is None
+
+    outsider_services.mark_all_notifications_read()
+
+    assert repo.get_notification(writer.community.id, notification.id).read_at is None
+
+
 def test_post_notification_creation_skips_memberships_that_cannot_view_target() -> None:
     services = create_services(path=":memory:")
     repo = services.repo
