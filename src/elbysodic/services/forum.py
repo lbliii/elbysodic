@@ -297,6 +297,7 @@ from elbysodic.services.read_models import (
     PublicCatalogCard,
     RealmGatewayAction,
     RealmGatewayAtmosphere,
+    RealmGatewayAudienceContract,
     RealmGatewayCastMember,
     RealmGatewayContinuation,
     RealmGatewayEntryPath,
@@ -1484,7 +1485,11 @@ class AppServices:
             or viewer.current_character.application_status != "accepted"
             else None
         )
-        return replace(gateway, continuation=_realm_gateway_continuation(viewer, activation))
+        return replace(
+            gateway,
+            story_frame=_realm_gateway_story_frame_for_viewer(gateway, viewer),
+            continuation=_realm_gateway_continuation(viewer, activation),
+        )
 
     def realm_home(self) -> RealmHome:
         boards = self.list_boards()
@@ -4187,7 +4192,15 @@ def _public_realm_gateway(repo: ForumRepository, community: Community) -> RealmG
         guidebook=guidebook,
         hero=_realm_gateway_hero(program, premise, atmosphere),
         premise=premise,
-        story_frame=_realm_gateway_story_frame(program, premise),
+        story_frame=_realm_gateway_story_frame(
+            program,
+            premise,
+            atmosphere,
+            premise_stage,
+            scene_hubs,
+            cast_members,
+            wanted_previews,
+        ),
         premise_stage=premise_stage,
         premise_evolution=_realm_gateway_premise_evolution(
             program,
@@ -4300,6 +4313,11 @@ def _realm_gateway_hero(
 def _realm_gateway_story_frame(
     program: StudioNetworkProgramView,
     premise: RealmGatewayPremise,
+    atmosphere: RealmGatewayAtmosphere,
+    premise_stage: RealmGatewayPremiseStage,
+    scene_hubs: tuple[RealmGatewaySceneHub, ...],
+    cast_members: tuple[RealmGatewayCastMember, ...],
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
 ) -> RealmGatewayStoryFrame:
     profile = premise.discovery_profile
     rating_parts = []
@@ -4316,6 +4334,8 @@ def _realm_gateway_story_frame(
         if profile is not None and profile.activity_expectation.strip()
         else "Scene cadence, writing length, and fit are set by the realm's public guidebook."
     )
+    audience_contracts = _realm_gateway_audience_contracts(program)
+    public_contract = audience_contracts[0]
     return RealmGatewayStoryFrame(
         eyebrow=premise.premise_label,
         access_label=program.invite_posture_label,
@@ -4323,7 +4343,147 @@ def _realm_gateway_story_frame(
         cadence_label=cadence_label,
         writing_expectation=writing_expectation,
         roster_posture=premise.roster_posture,
+        audience_label=public_contract.label,
+        audience_summary=public_contract.summary,
+        premise_stage_label=f"{premise_stage.label}: {premise_stage.title}",
+        featured_signal=f"{atmosphere.label}: {atmosphere.title}",
+        cast_signal=_realm_gateway_cast_signal(program, cast_members),
+        places_signal=_realm_gateway_places_signal(scene_hubs),
+        wanted_pressure=_realm_gateway_wanted_pressure(program, wanted_previews),
+        next_action=public_contract.next_action,
+        audience_contracts=audience_contracts,
     )
+
+
+def _realm_gateway_story_frame_for_viewer(
+    gateway: RealmGatewayView,
+    viewer: ForumView,
+) -> RealmGatewayStoryFrame:
+    mode = "member"
+    if policies.can_manage_world(viewer.membership, viewer.role):
+        mode = "director"
+    elif (
+        policies.can_manage_applications(viewer.membership, viewer.role)
+        or policies.can_manage_casting(viewer.membership, viewer.role)
+        or policies.can_manage_navigation(viewer.membership, viewer.role)
+        or policies.can_manage_threads(viewer.membership, viewer.role)
+    ):
+        mode = "staff"
+
+    if not viewer.membership.is_active:
+        mode = "inactive_member"
+    elif mode == "member" and (
+        viewer.current_character is None
+        or viewer.current_character.application_status != "accepted"
+    ):
+        mode = "account_visitor"
+
+    contract = _realm_gateway_audience_contract(gateway.story_frame, mode)
+    return replace(
+        gateway.story_frame,
+        audience_label=contract.label,
+        audience_summary=contract.summary,
+        next_action=contract.next_action,
+    )
+
+
+def _realm_gateway_audience_contract(
+    story_frame: RealmGatewayStoryFrame,
+    mode: str,
+) -> RealmGatewayAudienceContract:
+    for contract in story_frame.audience_contracts:
+        if contract.mode == mode:
+            return contract
+    return story_frame.audience_contracts[0]
+
+
+def _realm_gateway_audience_contracts(
+    program: StudioNetworkProgramView,
+) -> tuple[RealmGatewayAudienceContract, ...]:
+    request_access = RealmGatewayAction(
+        "Request access",
+        _community_href(program, "/request-access"),
+        is_hx_boost_safe=False,
+    )
+    read_public = _realm_gateway_primary_action(program, _realm_gateway_reading_action(program))
+    return (
+        RealmGatewayAudienceContract(
+            "public_visitor",
+            "Public visitor",
+            "Read the public premise, scan places and wanted hooks, then decide whether to request access.",
+            read_public,
+        ),
+        RealmGatewayAudienceContract(
+            "account_visitor",
+            "Signed-in account visitor",
+            "Browse the public preview with your account ready for a director-reviewed access request.",
+            request_access,
+        ),
+        RealmGatewayAudienceContract(
+            "member",
+            "Realm member",
+            "Continue writing from your Desk after checking the realm's public story pressure.",
+            RealmGatewayAction("Open Desk", _community_href(program, "/desk")),
+        ),
+        RealmGatewayAudienceContract(
+            "staff",
+            "Staff",
+            "Check the public story frame, then move into Studio for queues, moderation, and production work.",
+            RealmGatewayAction("Open Studio", "/studio"),
+        ),
+        RealmGatewayAudienceContract(
+            "director",
+            "Director",
+            "Review the public story frame and manage the home spotlight from Studio Structure.",
+            RealmGatewayAction("Manage home spotlight", "/studio/structure#gateway-curation"),
+        ),
+        RealmGatewayAudienceContract(
+            "inactive_member",
+            "Inactive member",
+            "Public preview only; staff must restore membership before private queues or faces reopen.",
+            request_access,
+        ),
+        RealmGatewayAudienceContract(
+            "cross_community_viewer",
+            "Cross-realm visitor",
+            "Preview this realm as an outside writer without carrying another community's private context.",
+            request_access,
+        ),
+    )
+
+
+def _realm_gateway_cast_signal(
+    program: StudioNetworkProgramView,
+    cast_members: tuple[RealmGatewayCastMember, ...],
+) -> str:
+    if cast_members:
+        featured_count = len(cast_members)
+        featured_label = "featured face" if featured_count == 1 else "featured faces"
+        return f"{featured_count} {featured_label}; {program.roster_count} rostered faces."
+    if program.roster_count:
+        face_label = "face" if program.roster_count == 1 else "faces"
+        return f"{program.roster_count} rostered {face_label} visible from the public roster."
+    return "Roster signals open after accepted faces join play."
+
+
+def _realm_gateway_places_signal(scene_hubs: tuple[RealmGatewaySceneHub, ...]) -> str:
+    if scene_hubs:
+        place_label = "public place" if len(scene_hubs) == 1 else "public places"
+        return f"{len(scene_hubs)} {place_label} in play."
+    return "Public places open when directors publish scene hubs."
+
+
+def _realm_gateway_wanted_pressure(
+    program: StudioNetworkProgramView,
+    wanted_previews: tuple[RealmGatewayWantedPreview, ...],
+) -> str:
+    if wanted_previews:
+        wanted_titles = _joined_labels(tuple(preview.title for preview in wanted_previews[:2]))
+        return f"Open calls include {wanted_titles}."
+    if program.open_wanted_count:
+        hook_label = "open call" if program.open_wanted_count == 1 else "open calls"
+        return f"{program.open_wanted_count} {hook_label} waiting for writers."
+    return "No public wanted pressure is open right now."
 
 
 def _realm_gateway_premise_stage(

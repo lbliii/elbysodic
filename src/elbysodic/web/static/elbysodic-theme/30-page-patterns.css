@@ -843,6 +843,47 @@
     max-inline-size: 42rem;
 }
 
+.elbysodic-realm-gateway-story-frame {
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+}
+
+.elbysodic-realm-gateway-story-frame div {
+    background: color-mix(in srgb, var(--chirpui-bg) 64%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-border) 54%, transparent);
+    border-radius: var(--chirpui-radius-sm);
+    display: grid;
+    gap: 0.2rem;
+    min-inline-size: 0;
+    padding: 0.65rem 0.7rem;
+}
+
+.elbysodic-realm-gateway-story-frame dt {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.elbysodic-realm-gateway-story-frame dd {
+    color: var(--chirpui-text-muted);
+    display: grid;
+    gap: 0.15rem;
+    font-size: var(--chirpui-font-sm);
+    line-height: 1.35;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.elbysodic-realm-gateway-story-frame dd strong {
+    color: var(--chirpui-text);
+    font-size: var(--chirpui-font-sm);
+}
+
 .elbysodic-realm-gateway-now,
 .elbysodic-realm-gateway-first-face {
     background: color-mix(in srgb, var(--chirpui-bg) 70%, transparent);
@@ -1429,6 +1470,10 @@
 
     .elbysodic-realm-gateway-hero h1 {
         font-size: clamp(2.35rem, 16vw, 3.4rem);
+    }
+
+    .elbysodic-realm-gateway-story-frame {
+        grid-template-columns: 1fr;
     }
 
     .elbysodic-realm-gateway-hero__media {

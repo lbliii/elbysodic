@@ -1953,6 +1953,14 @@ class RealmGatewayAction:
 
 
 @dataclass(frozen=True, slots=True)
+class RealmGatewayAudienceContract:
+    mode: str
+    label: str
+    summary: str
+    next_action: RealmGatewayAction
+
+
+@dataclass(frozen=True, slots=True)
 class RealmGatewayHero:
     kicker: str
     title: str
@@ -1983,6 +1991,15 @@ class RealmGatewayStoryFrame:
     cadence_label: str
     writing_expectation: str
     roster_posture: str
+    audience_label: str
+    audience_summary: str
+    premise_stage_label: str
+    featured_signal: str
+    cast_signal: str
+    places_signal: str
+    wanted_pressure: str
+    next_action: RealmGatewayAction
+    audience_contracts: tuple[RealmGatewayAudienceContract, ...]
 
     @property
     def fit_labels(self) -> tuple[str, ...]:
