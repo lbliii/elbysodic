@@ -128,6 +128,35 @@ def test_production_config_parses_allowed_hosts_and_hsts(monkeypatch) -> None:
     assert app.config.strict_transport_security == "max-age=31536000"
 
 
+def test_chirp_runtime_provisions_htmx_for_hypermedia_templates() -> None:
+    async def run() -> None:
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/login")
+
+        assert app.config.htmx is True
+        assert 'data-chirp="htmx"' in response.text
+
+    asyncio.run(run())
+
+
+def test_security_headers_are_registered_for_development_contract_check() -> None:
+    async def run() -> None:
+        app = create_app(debug=True, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            response = await client.get("/login")
+
+        headers = dict(response.headers)
+        assert headers["x-frame-options"] == "DENY"
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
+        assert "frame-ancestors 'none'" in headers["content-security-policy"]
+
+    asyncio.run(run())
+
+
 def test_production_default_allowed_hosts_pass_chirp_check(monkeypatch) -> None:
     monkeypatch.setenv("ELBYSODIC_ENV", "production")
     monkeypatch.setenv("ELBYSODIC_SECRET_KEY", "x" * 32)

@@ -74,6 +74,20 @@ Still required before this roadmap can call the production gate closed:
 - Decide email sender policy before replacing copy-only invitations with
   resend/email delivery.
 
+2026-06-15 framework adoption refresh:
+
+- Bengal Chirp is upgraded to 0.8 with Bengal Pounce 0.8, while Chirp-UI remains
+  on 0.9.
+- Chirp 0.8 app checks now enforce explicit HTMX provisioning and flag missing
+  security headers on mutating surfaces. Elbysodic adopted
+  `AppConfig(htmx=True)` and registers `SecurityHeadersMiddleware` for every
+  app mode so local development, app checks, and production share the same
+  security-header posture.
+- The next framework-adoption work belongs in the production trust gate:
+  include Pounce 0.8 checks in Railway smoke, decide explicit request/upload
+  and static-streaming limits, and set trusted proxy/forwarded-hop posture from
+  the actual Railway topology.
+
 ## 2026-05-18 Status Refresh
 
 Local proof is stronger than the stale review date implied. The full test suite

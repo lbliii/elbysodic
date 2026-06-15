@@ -159,8 +159,8 @@ Important invariants:
 The package declares normal published dependencies:
 
 ```toml
-bengal-chirp[config,forms,sessions,ui]>=0.6.0
-chirp-ui>=0.8.0
+bengal-chirp[config,forms,sessions,ui]>=0.8.0
+chirp-ui>=0.9.0
 ```
 
 For local development, you can keep editable sibling checkout overrides in an
@@ -309,8 +309,8 @@ registry so Railway can build the app. Local-only uv config belongs in ignored
 `uv.toml`, and committed lockfile updates should be regenerated without local
 editable path sources.
 
-The checked-in lockfile tracks the current stack intake: Chirp 0.7, Chirp-UI
-0.9, Kida 0.9, and Pounce 0.7. When moving templates inside a folder, prefer
+The checked-in lockfile tracks the current stack intake: Chirp 0.8, Chirp-UI
+0.9, Kida 0.9, and Pounce 0.8. When moving templates inside a folder, prefer
 Kida's `./` relative imports for sibling `_components` references so local
 component groups stay refactor-safe.
 

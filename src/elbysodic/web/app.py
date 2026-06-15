@@ -63,6 +63,7 @@ def create_app(
         secret_key=security.secret_key,
         allowed_hosts=security.allowed_hosts,
         strict_transport_security=security.strict_transport_security,
+        htmx=True,
     )
     app = App(config=config)
     register_error_handlers(app, include_internal=not debug)
@@ -141,14 +142,14 @@ def create_app(
             )
         )
         app.add_middleware(CSRFMiddleware(CSRFConfig()))
-        app.add_middleware(
-            SecurityHeadersMiddleware(
-                SecurityHeadersConfig(
-                    content_security_policy=PRODUCTION_CONTENT_SECURITY_POLICY,
-                    strict_transport_security=security.strict_transport_security,
-                )
+    app.add_middleware(
+        SecurityHeadersMiddleware(
+            SecurityHeadersConfig(
+                content_security_policy=PRODUCTION_CONTENT_SECURITY_POLICY,
+                strict_transport_security=security.strict_transport_security,
             )
         )
+    )
     app.add_middleware(RequireLoginMiddleware(security))
     app.add_middleware(IdentityFailureMiddleware())
     app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
