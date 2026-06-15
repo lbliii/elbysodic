@@ -102,3 +102,17 @@ Passed locally on June 3, 2026 against an isolated seeded development server on
   `/private/tmp/elbysodic-onboarding-community-landing-qa-2026-06-03`.
 - Writer activation QA passed after refreshing the script to wait for the
   current first-face action label, `Create draft face`.
+
+Passed locally on June 13, 2026 for the no-face and accepted-face next-move
+regression pack against an isolated seeded development server on
+`http://127.0.0.1:8007` with database
+`/private/tmp/elbysodic-issue-152-qa.sqlite3`.
+
+- `scripts/writer_activation_qa.py` passed. The path created a new invitation,
+  accepted it into faceless membership, verified Desk first-face continuation,
+  created a first-face draft, and checked accepted-writer wanted and plotting
+  entry points.
+- Focused rendered regression proof lives in
+  `tests/test_onboarding_journey_contracts.py` for no-face, draft,
+  submitted, revision-requested, accepted-without-scene, and
+  accepted-with-recommended-opening states.
