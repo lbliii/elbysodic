@@ -58,6 +58,14 @@ not reissue them as though the same token can be recovered. If a writer already
 accepted the invitation, use membership support workflows instead of creating a
 second invite.
 
+| State | Director action | Token posture | Support language |
+|---|---|---|---|
+| Pending | Copy the creation link now, revoke it, or reissue it. | Raw token is visible only in the creation/reissue response. | If the link is lost or sent to the wrong person, reissue: revoke the pending row and create a fresh invitation for the same email. |
+| Accepted | No resend or reissue. Support the membership. | Raw token is not recoverable and the accepted token no longer grants access. | Help the writer sign in, reset their account route, or adjust the community membership; do not create a duplicate membership. |
+| Revoked | No resend or reissue. Create a new invite only after confirming intent. | Raw token is not recoverable and the revoked token is dead. | Tell the recipient the prior invite was revoked; create a new invitation only for the corrected recipient. |
+| Expired | No resend or recovery. Create a new invite if still wanted. | Raw token is not recoverable and the expired token is dead. | Explain that the window closed; issue a fresh invite if the director still wants that writer. |
+| Bounced or mistaken recipient | Revoke pending invite, then create a new invite for the corrected email. | Never paste stored hashes or staff notes into support replies. | Confirm only the recipient email and state; keep staff notes and access-request details inside Studio. |
+
 ## 5. Smoke
 
 - Run the Railway smoke checklist.

@@ -4807,6 +4807,8 @@ def test_director_can_revoke_pending_writer_invitation() -> None:
         assert revoked.status == 200
         assert "Invitation for revoked-writer@example.com was revoked." in revoked.text
         assert "Revoked" in revoked.text
+        assert "Reissue invitation" not in revoked.text
+        assert "Revoke invitation" not in revoked.text
         assert denied.status == 403
         assert invitation.status == "revoked"
         assert invitation.revoked_at is not None
@@ -4870,6 +4872,60 @@ def test_director_can_reissue_pending_writer_invitation() -> None:
     asyncio.run(run())
 
 
+def test_writer_invitation_reissue_policy_is_pending_only_and_hash_only() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    staff_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    pending = staff_services.create_writer_invitation("lost-link@example.com")
+    reissued = staff_services.reissue_writer_invitation(pending.invitation.id)
+    old_pending = services.repo.get_community_invitation(
+        staff.community.id,
+        pending.invitation.id,
+    )
+    new_pending = services.repo.get_community_invitation(
+        staff.community.id,
+        reissued.invitation.id,
+    )
+
+    accepted = staff_services.create_writer_invitation("accepted-reissue@example.com")
+    staff_services.accept_invitation(
+        accepted.token,
+        username="accepted-reissue",
+        display_name="Accepted Reissue",
+        password="-".join(("writer", "password")),
+    )
+    revoked = staff_services.create_writer_invitation("revoked-reissue@example.com")
+    staff_services.revoke_writer_invitation(revoked.invitation.id)
+    expired = staff_services.create_writer_invitation("expired-reissue@example.com")
+    services.repo.connection.execute(
+        """
+        UPDATE community_invitations
+        SET expires_at = '2026-01-01T00:00:00+00:00'
+        WHERE community_id = ? AND id = ?
+        """,
+        (staff.community.id, expired.invitation.id),
+    )
+    services.repo.connection.commit()
+
+    assert old_pending.status == "revoked"
+    assert old_pending.revoked_at is not None
+    assert new_pending.status == "pending"
+    assert new_pending.email == "lost-link@example.com"
+    assert reissued.token != pending.token
+    assert pending.token not in old_pending.token_hash
+    assert reissued.token not in new_pending.token_hash
+    with pytest.raises(ValueError, match="only pending invitations can be reissued"):
+        staff_services.reissue_writer_invitation(accepted.invitation.id)
+    with pytest.raises(ValueError, match="only pending invitations can be reissued"):
+        staff_services.reissue_writer_invitation(revoked.invitation.id)
+    with pytest.raises(ValueError, match="only pending invitations can be reissued"):
+        staff_services.reissue_writer_invitation(expired.invitation.id)
+
+
 def test_expired_writer_invitation_cannot_be_accepted_or_revoked() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
@@ -4913,6 +4969,7 @@ def test_expired_writer_invitation_cannot_be_accepted_or_revoked() -> None:
         assert launch.status == 200
         assert "expired-writer@example.com" in launch.text
         assert "Expired" in launch.text
+        assert "Reissue invitation" not in launch.text
         assert "Revoke invitation" not in launch.text
 
     asyncio.run(run())

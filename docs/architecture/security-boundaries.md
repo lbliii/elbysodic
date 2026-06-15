@@ -199,7 +199,13 @@ communities must not be changed by the invite acceptance flow.
 Invitation delivery is copy-only until a sender policy exists. "Resend" means
 reissue, not recover: a director revokes the pending invitation and creates a
 fresh token for the same email. Accepted, revoked, or expired invitations do
-not expose raw tokens and should not be resurrected.
+not expose raw tokens and should not be resurrected. Bounced email, mistaken
+recipient, or lost-link support follows the same rule: if the invitation is
+still pending, revoke and reissue; if it is accepted, revoked, or expired, use
+membership/account support or create a deliberately new invitation after
+confirming the corrected recipient. Support replies may name the email and
+state but must not include token hashes, raw tokens recovered from storage, staff
+notes, or private access-request details.
 
 Current community and membership selection is stored on `user_sessions` as
 `selected_community_id` and `selected_membership_id`. Switching membership
