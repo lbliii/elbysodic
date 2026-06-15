@@ -55,6 +55,9 @@ Before adding stricter tenant-pair constraints or triggers, add or expand the
 repository integrity diagnostic for the affected row family and prove it with a
 corrupt legacy-row test. The migration should then either repair, clear, or
 explicitly reject those diagnosed rows before the new constraint is installed.
+Use the row-family audit matrix in `docs/architecture/data-integrity.md` to
+name the affected tenant pairings, proof group, and approval gate before the
+migration slice starts.
 
 Partial unique indexes are preferred when a workflow allows one of several
 identity shapes, such as character-backed interest and prospective-character
