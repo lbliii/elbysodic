@@ -257,15 +257,15 @@ def test_export_manifest_redacts_auth_material_and_cross_realm_shared_account() 
         "shared-export-hp-face",
         "Shared Export HP Face",
     )
-    raw_session_token = "raw-session-token-for-export-redaction"
-    session_hash = session_token_hash(raw_session_token)
+    session_probe = "session-redaction-fixture"
+    session_hash = session_token_hash(session_probe)
     repo.create_user_session(
         shared_user.id,
         session_hash,
         expires_at="2026-07-01T00:00:00+00:00",
     )
-    raw_invite_token = "raw-invite-token-for-export-redaction"
-    invite_hash = session_token_hash(raw_invite_token)
+    invite_probe = "invite-redaction-fixture"
+    invite_hash = session_token_hash(invite_probe)
     repo.create_community_invitation(
         staff.community.id,
         email="invite-export@example.com",
@@ -298,9 +298,9 @@ def test_export_manifest_redacts_auth_material_and_cross_realm_shared_account() 
     assert "Shared Export HP Face" not in rendered_manifest
     assert "shared-export@example.com" not in rendered_manifest
     assert "secret-export-password-hash" not in rendered_manifest
-    assert raw_session_token not in rendered_manifest
+    assert session_probe not in rendered_manifest
     assert session_hash not in rendered_manifest
-    assert raw_invite_token not in rendered_manifest
+    assert invite_probe not in rendered_manifest
     assert invite_hash not in rendered_manifest
     assert "invite-export@example.com" not in rendered_manifest
 

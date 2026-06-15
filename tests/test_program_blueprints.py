@@ -1226,6 +1226,78 @@ def test_program_blueprint_apply_gate_rolls_back_transaction_probe(
         repo.get_community_by_slug("blueprint-rollback-probe")
 
 
+def test_program_blueprint_apply_gate_rolls_back_nested_repository_writes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    source = _transaction_probe_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+    assert preview.preview_fingerprint
+    original_transaction = repo.transaction
+    entered = False
+
+    @contextmanager
+    def transaction_with_nested_repo_writes() -> Iterator[None]:
+        nonlocal entered
+        with original_transaction():
+            entered = True
+            repo.create_board(
+                seed.community.id,
+                "blueprint-nested-rollback-board",
+                "Blueprint Nested Rollback Board",
+                description="A scene hub probe for Blueprint apply rollback.",
+            )
+            repo.create_material(
+                seed.community.id,
+                "blueprint-nested-rollback-material",
+                "Blueprint Nested Rollback Material",
+                material_type="premise",
+                summary="A material probe for Blueprint apply rollback.",
+            )
+            repo.create_theme(
+                seed.community.id,
+                "blueprint-nested-rollback-theme",
+                "Blueprint Nested Rollback Theme",
+                "{}",
+            )
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_with_nested_repo_writes)
+
+    with pytest.raises(ValueError, match="apply remains gated"):
+        services.apply_program_blueprint_preview(source, preview.preview_fingerprint)
+
+    assert entered
+    assert not repo.connection.in_transaction
+    with pytest.raises(LookupError):
+        repo.get_board_by_slug(seed.community.id, "blueprint-nested-rollback-board")
+    with pytest.raises(LookupError):
+        repo.get_material_by_slug(seed.community.id, "blueprint-nested-rollback-material")
+    with pytest.raises(LookupError):
+        repo.get_theme_by_slug(seed.community.id, "blueprint-nested-rollback-theme")
+
+    recovered = repo.create_board(
+        seed.community.id,
+        "blueprint-nested-recovery-board",
+        "Blueprint Nested Recovery Board",
+        description="A scene hub created after the gated rollback.",
+    )
+    assert repo.get_board_by_slug(seed.community.id, recovered.slug) == recovered
+
+
 def _transaction_probe_blueprint_source() -> str:
     return """
 elbysodic_blueprint: 1
