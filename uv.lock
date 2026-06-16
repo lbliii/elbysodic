@@ -134,14 +134,14 @@ wheels = [
 
 [[package]]
 name = "chirp-ui"
-version = "0.9.0"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "kida-templates" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/76/1a9fb9f57c6940506ae1ffe325c20a34ac0aafac0ce464be91b3c662c98c/chirp_ui-0.9.0.tar.gz", hash = "sha256:93a231b975d209193028a62af033b016df74b0bf36419735ceb29c5c515c0329", size = 1818953, upload-time = "2026-05-14T13:50:27.355Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/62/ff36f155753c43eb6affd16d4eb16f0d325c19eeef0698d05da2a7ad16ba/chirp_ui-0.10.0.tar.gz", hash = "sha256:d10aeedf13631beb163478bfac4ea2608d5bb0f877ec832ac994e3538ee95112", size = 1969336, upload-time = "2026-06-16T02:35:54.512Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/3e/5f69d5fb857d33a2fda97387b41ec98d98c3de476bc02dee7d137d5f54d4/chirp_ui-0.9.0-py3-none-any.whl", hash = "sha256:a1a50567e7c4bb07df0b099cead79cd8c60332f9aa61e1cbc2036b1205db3517", size = 2011303, upload-time = "2026-05-14T13:50:25.166Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/42/7c0ae89e7506a218f8e0d129e843b709c338942142149b8160b9aa293771/chirp_ui-0.10.0-py3-none-any.whl", hash = "sha256:8e729f2cc47f97f73a47bc03a5b5a6cc1b443554070bad2a4fa8eb2e0ab10804", size = 2097124, upload-time = "2026-06-16T02:35:52.823Z" },
 ]
 
 [[package]]
@@ -237,7 +237,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "bengal-chirp", extras = ["config", "forms", "sessions", "ui"], specifier = ">=0.8.0" },
-    { name = "chirp-ui", specifier = ">=0.9.0" },
+    { name = "chirp-ui", specifier = ">=0.10.0" },
     { name = "milo-cli", specifier = ">=0.2.2" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]

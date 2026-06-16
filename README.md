@@ -160,7 +160,7 @@ The package declares normal published dependencies:
 
 ```toml
 bengal-chirp[config,forms,sessions,ui]>=0.8.0
-chirp-ui>=0.9.0
+chirp-ui>=0.10.0
 ```
 
 For local development, you can keep editable sibling checkout overrides in an
@@ -310,9 +310,12 @@ registry so Railway can build the app. Local-only uv config belongs in ignored
 editable path sources.
 
 The checked-in lockfile tracks the current stack intake: Chirp 0.8, Chirp-UI
-0.9, Kida 0.9, and Pounce 0.8. When moving templates inside a folder, prefer
-Kida's `./` relative imports for sibling `_components` references so local
-component groups stay refactor-safe.
+0.10, Kida 0.9, and Pounce 0.8. With Chirp 0.8 and Chirp-UI 0.10, the strict
+app check may report a false `chirpui-context-rail` OOB target warning from a
+Chirp-UI helper macro; Chirp upstream already skips library-owned templates for
+that rule, so the warning should self-resolve in the next Chirp release. When
+moving templates inside a folder, prefer Kida's `./` relative imports for sibling
+`_components` references so local component groups stay refactor-safe.
 
 ## Deploying To Railway
 
