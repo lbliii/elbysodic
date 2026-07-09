@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from dataclasses import dataclass
 from urllib.parse import quote
 
@@ -54,6 +55,11 @@ class WebSecurityConfig:
 
 def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
     env = (os.environ.get(ELBYSODIC_ENV) or "development").strip().lower()
+    if env == "prod":
+        # Chirp's env-keyed "auto" knobs (session cookie Secure, secret-key
+        # gates) only recognise "production"/"staging"; normalise the shorthand
+        # so posture never silently downgrades.
+        env = "production"
     production = env in PRODUCTION_ENVS
     secret_key = (os.environ.get(ELBYSODIC_SECRET_KEY) or "").strip()
 
@@ -62,6 +68,12 @@ def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
             f"{ELBYSODIC_SECRET_KEY} must be at least {MIN_SECRET_KEY_LENGTH} characters "
             "when ELBYSODIC_ENV is production or staging."
         )
+    if not secret_key and not production:
+        # Sessions + CSRF run in every environment (secure_stack parity), and
+        # SessionMiddleware requires a signing key. Local development gets an
+        # ephemeral per-process key: dev sessions/CSRF tokens simply reset on
+        # restart, and nothing durable is ever signed with it.
+        secret_key = secrets.token_urlsafe(48)
 
     allowed_hosts = _parse_allowed_hosts(os.environ.get(ELBYSODIC_ALLOWED_HOSTS))
     if not allowed_hosts:

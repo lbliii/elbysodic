@@ -1,0 +1,9 @@
+{# Self-contained 429 body rendered by AuthRateLimitMiddleware for htmx
+   form posts against rate-limited auth routes (see web/app.py). The
+   middleware renders the login_rate_limited block with retry_after in
+   scope; non-htmx requests keep the plain-text 429. #}
+{% block login_rate_limited %}
+<p class="elbysodic-form-error" role="alert">
+  Too many login attempts. Wait {{ retry_after }} seconds, then try again.
+</p>
+{% endblock %}
