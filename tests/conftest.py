@@ -67,13 +67,16 @@ def _development_csrf_autofill(monkeypatch: pytest.MonkeyPatch) -> None:
             headers = dict(headers or {})
             cookie_key = next((key for key in headers if key.lower() == "cookie"), "Cookie")
             existing = headers.get(cookie_key, "")
-            crumbs = [
-                crumb
-                for crumb in existing.split("; ")
-                if crumb and not crumb.startswith(f"{_CHIRP_SESSION_COOKIE}=")
-            ]
-            crumbs.append(f"{_CHIRP_SESSION_COOKIE}={session_value}")
-            headers[cookie_key] = "; ".join(crumbs)
+            if f"{_CHIRP_SESSION_COOKIE}=" not in existing:
+                # Only supply the primed session when the test does not manage
+                # its own chirp session (e.g. passkey ceremonies carry the
+                # WebAuthn challenge between begin and finish; replacing their
+                # cookie would drop the challenge). Sessions carried by tests
+                # derive from the primed one, so the primed CSRF token below
+                # stays valid for them either way.
+                crumbs = [crumb for crumb in existing.split("; ") if crumb]
+                crumbs.append(f"{_CHIRP_SESSION_COOKIE}={session_value}")
+                headers[cookie_key] = "; ".join(crumbs)
             if not any(key.lower() == _CSRF_HEADER.lower() for key in headers):
                 headers[_CSRF_HEADER] = token
         return await original_request(self, method, path, headers=headers, body=body)
