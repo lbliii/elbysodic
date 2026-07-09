@@ -7671,6 +7671,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 "/characters",
                 body=urlencode(
                     {
+                        "_action": "create_character",
                         "name": "Jubilee",
                         "summary": "Fireworks, mall instincts, and a very loud jacket.",
                         "avatar_url": "",
@@ -11235,7 +11236,10 @@ def test_character_roster_can_create_new_default_character() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/characters",
-                body=(b"name=Jean+Grey&summary=Telepath+with+a+plot-problem.&make_default=on"),
+                body=(
+                    b"_action=create_character"
+                    b"&name=Jean+Grey&summary=Telepath+with+a+plot-problem.&make_default=on"
+                ),
                 headers=_FORM,
             )
             assert response.status == 302
@@ -11247,6 +11251,47 @@ def test_character_roster_can_create_new_default_character() -> None:
 
             index = await client.get("/c/x-men-apocalypse")
             assert "playing as Jean Grey" in index.text
+
+    asyncio.run(run())
+
+
+def test_character_roster_create_validation_error_rerenders_form_block() -> None:
+    """The create_character page action negotiates error rendering (#249).
+
+    A plain POST keeps the legacy behavior (200 full-page re-render with the
+    error and submitted values); an htmx POST gets a 422 ValidationError that
+    re-renders only the ``character_create_form`` block.
+    """
+
+    async def run() -> None:
+        app = _app()
+        payload = {
+            "_action": "create_character",
+            "name": "",
+            "summary": "A face with no name.",
+        }
+
+        async with TestClient(app) as client:
+            plain = await client.post(
+                "/characters",
+                body=urlencode(payload).encode(),
+                headers=_FORM,
+            )
+            assert plain.status == 200
+            assert "chirpui-field__error" in plain.text
+            assert "A face with no name." in plain.text
+            assert "Your roster" in plain.text
+
+            htmx = await client.post(
+                "/characters",
+                body=urlencode(payload).encode(),
+                headers={**_FORM, "HX-Request": "true"},
+            )
+            assert htmx.status == 422
+            assert 'id="new-character"' in htmx.text
+            assert "chirpui-field__error" in htmx.text
+            assert "A face with no name." in htmx.text
+            assert "<html" not in htmx.text.lower()
 
     asyncio.run(run())
 
@@ -11334,6 +11379,7 @@ def test_character_style_preset_applies_approved_post_tokens() -> None:
                 "/characters",
                 body=urlencode(
                     {
+                        "_action": "create_character",
                         "name": "Jean Grey",
                         "summary": "Telepath with a plot-problem.",
                         "post_style_preset": "faction-dossier",
@@ -11468,6 +11514,7 @@ def test_studio_post_style_policy_filters_character_controls() -> None:
                 "/characters",
                 body=urlencode(
                     {
+                        "_action": "create_character",
                         "name": "Bobby Drake",
                         "summary": "Ice and bad timing.",
                         "post_profile_variant": "poster",
