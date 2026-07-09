@@ -105,6 +105,7 @@ RESTORE_CHECK_CORE_TABLES: tuple[tuple[str, str], ...] = (
     ("threads", "threads"),
     ("posts", "posts"),
     ("sessions", "user_sessions"),
+    ("passkey credentials", "user_passkey_credentials"),
     ("command submissions", "command_submissions"),
     ("invitations", "community_invitations"),
     ("access requests", "community_access_requests"),

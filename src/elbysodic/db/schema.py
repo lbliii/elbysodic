@@ -57,6 +57,18 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     revoked_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS user_passkey_credentials (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    credential_id BLOB NOT NULL UNIQUE,
+    public_key BLOB NOT NULL,
+    sign_count INTEGER NOT NULL DEFAULT 0,
+    transports TEXT NOT NULL DEFAULT '',
+    label TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    last_used_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS command_submissions (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -831,6 +843,8 @@ CREATE INDEX IF NOT EXISTS idx_realm_interaction_answers_response
 ON realm_interaction_answers(community_id, response_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user
 ON user_sessions(user_id, revoked_at, expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_passkey_credentials_user
+ON user_passkey_credentials(user_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_community_invitations_lookup
 ON community_invitations(token_hash, status, expires_at);
 CREATE INDEX IF NOT EXISTS idx_community_invitations_community

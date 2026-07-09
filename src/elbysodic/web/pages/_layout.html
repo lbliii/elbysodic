@@ -117,6 +117,7 @@
     {% end %}
     <script defer src="/elbysodic-static/elbysodic-shell.js?v=sidebar-rail-toggle-1"></script>
     <script defer src="/elbysodic-static/elbysodic-composer.js?v=scene-context-inspector-1"></script>
+    <script defer src="/elbysodic-static/elbysodic-passkeys.js?v=1"></script>
     {% if dev_tools_enabled() %}
     <script defer src="/elbysodic-static/elbysodic-htmx-timing.js?v=1"></script>
     {% end %}
@@ -405,6 +406,10 @@
           <span>QA switcher</span>
         </a>
         {% end %}
+        <a class="elbysodic-identity-menu__notification-link" href="/identity">
+          Identity &amp; security
+          <span>account &amp; passkeys</span>
+        </a>
         <a class="elbysodic-identity-menu__notification-link" href="/logout">
           Log out
           <span>clear session</span>

@@ -1,0 +1,94 @@
+{% imports %}
+  {% from "chirpui/layout.html" import container, stack, section_header %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="42rem") %}
+{% call stack(gap="lg") %}
+  {% call section_header("Identity & Security") %}
+  Manage how this account signs in. Realm memberships, roles, and faces stay with each community.
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <div class="chirpui-stack chirpui-stack--md">
+    <h2>Account</h2>
+    <p class="elbysodic-copy-helper">Signed in as <strong>{{ account_email }}</strong>.</p>
+  </div>
+  {% end %}
+
+  {% call surface(variant="elevated") %}
+  <div class="chirpui-stack chirpui-stack--md" id="passkey-settings">
+    <h2>Passkeys</h2>
+    <p class="elbysodic-copy-helper">
+      Passkeys sign this account in with your device's screen lock or security key instead of the password.
+      They work for every realm this account can enter.
+    </p>
+
+    {% if passkeys %}
+    <ul class="chirpui-stack chirpui-stack--sm elbysodic-passkey-list">
+      {% for passkey in passkeys %}
+      <li class="elbysodic-passkey-list__item">
+        <div class="chirpui-cluster elbysodic-cluster--between">
+          <span>
+            <strong>{{ passkey.label or "Passkey" }}</strong>
+            <small class="elbysodic-copy-helper">
+              Added {{ passkey.created_at[:10] }}
+              {% if passkey.last_used_at %} · last used {{ passkey.last_used_at[:10] }}{% else %} · never used{% end %}
+            </small>
+          </span>
+          <span class="chirpui-cluster">
+            <form action="/identity" method="post" hx-boost="false" class="elbysodic-passkey-list__rename">
+              {{ csrf_field() }}
+              <input type="hidden" name="intent" value="rename_passkey">
+              <input type="hidden" name="passkey_id" value="{{ passkey.id }}">
+              <label class="chirpui-visually-hidden" for="passkey-label-{{ passkey.id }}">New name for {{ passkey.label or "this passkey" }}</label>
+              <input id="passkey-label-{{ passkey.id }}"
+                     class="chirpui-field__input"
+                     name="label"
+                     maxlength="80"
+                     value="{{ passkey.label }}"
+                     required>
+              <button class="chirpui-btn chirpui-btn--sm" type="submit">Rename</button>
+            </form>
+            <form action="/identity" method="post" hx-boost="false">
+              {{ csrf_field() }}
+              <input type="hidden" name="intent" value="remove_passkey">
+              <input type="hidden" name="passkey_id" value="{{ passkey.id }}">
+              <button class="chirpui-btn chirpui-btn--sm" type="submit">Remove</button>
+            </form>
+          </span>
+        </div>
+      </li>
+      {% end %}
+    </ul>
+    {% else %}
+    <p class="elbysodic-empty-state">No passkeys yet. Add one to sign in without the password.</p>
+    {% end %}
+
+    <div class="chirpui-stack chirpui-stack--sm">
+      <label class="elbysodic-form-field">
+        <span>Name the new passkey</span>
+        <input id="passkey-label" name="passkey_label" maxlength="80" placeholder="e.g. Laptop, Phone, Security key">
+      </label>
+      <p id="passkey-register-error" class="elbysodic-form-error" hidden></p>
+      <div class="chirpui-cluster elbysodic-cluster--between">
+        <p class="elbysodic-copy-helper" id="passkey-register-unsupported">
+          Passkeys need a browser with WebAuthn support.
+        </p>
+        <button class="chirpui-btn chirpui-btn--primary" type="button" id="passkey-register" hidden>
+          Add a passkey
+        </button>
+      </div>
+    </div>
+  </div>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+</div>
+{% endblock %}
+{% endblock %}

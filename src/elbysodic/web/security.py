@@ -24,7 +24,7 @@ DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
 PUBLIC_PATHS = frozenset(
     {"/", "/health", "/login", "/logout", "/network", "/request-access", "/search"}
 )
-PUBLIC_PREFIXES = ("/elbysodic-static/", "/invite/")
+PUBLIC_PREFIXES = ("/elbysodic-static/", "/invite/", "/login/passkeys/")
 PUBLIC_TENANT_GET_PATHS = frozenset({"/", "/request-access", "/search", "/world", "/wanted"})
 PUBLIC_TENANT_GET_PREFIXES = ("/world/", "/wanted/")
 PRODUCTION_CONTENT_SECURITY_POLICY = (

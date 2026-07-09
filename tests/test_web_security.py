@@ -44,18 +44,30 @@ def _known_chirpui_context_rail_warning_active() -> bool:
     ).startswith("0.10.")
 
 
+# Advisory-only production warning from chirp's `passkeys` check category: the
+# CookieSessionStore carries the single-use WebAuthn challenge between begin
+# and finish. Accepted posture — the challenge is popped on finish and this
+# single-process deploy has no Redis to move it to.
+_KNOWN_PASSKEY_COOKIE_STORE_WARNING = "passkeys=True with a CookieSessionStore"
+
+
 def _assert_check_passes_or_only_has_known_context_rail_warning(app, capsys) -> None:
     try:
         app.check(warnings_as_errors=True)
     except SystemExit as exc:
         output = capsys.readouterr().out
-        if not _known_chirpui_context_rail_warning_active():
-            raise
         if exc.code != 1:
             raise AssertionError(f"unexpected app-check exit code: {exc.code!r}") from exc
-        assert 'id="chirpui-context-rail"' in output
-        assert "in chirpui/oob.html" in output
-        assert "No errors · 1 warning" in output
+        known_warnings = 0
+        if _KNOWN_PASSKEY_COOKIE_STORE_WARNING in output:
+            known_warnings += 1
+        if _known_chirpui_context_rail_warning_active() and 'id="chirpui-context-rail"' in output:
+            assert "in chirpui/oob.html" in output
+            known_warnings += 1
+        if known_warnings == 0:
+            raise
+        assert "No errors" in output
+        assert f"No errors · {known_warnings} warning" in output
     else:
         capsys.readouterr()
 

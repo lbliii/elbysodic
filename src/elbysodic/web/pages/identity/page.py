@@ -1,4 +1,4 @@
-"""Current-character preference route for the dev viewer."""
+"""Identity settings page and identity-preference intents."""
 
 from __future__ import annotations
 
@@ -8,7 +8,9 @@ from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
 from chirp.http.request import Request
 from chirp.http.response import Redirect
+from chirp.templating.returns import Page
 
+from elbysodic.services import AppServices
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
 from elbysodic.services.auth import SESSION_COOKIE
 from elbysodic.web.recovery import recover_next_url
@@ -22,6 +24,22 @@ class IdentityForm:
     next: str = "/"
     intent: str = "set_default_character"
     membership_id: str = "0"
+
+
+MAX_PASSKEY_LABEL_LENGTH = 80
+
+
+def get(request: Request) -> Page:
+    services = get_services(request)
+    viewer = services.viewer()
+    account = services.repo.get_user(viewer.membership.user_id)
+    return Page.mounted(
+        "identity/page.html",
+        current_path=request.url,
+        viewer=viewer,
+        account_email=account.email,
+        passkeys=services.repo.list_user_passkey_credentials(account.id),
+    )
 
 
 @contract(form=FormContract(IdentityForm, "_layout.html", block="topbar_end"))
@@ -59,11 +77,35 @@ async def post(request: Request) -> Redirect:
                 ),
             ),
         )
+    if intent in {"remove_passkey", "rename_passkey"}:
+        return _handle_passkey_intent(services, intent, form)
     if intent == "set_default_character":
         character_id = _form_int(form.get("character_id"), "character_id")
         services.set_default_character(character_id)
         return Redirect(next_url)
     return Redirect(next_url)
+
+
+def _handle_passkey_intent(services: AppServices, intent: str, form: object) -> Redirect:
+    viewer = services.viewer()
+    getter = getattr(form, "get", None)
+    if getter is None:
+        raise HTTPError(status=400, detail="malformed form body")
+    passkey_id = _form_int(getter("passkey_id"), "passkey_id")
+    label_value = str(getter("label") or "").strip()
+    try:
+        if intent == "remove_passkey":
+            services.repo.delete_user_passkey_credential(viewer.membership.user_id, passkey_id)
+        else:
+            label = label_value[:MAX_PASSKEY_LABEL_LENGTH]
+            services.repo.rename_user_passkey_credential(
+                viewer.membership.user_id,
+                passkey_id,
+                label or "Passkey",
+            )
+    except LookupError as exc:
+        raise HTTPError(status=404, detail="passkey not found") from exc
+    return Redirect("/identity")
 
 
 def _safe_next(next_url: str) -> str:
