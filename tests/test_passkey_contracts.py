@@ -1,8 +1,8 @@
 """Passkey credential storage, registration, and sign-in contracts.
 
 WebAuthn ceremonies are exercised through the app's routes with static
-py_webauthn vectors (see ``tests/_passkey_vectors.py``); browser QA with a
-Playwright virtual authenticator is tracked separately (#248).
+py_webauthn vectors (see ``tests/_passkey_vectors.py``). Browser QA with a
+Playwright virtual authenticator lives in ``scripts/passkey_qa.py`` (#248).
 """
 
 from __future__ import annotations
@@ -459,6 +459,31 @@ def test_passkey_login_rejects_wrong_origin_assertions(monkeypatch) -> None:
         unchanged = services.repo.get_user_passkey_credential(AUTH_CREDENTIAL_ID_BYTES)
         assert unchanged.sign_count == AUTH_STORED_SIGN_COUNT
         assert unchanged.last_used_at is None
+
+    asyncio.run(run())
+
+
+def test_passkey_login_rejects_revoked_credential(monkeypatch) -> None:
+    async def run() -> None:
+        patch_fixed_ceremony(monkeypatch)
+        _use_test_passkey_config(monkeypatch)
+        services = create_services(path=":memory:")
+        user_id = services.viewer().membership.user_id
+        stored = _seed_login_credential(services.repo, user_id)
+        services.repo.delete_user_passkey_credential(user_id, stored.id)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            begin = await client.post("/login/passkeys/begin")
+            finish = await client.post(
+                "/login/passkeys/finish",
+                json=dict(AUTH_CREDENTIAL),
+                headers={"Cookie": _cookie_header(_cookie_values(begin))},
+            )
+
+        assert finish.status == 422
+        assert finish.json["error"] == "Passkey sign-in failed. Try again or use your password."
+        assert SESSION_COOKIE not in _cookie_values(finish)
 
     asyncio.run(run())
 

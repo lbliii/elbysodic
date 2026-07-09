@@ -4,7 +4,11 @@
 PYTHON_VERSION ?= 3.14t
 VENV_DIR ?= .venv
 
-.PHONY: all help setup install test test-cov lint lint-fix format format-check ty app-check kida-check check ci changelog changelog-draft changelog-check build clean shell
+CHIRP_APP ?= elbysodic.web.contract_app:app
+CONTRACT_DIFF_BASE ?= origin/main
+CONTRACT_BASELINE ?= tests/fixtures/chirp_hypermedia_baseline.json
+
+.PHONY: all help setup install test test-cov lint lint-fix format format-check ty app-check kida-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
 
 all: help
 
@@ -25,8 +29,10 @@ help:
 	@echo "  make ty              - Run ty type checker"
 	@echo "  make app-check       - Run Chirp route/template check"
 	@echo "  make kida-check      - Run kida static template validation"
-	@echo "  make check           - Run lint, format-check, ty, app-check, and kida-check"
-	@echo "  make ci              - Run the full local gate"
+	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
+	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
+	@echo "  make check           - Run lint, format-check, ty, app-check, kida-check, and contract-baseline-check"
+	@echo "  make ci              - Run the full local gate (includes contract-diff)"
 	@echo "  make changelog       - Compile changelog.d fragments into CHANGELOG.md"
 	@echo "  make changelog-draft - Preview changelog from fragments"
 	@echo "  make build           - Build distribution packages"
@@ -77,9 +83,15 @@ app-check:
 kida-check:
 	uv run python scripts/kida_check.py
 
-check: lint format-check ty app-check kida-check
+contract-diff:
+	uv run chirp diff $(CHIRP_APP) --base $(CONTRACT_DIFF_BASE)
 
-ci: check test
+contract-baseline-check:
+	uv run chirp check $(CHIRP_APP) --baseline $(CONTRACT_BASELINE)
+
+check: lint format-check ty app-check kida-check contract-baseline-check
+
+ci: check contract-diff test
 
 changelog:
 	uv run towncrier build --yes

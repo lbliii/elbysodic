@@ -20,6 +20,7 @@ from elbysodic.services import (
     initialize_database,
 )
 from elbysodic.web.app import create_app
+from elbysodic.web.pounce_railway import apply_railway_pounce_defaults
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -245,6 +246,8 @@ def _run_server(
 ) -> None:
     services = create_services(db_path, seed_demo=seed_demo)
     app = create_app(debug=debug, services=services)
+    if not debug:
+        apply_railway_pounce_defaults()
     try:
         with _sighup_as_keyboard_interrupt(enabled=stop_on_sighup):
             app.run(host=host, port=port)

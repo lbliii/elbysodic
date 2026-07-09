@@ -60,6 +60,39 @@ The script creates a copy-only invitation, accepts it as a new writer, verifies
 faceless continuation, creates a first-face draft, and checks wanted/plotting
 entry for an accepted writer.
 
+## Passkey Browser QA
+
+Run the virtual-authenticator passkey pack against the same seeded server.
+Browse via ``localhost`` (Chromium rejects ``127.0.0.1`` as a WebAuthn rpId).
+Pass the database path so the sign-count regression can advance the stored
+counter in SQLite:
+
+```bash
+ELBYSODIC_ENV=development uv run python scripts/passkey_qa.py \
+  --base-url http://localhost:8007 \
+  --db-path /private/tmp/elbysodic-onboarding-qa.sqlite3
+```
+
+The script registers a passkey, logs out, signs back in with the passkey, and
+checks browser-visible regressions for revoked credentials and unknown
+authenticator credentials. Wrong-origin rejection is covered by
+`tests/test_passkey_contracts.py`; to exercise it in the browser, restart the
+server with a pinned localhost origin while browsing via `127.0.0.1`, then run:
+
+```bash
+ELBYSODIC_PASSKEY_ORIGIN=http://127.0.0.1:8007 \
+ELBYSODIC_ENV=development uv run elbysodic \
+  --db-path /private/tmp/elbysodic-onboarding-qa.sqlite3 \
+  --port 8007 \
+  --seed-demo \
+  serve
+
+PASSKEY_QA_WRONG_ORIGIN=1 \
+ELBYSODIC_ENV=development uv run python scripts/passkey_qa.py \
+  --base-url http://localhost:8007 \
+  --profile wrong-origin
+```
+
 ## Manual Inspection
 
 For each screenshot set or browser pass, record:

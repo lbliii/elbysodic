@@ -39,3 +39,17 @@ class Database:
     def repository(self) -> Iterator[ForumRepository]:
         with self.connection() as connection:
             yield ForumRepository(connection)
+
+    def probe(self) -> bool:
+        """Readiness probe — can SQLite serve a trivial query on a fresh connection?
+
+        Opens a dedicated connection (never the request-scoped repository
+        connection) so the check stays independent of in-flight transactions.
+        Returns ``True`` when ``SELECT 1`` succeeds, ``False`` on any error.
+        """
+        try:
+            with self.connection() as connection:
+                connection.execute("SELECT 1").fetchone()
+            return True
+        except Exception:
+            return False
