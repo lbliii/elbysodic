@@ -1,0 +1,1 @@
+The local gate now includes static kida template validation (`poe kida-check` / `make kida-check`), compiling every page template with the app's registered filters and chirp-ui template roots and validating component call sites against their def signatures.
