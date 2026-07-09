@@ -42,6 +42,7 @@ from elbysodic.services.operations import (
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, scope_response_urls
+from elbysodic.web.worker_draining import emit_worker_draining
 from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -483,6 +484,25 @@ def test_health_check_does_not_require_registered_community_host() -> None:
         assert response.text == "ok\n"
         assert "app;dur=" in _response_header(response, "Server-Timing")
         assert float(_response_header(response, "X-Elbysodic-Route-Time-Ms")) >= 0
+
+    asyncio.run(run())
+
+
+def test_framework_probes_bypass_login_and_cover_sqlite(tmp_path: Path) -> None:
+    async def run() -> None:
+        services = create_services(path=tmp_path / "probe.sqlite3", seed_demo=False)
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            livez = await client.get("/livez")
+            ready = await client.get("/ready")
+
+        assert livez.status == 200
+        assert livez.text == "ok"
+        assert ready.status == 200
+        assert ready.text == "ready"
+        assert "Server-Timing" not in _response_headers(livez, "Server-Timing")
+        assert "Server-Timing" not in _response_headers(ready, "Server-Timing")
 
     asyncio.run(run())
 
@@ -9687,13 +9707,87 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
             )
 
         assert stream.status == 200
-        assert len(stream.events) == 1
-        event = stream.events[0]
-        assert event.event == "plotting-room-ready"
+        ready_events = [event for event in stream.events if event.event == "plotting-room-ready"]
+        assert len(ready_events) == 1
+        event = ready_events[0]
         assert event.data == "connected"
         assert "\r" not in event.event
         assert "\n" not in event.event
         assert "\x00" not in event.event
+
+    asyncio.run(run())
+
+
+def test_plotting_room_sse_closes_cleanly_on_worker_draining() -> None:
+    async def run() -> None:
+        app = _app()
+        async with TestClient(app) as client:
+            response = await client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=b"intent=express_interest",
+                headers=_FORM,
+            )
+            assert response.status == 302
+
+        services = get_services()
+        repo = services.repo
+        community = services.seed.community
+        wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+        rogue = repo.get_character_by_slug(community.id, "rogue")
+        interest = repo.get_wanted_ad_interest_for_character(community.id, wanted_ad.id, rogue.id)
+        charlie_membership = repo.get_membership_by_username(community.id, "charlie")
+        charlie_user = repo.get_user(charlie_membership.user_id)
+        xavier = repo.get_character_by_slug(community.id, "charles-xavier")
+        charlie_app = create_app(
+            debug=False,
+            services=AppServices(
+                repo,
+                DemoSeed(community, charlie_user, charlie_membership, xavier),
+            ),
+        )
+        async with TestClient(charlie_app) as charlie_client:
+            room_response = await charlie_client.post(
+                "/wanted/human-un-liaison-for-b24",
+                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                headers=_FORM,
+            )
+            assert room_response.status == 302
+
+            room = repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+            stream_path = f"/plotting/{room.id}/stream"
+            stream_task = asyncio.create_task(
+                charlie_client.sse(stream_path, max_events=5, disconnect_after=5.0)
+            )
+            await asyncio.sleep(0.1)
+
+            message = await charlie_client.post(
+                f"/plotting/{room.id}",
+                body=urlencode(
+                    {
+                        "intent": "post_message",
+                        "body": "Queued before reload drain.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert message.status == 302
+            await asyncio.sleep(0.1)
+
+            await emit_worker_draining(charlie_app)
+            stream = await stream_task
+
+            room_page = await charlie_client.get(f"/plotting/{room.id}")
+            assert 'sse-close="pounce.worker.draining"' in room_page.text
+
+        assert stream.status == 200
+        event_names = [event.event for event in stream.events]
+        assert "plotting-room-ready" in event_names
+        message_events = [event for event in stream.events if event.event == "plotting-room-message"]
+        assert len(message_events) == 1
+        assert "Queued before reload drain." in message_events[0].data
+        close_events = [event for event in stream.events if event.event == "pounce.worker.draining"]
+        assert len(close_events) == 1
+        assert close_events[0].data == "complete"
 
     asyncio.run(run())
 

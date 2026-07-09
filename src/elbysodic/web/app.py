@@ -10,6 +10,7 @@ from typing import Any
 from chirp.app import App
 from chirp.config import AppConfig
 from chirp.ext.chirp_ui import use_chirp_ui
+from chirp.health import HealthCheck
 from chirp.middleware.auth_rate_limit import AuthRateLimitConfig, AuthRateLimitMiddleware
 from chirp.middleware.security_headers import SecurityHeadersConfig
 from chirp.middleware.stack import secure_stack
@@ -40,6 +41,7 @@ from elbysodic.web.state import (
 )
 from elbysodic.web.tenant import TenantPrefixMiddleware
 from elbysodic.web.timing import RequestTimingMiddleware
+from elbysodic.web.worker_draining import DrainingAwareApp, reset_worker_draining, wrap_worker_draining
 
 PAGES_DIR = Path(__file__).parent / "pages"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -53,7 +55,7 @@ def create_app(
     db_path: str | Path | None = None,
     dev_tools: bool | None = None,
     seed_demo: bool = False,
-) -> App:
+) -> DrainingAwareApp:
     security = resolve_web_security_config(debug=debug)
     config = AppConfig(
         template_dir=PAGES_DIR,
@@ -66,17 +68,30 @@ def create_app(
         # Injects the nonced window.chirp.passkeys JS bridge (CSP-safe, no CDN)
         # used by the login and identity-settings passkey ceremonies.
         passkeys=True,
-        # The app owns a tenant-aware /health route (Railway healthcheckPath);
-        # move Chirp's auto-mounted liveness probe off that path.
+        # Close long-lived SSE with a generation-scoped event before reload so
+        # htmx-sse reconnects to the new worker (Pounce 0.9 draining contract).
+        sse_close_event="pounce.worker.draining",
+        # The app owns /health (page route + timing middleware); Chirp probes
+        # live at /livez (liveness) and /ready (readiness, SQLite-backed).
         health_path="/livez",
+        # Worker lifecycle hooks (reset_worker_draining) require async workers
+        # in production so Pounce emits pounce.worker.startup/shutdown scopes.
+        worker_mode="async" if not debug else "auto",
     )
     app = App(config=config)
+    app.on_worker_startup(reset_worker_draining)
     register_error_handlers(app, include_internal=not debug)
     owns_services = services is None
     base_services = services or create_services(db_path, seed_demo=seed_demo)
     configured_services = base_services.with_request_auth(production=security.production)
     if owns_services:
         app.on_shutdown(configured_services.close)
+
+    database = base_services._database
+    if database is not None:
+        app.add_health_check(
+            HealthCheck("database", check=database.probe, message="database: probe failed")
+        )
 
     configure_services(
         configured_services,
@@ -167,7 +182,7 @@ def create_app(
     )
     app.mount_pages(str(PAGES_DIR))
 
-    return app
+    return wrap_worker_draining(app)
 
 
 def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool) -> bool:

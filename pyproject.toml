@@ -181,6 +181,8 @@ browser-qa-deep = { cmd = "python scripts/browser_qa.py --profile deep", help = 
 rapid-click-qa = { cmd = "python scripts/rapid_click_qa.py --iterations 1", help = "Run rapid identity/navigation protocol smoke QA" }
 latest-click-wins-qa = { cmd = "python scripts/latest_click_wins_qa.py", help = "Run browser QA that rapid htmx navigation settles on the latest click" }
 writer-activation-qa = { cmd = "python scripts/writer_activation_qa.py", help = "Run browser QA for invite, first-face, wanted, and plotting activation" }
+railway-probe-smoke = { cmd = "python scripts/railway_probe_smoke.py", help = "Verify Railway/Pounce probe and drain contracts locally or against a remote origin" }
+passkey-qa = { cmd = "python scripts/passkey_qa.py", help = "Run Playwright passkey registration/login and browser regression QA" }
 preview-prod-devtools = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path='var/elbysodic-preview.sqlite3', dev_tools=True, seed_demo=True).run(host='127.0.0.1', port=8001)\"", help = "Run production-like local preview with dev tools and timing harness" }
 
 ty = { cmd = "ty check src/elbysodic/ tests/", help = "Run ty type checker" }
@@ -195,9 +197,11 @@ hooks = { cmd = "prek run --all-files", help = "Run all pre-commit hooks" }
 hooks-install = { cmd = "prek install", help = "Install pre-commit hooks" }
 app-check = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)\"", help = "Run Chirp route/template check" }
 kida-check = { cmd = "python scripts/kida_check.py", help = "Static kida template validation (kida check --validate-calls with app filters + chirpui roots; --strict omitted: unified {% end %} closers are house style)" }
+contract-diff = { cmd = "chirp diff elbysodic.web.contract_app:app --base origin/main", help = "Diff hypermedia contracts vs origin/main" }
+contract-baseline-check = { cmd = "chirp check elbysodic.web.contract_app:app --baseline tests/fixtures/chirp_hypermedia_baseline.json", help = "Verify committed chirp contract JSON baseline" }
 
-ci = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check", "test"], help = "Full CI check" }
-check = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check"], help = "Quick check without tests" }
+ci = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check", "contract-baseline-check", "contract-diff", "test"], help = "Full CI check" }
+check = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check", "contract-baseline-check"], help = "Quick check without tests" }
 
 dist = { shell = "rm -rf dist/ && uv build && ls -la dist/", help = "Build distribution" }
 

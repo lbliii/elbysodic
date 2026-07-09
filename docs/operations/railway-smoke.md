@@ -40,6 +40,23 @@ Required staging variables:
 - `ELBYSODIC_SECRET_KEY=<staging-only random secret>`
 - `ELBYSODIC_DB_PATH=/app/var/elbysodic.sqlite3`
 
+Railway deploy overlap/drain settings (Pounce 0.9 bundle, lbliii/pounce #248/#291):
+
+- `numReplicas`: `1` while SQLite is the production store.
+- `overlapSeconds`: `5` — keep the previous deployment routable briefly after the
+  replacement passes readiness.
+- `drainingSeconds`: `15` — platform SIGTERM→SIGKILL window; Pounce
+  `shutdown_timeout` is `10` seconds, leaving a five-second safety margin.
+- `healthcheckPath`: `/ready` — SQLite-backed Chirp readiness, not the app-owned
+  `/health` alias.
+- Pounce built-in readiness: `/readyz` returns JSON `{"status":"ok"}` and flips to
+  `503 {"status":"draining"}` while the worker is draining.
+- `POUNCE_BUILD_ID`: set to the git SHA or immutable release fingerprint, for
+  example `${{RAILWAY_GIT_COMMIT_SHA}}`. `/_pounce/info` reports this value with
+  Pounce/Python versions and GIL state when `POUNCE_INTROSPECTION=1` is enabled
+  for staging diagnostics. Do not place secrets in `POUNCE_BUILD_ID`, and keep
+  introspection off in production unless the path is gated at the edge.
+
 Use a staging-only Railway Volume mounted at `/app/var`. Attaching the volume is
 not enough by itself; confirm the running app writes SQLite to
 `/app/var/elbysodic.sqlite3`, not `var/elbysodic.sqlite3` inside the disposable
@@ -120,7 +137,15 @@ Common diagnoses:
 
 Staging smoke should include:
 
-- `GET /health` returns `200`.
+- `GET /ready` returns `200` once SQLite is reachable.
+- `HEAD /ready`, `HEAD /livez`, and `HEAD /health` return `200` with correct
+  bodyless semantics (no Railway-edge 502).
+- `GET /readyz` returns JSON `{"status":"ok"}`.
+- When `POUNCE_INTROSPECTION=1` and `POUNCE_BUILD_ID` are set,
+  `GET /_pounce/info` reports the build id and `gil_enabled: false`.
+- During a redeploy overlap, the retiring instance should answer `/readyz` with
+  `503 {"status":"draining"}` while in-flight requests finish inside the overlap
+  window.
 - `GET /network` renders seeded realms such as `Jurassic Park Universe`,
   `RL NYC`, and `X-Men Apocalypse`.
 - At least one seed media URL, such as
@@ -132,16 +157,25 @@ Staging smoke should include:
   inputs, redacted output, success criteria, and failure handling.
 - Demo login works for the intended seed account policy.
 
-Known follow-up: `HEAD` requests to some app and static routes can currently
-produce a Railway `502` through the Pounce/Chirp response path. Use `GET` for
-staging smoke until that server bug is fixed, and keep the bug visible in PR or
-plan notes.
+Local probe smoke before a staging run:
+
+```bash
+uv run python scripts/railway_probe_smoke.py
+uv run python scripts/railway_probe_smoke.py \
+  --origin https://elbysodic-staging.up.railway.app \
+  --build-id <deployment-sha>
+```
 
 ## Smoke Script
 
 Record the date, Railway deployment ID, public URL, and tester account used.
 
-1. Visit `/health` and confirm `200`.
+1. Visit `/ready` and confirm `200`.
+2. Run `HEAD /ready`, `HEAD /livez`, and `HEAD /health`; confirm each returns
+   `200` without a response body.
+3. Visit `/readyz` and confirm JSON `{"status":"ok"}`.
+4. When introspection is enabled for the environment, visit `/_pounce/info` and
+   confirm `runtime.build_id` matches `POUNCE_BUILD_ID`.
 2. Visit `/network?q=magic` while signed out and confirm only public catalog
    language appears. No writer username, active face, unread count, staff note,
    or identity menu should render.

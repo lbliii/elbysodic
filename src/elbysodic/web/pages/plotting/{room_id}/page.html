@@ -120,6 +120,7 @@
         </div>
         <div hx-ext="sse"
              sse-connect="/plotting/{{ room.room.id }}/stream"
+             sse-close="pounce.worker.draining"
              hx-disinherit="hx-target hx-swap">
           {% block plotting_room_message_item %}
           {{ room_message_item(item | default(none)) }}

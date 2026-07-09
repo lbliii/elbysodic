@@ -67,7 +67,11 @@
 
   async function loginWithPasskey() {
     clearError("passkey-login-error");
-    var nextInput = document.querySelector('form input[name="next"]');
+    var loginBtn = document.getElementById("passkey-login");
+    var loginForm = loginBtn && loginBtn.closest("form");
+    var nextInput = loginForm
+      ? loginForm.querySelector('input[name="next"]')
+      : document.querySelector('form input[name="next"]');
     var nextUrl = (nextInput && nextInput.value) || "/";
     try {
       var result = await ceremony(
