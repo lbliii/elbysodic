@@ -12917,6 +12917,14 @@ def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path
         "secret-session-token",
         expires_at="2026-06-01T00:00:00+00:00",
     )
+    repo.create_user_passkey_credential(
+        secret_user.id,
+        credential_id=b"secret-passkey-credential-id",
+        public_key=b"secret-passkey-public-key",
+        sign_count=9,
+        transports=("internal",),
+        label="Secret Passkey Label",
+    )
     repo.create_material(
         viewer.community.id,
         "private-restore-note",
@@ -12956,10 +12964,14 @@ def test_restore_check_database_reports_redacted_service_readback(tmp_path: Path
     assert result.community_count > 0
     assert "restore-check ok" in report
     assert "- users:" in report
+    assert "- passkey credentials: 1" in report
     assert "- thread rows: ok" in report
     assert "secret-restore@example.com" not in combined_report
     assert "secret-password-hash" not in combined_report
     assert "secret-session-token" not in combined_report
+    assert "Secret Passkey Label" not in combined_report
+    assert "secret-passkey-credential-id" not in combined_report
+    assert "secret-passkey-public-key" not in combined_report
     assert "secret-request@example.com" not in combined_report
     assert "Secret Requester" not in combined_report
     assert "Do not emit this face concept." not in combined_report

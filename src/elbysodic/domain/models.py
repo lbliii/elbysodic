@@ -65,6 +65,28 @@ class UserSession:
     revoked_at: str | None
 
 
+@dataclass(slots=True)
+class UserPasskeyCredential:
+    """One WebAuthn credential registered to a global login account.
+
+    Deliberately not ``frozen``: this record must satisfy chirp's
+    ``PasskeyCredential`` protocol, whose members are declared as plain
+    (mutable) attributes, and the ``ty`` checker rejects frozen dataclasses
+    against mutable protocol members. Treat instances as immutable by
+    convention like every other domain record.
+    """
+
+    id: int
+    user_id: int
+    credential_id: bytes
+    public_key: bytes
+    sign_count: int
+    transports: tuple[str, ...]
+    label: str
+    created_at: str
+    last_used_at: str | None
+
+
 @dataclass(frozen=True, slots=True)
 class CommunityInvitation:
     id: int

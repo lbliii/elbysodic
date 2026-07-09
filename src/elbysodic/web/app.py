@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import secrets
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,9 @@ def create_app(
         allowed_hosts=security.allowed_hosts,
         strict_transport_security=security.strict_transport_security,
         htmx=True,
+        # Injects the nonced window.chirp.passkeys JS bridge (CSP-safe, no CDN)
+        # used by the login and identity-settings passkey ceremonies.
+        passkeys=True,
         # The app owns a tenant-aware /health route (Railway healthcheckPath);
         # move Chirp's auto-mounted liveness probe off that path.
         health_path="/livez",
@@ -127,6 +131,8 @@ def create_app(
         app.add_middleware(
             AuthRateLimitMiddleware(
                 AuthRateLimitConfig(
+                    # Prefix match: also covers the passkey sign-in ceremony
+                    # endpoints under /login/passkeys/.
                     paths=("/login",),
                     requests=10,
                     window_seconds=60,
@@ -134,16 +140,22 @@ def create_app(
                 )
             )
         )
-        app.add_middleware(
-            SessionMiddleware(
-                SessionConfig(
-                    secret_key=security.secret_key,
-                    secure=security.secure_cookies,
-                    httponly=True,
-                    samesite="lax",
-                )
+    # The Chirp session holds the single-use WebAuthn challenge between the
+    # begin and finish ceremonies, so it must be active in every environment.
+    # App auth still rides the elbysodic_session cookie; outside production the
+    # signing key may be an ephemeral per-process secret because the Chirp
+    # session carries only request-scoped ceremony scratch there.
+    app.add_middleware(
+        SessionMiddleware(
+            SessionConfig(
+                secret_key=security.secret_key or secrets.token_urlsafe(48),
+                secure=security.secure_cookies,
+                httponly=True,
+                samesite="lax",
             )
         )
+    )
+    if security.production:
         app.add_middleware(CSRFMiddleware(CSRFConfig()))
     app.add_middleware(
         SecurityHeadersMiddleware(
