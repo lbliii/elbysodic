@@ -166,7 +166,7 @@
   {% if profile.can_manage %}
   {% call surface(variant="elevated") %}
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="face-next-actions-heading">
-    <div class="chirpui-cluster chirpui-cluster--between">
+    <div class="chirpui-cluster elbysodic-cluster--between">
       <div>
         <p class="elbysodic-section-kicker">Now</p>
         <h2 id="face-next-actions-heading">Write as {{ profile.character.name }}</h2>
@@ -316,7 +316,7 @@
         {% end %}
         {% end %}
       </div>
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">Publish plot hook</button>
       </div>
     </form>
@@ -563,7 +563,7 @@
                   x-model="summary"
                   rows="4">{{ summary }}</textarea>
       </div>
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">Save character</button>
       </div>
     </form>
@@ -576,7 +576,7 @@
     {% for item in profile.recent_posts %}
     {% call surface(variant="elevated") %}
     <article class="chirpui-stack chirpui-stack--sm">
-      <div class="chirpui-cluster chirpui-cluster--between">
+      <div class="chirpui-cluster elbysodic-cluster--between">
         <div>
           <h3>
             <a class="chirpui-link"

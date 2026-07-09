@@ -16,7 +16,7 @@
 {% def wanted_card(item, link_context=true) %}
 {% call surface(variant="elevated", cls="elbysodic-wanted-card-shell elbysodic-wanted-card-shell--" ~ item.wanted_ad.status) %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-wanted-card elbysodic-wanted-card--{{ item.wanted_ad.status }}">
-  <div class="chirpui-cluster chirpui-cluster--between elbysodic-wanted-card__header">
+  <div class="chirpui-cluster elbysodic-cluster--between elbysodic-wanted-card__header">
     <div class="elbysodic-wanted-card__heading">
       <h2>
         <a class="chirpui-link" href="/wanted/{{ item.wanted_ad.slug }}">

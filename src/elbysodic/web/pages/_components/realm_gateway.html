@@ -5,7 +5,7 @@
 
 {% def gateway_action(action, variant="primary") %}
 {% if action %}
-<a class="chirpui-btn chirpui-btn--{{ variant }}"
+<a class="chirpui-btn {{ "chirpui-btn--primary" if variant == "primary" else "chirpui-btn--secondary" }}"
    href="{{ action.href }}"
    {{ 'hx-boost="false"' if not action.is_hx_boost_safe else "" }}>
   {{ action.label }}

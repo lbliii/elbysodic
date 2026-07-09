@@ -64,6 +64,9 @@ def create_app(
         allowed_hosts=security.allowed_hosts,
         strict_transport_security=security.strict_transport_security,
         htmx=True,
+        # The app owns a tenant-aware /health route (Railway healthcheckPath);
+        # move Chirp's auto-mounted liveness probe off that path.
+        health_path="/livez",
     )
     app = App(config=config)
     register_error_handlers(app, include_internal=not debug)

@@ -32,7 +32,7 @@
       </form>
       {% end %}
       {% for link in recovery.links %}
-      <a class="chirpui-btn chirpui-btn--{{ link.variant }}" href="{{ link.href }}">{{ link.label }}</a>
+      <a class="chirpui-btn {{ "chirpui-btn--primary" if link.variant == "primary" else "chirpui-btn--secondary" }}" href="{{ link.href }}">{{ link.label }}</a>
       {% end %}
     {% end %}
   </article>

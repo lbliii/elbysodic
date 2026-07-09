@@ -74,14 +74,12 @@
   <section class="elbysodic-queue-focus" aria-labelledby="queue-focus-heading">
     <div class="elbysodic-queue-focus__copy">
       <p class="elbysodic-section-kicker">Now</p>
+      <h2 id="queue-focus-heading">{% if dashboard.selected_character and character_lens_is_explicit %}{{ dashboard.selected_character.name }}'s replies{% elif dashboard.selected_character %}Active face first{% else %}Roster replies{% end %}</h2>
       {% if dashboard.selected_character and character_lens_is_explicit %}
-      <h2 id="queue-focus-heading">{{ dashboard.selected_character.name }}'s replies</h2>
       <p class="elbysodic-copy-section">Open the scenes that need this face first; use history when you need the broader tracker.</p>
       {% elif dashboard.selected_character %}
-      <h2 id="queue-focus-heading">Active face first</h2>
       <p class="elbysodic-copy-section">Open the scenes that need the active face first; use history when you need the broader tracker.</p>
       {% else %}
-      <h2 id="queue-focus-heading">Roster replies</h2>
       <p class="elbysodic-copy-section">Open scenes that need any of your faces first; use history when you need the broader tracker.</p>
       {% end %}
     </div>

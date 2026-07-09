@@ -12,15 +12,15 @@
   <input type="hidden" name="membership_id" value="{{ program.membership.id }}">
   <input type="hidden" name="character_id" value="{{ program.current_character.id if program.current_character else 0 }}">
   <input type="hidden" name="next" value="{{ next_href }}">
-  <button class="chirpui-btn chirpui-btn--{{ variant }}" type="submit">{{ label }}</button>
+  <button class="chirpui-btn {{ "chirpui-btn--primary" if variant == "primary" else "chirpui-btn--secondary" }}" type="submit">{{ label }}</button>
 </form>
 {% end %}
 
 {% def program_action(program, href, label, variant="primary") %}
 {% if not program.is_authenticated %}
-<a class="chirpui-btn chirpui-btn--{{ variant }}" href="{{ href }}">{{ label }}</a>
+<a class="chirpui-btn {{ "chirpui-btn--primary" if variant == "primary" else "chirpui-btn--secondary" }}" href="{{ href }}">{{ label }}</a>
 {% elif program.is_current %}
-<a class="chirpui-btn chirpui-btn--{{ variant }}" href="{{ href }}">{{ label }}</a>
+<a class="chirpui-btn {{ "chirpui-btn--primary" if variant == "primary" else "chirpui-btn--secondary" }}" href="{{ href }}">{{ label }}</a>
 {% else %}
 {{ switch_form(program, href, label, variant) }}
 {% end %}
@@ -28,7 +28,7 @@
 
 {% def network_billboard(program) %}
 <section class="elbysodic-network-billboard"
-         aria-labelledby="network-heading"
+         aria-labelledby="network-billboard-heading"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
   {% if program.community.world_hero_image_url %}
   <figure class="elbysodic-network-billboard__media">
@@ -46,7 +46,7 @@
       {% end %}
       <span>{{ program.role.name if program.role else "Open realm" }}</span>
     </div>
-    <h1 id="network-heading">{{ program.community.name }}</h1>
+    <h1 id="network-billboard-heading">{{ program.community.name }}</h1>
     <p class="elbysodic-network-billboard__summary">{{ program_summary(program) }}</p>
     <div class="elbysodic-network-billboard__signals" aria-label="{{ program.community.name }} network signals">
       {{ metric_item(program.roster_count, "faces") }}
@@ -113,7 +113,7 @@
 
 {% def home_showcase(program) %}
 <section class="elbysodic-network-home-showcase"
-         aria-labelledby="network-heading"
+         aria-labelledby="network-home-heading"
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};">
   {% if program.community.world_hero_image_url %}
   <figure class="elbysodic-network-home-showcase__media">
@@ -132,7 +132,7 @@
       {% end %}
     </div>
     <p class="elbysodic-section-kicker">Featured realm</p>
-    <h1 id="network-heading">{{ program.community.name }}</h1>
+    <h1 id="network-home-heading">{{ program.community.name }}</h1>
     <p>{{ program_summary(program) }}</p>
     <div class="elbysodic-network-home-showcase__actions">
       <a class="chirpui-btn chirpui-btn--primary" href="{{ program.entry_href }}">Open realm</a>
@@ -255,10 +255,10 @@
 {% call stack(gap="lg") %}
 {% if network_has_programs %}
   {% if network_mode != "home" %}
-  <section class="elbysodic-network-explore-command" aria-labelledby="network-heading">
+  <section class="elbysodic-network-explore-command" aria-labelledby="network-explore-heading">
     <div>
       <p class="elbysodic-section-kicker">Explore</p>
-      <h1 id="network-heading">Find a realm that fits the story you want to write.</h1>
+      <h1 id="network-explore-heading">Find a realm that fits the story you want to write.</h1>
       <p>Search by premise, pace, hooks, roster shape, and the chapter in motion.</p>
     </div>
     <form class="elbysodic-network-search" action="/network" method="get" role="search">

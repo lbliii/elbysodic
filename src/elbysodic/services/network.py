@@ -221,10 +221,17 @@ PUBLIC_CATALOG_PRIVACY_CONTRACT = PublicCatalogPrivacyContract(
 
 
 class NetworkMembershipContext(Protocol):
-    community: Community
-    membership: CommunityMembership
-    role: Role
-    current_character: Character | None
+    @property
+    def community(self) -> Community: ...
+
+    @property
+    def membership(self) -> CommunityMembership: ...
+
+    @property
+    def role(self) -> Role: ...
+
+    @property
+    def current_character(self) -> Character | None: ...
 
 
 class NetworkCatalogRepository(

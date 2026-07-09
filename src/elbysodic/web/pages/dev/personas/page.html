@@ -7,7 +7,7 @@
 {% def persona_card(persona) %}
 {% call surface(variant="elevated") %}
 <article class="chirpui-stack chirpui-stack--sm">
-  <header class="chirpui-cluster chirpui-cluster--between">
+  <header class="chirpui-cluster elbysodic-cluster--between">
     <div>
       <p class="elbysodic-kicker">{{ persona.key }}</p>
       <h2>{{ persona.label }}</h2>
@@ -37,7 +37,7 @@
       <dd>{{ persona.character.name if persona.character else "No face" }}</dd>
     </div>
   </dl>
-  <div class="chirpui-cluster chirpui-cluster--end">
+  <div class="chirpui-cluster elbysodic-cluster--end">
     {% if persona.can_switch %}
     <form action="/dev/personas" method="post" hx-boost="false">
         {{ csrf_field() }}

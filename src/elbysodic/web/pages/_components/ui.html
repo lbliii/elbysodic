@@ -71,7 +71,8 @@
 
 {% def meta_hint(hint, position="top", cls="") %}
 {% set pos = position if position in ("top", "bottom", "left", "right") else "top" %}
-<span class="chirpui-tooltip chirpui-tooltip--{{ pos }} elbysodic-meta-hint{{ " " ~ cls if cls else "" }}"
+{% set pos_class = "chirpui-tooltip--bottom" if pos == "bottom" else ("chirpui-tooltip--left" if pos == "left" else ("chirpui-tooltip--right" if pos == "right" else "chirpui-tooltip--top")) %}
+<span class="chirpui-tooltip {{ pos_class }} elbysodic-meta-hint{{ " " ~ cls if cls else "" }}"
       data-chirpui-tooltip
       data-tooltip="{{ hint | e }}">
   {% slot %}
@@ -134,7 +135,7 @@
 {% if beats %}
 {% call timeline(hoverable=true, cls="elbysodic-continuity-timeline") %}
   {% for beat in beats %}
-  {% set variant_class = " chirpui-timeline__item--" ~ beat.variant if beat.variant else "" %}
+  {% set variant_class = " chirpui-timeline__item--info" if beat.variant == "info" else (" chirpui-timeline__item--success" if beat.variant == "success" else (" chirpui-timeline__item--warning" if beat.variant == "warning" else (" chirpui-timeline__item--error" if beat.variant == "error" else ""))) %}
   {% set link_class = " chirpui-timeline__item--link" if beat.href else "" %}
   <div class="chirpui-timeline__item{{ variant_class }}{{ link_class }}">
     <div class="chirpui-timeline__dot" aria-hidden="true"></div>

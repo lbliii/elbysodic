@@ -268,6 +268,15 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
+  {# Shared section ids: the manage and read-only branches are mutually exclusive,
+     so each id renders once per page while staying stable for deep links. #}
+  {% set identity_appearance_id = "identity-appearance" %}
+  {% set world_structure_id = "world-structure" %}
+  {% set board_taxonomy_id = "board-taxonomy" %}
+  {% set board_taxonomy_heading_id = "board-taxonomy-heading" %}
+  {% set navigation_id = "navigation" %}
+  {% set navigation_composer_id = "navigation-composer" %}
+  {% set navigation_composer_heading_id = "navigation-composer-heading" %}
   {% if studio_room != "overview" and current_studio_room %}
   <div class="elbysodic-place-toolbar">
     <nav class="elbysodic-place-path" aria-label="Studio path">
@@ -424,7 +433,7 @@
 
   {% if studio_room == "appearance" %}
   {% if not studio.can_manage %}
-  <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
+  <section id="{{ identity_appearance_id }}" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
   {{ room_header("Identity and appearance", "The board's visual language", "Preview the accent source and post style vocabulary directors use to guide the board.", "identity-appearance-heading") }}
   {% call surface(variant="elevated") %}
   <article class="chirpui-stack chirpui-stack--sm">
@@ -437,7 +446,7 @@
   {% end %}
   </section>
   {% else %}
-  <section id="identity-appearance" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
+  <section id="{{ identity_appearance_id }}" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="identity-appearance-heading">
   {{ room_header("Identity and appearance", "The board's visual language", "Set the defaults that make character identity and post styling feel guided, not accidental.", "identity-appearance-heading") }}
   <section id="appearance-theme" class="chirpui-stack chirpui-stack--md" aria-label="Theme tokens">
   {% call surface(variant="elevated") %}
@@ -509,7 +518,7 @@
       <p class="elbysodic-empty-state">Theme contrast is healthy for the checked surfaces.</p>
       {% end %}
     </section>
-    <div class="chirpui-cluster chirpui-cluster--end">
+    <div class="chirpui-cluster elbysodic-cluster--end">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Save theme tokens</button>
     </div>
   </form>
@@ -581,7 +590,7 @@
         </select>
       </label>
     </div>
-    <div class="chirpui-cluster chirpui-cluster--end">
+    <div class="chirpui-cluster elbysodic-cluster--end">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Save community media</button>
     </div>
   </form>
@@ -591,7 +600,7 @@
   <form class="chirpui-stack chirpui-stack--sm" method="post">
         {{ csrf_field() }}
     <input type="hidden" name="intent" value="identity_accent">
-    <div class="chirpui-cluster chirpui-cluster--between">
+    <div class="chirpui-cluster elbysodic-cluster--between">
       <div>
         <p class="elbysodic-kicker">Community Direction</p>
         <h2>Inherited accents</h2>
@@ -625,14 +634,14 @@
   {% end %}
 
   {% if studio_room == "structure" and studio.can_manage %}
-  <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
+  <section id="{{ world_structure_id }}" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
   {{ room_header("Board map", "Boards, places, and community rooms", "Audit the board map after directors edit individual boards from their own pages.", "world-structure-heading") }}
   {% call surface(variant="elevated") %}
-  <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
-    <div class="chirpui-cluster chirpui-cluster--between">
+  <section id="{{ board_taxonomy_id }}" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
+    <div class="chirpui-cluster elbysodic-cluster--between">
       <div>
         <p class="elbysodic-kicker">Board placement</p>
-        <h2 id="board-taxonomy-heading">Board map audit and bulk repair</h2>
+        <h2 id="{{ board_taxonomy_heading_id }}">Board map audit and bulk repair</h2>
         <p class="elbysodic-copy-section">
           Single-board edits belong on the board's page. Use this room when you need to scan every board at once, repair parent/sub-forum placement, or fix sidebar order in a batch.
         </p>
@@ -726,13 +735,13 @@
   {% end %}
   </section>
 
-  <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
+  <section id="{{ navigation_id }}" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
   {{ room_header("Navigation", "Sidebar language and health", "Audit how writers move through the board while keeping route meaning stable.", "navigation-heading") }}
   {% call surface(variant="elevated") %}
-  <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
+  <section id="{{ navigation_composer_id }}" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
       <p class="elbysodic-kicker">Community Direction</p>
-      <h2 id="navigation-composer-heading">Sidebar audit</h2>
+      <h2 id="{{ navigation_composer_heading_id }}">Sidebar audit</h2>
       <p class="elbysodic-copy-section">
         Check the sidebars people will actually see after object-local board edits, sidebar labels, and contextual route choices compose together. Use this to catch boards in the wrong work area, repeated section labels, or sidebars that bury the next useful move.
       </p>
@@ -891,7 +900,7 @@
         {% end %}
       </fieldset>
     </div>
-    <div class="chirpui-cluster chirpui-cluster--end">
+    <div class="chirpui-cluster elbysodic-cluster--end">
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Save style vocabulary</button>
     </div>
   </form>
@@ -900,14 +909,14 @@
   {% end %}
 
   {% if studio_room == "structure" and not studio.can_manage %}
-  <section id="world-structure" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
+  <section id="{{ world_structure_id }}" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="world-structure-heading">
   {{ room_header("Board map", "Boards, places, and community rooms", "Preview how object-local board edits classify board kinds, parent and sub-forum relationships, sidebar placement, and navigation order.", "world-structure-heading") }}
   {% call surface(variant="elevated") %}
-  <section id="board-taxonomy" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
-    <div class="chirpui-cluster chirpui-cluster--between">
+  <section id="{{ board_taxonomy_id }}" class="chirpui-stack chirpui-stack--md" aria-labelledby="board-taxonomy-heading">
+    <div class="chirpui-cluster elbysodic-cluster--between">
       <div>
         <p class="elbysodic-kicker">Board placement</p>
-        <h2 id="board-taxonomy-heading">Board map audit</h2>
+        <h2 id="{{ board_taxonomy_heading_id }}">Board map audit</h2>
         <p class="elbysodic-copy-section">
           Read what each board is, whether it lives under a parent as a sub-forum, which sidebar section owns it, and where it sorts in navigation.
         </p>
@@ -945,13 +954,13 @@
   </section>
   {% end %}
   </section>
-  <section id="navigation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
+  <section id="{{ navigation_id }}" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="navigation-heading">
   {{ room_header("Navigation", "Sidebar language and health", "Preview the sidebar audit and health notes.", "navigation-heading") }}
   {% call surface(variant="elevated") %}
-  <section id="navigation-composer" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
+  <section id="{{ navigation_composer_id }}" class="chirpui-stack chirpui-stack--md" aria-labelledby="navigation-composer-heading">
     <div>
       <p class="elbysodic-kicker">Community Direction</p>
-      <h2 id="navigation-composer-heading">Sidebar audit</h2>
+      <h2 id="{{ navigation_composer_heading_id }}">Sidebar audit</h2>
       <p class="elbysodic-copy-section">
         Check the sidebars people will actually see after board map, sidebar label, and contextual route choices compose together.
       </p>
@@ -1063,7 +1072,7 @@
   <section class="elbysodic-director-queue">
     {% call surface(variant="elevated") %}
     <article class="chirpui-stack chirpui-stack--sm">
-      <div class="chirpui-cluster chirpui-cluster--between">
+      <div class="chirpui-cluster elbysodic-cluster--between">
         <p class="elbysodic-kicker">Canon</p>
         {{ badge(studio.draft_materials | length ~ " drafts", variant="warning") if studio.draft_materials else "" }}
       </div>
@@ -1077,7 +1086,7 @@
         <li>
           <div class="chirpui-stack chirpui-stack--xs">
             <a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
-            <div class="chirpui-cluster chirpui-cluster--start">
+            <div class="chirpui-cluster elbysodic-cluster--start">
               {{ badge(item.type_label, variant="muted") }}
               <form method="post">
         {{ csrf_field() }}
@@ -1146,7 +1155,7 @@
       {% else %}
       <p class="elbysodic-director-note">No claim types have been configured yet.</p>
       {% end %}
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake">Edit intake</a>
       </div>
     </article>

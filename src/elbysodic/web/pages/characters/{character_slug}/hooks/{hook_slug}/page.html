@@ -17,7 +17,7 @@
   <article class="chirpui-stack chirpui-stack--md elbysodic-wanted-detail">
     <div>
       <p class="elbysodic-wanted-card__type">{{ hook.hook_type_label }}</p>
-      <div class="chirpui-cluster chirpui-cluster--between">
+      <div class="chirpui-cluster elbysodic-cluster--between">
         <h2>{{ hook.plot_hook.title }}</h2>
         {{ badge(hook.plot_hook.status, variant="success" if hook.plot_hook.status == "open" else "muted") }}
       </div>
@@ -57,7 +57,7 @@
         {{ hook.viewer_interest.character.name }} is interested in this plot hook.
       </p>
       {% elif hook.can_express_interest and viewer.current_character %}
-      <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+      <form method="post" hx-boost="false" class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
@@ -98,7 +98,7 @@
             <span>{{ item.created_at_label }}</span>
           </div>
           {% if hook.can_manage and item.interest.status == "interested" %}
-          <form method="post" hx-boost="false" class="chirpui-cluster chirpui-cluster--end">
+          <form method="post" hx-boost="false" class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
             <input type="hidden" name="intent" value="start_plotting_room">
             <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
@@ -192,7 +192,7 @@
         {% end %}
         {% end %}
       </div>
-      <div class="chirpui-cluster chirpui-cluster--between">
+      <div class="chirpui-cluster elbysodic-cluster--between">
         <button type="submit" name="intent" value="save" class="chirpui-btn chirpui-btn--primary">Save plot hook</button>
         <button type="submit" name="intent" value="archive" class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined">Archive</button>
       </div>

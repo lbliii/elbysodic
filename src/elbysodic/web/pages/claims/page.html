@@ -59,7 +59,7 @@
       <span class="chirpui-field__label">Search claims</span>
       <input class="chirpui-field__input" name="q" value="{{ directory.search_query }}" placeholder="Face, role, family, faction, writer-facing value...">
     </label>
-    <div class="chirpui-cluster chirpui-cluster--end">
+    <div class="chirpui-cluster elbysodic-cluster--end">
       {% if directory.has_active_filter %}
       <a class="chirpui-btn chirpui-btn--secondary" href="/claims">Clear</a>
       {% end %}
@@ -150,7 +150,7 @@
                 <span class="chirpui-field__label">Notes</span>
                 <input class="chirpui-field__input" name="notes" value="{{ item.claim.notes }}" placeholder="Optional director context">
               </label>
-              <div class="chirpui-cluster chirpui-cluster--end">
+              <div class="chirpui-cluster elbysodic-cluster--end">
                 <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save claim</button>
               </div>
             </form>
@@ -209,7 +209,7 @@
           <span class="chirpui-field__label">Notes</span>
           <input class="chirpui-field__input" name="notes" placeholder="Optional director context">
         </label>
-        <div class="chirpui-cluster chirpui-cluster--end">
+        <div class="chirpui-cluster elbysodic-cluster--end">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">Add claim</button>
         </div>
       </form>

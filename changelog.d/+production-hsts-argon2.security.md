@@ -1,0 +1,1 @@
+Production deployments now pin HSTS by default (`ELBYSODIC_HSTS=off` opts out) and hash passwords with argon2id via the new `bengal-chirp[auth]` extra; existing scrypt hashes upgrade automatically on the next successful login.

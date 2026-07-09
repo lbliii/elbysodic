@@ -71,7 +71,7 @@ def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
         env=env,
         secret_key=secret_key,
         allowed_hosts=allowed_hosts,
-        strict_transport_security=_strict_transport_security(),
+        strict_transport_security=_strict_transport_security(production=production),
         secure_cookies=production and not debug,
     )
 
@@ -142,10 +142,12 @@ def _parse_allowed_hosts(raw: str | None) -> tuple[str, ...]:
     return tuple(host for host in hosts if host)
 
 
-def _strict_transport_security() -> str | None:
+def _strict_transport_security(*, production: bool = False) -> str | None:
     raw = os.environ.get(ELBYSODIC_HSTS)
     if raw is None:
-        return None
+        # Railway terminates TLS for every deployment, so HSTS is safe to pin
+        # by default in production; opt out with ELBYSODIC_HSTS=off.
+        return "max-age=31536000; includeSubDomains" if production else None
     normalized = raw.strip()
     if not normalized or normalized.lower() in {"0", "false", "no", "off"}:
         return None

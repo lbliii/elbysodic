@@ -149,7 +149,7 @@
       {% for item in desk.application_materials %}
       {% call surface(variant="elevated") %}
       <article class="chirpui-stack chirpui-stack--sm">
-        <div class="chirpui-cluster chirpui-cluster--between">
+        <div class="chirpui-cluster elbysodic-cluster--between">
           <h3><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h3>
           {{ badge(item.type_label, variant="info") }}
         </div>

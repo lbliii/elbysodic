@@ -95,7 +95,7 @@
       <div class="elbysodic-prose-body elbysodic-post-content" x-show="hasPreview()" x-html="renderPreview()"></div>
       <p class="elbysodic-copy-status" x-show="!hasPreview()">Preview will appear once the post has body text.</p>
     </div>
-    <div class="chirpui-cluster chirpui-cluster--end">
+    <div class="chirpui-cluster elbysodic-cluster--end">
       <p class="elbysodic-draft-status" aria-live="polite" x-text="draftStatusText()"></p>
       <a class="chirpui-btn chirpui-btn--secondary"
          href="/boards/{{ edit_view.board.slug }}/threads/{{ edit_view.thread.slug }}#{{ edit_view.post.anchor }}">

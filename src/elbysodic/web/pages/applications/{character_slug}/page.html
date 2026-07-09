@@ -173,7 +173,7 @@
         </div>
       </fieldset>
       {% end %}
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save notes</button>
       </div>
     </form>
@@ -283,12 +283,12 @@
                   name="checklist"
                   rows="5">{{ room.application.checklist }}</textarea>
       </label>
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save review notes</button>
       </div>
     </form>
     {% if room.character_view.character.application_status == "submitted" %}
-    <div class="chirpui-cluster chirpui-cluster--end">
+    <div class="chirpui-cluster elbysodic-cluster--end">
       <form method="post" hx-boost="false" data-elbysodic-submit-label="Accepting face...">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="accept_application">
