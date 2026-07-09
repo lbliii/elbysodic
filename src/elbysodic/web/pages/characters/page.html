@@ -124,6 +124,7 @@
   {{ empty_policy_block("No faces on your roster yet.", "Start a draft face for this realm; once accepted, it becomes a playable roster identity.", "First face", "Use the form below", "#new-character") }}
   {% end %}
 
+  {% block character_create_form %}
   {% call surface(variant="elevated") %}
   {{ alpine_json_config(post_style_preview_config_id, post_style_preview_config) }}
   <form id="new-character"
@@ -132,6 +133,7 @@
         class="chirpui-stack chirpui-stack--md"
         x-data="elbysodicPostStylePreview('{{ post_style_preview_config_id }}')">
         {{ csrf_field() }}
+        <input type="hidden" name="_action" value="create_character">
     <div>
       <h2>Add face</h2>
       <p class="elbysodic-copy-helper">Start a draft application for {{ viewer.community.name }}</p>
@@ -321,6 +323,7 @@
     </div>
   </form>
   {% end %}
+  {% endblock %}
 {% end %}
 {% end %}
 {% end %}
