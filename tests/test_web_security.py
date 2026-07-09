@@ -1126,6 +1126,118 @@ def test_production_login_rate_limit_ignores_spoofed_forwarded_for(monkeypatch) 
     asyncio.run(run())
 
 
+def test_login_rate_limit_renders_htmx_429_fragment(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            for _attempt in range(10):
+                await client.post("/login", body=b"", headers=_FORM)
+            htmx_blocked = await client.post(
+                "/login",
+                body=b"",
+                headers={**_FORM, "HX-Request": "true"},
+            )
+            plain_blocked = await client.post("/login", body=b"", headers=_FORM)
+
+        assert htmx_blocked.status == 429
+        assert dict(htmx_blocked.headers)["retry-after"] == "300"
+        assert "Too many login attempts" in htmx_blocked.text
+        assert 'role="alert"' in htmx_blocked.text
+        assert "elbysodic-form-error" in htmx_blocked.text
+        assert plain_blocked.status == 429
+        assert plain_blocked.text == "Too Many Requests"
+
+    asyncio.run(run())
+
+
+def test_development_login_rate_limit_ignores_spoofed_forwarded_for(monkeypatch) -> None:
+    async def run() -> None:
+        monkeypatch.delenv("ELBYSODIC_ENV", raising=False)
+        monkeypatch.delenv("ELBYSODIC_SECRET_KEY", raising=False)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            responses = [
+                await client.post(
+                    "/login",
+                    body=b"",
+                    headers={**_FORM, "X-Forwarded-For": f"203.0.113.{attempt}"},
+                )
+                for attempt in range(11)
+            ]
+
+        # A rotating spoofed X-Forwarded-For must not rotate the limiter key:
+        # keying uses the fail-closed Request.trusted_client_ip, so the 11th
+        # attempt from the same client is blocked even in development.
+        assert all(response.status != 429 for response in responses[:10])
+        assert responses[10].status == 429
+
+    asyncio.run(run())
+
+
+def test_development_and_production_resolve_the_same_middleware_chain(monkeypatch) -> None:
+    def resolved_chain(app) -> list[str]:
+        state = app._mutable_state
+        ordered = sorted(
+            zip(
+                state.middleware_priorities,
+                range(len(state.middleware_list)),
+                state.middleware_list,
+                strict=True,
+            )
+        )
+        return [type(middleware).__name__ for _priority, _index, middleware in ordered]
+
+    monkeypatch.delenv("ELBYSODIC_ENV", raising=False)
+    monkeypatch.delenv("ELBYSODIC_SECRET_KEY", raising=False)
+    development = create_app(debug=True, services=create_services(path=":memory:"))
+    _set_production_env(monkeypatch)
+    production = create_app(debug=False, services=create_services(path=":memory:"))
+
+    development_chain = resolved_chain(development)
+    assert development_chain == resolved_chain(production)
+    assert development_chain.index("SessionMiddleware") < development_chain.index("CSRFMiddleware")
+    assert development_chain.index("CSRFMiddleware") < development_chain.index(
+        "SecurityHeadersMiddleware"
+    )
+    assert "AuthRateLimitMiddleware" in development_chain
+
+
+def test_development_enforces_csrf_with_real_tokens(monkeypatch) -> None:
+    async def run() -> None:
+        monkeypatch.delenv("ELBYSODIC_ENV", raising=False)
+        monkeypatch.delenv("ELBYSODIC_SECRET_KEY", raising=False)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            login_page = await client.get("/login")
+            invalid = await client.post(
+                "/login",
+                body=urlencode(
+                    {"email": "moira@example.com", "password": "password", "next": "/studio"}
+                ).encode(),
+                headers={**_FORM, "X-CSRF-Token": "not-the-session-token"},
+            )
+            valid = await client.post(
+                "/login",
+                body=urlencode(
+                    {"email": "moira@example.com", "password": "password", "next": "/studio"}
+                ).encode(),
+                headers=_FORM,
+            )
+
+        # The dev stubs are gone: csrf_field() renders a real session-bound
+        # token in development, and CSRFMiddleware enforces it on POST.
+        assert login_page.status == 200
+        assert _CSRF_RE.search(login_page.text) is not None
+        assert invalid.status == 403
+        assert valid.status == 302
+
+    asyncio.run(run())
+
+
 def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)

@@ -1,0 +1,1 @@
+The login rate limiter keys on Chirp's fail-closed `Request.trusted_client_ip` — a spoofed `X-Forwarded-For` header can no longer rotate the limiter bucket — and over-limit htmx form posts now receive a friendly self-contained 429 fragment with a `Retry-After` header instead of bare text.
