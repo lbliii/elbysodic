@@ -1,0 +1,1 @@
+Passkey credentials now have first-class storage: a `user_passkey_credentials` table and repository methods that satisfy chirp's `PasskeyCredential` protocol (per-account, multi-credential, with transports, labels, and last-used tracking), covered by the tenant integrity audit, community export redactions, and the restore-check count/redaction proof.

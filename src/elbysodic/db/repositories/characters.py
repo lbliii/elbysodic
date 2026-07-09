@@ -6,7 +6,7 @@ import json
 from collections import defaultdict
 
 from elbysodic.db.repositories.base import TenantBoundaryError, _last_id, _utc_now
-from elbysodic.db.repositories.identity import IdentityRepositoryMixin
+from elbysodic.db.repositories.passkeys import PasskeyRepositoryMixin
 from elbysodic.db.repositories.rows import (
     _character_application_event_from_row,
     _character_application_from_row,
@@ -22,7 +22,7 @@ from elbysodic.domain.models import (
 )
 
 
-class CharacterRepositoryMixin(IdentityRepositoryMixin):
+class CharacterRepositoryMixin(PasskeyRepositoryMixin):
     def create_character(
         self,
         community_id: int,

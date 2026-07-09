@@ -321,6 +321,12 @@ def community_export_manifest(
             ),
             CommunityExportRedaction(
                 community.id,
+                "passkey_credentials",
+                "passkey credential ids, public keys, and sign counts are account "
+                "auth material and are never archived",
+            ),
+            CommunityExportRedaction(
+                community.id,
                 "invitations",
                 "raw invite tokens are unavailable after creation because only token hashes are stored",
             ),

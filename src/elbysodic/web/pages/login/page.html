@@ -30,7 +30,7 @@
       <span>Password</span>
       <input name="password" type="password" autocomplete="current-password" required>
     </label>
-    <div class="chirpui-cluster chirpui-cluster--between">
+    <div class="chirpui-cluster elbysodic-cluster--between">
       <p class="elbysodic-copy-helper">
         {% if show_demo_login_hint %}
         Invite/demo accounts use password: <code>password</code>.
@@ -41,6 +41,10 @@
       </p>
       <button class="chirpui-btn chirpui-btn--primary" type="submit">Log in</button>
     </div>
+    <p id="passkey-login-error" class="elbysodic-form-error" hidden></p>
+    <button class="chirpui-btn" type="button" id="passkey-login" hidden>
+      Sign in with a passkey
+    </button>
   </form>
   {% end %}
 {% end %}

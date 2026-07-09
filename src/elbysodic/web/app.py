@@ -11,9 +11,8 @@ from chirp.app import App
 from chirp.config import AppConfig
 from chirp.ext.chirp_ui import use_chirp_ui
 from chirp.middleware.auth_rate_limit import AuthRateLimitConfig, AuthRateLimitMiddleware
-from chirp.middleware.csrf import CSRFConfig, CSRFMiddleware
-from chirp.middleware.security_headers import SecurityHeadersConfig, SecurityHeadersMiddleware
-from chirp.middleware.sessions import SessionConfig, SessionMiddleware
+from chirp.middleware.security_headers import SecurityHeadersConfig
+from chirp.middleware.stack import secure_stack
 from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
@@ -64,6 +63,12 @@ def create_app(
         allowed_hosts=security.allowed_hosts,
         strict_transport_security=security.strict_transport_security,
         htmx=True,
+        # Injects the nonced window.chirp.passkeys JS bridge (CSP-safe, no CDN)
+        # used by the login and identity-settings passkey ceremonies.
+        passkeys=True,
+        # The app owns a tenant-aware /health route (Railway healthcheckPath);
+        # move Chirp's auto-mounted liveness probe off that path.
+        health_path="/livez",
     )
     app = App(config=config)
     register_error_handlers(app, include_internal=not debug)
@@ -114,45 +119,52 @@ def create_app(
     app.template_global()(shell_navigation)
     app.template_global()(shell_route_state)
     app.template_global()(community_initials)
-    if not security.production:
-        app.template_global("csrf_field")(_empty_csrf_field)
-        app.template_global("csrf_token")(_empty_csrf_token)
-    app.add_middleware(RequestTimingMiddleware())
-    app.add_middleware(RequestServicesCleanupMiddleware())
-    app.add_middleware(TenantPrefixMiddleware())
-    if security.production:
-        app.add_middleware(
-            AuthRateLimitMiddleware(
-                AuthRateLimitConfig(
-                    paths=("/login",),
-                    requests=10,
-                    window_seconds=60,
-                    block_seconds=300,
-                )
-            )
-        )
-        app.add_middleware(
-            SessionMiddleware(
-                SessionConfig(
-                    secret_key=security.secret_key,
-                    secure=security.secure_cookies,
-                    httponly=True,
-                    samesite="lax",
-                )
-            )
-        )
-        app.add_middleware(CSRFMiddleware(CSRFConfig()))
+    # Every environment runs the same middleware chain (dev/prod parity).
+    # Explicit priorities pin the resolved order regardless of registration
+    # order: lower priority runs outermost.
+    app.add_middleware(RequestTimingMiddleware(), priority=-30)
+    app.add_middleware(RequestServicesCleanupMiddleware(), priority=-25)
+    app.add_middleware(TenantPrefixMiddleware(), priority=-20)
     app.add_middleware(
-        SecurityHeadersMiddleware(
-            SecurityHeadersConfig(
-                content_security_policy=PRODUCTION_CONTENT_SECURITY_POLICY,
-                strict_transport_security=security.strict_transport_security,
+        AuthRateLimitMiddleware(
+            AuthRateLimitConfig(
+                # Prefix match: also covers the passkey sign-in ceremony
+                # endpoints under /login/passkeys/.
+                paths=("/login",),
+                requests=10,
+                window_seconds=60,
+                block_seconds=300,
+                # Keying stays on the fail-closed, trusted-proxy-corrected
+                # Request.trusted_client_ip default; a spoofed X-Forwarded-For
+                # cannot rotate the limiter bucket. htmx form posts get a
+                # friendly self-contained 429 fragment instead of bare text.
+                error_template="_components/_rate_limited.html",
+                error_block="login_rate_limited",
             )
-        )
+        ),
+        priority=-10,
     )
-    app.add_middleware(RequireLoginMiddleware(security))
-    app.add_middleware(IdentityFailureMiddleware())
-    app.add_middleware(StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"))
+    # secure_stack wires SessionMiddleware -> CSRFMiddleware ->
+    # SecurityHeadersMiddleware in contract-passing order in ALL envs. The
+    # session cookie's Secure flag stays at SessionConfig's "auto" default,
+    # resolved at freeze from AppConfig.env (True for production/staging,
+    # False for local development) — never from debug. The all-env Chirp
+    # session also carries the single-use WebAuthn challenge between the
+    # passkey begin and finish ceremonies; app auth still rides the
+    # elbysodic_session cookie.
+    for middleware in secure_stack(
+        config,
+        headers=SecurityHeadersConfig(
+            content_security_policy=PRODUCTION_CONTENT_SECURITY_POLICY,
+            strict_transport_security=security.strict_transport_security,
+        ),
+    ):
+        app.add_middleware(middleware, priority=0)
+    app.add_middleware(RequireLoginMiddleware(security), priority=10)
+    app.add_middleware(IdentityFailureMiddleware(), priority=20)
+    app.add_middleware(
+        StaticFiles(directory=str(STATIC_DIR), prefix="/elbysodic-static"), priority=30
+    )
     app.mount_pages(str(PAGES_DIR))
 
     return app
@@ -167,14 +179,6 @@ def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool)
     if configured is not None:
         return configured.strip().lower() not in {"0", "false", "no", "off"}
     return debug
-
-
-def _empty_csrf_field() -> str:
-    return ""
-
-
-def _empty_csrf_token() -> str:
-    return ""
 
 
 def community_initials(name: object) -> str:

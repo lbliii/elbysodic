@@ -28,6 +28,35 @@ def test_member_route_smoke_covers_full_pages_and_fragments() -> None:
     asyncio.run(run())
 
 
+def test_member_route_smoke_covers_boosted_shell_outlets() -> None:
+    """Boosted navigation must negotiate the Page shell outlet, never a raw Template.
+
+    ``mode="boosted"`` sends ``HX-Boosted``/``HX-Target`` and fails on any
+    route whose response carries a ``full_page`` render intent (an unshelled
+    ``Template`` response that would nest a document inside the outlet).
+    """
+
+    async def run() -> None:
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            await assert_route_smoke(
+                client,
+                [
+                    RouteSmokeCase(path, mode="boosted", target="main")
+                    for path in (
+                        "/",
+                        "/network",
+                        "/characters/rogue",
+                        "/boards/danger-room",
+                        "/boards/danger-room/threads/sentinel-drill",
+                    )
+                ],
+            )
+
+    asyncio.run(run())
+
+
 def test_staff_route_smoke_covers_director_surfaces() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
@@ -42,5 +71,12 @@ def test_staff_route_smoke_covers_director_surfaces() -> None:
 
         async with TestClient(app) as client:
             await assert_route_smoke(client, ["/studio", "/studio/launch", "/applications"])
+            await assert_route_smoke(
+                client,
+                [
+                    RouteSmokeCase(path, mode="boosted", target="main")
+                    for path in ("/studio", "/studio/launch", "/applications")
+                ],
+            )
 
     asyncio.run(run())

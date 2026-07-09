@@ -30,9 +30,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "bengal-chirp[config,forms,sessions,ui]>=0.8.0",
-    "chirp-ui>=0.10.0",
-    "milo-cli>=0.2.2",
+    "bengal-chirp[auth,config,forms,passkeys,sessions,ui]>=0.10.0",
+    "chirp-ui>=0.11.0",
+    "milo-cli>=0.4.2",
     "pyyaml>=6.0",
 ]
 
@@ -147,10 +147,11 @@ exclude_lines = [
 
 [dependency-groups]
 docs = [
-    "bengal>=0.3.2",
+    "bengal>=0.5.1",
     "lunr>=0.7.0",
 ]
 dev = [
+    "kida-templates>=0.11,<0.12",
     "pytest>=9.0.2",
     "pytest-cov>=6.0.0",
     "pytest-timeout>=2.3.0",
@@ -193,9 +194,10 @@ format-check = { cmd = "ruff format . --check", help = "Check formatting" }
 hooks = { cmd = "prek run --all-files", help = "Run all pre-commit hooks" }
 hooks-install = { cmd = "prek install", help = "Install pre-commit hooks" }
 app-check = { cmd = "python -c \"from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)\"", help = "Run Chirp route/template check" }
+kida-check = { cmd = "python scripts/kida_check.py", help = "Static kida template validation (kida check --validate-calls with app filters + chirpui roots; --strict omitted: unified {% end %} closers are house style)" }
 
-ci = { sequence = ["lint", "format-check", "ty", "app-check", "test"], help = "Full CI check" }
-check = { sequence = ["lint", "format-check", "ty", "app-check"], help = "Quick check without tests" }
+ci = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check", "test"], help = "Full CI check" }
+check = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check"], help = "Quick check without tests" }
 
 dist = { shell = "rm -rf dist/ && uv build && ls -la dist/", help = "Build distribution" }
 

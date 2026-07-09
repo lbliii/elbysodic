@@ -1,0 +1,1 @@
+Upgraded the full upstream stack — Chirp 0.10, Chirp-UI 0.11, Pounce 0.9, Milo 0.4, Bengal 0.5 — moving Chirp's built-in liveness probe to `/livez` so the app keeps its tenant-aware `/health` route, renaming the phantom `chirpui-cluster--*` modifier classes to app-owned `elbysodic-cluster--*` hooks, and clearing the new duplicate-id and class-token template checks.

@@ -335,6 +335,25 @@ def create_login_session(repo: AuthRepository, email: str, password: str) -> Log
         raise PermissionError("email or password is incorrect") from exc
     if not verify_password(password, user.password_hash):
         raise PermissionError("email or password is incorrect")
+    return _create_session_for_user(repo, user)
+
+
+def create_passkey_login_session(repo: AuthRepository, user_id: int) -> LoginSession:
+    """Create an app session for a user already verified by a passkey ceremony.
+
+    The WebAuthn assertion is the credential check; this helper only issues the
+    same session material password login issues, so both entry paths share one
+    session posture.
+    """
+
+    try:
+        user = repo.get_user(user_id)
+    except LookupError as exc:
+        raise PermissionError("passkey account is no longer available") from exc
+    return _create_session_for_user(repo, user)
+
+
+def _create_session_for_user(repo: AuthRepository, user: User) -> LoginSession:
     token = secrets.token_urlsafe(32)
     expires_at = (datetime.now(UTC) + SESSION_TTL).isoformat(timespec="seconds")
     stored_session = repo.create_user_session(

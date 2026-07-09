@@ -132,7 +132,7 @@
     {% for result in discovery.open_threads %}
     {% call surface(variant="elevated") %}
     <article class="chirpui-stack chirpui-stack--sm elbysodic-discovery-thread">
-      <div class="chirpui-cluster chirpui-cluster--between">
+      <div class="chirpui-cluster elbysodic-cluster--between">
         <div>
           <h2>
             <a class="chirpui-link" href="/boards/{{ result.board.slug }}/threads/{{ result.thread.slug }}">

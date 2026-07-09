@@ -75,7 +75,7 @@
                   rows="10"
                   placeholder="elbysodic_blueprint: 1&#10;&#10;program:&#10;  slug: rl-small-town">{{ blueprint_yaml }}</textarea>
       </label>
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">Preview blueprint</button>
       </div>
     </form>
@@ -200,7 +200,7 @@
           </label>
         </div>
         <input type="hidden" name="visibility" value="public">
-        <div class="chirpui-cluster chirpui-cluster--end">
+        <div class="chirpui-cluster elbysodic-cluster--end">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">Create claim type</button>
         </div>
       </form>
@@ -251,7 +251,7 @@
           </label>
         </div>
         <input type="hidden" name="visibility" value="{{ group.claim_type.visibility }}">
-        <div class="chirpui-cluster chirpui-cluster--end">
+        <div class="chirpui-cluster elbysodic-cluster--end">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save claim type</button>
         </div>
       </form>
@@ -319,7 +319,7 @@
           <input type="checkbox" name="is_required">
           <span>Required for application</span>
         </label>
-        <div class="chirpui-cluster chirpui-cluster--end">
+        <div class="chirpui-cluster elbysodic-cluster--end">
           <button type="submit" class="chirpui-btn chirpui-btn--primary">Create field</button>
         </div>
       </form>
@@ -386,7 +386,7 @@
           <input type="checkbox" name="is_required" {{ "checked" if item.field.is_required else "" }}>
           <span>Required for application</span>
         </label>
-        <div class="chirpui-cluster chirpui-cluster--end">
+        <div class="chirpui-cluster elbysodic-cluster--end">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save field</button>
         </div>
       </form>

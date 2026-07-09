@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 21
+CURRENT_SCHEMA_VERSION = 22
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -732,6 +732,30 @@ def _add_community_access_request_events(connection: sqlite3.Connection) -> None
     )
 
 
+def _add_user_passkey_credentials(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_passkey_credentials (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            credential_id BLOB NOT NULL UNIQUE,
+            public_key BLOB NOT NULL,
+            sign_count INTEGER NOT NULL DEFAULT 0,
+            transports TEXT NOT NULL DEFAULT '',
+            label TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            last_used_at TEXT
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_user_passkey_credentials_user
+        ON user_passkey_credentials(user_id, created_at, id)
+        """
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -761,6 +785,7 @@ MIGRATIONS: tuple[Migration, ...] = (
         _add_community_access_request_invitation_link,
     ),
     Migration(21, "community-access-request-events", _add_community_access_request_events),
+    Migration(22, "user-passkey-credentials", _add_user_passkey_credentials),
 )
 
 

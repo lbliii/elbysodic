@@ -157,7 +157,7 @@
             data-elbysodic-target-object="wanted_ad"
             data-elbysodic-stale-behavior="service-validates-current-face-and-open-hook"
             data-elbysodic-idempotency="service-duplicate-policy"
-            class="chirpui-cluster chirpui-cluster--end">
+            class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
         <input type="hidden" name="intent" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
@@ -170,12 +170,12 @@
       <p class="elbysodic-copy-status">This hook is {{ wanted.wanted_ad.status }}.</p>
       {% elif not viewer %}
       {% if account_visitor | default(none) %}
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <a class="chirpui-btn chirpui-btn--primary" href="{{ request_access_href }}" hx-boost="false">Request access to raise interest</a>
         <a class="chirpui-btn chirpui-btn--secondary" href="/network" data-elbysodic-global-link>Browse your realms</a>
       </div>
       {% else %}
-      <div class="chirpui-cluster chirpui-cluster--end">
+      <div class="chirpui-cluster elbysodic-cluster--end">
         <a class="chirpui-btn chirpui-btn--primary" href="/login?next={{ current_path or "/" }}" hx-boost="false">Log in to raise interest</a>
         <a class="chirpui-btn chirpui-btn--secondary" href="{{ request_access_href }}" hx-boost="false">Request access</a>
       </div>
@@ -215,7 +215,7 @@
                       name="note"
                       rows="3"></textarea>
           </div>
-          <div class="chirpui-cluster chirpui-cluster--end">
+          <div class="chirpui-cluster elbysodic-cluster--end">
             <button type="submit" class="chirpui-btn chirpui-btn--secondary">
               Send concept
             </button>
@@ -252,7 +252,7 @@
         <p class="elbysodic-copy-helper">
           Archived hooks disappear from ordinary wanted browsing, but directors can still inspect them here.
         </p>
-        <div class="chirpui-cluster chirpui-cluster--end">
+        <div class="chirpui-cluster elbysodic-cluster--end">
           <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save lifecycle</button>
         </div>
       </form>
@@ -300,14 +300,14 @@
           <p class="elbysodic-copy-summary">{{ item.interest.note }}</p>
           {% end %}
           {% if item.primary_action_label %}
-          <div class="chirpui-cluster chirpui-cluster--end">
+          <div class="chirpui-cluster elbysodic-cluster--end">
             <a class="chirpui-btn chirpui-btn--primary" href="{{ item.primary_action_href }}">{{ item.primary_action_label }}</a>
             {% if item.secondary_action_label %}
             <a class="chirpui-link" href="{{ item.secondary_action_href }}">{{ item.secondary_action_label }}</a>
             {% end %}
           </div>
           {% elif wanted.can_manage and wanted.wanted_ad.status == "open" and item.interest.status == "interested" %}
-          <div class="chirpui-cluster chirpui-cluster--end">
+          <div class="chirpui-cluster elbysodic-cluster--end">
             <form method="post"
                   hx-boost="false"
                   data-elbysodic-submit-label="Starting room..."
@@ -350,7 +350,7 @@
                 data-elbysodic-target-object="wanted_interest"
                 data-elbysodic-stale-behavior="service-validates-interest-and-character"
                 data-elbysodic-idempotency="service-duplicate-policy"
-                class="chirpui-cluster chirpui-cluster--end">
+                class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
             <input type="hidden" name="intent" value="create_reserve">
             <input type="hidden" name="interest_id" value="{{ item.interest.id }}">

@@ -1,0 +1,1 @@
+Route smoke now exercises htmx boosted navigation (shell-outlet negotiation) over the member and director surfaces, and a link-integrity crawl asserts every same-origin link reachable from the demo-seeded shell resolves.

@@ -34,11 +34,13 @@ from elbysodic.services.read_models import (
 
 
 class InvitationManagementItemLike(Protocol):
-    invitation: CommunityInvitation
+    @property
+    def invitation(self) -> CommunityInvitation: ...
 
 
 class AccessRequestManagementItemLike(Protocol):
-    request: CommunityAccessRequest
+    @property
+    def request(self) -> CommunityAccessRequest: ...
 
 
 class OperationsRepository(Protocol):
@@ -88,7 +90,8 @@ class RestoreCheckRepository(OperationsRepository, Protocol):
 
 
 class RestoreCheckRowWithId(Protocol):
-    id: int
+    @property
+    def id(self) -> int: ...
 
 
 RESTORE_CHECK_CORE_TABLES: tuple[tuple[str, str], ...] = (
@@ -102,6 +105,7 @@ RESTORE_CHECK_CORE_TABLES: tuple[tuple[str, str], ...] = (
     ("threads", "threads"),
     ("posts", "posts"),
     ("sessions", "user_sessions"),
+    ("passkey credentials", "user_passkey_credentials"),
     ("command submissions", "command_submissions"),
     ("invitations", "community_invitations"),
     ("access requests", "community_access_requests"),

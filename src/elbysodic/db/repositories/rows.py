@@ -53,6 +53,7 @@ from elbysodic.domain.models import (
     ThreadParticipant,
     ThreadWatch,
     User,
+    UserPasskeyCredential,
     UserSession,
     WantedAd,
     WantedAdInterest,
@@ -118,6 +119,21 @@ def _user_session_from_row(row: sqlite3.Row) -> UserSession:
         last_seen_at=row["last_seen_at"],
         expires_at=row["expires_at"],
         revoked_at=row["revoked_at"],
+    )
+
+
+def _user_passkey_credential_from_row(row: sqlite3.Row) -> UserPasskeyCredential:
+    raw_transports = str(row["transports"] or "")
+    return UserPasskeyCredential(
+        id=row["id"],
+        user_id=row["user_id"],
+        credential_id=bytes(row["credential_id"]),
+        public_key=bytes(row["public_key"]),
+        sign_count=row["sign_count"],
+        transports=tuple(part for part in raw_transports.split(",") if part),
+        label=row["label"],
+        created_at=row["created_at"],
+        last_used_at=row["last_used_at"],
     )
 
 

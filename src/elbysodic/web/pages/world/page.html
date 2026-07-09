@@ -8,7 +8,7 @@
 {% def material_card(item) %}
 {% call surface(variant="elevated", cls="elbysodic-material-card-shell elbysodic-material-card-shell--" ~ item.material.material_type) %}
 <article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
-  <div class="chirpui-cluster chirpui-cluster--between">
+  <div class="chirpui-cluster elbysodic-cluster--between">
     <div>
       <h2>
         <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from dataclasses import dataclass
 from urllib.parse import quote
 
@@ -24,7 +25,7 @@ DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
 PUBLIC_PATHS = frozenset(
     {"/", "/health", "/login", "/logout", "/network", "/request-access", "/search"}
 )
-PUBLIC_PREFIXES = ("/elbysodic-static/", "/invite/")
+PUBLIC_PREFIXES = ("/elbysodic-static/", "/invite/", "/login/passkeys/")
 PUBLIC_TENANT_GET_PATHS = frozenset({"/", "/request-access", "/search", "/world", "/wanted"})
 PUBLIC_TENANT_GET_PREFIXES = ("/world/", "/wanted/")
 PRODUCTION_CONTENT_SECURITY_POLICY = (
@@ -54,6 +55,11 @@ class WebSecurityConfig:
 
 def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
     env = (os.environ.get(ELBYSODIC_ENV) or "development").strip().lower()
+    if env == "prod":
+        # Chirp's env-keyed "auto" knobs (session cookie Secure, secret-key
+        # gates) only recognise "production"/"staging"; normalise the shorthand
+        # so posture never silently downgrades.
+        env = "production"
     production = env in PRODUCTION_ENVS
     secret_key = (os.environ.get(ELBYSODIC_SECRET_KEY) or "").strip()
 
@@ -62,6 +68,12 @@ def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
             f"{ELBYSODIC_SECRET_KEY} must be at least {MIN_SECRET_KEY_LENGTH} characters "
             "when ELBYSODIC_ENV is production or staging."
         )
+    if not secret_key and not production:
+        # Sessions + CSRF run in every environment (secure_stack parity), and
+        # SessionMiddleware requires a signing key. Local development gets an
+        # ephemeral per-process key: dev sessions/CSRF tokens simply reset on
+        # restart, and nothing durable is ever signed with it.
+        secret_key = secrets.token_urlsafe(48)
 
     allowed_hosts = _parse_allowed_hosts(os.environ.get(ELBYSODIC_ALLOWED_HOSTS))
     if not allowed_hosts:
@@ -71,7 +83,7 @@ def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
         env=env,
         secret_key=secret_key,
         allowed_hosts=allowed_hosts,
-        strict_transport_security=_strict_transport_security(),
+        strict_transport_security=_strict_transport_security(production=production),
         secure_cookies=production and not debug,
     )
 
@@ -142,10 +154,12 @@ def _parse_allowed_hosts(raw: str | None) -> tuple[str, ...]:
     return tuple(host for host in hosts if host)
 
 
-def _strict_transport_security() -> str | None:
+def _strict_transport_security(*, production: bool = False) -> str | None:
     raw = os.environ.get(ELBYSODIC_HSTS)
     if raw is None:
-        return None
+        # Railway terminates TLS for every deployment, so HSTS is safe to pin
+        # by default in production; opt out with ELBYSODIC_HSTS=off.
+        return "max-age=31536000; includeSubDomains" if production else None
     normalized = raw.strip()
     if not normalized or normalized.lower() in {"0", "false", "no", "off"}:
         return None

@@ -96,6 +96,7 @@ from elbysodic.services.auth import (
     SESSION_TTL,
     LoginSession,
     create_login_session,
+    create_passkey_login_session,
     hash_password,
     session_for_session_token,
     session_token_hash,
@@ -926,6 +927,20 @@ class AppServices:
 
     def login(self, email: str, password: str) -> tuple[LoginSession, RequestIdentityContext]:
         session = create_login_session(self.repo, email, password)
+        return session, self._bind_login_session_identity(session)
+
+    def login_with_passkey(self, user_id: int) -> tuple[LoginSession, RequestIdentityContext]:
+        """Establish a login session for a passkey-verified user.
+
+        The caller has already completed the WebAuthn assertion; from here the
+        session and identity selection follow the exact same path as password
+        login.
+        """
+
+        session = create_passkey_login_session(self.repo, user_id)
+        return session, self._bind_login_session_identity(session)
+
+    def _bind_login_session_identity(self, session: LoginSession) -> RequestIdentityContext:
         try:
             current_identity = self._identity_context or self._identity_resolver.resolve()
             preferred_community_id = current_identity.community_id
@@ -940,7 +955,7 @@ class AppServices:
             community_id=identity.community_id,
             membership_id=identity.membership_id,
         )
-        return session, identity
+        return identity
 
     def logout(self, session_token: str) -> None:
         if session_token:
