@@ -6,14 +6,6 @@
   {% from "chirpui/timeline.html" import timeline %}
 {% end %}
 
-{% def counter(mark, value, label) %}
-<span class="elbysodic-counter" title="{{ value }} {{ label }}" aria-label="{{ value }} {{ label }}">
-  <span class="elbysodic-counter__mark" aria-hidden="true">{{ mark }}</span>
-  <span class="elbysodic-counter__value">{{ value }}</span>
-  <span class="elbysodic-counter__label chirpui-visually-hidden">{{ label }}</span>
-</span>
-{% end %}
-
 {% def page_section(title, summary="", heading_id=none, cls="") %}
 <section class="elbysodic-page-section{{ " " ~ cls if cls else "" }}" {% if heading_id %}aria-labelledby="{{ heading_id }}"{% end %}>
   <div class="elbysodic-page-section__header">

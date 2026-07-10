@@ -94,39 +94,6 @@ a.elbysodic-metric:focus-visible {
     letter-spacing: 0;
 }
 
-.elbysodic-counter {
-    align-items: center;
-    color: var(--chirpui-text-muted);
-    display: inline-flex;
-    font-size: var(--chirpui-font-sm);
-    gap: 0.28rem;
-    line-height: 1;
-    min-height: 1.6rem;
-}
-
-.elbysodic-counter__mark {
-    align-items: center;
-    background: color-mix(in srgb, var(--chirpui-accent) 10%, var(--chirpui-bg-subtle));
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
-    color: var(--chirpui-text-muted);
-    display: inline-flex;
-    font-size: var(--chirpui-font-xs);
-    font-weight: 900;
-    height: 1.25rem;
-    justify-content: center;
-    min-width: 1.25rem;
-}
-
-.elbysodic-counter__value {
-    color: var(--chirpui-text);
-    font-weight: 800;
-}
-
-.elbysodic-counter__label {
-    color: var(--chirpui-text-muted);
-}
-
 .elbysodic-signal {
     display: grid;
     gap: 0.15rem;
