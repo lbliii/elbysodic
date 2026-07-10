@@ -7516,7 +7516,8 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "elbysodic-continuity-timeline" in event.text
             assert "elbysodic-continuity-timeline__title-link" in event.text
             assert "Event opened" in event.text
-            assert "elbysodic-counter__label chirpui-visually-hidden" in event.text
+            assert "chirpui-inline-counter__label" in event.text
+            assert ">replies</span>" in event.text
 
             location = await client.get("/boards/frozen-midtown")
             assert location.status == 200

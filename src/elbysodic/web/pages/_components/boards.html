@@ -1,9 +1,10 @@
 {% imports %}
   {% from "chirpui/ascii_icon.html" import ascii_icon %}
   {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import counter, latest_line, meta_hint %}
+  {% from "_components/ui.html" import latest_line, meta_hint %}
 {% end %}
 
 {% def board_media_image(board, cls) %}
@@ -72,10 +73,10 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
 
 {% def board_stat_row(summary, viewer, include_children=True) %}
 <div class="elbysodic-board-stat-row">
-  {{ counter("T", summary.thread_count, "threads") }}
-  {{ counter("P", summary.post_count, "posts") }}
+  {{ inline_counter("T", summary.thread_count, "threads") }}
+  {{ inline_counter("P", summary.post_count, "posts") }}
   {% if include_children and summary.child_boards %}
-  {{ counter(">", summary.child_boards | length, "places") }}
+  {{ inline_counter(">", summary.child_boards | length, "places") }}
   {% end %}
   {% if summary.unread_thread_count %}
   {{ badge(summary.unread_thread_count ~ " new", variant="info") }}
