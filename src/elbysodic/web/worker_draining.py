@@ -84,6 +84,13 @@ def wrap_worker_draining(app: App) -> DrainingAwareApp:
     return DrainingAwareApp(app)
 
 
+def unwrap_chirp_app(app: App | DrainingAwareApp) -> App:
+    """Return the inner Chirp app when contract tooling needs its concrete type."""
+    if isinstance(app, DrainingAwareApp):
+        return app.chirp_app
+    return app
+
+
 async def emit_worker_draining(
     app: App | DrainingAwareApp,
     *,

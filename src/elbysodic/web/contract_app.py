@@ -9,5 +9,6 @@ from __future__ import annotations
 from chirp.app import App
 
 from elbysodic.web.app import create_app
+from elbysodic.web.worker_draining import unwrap_chirp_app
 
-app: App = create_app(debug=False, db_path=":memory:").chirp_app
+app: App = unwrap_chirp_app(create_app(debug=False, db_path=":memory:"))

@@ -9,10 +9,55 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 THEME_ENTRYPOINT = REPO_ROOT / "src/elbysodic/web/static/elbysodic-theme.css"
 THEME_DIR = REPO_ROOT / "src/elbysodic/web/static/elbysodic-theme"
+PAGES_DIR = REPO_ROOT / "src/elbysodic/web/pages"
 EMPTY_SELECTOR_FILES = {
     "50-page-compositions.css": "composition review queue",
     "90-legacy.css": "legacy ledger",
 }
+LEGACY_CHIRPUI_UTILITY_CLASSES = frozenset(
+    {
+        "chirpui-clamp-2",
+        "chirpui-clamp-3",
+        "chirpui-display",
+        "chirpui-display--xl",
+        "chirpui-focus-ring",
+        "chirpui-font-2xl",
+        "chirpui-font-base",
+        "chirpui-font-lg",
+        "chirpui-font-medium",
+        "chirpui-font-mono",
+        "chirpui-font-sm",
+        "chirpui-font-xl",
+        "chirpui-font-xs",
+        "chirpui-list-reset",
+        "chirpui-mb-md",
+        "chirpui-measure-lg",
+        "chirpui-measure-md",
+        "chirpui-measure-sm",
+        "chirpui-min-w-0",
+        "chirpui-mt-md",
+        "chirpui-mt-sm",
+        "chirpui-placeholder-inline",
+        "chirpui-prose-lg",
+        "chirpui-prose-sm",
+        "chirpui-scroll-x",
+        "chirpui-text-muted",
+        "chirpui-truncate",
+        "chirpui-ui-base",
+        "chirpui-ui-bold",
+        "chirpui-ui-label",
+        "chirpui-ui-lg",
+        "chirpui-ui-medium",
+        "chirpui-ui-meta",
+        "chirpui-ui-normal",
+        "chirpui-ui-semibold",
+        "chirpui-ui-sm",
+        "chirpui-ui-title",
+        "chirpui-ui-xl",
+        "chirpui-ui-xs",
+        "chirpui-visually-hidden",
+    }
+)
 EXTERNALLY_PROVIDED_PROPERTIES = {
     "--elbysodic-preview-accent",
     "--elbysodic-preview-bg",
@@ -25,6 +70,7 @@ _IMPORT_RE = re.compile(r'@import\s+url\("\./elbysodic-theme/([^"]+\.css)"\);')
 _SELECTOR_RE = re.compile(r"^(?:[.#]|[a-z][\w-]*(?:[.#:\[]|\s|,|>|\+|~))", re.IGNORECASE)
 _CUSTOM_PROPERTY_DEFINITION_RE = re.compile(r"(?<![\w-])(--[A-Za-z0-9_-]+)\s*:")
 _CUSTOM_PROPERTY_REFERENCE_RE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)(\s*,)?")
+_CHIRPUI_CLASS_RE = re.compile(r"\bchirpui-[a-z0-9-]+\b")
 
 
 def imported_theme_files(entrypoint: Path = THEME_ENTRYPOINT) -> list[str]:
@@ -83,10 +129,29 @@ def theme_custom_property_errors(
     ]
 
 
+def legacy_chirpui_utility_errors(pages_dir: Path = PAGES_DIR) -> list[str]:
+    errors: list[str] = []
+    for path in sorted(pages_dir.rglob("*.html")):
+        try:
+            display_path = path.relative_to(REPO_ROOT)
+        except ValueError:
+            display_path = path
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            legacy_classes = sorted(
+                set(_CHIRPUI_CLASS_RE.findall(line)) & LEGACY_CHIRPUI_UTILITY_CLASSES
+            )
+            errors.extend(
+                f"{display_path}:{line_number} uses legacy Chirp-UI utility {name}"
+                for name in legacy_classes
+            )
+    return errors
+
+
 def validate_theme_css(
     *,
     entrypoint: Path = THEME_ENTRYPOINT,
     theme_dir: Path = THEME_DIR,
+    pages_dir: Path = PAGES_DIR,
 ) -> list[str]:
     errors: list[str] = []
     imports = imported_theme_files(entrypoint)
@@ -122,6 +187,7 @@ def validate_theme_css(
             )
 
     errors.extend(theme_custom_property_errors(entrypoint=entrypoint, theme_dir=theme_dir))
+    errors.extend(legacy_chirpui_utility_errors(pages_dir))
 
     return errors
 
