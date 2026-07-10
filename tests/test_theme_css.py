@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts/check_theme_css.py"
@@ -42,3 +43,30 @@ def test_app_owned_accessibility_utilities_preserve_behavior() -> None:
         assert declaration in css
     assert ".elbysodic-text-muted" in css
     assert "color: var(--chirpui-text-muted);" in css
+
+
+def test_cluster_alignment_modifiers_have_owned_layout_rules() -> None:
+    theme_css = "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(check_theme_css.THEME_DIR.glob("*.css"))
+    )
+    assert re.search(
+        r"\.elbysodic-cluster--between\s*\{[^}]*justify-content:\s*space-between",
+        theme_css,
+        re.DOTALL,
+    )
+    assert re.search(
+        r"\.elbysodic-cluster--end\s*\{[^}]*justify-content:\s*flex-end",
+        theme_css,
+        re.DOTALL,
+    )
+
+    pages_root = Path(__file__).resolve().parents[1] / "src/elbysodic/web/pages"
+    modifiers = {
+        modifier
+        for path in pages_root.rglob("*.html")
+        for modifier in re.findall(
+            r"elbysodic-cluster--([a-z-]+)",
+            path.read_text(encoding="utf-8"),
+        )
+    }
+    assert modifiers <= {"between", "end"}

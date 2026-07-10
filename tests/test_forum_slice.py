@@ -9711,6 +9711,7 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
         assert len(ready_events) == 1
         event = ready_events[0]
         assert event.data == "connected"
+        assert event.event is not None
         assert "\r" not in event.event
         assert "\n" not in event.event
         assert "\x00" not in event.event
@@ -9782,7 +9783,9 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining() -> None:
         assert stream.status == 200
         event_names = [event.event for event in stream.events]
         assert "plotting-room-ready" in event_names
-        message_events = [event for event in stream.events if event.event == "plotting-room-message"]
+        message_events = [
+            event for event in stream.events if event.event == "plotting-room-message"
+        ]
         assert len(message_events) == 1
         assert "Queued before reload drain." in message_events[0].data
         close_events = [event for event in stream.events if event.event == "pounce.worker.draining"]
