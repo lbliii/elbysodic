@@ -144,3 +144,18 @@ def test_access_and_search_surfaces_keep_labelled_controls() -> None:
         text = (PAGES / template_path).read_text(encoding="utf-8")
         for snippet in required_snippets:
             assert snippet in text, f"{template_path} is missing {snippet!r}"
+
+
+def test_filter_navigation_uses_chirp_ui_components() -> None:
+    shared_ui = (PAGES / "_components/ui.html").read_text(encoding="utf-8")
+    board = (PAGES / "boards/{board_slug}/page.html").read_text(encoding="utf-8")
+    world_material = (PAGES / "world/{material_slug}/page.html").read_text(encoding="utf-8")
+    writer_queue = (PAGES / "my/threads/page.html").read_text(encoding="utf-8")
+
+    assert "def inline_nav(" not in shared_ui
+    assert "def inline_nav_link(" not in shared_ui
+    assert 'from "chirpui/filter_chips.html" import filter_group' in board
+    assert "def thread_filter_chip(option)" in board
+    assert 'hx-disinherit="hx-select hx-target hx-swap"' in board
+    assert 'from "chirpui/chip_group.html" import chip, chip_group' in world_material
+    assert 'from "chirpui/filter_chips.html" import filter_chip, filter_group' in writer_queue

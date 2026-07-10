@@ -45,30 +45,6 @@
 </div>
 {% end %}
 
-{% def inline_nav(label, cls="") %}
-<nav class="chirpui-saved-view-strip elbysodic-filter-bar{{ " " ~ cls if cls else "" }}" aria-label="{{ label }}">
-  {% slot %}
-</nav>
-{% end %}
-
-{% def inline_nav_link(label, href, active=false, hx_target=none, hx_select=none, hx_swap="innerHTML show:none", hx_push_url=false) %}
-<a class="chirpui-chip{{ " chirpui-chip--selected" if active else "" }} elbysodic-filter-link{{ " elbysodic-filter-link--active" if active else "" }}"
-   href="{{ href }}"
-   {% if active %}aria-current="page"{% end %}
-   {% if hx_target %}
-   hx-boost="false"
-   hx-get="{{ href }}"
-   hx-target="{{ hx_target }}"
-   hx-swap="{{ hx_swap }}"
-   hx-sync="closest nav:replace"
-   hx-disinherit="hx-select hx-target hx-swap"
-   {% if hx_select %} hx-select="{{ hx_select }}"{% end %}
-   {% if hx_push_url %} hx-push-url="true"{% end %}
-   {% end %}>
-  {{ label }}
-</a>
-{% end %}
-
 {% def meta_hint(hint, position="top", cls="") %}
 {% set pos = position if position in ("top", "bottom", "left", "right") else "top" %}
 {% set pos_class = "chirpui-tooltip--bottom" if pos == "bottom" else ("chirpui-tooltip--left" if pos == "left" else ("chirpui-tooltip--right" if pos == "right" else "chirpui-tooltip--top")) %}
