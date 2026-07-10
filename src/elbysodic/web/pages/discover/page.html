@@ -1,9 +1,9 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_filter_link, facet_pills %}
-  {% from "_components/ui.html" import counter %}
 {% end %}
 
 {% block page_root %}
@@ -144,7 +144,7 @@
             <a class="chirpui-link" href="/characters/{{ result.author.slug }}">{{ result.author.name }}</a>
           </p>
         </div>
-        {{ counter("R", result.reply_count, "replies") }}
+        {{ inline_counter("R", result.reply_count, "replies") }}
       </div>
       {% if result.thread.summary %}
       <p class="elbysodic-copy-summary">{{ result.thread.summary }}</p>

@@ -32,3 +32,12 @@
     border-color: var(--chirpui-border);
 }
 
+@layer app.overrides {
+    .chirpui-cluster.elbysodic-cluster--between {
+        justify-content: space-between;
+    }
+
+    .chirpui-cluster.elbysodic-cluster--end {
+        justify-content: flex-end;
+    }
+}

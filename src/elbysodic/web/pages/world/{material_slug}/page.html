@@ -1,11 +1,12 @@
 {% imports %}
   {% from "chirpui/chip_group.html" import chip, chip_group %}
   {% from "chirpui/detail_header.html" import detail_header %}
+  {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_signal %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import cast_faces, continuity_timeline, counter, scene_state_badges, studio_facts %}
+  {% from "_components/ui.html" import cast_faces, continuity_timeline, scene_state_badges, studio_facts %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -25,7 +26,7 @@
   </div>
   {{ scene_state_badges(item.thread) }}
   <div class="elbysodic-material-scene-card__footer">
-    {{ counter("R", item.reply_count, "replies") }}
+    {{ inline_counter("R", item.reply_count, "replies") }}
     {{ cast_faces(item.participants) }}
   </div>
 </article>
