@@ -21,7 +21,7 @@ A realm ready for scenes, casting, and writer movement.
 {% call tooltip(label, position="left", cls="elbysodic-network-card__tooltip") %}
   <a class="elbysodic-network-card__icon-action" href="{{ href }}" aria-label="{{ label }}">
     <span aria-hidden="true">{{ icon | icon }}</span>
-    <span class="chirpui-visually-hidden">{{ label }}</span>
+    <span class="elbysodic-visually-hidden">{{ label }}</span>
   </a>
 {% end %}
 {% end %}
@@ -38,7 +38,7 @@ A realm ready for scenes, casting, and writer movement.
          style="--elbysodic-network-accent: {{ program.theme_preview.accent }}; --elbysodic-network-surface: {{ program.theme_preview.surface }}; --elbysodic-network-text: {{ program.theme_preview.text }}; --elbysodic-network-display-font: {{ program.theme_preview.display_font }};"
          {% if preview %}data-elbysodic-discovery-preview-card{% end %}>
   <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
-    <span class="chirpui-visually-hidden">Preview {{ program.community.name }}</span>
+    <span class="elbysodic-visually-hidden">Preview {{ program.community.name }}</span>
   </a>
   <a class="elbysodic-network-card__poster" href="{{ program.entry_href }}">
     {% if program.community.world_hero_image_url %}
