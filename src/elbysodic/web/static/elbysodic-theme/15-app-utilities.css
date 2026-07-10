@@ -1,0 +1,21 @@
+/* Small, app-owned utilities with stable semantic jobs.
+ *
+ * Keep these independent of Chirp-UI's compatibility utility classes so
+ * framework upgrades cannot remove accessibility or hierarchy behavior.
+ */
+
+.elbysodic-visually-hidden {
+    border: 0;
+    clip: rect(0, 0, 0, 0);
+    height: 1px;
+    margin: -1px;
+    overflow: clip;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.elbysodic-text-muted {
+    color: var(--chirpui-text-muted);
+}

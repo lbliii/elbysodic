@@ -700,21 +700,21 @@
     color: var(--elbysodic-on-media-muted);
 }
 
-.elbysodic-board-stage .elbysodic-counter {
+.elbysodic-board-stage .chirpui-inline-counter {
     color: var(--elbysodic-on-media-muted);
 }
 
-.elbysodic-board-stage .elbysodic-counter__mark {
+.elbysodic-board-stage .chirpui-inline-counter__mark {
     background: var(--elbysodic-on-media-chip-bg);
     border-color: var(--elbysodic-on-media-chip-border);
     color: var(--elbysodic-on-media-muted);
 }
 
-.elbysodic-board-stage .elbysodic-counter__value {
+.elbysodic-board-stage .chirpui-inline-counter__value {
     color: var(--elbysodic-on-media-text);
 }
 
-.elbysodic-board-stage .elbysodic-counter__label {
+.elbysodic-board-stage .chirpui-inline-counter__label {
     color: var(--elbysodic-on-media-muted);
 }
 

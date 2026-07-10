@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from chirp.app import App
 from chirp.config import AppConfig
@@ -41,7 +41,10 @@ from elbysodic.web.state import (
 )
 from elbysodic.web.tenant import TenantPrefixMiddleware
 from elbysodic.web.timing import RequestTimingMiddleware
-from elbysodic.web.worker_draining import DrainingAwareApp, reset_worker_draining, wrap_worker_draining
+from elbysodic.web.worker_draining import (
+    reset_worker_draining,
+    wrap_worker_draining,
+)
 
 PAGES_DIR = Path(__file__).parent / "pages"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -55,7 +58,7 @@ def create_app(
     db_path: str | Path | None = None,
     dev_tools: bool | None = None,
     seed_demo: bool = False,
-) -> DrainingAwareApp:
+) -> App:
     security = resolve_web_security_config(debug=debug)
     config = AppConfig(
         template_dir=PAGES_DIR,
@@ -182,7 +185,9 @@ def create_app(
     )
     app.mount_pages(str(PAGES_DIR))
 
-    return wrap_worker_draining(app)
+    # Pounce needs the drain-aware ASGI proxy at runtime, while callers use
+    # the complete Chirp App API delegated by that proxy.
+    return cast(App, wrap_worker_draining(app))
 
 
 def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool) -> bool:

@@ -250,7 +250,7 @@
 
 {% def topbar_search(scope_label, query="", compact_label="") %}
 <form class="elbysodic-topbar-search" action="/search" method="get" role="search" hx-boost="false">
-  <label class="chirpui-visually-hidden" for="elbysodic-topbar-search-input">Search {{ scope_label }}</label>
+  <label class="elbysodic-visually-hidden" for="elbysodic-topbar-search-input">Search {{ scope_label }}</label>
   <span class="elbysodic-topbar-search__scope">
     <span class="elbysodic-topbar-search__scope-full">{{ scope_label }}</span>
     <span class="elbysodic-topbar-search__scope-short">{{ compact_label or scope_label }}</span>

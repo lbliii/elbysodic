@@ -158,3 +158,25 @@ def test_metadata_hints_use_the_chirp_ui_tooltip() -> None:
     assert all(
         "meta_hint" not in path.read_text(encoding="utf-8") for path in PAGES.rglob("*.html")
     )
+
+
+def test_compact_counts_use_the_chirp_ui_inline_counter() -> None:
+    migrated_templates = (
+        "_components/boards.html",
+        "_components/thread_summary.html",
+        "discover/page.html",
+        "world/{material_slug}/page.html",
+    )
+
+    for template_path in migrated_templates:
+        text = (PAGES / template_path).read_text(encoding="utf-8")
+        assert 'from "chirpui/inline_counter.html" import inline_counter' in text
+        assert "inline_counter(" in text
+        assert 'from "_components/ui.html" import counter' not in text
+        assert "{{ counter(" not in text
+
+    shared_ui = (PAGES / "_components/ui.html").read_text(encoding="utf-8")
+    assert "{% def counter(" not in shared_ui
+
+    theme = (REPO_ROOT / "src/elbysodic/web/static/elbysodic-theme").glob("*.css")
+    assert all(".elbysodic-counter" not in path.read_text(encoding="utf-8") for path in theme)
