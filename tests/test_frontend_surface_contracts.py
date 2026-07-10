@@ -146,6 +146,20 @@ def test_access_and_search_surfaces_keep_labelled_controls() -> None:
             assert snippet in text, f"{template_path} is missing {snippet!r}"
 
 
+def test_metadata_hints_use_the_chirp_ui_tooltip() -> None:
+    shared_ui = (PAGES / "_components/ui.html").read_text(encoding="utf-8")
+    boards = (PAGES / "_components/boards.html").read_text(encoding="utf-8")
+
+    for text in (shared_ui, boards):
+        assert 'from "chirpui/tooltip.html" import tooltip' in text
+        assert "{% call tooltip(" in text
+
+    assert "{% def meta_hint(" not in shared_ui
+    assert all(
+        "meta_hint" not in path.read_text(encoding="utf-8") for path in PAGES.rglob("*.html")
+    )
+
+
 def test_compact_counts_use_the_chirp_ui_inline_counter() -> None:
     migrated_templates = (
         "_components/boards.html",

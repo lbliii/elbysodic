@@ -4,6 +4,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/description_list.html" import description_item, description_list %}
   {% from "chirpui/timeline.html" import timeline %}
+  {% from "chirpui/tooltip.html" import tooltip %}
 {% end %}
 
 {% def page_section(title, summary="", heading_id=none, cls="") %}
@@ -61,23 +62,12 @@
 </a>
 {% end %}
 
-{% def meta_hint(hint, position="top", cls="") %}
-{% set pos = position if position in ("top", "bottom", "left", "right") else "top" %}
-{% set pos_class = "chirpui-tooltip--bottom" if pos == "bottom" else ("chirpui-tooltip--left" if pos == "left" else ("chirpui-tooltip--right" if pos == "right" else "chirpui-tooltip--top")) %}
-<span class="chirpui-tooltip {{ pos_class }} elbysodic-meta-hint{{ " " ~ cls if cls else "" }}"
-      data-chirpui-tooltip
-      data-tooltip="{{ hint | e }}">
-  {% slot %}
-  <span class="chirpui-tooltip__bubble" role="tooltip">{{ hint }}</span>
-</span>
-{% end %}
-
 {% def latest_line(label, href, title, author=None, author_href=None, writer=None, writer_href=None, updated=None) %}
 <div class="elbysodic-latest">
   <span class="elbysodic-latest__label">{{ label }}</span>
   {% set detail = ((("by " ~ author) if author else "") ~ ((" · writer " ~ writer) if writer else "") ~ ((" · " ~ updated) if updated else "")) %}
   {% if detail %}
-  {% call meta_hint("Latest details: " ~ title ~ " · " ~ detail, position="top", cls="elbysodic-latest__tooltip") %}
+  {% call tooltip("Latest details: " ~ title ~ " · " ~ detail, position="top", cls="elbysodic-latest__tooltip") %}
     <a class="elbysodic-latest__title" href="{{ href }}">{{ title }}</a>
   {% end %}
   {% else %}

@@ -3,8 +3,9 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/surface.html" import surface %}
+  {% from "chirpui/tooltip.html" import tooltip %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import latest_line, meta_hint %}
+  {% from "_components/ui.html" import latest_line %}
 {% end %}
 
 {% def board_media_image(board, cls) %}
@@ -22,10 +23,10 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
 {% def board_poster(summary, viewer=None, compact=False, tile=False, title_level="h2") %}
 <a class="elbysodic-board-poster {{ board_media_classes(summary.board) }} {{ "elbysodic-board-poster--compact" if compact else "" }}{{ " elbysodic-board-poster--tile" if tile else "" }}"
    href="{{ summary.href }}"
-   aria-label="{{ summary.board.name }}">
+   aria-label="{{ summary.board.name }}{{ " · Relevant to active face" if viewer and summary.is_relevant_to_current_face and viewer.current_character else "" }}">
   {{ board_media_image(summary.board, "elbysodic-board-poster__media") }}
   {% if viewer and summary.is_relevant_to_current_face and viewer.current_character %}
-  {% call meta_hint("Relevant to the active face: this location shares one of their world lenses.", position="left", cls="elbysodic-board-poster__face-signal-hint") %}
+  {% call tooltip("Relevant to the active face: this location shares one of their world lenses.", position="left", cls="elbysodic-board-poster__face-signal-hint") %}
     <span class="elbysodic-board-poster__face-signal"
           aria-label="Relevant to the active face">
       {{ ascii_icon("user" | icon, size="sm", cls="elbysodic-board-poster__face-icon") }}

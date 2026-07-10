@@ -3187,6 +3187,11 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "written by" in board.text
             assert "Next unread" in board.text
             assert "Magneto" in board.text
+            assert (
+                'class="chirpui-tooltip chirpui-tooltip--top '
+                'elbysodic-latest__tooltip"' in board.text
+            )
+            assert 'data-tooltip="Latest details:' in board.text
 
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread.status == 200
@@ -6396,6 +6401,15 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "elbysodic-location-compass" in academy.text
             assert "What is playable here" in academy.text
             assert "Relevant to the active face" in academy.text
+            assert 'aria-label="Med Bay · Relevant to active face"' in academy.text
+            assert (
+                'class="chirpui-tooltip chirpui-tooltip--left '
+                'elbysodic-board-poster__face-signal-hint"' in academy.text
+            )
+            assert (
+                'data-tooltip="Relevant to the active face: this location '
+                'shares one of their world lenses."' in academy.text
+            )
             assert "Plot pressure" in academy.text
             assert "No scene spotlight yet" in academy.text
             assert "Total" in academy.text
