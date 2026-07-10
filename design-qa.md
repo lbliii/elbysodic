@@ -1,6 +1,6 @@
 # Design QA: Editorial Hierarchy And Progressive Disclosure
 
-- Source visual truth: `/Users/llane/.codex/generated_images/019f4cc1-eb59-7883-a554-aab4995e77f9/exec-be2ff2ff-68c5-4fdb-94fd-bf542859b485.png`
+- Source visual truth: `design/references/editorial-hierarchy-2026-07-10.png`
 - Implementation routes: community home, Writer Desk, Studio home, Studio
   Content, Studio Operations, and a representative location
 - Intended comparison viewport: 1440 × 1200 desktop and 390 × 844 mobile

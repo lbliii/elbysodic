@@ -36,6 +36,8 @@ membership, character, staff, privacy, route, schema, or Blueprint contracts.
 ## Evidence
 
 - Fresh staging screenshots captured 2026-07-10 at 1440x1100 and 390x844.
+- Approved visual target:
+  `design/references/editorial-hierarchy-2026-07-10.png`.
 - Simulated task and persona synthesis:
   `research/uat/simulated/2026-07-10-hierarchy-progressive-disclosure-simulated-uat.md`.
 - Product doctrine: `docs/product/surface-quality-bar.md`,
