@@ -410,11 +410,14 @@ def _open_application_items(applications: ApplicationsDesk) -> list[ApplicationC
 
 
 def _actionable_roster_activity(queue: MyThreadsDashboard) -> list[CharacterThreadActivity]:
-    return [
+    activity = [
         activity
         for activity in queue.roster_activity
         if activity.needs_reply or activity.waiting_on_others
     ]
+    # A single face is already named by the command and active work lane. Keep
+    # the face index for real roster choice instead of repeating one obligation.
+    return activity if len(activity) > 1 else []
 
 
 def _thread_preview_items(

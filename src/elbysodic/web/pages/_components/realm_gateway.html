@@ -1,5 +1,4 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
   {% from "_components/director_controls.html" import director_action_menu %}
 {% end %}
 
@@ -32,14 +31,6 @@
   {{ gateway_section_header(kicker, title, summary, heading_id) }}
   {% slot %}
 </section>
-{% end %}
-
-{% def gateway_social_lane_card(lane) %}
-<article class="elbysodic-realm-lane-card elbysodic-realm-lane-card--{{ lane.tone }}">
-  <span class="elbysodic-realm-lane-card__mark" aria-hidden="true"></span>
-  <h3>{{ lane.title }}</h3>
-  <p>{{ lane.summary }}</p>
-</article>
 {% end %}
 
 {% def gateway_hero(gateway) %}
@@ -227,25 +218,6 @@
 {% end %}
 {% end %}
 
-{% def gateway_entry_paths(gateway) %}
-{% if gateway.entry_paths %}
-{% call gateway_section("Join", "Find your place here", heading_id="realm-entry-title") %}
-  <div class="elbysodic-realm-entry-list">
-    {% for path in gateway.entry_paths %}
-    <a class="elbysodic-realm-entry-row"
-       href="{{ path.href }}"
-       {{ 'hx-boost="false"' if path.href.endswith("/request-access") else "" }}>
-      <span>
-        <strong>{{ path.title }}</strong>
-        <small>{{ path.summary }}</small>
-      </span>
-    </a>
-    {% end %}
-  </div>
-{% end %}
-{% end %}
-{% end %}
-
 {% def gateway_lore(gateway) %}
 {% set guidebook_previews = gateway | get("guidebook_previews", ()) %}
 {% if guidebook_previews %}
@@ -273,42 +245,6 @@
       <strong>{{ item.material.title }}</strong>
       <span>{{ item.rendered_summary }}</span>
     </a>
-    {% end %}
-  </div>
-{% end %}
-{% end %}
-{% end %}
-
-{% def gateway_cast(gateway) %}
-{% if gateway.cast_members %}
-{% call gateway_section("Cast", "Featured faces", heading_id="realm-cast-title") %}
-  <div class="elbysodic-realm-cast-grid">
-    {% for member in gateway.cast_members %}
-    <a class="elbysodic-realm-cast-card" href="{{ member.href }}">
-      <span class="elbysodic-realm-cast-card__avatar">
-        {% if member.character.avatar_url %}
-        <img src="{{ member.character.avatar_url }}" alt="">
-        {% else %}
-        {{ member.monogram }}
-        {% end %}
-      </span>
-      <span class="elbysodic-realm-cast-card__copy">
-        <strong>{{ member.character.name }}</strong>
-        <small>{{ member.summary }}</small>
-      </span>
-    </a>
-    {% end %}
-  </div>
-{% end %}
-{% end %}
-{% end %}
-
-{% def gateway_social_lanes(gateway) %}
-{% if gateway.social_lanes %}
-{% call gateway_section("Claims", "Social map", heading_id="realm-social-title", modifier="elbysodic-realm-gateway-section--social-map") %}
-  <div class="elbysodic-realm-lane-grid">
-    {% for lane in gateway.social_lanes %}
-    {{ gateway_social_lane_card(lane) }}
     {% end %}
   </div>
 {% end %}
@@ -366,12 +302,5 @@
     {{ gateway_lore(gateway) }}
     {{ gateway_wanted(gateway) }}
   </div>
-  {% if not viewer %}
-  <div class="elbysodic-realm-gateway__visitor-field">
-    {{ gateway_entry_paths(gateway) }}
-    {{ gateway_cast(gateway) }}
-  </div>
-  {{ gateway_social_lanes(gateway) }}
-  {% end %}
 </div>
 {% end %}

@@ -395,7 +395,7 @@ a.elbysodic-metric:focus-visible {
     cursor: pointer;
     display: flex;
     gap: 0.45rem;
-    min-block-size: 2.45rem;
+    min-block-size: 2.75rem;
     padding: 0.55rem 0.8rem;
     user-select: none;
 }
@@ -428,6 +428,13 @@ a.elbysodic-metric:focus-visible {
 
 .elbysodic-director-menu[open] summary {
     border-color: color-mix(in srgb, var(--chirpui-accent) 52%, var(--chirpui-border));
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .elbysodic-director-menu summary:hover {
+        background: color-mix(in srgb, var(--chirpui-accent) 8%, var(--chirpui-surface));
+        border-color: color-mix(in srgb, var(--chirpui-accent) 42%, var(--chirpui-border));
+    }
 }
 
 .elbysodic-director-menu__panel {

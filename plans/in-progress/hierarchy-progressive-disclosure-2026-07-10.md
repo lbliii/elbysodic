@@ -151,8 +151,11 @@ not additional spectacle.
 - Completed: representative location story field and removal of the duplicate
   director panel.
 - Completed: focused rendered, privacy, and route checks.
-- Pending: browser screenshots, design comparison, keyboard/pointer/reduced
-  motion QA, full regression gates, and final evidence rollup.
+- Completed: browser screenshots, source comparison, keyboard/fine-pointer/
+  touch-emulated/reduced-motion QA, and final evidence rollup in
+  `design-qa.md` and `design/qa/editorial-hierarchy-2026-07-10/`.
+- Pending: repository-wide regression gates tracked by #264 and observed
+  real-user validation.
 
 ## Implementation Slices
 

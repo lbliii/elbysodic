@@ -2494,44 +2494,18 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Choose a setting" in content
                 assert "Guidebook" in content
                 assert "Know the world" in content
-                assert "Claims" in content
-                assert "Social map" in content
-                assert 'aria-labelledby="realm-social-title"' in response.text
-                assert 'id="realm-social-title"' in response.text
+                assert "Find your place here" not in content
+                assert "Featured faces" not in content
+                assert "Social map" not in content
+                assert 'aria-labelledby="realm-social-title"' not in response.text
+                assert 'id="realm-social-title"' not in response.text
                 if community_slug == "harbor-society":
-                    assert "Cast" in content
-                    assert "Featured faces" in content
-                    assert "Maris Vale" in content
-                    assert "August Reed" in content
                     assert "Town Power Map" in content
-                    assert "Family" in content
-                    assert "Club Role" in content
-                    assert "Influence Lane" in content
-                    assert "Business" in content
-                    assert (
-                        "Old names, newcomer ties, and marriages that still carry debt." in content
-                    )
-                    assert (
-                        "Members, guests, staff, donors, and applicants with something to prove."
-                        in content
-                    )
-                    assert (
-                        "Old families, civic office, press, donors, workers, and club staff all move power differently."
-                        in content
-                    )
-                    assert (
-                        "Workplaces, civic offices, service counters, and favors traded in public."
-                        in content
-                    )
                     assert "He can print the scandal if his source survives the room." in content
                     assert (
                         "White jackets, old money, and a membership vote that turns manners into weapons."
                         in content
                     )
-                    assert "elbysodic-realm-lane-card--kinship" in response.text
-                    assert "elbysodic-realm-lane-card--access" in response.text
-                    assert "elbysodic-realm-lane-card--faction" in response.text
-                    assert "elbysodic-realm-lane-card--work" in response.text
                     assert "Family Claim" not in content
                     assert "Faction Claim" not in content
                     assert "Old family, newcomer tie, or married-in pressure." not in content
