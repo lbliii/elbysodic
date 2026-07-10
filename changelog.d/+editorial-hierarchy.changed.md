@@ -1,0 +1,1 @@
+Community home, Writer Desk, Studio, Studio Content, Operations, and location pages now use a calmer editorial hierarchy with fewer equal-weight panels, one prominent continuation or command, and disclosed director controls.

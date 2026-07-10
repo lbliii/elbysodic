@@ -1,6 +1,6 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "_components/director_controls.html" import director_context_panel %}
+  {% from "_components/director_controls.html" import director_action_menu %}
 {% end %}
 
 {% def gateway_action(action, variant="primary") %}
@@ -48,41 +48,11 @@
     <p class="elbysodic-section-kicker">{{ gateway.story_frame.eyebrow }}</p>
     <h1 id="realm-gateway-title">{{ gateway.hero.title }}</h1>
     <p class="elbysodic-copy-lead">{{ gateway.hero.lead }}</p>
-    <p class="elbysodic-realm-gateway-fit">{{ gateway.story_frame.fit_summary }}</p>
-    <p class="elbysodic-realm-gateway-writing">{{ gateway.story_frame.writing_expectation }}</p>
-    <dl class="elbysodic-realm-gateway-story-frame" aria-label="Realm story frame">
-      <div>
-        <dt>Audience</dt>
-        <dd>
-          <strong>{{ gateway.story_frame.audience_label }}</strong>
-          <span>{{ gateway.story_frame.audience_summary }}</span>
-        </dd>
-      </div>
-      <div>
-        <dt>Now</dt>
-        <dd>{{ gateway.story_frame.featured_signal }}</dd>
-      </div>
-      <div>
-        <dt>Places</dt>
-        <dd>{{ gateway.story_frame.places_signal }}</dd>
-      </div>
-      <div>
-        <dt>Cast</dt>
-        <dd>{{ gateway.story_frame.cast_signal }}</dd>
-      </div>
-      <div>
-        <dt>Wanted</dt>
-        <dd>{{ gateway.story_frame.wanted_pressure }}</dd>
-      </div>
-      <div>
-        <dt>Next</dt>
-        <dd>{{ gateway.story_frame.next_action.label }}</dd>
-      </div>
-    </dl>
-    <p class="elbysodic-realm-gateway-first-face">
-      <strong>Start here</strong>
-      <span>{{ gateway.hero.first_face_path }}</span>
-    </p>
+    <div class="elbysodic-realm-gateway-hero__context">
+      <p>{{ gateway.story_frame.fit_summary }}</p>
+      <p>{{ gateway.story_frame.writing_expectation }}</p>
+      <p class="elbysodic-realm-gateway-first-face">{{ gateway.hero.first_face_path }}</p>
+    </div>
     <div class="chirpui-cluster elbysodic-realm-gateway-hero__actions">
       {{ gateway_action(gateway.hero.primary_action) }}
       {{ gateway_action(gateway.hero.secondary_action, "secondary") }}
@@ -103,6 +73,24 @@
     </figcaption>
   </figure>
 </section>
+<dl class="elbysodic-realm-gateway-story-frame" aria-label="Realm at a glance">
+  <div>
+    <dt>Happening now</dt>
+    <dd>{{ gateway.story_frame.featured_signal }}</dd>
+  </div>
+  <div>
+    <dt>Places</dt>
+    <dd>{{ gateway.story_frame.places_signal }}</dd>
+  </div>
+  <div>
+    <dt>Cast</dt>
+    <dd>{{ gateway.story_frame.cast_signal }}</dd>
+  </div>
+  <div>
+    <dt>Wanted</dt>
+    <dd>{{ gateway.story_frame.wanted_pressure }}</dd>
+  </div>
+</dl>
 {% end %}
 
 {% def gateway_premise_stage(gateway) %}
@@ -116,17 +104,17 @@
   <aside class="elbysodic-realm-stage__pressure" aria-label="Story pressure">
     <dl class="elbysodic-realm-stage__beats">
     {% if premise_evolution %}
-    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
-      <dt>Already moving</dt>
+    <div class="elbysodic-realm-stage__beat">
+      <dt>What has changed</dt>
       <dd>{{ premise_evolution.consequences }}</dd>
     </div>
-    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
-      <dt>Ways in</dt>
+    <div class="elbysodic-realm-stage__beat">
+      <dt>Where the story is opening</dt>
       <dd>{{ premise_evolution.next_openings }}</dd>
     </div>
     {% else %}
-    <div class="elbysodic-realm-stage__beat elbysodic-realm-stage__beat-card">
-      <dt>Ways in</dt>
+    <div class="elbysodic-realm-stage__beat">
+      <dt>Where the story is opening</dt>
       <dd>{{ gateway.premise_stage.playable_pressure }}</dd>
     </div>
     {% end %}
@@ -160,7 +148,7 @@
 {% if gateway.continuation %}
 <section class="elbysodic-realm-continuation" aria-label="Continue writing">
   <div>
-    <p class="elbysodic-section-kicker">Continue writing</p>
+    <p class="elbysodic-section-kicker">Pick up where you left off</p>
     <h2>{{ gateway.continuation.title }}</h2>
     <p>{{ gateway.continuation.summary }}</p>
     {% if gateway.continuation.audience == "applicant" %}
@@ -200,7 +188,7 @@
 
 {% def gateway_scene_hubs(gateway) %}
 {% if gateway.scene_hubs %}
-{% call gateway_section("Places", "In play", heading_id="realm-scene-hubs-title") %}
+{% call gateway_section("Places", "Choose a setting", heading_id="realm-scene-hubs-title") %}
   <div class="elbysodic-realm-hub-grid">
     {% for hub in gateway.scene_hubs %}
     <a class="elbysodic-realm-hub-card elbysodic-realm-hub-card--{{ hub.emphasis }}" href="{{ hub.href }}">
@@ -223,7 +211,7 @@
 {% def gateway_scene_previews(gateway) %}
 {% set scene_previews = gateway | get("scene_previews", ()) %}
 {% if scene_previews %}
-{% call gateway_section("Scenes", "In motion", heading_id="realm-scenes-title") %}
+{% call gateway_section("Scenes", "Underway now", heading_id="realm-scenes-title") %}
   <div class="elbysodic-realm-scene-list">
     {% for scene in scene_previews %}
     <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
@@ -241,7 +229,7 @@
 
 {% def gateway_entry_paths(gateway) %}
 {% if gateway.entry_paths %}
-{% call gateway_section("Entry", "Choose your way in", heading_id="realm-entry-title") %}
+{% call gateway_section("Join", "Find your place here", heading_id="realm-entry-title") %}
   <div class="elbysodic-realm-entry-list">
     {% for path in gateway.entry_paths %}
     <a class="elbysodic-realm-entry-row"
@@ -261,7 +249,7 @@
 {% def gateway_lore(gateway) %}
 {% set guidebook_previews = gateway | get("guidebook_previews", ()) %}
 {% if guidebook_previews %}
-{% call gateway_section("Guidebook", "Before you enter", heading_id="realm-guide-title") %}
+{% call gateway_section("Guidebook", "Know the world", heading_id="realm-guide-title") %}
   <div class="elbysodic-material-grid">
     {% for item in guidebook_previews %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.material.slug }}">
@@ -272,7 +260,7 @@
   </div>
 {% end %}
 {% elif gateway.guidebook.featured or gateway.guidebook.events %}
-{% call gateway_section("Guidebook", "Before you enter", heading_id="realm-guide-title") %}
+{% call gateway_section("Guidebook", "Know the world", heading_id="realm-guide-title") %}
   <div class="elbysodic-material-grid">
     {% for item in gateway.guidebook.featured %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
@@ -329,7 +317,7 @@
 
 {% def gateway_wanted(gateway) %}
 {% if gateway.program.open_wanted_count %}
-{% call gateway_section("Wanted", "Calls to answer", heading_id="realm-wanted-title") %}
+{% call gateway_section("Wanted", "Characters and connections wanted", heading_id="realm-wanted-title") %}
   {% if gateway.wanted_previews %}
   <div class="elbysodic-realm-wanted-grid">
     {% for wanted in gateway.wanted_previews %}
@@ -357,22 +345,32 @@
 <div class="elbysodic-realm-gateway">
   {{ gateway_hero(gateway) }}
   {% if can_manage_home %}
-  {% call director_context_panel("Director controls", "Realm home controls", "This surface owns the first visitor scan. Use Studio Structure when you need the cross-realm audit.") %}
-    <a class="chirpui-btn chirpui-btn--primary" href="/studio/structure#gateway-curation">Manage home spotlight</a>
-    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/discovery">Edit discovery profile</a>
-    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/appearance">Edit appearance</a>
+  <div class="elbysodic-realm-gateway__director-tools">
+  {% call director_action_menu("Edit realm home", "Directors only") %}
+    <a href="/studio/structure#gateway-curation">Manage home spotlight</a>
+    <a href="/studio/discovery">Edit discovery profile</a>
+    <a href="/studio/appearance">Edit appearance</a>
   {% end %}
+  </div>
   {% end %}
   {{ gateway_account_status(gateway, account_visitor) }}
   {{ gateway_continuation(gateway) }}
-  {{ gateway_premise_stage(gateway) }}
-  {{ gateway_scene_hubs(gateway) }}
-  {{ gateway_scene_previews(gateway) }}
-  {{ gateway_lore(gateway) }}
-  {{ gateway_wanted(gateway) }}
+  <div class="elbysodic-realm-gateway__story-field">
+    {{ gateway_premise_stage(gateway) }}
+    <div class="elbysodic-realm-gateway__activity-field">
+      {{ gateway_scene_previews(gateway) }}
+      {{ gateway_scene_hubs(gateway) }}
+    </div>
+  </div>
+  <div class="elbysodic-realm-gateway__story-shelves">
+    {{ gateway_lore(gateway) }}
+    {{ gateway_wanted(gateway) }}
+  </div>
   {% if not viewer %}
-  {{ gateway_entry_paths(gateway) }}
-  {{ gateway_cast(gateway) }}
+  <div class="elbysodic-realm-gateway__visitor-field">
+    {{ gateway_entry_paths(gateway) }}
+    {{ gateway_cast(gateway) }}
+  </div>
   {{ gateway_social_lanes(gateway) }}
   {% end %}
 </div>

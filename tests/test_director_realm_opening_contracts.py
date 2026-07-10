@@ -116,7 +116,7 @@ def test_member_and_public_visitors_do_not_see_director_launch_body(monkeypatch)
             assert forbidden not in public_realm.text
 
         assert public_realm.status == 200
-        assert "Ways in" in public_realm.text
+        assert "Where the story is opening" in public_realm.text
         assert "Public preview" in public_realm.text
         assert "Launch readiness" not in public_realm.text
         assert public_launch.status == 302

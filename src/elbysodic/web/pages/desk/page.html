@@ -10,15 +10,15 @@
 {% block page_content %}
 {% call container(max_width="72rem") %}
 {% call stack(gap="lg") %}
+<div class="elbysodic-editorial-page elbysodic-desk-page">
   <section class="elbysodic-desk-hero elbysodic-desk-hero--v2">
     <div class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-kicker">Writer Desk</p>
       <h1>Writer Desk</h1>
-      <p class="elbysodic-copy-lead">Replies, reading, plotting, inbox, and face work.</p>
+      <p class="elbysodic-copy-lead">Return to a scene, catch up on reading, or move a plot forward.</p>
     </div>
   </section>
 
-  {% call page_pulse("Today", "What needs you", desk.current_focus_label, "desk-queue-heading", "elbysodic-page-pulse--desk") %}
+  {% call page_pulse("Up next", "Pick up where you left off", desk.current_focus_label, "desk-queue-heading", "elbysodic-page-pulse--desk") %}
     {% if desk.has_attention_counts %}
     <div class="elbysodic-desk-queue__metrics" aria-label="Desk queue totals">
       {% if desk.needs_reply_count %}
@@ -51,7 +51,7 @@
   {% end %}
 
   {% if desk.actionable_roster_activity %}
-  {% call page_section("Face lanes", "Narrow the queue to the cleanest writing lane.") %}
+  {% call page_section("By face", "See the scenes waiting on each member of your roster.") %}
     <div class="elbysodic-desk-face-lanes">
       {% for activity in desk.actionable_roster_activity %}
       <a class="elbysodic-desk-face-lane" href="/my/threads?character={{ activity.character.slug }}">
@@ -67,7 +67,7 @@
   {% end %}
 
   {% if desk.lanes %}
-  {% call page_section("Work lanes", "Active writing, reading, plotting, applications, and inbox work.") %}
+  {% call page_section("Everything else", "Reading, plotting, applications, and inbox work that is still moving.") %}
     <div class="elbysodic-desk-grid elbysodic-desk-grid--lanes">
       {% for lane in desk.lanes %}
       {{ lane_preview(lane) }}
@@ -75,6 +75,7 @@
     </div>
   {% end %}
   {% end %}
+</div>
 {% end %}
 {% end %}
 {% end %}

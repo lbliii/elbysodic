@@ -2,7 +2,7 @@
   {% from "chirpui/breadcrumbs.html" import breadcrumbs %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
-  {% from "_components/director_controls.html" import director_action_menu, director_context_panel %}
+  {% from "_components/director_controls.html" import director_action_menu %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
   {% from "_components/ui.html" import empty_policy_block, event_bridge, inline_nav, inline_nav_link %}
@@ -84,32 +84,25 @@
     </div>
   </section>
 
-  {% if can_manage_board %}
-  {% call director_context_panel("Director controls", "Manage this " ~ ("place" if is_location_board else "board"), "Edit identity, parent/sub-forum placement, sidebar visibility, and media from this object. Studio Structure is the audit view when many boards need review.", "elbysodic-director-context--compact") %}
-    <a class="chirpui-btn chirpui-btn--primary" href="/studio/boards/{{ board.slug }}">Edit {{ board.name }}</a>
-    <a class="chirpui-btn chirpui-btn--secondary" href="/studio/structure#board-taxonomy">Open board map audit</a>
-  {% end %}
-  {% end %}
-
   {% if is_location_board %}
   <section class="elbysodic-location-compass" aria-label="{{ board.name }} throughline">
     <div class="elbysodic-location-compass__copy">
-      <p class="elbysodic-kicker">At this location</p>
-      <h2>What is playable here</h2>
+      <p class="elbysodic-kicker">About this place</p>
+      <h2>Life at {{ board.name }}</h2>
       <p class="elbysodic-location-compass__description">{{ board.description }}</p>
     </div>
     <div class="elbysodic-location-compass__signals">
       {% if current_event %}
-      {{ event_bridge(current_event, "Current event in this location") }}
+      {{ event_bridge(current_event, "Happening here") }}
       {% else %}
       <aside class="elbysodic-location-compass__quiet" aria-label="Continuity state">
-        <span>Continuity</span>
+        <span>Right now</span>
         <strong>Open for scenes</strong>
-        <em>Use the local scene list and doors below to choose where the pressure lands.</em>
+        <em>Choose a room below or open a scene directly in this place.</em>
       </aside>
       {% end %}
-      <aside class="elbysodic-location-compass__activity" aria-label="{{ board.name }} plot pressure">
-        <span>Plot pressure</span>
+      <aside class="elbysodic-location-compass__activity" aria-label="{{ board.name }} scene activity">
+        <span>Scenes here</span>
         {% if direct_thread_count %}
         <strong>{{ direct_thread_count }} direct {{ "scene" if direct_thread_count == 1 else "scenes" }} open</strong>
         {% if board_summary.thread_count != direct_thread_count %}
@@ -118,8 +111,8 @@
         <em>Direct scenes are already listed below.</em>
         {% end %}
         {% else %}
-        <strong>No scene spotlight yet</strong>
-        <em>Event boosts, location pins, or first direct scenes can surface here.</em>
+        <strong>No direct scenes yet</strong>
+        <em>The first scene opened here will appear below.</em>
         {% end %}
         <dl class="elbysodic-location-compass__facts">
           <div>

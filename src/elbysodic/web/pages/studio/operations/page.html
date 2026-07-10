@@ -6,8 +6,6 @@
 {% end %}
 
 {% def operations_card(card) %}
-{% set surface_tone = "warning" if card.variant in ("warning", "attention") else ("success" if card.variant == "success" else "neutral") %}
-{% call surface(variant="elevated", appearance="tonal", tone=surface_tone) %}
 <article class="elbysodic-operations-card elbysodic-operations-card--{{ card.variant }}">
   <header class="elbysodic-operations-card__header">
     <div>
@@ -27,7 +25,6 @@
   <a class="chirpui-btn chirpui-btn--secondary" href="{{ card.href }}">{{ card.cta }}</a>
 </article>
 {% end %}
-{% end %}
 
 {% block page_root %}
 <div id="page-root">
@@ -35,17 +32,12 @@
 {% block page_content %}
 {% call container(max_width="76rem") %}
 {% call stack(gap="lg") %}
-  {% call section_header("Director desk") %}
-  Daily decisions for {{ viewer.community.name }}.
-  {% end %}
-
-  {% call surface(variant="elevated") %}
-  <section class="elbysodic-operations-hero" aria-labelledby="operations-heading">
+  <section class="elbysodic-operations-hero elbysodic-editorial-hero" aria-labelledby="operations-heading">
     <div>
-      <p class="elbysodic-section-kicker">Daily desk</p>
-      <h1 id="operations-heading">What needs a director?</h1>
+      <p class="elbysodic-section-kicker">Director desk</p>
+      <h1 id="operations-heading">Operations</h1>
       <p class="elbysodic-copy-section">
-        Applications, claims, reserves, hooks, navigation, and unread signals in one calm scan.
+        Applications, claims, reserves, hooks, and health signals that need a decision today.
       </p>
     </div>
     <div class="elbysodic-operations-hero__badges">
@@ -54,7 +46,6 @@
       {{ badge(operations.blocked_applications | length ~ " blocked apps", variant="warning") }}
     </div>
   </section>
-  {% end %}
 
   {% if operations.lanes %}
   <nav class="elbysodic-operations-lanes" aria-label="Operations attention lanes">
@@ -90,7 +81,12 @@
   {{ empty_policy_block("No director operations need attention right now.", "Applications, claim conflicts, reserves, wanted movement, ready-for-scene handoffs, drafts, and health warnings will appear here when they need movement.", "Operations clear") }}
   {% end %}
 
-  {% call surface(variant="elevated") %}
+  <details class="elbysodic-operations-diagnostics">
+    <summary>
+      <span>Technical checks</span>
+      <small>Queue contracts, runtime, and persistence</small>
+    </summary>
+  <div class="elbysodic-operations-diagnostics__body">
   <section class="elbysodic-operations-panel" aria-labelledby="operations-parity-heading">
     <p class="elbysodic-section-kicker">Parity check</p>
     <h2 id="operations-parity-heading">Queue contracts</h2>
@@ -104,10 +100,8 @@
       {% end %}
     </ul>
   </section>
-  {% end %}
 
   {% if operations.inspection %}
-  {% call surface(variant="elevated") %}
   <section class="elbysodic-operations-panel" aria-labelledby="hosted-inspection-heading">
     <p class="elbysodic-section-kicker">Live check</p>
     <h2 id="hosted-inspection-heading">Runtime and persistence</h2>
@@ -179,7 +173,8 @@
     </dl>
   </section>
   {% end %}
-  {% end %}
+  </div>
+  </details>
 
   {% if operations.ready_applications or operations.blocked_applications %}
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">

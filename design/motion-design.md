@@ -51,6 +51,42 @@ Use animation only when it does one of these jobs:
 
 If motion does not serve one of these jobs, it should not ship.
 
+## Fluidity Means Continuity, Not Kinetics
+
+Karl Koch's [10 Principles for Fluid
+UI](https://karlkoch.me/writing/10-principles-for-fluid-ui) is useful here as
+an interaction lens, not a visual mandate. Elbysodic should feel fluid because
+state changes preserve context and accept the writer's latest intention—not
+because every surface moves.
+
+Accept:
+
+- Latest intent wins. Opening, closing, reversing, or choosing a new target
+  should not wait for an earlier transition to finish.
+- Preserve the object of attention when moving from an overview into a scene,
+  location, queue item, or other detail.
+- Adapt to input method. Hover may enrich a fine-pointer path, but keyboard and
+  touch must expose the same essential context and action.
+- Move bounded layout changes only when the movement explains what changed and
+  does not shift prose under the reader.
+- Sequence attention sparingly around one consequential change, never across a
+  wall of cards or rows.
+- Treat reduced motion as a complete presentation with the same state,
+  affordances, and focus behavior.
+
+Reject as defaults:
+
+- spring, bounce, elastic resistance, or overshoot
+- draggable cards, velocity gestures, elastic overscroll, or gesture-only
+  navigation for ordinary board-running work
+- page-wide route choreography, parallax, or staggered content walls
+- new animation dependencies where CSS, native browser APIs, and existing
+  Chirp or Alpine behavior are sufficient
+
+Native View Transitions are candidates for a later, bounded continuity proof.
+They are not a prerequisite for hierarchy work and must preserve server-rendered
+navigation, semantic identity, focus, history, scroll behavior, and privacy.
+
 ## Surface Budgets
 
 | Surface | Motion Budget | Allowed Motion |
@@ -298,12 +334,17 @@ For any motion implementation:
 
 - Test keyboard focus before, during, and after the transition.
 - Test touch behavior where hover is unavailable.
+- Test fine-pointer hover and coarse-pointer behavior independently.
+- Reverse the interaction or choose a new target before the transition settles;
+  the latest intent must win without an intermediate false state.
 - Test `prefers-reduced-motion: reduce`.
 - Verify no layout shift around prose, composer, primary actions, or controls.
 - Verify motion does not obscure private/staff/warning/error state.
 - Verify long labels, many badges, and mobile wrapping do not collide with the
   animated element.
 - Verify the final state is visible without animation.
+- For shared-object or route transitions, verify semantic identity, focus,
+  history, and scroll restoration independently of the animation.
 
 ## Open Decisions
 
