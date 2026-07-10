@@ -49,11 +49,11 @@ def apply_railway_pounce_defaults() -> None:
         return original_config_factory(**_railway_server_config_kwargs(kwargs))
 
     def run_production_server(*args: Any, **kwargs: Any) -> None:
-        pounce_config.ServerConfig = patched_config_factory  # type: ignore[assignment,misc]
+        vars(pounce_config)["ServerConfig"] = patched_config_factory
         try:
             original_run(*args, **kwargs)
         finally:
-            pounce_config.ServerConfig = original_config_factory
+            vars(pounce_config)["ServerConfig"] = original_config_factory
 
-    chirp_production.run_production_server = run_production_server
-    chirp_production._elbysodic_railway_patch = True
+    vars(chirp_production)["run_production_server"] = run_production_server
+    vars(chirp_production)["_elbysodic_railway_patch"] = True

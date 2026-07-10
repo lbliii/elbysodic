@@ -45,7 +45,7 @@
               {{ csrf_field() }}
               <input type="hidden" name="intent" value="rename_passkey">
               <input type="hidden" name="passkey_id" value="{{ passkey.id }}">
-              <label class="chirpui-visually-hidden" for="passkey-label-{{ passkey.id }}">New name for {{ passkey.label or "this passkey" }}</label>
+              <label class="elbysodic-visually-hidden" for="passkey-label-{{ passkey.id }}">New name for {{ passkey.label or "this passkey" }}</label>
               <input id="passkey-label-{{ passkey.id }}"
                      class="chirpui-field__input"
                      name="label"

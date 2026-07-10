@@ -1,11 +1,28 @@
 {% imports %}
   {% from "chirpui/breadcrumbs.html" import breadcrumbs %}
+  {% from "chirpui/filter_chips.html" import filter_group %}
   {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
   {% from "_components/boards.html" import board_media_classes, board_media_image, board_stat_row, subboard_card %}
   {% from "_components/director_controls.html" import director_action_menu %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/thread_summary.html" import thread_card %}
-  {% from "_components/ui.html" import empty_policy_block, event_bridge, inline_nav, inline_nav_link %}
+  {% from "_components/ui.html" import empty_policy_block, event_bridge %}
+{% end %}
+
+{# Chirp-UI's filter_chip does not yet expose hx-disinherit or hx-sync. Keep
+   this board-region request local so shell selection cannot leak into it. #}
+{% def thread_filter_chip(option) %}
+<a class="chirpui-badge {{ "chirpui-badge--primary" if option.is_active else "chirpui-badge--muted" }} chirpui-filter-chip{{ " chirpui-filter-chip--active" if option.is_active else "" }}"
+   href="{{ option.href }}"
+   {% if option.is_active %}aria-current="page"{% end %}
+   hx-boost="false"
+   hx-get="{{ option.href }}"
+   hx-target="#board-thread-region"
+   hx-swap="outerHTML show:none"
+   hx-sync="closest nav:replace"
+   hx-disinherit="hx-select hx-target hx-swap"
+   hx-select="#board-thread-region"
+   hx-push-url="true"><span class="chirpui-badge__text">{{ option.label }}</span></a>
 {% end %}
 
 {% def next_unread_link(item) %}
@@ -199,11 +216,13 @@
       <p class="elbysodic-copy-section">Direct threads in this board.</p>
       {% end %}
     </header>
-    {% call inline_nav("Thread filters", "elbysodic-scene-filter-bar") %}
+    <nav aria-label="Thread filters">
+    {% call filter_group("Thread status", cls="elbysodic-scene-filter-bar") %}
       {% for option in filter_options %}
-      {{ inline_nav_link(option.label, option.href, option.is_active, "#board-thread-region", "#board-thread-region", "outerHTML show:none", true) }}
+      {{ thread_filter_chip(option) }}
       {% end %}
     {% end %}
+    </nav>
 
     <div class="chirpui-stack chirpui-stack--md elbysodic-thread-list">
       {% if threads %}

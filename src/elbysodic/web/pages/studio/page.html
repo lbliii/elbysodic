@@ -302,6 +302,7 @@
       </p>
     </div>
     <aside class="elbysodic-director-hero__signals" aria-label="Studio pulse">
+      <h2 class="elbysodic-visually-hidden">Studio pulse</h2>
       {{ studio_signal("Materials", studio.material_count) }}
       {{ studio_signal("Locations", studio.location_count) }}
       {{ studio_signal("Open hooks", studio.open_wanted_count) }}
@@ -1066,7 +1067,7 @@
         <li>
           <div class="chirpui-stack chirpui-stack--xs">
             <a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a>
-            <div class="chirpui-cluster elbysodic-cluster--start">
+            <div class="chirpui-cluster">
               {{ badge(item.type_label, variant="muted") }}
               <form method="post">
         {{ csrf_field() }}

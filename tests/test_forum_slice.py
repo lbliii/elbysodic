@@ -3150,7 +3150,8 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert 'hx-sync="closest nav:replace"' in board.text
             assert 'hx-swap="outerHTML show:none"' in board.text
             assert "chirpui-breadcrumbs" in board.text
-            assert "chirpui-saved-view-strip" in board.text
+            assert "chirpui-filter-group" in board.text
+            assert "chirpui-filter-chip" in board.text
             assert "chirpui-facet-chip" in board.text
             assert "First unread" in board.text
             assert "#post-" in board.text
@@ -3159,6 +3160,11 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "written by" in board.text
             assert "Next unread" in board.text
             assert "Magneto" in board.text
+            assert (
+                'class="chirpui-tooltip chirpui-tooltip--top '
+                'elbysodic-latest__tooltip"' in board.text
+            )
+            assert 'data-tooltip="Latest details:' in board.text
 
             thread = await client.get("/boards/plotting/threads/open-thread-roster")
             assert thread.status == 200
@@ -6378,6 +6384,15 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "Relevant to the active face" in academy.text
             assert "Scenes here" in academy.text
             assert "No direct scenes yet" in academy.text
+            assert 'aria-label="Med Bay · Relevant to active face"' in academy.text
+            assert (
+                'class="chirpui-tooltip chirpui-tooltip--left '
+                'elbysodic-board-poster__face-signal-hint"' in academy.text
+            )
+            assert (
+                'data-tooltip="Relevant to the active face: this location '
+                'shares one of their world lenses."' in academy.text
+            )
             assert "Total" in academy.text
             assert "The first scene opened here will appear below." in academy.text
             assert "elbysodic-director-context" not in academy.text
@@ -7472,7 +7487,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert event.status == 200
             assert "elbysodic-material-hero--event" in event.text
             assert "chirpui-detail-header" in event.text
-            assert "chirpui-saved-view-strip" in event.text
+            assert "chirpui-chip-group" in event.text
             assert "elbysodic-material-detail-shell--event" in event.text
             assert "Iceman is infected with B-24" in event.text
             assert "Evil Lab" in event.text
@@ -7494,7 +7509,8 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "elbysodic-continuity-timeline" in event.text
             assert "elbysodic-continuity-timeline__title-link" in event.text
             assert "Event opened" in event.text
-            assert "elbysodic-counter__label chirpui-visually-hidden" in event.text
+            assert "chirpui-inline-counter__label" in event.text
+            assert ">replies</span>" in event.text
 
             location = await client.get("/boards/frozen-midtown")
             assert location.status == 200
@@ -9690,6 +9706,7 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
         assert len(ready_events) == 1
         event = ready_events[0]
         assert event.data == "connected"
+        assert event.event is not None
         assert "\r" not in event.event
         assert "\n" not in event.event
         assert "\x00" not in event.event

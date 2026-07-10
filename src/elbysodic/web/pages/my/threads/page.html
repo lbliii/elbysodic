@@ -1,4 +1,5 @@
 {% imports %}
+  {% from "chirpui/filter_chips.html" import filter_chip, filter_group %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/thread_summary.html" import compact_thread_card, thread_card %}
@@ -119,17 +120,13 @@
       <small>Switch to one face when you want a tighter writing lane.</small>
       {% end %}
     </summary>
-    <nav class="elbysodic-filter-bar" aria-label="Queue lens">
-      <a class="chirpui-btn {{ "chirpui-btn--primary" if not dashboard.selected_character else "chirpui-btn--secondary" }}"
-         href="/my/threads?character=all">
-        Whole roster
-      </a>
+    <nav aria-label="Queue lens">
+    {% call filter_group("Face lens") %}
+      {{ filter_chip("Whole roster", href="/my/threads?character=all", active=not dashboard.selected_character) }}
       {% for activity in dashboard.roster_activity %}
-      <a class="chirpui-btn {{ "chirpui-btn--primary" if dashboard.selected_character and dashboard.selected_character.id == activity.character.id else "chirpui-btn--secondary" }}"
-         href="/my/threads?character={{ activity.character.slug }}">
-        {{ activity.character.name }} · {{ activity.needs_reply | length }}
-      </a>
+      {{ filter_chip(activity.character.name ~ " · " ~ (activity.needs_reply | length), href="/my/threads?character=" ~ activity.character.slug, active=dashboard.selected_character and dashboard.selected_character.id == activity.character.id) }}
       {% end %}
+    {% end %}
     </nav>
   </details>
   {% end %}

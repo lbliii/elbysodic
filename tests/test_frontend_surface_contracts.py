@@ -57,7 +57,7 @@ SURFACE_COMPONENT_EXPECTATIONS = {
     ],
     "page.html": [
         'from "_components/realm_gateway.html" import realm_gateway_home',
-        'from "_components/director_controls.html" import director_context_panel',
+        'from "_components/director_controls.html" import director_action_menu',
         "realm_gateway_home(",
     ],
     "studio/page.html": [
@@ -144,3 +144,54 @@ def test_access_and_search_surfaces_keep_labelled_controls() -> None:
         text = (PAGES / template_path).read_text(encoding="utf-8")
         for snippet in required_snippets:
             assert snippet in text, f"{template_path} is missing {snippet!r}"
+
+
+def test_filter_navigation_uses_chirp_ui_components() -> None:
+    shared_ui = (PAGES / "_components/ui.html").read_text(encoding="utf-8")
+    board = (PAGES / "boards/{board_slug}/page.html").read_text(encoding="utf-8")
+    world_material = (PAGES / "world/{material_slug}/page.html").read_text(encoding="utf-8")
+    writer_queue = (PAGES / "my/threads/page.html").read_text(encoding="utf-8")
+
+    assert "def inline_nav(" not in shared_ui
+    assert "def inline_nav_link(" not in shared_ui
+    assert 'from "chirpui/filter_chips.html" import filter_group' in board
+    assert "def thread_filter_chip(option)" in board
+    assert 'hx-disinherit="hx-select hx-target hx-swap"' in board
+    assert 'from "chirpui/chip_group.html" import chip, chip_group' in world_material
+    assert 'from "chirpui/filter_chips.html" import filter_chip, filter_group' in writer_queue
+
+
+def test_metadata_hints_use_the_chirp_ui_tooltip() -> None:
+    shared_ui = (PAGES / "_components/ui.html").read_text(encoding="utf-8")
+    boards = (PAGES / "_components/boards.html").read_text(encoding="utf-8")
+
+    for text in (shared_ui, boards):
+        assert 'from "chirpui/tooltip.html" import tooltip' in text
+        assert "{% call tooltip(" in text
+
+    assert "{% def meta_hint(" not in shared_ui
+    assert all(
+        "meta_hint" not in path.read_text(encoding="utf-8") for path in PAGES.rglob("*.html")
+    )
+
+
+def test_compact_counts_use_the_chirp_ui_inline_counter() -> None:
+    migrated_templates = (
+        "_components/boards.html",
+        "_components/thread_summary.html",
+        "discover/page.html",
+        "world/{material_slug}/page.html",
+    )
+
+    for template_path in migrated_templates:
+        text = (PAGES / template_path).read_text(encoding="utf-8")
+        assert 'from "chirpui/inline_counter.html" import inline_counter' in text
+        assert "inline_counter(" in text
+        assert 'from "_components/ui.html" import counter' not in text
+        assert "{{ counter(" not in text
+
+    shared_ui = (PAGES / "_components/ui.html").read_text(encoding="utf-8")
+    assert "{% def counter(" not in shared_ui
+
+    theme = (REPO_ROOT / "src/elbysodic/web/static/elbysodic-theme").glob("*.css")
+    assert all(".elbysodic-counter" not in path.read_text(encoding="utf-8") for path in theme)
