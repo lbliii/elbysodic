@@ -439,6 +439,8 @@ def test_create_app_closes_internally_created_services_on_shutdown(monkeypatch) 
     calls: dict[str, object] = {}
 
     class FakeAppServices(_FakeServices):
+        _database = None
+
         def with_request_auth(self, *, production: bool) -> FakeAppServices:
             calls["production"] = production
             return self

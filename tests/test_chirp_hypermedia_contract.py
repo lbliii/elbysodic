@@ -20,7 +20,9 @@ def test_contract_app_exports_chirp_app() -> None:
 
 
 def test_committed_hypermedia_baseline_matches_current() -> None:
-    proc = subprocess.run(
+    # The executable, module, arguments, and working directory are all fixed
+    # repository-owned values; no untrusted input reaches this subprocess.
+    proc = subprocess.run(  # noqa: S603
         [
             sys.executable,
             "-m",
