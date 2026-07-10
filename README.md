@@ -196,7 +196,9 @@ make ci
 Useful commands:
 
 - `make test` runs the test suite.
-- `make test-cov` runs tests with coverage; CI enforces an 80% floor via pytest-cov.
+- `make test-cov` runs parallel-safe tests with pytest-xdist, then appends the
+  three serial process tests to one coverage result; CI enforces an 80% floor
+  via pytest-cov and reports the slowest tests.
 - `make lint` runs Ruff.
 - `make format` formats the project.
 - `make format-check` checks Ruff formatting.

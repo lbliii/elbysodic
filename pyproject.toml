@@ -175,7 +175,9 @@ test-fast = { cmd = "pytest tests/ -x -q --timeout=10", help = "Fast feedback lo
 test-parallel-safe = { cmd = "pytest -n auto -m 'not process' -q --tb=short", help = "Run parallel-safe tests with pytest-xdist" }
 test-process = { cmd = "pytest -m process -q --tb=short", help = "Run process-level tests serially" }
 test-parallel = { sequence = ["test-parallel-safe", "test-process"], help = "Run the suite with parallel-safe tests first, then process tests serially" }
-test-cov = { cmd = "pytest tests/ --cov=elbysodic --cov-report=term-missing", help = "Run tests with coverage" }
+test-cov-parallel-safe = { cmd = "pytest -n auto -m 'not process' --cov=elbysodic --cov-report= --cov-fail-under=0 --durations=20", help = "Run parallel-safe tests and collect coverage" }
+test-cov-process = { cmd = "pytest -m process --cov=elbysodic --cov-append --cov-report=term-missing --durations=20", help = "Append serial process-test coverage and enforce the floor" }
+test-cov = { sequence = ["test-cov-parallel-safe", "test-cov-process"], help = "Run split tests with combined coverage" }
 browser-qa = { cmd = "python scripts/browser_qa.py", help = "Run Playwright visual smoke QA against the local app" }
 browser-qa-deep = { cmd = "python scripts/browser_qa.py --profile deep", help = "Run expanded Playwright visual QA against seeded routes" }
 rapid-click-qa = { cmd = "python scripts/rapid_click_qa.py --iterations 1", help = "Run rapid identity/navigation protocol smoke QA" }
