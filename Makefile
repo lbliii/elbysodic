@@ -8,7 +8,7 @@ CHIRP_APP ?= elbysodic.web.contract_app:app
 CONTRACT_DIFF_BASE ?= origin/main
 CONTRACT_BASELINE ?= tests/fixtures/chirp_hypermedia_baseline.json
 
-.PHONY: all help setup install test test-cov lint lint-fix format format-check ty app-check kida-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
+.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
 
 all: help
 
@@ -21,7 +21,7 @@ help:
 	@echo "  make setup           - Create virtual environment with Python $(PYTHON_VERSION)"
 	@echo "  make install         - Install dependencies in development mode"
 	@echo "  make test            - Run the test suite"
-	@echo "  make test-cov        - Run tests with coverage report"
+	@echo "  make test-cov        - Run parallel-safe and process tests with combined coverage"
 	@echo "  make lint            - Run ruff linter"
 	@echo "  make lint-fix        - Run ruff linter with auto-fix"
 	@echo "  make format          - Run ruff formatter"
@@ -54,8 +54,13 @@ install:
 test:
 	uv run pytest -q --tb=short
 
-test-cov:
-	uv run pytest --cov=elbysodic --cov-report=term-missing
+test-cov: test-cov-parallel-safe test-cov-process
+
+test-cov-parallel-safe:
+	uv run pytest -n auto -m "not process" --cov=elbysodic --cov-report= --cov-fail-under=0 --durations=20
+
+test-cov-process:
+	uv run pytest -m process --cov=elbysodic --cov-append --cov-report=term-missing --durations=20
 
 lint:
 	@echo "Running ruff linter..."

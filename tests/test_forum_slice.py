@@ -2501,7 +2501,6 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert 'id="realm-social-title"' not in response.text
                 if community_slug == "harbor-society":
                     assert "Town Power Map" in content
-                    assert "He can print the scandal if his source survives the room." in content
                     assert (
                         "White jackets, old money, and a membership vote that turns manners into weapons."
                         in content

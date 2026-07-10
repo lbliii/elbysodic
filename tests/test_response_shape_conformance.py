@@ -96,7 +96,7 @@ def test_member_response_shape_matrix_preserves_the_negotiated_shell() -> None:
 
     async def run() -> None:
         app = create_app(debug=False, services=create_services(path=":memory:"))
-        async with TestClient(app.chirp_app) as client:
+        async with TestClient(app) as client:
             await _assert_response_matrix(client, _MEMBER_ROUTES)
 
     asyncio.run(run())
@@ -113,7 +113,7 @@ def test_staff_response_shape_matrix_preserves_the_director_boundary() -> None:
                 DemoSeed(staff.community, staff.user, staff.membership, staff.character),
             ),
         )
-        async with TestClient(app.chirp_app) as client:
+        async with TestClient(app) as client:
             await _assert_response_matrix(client, _STAFF_ROUTES)
 
     asyncio.run(run())
