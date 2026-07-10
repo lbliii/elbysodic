@@ -1,11 +1,12 @@
 {% imports %}
+  {% from "chirpui/chip_group.html" import chip, chip_group %}
   {% from "chirpui/detail_header.html" import detail_header %}
   {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/boards.html" import board_signal %}
   {% from "_components/facets.html" import facet_pills %}
-  {% from "_components/ui.html" import cast_faces, continuity_timeline, inline_nav, inline_nav_link, scene_state_badges, studio_facts %}
+  {% from "_components/ui.html" import cast_faces, continuity_timeline, scene_state_badges, studio_facts %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
 
@@ -61,27 +62,29 @@
     {% end %}
   {% end %}
 
-  {% call inline_nav("Guide sections", cls="elbysodic-section-jump") %}
+  <nav aria-label="Guide sections">
+  {% call chip_group(cls="elbysodic-section-jump") %}
     {% if material.event_actions %}
-    {{ inline_nav_link("Write now", "#event-actions") }}
+    {{ chip("Write now", href="#event-actions") }}
     {% end %}
-    {{ inline_nav_link("Canon", "#canon") }}
+    {{ chip("Canon", href="#canon") }}
     {% if material.continuity_beats %}
-    {{ inline_nav_link("Progression", "#event-progression") }}
+    {{ chip("Progression", href="#event-progression") }}
     {% end %}
     {% if material.related_wanted_ads %}
-    {{ inline_nav_link("Wanted", "#wanted-hooks") }}
+    {{ chip("Wanted", href="#wanted-hooks") }}
     {% end %}
     {% if material.related_scenes %}
-    {{ inline_nav_link("Scenes", "#active-scenes") }}
+    {{ chip("Scenes", href="#active-scenes") }}
     {% end %}
     {% if material.related_locations %}
-    {{ inline_nav_link("Locations", "#locations") }}
+    {{ chip("Locations", href="#locations") }}
     {% end %}
     {% if material.related_materials %}
-    {{ inline_nav_link("Related", "#related-materials") }}
+    {{ chip("Related", href="#related-materials") }}
     {% end %}
   {% end %}
+  </nav>
 
   {% if material.event_actions %}
   <section id="event-actions" class="elbysodic-event-actions" aria-labelledby="event-actions-title">

@@ -3178,7 +3178,8 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert 'hx-sync="closest nav:replace"' in board.text
             assert 'hx-swap="outerHTML show:none"' in board.text
             assert "chirpui-breadcrumbs" in board.text
-            assert "chirpui-saved-view-strip" in board.text
+            assert "chirpui-filter-group" in board.text
+            assert "chirpui-filter-chip" in board.text
             assert "chirpui-facet-chip" in board.text
             assert "First unread" in board.text
             assert "#post-" in board.text
@@ -7508,7 +7509,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert event.status == 200
             assert "elbysodic-material-hero--event" in event.text
             assert "chirpui-detail-header" in event.text
-            assert "chirpui-saved-view-strip" in event.text
+            assert "chirpui-chip-group" in event.text
             assert "elbysodic-material-detail-shell--event" in event.text
             assert "Iceman is infected with B-24" in event.text
             assert "Evil Lab" in event.text

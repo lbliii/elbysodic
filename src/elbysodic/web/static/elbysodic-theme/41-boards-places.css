@@ -809,13 +809,6 @@
     vertical-align: baseline;
 }
 
-.elbysodic-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: -0.35rem;
-}
-
 .elbysodic-section-jump {
     border-block: 1px solid var(--chirpui-border-subtle);
     margin-top: 0;
@@ -840,35 +833,6 @@
 #nearby,
 #board-thread-region {
     scroll-margin-top: 5.5rem;
-}
-
-.elbysodic-filter-link {
-    border-bottom: 2px solid transparent;
-    color: var(--chirpui-text-muted);
-    font-size: var(--chirpui-font-sm);
-    font-weight: 800;
-    padding: 0.15rem 0;
-    text-decoration: none;
-}
-
-.elbysodic-filter-link + .elbysodic-filter-link {
-    margin-left: 0.55rem;
-}
-
-.elbysodic-filter-link.chirpui-chip {
-    border-bottom-width: 1px;
-    padding: var(--chirpui-spacing-xs) var(--chirpui-spacing-sm);
-}
-
-.elbysodic-filter-link.chirpui-chip + .elbysodic-filter-link.chirpui-chip {
-    margin-left: 0;
-}
-
-.elbysodic-filter-link:hover,
-.elbysodic-filter-link:focus-visible,
-.elbysodic-filter-link--active {
-    border-bottom-color: color-mix(in srgb, var(--chirpui-accent) 72%, transparent);
-    color: var(--chirpui-text);
 }
 
 .elbysodic-scene-filter-bar {
