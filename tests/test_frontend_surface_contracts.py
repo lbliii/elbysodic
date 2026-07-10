@@ -57,7 +57,7 @@ SURFACE_COMPONENT_EXPECTATIONS = {
     ],
     "page.html": [
         'from "_components/realm_gateway.html" import realm_gateway_home',
-        'from "_components/director_controls.html" import director_context_panel',
+        'from "_components/director_controls.html" import director_action_menu',
         "realm_gateway_home(",
     ],
     "studio/page.html": [

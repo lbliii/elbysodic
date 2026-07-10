@@ -71,6 +71,14 @@ Simplification is not minimalism for its own sake. It is the discipline of
 letting the primary PBP object stay foregrounded while supporting context,
 counts, controls, and director tools recede until they are useful.
 
+The approved composition pattern is an open editorial field with one contained
+continuation or command. Apply it across page templates: identity and story use
+type, media, whitespace, and alignment; repeated work uses rows; story-object
+cards remain for meaningful comparison; staff or director depth opens through
+one capability-gated disclosure. See `design/composition-bible.md` for the
+Editorial Continuity Contract and `design/motion-design.md` for its interaction
+behavior.
+
 ### Hub Page Contract
 
 A hub page is not an index of every adjacent route. It earns its place only

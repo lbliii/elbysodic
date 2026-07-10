@@ -2,7 +2,7 @@
 
 Status: living design doctrine
 Owner: Product design, web, docs, and surface-contract stewardship
-Last updated: 2026-05-18
+Last updated: 2026-07-10
 
 This guide answers: what should an Elbysodic screen feel like, and how should
 it be arranged?
@@ -73,6 +73,29 @@ Choose the lightest structure that gives the user confidence.
 If every section becomes a card, nothing is important. If every datum becomes a
 badge, nothing is readable. If every action becomes a CTA, the product becomes
 a dashboard.
+
+## Editorial Continuity Contract
+
+The default Elbysodic composition is an open editorial field with one clearly
+contained continuation or command. This is the approved direction for new
+surfaces and for refactoring pages that feel like rows of equal blocks.
+
+- Let the realm, place, face, scene, wanted hook, or current work carry the
+  largest type and strongest media without a surrounding card.
+- Use asymmetry, whitespace, image placement, and light rules to separate jobs
+  before introducing another container.
+- Contain the one action that deserves immediate commitment: continue a scene,
+  answer a reply, review a submission, publish a draft, or resolve a warning.
+- Render repeated work as compact rows or an open index. Reserve story-object
+  cards for objects whose media or identity helps comparison.
+- Keep staff and director capability attached to the object through one
+  disclosure entry, outside the ordinary reading path.
+- Preserve context across state changes. A disclosure or transition accepts
+  the latest intention immediately and remains complete for keyboard, touch,
+  fine-pointer, and reduced-motion users.
+
+Fluidity means continuity, not kinetic spectacle. The page should remain calm
+while reading; interaction should feel responsive when the user acts.
 
 ## Page Rhythm
 

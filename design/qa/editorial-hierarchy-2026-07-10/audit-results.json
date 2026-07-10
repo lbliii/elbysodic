@@ -1,0 +1,722 @@
+{
+  "captured_at": "2026-07-10T18:28:37.510Z",
+  "base_url": "http://localhost:8001",
+  "branch": "codex/editorial-hierarchy",
+  "pages": [
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/01-public-home-desktop.png",
+      "route": "/c/harbor-society",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "public",
+      "title": "Harbor Society",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Harbor Society"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Harbor Society"
+        },
+        {
+          "level": 2,
+          "text": "Founders Gala"
+        },
+        {
+          "level": 2,
+          "text": "Underway now"
+        },
+        {
+          "level": 2,
+          "text": "Choose a setting"
+        },
+        {
+          "level": 2,
+          "text": "Know the world"
+        },
+        {
+          "level": 2,
+          "text": "Characters and connections wanted"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/02-public-home-mobile.png",
+      "route": "/c/harbor-society",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "public",
+      "title": "Harbor Society",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Harbor Society"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Harbor Society"
+        },
+        {
+          "level": 2,
+          "text": "Founders Gala"
+        },
+        {
+          "level": 2,
+          "text": "Underway now"
+        },
+        {
+          "level": 2,
+          "text": "Choose a setting"
+        },
+        {
+          "level": 2,
+          "text": "Know the world"
+        },
+        {
+          "level": 2,
+          "text": "Characters and connections wanted"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/03-member-home-desktop.png",
+      "route": "/c/harbor-society",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "director",
+      "title": "Elbysodic",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Harbor Society"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Harbor Society"
+        },
+        {
+          "level": 2,
+          "text": "Continue writing as Maris Vale"
+        },
+        {
+          "level": 2,
+          "text": "Founders Gala"
+        },
+        {
+          "level": 2,
+          "text": "Underway now"
+        },
+        {
+          "level": 2,
+          "text": "Choose a setting"
+        },
+        {
+          "level": 2,
+          "text": "Know the world"
+        },
+        {
+          "level": 2,
+          "text": "Characters and connections wanted"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/05-writer-desk-desktop.png",
+      "route": "/c/harbor-society/desk",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "director",
+      "title": "Writer Desk",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Writer Desk"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Writer Desk"
+        },
+        {
+          "level": 2,
+          "text": "Pick up where you left off"
+        },
+        {
+          "level": 2,
+          "text": "Everything else"
+        },
+        {
+          "level": 2,
+          "text": "Needs reply"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/07-studio-home-desktop.png",
+      "route": "/c/harbor-society/studio",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "director",
+      "title": "Director Studio",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Studio"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Studio"
+        },
+        {
+          "level": 2,
+          "text": "Needs attention"
+        },
+        {
+          "level": 2,
+          "text": "No director queues need attention right now."
+        },
+        {
+          "level": 2,
+          "text": "Studio rooms"
+        },
+        {
+          "level": 2,
+          "text": "Operations"
+        },
+        {
+          "level": 2,
+          "text": "Launch"
+        },
+        {
+          "level": 2,
+          "text": "Discovery profile"
+        },
+        {
+          "level": 2,
+          "text": "Structure"
+        },
+        {
+          "level": 2,
+          "text": "Intake"
+        },
+        {
+          "level": 2,
+          "text": "Appearance"
+        },
+        {
+          "level": 2,
+          "text": "Content"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/09-studio-content-desktop.png",
+      "route": "/c/harbor-society/studio/content",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "director",
+      "title": "Studio Content",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Content"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Content"
+        },
+        {
+          "level": 2,
+          "text": "Content at a glance"
+        },
+        {
+          "level": 2,
+          "text": "Guidebook"
+        },
+        {
+          "level": 2,
+          "text": "Locations"
+        },
+        {
+          "level": 2,
+          "text": "Current event"
+        },
+        {
+          "level": 2,
+          "text": "Applications and hooks"
+        },
+        {
+          "level": 2,
+          "text": "Intake tables"
+        },
+        {
+          "level": 2,
+          "text": "What needs a decision"
+        },
+        {
+          "level": 2,
+          "text": "Open work"
+        },
+        {
+          "level": 2,
+          "text": "Open wants"
+        },
+        {
+          "level": 2,
+          "text": "Current event"
+        },
+        {
+          "level": 2,
+          "text": "Current Chapter: Founders Gala"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/11-operations-desktop.png",
+      "route": "/c/harbor-society/studio/operations",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "director",
+      "title": "Director desk",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Operations"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Operations"
+        },
+        {
+          "level": 2,
+          "text": "Writer activation"
+        },
+        {
+          "level": 2,
+          "text": "Queue contracts"
+        },
+        {
+          "level": 2,
+          "text": "Runtime and persistence"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/13-shoreline-club-desktop.png",
+      "route": "/c/harbor-society/boards/shoreline-club",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "audience": "director",
+      "title": "Board",
+      "document_width": 1440,
+      "scroll_width": 1425,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Shoreline Club"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Shoreline Club"
+        },
+        {
+          "level": 2,
+          "text": "Life at Shoreline Club"
+        },
+        {
+          "level": 2,
+          "text": "Other major locations"
+        },
+        {
+          "level": 2,
+          "text": "Shoreline Club scenes"
+        },
+        {
+          "level": 2,
+          "text": "The Ledger Page Under Table Six"
+        },
+        {
+          "level": 2,
+          "text": "Opening pressure"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/04-member-home-mobile.png",
+      "route": "/c/harbor-society",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "director",
+      "title": "Elbysodic",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Harbor Society"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Harbor Society"
+        },
+        {
+          "level": 2,
+          "text": "Continue writing as Maris Vale"
+        },
+        {
+          "level": 2,
+          "text": "Founders Gala"
+        },
+        {
+          "level": 2,
+          "text": "Underway now"
+        },
+        {
+          "level": 2,
+          "text": "Choose a setting"
+        },
+        {
+          "level": 2,
+          "text": "Know the world"
+        },
+        {
+          "level": 2,
+          "text": "Characters and connections wanted"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/06-writer-desk-mobile.png",
+      "route": "/c/harbor-society/desk",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "director",
+      "title": "Writer Desk",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Writer Desk"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Writer Desk"
+        },
+        {
+          "level": 2,
+          "text": "Pick up where you left off"
+        },
+        {
+          "level": 2,
+          "text": "Everything else"
+        },
+        {
+          "level": 2,
+          "text": "Needs reply"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/08-studio-home-mobile.png",
+      "route": "/c/harbor-society/studio",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "director",
+      "title": "Director Studio",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Studio"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Studio"
+        },
+        {
+          "level": 2,
+          "text": "Needs attention"
+        },
+        {
+          "level": 2,
+          "text": "No director queues need attention right now."
+        },
+        {
+          "level": 2,
+          "text": "Studio rooms"
+        },
+        {
+          "level": 2,
+          "text": "Operations"
+        },
+        {
+          "level": 2,
+          "text": "Launch"
+        },
+        {
+          "level": 2,
+          "text": "Discovery profile"
+        },
+        {
+          "level": 2,
+          "text": "Structure"
+        },
+        {
+          "level": 2,
+          "text": "Intake"
+        },
+        {
+          "level": 2,
+          "text": "Appearance"
+        },
+        {
+          "level": 2,
+          "text": "Content"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/10-studio-content-mobile.png",
+      "route": "/c/harbor-society/studio/content",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "director",
+      "title": "Studio Content",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Content"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Content"
+        },
+        {
+          "level": 2,
+          "text": "Content at a glance"
+        },
+        {
+          "level": 2,
+          "text": "Guidebook"
+        },
+        {
+          "level": 2,
+          "text": "Locations"
+        },
+        {
+          "level": 2,
+          "text": "Current event"
+        },
+        {
+          "level": 2,
+          "text": "Applications and hooks"
+        },
+        {
+          "level": 2,
+          "text": "Intake tables"
+        },
+        {
+          "level": 2,
+          "text": "What needs a decision"
+        },
+        {
+          "level": 2,
+          "text": "Open work"
+        },
+        {
+          "level": 2,
+          "text": "Open wants"
+        },
+        {
+          "level": 2,
+          "text": "Current event"
+        },
+        {
+          "level": 2,
+          "text": "Current Chapter: Founders Gala"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/12-operations-mobile.png",
+      "route": "/c/harbor-society/studio/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "director",
+      "title": "Director desk",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Operations"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Operations"
+        },
+        {
+          "level": 2,
+          "text": "Writer activation"
+        },
+        {
+          "level": 2,
+          "text": "Queue contracts"
+        },
+        {
+          "level": 2,
+          "text": "Runtime and persistence"
+        }
+      ]
+    },
+    {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/14-shoreline-club-mobile.png",
+      "route": "/c/harbor-society/boards/shoreline-club",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "audience": "director",
+      "title": "Board",
+      "document_width": 390,
+      "scroll_width": 390,
+      "horizontal_overflow": false,
+      "visible_h1": [
+        "Shoreline Club"
+      ],
+      "heading_sequence": [
+        {
+          "level": 1,
+          "text": "Shoreline Club"
+        },
+        {
+          "level": 2,
+          "text": "Life at Shoreline Club"
+        },
+        {
+          "level": 2,
+          "text": "Other major locations"
+        },
+        {
+          "level": 2,
+          "text": "Shoreline Club scenes"
+        },
+        {
+          "level": 2,
+          "text": "The Ledger Page Under Table Six"
+        },
+        {
+          "level": 2,
+          "text": "Opening pressure"
+        }
+      ]
+    }
+  ],
+  "interactions": {
+    "realm_keyboard": {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/15-realm-disclosure-keyboard.png",
+      "route": "/c/harbor-society",
+      "label": "Edit realm home",
+      "open": true,
+      "focused": true,
+      "target": {
+        "width": 264,
+        "height": 44,
+        "outline_style": "auto",
+        "outline_width": "1px"
+      },
+      "target_meets_44px": true
+    },
+    "location_keyboard": {
+      "file": "design/qa/editorial-hierarchy-2026-07-10/16-location-disclosure-keyboard.png",
+      "route": "/c/harbor-society/boards/shoreline-club",
+      "label": "Manage place",
+      "open": true,
+      "focused": true,
+      "target": {
+        "width": 245,
+        "height": 44,
+        "outline_style": "auto",
+        "outline_width": "1px"
+      },
+      "target_meets_44px": true
+    },
+    "fine_pointer": {
+      "matches": true,
+      "before_background": "color(srgb 1 1 1 / 0.78)",
+      "after_background": "color(srgb 0.978039 0.928471 0.960784)",
+      "file": "design/qa/editorial-hierarchy-2026-07-10/18-realm-disclosure-fine-pointer-hover.png"
+    },
+    "coarse_pointer": {
+      "matches": true,
+      "emulation": "Playwright touchscreen taps with hasTouch enabled",
+      "touch_capabilities": {
+        "max_touch_points": 0,
+        "ontouchstart": true,
+        "coarse_media_query": false
+      },
+      "final_open": true,
+      "target": {
+        "width": 245,
+        "height": 44
+      },
+      "target_meets_44px": true,
+      "file": "design/qa/editorial-hierarchy-2026-07-10/19-location-disclosure-touch.png"
+    },
+    "reduced_motion": {
+      "matches": true,
+      "final_open": true,
+      "computed": {
+        "transition_duration": "1e-05s",
+        "animation_duration": "1e-05s"
+      },
+      "file": "design/qa/editorial-hierarchy-2026-07-10/17-realm-disclosure-reduced-motion.png"
+    }
+  },
+  "console_errors": [],
+  "page_errors": []
+}

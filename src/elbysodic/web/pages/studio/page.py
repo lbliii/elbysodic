@@ -302,19 +302,6 @@ def _theme_mode_values(form: object, mode: str) -> dict[str, str]:
 
 def _studio_cockpit_lanes(studio: DirectorStudio) -> list[StudioCockpitLane]:
     lanes: list[StudioCockpitLane] = []
-    if studio.can_manage:
-        lanes.append(
-            StudioCockpitLane(
-                "Discovery",
-                "Public discovery profile",
-                "Premise, pace, roster, and first-face signals for Writer Network.",
-                "/studio/discovery",
-                "Edit discovery profile",
-                studio.open_wanted_count,
-                tuple(item.wanted_ad.title for item in studio.open_wanted_ads[:4]),
-                "info",
-            )
-        )
     if studio.review_queue_count:
         lanes.append(
             StudioCockpitLane(
@@ -479,9 +466,9 @@ def _studio_room_cards(
         ),
         StudioRoomCard(
             "content",
-            "Canon pressure",
+            "Story materials",
             "Content",
-            "Guidebook materials, current event pressure, wanted hooks, and location coverage.",
+            "Guidebook materials, the current event, wanted hooks, and location coverage.",
             "/studio/content",
             "Open content",
             content_count,

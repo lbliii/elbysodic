@@ -2481,11 +2481,9 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 content = _page_content(response.text)
 
                 assert response.status == 200
-                assert "Already moving" in content
-                assert "Ways in" in content
-                assert response.text.count("elbysodic-realm-stage__beat-card") >= 2
-                assert "Start here" in content
-                assert content.count("Start here") == 1
+                assert "What has changed" in content
+                assert "Where the story is opening" in content
+                assert 'aria-label="Realm at a glance"' in response.text
                 assert "Play readiness" not in content
                 assert "Public preview" in content
                 if community_slug == "harbor-society":
@@ -2493,47 +2491,21 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert premise_label in content
                 assert onboarding_pitch in content
                 assert "Places" in content
-                assert "In play" in content
+                assert "Choose a setting" in content
                 assert "Guidebook" in content
-                assert "Before you enter" in content
-                assert "Claims" in content
-                assert "Social map" in content
-                assert 'aria-labelledby="realm-social-title"' in response.text
-                assert 'id="realm-social-title"' in response.text
+                assert "Know the world" in content
+                assert "Find your place here" not in content
+                assert "Featured faces" not in content
+                assert "Social map" not in content
+                assert 'aria-labelledby="realm-social-title"' not in response.text
+                assert 'id="realm-social-title"' not in response.text
                 if community_slug == "harbor-society":
-                    assert "Cast" in content
-                    assert "Featured faces" in content
-                    assert "Maris Vale" in content
-                    assert "August Reed" in content
                     assert "Town Power Map" in content
-                    assert "Family" in content
-                    assert "Club Role" in content
-                    assert "Influence Lane" in content
-                    assert "Business" in content
-                    assert (
-                        "Old names, newcomer ties, and marriages that still carry debt." in content
-                    )
-                    assert (
-                        "Members, guests, staff, donors, and applicants with something to prove."
-                        in content
-                    )
-                    assert (
-                        "Old families, civic office, press, donors, workers, and club staff all move power differently."
-                        in content
-                    )
-                    assert (
-                        "Workplaces, civic offices, service counters, and favors traded in public."
-                        in content
-                    )
                     assert "He can print the scandal if his source survives the room." in content
                     assert (
                         "White jackets, old money, and a membership vote that turns manners into weapons."
                         in content
                     )
-                    assert "elbysodic-realm-lane-card--kinship" in response.text
-                    assert "elbysodic-realm-lane-card--access" in response.text
-                    assert "elbysodic-realm-lane-card--faction" in response.text
-                    assert "elbysodic-realm-lane-card--work" in response.text
                     assert "Family Claim" not in content
                     assert "Faction Claim" not in content
                     assert "Old family, newcomer tie, or married-in pressure." not in content
@@ -2565,7 +2537,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                     assert "Emergency Court Before Dawn" in content
                 assert f"/c/{community_slug}/wanted" in content
                 assert f"/c/{community_slug}/wanted/{wanted_slug}" in content
-                assert "Calls to answer" in content
+                assert "Characters and connections wanted" in content
                 assert "Public scenes carrying the premise" not in content
                 assert "Ways in before a writer has a face here" not in content
                 assert "What to know before a first face" not in content
@@ -2700,11 +2672,11 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
 
             assert response.status == 200
             assert "Quiet Harbor Premise" in content
-            assert "Public visitor" in content
+            assert "Public preview" in content
             assert "Standing premise: Quiet Harbor Premise" in content
             assert "1 public place in play." in content
             assert "No public wanted pressure is open right now." in content
-            assert 'aria-label="Realm story frame"' in response.text
+            assert 'aria-label="Realm at a glance"' in response.text
             assert "Locked Harbor" not in content
             assert "Director-only pressure" not in content
             assert "Main Street" in content
@@ -2762,7 +2734,7 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
 
             assert response.status == 200
             assert "Scenes" in content
-            assert "In motion" in content
+            assert "Underway now" in content
             assert "Public gateway scene" in content
             assert "Private gateway scene" not in content
             assert "Private story motion" not in content
@@ -2804,7 +2776,7 @@ def test_realm_gateway_home_tolerates_missing_scene_previews(
 
             assert response.status == 200
             assert "X-Men Apocalypse" in content
-            assert "In play" in content
+            assert "Choose a setting" in content
             assert "Playable now" not in content
 
     asyncio.run(run())
@@ -3319,8 +3291,8 @@ def test_shell_groups_community_modes_in_topbar_and_context_in_sidebar() -> None
             )
             assert "Search X-Men Apocalypse" in index.text
             assert "XMA" in index.text
-            assert "Before you enter" in index.text
-            assert "Calls to answer" in index.text
+            assert "Know the world" in index.text
+            assert "Characters and connections wanted" in index.text
             assert "Browse all open calls" in index.text
             identity_summary = re.search(
                 r'<summary class="elbysodic-identity-menu__summary"[^>]*>(?P<body>.*?)</summary>',
@@ -3540,11 +3512,12 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
 
             assert desk.status == 200
             assert "Writer Desk" in desk.text
-            assert "Replies, reading, plotting, inbox, and face work." in desk.text
+            assert "Return to a scene, catch up on reading, or move a plot forward." in desk.text
             assert "Writing as Rogue" not in desk.text
-            assert "What needs you" in desk.text
-            assert "Face lanes" in desk.text
-            assert "Work lanes" in desk.text
+            assert "Pick up where you left off" in desk.text
+            assert "By face" in desk.text
+            assert "Everything else" in desk.text
+            assert "elbysodic-page-pulse--desk" in desk.text
             assert "Read latest" in desk.text
             assert "Unread watched" in desk.text
             assert "Waiting on others" in desk.text
@@ -3832,8 +3805,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
 
             assert studio.status == 200
             assert "Director Studio" in studio.text
-            assert "Shape X-Men Apocalypse" in studio.text
-            assert "Director attention" in studio.text
+            assert "<h1>Studio</h1>" in studio.text
+            assert "Run X-Men Apocalypse without carrying every control at once." in studio.text
+            assert "Needs attention" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
             assert "Studio rooms" in studio.text
@@ -3879,9 +3853,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Identity and appearance" in appearance.text
             assert "Inherited accents" in appearance.text
             assert content.status == 200
-            assert "World Bible" in content.text
-            assert "Location Studio" in content.text
-            assert "Event Studio" in content.text
+            assert "Content at a glance" in content.text
+            assert "Guidebook" in content.text
+            assert "Locations" in content.text
+            assert "Current event" in content.text
             assert "Applications and hooks" in content.text
             assert 'href="/world/b-24-winter"' in content.text
             assert 'href="/applications"' in content.text
@@ -3889,7 +3864,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Current event" in content.text
             assert operations.status == 200
             assert "Director desk" in operations.text
-            assert "What needs a director?" in operations.text
+            assert '<h1 id="operations-heading">Operations</h1>' in operations.text
+            assert "Technical checks" in operations.text
+            assert '<details class="elbysodic-operations-diagnostics">' in operations.text
             assert "No director operations need attention right now." in operations.text
             assert "Operations clear" in operations.text
             assert "Review queue" not in operations.text
@@ -3966,19 +3943,20 @@ def test_director_context_controls_live_on_home_and_board_surfaces() -> None:
             writer_board = await client.get("/boards/xavier-institute")
 
         assert home.status == 200
-        assert "Realm home controls" in home.text
+        assert "Edit realm home" in home.text
+        assert "elbysodic-realm-gateway__director-tools" in home.text
         assert "/studio/structure#gateway-curation" in home.text
         assert "/studio/discovery" in home.text
         assert board.status == 200
         assert "Manage place" in board.text
-        assert "Manage this place" in board.text
+        assert "elbysodic-director-context" not in board.text
         assert "/studio/boards/xavier-institute" in board.text
         assert "/studio/structure#board-taxonomy" in board.text
 
         assert writer_home.status == 200
-        assert "Realm home controls" not in writer_home.text
+        assert "Edit realm home" not in writer_home.text
         assert writer_board.status == 200
-        assert "Manage this place" not in writer_board.text
+        assert "Manage place" not in writer_board.text
         assert "/studio/boards/xavier-institute" not in writer_board.text
 
     asyncio.run(run())
@@ -5465,6 +5443,7 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Private application body should not leak" not in member_operations.text
         assert "0 ready apps" in member_operations.text
         assert "Queue contracts" in member_operations.text
+        assert "Technical checks" in member_operations.text
         assert "queue names hidden from non-staff" in member_operations.text
         assert "Live check" not in member_operations.text
         assert "Database path" not in member_operations.text
@@ -5475,6 +5454,7 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         assert "Public-ready realms" not in member_operations.text
         assert "Seed demo mode" not in member_operations.text
         assert staff_operations.status == 200
+        assert "Technical checks" in staff_operations.text
         assert "Privacy Queue Face - ready" in staff_operations.text
         assert "ready apps" in staff_operations.text
         assert "Live check" in staff_operations.text
@@ -6400,8 +6380,10 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
             assert "elbysodic-board-stage" in academy.text
             assert "elbysodic-board-media--xavier-institute" in academy.text
             assert "elbysodic-location-compass" in academy.text
-            assert "What is playable here" in academy.text
+            assert "Life at Xavier Institute" in academy.text
             assert "Relevant to the active face" in academy.text
+            assert "Scenes here" in academy.text
+            assert "No direct scenes yet" in academy.text
             assert 'aria-label="Med Bay · Relevant to active face"' in academy.text
             assert (
                 'class="chirpui-tooltip chirpui-tooltip--left '
@@ -6411,13 +6393,9 @@ def test_board_pages_render_location_stage_and_place_tiles() -> None:
                 'data-tooltip="Relevant to the active face: this location '
                 'shares one of their world lenses."' in academy.text
             )
-            assert "Plot pressure" in academy.text
-            assert "No scene spotlight yet" in academy.text
             assert "Total" in academy.text
-            assert (
-                "Event boosts, location pins, or first direct scenes can surface here."
-                in academy.text
-            )
+            assert "The first scene opened here will appear below." in academy.text
+            assert "elbysodic-director-context" not in academy.text
             assert "Doors" in academy.text
             assert "Nearby" in academy.text
             assert 'id="sublocations"' in academy.text
@@ -6462,8 +6440,8 @@ def test_quiet_location_page_keeps_actions_visible_without_empty_door_sections()
         assert page.status == 200
         assert "elbysodic-location-compass" in page.text
         assert "Open for scenes" in page.text
-        assert "No scene spotlight yet" in page.text
-        assert "Event boosts, location pins, or first direct scenes can surface here." in page.text
+        assert "No direct scenes yet" in page.text
+        assert "The first scene opened here will appear below." in page.text
         assert 'href="#sublocations"' not in page.text
         assert 'id="sublocations"' not in page.text
         assert "No scenes have opened directly here yet." in page.text
@@ -7536,7 +7514,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
 
             location = await client.get("/boards/frozen-midtown")
             assert location.status == 200
-            assert "Current event in this location" in location.text
+            assert "Happening here" in location.text
             assert 'href="/world/b-24-winter"' in location.text
 
             scene = await client.get("/boards/frozen-midtown/threads/frozen-avenue-evacuation")
@@ -8717,7 +8695,7 @@ def test_claims_directory_renders_seeded_claims_and_studio_summary() -> None:
         assert 'value="not-a-real-claim"' in no_results.text
         assert 'No claims match "not-a-real-claim" in this type.' in no_results.text
         assert studio.status == 200
-        assert "Claims and fields" in studio.text
+        assert "Intake tables" in studio.text
         assert 'href="/claims"' in studio.text
 
     asyncio.run(run())
@@ -8828,8 +8806,8 @@ def test_rendered_surface_contract_parity_across_realm_viewers() -> None:
 
         assert member_home.status == 200
         assert "playing as Rogue" in member_home.text
-        assert "Realm member" in _page_content(member_home.text)
-        assert "Continue writing from your Desk" in _page_content(member_home.text)
+        assert "Pick up where you left off" in _page_content(member_home.text)
+        assert "Continue writing as Rogue" in _page_content(member_home.text)
         assert 'href="/c/x-men-apocalypse/desk"' in member_home.text
         assert "Cross-Realm Only Face" not in member_home.text
         assert "HP DIRECTOR CONTRACT NOTE" not in member_home.text
@@ -8837,7 +8815,8 @@ def test_rendered_surface_contract_parity_across_realm_viewers() -> None:
         staff_home_content = _page_content(staff_home.text)
         assert staff_home.status == 200
         assert "Staff" in staff_home_content or "Director" in staff_home_content
-        assert "Studio" in staff_home_content
+        assert "Edit realm home" in staff_home_content
+        assert "/studio/structure#gateway-curation" in staff_home_content
         assert "HP DIRECTOR CONTRACT NOTE" not in staff_home_content
 
         hp_home_content = _page_content(hp_home.text)

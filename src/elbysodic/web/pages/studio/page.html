@@ -19,7 +19,6 @@
 {% end %}
 
 {% def studio_lane(kicker, title, summary, href, cta, count, items) %}
-{% call surface(variant="elevated") %}
 <article class="elbysodic-director-lane">
   <div class="elbysodic-director-lane__header">
     <div>
@@ -39,17 +38,16 @@
   <a class="elbysodic-director-action" href="{{ href }}">{{ cta }}</a>
 </article>
 {% end %}
-{% end %}
 
 {% def studio_room_card(room) %}
-{% call surface(variant="elevated") %}
-<article class="elbysodic-director-lane elbysodic-director-lane--{{ room.variant }}">
+<a class="elbysodic-studio-room-link elbysodic-director-lane--{{ room.variant }}" href="{{ room.href }}">
+<article class="elbysodic-director-lane">
   <div class="elbysodic-director-lane__header">
     <div>
       <p class="elbysodic-kicker">{{ room.kicker }}</p>
-      <h2><a class="chirpui-link" href="{{ room.href }}">{{ room.title }}</a></h2>
+      <h2>{{ room.title }}</h2>
     </div>
-    <span class="elbysodic-director-lane__count">{{ room.count }}</span>
+    <span class="elbysodic-director-lane__count" aria-label="{{ room.count }} current items">{{ room.count }}</span>
   </div>
   <p class="elbysodic-copy-summary">{{ room.summary }}</p>
   {% if room.items %}
@@ -59,9 +57,9 @@
     {% end %}
   </ul>
   {% end %}
-  <a class="elbysodic-director-action" href="{{ room.href }}">{{ room.cta }}</a>
+  <span class="elbysodic-director-action">{{ room.cta }}</span>
 </article>
-{% end %}
+</a>
 {% end %}
 
 {% def navigation_health(studio) %}
@@ -291,20 +289,20 @@
   </div>
   {% end %}
 
-  <section class="elbysodic-director-hero">
+  <section class="elbysodic-director-hero elbysodic-editorial-hero">
     <div>
       <p class="elbysodic-kicker">Director Studio</p>
-      <h1>{% if current_studio_room %}{{ current_studio_room.title }}{% else %}Shape {{ viewer.community.name }}{% end %}</h1>
+      <h1>{% if current_studio_room %}{{ current_studio_room.title }}{% else %}Studio{% end %}</h1>
       <p class="elbysodic-copy-lead">
         {% if current_studio_room %}
         {{ current_studio_room.summary }}
         {% else %}
-        A director room for the canon, locations, applications, and hooks that
-        need director attention now.
+        Run {{ viewer.community.name }} without carrying every control at once.
         {% end %}
       </p>
     </div>
     <aside class="elbysodic-director-hero__signals" aria-label="Studio pulse">
+      <h2 class="elbysodic-visually-hidden">Studio pulse</h2>
       {{ studio_signal("Materials", studio.material_count) }}
       {{ studio_signal("Locations", studio.location_count) }}
       {{ studio_signal("Open hooks", studio.open_wanted_count) }}
@@ -327,33 +325,14 @@
   {% end %}
 
   {% if studio_room == "overview" %}
-  <section class="chirpui-stack chirpui-stack--md" aria-label="Director attention">
-    {% call section_header("Director attention") %}
-    Queues and opening risks that need movement before writers feel them.
+  <section class="elbysodic-studio-attention chirpui-stack chirpui-stack--md" aria-label="Director attention">
+    {% call section_header("Needs attention") %}
+    Reviews, conflicts, drafts, and opening work that are active now.
     {% end %}
     {% if cockpit_lanes %}
-    <div class="elbysodic-director-grid" aria-label="Studio attention lanes">
+    <div class="elbysodic-director-grid elbysodic-director-grid--attention" aria-label="Studio attention lanes">
       {% for lane in cockpit_lanes %}
-      {% call surface(variant="elevated") %}
-      <article class="elbysodic-director-lane elbysodic-director-lane--{{ lane.variant }}">
-        <div class="elbysodic-director-lane__header">
-          <div>
-            <p class="elbysodic-kicker">{{ lane.kicker }}</p>
-            <h2><a class="chirpui-link" href="{{ lane.href }}">{{ lane.title }}</a></h2>
-          </div>
-          <span class="elbysodic-director-lane__count">{{ lane.count }}</span>
-        </div>
-        <p class="elbysodic-copy-summary">{{ lane.summary }}</p>
-        {% if lane.items %}
-        <ul class="elbysodic-director-list">
-          {% for item in lane.items %}
-          <li>{{ item }}</li>
-          {% end %}
-        </ul>
-        {% end %}
-        <a class="elbysodic-director-action" href="{{ lane.href }}">{{ lane.cta }}</a>
-      </article>
-      {% end %}
+      {{ studio_lane(lane.kicker, lane.title, lane.summary, lane.href, lane.cta, lane.count, lane.items) }}
       {% end %}
     </div>
     {% else %}
@@ -363,9 +342,9 @@
 
   <section class="chirpui-stack chirpui-stack--md" aria-label="Studio rooms">
     {% call section_header("Studio rooms") %}
-    Move through the realm in the order directors usually need: daily desk, opening gates, public presence, structure, intake, appearance, then content pressure.
+    Open the room for the work you are doing. The rest stays out of the way.
     {% end %}
-    <div class="elbysodic-director-grid" aria-label="Studio room shortcuts">
+    <div class="elbysodic-director-grid elbysodic-director-grid--rooms" aria-label="Studio room shortcuts">
       {% for room in studio_rooms %}
       {{ studio_room_card(room) }}
       {% end %}
@@ -1012,11 +991,11 @@
 
   {% if studio_room == "content" %}
   <section id="casting-applications" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="casting-applications-heading">
-  {{ room_header("Casting and applications", "Intake, wanted hooks, and review queues", "Keep character growth and casting prompts close to the board's production pulse.", "casting-applications-heading") }}
-  <section class="elbysodic-director-grid" aria-label="Director work lanes">
+  {{ room_header("Realm materials", "Content at a glance", "Guidebook, places, events, applications, and claims—each in its own working room.", "casting-applications-heading") }}
+  <section class="elbysodic-director-grid elbysodic-director-grid--content-index" aria-label="Content rooms">
     {% set current_event_href = "/world/" ~ studio.current_event.material.slug if studio.current_event else "/world" %}
     {{ studio_lane(
-      "World Bible",
+      "Guidebook",
       "Guidebook",
       "Premise, rules, faction lenses, and application guidance.",
       "/world",
@@ -1025,8 +1004,8 @@
       studio.featured_material_titles or ["No featured pillars yet."]
     ) }}
     {{ studio_lane(
-      "Location Studio",
-      "World map",
+      "Places",
+      "Locations",
       "The playable geography writers browse when they are looking for a scene.",
       "/",
       "Map locations",
@@ -1034,8 +1013,8 @@
       studio.location_board_names or ["No IC locations mapped yet."]
     ) }}
     {{ studio_lane(
-      "Event Studio",
-      "Current pressure",
+      "Events",
+      "Current event",
       "Events that turn static lore into scene prompts, crisis pages, and shared momentum.",
       current_event_href,
       "Open event",
@@ -1064,14 +1043,16 @@
   </section>
 
   <section id="continuity-events" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="continuity-events-heading">
-  {{ room_header("Continuity and events", "Canon pressure and director queue", "Track the guidebook, drafts, current event pressure, and map coverage that keep play moving.", "continuity-events-heading") }}
-  {% call section_header("Director queue") %}
-  The most useful next places to look before opening an editor.
+  {{ room_header("Publishing", "What needs a decision", "Drafts, open wants, and intake work that are waiting for director judgment.", "continuity-events-heading") }}
+  {% call section_header("Open work") %}
+  Only active work appears here.
   {% end %}
 
-  <section class="elbysodic-director-queue">
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm">
+  {% set has_open_content_work = studio.draft_materials or studio.open_wanted_ads or studio.claims.reserved_count %}
+  {% if has_open_content_work %}
+  <section class="elbysodic-director-queue elbysodic-director-queue--open-work">
+    {% if studio.draft_materials %}
+    <article class="elbysodic-studio-workstream chirpui-stack chirpui-stack--sm">
       <div class="chirpui-cluster elbysodic-cluster--between">
         <p class="elbysodic-kicker">Canon</p>
         {{ badge(studio.draft_materials | length ~ " drafts", variant="warning") if studio.draft_materials else "" }}
@@ -1116,8 +1097,8 @@
     </article>
     {% end %}
 
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm">
+    {% if studio.open_wanted_ads %}
+    <article class="elbysodic-studio-workstream chirpui-stack chirpui-stack--sm">
       <p class="elbysodic-kicker">Casting</p>
       <h2>Open wants</h2>
       <p class="elbysodic-copy-helper">
@@ -1135,15 +1116,15 @@
     </article>
     {% end %}
 
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm">
+    {% if studio.claims.reserved_count %}
+    <article class="elbysodic-studio-workstream chirpui-stack chirpui-stack--sm">
       <p class="elbysodic-kicker">Intake</p>
-      <h2>Claims and fields</h2>
+      <h2>Reserved claims</h2>
       <p class="elbysodic-copy-helper">
-        Application fields now map to claim tables so directors can see launch-readiness.
+        Check active reserves before accepting a new face or opening a conflicting claim.
       </p>
       <div class="elbysodic-director-mini-grid">
-        {{ studio_signal("Types", studio.claims.groups | length) }}
+        {{ studio_signal("Reserved", studio.claims.reserved_count) }}
         {{ studio_signal("Claims", studio.claims.claim_count) }}
       </div>
       {% if studio.claims.groups %}
@@ -1160,35 +1141,16 @@
       </div>
     </article>
     {% end %}
-
-    {% call surface(variant="elevated") %}
-    <article class="chirpui-stack chirpui-stack--sm">
-      <p class="elbysodic-kicker">Map</p>
-      <h2>Location coverage</h2>
-      <p class="elbysodic-copy-helper">
-        Major places are the emotional surface; sublocations add the browsable file-tree depth.
-      </p>
-      <div class="elbysodic-director-mini-grid">
-        {{ studio_signal("Major", studio.location_count) }}
-        {{ studio_signal("Nested", studio.sublocation_count) }}
-      </div>
-      {% if studio.location_boards %}
-      <div class="elbysodic-director-facets">
-        {% for item in studio.location_boards[:3] %}
-        <a href="{{ item.href }}">{{ item.board.name }}</a>
-        {% end %}
-      </div>
-      {% end %}
-    </article>
-    {% end %}
   </section>
+  {% else %}
+  {{ empty_policy_block("Nothing is waiting for publication or intake review.", "Drafts, open wants, and reserved claims will appear here when they need a director.", "All clear") }}
+  {% end %}
 
   {% if studio.current_event %}
   {% call section_header("Current event") %}
-  The active canon pressure Studio should keep feeding into scenes, wants, and location copy.
+  The event currently feeding scenes, wants, and location copy.
   {% end %}
-  {% call surface(variant="elevated") %}
-  <article class="elbysodic-director-event">
+  <article class="elbysodic-director-event elbysodic-studio-current-event">
     <div>
       <p class="elbysodic-kicker">{{ studio.current_event.type_label }}</p>
       <h2><a class="chirpui-link" href="/world/{{ studio.current_event.material.slug }}">{{ studio.current_event.material.title }}</a></h2>
@@ -1196,7 +1158,6 @@
     </div>
     {{ facet_pills(studio.current_event.facets) }}
   </article>
-  {% end %}
   {% end %}
   </section>
   {% end %}

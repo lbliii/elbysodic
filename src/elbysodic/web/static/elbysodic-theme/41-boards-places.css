@@ -478,7 +478,7 @@
 .elbysodic-board-stage {
     align-items: end;
     aspect-ratio: var(--elbysodic-ratio-billboard);
-    border: 1px solid var(--chirpui-border-subtle);
+    border: 0;
     display: flex;
     min-height: min(58vh, 30rem);
     padding: clamp(1.25rem, 3vw, 2rem);
@@ -565,9 +565,9 @@
 
 .elbysodic-location-compass {
     display: grid;
-    gap: 1.75rem;
-    grid-template-columns: minmax(0, 0.9fr) minmax(min(100%, 24rem), 1fr);
-    padding-block: 0.45rem 0.8rem;
+    gap: clamp(2rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1.15fr) minmax(min(100%, 22rem), 0.85fr);
+    padding-block: clamp(1.5rem, 4vw, 3.5rem);
 }
 
 .elbysodic-location-compass__copy {
@@ -584,9 +584,10 @@
 }
 
 .elbysodic-location-compass__copy h2 {
-    font-size: var(--chirpui-font-2xl);
+    font-family: var(--elbysodic-display-font-family);
+    font-size: clamp(2.3rem, 4.8vw, 4.3rem);
     letter-spacing: 0;
-    line-height: 1.05;
+    line-height: 0.94;
 }
 
 .elbysodic-location-compass__description {
@@ -612,12 +613,13 @@
 }
 
 .elbysodic-location-compass__quiet {
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 82%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border: 0;
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
     display: grid;
     gap: 0.2rem;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 0 0;
 }
 
 .elbysodic-location-compass__quiet span,
@@ -642,10 +644,11 @@
 }
 
 .elbysodic-location-compass__activity {
-    border-left: 2px solid color-mix(in srgb, var(--chirpui-accent) 54%, var(--chirpui-border));
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    border-left: 0;
     display: grid;
     gap: 0.24rem;
-    padding: 0.15rem 0 0.15rem 0.75rem;
+    padding: 0.85rem 0 0;
 }
 
 .elbysodic-location-compass__activity strong {
@@ -669,13 +672,19 @@
 
 .elbysodic-location-compass__facts div {
     align-items: baseline;
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 78%, transparent);
-    border: 1px solid var(--chirpui-border-subtle);
-    border-radius: 999px;
+    background: transparent;
+    border: 0;
+    border-inline-start: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
     display: inline-flex;
     gap: 0.35rem;
     min-height: 1.75rem;
     padding: 0.22rem 0.6rem;
+}
+
+.elbysodic-location-compass__facts div:first-child {
+    border-inline-start: 0;
+    padding-inline-start: 0;
 }
 
 .elbysodic-location-compass__facts dt {

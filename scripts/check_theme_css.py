@@ -11,7 +11,6 @@ THEME_ENTRYPOINT = REPO_ROOT / "src/elbysodic/web/static/elbysodic-theme.css"
 THEME_DIR = REPO_ROOT / "src/elbysodic/web/static/elbysodic-theme"
 PAGES_DIR = REPO_ROOT / "src/elbysodic/web/pages"
 EMPTY_SELECTOR_FILES = {
-    "50-page-compositions.css": "composition review queue",
     "90-legacy.css": "legacy ledger",
 }
 LEGACY_CHIRPUI_UTILITY_CLASSES = frozenset(
