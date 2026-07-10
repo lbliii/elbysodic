@@ -210,17 +210,28 @@
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
 }
 
-.elbysodic-board-poster__face-signal-hint {
-    display: inline-flex;
-    inset-block-start: 0.75rem;
-    inset-inline-end: 0.75rem;
-    position: absolute;
-    z-index: 2;
+.elbysodic-board-poster__face-signal-hint .chirpui-tooltip__bubble {
+    max-width: min(12rem, calc(100vw - 2rem));
+}
+
+.elbysodic-board-poster:focus-visible
+    .elbysodic-board-poster__face-signal-hint
+    .chirpui-tooltip__bubble {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
 }
 
 .elbysodic-board-poster > :not(.elbysodic-board-poster__media) {
     position: relative;
     z-index: 2;
+}
+
+.elbysodic-board-poster > .elbysodic-board-poster__face-signal-hint {
+    display: inline-flex;
+    inset-block-start: 0.75rem;
+    inset-inline-end: 0.75rem;
+    position: absolute;
+    z-index: 3;
 }
 
 .elbysodic-board-poster__face-signal {
