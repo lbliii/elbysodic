@@ -46,7 +46,19 @@ jobs:
           PYTHON_GIL: "0"
         run: make contract-diff CONTRACT_DIFF_BASE=origin/${{ github.base_ref || 'main' }}
 
-      - name: Test suite
+      - name: Changelog enforcement
+        run: make changelog-check
+
+      - name: Validate changed changelog fragments
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE="origin/${{ github.base_ref }}"
+          FILES=$(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD -- 'changelog.d/*.md' || true)
+          if [ -n "$FILES" ]; then
+            uv run python scripts/check_changelog_fragments.py $FILES
+          fi
+
+      - name: Test suite with coverage
         env:
           PYTHON_GIL: "0"
-        run: make test
+        run: make test-cov

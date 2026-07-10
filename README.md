@@ -196,6 +196,7 @@ make ci
 Useful commands:
 
 - `make test` runs the test suite.
+- `make test-cov` runs tests with coverage; CI enforces an 80% floor via pytest-cov.
 - `make lint` runs Ruff.
 - `make format` formats the project.
 - `make format-check` checks Ruff formatting.
