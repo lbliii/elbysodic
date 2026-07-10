@@ -126,7 +126,7 @@
                 title="Scene actions"
                 @click.prevent="toggleInspector()">
           <span aria-hidden="true">{{ "logs" | icon }}</span>
-          <span class="chirpui-visually-hidden">Scene actions</span>
+          <span class="elbysodic-visually-hidden">Scene actions</span>
         </button>
       </div>
     </aside>
@@ -134,7 +134,7 @@
 
   {% call thread_reader_layout(label="Scene transcript", cls="elbysodic-thread-reader-layout") %}
   {% slot header %}
-  <h2 id="scene-transcript-title" class="chirpui-visually-hidden">Scene posts</h2>
+  <h2 id="scene-transcript-title" class="elbysodic-visually-hidden">Scene posts</h2>
   {% end %}
 
   {% slot local_nav %}
@@ -224,7 +224,7 @@
           {{ composer_view_toggle("reply-composer-view") }}
         </div>
         <div class="elbysodic-composer-body" x-show="!previewMode">
-          <label class="chirpui-visually-hidden" for="reply-body">Reply body</label>
+          <label class="elbysodic-visually-hidden" for="reply-body">Reply body</label>
           <textarea id="reply-body"
                     name="body"
                     class="chirpui-field__input"
