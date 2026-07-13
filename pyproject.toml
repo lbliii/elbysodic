@@ -31,6 +31,7 @@ classifiers = [
 ]
 dependencies = [
     "bengal-chirp[auth,config,forms,passkeys,sessions,ui]>=0.10.0",
+    "bengal-pounce>=0.9.1,<0.10.0",
     "chirp-ui>=0.11.0",
     "milo-cli>=0.4.2",
     "pyyaml>=6.0",
