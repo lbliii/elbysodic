@@ -43,11 +43,24 @@ from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, scope_response_urls
 from elbysodic.web.worker_draining import emit_worker_draining
+from tests._db_lifecycle import preserve_test_connection, release_test_connection
 from tests._sql_probe import trace_sql
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
 _SEEDED_TEMPLATE_CONNECTION: sqlite3.Connection | None = None
 _SEEDED_TEMPLATE_SEED: DemoSeed | None = None
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _close_seeded_template_connection() -> Any:
+    yield
+    global _SEEDED_TEMPLATE_CONNECTION
+    global _SEEDED_TEMPLATE_SEED
+    if _SEEDED_TEMPLATE_CONNECTION is not None:
+        release_test_connection(_SEEDED_TEMPLATE_CONNECTION)
+        _SEEDED_TEMPLATE_CONNECTION.close()
+    _SEEDED_TEMPLATE_CONNECTION = None
+    _SEEDED_TEMPLATE_SEED = None
 
 
 def _sidebar_board_count(html: str, board_slug: str) -> int:
@@ -206,6 +219,7 @@ def _seeded_template() -> tuple[sqlite3.Connection, DemoSeed]:
         repository = ForumRepository(_synchronized_connection(connection))
         seed = seed_demo_forum(repository)
         connection.commit()
+        preserve_test_connection(connection)
         _SEEDED_TEMPLATE_CONNECTION = connection
         _SEEDED_TEMPLATE_SEED = seed
 
