@@ -3,15 +3,60 @@
 from __future__ import annotations
 
 import re
+import sqlite3
+from collections.abc import Generator
+from contextlib import suppress
+from typing import Any
 
 import pytest
 from chirp.app import App
 from chirp.testing import TestClient
 
+from elbysodic.services import AppServices
+from tests._db_lifecycle import is_persistent_test_connection
+
 _UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 _CSRF_INPUT_RE = re.compile(r'name="_csrf_token" value="([^"]+)"')
 _CHIRP_SESSION_COOKIE = "chirp_session"
 _CSRF_HEADER = "X-CSRF-Token"
+
+
+@pytest.fixture(autouse=True)
+def _close_test_database_resources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None]:
+    """Close every database resource constructed by a test after it ends.
+
+    Production keeps caller-supplied services open by contract. Tests are the
+    callers for their in-memory facades and direct SQLite connections, so this
+    registry supplies the missing teardown without changing application
+    ownership semantics.
+    """
+
+    created: list[AppServices] = []
+    connections: list[sqlite3.Connection] = []
+    original_init = AppServices.__init__
+    original_connect = sqlite3.connect
+
+    def tracked_init(self: AppServices, *args: Any, **kwargs: Any) -> None:
+        original_init(self, *args, **kwargs)
+        created.append(self)
+
+    def tracked_connect(*args: Any, **kwargs: Any) -> sqlite3.Connection:
+        connection = original_connect(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    monkeypatch.setattr(AppServices, "__init__", tracked_init)
+    monkeypatch.setattr(sqlite3, "connect", tracked_connect)
+    yield
+    for services in reversed(created):
+        services.close()
+    for connection in reversed(connections):
+        if is_persistent_test_connection(connection):
+            continue
+        with suppress(sqlite3.Error):
+            connection.close()
 
 
 @pytest.fixture(autouse=True)

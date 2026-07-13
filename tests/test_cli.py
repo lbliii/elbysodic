@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import IO
+from typing import IO, cast
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -461,6 +461,28 @@ def test_create_app_closes_internally_created_services_on_shutdown(monkeypatch) 
 
     assert calls["seed_demo"] is False
     assert calls["services_closed"] is True
+
+
+def test_create_app_leaves_caller_supplied_services_open_on_shutdown() -> None:
+    calls: dict[str, object] = {}
+
+    class FakeAppServices(_FakeServices):
+        _database = None
+
+        def with_request_auth(self, *, production: bool) -> FakeAppServices:
+            calls["production"] = production
+            return self
+
+    async def run_lifespan() -> None:
+        services = FakeAppServices(calls)
+        app = web_app.create_app(debug=True, services=cast(AppServices, services))
+        async with TestClient(app):
+            pass
+
+    asyncio.run(run_lifespan())
+
+    assert calls["production"] is False
+    assert "services_closed" not in calls
 
 
 @pytest.mark.parametrize("stop_signal", [signal.SIGTERM, signal.SIGINT])
