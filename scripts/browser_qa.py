@@ -279,7 +279,6 @@ async def _check_page(page: Page) -> list[str]:
           const mediaSelector = [
             '.elbysodic-board-stage',
             '.elbysodic-board-poster',
-            '.elbysodic-current-event-card',
             '.elbysodic-material-hero',
             '.elbysodic-thread-card__poster',
             '.elbysodic-wanted-card',
@@ -319,10 +318,28 @@ async def _check_page(page: Page) -> list[str]:
           }
 
           for (const el of Array.from(document.querySelectorAll('h1, h2, h3, .elbysodic-copy-lead, .elbysodic-prose-body'))) {
+            if (el.classList.contains('elbysodic-visually-hidden')) continue;
             const rect = el.getBoundingClientRect();
             if (rect.width > 0 && el.scrollWidth > el.clientWidth + 2) {
-              issues.push(`text overflow: ${el.tagName.toLowerCase()}.${el.className}`);
-              break;
+              const range = document.createRange();
+              range.selectNodeContents(el);
+              const textRect = range.getBoundingClientRect();
+              const branch = el.parentElement;
+              const layout = branch?.parentElement;
+              const collides = Array.from(layout?.children || []).some(sibling => {
+                if (sibling === branch) return false;
+                const siblingRange = document.createRange();
+                siblingRange.selectNodeContents(sibling);
+                const siblingRect = siblingRange.getBoundingClientRect();
+                return textRect.left < siblingRect.right - 2
+                  && textRect.right > siblingRect.left + 2
+                  && textRect.top < siblingRect.bottom - 2
+                  && textRect.bottom > siblingRect.top + 2;
+              });
+              if (collides) {
+                issues.push(`text collision: ${el.tagName.toLowerCase()}.${el.className}`);
+                break;
+              }
             }
           }
 

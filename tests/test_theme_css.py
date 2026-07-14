@@ -70,3 +70,16 @@ def test_cluster_alignment_modifiers_have_owned_layout_rules() -> None:
         )
     }
     assert modifiers <= {"between", "end"}
+
+
+def test_director_hero_stacks_before_shell_columns_cramp_it() -> None:
+    css = (check_theme_css.THEME_DIR / "60-studio.css").read_text(encoding="utf-8")
+
+    tablet_rules = re.search(r"@media \(max-width: 64rem\)\s*\{(?P<body>.*?)\n\}", css, re.DOTALL)
+
+    assert tablet_rules is not None
+    assert re.search(
+        r"\.elbysodic-director-hero\s*\{[^}]*grid-template-columns:\s*1fr",
+        tablet_rules.group("body"),
+        re.DOTALL,
+    )

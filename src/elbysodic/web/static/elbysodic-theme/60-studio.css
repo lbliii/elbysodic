@@ -1751,6 +1751,10 @@
 }
 
 @media (max-width: 64rem) {
+    .elbysodic-director-hero {
+        grid-template-columns: 1fr;
+    }
+
     .elbysodic-director-grid--content-index,
     .elbysodic-director-queue--open-work {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1758,7 +1762,6 @@
 }
 
 @media (max-width: 48rem) {
-    .elbysodic-director-hero,
     .elbysodic-operations-hero {
         grid-template-columns: 1fr;
     }
