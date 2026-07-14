@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import re
 from dataclasses import dataclass
+from http.cookies import SimpleCookie
 from time import perf_counter
 from urllib.parse import urlencode
 
@@ -14,6 +16,7 @@ from elbysodic.web.state import get_services
 
 FORM_HEADERS = {"Content-Type": "application/x-www-form-urlencoded"}
 ROUTE_TIME_HEADER = "x-elbysodic-route-time-ms"
+CSRF_INPUT_RE = re.compile(r'name="_csrf_token" value="([^"]+)"')
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,23 +48,45 @@ def _header(response: object, name: str) -> str | None:
     return None
 
 
-def _cookie_pair(response: object, name: str) -> str | None:
-    header = _header(response, "set-cookie")
-    if header is None:
-        return None
-    pair = header.split(";", 1)[0]
-    return pair if pair.startswith(f"{name}=") else None
+def _cookie_values(response: object) -> dict[str, str]:
+    headers = getattr(response, "headers", ())
+    if isinstance(headers, dict):
+        set_cookie_headers = [
+            str(value) for key, value in headers.items() if str(key).lower() == "set-cookie"
+        ]
+    else:
+        set_cookie_headers = [
+            str(value) for key, value in headers if str(key).lower() == "set-cookie"
+        ]
+
+    values: dict[str, str] = {}
+    for header in set_cookie_headers:
+        parsed = SimpleCookie()
+        parsed.load(header)
+        values.update({name: morsel.value for name, morsel in parsed.items()})
+    return values
+
+
+def _cookie_header(cookies: dict[str, str]) -> str:
+    return "; ".join(f"{name}={value}" for name, value in cookies.items())
+
+
+def _csrf_token(html: str) -> str:
+    match = CSRF_INPUT_RE.search(html)
+    if match is None:
+        raise RuntimeError("development login page rendered no CSRF token")
+    return match.group(1)
 
 
 async def _timed_get(
     client: TestClient,
     label: str,
     path: str,
-    cookie: str | None,
+    cookies: dict[str, str],
     *,
     expected_text: str | None = None,
 ) -> CheckResult:
-    headers = {"Cookie": cookie} if cookie else None
+    headers = {"Cookie": _cookie_header(cookies)} if cookies else None
     started = perf_counter()
     response = await client.get(path, headers=headers)
     wall_ms = (perf_counter() - started) * 1000
@@ -84,11 +109,13 @@ async def _timed_switch(
     label: str,
     membership_id: int,
     next_url: str,
-    cookie: str | None,
-) -> tuple[CheckResult, str | None]:
+    cookies: dict[str, str],
+    csrf_token: str,
+) -> CheckResult:
     headers = dict(FORM_HEADERS)
-    if cookie:
-        headers["Cookie"] = cookie
+    if cookies:
+        headers["Cookie"] = _cookie_header(cookies)
+    before = dict(cookies)
     started = perf_counter()
     response = await client.post(
         "/identity",
@@ -98,24 +125,22 @@ async def _timed_switch(
                 "membership_id": str(membership_id),
                 "character_id": "0",
                 "next": next_url,
+                "_csrf_token": csrf_token,
             }
         ).encode(),
         headers=headers,
     )
     wall_ms = (perf_counter() - started) * 1000
-    next_cookie = _cookie_pair(response, "elbysodic_dev_identity") or cookie
-    return (
-        CheckResult(
-            label=label,
-            method="POST",
-            path="/identity",
-            status=response.status,
-            wall_ms=wall_ms,
-            route_ms=_header(response, ROUTE_TIME_HEADER) or "",
-            expected_status=302,
-            cookie_changed=next_cookie != cookie,
-        ),
-        next_cookie,
+    cookies.update(_cookie_values(response))
+    return CheckResult(
+        label=label,
+        method="POST",
+        path="/identity",
+        status=response.status,
+        wall_ms=wall_ms,
+        route_ms=_header(response, ROUTE_TIME_HEADER) or "",
+        expected_status=302,
+        cookie_changed=cookies != before,
     )
 
 
@@ -140,7 +165,11 @@ async def run(iterations: int) -> list[CheckResult]:
         ("enter-xmen", "x-men-apocalypse", "/boards/danger-room", "X-Men Apocalypse"),
     )
     route_targets = (
-        ("network", "/network", "Studio Network"),
+        (
+            "network",
+            "/network",
+            "Find a realm that fits the story you want to write.",
+        ),
         ("nyc-claims", "/c/rl-nyc/claims", "RL NYC"),
         ("nyc-my-threads", "/c/rl-nyc/my/threads", "RL NYC"),
         ("small-town-mine", "/c/rl-small-town/boards/town-hall?filter=mine", "RL Small Town"),
@@ -155,16 +184,20 @@ async def run(iterations: int) -> list[CheckResult]:
     }
 
     results: list[CheckResult] = []
-    cookie: str | None = None
+    cookies: dict[str, str] = {}
     async with TestClient(app) as client:
+        login_page = await client.get("/login")
+        cookies.update(_cookie_values(login_page))
+        csrf_token = _csrf_token(login_page.text)
         for index in range(iterations):
             for label, slug, next_url, expected_text in switch_targets:
-                result, cookie = await _timed_switch(
+                result = await _timed_switch(
                     client,
                     f"{label}-{index + 1}",
                     memberships[slug],
                     next_url,
-                    cookie,
+                    cookies,
+                    csrf_token,
                 )
                 results.append(result)
                 results.append(
@@ -172,7 +205,7 @@ async def run(iterations: int) -> list[CheckResult]:
                         client,
                         f"{label}-landing-{index + 1}",
                         next_url,
-                        cookie,
+                        cookies,
                         expected_text=expected_text,
                     )
                 )
@@ -182,7 +215,7 @@ async def run(iterations: int) -> list[CheckResult]:
                         client,
                         f"{label}-{index + 1}",
                         path,
-                        cookie,
+                        cookies,
                         expected_text=expected_text,
                     )
                 )

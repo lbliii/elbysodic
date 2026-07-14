@@ -24,7 +24,7 @@ path.
 Current staging posture:
 
 - URL: `https://elbysodic-staging.up.railway.app`
-- Railway project: `intuitive-friendship`
+- Railway project: `Elbysodic`
 - Railway service: `elbysodic`
 - Railway environment: `staging`
 - SQLite volume mount: `/app/var`
@@ -225,6 +225,36 @@ production run so staging proof and production proof stay distinct.
 Latest known staging smoke:
 
 ```text
+Railway smoke:
+- Date: 2026-07-14
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 7fd9bb62-a214-438e-baf8-b0ea3952d776 (SUCCESS)
+- Commit: 1f1d5f84c80a7c79f82daaa985327ceae3e79b9e
+- Railway project: Elbysodic
+- Railway service: elbysodic
+- Railway environment: staging
+- Volume path: /app/var
+- Replica count: 1
+- Deploy posture: /ready healthcheck, 5-second overlap, 15-second drain
+- Auto seed: startup log reported the configured /app/var database path
+- Pounce: local `pounce check` passed on 0.9.1; staging startup reported
+  Pounce 0.9.1 on Python 3.14.2 with the GIL enabled and process workers
+- Public probes: HEAD /health, /livez, /ready, and /readyz passed with
+  bodyless semantics; GET /ready and /readyz passed
+- Seed/login smoke: seeded public realms and X-Men seed media passed; a seeded
+  writer login resolved the intended X-Men Apocalypse membership and face
+- Introspection: /_pounce/info redirected to the app login boundary, so this
+  run did not assert public build-id or free-threaded runtime posture
+- Browser QA: deep viewport, rapid-click, latest-click-wins, and writer
+  activation packs passed after one Director Studio tablet collision fix
+- Password hash posture: aggregate-only inspection reported 11 demo-seed
+  hashes and no scrypt or argon2id rows. The requested rehash proof is blocked
+  on Elbysodic #273 and lbliii/chirp#751.
+- Result: staging deployment, probes, and browser QA passed; this is not a
+  complete production or password-migration sign-off
+
+Previous complete staging smoke:
+
 Railway smoke:
 - Date: 2026-06-15
 - URL: https://elbysodic-staging.up.railway.app
