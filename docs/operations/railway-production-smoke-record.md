@@ -10,6 +10,42 @@ Production smoke has not been run yet.
 ## Attempt Log
 
 ```text
+Railway staging upgrade smoke:
+- Date: 2026-07-14
+- Operator: Codex local workspace
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 7fd9bb62-a214-438e-baf8-b0ea3952d776 (SUCCESS)
+- Commit: 1f1d5f84c80a7c79f82daaa985327ceae3e79b9e, deployed from the
+  verified local branch through Railway CLI
+- Railway project/service/environment: Elbysodic / elbysodic / staging
+- Deploy posture: one replica, /ready healthcheck, 5-second overlap,
+  15-second drain, and /app/var volume mount
+- Local Pounce check: pounce 0.9.1; app import, config validation, and
+  127.0.0.1:8765 port availability all passed
+- Staging runtime: startup log reported Pounce 0.9.1, Python 3.14.2, GIL
+  enabled, and process-worker mode. Do not treat this run as free-threaded
+  runtime proof.
+- Probe smoke: HEAD /health, /livez, /ready, and /readyz had correct bodyless
+  semantics; GET /ready and /readyz passed. /_pounce/info redirected to the
+  app login boundary, so no public build-id or gil_enabled assertion was made.
+- Seed/login smoke: the public catalog rendered Jurassic Park Universe,
+  RL NYC, and X-Men Apocalypse; X-Men seed media returned 200; a seeded writer
+  login resolved the intended X-Men Apocalypse membership and face. No
+  credentials, cookies, or account identifiers beyond the seed class are
+  recorded here.
+- Browser QA: browser-qa-deep, rapid-click-qa, latest-click-wins-qa, and
+  writer-activation-qa passed. The accepted visual fix stacks the Director
+  Studio hero before tablet shell columns collide; no privacy or service
+  contract changed.
+- Password rehash evidence: aggregate-only SSH inspection found 11 demo-seed
+  hashes and zero scrypt or argon2id hashes. A scrypt-to-argon2 staging login
+  is therefore not executable against the current seed corpus. Elbysodic #273
+  owns application integration and a safe legacy fixture; upstream Chirp #751
+  owns the verify_and_upgrade opt-in/documentation mismatch.
+- Result: staging deploy, runtime, public probes, and visual/interaction QA
+  passed. The password-rehash acceptance criterion remains blocked on #273
+  and lbliii/chirp#751; production smoke remains unrun.
+
 Chirp/Pounce 0.8 production-check adoption:
 - Date: 2026-06-15
 - Operator: Codex local workspace
