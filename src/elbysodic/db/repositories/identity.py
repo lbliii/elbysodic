@@ -3033,6 +3033,192 @@ class IdentityRepositoryMixin(RepositoryBase):
                         message.author_character_id IS NOT NULL
                         AND character.id IS NULL
                     )
+
+                UNION ALL
+
+                SELECT
+                    'continuity_proposals' AS table_name,
+                    proposal.id AS row_id,
+                    proposal.community_id,
+                    CASE
+                        WHEN author.id IS NULL
+                            THEN 'continuity proposal author belongs to another community'
+                        WHEN face.id IS NULL
+                            AND proposal.author_character_id IS NOT NULL
+                            THEN 'continuity proposal face does not belong to its author'
+                        ELSE 'continuity proposal tenant pair is invalid'
+                    END AS reason
+                FROM continuity_proposals AS proposal
+                LEFT JOIN community_memberships AS author
+                    ON author.id = proposal.author_membership_id
+                    AND author.community_id = proposal.community_id
+                LEFT JOIN characters AS face
+                    ON face.id = proposal.author_character_id
+                    AND face.community_id = proposal.community_id
+                    AND face.membership_id = proposal.author_membership_id
+                WHERE author.id IS NULL
+                    OR (
+                        proposal.author_character_id IS NOT NULL
+                        AND face.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'continuity_source_citations' AS table_name,
+                    citation.id AS row_id,
+                    citation.community_id,
+                    CASE
+                        WHEN proposal.id IS NULL
+                            THEN 'continuity citation proposal belongs to another community'
+                        WHEN thread.id IS NULL
+                            THEN 'continuity citation scene belongs to another community'
+                        WHEN citation.source_type = 'thread'
+                            AND citation.source_id != citation.source_thread_id
+                            THEN 'continuity scene citation id does not match its scene'
+                        WHEN citation.source_type = 'post' AND post.id IS NULL
+                            THEN 'continuity post citation does not match its scene and community'
+                        ELSE 'continuity citation tenant pair is invalid'
+                    END AS reason
+                FROM continuity_source_citations AS citation
+                LEFT JOIN continuity_proposals AS proposal
+                    ON proposal.id = citation.proposal_id
+                    AND proposal.community_id = citation.community_id
+                LEFT JOIN threads AS thread
+                    ON thread.id = citation.source_thread_id
+                    AND thread.community_id = citation.community_id
+                LEFT JOIN posts AS post
+                    ON post.id = citation.source_id
+                    AND post.community_id = citation.community_id
+                    AND post.thread_id = citation.source_thread_id
+                WHERE proposal.id IS NULL
+                    OR thread.id IS NULL
+                    OR (
+                        citation.source_type = 'thread'
+                        AND citation.source_id != citation.source_thread_id
+                    )
+                    OR (
+                        citation.source_type = 'post'
+                        AND post.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'continuity_affected_objects' AS table_name,
+                    affected.id AS row_id,
+                    affected.community_id,
+                    CASE
+                        WHEN proposal.id IS NULL
+                            THEN 'continuity affected-object proposal belongs to another community'
+                        ELSE 'continuity affected object belongs to another community'
+                    END AS reason
+                FROM continuity_affected_objects AS affected
+                LEFT JOIN continuity_proposals AS proposal
+                    ON proposal.id = affected.proposal_id
+                    AND proposal.community_id = affected.community_id
+                WHERE proposal.id IS NULL
+                    OR NOT (
+                        (affected.object_type = 'board' AND EXISTS (
+                            SELECT 1 FROM boards AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'character' AND EXISTS (
+                            SELECT 1 FROM characters AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'claim' AND EXISTS (
+                            SELECT 1 FROM character_claims AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'material' AND EXISTS (
+                            SELECT 1 FROM materials AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'plot_hook' AND EXISTS (
+                            SELECT 1 FROM character_plot_hooks AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'reserve' AND EXISTS (
+                            SELECT 1 FROM character_reserves AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'thread' AND EXISTS (
+                            SELECT 1 FROM threads AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                        OR (affected.object_type = 'wanted_ad' AND EXISTS (
+                            SELECT 1 FROM wanted_ads AS target
+                            WHERE target.id = affected.object_id
+                                AND target.community_id = affected.community_id
+                        ))
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'continuity_review_events' AS table_name,
+                    event.id AS row_id,
+                    event.community_id,
+                    CASE
+                        WHEN proposal.id IS NULL
+                            THEN 'continuity review proposal belongs to another community'
+                        WHEN actor.id IS NULL
+                            THEN 'continuity review actor belongs to another community'
+                        WHEN face.id IS NULL
+                            AND event.actor_character_id IS NOT NULL
+                            THEN 'continuity review face does not belong to its actor'
+                        ELSE 'continuity review event tenant pair is invalid'
+                    END AS reason
+                FROM continuity_review_events AS event
+                LEFT JOIN continuity_proposals AS proposal
+                    ON proposal.id = event.proposal_id
+                    AND proposal.community_id = event.community_id
+                LEFT JOIN community_memberships AS actor
+                    ON actor.id = event.actor_membership_id
+                    AND actor.community_id = event.community_id
+                LEFT JOIN characters AS face
+                    ON face.id = event.actor_character_id
+                    AND face.community_id = event.community_id
+                    AND face.membership_id = event.actor_membership_id
+                WHERE proposal.id IS NULL
+                    OR actor.id IS NULL
+                    OR (
+                        event.actor_character_id IS NOT NULL
+                        AND face.id IS NULL
+                    )
+
+                UNION ALL
+
+                SELECT
+                    'canon_entries' AS table_name,
+                    canon.id AS row_id,
+                    canon.community_id,
+                    CASE
+                        WHEN proposal.id IS NULL
+                            THEN 'canon entry does not reference an approved public same-community proposal'
+                        WHEN approver.id IS NULL
+                            THEN 'canon approver belongs to another community'
+                        ELSE 'canon entry tenant pair is invalid'
+                    END AS reason
+                FROM canon_entries AS canon
+                LEFT JOIN continuity_proposals AS proposal
+                    ON proposal.id = canon.approved_proposal_id
+                    AND proposal.community_id = canon.community_id
+                    AND proposal.state = 'approved'
+                    AND proposal.visibility = 'public'
+                LEFT JOIN community_memberships AS approver
+                    ON approver.id = canon.approved_by_membership_id
+                    AND approver.community_id = canon.community_id
+                WHERE proposal.id IS NULL
+                    OR approver.id IS NULL
             )
             ORDER BY table_name, community_id, row_id
             """

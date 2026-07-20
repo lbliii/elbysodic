@@ -132,7 +132,7 @@ def test_schema_v26_adds_fail_closed_thread_visibility() -> None:
         (active.id, "members"),
         (private.id, "private"),
     ]
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 26
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == CURRENT_SCHEMA_VERSION
 
 
 def test_schema_v25_preserves_materials_and_adds_presentation_variant() -> None:
@@ -164,7 +164,69 @@ def test_schema_v25_preserves_materials_and_adds_presentation_variant() -> None:
     assert migrated.title == "Legacy Premise"
     assert migrated.summary == "Preserve this director-authored premise."
     assert migrated.presentation_variant == "chapter"
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 26
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == CURRENT_SCHEMA_VERSION
+
+
+def test_schema_v27_adds_manual_continuity_backend_without_touching_existing_scenes() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Legacy Continuity Backend")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("legacy-continuity@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "legacy-continuity",
+        "Legacy Continuity",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "legacy-continuity-face",
+        "Legacy Continuity Face",
+        make_default=True,
+    )
+    board = repo.create_board(community.id, "legacy-continuity-scenes", "Legacy Scenes")
+    thread = repo.create_thread(
+        community.id,
+        board.id,
+        character.id,
+        "legacy-continuity-scene",
+        "Legacy continuity scene",
+    )
+    for table in (
+        "canon_entries",
+        "continuity_review_events",
+        "continuity_affected_objects",
+        "continuity_source_citations",
+        "continuity_proposals",
+    ):
+        connection.execute(f"DROP TRIGGER IF EXISTS trg_{table}_tenant_pair_insert")
+        connection.execute(f"DROP TRIGGER IF EXISTS trg_{table}_tenant_pair_update")
+        connection.execute(f"DROP TABLE {table}")
+    connection.execute("DELETE FROM schema_migrations WHERE version = 27")
+    connection.execute("PRAGMA user_version = 26")
+    connection.commit()
+
+    create_schema(connection)
+
+    table_names = {
+        row["name"]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+    }
+    assert {
+        "continuity_proposals",
+        "continuity_source_citations",
+        "continuity_affected_objects",
+        "continuity_review_events",
+        "canon_entries",
+    }.issubset(table_names)
+    assert repo.get_thread(community.id, thread.id).title == "Legacy continuity scene"
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == CURRENT_SCHEMA_VERSION
 
 
 def test_thread_visibility_is_tenant_scoped_and_validated(repo: ForumRepository) -> None:

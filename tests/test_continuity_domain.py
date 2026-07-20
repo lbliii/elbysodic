@@ -185,3 +185,4 @@ def test_continuity_lifecycle_distinguishes_author_and_reviewer_transitions() ->
         reviewer=True,
     )
     assert not can_transition_continuity_proposal("approved", "submitted", reviewer=True)
+    assert not can_transition_continuity_proposal("approved", "archived", reviewer=True)

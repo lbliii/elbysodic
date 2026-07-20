@@ -318,7 +318,7 @@ review.
 | Plot hooks and plotting rooms | Plotter hooks and plotting-room state only for tiers allowed to see owner/participant/staff handoff context. | Private plotting notes for public/member tiers, nonparticipant room messages, hidden targets, and unrelated rooms. | Character hook route, plotting room id, owner membership id, participant ids when tier-approved. |
 | Access requests and invitations | Counts and lifecycle metadata only in director archive profile unless a future detail export approves more. Invitation state without raw tokens. | Applicant emails, private notes, face concepts, wanted-hook private interest text, token hashes, raw invite tokens, and account-link history outside director/staff review. | Request id, invitation id, status, event timestamps, `community_id`; no raw token or hash. |
 | Notifications and queues | Notification row counts and target families only after target visibility review in director archive profile. | Public/member notification rows, inaccessible target labels, private snippets, cross-community targets, and global inbox framing. | Notification id, target kind, target family, visible target route if approved by target contract. |
-| Continuity-ready source links | Stable source references for scenes, posts, materials, claims, reserves, wanted hooks, and future reviewed canon proposals. | Unreviewed summaries, private source text, staff notes, access-request notes, and automatic canon from private material. | Source family, `community_id`, source id, optional source thread id for posts, visibility status. |
+| Continuity proposals and source links | Tenant-scoped manual proposals, thread/post citations, explicit affected objects, review events, approved canon entries, and director-archive provenance. | Private source text, reviewer notes, access-request/application/plotting notes, fanout rows, and automatic canon. | Proposal/citation/affected/review/canon ids, `community_id`, source family/id, source thread id for posts, membership actor, optional actor face, lifecycle, visibility. |
 
 Export proof groups:
 
@@ -337,19 +337,20 @@ or service API changes that alter which domains are included.
 
 ## Continuity Graph
 
-Continuity Graph is not yet a persistence primitive in this repo. Existing
-world materials and wanted-hook vocabulary can refer to canon, and
-`src/elbysodic/domain/continuity.py` names schema-neutral draft primitives for
-manual proposals, source citations, affected objects, review events, lifecycle
-state, and approved canon entries. Storage, services, notifications, rendered
-surfaces, and public canon read models remain gated by
-`docs/architecture/continuity-graph-readiness.md`.
+Continuity Graph has a backend persistence primitive in schema version 27.
+`continuity_proposals` owns manual lifecycle and visibility;
+`continuity_source_citations` stores explicit thread/post provenance;
+`continuity_affected_objects` stores allowlisted typed relationships;
+`continuity_review_events` keeps the membership reviewer separate from an
+optional owned face; and `canon_entries` materializes only approved public
+proposals. Repository writes and storage triggers validate every community
+pair, and the tenant integrity audit diagnoses legacy drift without private
+content.
 
-The first approved slice must be manual, source-linked, and reviewed. It must
-keep staff membership review authority separate from public character context,
-and it must prove that private scenes, plotting rooms, applications, staff
-notes, access-request notes, and unreviewed summaries cannot become public
-canon.
+Services own author participation, review capability, transitions, public-safe
+source checks, redacted read models, and visibility-filtered notification target
+planning. No continuity route or notification fanout exists yet; both remain
+gated by `docs/architecture/continuity-graph-readiness.md`.
 
 ## Invariants
 
