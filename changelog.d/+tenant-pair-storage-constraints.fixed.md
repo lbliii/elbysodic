@@ -1,0 +1,1 @@
+Schema upgrades now reject diagnosed cross-realm row pairings before installing tenant-integrity guards, and fresh databases enforce the same membership, face, authorship, workflow, notification, facet, and session boundaries at storage.

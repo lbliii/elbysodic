@@ -12,6 +12,13 @@ from elbysodic.services.tenant_integrity import (
 )
 
 
+def _allow_legacy_tenant_drift(repo: ForumRepository, table: str) -> None:
+    """Disable a v23 guard while manufacturing an auditable legacy row."""
+
+    repo.connection.execute(f"DROP TRIGGER trg_{table}_tenant_pair_insert")
+    repo.connection.execute(f"DROP TRIGGER trg_{table}_tenant_pair_update")
+
+
 def test_tenant_integrity_audit_reports_clean_seed_without_writes() -> None:
     services = create_services(path=":memory:")
     before_changes = services.repo.connection.total_changes
@@ -45,6 +52,7 @@ def test_tenant_integrity_audit_detects_wrong_face_authorship_without_private_te
         writer.character.id,
         "Private wrong-face audit body should not appear.",
     )
+    _allow_legacy_tenant_drift(repo, "posts")
     repo.connection.execute(
         """
         UPDATE posts
@@ -81,6 +89,7 @@ def test_tenant_integrity_audit_groups_findings_by_community_and_severity() -> N
     writer = resolve_seed_persona(repo, "xmen_writer")
     hp_director = resolve_seed_persona(repo, "hp_director")
     assert hp_director.character is not None
+    _allow_legacy_tenant_drift(repo, "community_memberships")
     repo.connection.execute(
         """
         UPDATE community_memberships
@@ -110,6 +119,8 @@ def test_tenant_integrity_audit_reports_default_face_drift_without_identity_text
     assert writer.character is not None
     assert staff.character is not None
     assert hp_director.character is not None
+
+    _allow_legacy_tenant_drift(repo, "community_memberships")
 
     repo.connection.execute(
         """
@@ -183,6 +194,7 @@ def test_tenant_integrity_audit_for_viewer_is_capability_and_community_scoped() 
         writer.character.id,
         "Viewer-scoped audit body should not appear.",
     )
+    _allow_legacy_tenant_drift(repo, "posts")
     repo.connection.execute(
         """
         UPDATE posts

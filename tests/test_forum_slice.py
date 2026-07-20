@@ -851,7 +851,9 @@ def test_mark_all_notifications_read_has_no_visible_count_cap() -> None:
         for statement in trace.statements
         if statement.strip().upper().startswith("UPDATE notifications".upper())
     ]
-    assert len(notification_updates) == 1
+    # SQLite's trace callback repeats the originating statement while row
+    # triggers execute; the operation is still one distinct bulk UPDATE.
+    assert len(set(notification_updates)) == 1
     assert "json_each" in notification_updates[0]
 
 
@@ -1393,6 +1395,9 @@ def test_tenant_prefixed_board_handles_invalid_membership_role_as_identity_failu
             services.seed.user.id,
         )
         xmen_role = services.repo.get_role_by_slug(services.seed.community.id, "member")
+        services.repo.connection.execute(
+            "DROP TRIGGER trg_community_memberships_tenant_pair_update"
+        )
         services.repo.connection.execute(
             """
             UPDATE community_memberships

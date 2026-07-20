@@ -25,6 +25,18 @@ def repo() -> ForumRepository:
     return repository
 
 
+def _drop_tenant_pair_triggers(connection: sqlite3.Connection, *tables: str) -> None:
+    for table in tables:
+        connection.execute(f"DROP TRIGGER IF EXISTS trg_{table}_tenant_pair_insert")
+        connection.execute(f"DROP TRIGGER IF EXISTS trg_{table}_tenant_pair_update")
+
+
+def _allow_legacy_tenant_drift(repo: ForumRepository, *tables: str) -> None:
+    """Disable v23 guards only while a test manufactures pre-v23 corrupt rows."""
+
+    _drop_tenant_pair_triggers(repo.connection, *tables)
+
+
 def test_boards_are_scoped_by_community(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted", "Hosted Test")
@@ -154,6 +166,51 @@ def test_schema_applies_ordered_migrations_from_historical_baseline() -> None:
     assert [row["version"] for row in rows] == list(range(1, CURRENT_SCHEMA_VERSION + 1))
     assert [row["name"] for row in rows][1:] == [migration.name for migration in MIGRATIONS]
     assert user_version == CURRENT_SCHEMA_VERSION
+
+
+def test_tenant_pair_migration_rejects_corrupt_legacy_rows() -> None:
+    connection = connect()
+    create_schema(connection)
+    connection.execute("DROP TRIGGER trg_community_memberships_tenant_pair_insert")
+    connection.execute("DROP TRIGGER trg_community_memberships_tenant_pair_update")
+    connection.execute(
+        "UPDATE schema_migrations SET version = 22, name = 'user-passkey-credentials'"
+    )
+    connection.execute("PRAGMA user_version = 22")
+    connection.execute(
+        "INSERT INTO communities (id, name, slug, created_at, updated_at) "
+        "VALUES (1, 'One', 'one', 'now', 'now'), (2, 'Two', 'two', 'now', 'now')"
+    )
+    connection.execute(
+        "INSERT INTO roles (id, community_id, slug, name, created_at, updated_at) "
+        "VALUES (1, 1, 'member', 'Member', 'now', 'now')"
+    )
+    connection.execute(
+        "INSERT INTO users (id, email, password_hash, created_at) "
+        "VALUES (1, 'legacy@example.com', 'hash', 'now')"
+    )
+    connection.execute(
+        """
+        INSERT INTO community_memberships (
+            id, community_id, user_id, username, display_name, role_id, joined_at
+        ) VALUES (1, 2, 1, 'legacy', 'Legacy', 1, 'now')
+        """
+    )
+    connection.commit()
+
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="community_memberships row 1 requires repair",
+    ):
+        create_schema(connection)
+
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 22
+    assert (
+        connection.execute("SELECT COUNT(*) FROM schema_migrations WHERE version = 23").fetchone()[
+            0
+        ]
+        == 0
+    )
 
 
 def test_fresh_schema_matches_upgraded_schema_shape() -> None:
@@ -637,6 +694,11 @@ def test_schema_migrates_community_access_request_invitation_link_from_version_1
         FROM community_access_requests
         """
     )
+    _drop_tenant_pair_triggers(
+        connection,
+        "community_access_requests",
+        "community_access_request_events",
+    )
     connection.execute("DROP TABLE community_access_requests")
     connection.execute("ALTER TABLE legacy_access_requests RENAME TO community_access_requests")
     connection.commit()
@@ -811,6 +873,11 @@ def test_community_access_requests_are_tenant_scoped(repo: ForumRepository) -> N
         invitation_id=default_invitation.id,
     )
     assert reviewed_with_invitation.invitation_id == default_invitation.id
+    _allow_legacy_tenant_drift(
+        repo,
+        "community_access_requests",
+        "community_access_request_events",
+    )
     repo.connection.execute(
         """
         UPDATE community_access_requests
@@ -1014,6 +1081,8 @@ def test_discovery_profiles_and_tags_are_tenant_scoped(repo: ForumRepository) ->
     assert {tag.community_id for tag in tags[default.id]} == {default.id}
     assert repo.get_discovery_tag(hosted.id, "premise", "weird-town").label == "Weird town"
 
+    _allow_legacy_tenant_drift(repo, "community_discovery_profiles")
+
     repo.connection.execute(
         """
         UPDATE community_discovery_profiles
@@ -1216,6 +1285,7 @@ def test_gateway_slots_are_tenant_scoped_and_validate_eligible_targets(
         repo.create_community_gateway_slot(default.id, "public_scene", hosted_scene_hub.id)
 
     diagnostic_scene = repo.create_community_gateway_slot(default.id, "scene_hub", scene_hub.id)
+    _allow_legacy_tenant_drift(repo, "community_gateway_slots")
     repo.connection.execute(
         """
         UPDATE community_gateway_slots
@@ -1336,6 +1406,8 @@ def test_community_invitation_lifecycle_is_tenant_scoped(repo: ForumRepository) 
     assert accepted.accepted_at is not None
     assert revoked.status == "revoked"
     assert revoked.revoked_at is not None
+
+    _allow_legacy_tenant_drift(repo, "community_invitations")
 
     repo.connection.execute(
         """
@@ -1618,6 +1690,17 @@ def test_membership_role_integrity_issues_detect_cross_community_roles(
         "Role Integrity",
     )
 
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: community_memberships",
+    ):
+        repo.connection.execute(
+            "UPDATE community_memberships SET role_id = ? WHERE id = ?",
+            (default_role.id, membership.id),
+        )
+
+    _allow_legacy_tenant_drift(repo, "community_memberships")
+
     repo.connection.execute(
         """
         UPDATE community_memberships
@@ -1688,6 +1771,17 @@ def test_identity_root_tenant_pair_integrity_detects_face_and_owner_drift(
         "hosted-identity-roots",
         "Hosted Identity Roots",
     )
+
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: characters",
+    ):
+        repo.connection.execute(
+            "UPDATE characters SET membership_id = ? WHERE id = ?",
+            (default_membership.id, hosted_character.id),
+        )
+
+    _allow_legacy_tenant_drift(repo, "community_memberships", "characters")
 
     repo.connection.execute(
         """
@@ -1766,6 +1860,8 @@ def test_command_submissions_are_reported_by_tenant_pair_integrity(
         """,
         (default.id, default_membership.id),
     ).fetchone()["id"]
+
+    _allow_legacy_tenant_drift(repo, "command_submissions")
 
     repo.connection.execute(
         """
@@ -1949,6 +2045,33 @@ def test_tenant_pair_integrity_issues_detect_wrong_face_authorship(
         default_membership.id,
         "A clean planning note.",
         author_character_id=default_character.id,
+    )
+
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: threads",
+    ):
+        repo.connection.execute(
+            "UPDATE threads SET author_character_id = ? WHERE id = ?",
+            (hosted_character.id, thread.id),
+        )
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: posts",
+    ):
+        repo.connection.execute(
+            "UPDATE posts SET author_character_id = ? WHERE id = ?",
+            (hosted_character.id, post.id),
+        )
+
+    _allow_legacy_tenant_drift(
+        repo,
+        "threads",
+        "posts",
+        "thread_participants",
+        "notifications",
+        "plotting_room_participants",
+        "plotting_room_messages",
     )
 
     repo.connection.execute(
@@ -2398,6 +2521,13 @@ def test_realm_interactions_are_scoped_and_accept_one_membership_response(
         """,
         (default.id, response.id),
     ).fetchone()["id"]
+    _allow_legacy_tenant_drift(
+        repo,
+        "realm_interaction_responses",
+        "realm_interaction_answers",
+        "realm_interaction_questions",
+        "realm_interaction_options",
+    )
     repo.connection.execute(
         """
         UPDATE realm_interaction_responses
@@ -2551,6 +2681,17 @@ def test_plotting_room_integrity_detects_source_owner_and_target_drift(
             )
         )
     owner_room, source_room, target_room = rooms
+
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: plotting_rooms",
+    ):
+        repo.connection.execute(
+            "UPDATE plotting_rooms SET owner_membership_id = ? WHERE id = ?",
+            (hosted_membership.id, owner_room.id),
+        )
+
+    _allow_legacy_tenant_drift(repo, "plotting_rooms")
 
     repo.connection.execute(
         """
@@ -2754,6 +2895,22 @@ def test_claim_types_template_fields_and_character_claims_are_scoped(
         )
     with pytest.raises(LookupError, match="application not found"):
         repo.set_application_field_value(hosted.id, application.id, field.id, "Leak")
+
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: character_claims",
+    ):
+        repo.connection.execute(
+            "UPDATE character_claims SET character_id = ? WHERE id = ?",
+            (hosted_character.id, face_claim.id),
+        )
+
+    _allow_legacy_tenant_drift(
+        repo,
+        "application_template_fields",
+        "application_field_values",
+        "character_claims",
+    )
 
     repo.connection.execute(
         """
@@ -2992,6 +3149,8 @@ def test_community_identity_accent_group_is_tenant_scoped(repo: ForumRepository)
     with pytest.raises(LookupError):
         repo.update_community_identity_accent_group(default.id, hosted_group.id)
 
+    _allow_legacy_tenant_drift(repo, "communities")
+
     repo.connection.execute(
         """
         UPDATE communities
@@ -3082,6 +3241,17 @@ def test_board_hierarchy_is_tenant_scoped(repo: ForumRepository) -> None:
             "Wrong House",
             parent_board_id=hosted_parent.id,
         )
+
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: boards",
+    ):
+        repo.connection.execute(
+            "UPDATE boards SET parent_board_id = ? WHERE id = ?",
+            (hosted_parent.id, child.id),
+        )
+
+    _allow_legacy_tenant_drift(repo, "boards")
 
     repo.connection.execute(
         """
@@ -3263,6 +3433,15 @@ def test_application_review_rooms_are_tenant_scoped(repo: ForumRepository) -> No
     assert repo.get_role(default.id, default_membership.role_id).is_admin is False
 
     event_id = events[0].id
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: applications",
+    ):
+        repo.connection.execute(
+            "UPDATE applications SET membership_id = ? WHERE id = ?",
+            (hosted_membership.id, submitted.id),
+        )
+    _allow_legacy_tenant_drift(repo, "applications", "application_events")
     repo.connection.execute(
         """
         UPDATE applications
@@ -3593,6 +3772,12 @@ def test_world_facets_scope_characters_boards_and_threads(repo: ForumRepository)
         """,
         (community.id, thread.id, x_men.id),
     ).fetchone()["id"]
+    _allow_legacy_tenant_drift(
+        repo,
+        "character_facets",
+        "board_facets",
+        "thread_facets",
+    )
     repo.connection.execute(
         """
         UPDATE character_facets
@@ -3736,6 +3921,8 @@ def test_network_catalog_batch_reads_are_tenant_scoped(repo: ForumRepository) ->
     with pytest.raises(LookupError, match="theme not found"):
         repo.set_default_theme(community.id, other_theme.id)
 
+    _allow_legacy_tenant_drift(repo, "communities")
+
     repo.connection.execute(
         """
         UPDATE communities
@@ -3861,6 +4048,7 @@ def test_world_materials_are_tenant_scoped_and_facet_tagged(repo: ForumRepositor
         """,
         (default.id, premise.id, x_men.id),
     ).fetchone()["id"]
+    _allow_legacy_tenant_drift(repo, "material_facets")
     repo.connection.execute(
         """
         UPDATE material_facets
@@ -4012,6 +4200,22 @@ def test_wanted_ads_are_tenant_scoped_and_facet_tagged(repo: ForumRepository) ->
         """,
         (default.id, wanted.id, magneto.id),
     ).fetchone()["id"]
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: character_reserves",
+    ):
+        repo.connection.execute(
+            "UPDATE character_reserves SET membership_id = ? WHERE id = ?",
+            (hosted_membership.id, reserve.id),
+        )
+    _allow_legacy_tenant_drift(
+        repo,
+        "character_reserves",
+        "wanted_ads",
+        "wanted_ad_interests",
+        "wanted_ad_facets",
+        "wanted_ad_related_characters",
+    )
     repo.connection.execute(
         """
         UPDATE wanted_ad_facets
@@ -4328,6 +4532,20 @@ def test_plot_hooks_and_prospective_wanted_interest_are_tenant_scoped(
         """,
         (default.id, hook.id, x_men.id),
     ).fetchone()["id"]
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: character_plot_hooks",
+    ):
+        repo.connection.execute(
+            "UPDATE character_plot_hooks SET character_id = ? WHERE id = ?",
+            (hosted_character.id, hook.id),
+        )
+    _allow_legacy_tenant_drift(
+        repo,
+        "character_plot_hook_facets",
+        "character_plot_hooks",
+        "character_plot_hook_interests",
+    )
     repo.connection.execute(
         """
         UPDATE character_plot_hook_facets
@@ -4786,6 +5004,21 @@ def test_thread_read_and_watch_boundaries_are_tenant_scoped(repo: ForumRepositor
         "Hosted reaction target.",
     )
 
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="tenant pair constraint failed: reactions",
+    ):
+        repo.connection.execute(
+            """
+            INSERT INTO reactions (
+                community_id, post_id, membership_id, reaction_key, created_at
+            ) VALUES (?, ?, ?, 'blocked', 'now')
+            """,
+            (default.id, hosted_post.id, default_membership.id),
+        )
+
+    _allow_legacy_tenant_drift(repo, "reactions", "thread_reads", "thread_watches")
+
     repo.mark_thread_read(default.id, default_thread.id, default_membership.id)
     repo.mark_thread_read(default.id, second_default_thread.id, default_membership.id)
     repo.watch_thread(default.id, default_thread.id, default_membership.id)
@@ -4952,6 +5185,8 @@ def test_post_revisions_are_scoped_by_community(repo: ForumRepository) -> None:
             "Wrong.",
             "Wrong.",
         )
+
+    _allow_legacy_tenant_drift(repo, "post_revisions")
 
     repo.connection.execute(
         """

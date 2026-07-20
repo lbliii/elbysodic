@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 22
+CURRENT_SCHEMA_VERSION = 23
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -756,6 +756,674 @@ def _add_user_passkey_credentials(connection: sqlite3.Connection) -> None:
     )
 
 
+TENANT_PAIR_RULES: tuple[tuple[str, str], ...] = (
+    (
+        "community_memberships",
+        """
+        EXISTS (
+            SELECT 1 FROM roles AS role
+            WHERE role.id = {row}.role_id
+              AND role.community_id = {row}.community_id
+        )
+        AND (
+            {row}.default_character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.default_character_id
+                  AND character.community_id = {row}.community_id
+                  AND character.membership_id = {row}.id
+            )
+        )
+        """,
+    ),
+    (
+        "characters",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
+        "command_submissions",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
+        "community_invitations",
+        """
+        EXISTS (SELECT 1 FROM roles AS role WHERE role.id = {row}.role_id AND role.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS inviter WHERE inviter.id = {row}.invited_by_membership_id AND inviter.community_id = {row}.community_id)
+        AND ({row}.accepted_membership_id IS NULL OR EXISTS (
+            SELECT 1 FROM community_memberships AS accepted
+            WHERE accepted.id = {row}.accepted_membership_id
+              AND accepted.community_id = {row}.community_id
+              AND ({row}.accepted_user_id IS NULL OR accepted.user_id = {row}.accepted_user_id)
+        ))
+        """,
+    ),
+    (
+        "community_access_requests",
+        """
+        {row}.invitation_id IS NULL OR EXISTS (
+            SELECT 1 FROM community_invitations AS invitation
+            WHERE invitation.id = {row}.invitation_id
+              AND invitation.community_id = {row}.community_id
+              AND ({row}.account_user_id IS NULL OR invitation.accepted_user_id IS NULL OR invitation.accepted_user_id = {row}.account_user_id)
+        )
+        """,
+    ),
+    (
+        "community_access_request_events",
+        """
+        EXISTS (SELECT 1 FROM community_access_requests AS request WHERE request.id = {row}.access_request_id AND request.community_id = {row}.community_id)
+        AND ({row}.actor_membership_id IS NULL OR EXISTS (SELECT 1 FROM community_memberships AS actor WHERE actor.id = {row}.actor_membership_id AND actor.community_id = {row}.community_id))
+        AND ({row}.invitation_id IS NULL OR EXISTS (SELECT 1 FROM community_invitations AS invitation WHERE invitation.id = {row}.invitation_id AND invitation.community_id = {row}.community_id))
+        """,
+    ),
+    (
+        "community_gateway_slots",
+        """
+        ({row}.slot_type = 'scene_hub' AND EXISTS (SELECT 1 FROM boards AS target WHERE target.id = {row}.target_id AND target.community_id = {row}.community_id))
+        OR ({row}.slot_type = 'wanted_hook' AND EXISTS (SELECT 1 FROM wanted_ads AS target WHERE target.id = {row}.target_id AND target.community_id = {row}.community_id))
+        OR ({row}.slot_type = 'guidebook_material' AND EXISTS (SELECT 1 FROM materials AS target WHERE target.id = {row}.target_id AND target.community_id = {row}.community_id))
+        """,
+    ),
+    (
+        "community_discovery_profiles",
+        """
+        {row}.featured_event_material_id IS NULL OR EXISTS (
+            SELECT 1 FROM materials AS material
+            WHERE material.id = {row}.featured_event_material_id
+              AND material.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
+        "boards",
+        """
+        {row}.parent_board_id IS NULL
+        OR EXISTS (
+            SELECT 1 FROM boards AS parent
+            WHERE parent.id = {row}.parent_board_id
+              AND parent.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
+        "facets",
+        """
+        EXISTS (SELECT 1 FROM facet_groups AS facet_group WHERE facet_group.id = {row}.facet_group_id AND facet_group.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "character_facets",
+        """
+        EXISTS (SELECT 1 FROM characters AS character WHERE character.id = {row}.character_id AND character.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM facets AS facet WHERE facet.id = {row}.facet_id AND facet.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "board_facets",
+        """
+        EXISTS (SELECT 1 FROM boards AS board WHERE board.id = {row}.board_id AND board.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM facets AS facet WHERE facet.id = {row}.facet_id AND facet.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "material_facets",
+        """
+        EXISTS (SELECT 1 FROM materials AS material WHERE material.id = {row}.material_id AND material.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM facets AS facet WHERE facet.id = {row}.facet_id AND facet.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "wanted_ad_facets",
+        """
+        EXISTS (SELECT 1 FROM wanted_ads AS wanted WHERE wanted.id = {row}.wanted_ad_id AND wanted.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM facets AS facet WHERE facet.id = {row}.facet_id AND facet.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "character_plot_hook_facets",
+        """
+        EXISTS (SELECT 1 FROM character_plot_hooks AS hook WHERE hook.id = {row}.plot_hook_id AND hook.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM facets AS facet WHERE facet.id = {row}.facet_id AND facet.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "thread_facets",
+        """
+        EXISTS (SELECT 1 FROM threads AS thread WHERE thread.id = {row}.thread_id AND thread.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM facets AS facet WHERE facet.id = {row}.facet_id AND facet.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "threads",
+        """
+        EXISTS (
+            SELECT 1 FROM boards AS board
+            WHERE board.id = {row}.board_id
+              AND board.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.author_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.author_character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.author_membership_id
+        )
+        """,
+    ),
+    (
+        "posts",
+        """
+        EXISTS (
+            SELECT 1 FROM threads AS thread
+            WHERE thread.id = {row}.thread_id
+              AND thread.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.author_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.author_character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.author_membership_id
+        )
+        """,
+    ),
+    (
+        "wanted_ads",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.creator_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND (
+            {row}.creator_character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.creator_character_id
+                  AND character.community_id = {row}.community_id
+                  AND character.membership_id = {row}.creator_membership_id
+            )
+        )
+        """,
+    ),
+    (
+        "wanted_ad_interests",
+        """
+        EXISTS (
+            SELECT 1 FROM wanted_ads AS wanted
+            WHERE wanted.id = {row}.wanted_ad_id
+              AND wanted.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND (
+            {row}.character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.character_id
+                  AND character.community_id = {row}.community_id
+                  AND character.membership_id = {row}.membership_id
+            )
+        )
+        """,
+    ),
+    (
+        "character_plot_hooks",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.author_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.author_membership_id
+        )
+        """,
+    ),
+    (
+        "character_plot_hook_interests",
+        """
+        EXISTS (
+            SELECT 1 FROM character_plot_hooks AS hook
+            WHERE hook.id = {row}.plot_hook_id
+              AND hook.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.membership_id
+        )
+        """,
+    ),
+    (
+        "applications",
+        """
+        EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.membership_id
+        )
+        AND (
+            {row}.source_wanted_ad_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM wanted_ads AS wanted
+                WHERE wanted.id = {row}.source_wanted_ad_id
+                  AND wanted.community_id = {row}.community_id
+            )
+        )
+        AND (
+            {row}.source_wanted_ad_interest_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM wanted_ad_interests AS interest
+                WHERE interest.id = {row}.source_wanted_ad_interest_id
+                  AND interest.community_id = {row}.community_id
+                  AND (
+                      {row}.source_wanted_ad_id IS NULL
+                      OR interest.wanted_ad_id = {row}.source_wanted_ad_id
+                  )
+            )
+        )
+        """,
+    ),
+    (
+        "application_template_fields",
+        """
+        {row}.maps_to_claim_type_id IS NULL OR EXISTS (
+            SELECT 1 FROM claim_types AS claim_type
+            WHERE claim_type.id = {row}.maps_to_claim_type_id
+              AND claim_type.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
+        "application_field_values",
+        """
+        EXISTS (SELECT 1 FROM applications AS application WHERE application.id = {row}.application_id AND application.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM application_template_fields AS field WHERE field.id = {row}.field_id AND field.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "application_events",
+        """
+        EXISTS (
+            SELECT 1 FROM applications AS application
+            WHERE application.id = {row}.application_id
+              AND application.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.actor_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND (
+            {row}.actor_character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.actor_character_id
+                  AND character.community_id = {row}.community_id
+                  AND character.membership_id = {row}.actor_membership_id
+            )
+        )
+        """,
+    ),
+    (
+        "character_reserves",
+        """
+        EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.membership_id
+        )
+        AND (
+            {row}.wanted_ad_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM wanted_ads AS wanted
+                WHERE wanted.id = {row}.wanted_ad_id
+                  AND wanted.community_id = {row}.community_id
+            )
+        )
+        AND (
+            {row}.wanted_ad_interest_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM wanted_ad_interests AS interest
+                WHERE interest.id = {row}.wanted_ad_interest_id
+                  AND interest.community_id = {row}.community_id
+                  AND interest.membership_id = {row}.membership_id
+                  AND (
+                      {row}.wanted_ad_id IS NULL
+                      OR interest.wanted_ad_id = {row}.wanted_ad_id
+                  )
+            )
+        )
+        """,
+    ),
+    (
+        "wanted_ad_related_characters",
+        """
+        EXISTS (SELECT 1 FROM wanted_ads AS wanted WHERE wanted.id = {row}.wanted_ad_id AND wanted.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM characters AS character WHERE character.id = {row}.character_id AND character.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "character_claims",
+        """
+        EXISTS (
+            SELECT 1 FROM claim_types AS claim_type
+            WHERE claim_type.id = {row}.claim_type_id
+              AND claim_type.community_id = {row}.community_id
+        )
+        AND (
+            {row}.character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.character_id
+                  AND character.community_id = {row}.community_id
+            )
+        )
+        AND (
+            {row}.application_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM applications AS application
+                WHERE application.id = {row}.application_id
+                  AND application.community_id = {row}.community_id
+                  AND ({row}.character_id IS NULL OR application.character_id = {row}.character_id)
+            )
+        )
+        AND (
+            {row}.source_reserve_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM character_reserves AS reserve
+                WHERE reserve.id = {row}.source_reserve_id
+                  AND reserve.community_id = {row}.community_id
+                  AND ({row}.character_id IS NULL OR reserve.character_id = {row}.character_id)
+            )
+        )
+        """,
+    ),
+    (
+        "plotting_rooms",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.owner_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND ({row}.source_plot_hook_id IS NULL OR EXISTS (
+            SELECT 1 FROM character_plot_hooks AS hook
+            WHERE hook.id = {row}.source_plot_hook_id
+              AND hook.community_id = {row}.community_id
+        ))
+        AND ({row}.source_plot_hook_interest_id IS NULL OR EXISTS (
+            SELECT 1 FROM character_plot_hook_interests AS interest
+            WHERE interest.id = {row}.source_plot_hook_interest_id
+              AND interest.community_id = {row}.community_id
+              AND ({row}.source_plot_hook_id IS NULL OR interest.plot_hook_id = {row}.source_plot_hook_id)
+        ))
+        AND ({row}.source_wanted_ad_id IS NULL OR EXISTS (
+            SELECT 1 FROM wanted_ads AS wanted
+            WHERE wanted.id = {row}.source_wanted_ad_id
+              AND wanted.community_id = {row}.community_id
+        ))
+        AND ({row}.source_wanted_ad_interest_id IS NULL OR EXISTS (
+            SELECT 1 FROM wanted_ad_interests AS interest
+            WHERE interest.id = {row}.source_wanted_ad_interest_id
+              AND interest.community_id = {row}.community_id
+              AND ({row}.source_wanted_ad_id IS NULL OR interest.wanted_ad_id = {row}.source_wanted_ad_id)
+        ))
+        AND ({row}.target_board_id IS NULL OR EXISTS (
+            SELECT 1 FROM boards AS board
+            WHERE board.id = {row}.target_board_id
+              AND board.community_id = {row}.community_id
+        ))
+        AND ({row}.target_thread_id IS NULL OR EXISTS (
+            SELECT 1 FROM threads AS thread
+            WHERE thread.id = {row}.target_thread_id
+              AND thread.community_id = {row}.community_id
+              AND ({row}.target_board_id IS NULL OR thread.board_id = {row}.target_board_id)
+        ))
+        """,
+    ),
+    (
+        "plotting_room_participants",
+        """
+        EXISTS (
+            SELECT 1 FROM plotting_rooms AS room
+            WHERE room.id = {row}.plotting_room_id
+              AND room.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND ({row}.character_id IS NULL OR EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.membership_id
+        ))
+        """,
+    ),
+    (
+        "plotting_room_messages",
+        """
+        EXISTS (
+            SELECT 1 FROM plotting_rooms AS room
+            WHERE room.id = {row}.plotting_room_id
+              AND room.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS membership
+            WHERE membership.id = {row}.author_membership_id
+              AND membership.community_id = {row}.community_id
+        )
+        AND ({row}.author_character_id IS NULL OR EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.author_character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.author_membership_id
+        ))
+        """,
+    ),
+    (
+        "thread_participants",
+        """
+        EXISTS (SELECT 1 FROM threads AS thread WHERE thread.id = {row}.thread_id AND thread.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM characters AS character WHERE character.id = {row}.character_id AND character.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "post_revisions",
+        """
+        EXISTS (SELECT 1 FROM posts AS post WHERE post.id = {row}.post_id AND post.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS editor WHERE editor.id = {row}.editor_membership_id AND editor.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "realm_interaction_questions",
+        """
+        EXISTS (SELECT 1 FROM realm_interactions AS interaction WHERE interaction.id = {row}.interaction_id AND interaction.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "realm_interaction_options",
+        """
+        EXISTS (SELECT 1 FROM realm_interaction_questions AS question WHERE question.id = {row}.question_id AND question.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "realm_interaction_responses",
+        """
+        EXISTS (SELECT 1 FROM realm_interactions AS interaction WHERE interaction.id = {row}.interaction_id AND interaction.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS membership WHERE membership.id = {row}.membership_id AND membership.community_id = {row}.community_id)
+        AND ({row}.character_id IS NULL OR EXISTS (SELECT 1 FROM characters AS character WHERE character.id = {row}.character_id AND character.community_id = {row}.community_id AND character.membership_id = {row}.membership_id))
+        """,
+    ),
+    (
+        "realm_interaction_answers",
+        """
+        EXISTS (
+            SELECT 1 FROM realm_interaction_responses AS response
+            JOIN realm_interaction_questions AS question ON question.id = {row}.question_id
+            WHERE response.id = {row}.response_id
+              AND response.community_id = {row}.community_id
+              AND question.community_id = {row}.community_id
+              AND question.interaction_id = response.interaction_id
+        )
+        AND ({row}.option_id IS NULL OR EXISTS (SELECT 1 FROM realm_interaction_options AS option WHERE option.id = {row}.option_id AND option.community_id = {row}.community_id AND option.question_id = {row}.question_id))
+        """,
+    ),
+    (
+        "reactions",
+        """
+        EXISTS (SELECT 1 FROM posts AS post WHERE post.id = {row}.post_id AND post.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS membership WHERE membership.id = {row}.membership_id AND membership.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "thread_reads",
+        """
+        EXISTS (SELECT 1 FROM threads AS thread WHERE thread.id = {row}.thread_id AND thread.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS membership WHERE membership.id = {row}.membership_id AND membership.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "thread_watches",
+        """
+        EXISTS (SELECT 1 FROM threads AS thread WHERE thread.id = {row}.thread_id AND thread.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS membership WHERE membership.id = {row}.membership_id AND membership.community_id = {row}.community_id)
+        """,
+    ),
+    (
+        "notifications",
+        """
+        EXISTS (SELECT 1 FROM community_memberships AS membership WHERE membership.id = {row}.membership_id AND membership.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS actor WHERE actor.id = {row}.actor_membership_id AND actor.community_id = {row}.community_id)
+        AND ({row}.thread_id IS NULL OR EXISTS (SELECT 1 FROM threads AS thread WHERE thread.id = {row}.thread_id AND thread.community_id = {row}.community_id))
+        AND ({row}.post_id IS NULL OR EXISTS (SELECT 1 FROM posts AS post WHERE post.id = {row}.post_id AND post.community_id = {row}.community_id AND ({row}.thread_id IS NULL OR post.thread_id = {row}.thread_id)))
+        AND ({row}.wanted_ad_id IS NULL OR EXISTS (SELECT 1 FROM wanted_ads AS wanted WHERE wanted.id = {row}.wanted_ad_id AND wanted.community_id = {row}.community_id))
+        AND ({row}.wanted_ad_interest_id IS NULL OR EXISTS (SELECT 1 FROM wanted_ad_interests AS interest WHERE interest.id = {row}.wanted_ad_interest_id AND interest.community_id = {row}.community_id AND ({row}.wanted_ad_id IS NULL OR interest.wanted_ad_id = {row}.wanted_ad_id)))
+        AND ({row}.character_plot_hook_id IS NULL OR EXISTS (SELECT 1 FROM character_plot_hooks AS hook WHERE hook.id = {row}.character_plot_hook_id AND hook.community_id = {row}.community_id))
+        AND ({row}.plotting_room_id IS NULL OR EXISTS (SELECT 1 FROM plotting_rooms AS room WHERE room.id = {row}.plotting_room_id AND room.community_id = {row}.community_id))
+        AND ({row}.character_id IS NULL OR EXISTS (SELECT 1 FROM characters AS character WHERE character.id = {row}.character_id AND character.community_id = {row}.community_id))
+        AND ({row}.actor_character_id IS NULL OR EXISTS (SELECT 1 FROM characters AS character WHERE character.id = {row}.actor_character_id AND character.community_id = {row}.community_id AND character.membership_id = {row}.actor_membership_id))
+        """,
+    ),
+)
+
+COMMUNITY_TENANT_PAIR_PREDICATE = """
+({row}.default_theme_id IS NULL OR EXISTS (
+    SELECT 1 FROM themes AS theme
+    WHERE theme.id = {row}.default_theme_id
+      AND theme.community_id = {row}.id
+))
+AND ({row}.identity_accent_facet_group_id IS NULL OR EXISTS (
+    SELECT 1 FROM facet_groups AS facet_group
+    WHERE facet_group.id = {row}.identity_accent_facet_group_id
+      AND facet_group.community_id = {row}.id
+))
+"""
+
+
+def ensure_tenant_pair_triggers(connection: sqlite3.Connection) -> None:
+    """Install storage guards for acceptance-critical tenant pairings."""
+
+    for table, predicate_template in TENANT_PAIR_RULES:
+        predicate = " ".join(predicate_template.format(row="NEW").split())
+        message = f"tenant pair constraint failed: {table}"
+        connection.execute(
+            f"""
+            CREATE TRIGGER IF NOT EXISTS trg_{table}_tenant_pair_insert
+            BEFORE INSERT ON {table}
+            WHEN NOT ({predicate})
+            BEGIN
+                SELECT RAISE(ABORT, '{message}');
+            END
+            """
+        )
+        connection.execute(
+            f"""
+            CREATE TRIGGER IF NOT EXISTS trg_{table}_tenant_pair_update
+            BEFORE UPDATE ON {table}
+            WHEN NEW.community_id != OLD.community_id OR NOT ({predicate})
+            BEGIN
+                SELECT RAISE(ABORT, '{message}');
+            END
+            """
+        )
+    community_predicate = " ".join(COMMUNITY_TENANT_PAIR_PREDICATE.format(row="NEW").split())
+    connection.execute(
+        f"""
+        CREATE TRIGGER IF NOT EXISTS trg_communities_tenant_pair_update
+        BEFORE UPDATE ON communities
+        WHEN NEW.id != OLD.id OR NOT ({community_predicate})
+        BEGIN
+            SELECT RAISE(ABORT, 'tenant pair constraint failed: communities');
+        END
+        """
+    )
+
+
+def _enforce_tenant_pair_constraints(connection: sqlite3.Connection) -> None:
+    for table, predicate_template in TENANT_PAIR_RULES:
+        predicate = " ".join(predicate_template.format(row="candidate").split())
+        # Both fragments come from the closed, code-owned rule tuple above; no
+        # runtime or operator input can reach this migration query.
+        query = (
+            f"SELECT candidate.rowid AS row_id FROM {table} AS candidate "  # noqa: S608
+            f"WHERE NOT ({predicate}) LIMIT 1"
+        )
+        invalid = connection.execute(query).fetchone()
+        if invalid is not None:
+            raise sqlite3.IntegrityError(
+                "tenant pair migration blocked: "
+                f"{table} row {invalid['row_id']} requires repair; run the tenant integrity audit"
+            )
+    community_predicate = " ".join(COMMUNITY_TENANT_PAIR_PREDICATE.format(row="candidate").split())
+    # The predicate is a code-owned constant, not runtime or operator input.
+    community_query = (
+        "SELECT candidate.rowid AS row_id FROM communities AS candidate "  # noqa: S608
+        f"WHERE NOT ({community_predicate}) LIMIT 1"
+    )
+    invalid_community = connection.execute(community_query).fetchone()
+    if invalid_community is not None:
+        raise sqlite3.IntegrityError(
+            "tenant pair migration blocked: "
+            f"communities row {invalid_community['row_id']} requires repair; "
+            "run the tenant integrity audit"
+        )
+    ensure_tenant_pair_triggers(connection)
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -786,6 +1454,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(21, "community-access-request-events", _add_community_access_request_events),
     Migration(22, "user-passkey-credentials", _add_user_passkey_credentials),
+    Migration(23, "tenant-pair-storage-constraints", _enforce_tenant_pair_constraints),
 )
 
 
