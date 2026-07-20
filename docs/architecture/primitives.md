@@ -88,6 +88,13 @@ Thread starter metadata follows the same pattern. Permissions are evaluated
 through the membership unless Elbysodic later adds an explicit
 character-specific restriction.
 
+Scene lifecycle and audience are separate contracts. `threads.status` says
+whether a scene is open, active, paused, complete, private-legacy, or archived;
+`threads.visibility` says whether it is available as a four-post
+`public_preview`, readable by `members`, or forced `private` by a private
+location/legacy private status. An open or active scene is not public unless its
+visibility explicitly says so.
+
 ## Thread State And Queues
 
 Thread participation is tracked through characters, but obligations are
@@ -256,9 +263,12 @@ realm cards.
 
 Program Blueprints are director-authored starter packets for communities,
 starter faces, boards, materials, wanted hooks, theme tokens, appearance
-choices, and board media. Current Studio intake supports parsing, validation,
-and dry-run preview. Apply/hydration is intentionally gated until a typed diff,
-collision handling, transaction, rollback, and tenant tests exist.
+choices, and board media. Studio intake supports parsing, validation, a
+current-realm typed diff, and explicit create-only, skip-existing,
+explicit-update, or dry-run apply modes. Non-dry-run hydration and its accepted
+audit event commit in one transaction behind a preview fingerprint and
+idempotency key; tenant and ownership checks prevent cross-realm attachment or
+casual replacement of another writer's face or wanted hook.
 
 ## Moderation
 

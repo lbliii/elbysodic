@@ -50,8 +50,9 @@ state gaps:
 - Accepted applications surface a service-owned next writing move, and accepted
   face activation can recommend a specific opening when claims/reserves are
   clear.
-- Program Blueprint apply remains gated, with apply-readiness checklist data
-  owned by the service rather than the template.
+- Program Blueprint apply is implemented behind a service-owned current-realm
+  diff, explicit collision mode, fingerprint/idempotency guard, atomic audit,
+  and rollback/tenant/ownership proof.
 - `scripts/browser_qa.py --profile community-landing` now covers public,
   account-visitor, member, accepted-application, and Studio routes for local
   screenshot QA. The profile passed locally on 2026-05-19 with artifacts in

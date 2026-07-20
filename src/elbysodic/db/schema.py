@@ -392,6 +392,9 @@ CREATE TABLE IF NOT EXISTS materials (
     slug TEXT NOT NULL,
     title TEXT NOT NULL,
     material_type TEXT NOT NULL DEFAULT 'guide',
+    presentation_variant TEXT NOT NULL DEFAULT 'chapter' CHECK (
+        presentation_variant IN ('chapter', 'dossier', 'noticeboard', 'archive')
+    ),
     summary TEXT NOT NULL DEFAULT '',
     body TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'published',
@@ -692,6 +695,9 @@ CREATE TABLE IF NOT EXISTS threads (
     slug TEXT NOT NULL,
     title TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
+    visibility TEXT NOT NULL DEFAULT 'members' CHECK (
+        visibility IN ('public_preview', 'members', 'private')
+    ),
     location TEXT NOT NULL DEFAULT '',
     timeline TEXT NOT NULL DEFAULT '',
     summary TEXT NOT NULL DEFAULT '',

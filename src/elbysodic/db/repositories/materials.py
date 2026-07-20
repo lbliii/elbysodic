@@ -11,6 +11,8 @@ from elbysodic.db.repositories.rows import _community_from_row, _material_from_r
 from elbysodic.domain.models import Community, Material
 from elbysodic.domain.vocabulary import MATERIAL_TYPES
 
+MATERIAL_PRESENTATION_VARIANTS = frozenset({"chapter", "dossier", "noticeboard", "archive"})
+
 
 class MaterialRepositoryMixin(FacetRepositoryMixin):
     def create_material(
@@ -20,6 +22,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
         title: str,
         *,
         material_type: str = "guide",
+        presentation_variant: str = "chapter",
         summary: str = "",
         body: str = "",
         status: str = "published",
@@ -28,6 +31,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
     ) -> Material:
         self.get_community(community_id)
         _require_material_type(material_type)
+        _require_material_presentation_variant(presentation_variant)
         now = _utc_now()
         cursor = self.connection.execute(
             """
@@ -36,6 +40,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 slug,
                 title,
                 material_type,
+                presentation_variant,
                 summary,
                 body,
                 status,
@@ -44,13 +49,14 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
                 slug,
                 title,
                 material_type,
+                presentation_variant,
                 summary,
                 body,
                 status,
@@ -72,6 +78,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 slug,
                 title,
                 material_type,
+                presentation_variant,
                 summary,
                 body,
                 status,
@@ -97,6 +104,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 slug,
                 title,
                 material_type,
+                presentation_variant,
                 summary,
                 body,
                 status,
@@ -155,20 +163,26 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
         *,
         title: str,
         material_type: str,
+        presentation_variant: str | None = None,
         summary: str,
         body: str,
         status: str = "published",
         sort_order: int = 0,
         is_featured: bool = False,
     ) -> Material:
-        self.get_material(community_id, material_id)
+        material = self.get_material(community_id, material_id)
         _require_material_type(material_type)
+        resolved_variant = (
+            material.presentation_variant if presentation_variant is None else presentation_variant
+        )
+        _require_material_presentation_variant(resolved_variant)
         self.connection.execute(
             """
             UPDATE materials
             SET
                 title = ?,
                 material_type = ?,
+                presentation_variant = ?,
                 summary = ?,
                 body = ?,
                 status = ?,
@@ -180,6 +194,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
             (
                 title,
                 material_type,
+                resolved_variant,
                 summary,
                 body,
                 status,
@@ -212,6 +227,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 slug,
                 title,
                 material_type,
+                presentation_variant,
                 summary,
                 body,
                 status,
@@ -248,6 +264,7 @@ class MaterialRepositoryMixin(FacetRepositoryMixin):
                 slug,
                 title,
                 material_type,
+                presentation_variant,
                 summary,
                 body,
                 status,
@@ -272,3 +289,9 @@ def _require_material_type(material_type: str) -> None:
     if material_type not in MATERIAL_TYPES:
         allowed = ", ".join(sorted(MATERIAL_TYPES))
         raise ValueError(f"material_type must be one of: {allowed}")
+
+
+def _require_material_presentation_variant(presentation_variant: str) -> None:
+    if presentation_variant not in MATERIAL_PRESENTATION_VARIANTS:
+        allowed = ", ".join(sorted(MATERIAL_PRESENTATION_VARIANTS))
+        raise ValueError(f"presentation_variant must be one of: {allowed}")

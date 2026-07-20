@@ -31,6 +31,13 @@ PLOT_HOOK_TYPE_LABELS: dict[str, str] = {
 }
 PLOT_HOOK_TYPES: frozenset[str] = frozenset(PLOT_HOOK_TYPE_LABELS)
 
+THREAD_VISIBILITY_LABELS: dict[str, str] = {
+    "public_preview": "Public preview",
+    "members": "Realm members",
+    "private": "Private scene",
+}
+THREAD_VISIBILITIES: frozenset[str] = frozenset(THREAD_VISIBILITY_LABELS)
+
 
 def vocabulary_label(value: str, labels: dict[str, str]) -> str:
     return labels.get(value, value.replace("_", " ").title())

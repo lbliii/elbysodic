@@ -1,0 +1,103 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import container, stack, cluster %}
+  {% from "chirpui/surface.html" import surface %}
+{% end %}
+
+{% block page_root %}
+<div id="page-root" class="elbysodic-scene-reader-root elbysodic-public-scene-preview">
+{% block page_root_inner %}
+{% block page_content %}
+{% call container(max_width="72rem") %}
+{% call stack(gap="lg") %}
+  <a class="chirpui-link" href="/">← {{ preview.community.name }}</a>
+
+  <header class="elbysodic-thread-stage elbysodic-thread-stage--editorial">
+    <div class="elbysodic-thread-stage__copy">
+      <p class="elbysodic-kicker">Public scene preview · {{ preview.board_name }}</p>
+      <h1>{{ preview.thread_title }}</h1>
+      {% if preview.thread_summary %}
+      <p class="elbysodic-thread-stage__logline">{{ preview.thread_summary }}</p>
+      {% end %}
+      {% call cluster(gap="sm") %}
+        {{ badge(preview.thread_status.replace("_", " ").title(), variant="muted") }}
+        {% if preview.location %}{{ badge(preview.location, variant="muted") }}{% end %}
+        {% if preview.timeline %}{{ badge(preview.timeline, variant="muted") }}{% end %}
+      {% end %}
+      <p class="elbysodic-copy-helper">
+        The writers opened this scene for a four-post preview. Writer identities, replies, watches, and realm-only context stay private.
+      </p>
+    </div>
+  </header>
+
+  {% if preview.cast %}
+  <section aria-labelledby="public-preview-cast">
+    <h2 id="public-preview-cast" class="elbysodic-kicker">Faces in this scene</h2>
+    <div class="chirpui-cluster chirpui-cluster--sm">
+      {% for face in preview.cast %}
+      <span class="elbysodic-reader-chip">
+        <span class="elbysodic-character-avatar" aria-hidden="true">
+          {% if face.avatar_url %}<img src="{{ face.avatar_url }}" alt="">{% else %}<span>{{ face.name[:1] }}</span>{% end %}
+        </span>
+        <strong>{{ face.name }}</strong>
+      </span>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+  <section aria-labelledby="public-preview-posts">
+    <h2 id="public-preview-posts" class="elbysodic-visually-hidden">Scene preview posts</h2>
+    <div class="elbysodic-post-list elbysodic-post-list--editorial-wrap" aria-label="First four scene posts">
+      {% for item in preview.posts %}
+      {% call surface(variant="elevated", cls="elbysodic-post-shell") %}
+      <article id="{{ item.anchor }}" class="elbysodic-post">
+        <aside class="elbysodic-post__poster elbysodic-post-profile" aria-label="{{ item.author.name }} face">
+          <div class="elbysodic-post__poster-media" aria-hidden="true">
+            {% if item.author.poster_url %}
+            <img src="{{ item.author.poster_url }}" alt="{{ item.author.poster_alt or item.author.name }}">
+            {% else %}
+            <span>{{ item.author.name[:1] }}</span>
+            {% end %}
+          </div>
+          <div class="elbysodic-post__poster-card">
+            <div class="elbysodic-post__poster-name"><h2>{{ item.author.name }}</h2></div>
+            {% if item.author.tagline %}<p class="elbysodic-post__poster-tagline">{{ item.author.tagline }}</p>{% end %}
+          </div>
+        </aside>
+        <div class="elbysodic-post__body">
+          <header class="elbysodic-post__meta">
+            <div class="elbysodic-post__meta-line">
+              <strong class="elbysodic-post__author-name">{{ item.author.name }}</strong>
+              <time datetime="{{ item.created_at }}" title="{{ item.created_at_label }}">{{ item.created_at_relative_label }}</time>
+              <a class="chirpui-link" href="#{{ item.anchor }}" aria-label="Permalink to preview post {{ item.post_number }}">#{{ item.post_number }}</a>
+              {% if item.is_edited %}<span>edited</span>{% end %}
+            </div>
+          </header>
+          <div class="elbysodic-prose-body elbysodic-post-content">{{ item.rendered_body }}</div>
+        </div>
+      </article>
+      {% end %}
+      {% end %}
+    </div>
+  </section>
+
+  {% call surface(variant="elevated", cls="elbysodic-access-account") %}
+  <section aria-labelledby="public-preview-gate">
+    <p class="elbysodic-kicker">Preview boundary</p>
+    <h2 id="public-preview-gate">{% if preview.has_more_posts %}The scene continues inside the realm{% else %}Follow this scene inside the realm{% end %}</h2>
+    <p>
+      You’ve reached the public preview boundary. Join {{ preview.community.name }} to read realm-only posts and participate with a face of your own.
+    </p>
+    {% call cluster(gap="sm") %}
+      <a class="chirpui-btn chirpui-btn--primary" href="/request-access">Request access</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/login?next={{ current_path }}" data-elbysodic-global-link>Log in</a>
+    {% end %}
+  </section>
+  {% end %}
+{% end %}
+{% end %}
+{% end %}
+{% endblock %}
+</div>
+{% endblock %}

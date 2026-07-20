@@ -5238,6 +5238,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         triage.id,
         status="active",
+        visibility="public_preview",
         location="Xavier Institute med-bay",
         timeline="First night of the B-24 winter",
         summary="Moira opens the school infirmary while students and refugees arrive from the cold.",
@@ -5294,6 +5295,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         evacuation.id,
         status="open",
+        visibility="public_preview",
         location="Midtown evacuation route",
         timeline="B-24 winter, hour six",
         summary="Cyclops coordinates a street-level rescue while cameras turn every mutant power into evidence.",
@@ -5563,6 +5565,7 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         drill.id,
         status="active",
+        visibility="public_preview",
         location="Danger Room",
         timeline="After curfew",
         summary="A late-night training run turns into exactly the kind of trouble everyone expected.",
@@ -6437,6 +6440,11 @@ def _seed_original_premise_depth(
             timeline="Current chapter",
         ),
     )
+    opening = repo.update_thread_scene(
+        community.id,
+        opening.id,
+        visibility="public_preview",
+    )
     repo.set_thread_participants(
         community.id,
         opening.id,
@@ -6469,6 +6477,11 @@ def _seed_original_premise_depth(
             location=boards[1].name,
             timeline="Current chapter",
         ),
+    )
+    followup = repo.update_thread_scene(
+        community.id,
+        followup.id,
+        visibility="public_preview",
     )
     repo.set_thread_participants(
         community.id,

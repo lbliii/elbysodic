@@ -64,6 +64,9 @@
 {% end %}
 
 {% block head_extra %}
+{% if robots_noindex | default(false) %}
+    <meta name="robots" content="noindex, nofollow">
+{% end %}
     <script>
     (function () {
       var cookieName = "elbysodic_sidebar_hidden_v2";

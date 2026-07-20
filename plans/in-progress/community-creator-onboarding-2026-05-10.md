@@ -83,9 +83,9 @@ signup or hosted billing scope.
 - The post-PR31 roadmap already prioritizes first realm setup, invitation
   model, first-face onboarding, and then Blueprint Apply or Guided Realm
   Builder.
-- Program Blueprint intake can parse, validate, and preview YAML, but apply is
-  gated until typed diff, collision handling, transaction, rollback, and tenant
-  proof exist.
+- Program Blueprint intake can parse, validate, preview, and apply current-realm
+  YAML after an explicit collision-mode review; typed diff, transaction,
+  rollback, tenant, ownership, idempotency, and audit proof are implemented.
 - The MVP is one community per install, but architecture remains tenant-aware.
 
 ## Product Principles
@@ -97,7 +97,8 @@ signup or hosted billing scope.
   sections, status, and next actions.
 - Do not open public self-serve registration before invitation and first-face
   onboarding are implemented.
-- Do not expose Blueprint Apply until the hydration gate is satisfied.
+- Keep Blueprint Apply behind the satisfied hydration contract: current-realm
+  diff, explicit mode, named capability, fingerprint, transaction, and audit.
 - Keep `community_id`, membership ownership, character authorship, and
   role-based permissions explicit in every implementation slice.
 
@@ -443,8 +444,8 @@ Collateral:
   production usage.
 - Invitation model must land before broad writer onboarding.
 - First-face onboarding must land before public creator onboarding.
-- Program Blueprint Apply must wait for typed diff, transaction, rollback, and
-  tenant proof.
+- Program Blueprint Apply now carries typed diff, transaction, rollback,
+  tenant, ownership, and audit proof; new-realm creation remains separate.
 - Transaction helper should precede multi-row setup writes where practical.
 
 ## Not Now
@@ -454,7 +455,8 @@ Collateral:
 - Raw CSS skins or external theme assets.
 - General plugin system.
 - Multi-community management UI beyond preserving tenant-aware architecture.
-- Blueprint Apply button before the hydration gate.
+- Blueprint-driven hosted realm creation or unreviewed apply outside the
+  current-realm hydration contract.
 
 ## Steward Notes
 

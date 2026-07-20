@@ -100,11 +100,25 @@ SURFACE_CONTRACTS: tuple[SurfaceContract, ...] = (
     ),
     SurfaceContract(
         key="thread_and_posting",
-        route_family="/boards/{board} and /boards/{board}/threads/{thread}",
-        page_path="src/elbysodic/web/pages/boards/{board_slug}/page.py",
-        service_calls=("services.board_page(",),
-        read_models=("BoardPage", "ThreadView", "PostView"),
-        viewer_modes=("member", "owner", "staff", "faceless", "cross_tenant"),
+        route_family=(
+            "/boards/{board}, /boards/{board}/threads/{thread}, and "
+            "/c/{community}/boards/{board}/threads/{thread}"
+        ),
+        page_path="src/elbysodic/web/pages/boards/{board_slug}/threads/{thread_slug}/page.py",
+        service_calls=(
+            "services.read_scene_context(",
+            "services.public_scene_preview(",
+        ),
+        read_models=("ThreadView", "PostView", "PublicScenePreview"),
+        viewer_modes=(
+            "public",
+            "account_visitor",
+            "member",
+            "owner",
+            "staff",
+            "faceless",
+            "cross_tenant",
+        ),
         dimensions=(
             "shell_count",
             "page_list",
@@ -118,6 +132,8 @@ SURFACE_CONTRACTS: tuple[SurfaceContract, ...] = (
             "tests/test_forum_slice.py::test_forum_pages_render_seeded_boards_and_thread",
             "tests/test_forum_slice.py::test_rendered_surface_contract_parity_across_realm_viewers",
             "tests/test_forum_slice.py::test_reply_notification_failure_rolls_back_post",
+            "tests/test_web_security.py::test_production_signed_out_public_scene_stops_after_four_posts",
+            "tests/test_web_security.py::test_production_public_scene_route_fails_closed_for_member_only_and_private_scenes",
         ),
     ),
     SurfaceContract(

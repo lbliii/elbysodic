@@ -34,6 +34,7 @@ from elbysodic.services.threads import (
     clean_participant_ids,
     clean_posting_mode,
     clean_thread_status,
+    clean_thread_visibility,
     taggable_characters,
 )
 
@@ -54,6 +55,7 @@ class PostingRepository(NotificationRepository, Protocol):
         title: str,
         *,
         status: str = "active",
+        visibility: str = "members",
         location: str = "",
         timeline: str = "",
         summary: str = "",
@@ -66,6 +68,7 @@ class PostingRepository(NotificationRepository, Protocol):
         thread_id: int,
         *,
         status: str,
+        visibility: str | None = None,
         location: str = "",
         timeline: str = "",
         summary: str = "",
@@ -256,6 +259,7 @@ def update_thread_scene(
     thread_slug: str,
     *,
     status: str,
+    visibility: str | None = None,
     location: str = "",
     timeline: str = "",
     summary: str = "",
@@ -266,11 +270,13 @@ def update_thread_scene(
     if not can_manage_scene(viewer, thread):
         raise PermissionError(f"membership {viewer.membership.id} cannot manage scene {thread.id}")
     cleaned_status = clean_thread_status(status)
+    cleaned_visibility = None if visibility is None else clean_thread_visibility(visibility)
     cleaned_posting_mode = clean_posting_mode(posting_mode)
     repo.update_thread_scene(
         viewer.community.id,
         thread.id,
         status=cleaned_status,
+        visibility=cleaned_visibility,
         location=location.strip(),
         timeline=timeline.strip(),
         summary=summary.strip(),
@@ -363,6 +369,7 @@ def start_thread(
     title: str,
     body: str,
     status: str = "active",
+    visibility: str = "members",
     location: str = "",
     timeline: str = "",
     summary: str = "",
@@ -386,6 +393,7 @@ def start_thread(
     if not cleaned_body:
         raise ValueError("opening post is required")
     cleaned_status = clean_thread_status(status)
+    cleaned_visibility = clean_thread_visibility(visibility)
     cleaned_posting_mode = clean_posting_mode(posting_mode)
     taggable_ids = {
         item.id
@@ -409,6 +417,7 @@ def start_thread(
             slug,
             cleaned_title,
             status=cleaned_status,
+            visibility=cleaned_visibility,
             location=location.strip(),
             timeline=timeline.strip(),
             summary=summary.strip(),

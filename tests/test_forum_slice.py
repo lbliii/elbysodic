@@ -2733,7 +2733,14 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
         "public-gateway-scene",
         "Public gateway scene",
         status="open",
+        visibility="public_preview",
         summary="A public scene that can safely invite first-face readers.",
+    )
+    repo.create_post(
+        community.id,
+        public_thread.id,
+        rogue.id,
+        "A public opening beat makes this a real scene preview.",
     )
 
     gateway = services.public_realm_gateway(community.slug)
@@ -2844,6 +2851,7 @@ def test_public_realm_gateway_ranks_active_scene_hubs_before_limit() -> None:
             f"active-hub-scene-{index}",
             f"Active hub scene {index}",
             status="open",
+            visibility="public_preview",
         )
     repo.update_community_launch_status(community.id, "public-preview")
 
@@ -5753,33 +5761,33 @@ def test_studio_intake_previews_program_blueprint_yaml_without_hydration() -> No
         blueprint_yaml = """
 elbysodic_blueprint: 1
 program:
-  slug: rl-small-town-preview
-  name: RL Small Town Preview
+  slug: x-men-apocalypse
+  name: X-Men Apocalypse
   role:
-    slug: director
-    name: Director
+    slug: staff
+    name: Staff
     is_admin: true
 characters:
-  - slug: june-calloway
-    name: June Calloway
+  - slug: blueprint-render-face
+    name: Blueprint Render Face
     summary: Florist and town council note-taker.
 boards:
-  - slug: main-street
-    name: Main Street
+  - slug: blueprint-render-main-street
+    name: Blueprint Render Main Street
     kind: location
     tagline: One stoplight, twelve opinions.
     description: The town's public spine.
 materials:
-  - slug: premise
-    title: Premise
+  - slug: blueprint-render-premise
+    title: Blueprint Render Premise
     type: premise
     summary: A small-town ensemble.
     body: Founder's Week should be a cozy pressure cooker.
 wanted:
-  - slug: returning-sibling
-    title: Returning sibling
+  - slug: blueprint-render-returning-sibling
+    title: Blueprint Render Returning Sibling
     type: relationship
-    related_material: premise
+    related_material: blueprint-render-premise
     summary: A homecoming character with history.
     body: Someone left, came back, and knows where the deed is hidden.
 appearance:
@@ -5816,24 +5824,26 @@ appearance:
                         "intent": "apply_blueprint",
                         "blueprint_yaml": blueprint_yaml,
                         "preview_fingerprint": "stale-preview",
+                        "apply_mode": "create_only",
                     }
                 ).encode(),
                 headers=_FORM,
             )
-            gated_apply = await client.post(
+            applied = await client.post(
                 "/studio/intake",
                 body=urlencode(
                     {
                         "intent": "apply_blueprint",
                         "blueprint_yaml": blueprint_yaml,
                         "preview_fingerprint": preview.preview_fingerprint,
+                        "apply_mode": "create_only",
                     }
                 ).encode(),
                 headers=_FORM,
             )
 
         assert page.status == 200
-        assert "Dry-run YAML intake" in page.text
+        assert "Reviewed YAML intake" in page.text
         assert response.status == 200
         assert "valid dry run" in response.text
         assert "1 program" in response.text
@@ -5845,31 +5855,48 @@ appearance:
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration diff preview" in response.text
         assert "Preview fingerprint:" in response.text
-        assert "Preflight: 7 create actions." in response.text
-        assert "create</strong> program: RL Small Town Preview" in response.text
-        assert "create</strong> scene hub: Main Street" in response.text
-        assert "create</strong> wanted hook: Returning sibling" in response.text
-        assert "Hydration gate: nothing has been applied." in response.text
-        assert "duplicate handling, ownership defaults, rollback behavior" in response.text
+        assert "Preflight: 4 create actions, 3 update actions." in response.text
+        assert "update</strong> program: X-Men Apocalypse" in response.text
+        assert "create</strong> scene hub: Blueprint Render Main Street" in response.text
+        assert "create</strong> wanted hook: Blueprint Render Returning Sibling" in response.text
+        assert "Hydration status: nothing has been applied from this preview." in response.text
         assert "Apply readiness review" in response.text
         assert (
-            "Preflight resolved 7 create, 0 update, 0 skip, 0 blocked, and 0 warning actions."
+            "Preflight resolved 4 create, 3 update, 0 skip, 0 blocked, and 0 warning actions."
             in (response.text)
         )
         assert "No live face or wanted-hook collisions need explicit update mode." in response.text
-        assert "Duplicate handling must stay tenant-scoped." in response.text
-        assert "Hydration must run inside one rollback-tested transaction." in response.text
-        assert "Check apply gate" in response.text
+        assert "Explicit update replaces only current-realm rows" in response.text
+        assert "Starter faces and wanted hooks are owned by the importing director" in (
+            response.text
+        )
+        assert "Apply uses one rollback-tested transaction" in response.text
+        assert "Collision mode" in response.text
+        assert "Create only — stop on live collisions" in response.text
+        assert "Apply reviewed blueprint" in response.text
         assert stale_apply.status == 200
         assert "Program Blueprint preview changed; preview again before applying." in (
             stale_apply.text
         )
-        assert gated_apply.status == 200
-        assert "Program Blueprint apply remains gated; no rows were written." in (gated_apply.text)
+        assert applied.status == 200
+        assert "Blueprint applied in create only mode." in applied.text
+        assert "Current-realm rows and the accepted audit event committed together." in (
+            applied.text
+        )
+        assert "Apply reviewed blueprint" not in applied.text
         after_count = repo.connection.execute(
             "SELECT COUNT(*) FROM communities",
         ).fetchone()[0]
         assert after_count == before_count
+        assert repo.get_character_by_slug(community.id, "blueprint-render-face").name == (
+            "Blueprint Render Face"
+        )
+        assert repo.get_board_by_slug(community.id, "blueprint-render-main-street").name == (
+            "Blueprint Render Main Street"
+        )
+        assert repo.get_material_by_slug(community.id, "blueprint-render-premise").title == (
+            "Blueprint Render Premise"
+        )
 
     asyncio.run(run())
 
@@ -7146,8 +7173,8 @@ def test_thread_page_renders_scene_grounding_for_owner() -> None:
         assert "Mode" in content
         assert "Posting order" in content
         assert "Visibility" in content
-        assert "member-visible scene" in content
-        assert "Visible to active members who can enter this location." in content
+        assert "public preview scene" in content
+        assert "The first four posts are visible to people browsing while signed out." in content
         assert "Linked story objects" in content
         assert "Staff controls" not in content
 
@@ -7495,7 +7522,7 @@ def test_scene_grounding_for_ordinary_member_hides_staff_management_copy() -> No
         assert page.status == 200
         assert "Scene context" in content
         assert "Reading as Outsider Face" in content
-        assert "member-visible scene" in content
+        assert "public preview scene" in content
         assert "staff-manageable member-visible scene" not in content
         assert "Staff controls" not in content
         assert "Scene management" not in content
@@ -12712,6 +12739,9 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                 is None
             )
             assert "Open to join" in form.text
+            assert "Who can read" in form.text
+            assert "Public preview — first 4 posts" in form.text
+            assert re.search(r'<option value="members"\s+selected>', form.text)
             assert "Posting order" in form.text
             assert 'role="toolbar"' in form.text
             assert 'aria-label="Bold"' in form.text
@@ -12729,6 +12759,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "participant_ids": [xavier.id, rogue.id],
                         "title": "Metal and Memory",
                         "status": "open",
+                        "visibility": "public_preview",
                         "location": "Sublevel 3",
                         "timeline": "Before breakfast",
                         "summary": "Magneto tags Xavier into an unreasonable simulation.",
@@ -12784,6 +12815,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                     created_thread.id,
                 )
             } == {"magneto", "charles-xavier"}
+            assert created_thread.visibility == "public_preview"
 
             board = await client.get("/boards/danger-room")
             assert "Metal and Memory" in board.text
@@ -13140,6 +13172,7 @@ def test_thread_starter_can_manage_scene_cast() -> None:
             assert "Scene management" in page.text
             assert "Tag cast" in page.text
             assert "Charles Xavier" in page.text
+            assert "Public preview — first 4 posts" in page.text
 
             response = await client.post(
                 "/boards/danger-room/threads/sentinel-drill",
@@ -13147,6 +13180,7 @@ def test_thread_starter_can_manage_scene_cast() -> None:
                     {
                         "intent": "scene",
                         "status": "paused",
+                        "visibility": "members",
                         "posting_mode": "freeform",
                         "location": "West lawn",
                         "timeline": "After inspection",
@@ -13160,6 +13194,7 @@ def test_thread_starter_can_manage_scene_cast() -> None:
 
             updated = repo.get_thread(community.id, thread.id)
             assert updated.status == "paused"
+            assert updated.visibility == "members"
             assert updated.location == "West lawn"
             assert updated.timeline == "After inspection"
             assert updated.summary == "Rogue calls a timeout before the simulation gets personal."

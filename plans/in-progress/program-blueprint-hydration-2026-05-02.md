@@ -1,13 +1,29 @@
 # Program Blueprint Hydration Plan
 
-Status: active; dry-run exists and apply remains gated
+Status: implementation complete on the issue #85 branch; archive after merge
 Owner: Blueprint, service, storage, and test stewardship  
 Created: 2026-05-02  
-Last updated: 2026-05-09
+Last updated: 2026-07-20
 Review by: 2026-05-30
 Closure criteria: split into PRs for dry-run diffs, service-layer hydration,
 rollback tests, tenant coverage, and Studio apply controls; archive once apply
 is implemented or superseded.
+
+## 2026-07-20 Closure Update
+
+The typed current-realm diff and Studio apply workflow are implemented with
+create-only, skip-existing, explicit-update, and dry-run modes. Apply rechecks
+the accepted fingerprint and named capability before reserving a
+fingerprint-and-mode command key. Hydrated primitives and the accepted audit
+event commit in one repository transaction; deterministic late failures prove
+row and command-reservation rollback, and durable failed events use sanitized
+reasons.
+
+Coverage now includes every supported primitive, same-slug rows in a second
+community, writer ownership limits, repeated command rejection, v25 material
+variant migration, rendered preview/stale/apply state, and unsafe input
+validation. The implementation deliberately targets only the resolved current
+realm; opening a new hosted realm remains a separate privileged workflow.
 
 ## 2026-05-09 Verification Update
 
@@ -20,11 +36,10 @@ same planning semantics or explicitly document why seed remains privileged.
 
 ## Purpose
 
-Studio intake can parse and validate Program Blueprint YAML, but it
-intentionally stops before database mutation. The next step is not adding an
-Apply button. The next step is designing the hydrator contract so a director
-can see exactly what would be created, updated, skipped, or blocked before any
-program state changes.
+Studio intake parses and validates Program Blueprint YAML, shows exactly what
+would be created, updated, skipped, or blocked, then applies only the accepted
+current-realm fingerprint and collision mode. This plan records why the Apply
+button follows that service-owned hydrator contract instead of bypassing it.
 
 Program Blueprints are starter packets for PBP hubs: program identity, director
 role, starter faces, playable boards, world materials, wanted hooks, safe theme
@@ -128,13 +143,12 @@ Implementation shape:
 - Per-row owner mapping UI beyond the importing director.
 - Export round trip for boards and themes before import apply is stable.
 
-## Open Questions
+## Resolved Questions
 
-- Should an existing community require an explicit `update_existing: true`
-  packet flag before any update actions appear?
-- Should starter faces be created as accepted faces or draft applications when
-  imported outside development seed?
-- Should wanted hooks imported into a live program default to open, draft, or a
-  Studio-only pending state?
-- What diff fingerprint should apply use to detect that the database changed
-  after preview?
+- Existing rows change only in explicit-update mode; create-only rejects live
+  content collisions and skip-existing preserves them.
+- Starter faces are created as importing-membership faces. Future applicant
+  staging remains a separate onboarding design.
+- Imported wanted hooks are created open and owned by the importing membership.
+- The apply token hashes the source plus current typed diff rows and is paired
+  with the selected mode in the command ledger.

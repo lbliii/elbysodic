@@ -7,6 +7,7 @@ from typing import Protocol, cast
 from elbysodic.domain.models import (
     Board,
     Character,
+    Community,
     CommunityMembership,
     Facet,
     FacetGroup,
@@ -23,6 +24,7 @@ from elbysodic.services.facets import (
     facet_tags,
     facet_tags_with_groups,
 )
+from elbysodic.services.markup import render_post_body
 from elbysodic.services.posts import (
     PostViewContext,
     PostViewContextBuilder,
@@ -32,10 +34,14 @@ from elbysodic.services.posts import (
 from elbysodic.services.read_models import (
     POSTING_MODES,
     THREAD_STATUSES,
+    THREAD_VISIBILITIES,
     BoardThreadFilter,
     ForumView,
     MaterialSummary,
     PostingMode,
+    PublicSceneFace,
+    PublicScenePostPreview,
+    PublicScenePreview,
     SceneContextView,
     SceneGroundingFact,
     SceneGroundingPanel,
@@ -49,9 +55,16 @@ from elbysodic.services.read_models import (
     ThreadStatus,
     ThreadSummary,
     ThreadView,
+    ThreadVisibility,
     scene_location_lane_item_badges,
 )
-from elbysodic.services.timestamps import timestamp_key
+from elbysodic.services.timestamps import (
+    relative_timestamp_label,
+    timestamp_key,
+    timestamp_label,
+)
+
+PUBLIC_SCENE_POST_LIMIT = 4
 
 
 class ThreadReadRepository(
@@ -61,6 +74,10 @@ class ThreadReadRepository(
     Protocol,
 ):
     def get_board(self, community_id: int, board_id: int) -> Board: ...
+
+    def get_board_by_slug(self, community_id: int, slug: str) -> Board: ...
+
+    def get_thread_by_slug(self, community_id: int, board_id: int, slug: str) -> Thread: ...
 
     def list_boards(self, community_id: int) -> list[Board]: ...
 
@@ -167,6 +184,76 @@ class ThreadReadRepository(
         thread_ids: list[int],
         membership_id: int,
     ) -> set[int]: ...
+
+
+def public_scene_preview(
+    repo: ThreadReadRepository,
+    community: Community,
+    board_slug: str,
+    thread_slug: str,
+    *,
+    post_limit: int = PUBLIC_SCENE_POST_LIMIT,
+) -> PublicScenePreview:
+    board = repo.get_board_by_slug(community.id, board_slug)
+    if board.is_private:
+        raise LookupError(f"public scene not found in community {community.id}: {thread_slug}")
+    thread = repo.get_thread_by_slug(community.id, board.id, thread_slug)
+    if thread.visibility != "public_preview" or not is_live_queue_thread(thread):
+        raise LookupError(f"public scene not found in community {community.id}: {thread_slug}")
+
+    posts = repo.list_posts(community.id, thread.id)
+    preview_posts = posts[:post_limit]
+    author_ids = list({post.author_character_id for post in preview_posts})
+    authors = repo.list_characters_by_ids(community.id, author_ids)
+    if len(authors) != len(author_ids) or any(
+        author.application_status != "accepted" for author in authors.values()
+    ):
+        raise LookupError(f"public scene not found in community {community.id}: {thread_slug}")
+
+    participant_faces = tuple(
+        _public_scene_face(character)
+        for character in repo.list_thread_participants(community.id, thread.id)
+        if character.application_status == "accepted"
+    )
+    rendered_posts = tuple(
+        PublicScenePostPreview(
+            post_number=post.post_number,
+            author=_public_scene_face(authors[post.author_character_id]),
+            rendered_body=render_post_body(post.body),
+            created_at=post.created_at,
+            created_at_label=timestamp_label(post.created_at),
+            created_at_relative_label=relative_timestamp_label(post.created_at),
+            anchor=f"post-{post.post_number}",
+            is_edited=timestamp_key(post.updated_at) > timestamp_key(post.created_at),
+        )
+        for post in preview_posts
+    )
+    return PublicScenePreview(
+        community=community,
+        board_slug=board.slug,
+        board_name=board.name,
+        thread_slug=thread.slug,
+        thread_title=thread.title,
+        thread_summary=thread.summary,
+        thread_status=thread.status,
+        location=thread.location,
+        timeline=thread.timeline,
+        cast=participant_faces,
+        posts=rendered_posts,
+        total_post_count=len(posts),
+        preview_limit=post_limit,
+    )
+
+
+def _public_scene_face(character: Character) -> PublicSceneFace:
+    return PublicSceneFace(
+        slug=character.slug,
+        name=character.name,
+        avatar_url=character.avatar_url,
+        poster_url=character.poster_url,
+        poster_alt=character.poster_alt,
+        tagline=character.tagline,
+    )
 
 
 def board_thread_summaries(
@@ -823,8 +910,10 @@ def thread_obligations(
 
 
 def scene_visibility_label(board: Board, thread: Thread, can_moderate: bool = False) -> str:
-    if board.is_private or thread.status == "private":
+    if board.is_private or thread.status == "private" or thread.visibility == "private":
         return "private scene"
+    if thread.visibility == "public_preview":
+        return "public preview scene"
     if can_moderate:
         return "staff-manageable member-visible scene"
     return "member-visible scene"
@@ -833,8 +922,10 @@ def scene_visibility_label(board: Board, thread: Thread, can_moderate: bool = Fa
 def scene_visibility_detail(board: Board, thread: Thread, can_moderate: bool = False) -> str:
     if board.is_private:
         return "This location is visible only to staff with world access."
-    if thread.status == "private":
+    if thread.status == "private" or thread.visibility == "private":
         return "This scene is marked private inside a visible location."
+    if thread.visibility == "public_preview":
+        return "The first four posts are visible to people browsing while signed out."
     if can_moderate:
         return "Members can read this scene; staff controls remain in management panels."
     return "Visible to active members who can enter this location."
@@ -1220,6 +1311,13 @@ def clean_thread_status(value: str) -> ThreadStatus:
     if status not in THREAD_STATUSES:
         raise ValueError("choose a valid thread status")
     return cast(ThreadStatus, status)
+
+
+def clean_thread_visibility(value: str) -> ThreadVisibility:
+    visibility = value.strip().lower().replace("-", "_")
+    if visibility not in THREAD_VISIBILITIES:
+        raise ValueError("choose a valid scene visibility")
+    return cast(ThreadVisibility, visibility)
 
 
 def clean_posting_mode(value: str) -> PostingMode:

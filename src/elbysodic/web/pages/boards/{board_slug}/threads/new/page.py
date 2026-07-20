@@ -8,7 +8,7 @@ from chirp.templating.returns import Page
 
 from elbysodic.domain import Character
 from elbysodic.services import Mentionable
-from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
+from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES, THREAD_VISIBILITIES
 from elbysodic.services.threads import taggable_characters
 from elbysodic.web.commands import idempotency_key
 from elbysodic.web.composer import composer_config, mention_picker_config
@@ -26,6 +26,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
     participant_ids = _parse_participant_ids(form)
     title = str(form.get("title") or "")
     status = str(form.get("status") or "active")
+    visibility = str(form.get("visibility") or "members")
     location = str(form.get("location") or "")
     timeline = str(form.get("timeline") or "")
     summary = str(form.get("summary") or "")
@@ -47,6 +48,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             title=title,
             body=body,
             status=status,
+            visibility=visibility,
             location=location,
             timeline=timeline,
             summary=summary,
@@ -63,6 +65,7 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
             participant_ids=participant_ids,
             title=title,
             status=status,
+            visibility=visibility,
             location=location,
             timeline=timeline,
             summary=summary,
@@ -89,6 +92,7 @@ def _render_form(
     participant_ids: list[int] | None = None,
     title: str = "",
     status: str = "active",
+    visibility: str = "members",
     location: str = "",
     timeline: str = "",
     summary: str = "",
@@ -105,16 +109,19 @@ def _render_form(
             current_path=request.url,
             viewer=viewer,
             board=board,
+            audience_locked=board.is_private,
             selected_character=None,
             selected_character_id=None,
             error=error,
             title=title,
             status=status,
+            visibility="private" if board.is_private else visibility,
             location=location,
             timeline=timeline,
             summary=summary,
             posting_mode=posting_mode,
             thread_statuses=THREAD_STATUSES,
+            thread_visibilities=THREAD_VISIBILITIES,
             posting_modes=POSTING_MODES,
             taggable_characters=[],
             selected_participant_ids=set(),
@@ -150,16 +157,19 @@ def _render_form(
         current_path=request.url,
         viewer=viewer,
         board=board,
+        audience_locked=board.is_private,
         selected_character=selected_character,
         selected_character_id=selected_character.id,
         error=error,
         title=title,
         status=status,
+        visibility="private" if board.is_private else visibility,
         location=location,
         timeline=timeline,
         summary=summary,
         posting_mode=posting_mode,
         thread_statuses=THREAD_STATUSES,
+        thread_visibilities=THREAD_VISIBILITIES,
         posting_modes=POSTING_MODES,
         taggable_characters=taggable,
         selected_participant_ids=selected_participant_ids,

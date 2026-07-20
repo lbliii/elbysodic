@@ -1,1 +1,1 @@
-Program Blueprint apply requests now reject stale previews and remain a transaction-gated no-op.
+Program Blueprint Studio intake now applies reviewed current-realm packets atomically with explicit collision modes, stale-preview and idempotency guards, ownership and tenant checks, rollback proof, and a durable staff audit outcome.

@@ -2,6 +2,7 @@
 
 from elbysodic.blueprints.programs import (
     BlueprintAppearance,
+    BlueprintApplyMode,
     BlueprintBoard,
     BlueprintCharacter,
     BlueprintDiffRow,
@@ -25,6 +26,7 @@ from elbysodic.blueprints.programs import (
 
 __all__ = [
     "BlueprintAppearance",
+    "BlueprintApplyMode",
     "BlueprintBoard",
     "BlueprintCharacter",
     "BlueprintDiffRow",
