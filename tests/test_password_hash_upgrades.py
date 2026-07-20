@@ -188,6 +188,70 @@ def test_failed_legacy_login_never_writes_or_creates_a_session() -> None:
     assert repo.sessions == {}
 
 
+def test_unknown_user_runs_chirp_decoy_and_creates_no_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = RecordingAuthRepository(hash_password(PASSWORD))
+    verifier_calls: list[tuple[str, str | None]] = []
+
+    def record_verify_login(password: str, stored_hash: str | None) -> bool:
+        verifier_calls.append((password, stored_hash))
+        return False
+
+    monkeypatch.setattr(auth, "_verify_current_login", record_verify_login)
+
+    with pytest.raises(PermissionError, match="email or password is incorrect"):
+        create_login_session(repo, "missing@example.com", PASSWORD)
+
+    assert verifier_calls == [(PASSWORD, None)]
+    assert repo.update_attempts == 0
+    assert repo.sessions == {}
+
+
+def test_known_argon2_wrong_password_uses_the_same_login_verifier_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    current_hash = hash_password(PASSWORD)
+    repo = RecordingAuthRepository(current_hash)
+    verifier_calls: list[tuple[str, str | None]] = []
+
+    def record_verify_login(password: str, stored_hash: str | None) -> bool:
+        verifier_calls.append((password, stored_hash))
+        return False
+
+    monkeypatch.setattr(auth, "_verify_current_login", record_verify_login)
+
+    with pytest.raises(PermissionError, match="email or password is incorrect"):
+        create_login_session(repo, EMAIL, "wrong-password")
+
+    assert verifier_calls == [("wrong-password", current_hash)]
+    assert repo.update_attempts == 0
+    assert repo.sessions == {}
+
+
+@pytest.mark.parametrize(
+    "corrupt_hash",
+    [
+        "pbkdf2_sha256$not-an-integer$salt$digest",
+        "pbkdf2_sha256$-1$salt$digest",
+        "$argon2id$malformed",
+        "$scrypt$malformed",
+        "unsupported-password-hash",
+    ],
+)
+def test_corrupt_or_unsupported_hash_fails_closed_without_mutation(
+    corrupt_hash: str,
+) -> None:
+    repo = RecordingAuthRepository(corrupt_hash)
+
+    with pytest.raises(PermissionError, match="email or password is incorrect"):
+        create_login_session(repo, EMAIL, PASSWORD)
+
+    assert repo.user.password_hash == corrupt_hash
+    assert repo.update_attempts == 0
+    assert repo.sessions == {}
+
+
 def test_current_argon2id_login_does_not_rewrite_the_hash() -> None:
     current_hash = hash_password(PASSWORD)
     repo = RecordingAuthRepository(current_hash)

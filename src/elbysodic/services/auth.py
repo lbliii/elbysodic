@@ -13,6 +13,7 @@ from typing import Protocol
 
 from chirp.security.passwords import hash_password as _hash_current_password
 from chirp.security.passwords import needs_rehash as _current_password_needs_rehash
+from chirp.security.passwords import verify_login as _verify_current_login
 from chirp.security.passwords import verify_password as _verify_current_password
 
 from elbysodic.domain.models import User, UserSession
@@ -335,8 +336,29 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return False
 
 
-def _verify_password_and_upgrade(password: str, stored_hash: str) -> tuple[bool, str | None]:
-    if not verify_password(password, stored_hash):
+def _verify_login_password(password: str, stored_hash: str | None) -> bool:
+    """Verify one login attempt, including Chirp's unknown-user decoy path."""
+
+    if stored_hash is None:
+        try:
+            return _verify_current_login(password, None)
+        except RuntimeError, ValueError:
+            return False
+    if stored_hash == "dev-password-hash" or stored_hash.startswith(f"{HASH_SCHEME}$"):
+        return verify_password(password, stored_hash)
+    if not stored_hash.startswith(("$argon2", "$scrypt$")):
+        return False
+    try:
+        return _verify_current_login(password, stored_hash)
+    except RuntimeError, ValueError:
+        return False
+
+
+def _verify_password_and_upgrade(
+    password: str,
+    stored_hash: str | None,
+) -> tuple[bool, str | None]:
+    if not _verify_login_password(password, stored_hash) or stored_hash is None:
         return False, None
     if stored_hash == "dev-password-hash":
         return True, None
@@ -354,14 +376,14 @@ def _verify_legacy_pbkdf2(password: str, stored_hash: str) -> bool:
     _scheme, raw_iterations, salt, expected = parts
     try:
         iterations = int(raw_iterations)
-    except ValueError:
+        derived = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt.encode("utf-8"),
+            iterations,
+        )
+    except OverflowError, ValueError:
         return False
-    derived = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        iterations,
-    )
     actual = base64.urlsafe_b64encode(derived).decode("ascii").rstrip("=")
     return hmac.compare_digest(actual, expected)
 
@@ -378,11 +400,14 @@ def create_login_session(repo: AuthRepository, email: str, password: str) -> Log
     if not normalized_email or not password:
         raise PermissionError("email and password are required")
     try:
-        user = repo.get_user_by_email(normalized_email)
-    except LookupError as exc:
-        raise PermissionError("email or password is incorrect") from exc
-    verified, replacement = _verify_password_and_upgrade(password, user.password_hash)
-    if not verified:
+        user: User | None = repo.get_user_by_email(normalized_email)
+    except LookupError:
+        user = None
+    verified, replacement = _verify_password_and_upgrade(
+        password,
+        user.password_hash if user is not None else None,
+    )
+    if not verified or user is None:
         raise PermissionError("email or password is incorrect")
     if replacement is not None:
         updated = repo.update_user_password_hash(
