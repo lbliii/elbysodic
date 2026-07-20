@@ -261,6 +261,49 @@ def test_production_seed_password_requires_demo_mode(monkeypatch) -> None:
     asyncio.run(run())
 
 
+def test_unknown_account_and_wrong_password_share_rendered_failure_posture(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch, demo_mode=True)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            known_page = await client.get("/login")
+            known = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "writer@example.com",
+                        "password": "wrong-password",
+                        "next": "/",
+                        "_csrf_token": _csrf_token(known_page.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(_cookie_values(known_page))},
+            )
+            unknown_page = await client.get("/login")
+            unknown = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "email": "missing@example.com",
+                        "password": "wrong-password",
+                        "next": "/",
+                        "_csrf_token": _csrf_token(unknown_page.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(_cookie_values(unknown_page))},
+            )
+
+        assert known.status == unknown.status == 200
+        for response in (known, unknown):
+            assert response.text.count("email or password is incorrect") == 1
+            assert "elbysodic_session=" not in "\n".join(_response_headers(response, "set-cookie"))
+
+    asyncio.run(run())
+
+
 def test_production_routes_require_session(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)

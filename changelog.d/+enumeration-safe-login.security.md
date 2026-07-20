@@ -1,0 +1,1 @@
+Unknown-account and wrong-password logins now share Chirp's enumeration-safe verification posture, while malformed stored password hashes fail closed without creating sessions or mutating credentials.

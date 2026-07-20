@@ -274,6 +274,13 @@ password never writes, a current argon2id hash is not rewritten, and a
 Password hashes remain global login-account material; the upgrade does not
 change community membership, role, active face, or tenant ownership.
 
+An unknown login account still runs Chirp's process-wide decoy password
+verification and returns the same generic rendered failure as a known account
+with a wrong password. Malformed legacy or PHC hashes fail closed without
+creating a session or mutating credentials. This credential check remains a
+global-user authentication boundary; membership and active-face resolution
+still happen only after authentication succeeds.
+
 Production mutating requests are protected by Chirp session-backed CSRF.
 Rendered POST form templates include the active CSRF field explicitly, and
 unsafe methods are rejected when the token is missing or invalid.

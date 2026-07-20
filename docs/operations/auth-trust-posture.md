@@ -53,6 +53,19 @@ shared Railway, staging, or production deployment is safe.
 - Smoke records name hash formats only. Never record hashes, passwords, email
   addresses, session cookies, or reset material.
 
+Login lookup uses Chirp's enumeration-safe verification contract. An unknown
+email still performs one password verification against Chirp's process-wide
+decoy hash before returning the same rendered error as a known account with a
+wrong password. Elbysodic keeps its legacy PBKDF2 and demo-seed adapters around
+that contract until those stored formats disappear. Malformed PBKDF2, scrypt,
+argon2, and unsupported hashes fail closed without a session or password write.
+
+Elbysodic does not currently register Chirp `AuditMiddleware` or consume
+`authz.permission.denied` events, so the upstream `details["missing"]`
+sorted-list shape has no downstream consumer in this release. Issue #277 owns
+the metadata-audit adopt/defer decision, and #104 owns any future persistent
+staff capability audit trail.
+
 ## Production Readiness
 
 A launch-readiness record should treat `production_blocking: yes` as a blocker
