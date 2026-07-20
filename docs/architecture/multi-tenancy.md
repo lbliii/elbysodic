@@ -61,7 +61,11 @@ repair planning; repository and service methods still enforce tenant scope
 before normal writes.
 The row-family audit matrix in `docs/architecture/data-integrity.md` is the
 source of truth for which tenant pairings need diagnostics, negative tests,
-service proof, and later constraint work.
+service proof, and storage enforcement. Schema version `23` installs
+insert/update guards for every row family currently emitted by that diagnostic
+and rejects a legacy upgrade before installing them when an invalid row is
+present. Community reassignment is likewise blocked for guarded rows; repair is
+an explicit operator decision rather than an automatic cross-realm move.
 Community export is also single-community by default: the export boundary
 matrix in `docs/architecture/primitives.md` names the allowed row families,
 redactions, and provenance fields before any future cross-community export mode

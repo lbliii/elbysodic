@@ -7,7 +7,7 @@ from pathlib import Path
 from threading import RLock
 from typing import Any, cast
 
-from elbysodic.db.migrations import apply_migrations
+from elbysodic.db.migrations import apply_migrations, ensure_tenant_pair_triggers
 from elbysodic.domain.boards import DEFAULT_SIDEBAR_SECTION_CONFIGS
 
 SCHEMA = """
@@ -989,6 +989,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
     _migrate_schema(connection)
     _ensure_sidebar_section_defaults(connection)
     apply_migrations(connection)
+    ensure_tenant_pair_triggers(connection)
     connection.commit()
 
 

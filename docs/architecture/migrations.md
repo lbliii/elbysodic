@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `21`. Calling
+The checked-in schema currently creates databases at version `23`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -18,14 +18,18 @@ post-baseline migrations in `src/elbysodic/db/migrations.py`. This keeps the
 prototype's existing schema bootstrap intact while giving future schema changes
 an ordered migration path.
 
-Version `21` adds `community_access_request_events`, a tenant-scoped audit
-table for director-visible access-request lifecycle activity. Fresh schema and
-upgraded databases both include the request-scoped event index used by Studio
-request detail pages.
+Version `22` adds user-owned passkey credentials and their user/time lookup
+index. Version `23` rejects diagnosed legacy tenant-pair drift and then
+installs insert/update triggers for every row family covered by the tenant
+integrity audit. It also guards community default-theme and identity-accent
+roots. The migration never guesses how to repair story-visible or private
+rows: it names the affected table and row id, tells the operator to run the
+content-free tenant integrity audit, and leaves version `22` recorded until the
+row is repaired deliberately.
 
 Fresh-schema and upgraded-schema parity is a production-readiness requirement:
 new tables, columns, indexes, and constraints must be represented in both the
-checked-in `SCHEMA` and the ordered migration path. When adding a migration,
+fresh `create_schema()` path and the ordered migration path. When adding a migration,
 include a parity-oriented test if the change affects indexes or constraints
 that are easy to omit from one path.
 
