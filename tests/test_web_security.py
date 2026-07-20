@@ -708,6 +708,9 @@ def test_production_backstage_realm_stays_out_of_public_network(monkeypatch) -> 
         assert "No public-ready realms are open yet." in director_network.text
         assert "Starter Director" in director_network.text
         assert "Director in Starter Realm" in director_network.text
+        assert services.repo.get_user_by_email("director@example.com").password_hash.startswith(
+            "$argon2id$"
+        )
         assert (
             'class="elbysodic-network-card__realm-link" href="/c/starter-realm"'
             not in director_network.text

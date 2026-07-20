@@ -777,6 +777,26 @@ class IdentityRepositoryMixin(RepositoryBase):
             raise LookupError(f"user not found: {email}")
         return _user_from_row(row)
 
+    def update_user_password_hash(
+        self,
+        user_id: int,
+        *,
+        expected_hash: str,
+        new_hash: str,
+    ) -> bool:
+        """Replace one global account hash only if the caller verified this version."""
+
+        cursor = self.connection.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ? AND password_hash = ?
+            """,
+            (new_hash, user_id, expected_hash),
+        )
+        self._commit()
+        return cursor.rowcount == 1
+
     def get_or_create_user(self, email: str, password_hash: str) -> User:
         try:
             return self.get_user_by_email(email)

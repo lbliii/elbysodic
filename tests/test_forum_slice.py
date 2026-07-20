@@ -4943,6 +4943,7 @@ def test_director_invites_writer_through_first_face_handoff() -> None:
         assert desk.status == 200
         assert "playing as First Face" in desk.text
         assert replay.status == 403
+        assert user.password_hash.startswith("$argon2id$")
         assert membership.username == "new-writer"
         assert membership.default_character_id == character.id
         assert character.membership_id == membership.id

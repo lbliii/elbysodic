@@ -11,6 +11,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
+from chirp.security.passwords import hash_password as _hash_current_password
+from chirp.security.passwords import needs_rehash as _current_password_needs_rehash
+from chirp.security.passwords import verify_password as _verify_current_password
+
 from elbysodic.domain.models import User, UserSession
 
 SESSION_COOKIE = "elbysodic_session"
@@ -28,6 +32,14 @@ class AuthRepository(Protocol):
     def get_user_by_email(self, email: str) -> User: ...
 
     def get_user(self, user_id: int) -> User: ...
+
+    def update_user_password_hash(
+        self,
+        user_id: int,
+        *,
+        expected_hash: str,
+        new_hash: str,
+    ) -> bool: ...
 
     def create_user_session(
         self,
@@ -283,7 +295,20 @@ def format_auth_trust_posture(posture: AuthTrustPosture) -> str:
     return "\n".join(lines) + "\n"
 
 
-def hash_password(password: str, *, salt: str | None = None) -> str:
+def hash_password(password: str) -> str:
+    """Hash a new real password with argon2id."""
+
+    return _hash_argon2id(password)
+
+
+def _hash_argon2id(password: str) -> str:
+    password_hash = _hash_current_password(password)
+    if not password_hash.startswith("$argon2id$"):
+        raise RuntimeError("argon2id password hashing is unavailable")
+    return password_hash
+
+
+def _hash_legacy_pbkdf2(password: str, *, salt: str | None = None) -> str:
     normalized_salt = salt or secrets.token_urlsafe(16)
     derived = hashlib.pbkdf2_hmac(
         "sha256",
@@ -300,6 +325,29 @@ def verify_password(password: str, stored_hash: str) -> bool:
         if not seed_passwords_enabled():
             return False
         return hmac.compare_digest(password, SEED_LOGIN_PHRASE)
+    if stored_hash.startswith(f"{HASH_SCHEME}$"):
+        return _verify_legacy_pbkdf2(password, stored_hash)
+    if not stored_hash.startswith(("$argon2", "$scrypt$")):
+        return False
+    try:
+        return _verify_current_password(password, stored_hash)
+    except RuntimeError, ValueError:
+        return False
+
+
+def _verify_password_and_upgrade(password: str, stored_hash: str) -> tuple[bool, str | None]:
+    if not verify_password(password, stored_hash):
+        return False, None
+    if stored_hash == "dev-password-hash":
+        return True, None
+    if stored_hash.startswith(f"{HASH_SCHEME}$"):
+        return True, _hash_argon2id(password)
+    if _current_password_needs_rehash(stored_hash, upgrade_algorithm=True):
+        return True, _hash_argon2id(password)
+    return True, None
+
+
+def _verify_legacy_pbkdf2(password: str, stored_hash: str) -> bool:
     parts = stored_hash.split("$")
     if len(parts) != 4 or parts[0] != HASH_SCHEME:
         return False
@@ -333,8 +381,18 @@ def create_login_session(repo: AuthRepository, email: str, password: str) -> Log
         user = repo.get_user_by_email(normalized_email)
     except LookupError as exc:
         raise PermissionError("email or password is incorrect") from exc
-    if not verify_password(password, user.password_hash):
+    verified, replacement = _verify_password_and_upgrade(password, user.password_hash)
+    if not verified:
         raise PermissionError("email or password is incorrect")
+    if replacement is not None:
+        updated = repo.update_user_password_hash(
+            user.id,
+            expected_hash=user.password_hash,
+            new_hash=replacement,
+        )
+        user = repo.get_user(user.id)
+        if not updated and not verify_password(password, user.password_hash):
+            raise PermissionError("email or password is incorrect")
     return _create_session_for_user(repo, user)
 
 

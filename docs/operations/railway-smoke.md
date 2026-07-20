@@ -166,6 +166,32 @@ uv run python scripts/railway_probe_smoke.py \
   --build-id <deployment-sha>
 ```
 
+### Staging Password Rehash Smoke
+
+Run this only against the seeded staging/demo database. The helper refuses
+production or non-demo environments, targets only the fixed seeded-writer
+fixture, requires an explicit write confirmation, and prints format labels
+without the account email, plaintext password, or stored hash.
+
+```bash
+railway ssh --service elbysodic python scripts/password_rehash_smoke.py status
+railway ssh --service elbysodic python scripts/password_rehash_smoke.py prepare \
+  --confirm-staging-write
+```
+
+After `prepare` reports `after=scrypt`, complete one normal seeded-writer login
+through the rendered staging login form. Then verify the persisted replacement:
+
+```bash
+railway ssh --service elbysodic python scripts/password_rehash_smoke.py verify
+```
+
+The final command must report `format=argon2id`. A wrong password must leave
+`status` at `scrypt`; do not record the credential, cookie, account email, or
+raw PHC strings in the smoke record. The helper may reset a prior argon2id
+fixture back to scrypt only when the operator explicitly reruns `prepare` in
+staging demo mode.
+
 ## Smoke Script
 
 Record the date, Railway deployment ID, public URL, and tester account used.

@@ -263,6 +263,17 @@ Production also requires `ELBYSODIC_SECRET_KEY` with at least 32 characters.
 Seed `dev-password-hash` accounts are accepted in production only when
 `ELBYSODIC_DEMO_MODE=1` is set; otherwise those hashes are rejected.
 
+New real accounts store argon2id hashes through Chirp's password primitives.
+The login service can verify the previous Elbysodic PBKDF2 format and Chirp's
+scrypt PHC format, then derives an argon2id replacement only after the password
+has verified. The repository persists that replacement with a compare-and-swap
+against the exact hash that was verified, so concurrent successful logins may
+both establish sessions but only one can replace the legacy value. A failed
+password never writes, a current argon2id hash is not rewritten, and a
+`dev-password-hash` seed account stays on the explicit demo-mode boundary.
+Password hashes remain global login-account material; the upgrade does not
+change community membership, role, active face, or tenant ownership.
+
 Production mutating requests are protected by Chirp session-backed CSRF.
 Rendered POST form templates include the active CSRF field explicitly, and
 unsafe methods are rejected when the token is missing or invalid.
