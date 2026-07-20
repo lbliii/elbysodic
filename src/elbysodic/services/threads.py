@@ -198,7 +198,7 @@ def public_scene_preview(
     if board.is_private:
         raise LookupError(f"public scene not found in community {community.id}: {thread_slug}")
     thread = repo.get_thread_by_slug(community.id, board.id, thread_slug)
-    if thread.visibility != "public_preview" or thread.status == "private":
+    if thread.visibility != "public_preview" or not is_live_queue_thread(thread):
         raise LookupError(f"public scene not found in community {community.id}: {thread_slug}")
 
     posts = repo.list_posts(community.id, thread.id)

@@ -880,6 +880,21 @@ def test_production_public_scene_route_fails_closed_for_member_only_and_private_
             draft_face.id,
             "DRAFT FACE SCENE BODY",
         )
+        closed_scene = services.repo.create_thread(
+            community.id,
+            board.id,
+            rogue.id,
+            "closed-preview-check",
+            "CLOSED SCENE TITLE",
+            status="closed",
+            visibility="public_preview",
+        )
+        services.repo.create_post(
+            community.id,
+            closed_scene.id,
+            rogue.id,
+            "CLOSED SCENE BODY",
+        )
         app = create_app(debug=False, services=services)
 
         async with TestClient(app) as client:
@@ -892,6 +907,9 @@ def test_production_public_scene_route_fails_closed_for_member_only_and_private_
             draft_response = await client.get(
                 "/c/x-men-apocalypse/boards/danger-room/threads/draft-face-preview-check"
             )
+            closed_response = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/closed-preview-check"
+            )
 
         assert member_response.status == 404
         assert "MEMBER ONLY SCENE BODY" not in member_response.text
@@ -899,6 +917,8 @@ def test_production_public_scene_route_fails_closed_for_member_only_and_private_
         assert "PRIVATE SCENE BODY" not in private_response.text
         assert draft_response.status == 404
         assert "DRAFT FACE SCENE BODY" not in draft_response.text
+        assert closed_response.status == 404
+        assert "CLOSED SCENE BODY" not in closed_response.text
 
     asyncio.run(run())
 
