@@ -173,6 +173,28 @@ def test_production_config_parses_allowed_hosts_and_hsts(monkeypatch) -> None:
     assert app.config.strict_transport_security == "max-age=31536000"
 
 
+def test_production_config_forces_json_logs_and_honors_chirp_log_level(monkeypatch) -> None:
+    _set_production_env(monkeypatch)
+    monkeypatch.setenv("CHIRP_LOG_LEVEL", "WARNING")
+
+    app = create_app(debug=False, services=create_services(path=":memory:"))
+
+    assert app.config.log_format == "json"
+    assert app.config.log_level == "warning"
+
+
+def test_invalid_chirp_log_level_falls_back_without_changing_development_format(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("ELBYSODIC_ENV", raising=False)
+    monkeypatch.setenv("CHIRP_LOG_LEVEL", "verbose")
+
+    app = create_app(debug=True, services=create_services(path=":memory:"))
+
+    assert app.config.log_format == "auto"
+    assert app.config.log_level == "info"
+
+
 def test_chirp_runtime_provisions_htmx_for_hypermedia_templates() -> None:
     async def run() -> None:
         app = create_app(debug=False, services=create_services(path=":memory:"))
