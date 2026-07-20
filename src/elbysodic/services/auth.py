@@ -19,6 +19,7 @@ from chirp.security.passwords import verify_password as _verify_current_password
 from elbysodic.domain.models import User, UserSession
 
 SESSION_COOKIE = "elbysodic_session"
+REQUEST_LOGIN_CACHE_KEY = "elbysodic.request_login"
 SESSION_TTL = timedelta(days=30)
 HASH_SCHEME = "pbkdf2_sha256"
 HASH_ITERATIONS = 210_000
@@ -79,6 +80,15 @@ class LoginSession:
     user: User
     token: str
     expires_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class RequestLogin:
+    """One validated global-account login bound to the current request."""
+
+    session: UserSession
+    user: User
+    token: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -461,6 +471,45 @@ def user_for_session_token(repo: SessionLookupRepository, token: str) -> User | 
     if session is None:
         return None
     return repo.get_user(session.user_id)
+
+
+def request_login(
+    repo: SessionLookupRepository,
+    request: object | None,
+) -> RequestLogin | None:
+    """Resolve and cache the DB-backed global account for one request."""
+
+    cache = getattr(request, "_cache", None)
+    if isinstance(cache, dict) and REQUEST_LOGIN_CACHE_KEY in cache:
+        cached = cache[REQUEST_LOGIN_CACHE_KEY]
+        return cached if isinstance(cached, RequestLogin) else None
+
+    token = request_session_token(request)
+    resolved: RequestLogin | None = None
+    if token is not None:
+        session = session_for_session_token(repo, token)
+        if session is not None:
+            try:
+                user = repo.get_user(session.user_id)
+            except LookupError:
+                pass
+            else:
+                resolved = RequestLogin(session=session, user=user, token=token)
+
+    if isinstance(cache, dict):
+        cache[REQUEST_LOGIN_CACHE_KEY] = resolved
+    return resolved
+
+
+def request_session_token(request: object | None) -> str | None:
+    """Return the app-session token from the request without validating it."""
+
+    cookies = getattr(request, "cookies", None)
+    getter = getattr(cookies, "get", None)
+    if getter is None:
+        return None
+    value = getter(SESSION_COOKIE)
+    return str(value) if value is not None else None
 
 
 def session_for_session_token(

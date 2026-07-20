@@ -91,7 +91,7 @@ def _scenario(request: Request, status: int, detail: str) -> ErrorScenario:
         if (
             "login required" in normalized
             or "login is required" in normalized
-            or request.cookies.get("elbysodic_session") is None
+            or not request.user.is_authenticated
         ):
             return ErrorScenario(
                 title="Log in to keep writing.",

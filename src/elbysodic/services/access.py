@@ -7,7 +7,7 @@ from typing import Protocol
 
 from elbysodic.domain.context import RequestIdentityContext
 from elbysodic.domain.models import Community, CommunityMembership, User, UserSession
-from elbysodic.services.auth import SESSION_COOKIE, session_for_session_token
+from elbysodic.services.auth import request_login
 
 DEV_COMMUNITY_HEADER = "x-elbysodic-community"
 DEV_MEMBERSHIP_HEADER = "x-elbysodic-membership-id"
@@ -346,16 +346,8 @@ def _selected_membership_id(session: UserSession | None, community_id: int) -> i
 
 
 def _session_for_request(repo: AccessRepository, request: object | None) -> UserSession | None:
-    cookies = getattr(request, "cookies", None)
-    if cookies is None:
-        return None
-    getter = getattr(cookies, "get", None)
-    if getter is None:
-        return None
-    raw_value = getter(SESSION_COOKIE)
-    if raw_value is None:
-        return None
-    return session_for_session_token(repo, str(raw_value))
+    login = request_login(repo, request)
+    return None if login is None else login.session
 
 
 def _user_id(user: User | None) -> int | None:

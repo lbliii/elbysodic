@@ -91,6 +91,27 @@ Production request identity is session-backed:
 - logout revokes the stored session and clears its selected community and
   membership so stale cookies cannot carry forward active realm identity state
 
+The web stack resolves that database-backed session once per request and adapts
+its global `User` through Chirp `AuthMiddleware`. `request.user` therefore names
+only the authenticated login account. The tenant resolver consumes the same
+cached request login before it selects a community membership, role, or active
+face; none of those community-local identities are added to Chirp's global-user
+adapter. Revoked, expired, missing, or orphaned app sessions resolve as
+anonymous even when a Chirp session cookie still contains an older user id.
+
+Chirp session cookies are newly signed with SHA-256. The SHA-1 fallback remains
+read-only for cookies issued before this rollout: a readable SHA-1 cookie is
+reissued with SHA-256 on its next request, and no new cookie is SHA-1-signed.
+Review removal on or after **2026-08-20**, once the 30-day app-session window has
+elapsed and production evidence shows no pre-rollout Chirp sessions remain.
+
+Anonymous public catalog `GET`/`HEAD` requests that do not arrive with a Chirp
+session do not emit `Set-Cookie` or vary on cookies, so `/`, `/network`, health,
+static assets, and public tenant preview reads remain eligible for shared
+caching. `/login`, `/login/passkeys/*`, `/invite/*`, and tenant or global
+`/request-access` intentionally touch Chirp session state for CSRF or passkey
+ceremonies and are not part of that cacheable catalog contract.
+
 `auth_trust_posture()` in `src/elbysodic/services/auth.py` provides a redacted
 operations diagnostic for this posture. It reports environment, production
 mode, demo-mode seed password posture, secret-key presence/minimum status,

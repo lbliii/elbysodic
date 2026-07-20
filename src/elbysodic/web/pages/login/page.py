@@ -11,7 +11,7 @@ from chirp.templating.returns import Page
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
 from elbysodic.services.auth import SESSION_COOKIE, seed_passwords_enabled
-from elbysodic.web.security import session_cookie
+from elbysodic.web.security import expose_global_account, session_cookie
 from elbysodic.web.state import get_services, get_web_security_config
 
 
@@ -34,6 +34,7 @@ async def post(request: Request, form: LoginForm) -> Page | Response:
         session, identity = services.login(form.email, form.password)
     except PermissionError as exc:
         return _render_login(request, email=form.email, next_url=next_url, error=str(exc))
+    expose_global_account(session.user)
     security = get_web_security_config()
     cookies = [
         session_cookie(

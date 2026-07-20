@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -9,6 +10,7 @@ from urllib.parse import urlencode
 
 import pytest
 from chirp.testing import TestClient
+from itsdangerous import BadData, URLSafeTimedSerializer
 
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.services import create_services
@@ -20,6 +22,7 @@ from elbysodic.services.network import (
     search_studio_network,
 )
 from elbysodic.web import create_app
+from elbysodic.web.security import CHIRP_GLOBAL_USER_SESSION_KEY
 from elbysodic.web.state import get_services
 
 _FORM = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -409,6 +412,100 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "Log in to keep writing." in post.text
         assert "/login?next=/identity" in post.text
         assert personas.status == 302
+
+    asyncio.run(run())
+
+
+def test_anonymous_public_catalog_gets_do_not_issue_or_vary_on_session_cookie(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        responses = []
+        for path in ("/", "/network", "/c/x-men-apocalypse/world"):
+            async with TestClient(app) as client:
+                responses.append((path, await client.get(path)))
+
+        for path, response in responses:
+            assert response.status == 200
+            assert _response_headers(response, "set-cookie") == [], path
+            assert "cookie" not in str(dict(response.headers).get("vary", "")).lower()
+
+    asyncio.run(run())
+
+
+def test_request_user_exposes_global_account_before_membership_resolution(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        app = create_app(debug=False, services=services)
+        seen_users: list[Any] = []
+
+        class RequestUserProbe:
+            async def __call__(self, request, call_next):
+                if request.path == "/studio":
+                    seen_users.append(request.user)
+                return await call_next(request)
+
+        app.add_middleware(RequestUserProbe(), priority=5)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            studio = await client.get(
+                "/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        assert studio.status == 200
+        assert len(seen_users) == 1
+        request_user = seen_users[0]
+        assert request_user.is_authenticated is True
+        assert request_user.id == str(services.seed.user.id)
+        assert request_user.account.email == "writer@example.com"
+        assert not hasattr(request_user, "membership_id")
+
+    asyncio.run(run())
+
+
+def test_sha1_chirp_session_is_read_and_reissued_with_sha256(monkeypatch) -> None:
+    async def run() -> None:
+        secret_key = "x" * 32
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        login, _identity = services.login("writer@example.com", "password")
+        app = create_app(debug=False, services=services)
+        sha1 = URLSafeTimedSerializer(
+            secret_key,
+            signer_kwargs={"digest_method": hashlib.sha1},
+        )
+        legacy_cookie = sha1.dumps(
+            {
+                "compatibility_marker": "sha1-cookie-loaded",
+                CHIRP_GLOBAL_USER_SESSION_KEY: str(login.user.id),
+            }
+        )
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/network",
+                headers={
+                    "Cookie": (f"elbysodic_session={login.token}; chirp_session={legacy_cookie}")
+                },
+            )
+
+        assert response.status == 200
+        reissued = _cookie_values(response)["chirp_session"]
+        sha256 = URLSafeTimedSerializer(
+            secret_key,
+            signer_kwargs={"digest_method": hashlib.sha256},
+        )
+        payload = sha256.loads(reissued)
+        assert payload["compatibility_marker"] == "sha1-cookie-loaded"
+        assert payload[CHIRP_GLOBAL_USER_SESSION_KEY] == str(login.user.id)
+        with pytest.raises(BadData):
+            sha1.loads(reissued)
 
     asyncio.run(run())
 
@@ -1244,7 +1341,13 @@ def test_development_and_production_resolve_the_same_middleware_chain(monkeypatc
 
     development_chain = resolved_chain(development)
     assert development_chain == resolved_chain(production)
-    assert development_chain.index("SessionMiddleware") < development_chain.index("CSRFMiddleware")
+    assert development_chain.index("SessionMiddleware") < development_chain.index(
+        "AppSessionIdentityMiddleware"
+    )
+    assert development_chain.index("AppSessionIdentityMiddleware") < development_chain.index(
+        "AuthMiddleware"
+    )
+    assert development_chain.index("AuthMiddleware") < development_chain.index("CSRFMiddleware")
     assert development_chain.index("CSRFMiddleware") < development_chain.index(
         "SecurityHeadersMiddleware"
     )

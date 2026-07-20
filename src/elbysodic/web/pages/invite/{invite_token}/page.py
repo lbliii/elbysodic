@@ -11,7 +11,7 @@ from chirp.http.response import Response
 from chirp.templating.returns import Page
 
 from elbysodic.services.auth import SESSION_COOKIE
-from elbysodic.web.security import session_cookie
+from elbysodic.web.security import expose_global_account, session_cookie
 from elbysodic.web.state import get_services, get_web_security_config
 
 
@@ -48,6 +48,7 @@ async def post(
         return _render_invite(request, invite_token, error=str(exc), form=form)
     except ValueError as exc:
         return _render_invite(request, invite_token, error=str(exc), form=form)
+    expose_global_account(accepted.session.user)
     security = get_web_security_config()
     return Response(
         "",

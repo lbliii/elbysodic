@@ -10,9 +10,13 @@ from urllib.parse import quote
 from chirp.http.cookies import SetCookie
 from chirp.http.request import Request
 from chirp.http.response import Response
+from chirp.middleware.auth import AuthConfig
+from chirp.middleware.auth import login as chirp_login
+from chirp.middleware.auth import logout as chirp_logout
 from chirp.middleware.protocol import AnyResponse, Next
+from chirp.middleware.sessions import get_session
 
-from elbysodic.services.auth import SESSION_COOKIE, user_for_session_token
+from elbysodic.domain.models import User
 from elbysodic.web.errors import error_response
 
 ELBYSODIC_ENV = "ELBYSODIC_ENV"
@@ -20,6 +24,9 @@ ELBYSODIC_SECRET_KEY = "ELBYSODIC_SECRET_KEY"  # noqa: S105
 ELBYSODIC_ALLOWED_HOSTS = "ELBYSODIC_ALLOWED_HOSTS"
 ELBYSODIC_HSTS = "ELBYSODIC_HSTS"
 MIN_SECRET_KEY_LENGTH = 32
+CHIRP_GLOBAL_USER_SESSION_KEY = "elbysodic_global_user_id"
+CHIRP_SESSION_COOKIE = "chirp_session"
+CHIRP_CSRF_SESSION_KEY = "_csrf_token"
 PRODUCTION_ENVS = frozenset({"production", "prod", "staging"})
 DEFAULT_PRODUCTION_ALLOWED_HOSTS = (".up.railway.app", ".railway.app")
 PUBLIC_PATHS = frozenset(
@@ -51,6 +58,92 @@ class WebSecurityConfig:
     @property
     def production(self) -> bool:
         return self.env in PRODUCTION_ENVS
+
+
+@dataclass(frozen=True, slots=True)
+class ChirpGlobalAccount:
+    """Chirp auth adapter for an Elbysodic global login account."""
+
+    account: User
+
+    @property
+    def id(self) -> str:
+        return str(self.account.id)
+
+    @property
+    def is_authenticated(self) -> bool:
+        return True
+
+
+def request_auth_config() -> AuthConfig:
+    """Build Chirp auth around the existing DB-backed app session."""
+
+    return AuthConfig(
+        session_key=CHIRP_GLOBAL_USER_SESSION_KEY,
+        load_user=_load_request_global_account,
+        login_url=None,
+    )
+
+
+def expose_global_account(user: User) -> None:
+    """Rotate Chirp's session and expose a newly authenticated account."""
+
+    chirp_login(ChirpGlobalAccount(user))
+
+
+def clear_global_account() -> None:
+    """Rotate Chirp's session and clear its request-global auth account."""
+
+    chirp_logout()
+
+
+class AppSessionIdentityMiddleware:
+    """Bridge one validated app login into Chirp's request auth context."""
+
+    __slots__ = ()
+
+    async def __call__(self, request: Request, call_next: Next) -> AnyResponse:
+        from elbysodic.web.state import get_services
+
+        login = get_services().request_login(request)
+        session = get_session()
+        if login is None:
+            session.pop(CHIRP_GLOBAL_USER_SESSION_KEY, None)
+        else:
+            session[CHIRP_GLOBAL_USER_SESSION_KEY] = str(login.user.id)
+        return await call_next(request)
+
+
+class AnonymousCatalogSessionMiddleware:
+    """Keep untouched anonymous public reads free of session cookies."""
+
+    __slots__ = ()
+
+    async def __call__(self, request: Request, call_next: Next) -> AnyResponse:
+        had_session_cookie = CHIRP_SESSION_COOKIE in request.cookies
+        response = await call_next(request)
+        if (
+            not had_session_cookie
+            and not request.user.is_authenticated
+            and _is_public_request(request)
+            and not _public_request_requires_session(request)
+        ):
+            # Chirp CSRF eagerly provisions a token. Catalog reads render no
+            # mutating form, so remove that untouched token before the outer
+            # SessionMiddleware decides whether a cookie must be written.
+            get_session().pop(CHIRP_CSRF_SESSION_KEY, None)
+        return response
+
+
+async def _load_request_global_account(user_id: str) -> ChirpGlobalAccount | None:
+    from chirp.context import get_request
+
+    from elbysodic.web.state import get_services
+
+    login = get_services().request_login(get_request())
+    if login is None or str(login.user.id) != user_id:
+        return None
+    return ChirpGlobalAccount(login.user)
 
 
 def resolve_web_security_config(*, debug: bool) -> WebSecurityConfig:
@@ -122,7 +215,7 @@ class RequireLoginMiddleware:
         if not self._security.production or _is_public_request(request):
             return await call_next(request)
 
-        if _session_is_valid(request):
+        if request.user.is_authenticated:
             return await call_next(request)
 
         if request.method in {"GET", "HEAD"}:
@@ -185,10 +278,17 @@ def _is_public_request(request: Request) -> bool:
     )
 
 
-def _session_is_valid(request: Request) -> bool:
-    from elbysodic.web.state import get_services
+def _public_request_requires_session(request: Request) -> bool:
+    """Return whether a public route intentionally needs CSRF/session state."""
 
-    token = request.cookies.get(SESSION_COOKIE)
-    if token is None:
-        return False
-    return user_for_session_token(get_services().repo, str(token)) is not None
+    from elbysodic.web.tenant import request_tenant_slug, split_tenant_path
+
+    if request.path in {"/login", "/request-access"} or request.path.startswith(
+        ("/invite/", "/login/passkeys/")
+    ):
+        return True
+    tenant_local_path = request.path if request_tenant_slug(request) is not None else None
+    split = split_tenant_path(request.path)
+    if split is not None:
+        _community_slug, tenant_local_path = split
+    return tenant_local_path == "/request-access"

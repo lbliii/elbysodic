@@ -19,6 +19,13 @@ The request tenant prefix wins before session-selected identity. A selected
 membership is usable only when it belongs to the resolved community, belongs to
 the resolved user, is active, and has a role in the same community.
 
+Authentication resolves first and remains global-account scoped. The existing
+database-backed `elbysodic_session` is validated once and exposed through
+Chirp's `request.user` accessor; the request tenant resolver then derives the
+community-local membership and face from that same cached login. Code reading
+`request.user` must not infer a membership, role, staff capability, current
+community, or active face from the global account adapter.
+
 Malformed session-backed identity must be auditable and fail closed or recover
 deterministically. Development cookie fallback can recover stale local state, but
 production session corruption must not silently become an unrelated identity.
