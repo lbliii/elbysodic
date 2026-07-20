@@ -92,6 +92,21 @@ CREATE TABLE IF NOT EXISTS roles (
     UNIQUE (community_id, slug)
 );
 
+CREATE TABLE IF NOT EXISTS role_capabilities (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    capability TEXT NOT NULL CHECK (capability IN (
+        'manage_applications',
+        'manage_casting',
+        'manage_navigation',
+        'manage_threads',
+        'manage_world'
+    )),
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, role_id, capability)
+);
+
 CREATE TABLE IF NOT EXISTS community_memberships (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -229,6 +244,27 @@ CREATE TABLE IF NOT EXISTS characters (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     UNIQUE (community_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS staff_audit_events (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    capability TEXT NOT NULL CHECK (capability IN (
+        'manage_applications',
+        'manage_casting',
+        'manage_navigation',
+        'manage_threads',
+        'manage_world'
+    )),
+    target_family TEXT NOT NULL CHECK (length(trim(target_family)) > 0),
+    target_id INTEGER,
+    action TEXT NOT NULL CHECK (length(trim(action)) > 0),
+    outcome TEXT NOT NULL CHECK (outcome IN ('accepted', 'rejected', 'failed')),
+    reason TEXT NOT NULL DEFAULT '',
+    public_aftermath TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS applications (
@@ -775,6 +811,12 @@ CREATE INDEX IF NOT EXISTS idx_thread_participants_character ON thread_participa
 CREATE INDEX IF NOT EXISTS idx_posts_community_thread ON posts(community_id, thread_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_post_revisions_post ON post_revisions(community_id, post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON community_memberships(user_id, community_id);
+CREATE INDEX IF NOT EXISTS idx_role_capabilities_role
+ON role_capabilities(community_id, role_id, capability);
+CREATE INDEX IF NOT EXISTS idx_staff_audit_events_community
+ON staff_audit_events(community_id, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_staff_audit_events_actor
+ON staff_audit_events(community_id, actor_membership_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_characters_membership ON characters(community_id, membership_id, name);
 CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(community_id, status, updated_at);
 CREATE INDEX IF NOT EXISTS idx_applications_membership ON applications(community_id, membership_id, status);

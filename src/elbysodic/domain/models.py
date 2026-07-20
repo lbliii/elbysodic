@@ -189,6 +189,23 @@ class Role:
     is_admin: bool
     created_at: str
     updated_at: str
+    capabilities: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True, slots=True)
+class StaffAuditEvent:
+    id: int
+    community_id: int
+    actor_membership_id: int
+    actor_character_id: int | None
+    capability: str
+    target_family: str
+    target_id: int | None
+    action: str
+    outcome: str
+    reason: str
+    public_aftermath: str
+    created_at: str
 
 
 @dataclass(frozen=True, slots=True)

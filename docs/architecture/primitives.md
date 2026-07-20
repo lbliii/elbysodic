@@ -18,16 +18,18 @@ workflow policy, and rendered privacy proof.
 permissions, community-local username, roster preferences, and moderation power
 belong here.
 
-Staff power is expressed in services as named membership-scoped capabilities,
-not user-level authority. The current storage shorthand grants all V1 staff
-capabilities through an admin role, but the product contract remains
-capability-shaped so a future partial-staff role can be added without teaching
-pages to read storage flags directly.
+Staff power is expressed and stored as named membership-scoped capabilities,
+not user-level authority. `role_capabilities` grants each community role only
+the powers it needs. Legacy director roles marked `is_admin` are migrated to
+all registered capabilities, while partial staff roles can hold a strict
+subset without teaching pages to read storage flags directly.
 
 The service policy module keeps an executable capability contract registry for
-the current staff surface. It names protected workflow families and future
-audit-event candidates while preserving the V1 storage shorthand until
-community-scoped capability and audit tables are approved.
+the current staff surface. Sensitive accepted, rejected, and failed actions
+can be recorded in `staff_audit_events` with the community, actor membership,
+optional actor face, capability, target family/id, action, outcome, reason,
+public aftermath, and timestamp. Audit reads are tenant- and
+capability-scoped; there is no public audit feed.
 
 `Character` is the public posting identity. Characters are not global. A
 character belongs to exactly one membership in exactly one community.

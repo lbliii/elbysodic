@@ -35,8 +35,7 @@ or attach a character to the wrong membership.
 Page handlers should not make permission decisions directly. They should call
 service methods, and services should route decisions through policy helpers.
 
-Policy checks expose named capabilities, even while the MVP still maps them to
-admin roles:
+Policy checks expose named capabilities backed by community-local role grants:
 
 - `manage_threads`
 - `manage_world`
@@ -60,17 +59,22 @@ role assignment, or role lacking staff power. They must not include private
 target details, staff notes, application body, access-request notes, raw
 tokens, or role/member display names.
 
-V1 keeps `roles.is_admin` as the storage shorthand for "has every current
-staff capability." Do not add role-capability rows until partial staff roles
-become product-visible. Even while storage is coarse, page handlers and
-workflow services should still depend on named policy helpers rather than the
-storage flag.
+Schema version 24 stores grants in `role_capabilities`. The migration expands
+each legacy `roles.is_admin = 1` director role to every registered capability;
+new partial staff roles may receive any validated subset. `roles.is_admin`
+remains a compatibility and seed-input field, not the policy authority. Page
+handlers and workflow services depend on named policy helpers rather than that
+legacy flag.
 
 `src/elbysodic/services/policies.py` owns the current staff capability contract
-registry. Each entry names the helper, V1 storage shorthand, membership actor
-contract, protected workflow families, and candidate audit-event actions for
-future storage. This is an audit map, not a role editor: it must not introduce
-global user staff power, page-local checks, or public audit output.
+registry. Each entry names the helper, storage contract, membership actor
+contract, protected workflow families, and audit-event actions. Durable events
+are community-scoped and carry actor membership, optional owned face,
+capability, target family/id, action, outcome, optional reason, sanitized public
+aftermath, and time. Reading all capabilities requires `manage_world`; a
+partial staff role can read only the capability trail it holds. This is not
+public output and must not introduce global user staff power or page-local
+checks.
 
 ## Production Request Identity
 

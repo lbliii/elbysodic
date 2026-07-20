@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `23`. Calling
+The checked-in schema currently creates databases at version `24`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -26,6 +26,12 @@ roots. The migration never guesses how to repair story-visible or private
 rows: it names the affected table and row id, tells the operator to run the
 content-free tenant integrity audit, and leaves version `22` recorded until the
 row is repaired deliberately.
+
+Version `24` adds community-scoped `role_capabilities` and durable
+`staff_audit_events`. It backfills every legacy admin role with the complete
+registered capability set, then installs the same role, actor-membership, and
+optional actor-face tenant-pair triggers used by fresh databases. It never
+infers global staff power or copies an audit actor across communities.
 
 Fresh-schema and upgraded-schema parity is a production-readiness requirement:
 new tables, columns, indexes, and constraints must be represented in both the

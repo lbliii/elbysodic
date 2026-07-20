@@ -7,7 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-CURRENT_SCHEMA_VERSION = 23
+from elbysodic.domain.capabilities import STAFF_CAPABILITIES
+
+CURRENT_SCHEMA_VERSION = 24
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -777,12 +779,41 @@ TENANT_PAIR_RULES: tuple[tuple[str, str], ...] = (
         """,
     ),
     (
+        "role_capabilities",
+        """
+        EXISTS (
+            SELECT 1 FROM roles AS role
+            WHERE role.id = {row}.role_id
+              AND role.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
         "characters",
         """
         EXISTS (
             SELECT 1 FROM community_memberships AS membership
             WHERE membership.id = {row}.membership_id
               AND membership.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
+        "staff_audit_events",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS actor
+            WHERE actor.id = {row}.actor_membership_id
+              AND actor.community_id = {row}.community_id
+        )
+        AND (
+            {row}.actor_character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.actor_character_id
+                  AND character.community_id = {row}.community_id
+                  AND character.membership_id = {row}.actor_membership_id
+            )
         )
         """,
     ),
@@ -1424,6 +1455,82 @@ def _enforce_tenant_pair_constraints(connection: sqlite3.Connection) -> None:
     ensure_tenant_pair_triggers(connection)
 
 
+def _add_role_capabilities_and_staff_audit_events(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS role_capabilities (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+            capability TEXT NOT NULL CHECK (capability IN (
+                'manage_applications',
+                'manage_casting',
+                'manage_navigation',
+                'manage_threads',
+                'manage_world'
+            )),
+            created_at TEXT NOT NULL,
+            UNIQUE (community_id, role_id, capability)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS staff_audit_events (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            capability TEXT NOT NULL CHECK (capability IN (
+                'manage_applications',
+                'manage_casting',
+                'manage_navigation',
+                'manage_threads',
+                'manage_world'
+            )),
+            target_family TEXT NOT NULL CHECK (length(trim(target_family)) > 0),
+            target_id INTEGER,
+            action TEXT NOT NULL CHECK (length(trim(action)) > 0),
+            outcome TEXT NOT NULL CHECK (outcome IN ('accepted', 'rejected', 'failed')),
+            reason TEXT NOT NULL DEFAULT '',
+            public_aftermath TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_role_capabilities_role
+        ON role_capabilities(community_id, role_id, capability)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_staff_audit_events_community
+        ON staff_audit_events(community_id, created_at, id)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_staff_audit_events_actor
+        ON staff_audit_events(community_id, actor_membership_id, created_at, id)
+        """
+    )
+    now = datetime.now(UTC).isoformat(timespec="seconds")
+    for capability in sorted(STAFF_CAPABILITIES):
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO role_capabilities (
+                community_id, role_id, capability, created_at
+            )
+            SELECT community_id, id, ?, ?
+            FROM roles
+            WHERE is_admin = 1
+            """,
+            (capability, now),
+        )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -1455,6 +1562,11 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(21, "community-access-request-events", _add_community_access_request_events),
     Migration(22, "user-passkey-credentials", _add_user_passkey_credentials),
     Migration(23, "tenant-pair-storage-constraints", _enforce_tenant_pair_constraints),
+    Migration(
+        24,
+        "role-capabilities-and-staff-audit-events",
+        _add_role_capabilities_and_staff_audit_events,
+    ),
 )
 
 
