@@ -76,6 +76,14 @@ partial staff role can read only the capability trail it holds. This is not
 public output and must not introduce global user staff power or page-local
 checks.
 
+Program Blueprint preview and apply require the current membership's
+`manage_world` capability. Apply accepts only a validated packet whose program
+slug matches the resolved realm and whose preview fingerprint is still current.
+Unsafe CSS, script, font, and template input is rejected before mutation. The
+accepted audit event commits with hydration; rejected and failed events store a
+director-safe reason, never raw Blueprint source, database exceptions, secrets,
+or another community's object labels.
+
 ## Production Request Identity
 
 Production mode is enabled with `ELBYSODIC_ENV=production` or `staging`.
@@ -135,11 +143,17 @@ private writer queues.
 Signed-out tenant previews use the same posture inside one public-ready realm.
 They can show published guidebook materials, public premise/current-event
 summaries, non-archived wanted hooks, public media, face counts, and
-request-access/login calls to action. They must not render draft materials,
-private or raw scene/thread activity, wanted interest notes, reserves, plotting
-room links, lifecycle controls, identity menus, unread counts, or any mutating
-forms. Raising interest, reserving, applying, replying, watching, and staff
-workflow actions still require a valid session and community-local membership.
+request-access/login calls to action. A scene explicitly marked
+`public_preview` on a non-private board may additionally expose only its public
+face presentation, public scene metadata, and first four sanitized post bodies.
+The public scene read model excludes membership ownership, writer links, read
+state, watches, member navigation, reply actions, and staff controls; member-only,
+private-board, and legacy-private scenes fail as not found. Other raw
+scene/thread activity, draft materials, wanted interest notes, reserves,
+plotting-room links, lifecycle controls, identity menus, unread counts, and all
+mutating forms remain private. Raising interest, reserving, applying, replying,
+watching, and staff workflow actions still require a valid session and
+community-local membership.
 
 A signed-in account without a membership in the current community keeps the
 same public-safe preview boundary. The shell may identify the global account

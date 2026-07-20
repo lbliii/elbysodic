@@ -3,24 +3,38 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Callable
+import json
+from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, replace
 from typing import Literal, Protocol
 
 from elbysodic.blueprints import (
+    BlueprintApplyMode,
     BlueprintDiffRow,
     ProgramBlueprint,
     ProgramBlueprintPreview,
+    blueprint_theme_tokens,
     preview_program_blueprint_yaml,
 )
-from elbysodic.domain import Board, Character, Community, CommunityTheme, Material, Role, WantedAd
+from elbysodic.domain import (
+    Board,
+    Character,
+    Community,
+    CommunityMembership,
+    CommunityTheme,
+    Material,
+    Role,
+    WantedAd,
+)
 from elbysodic.services import policies
 from elbysodic.services.read_models import ForumView
 
 
 class BlueprintPlanRepository(Protocol):
     def transaction(self) -> AbstractContextManager[None]: ...
+
+    def get_community(self, community_id: int) -> Community: ...
 
     def get_community_by_slug(self, slug: str) -> Community: ...
 
@@ -35,6 +49,205 @@ class BlueprintPlanRepository(Protocol):
     def get_wanted_ad_by_slug(self, community_id: int, slug: str) -> WantedAd: ...
 
     def get_theme_by_slug(self, community_id: int, slug: str) -> CommunityTheme: ...
+
+    def update_community_name_and_slug(
+        self, community_id: int, *, slug: str, name: str
+    ) -> Community: ...
+
+    def create_role(
+        self,
+        community_id: int,
+        slug: str,
+        name: str,
+        *,
+        is_admin: bool = False,
+        capabilities: Iterable[str] | None = None,
+    ) -> Role: ...
+
+    def update_role(
+        self,
+        community_id: int,
+        role_id: int,
+        *,
+        name: str,
+        is_admin: bool,
+        capabilities: Iterable[str],
+    ) -> Role: ...
+
+    def create_character(
+        self,
+        community_id: int,
+        membership_id: int,
+        slug: str,
+        name: str,
+        avatar_url: str | None = None,
+        poster_url: str | None = None,
+        poster_alt: str = "",
+        tagline: str = "",
+        accent_color: str = "",
+        summary: str = "",
+        post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
+        *,
+        application_status: str = "accepted",
+        make_default: bool = False,
+    ) -> Character: ...
+
+    def update_character(
+        self,
+        community_id: int,
+        character_id: int,
+        *,
+        slug: str,
+        name: str,
+        avatar_url: str | None,
+        poster_url: str | None = None,
+        poster_alt: str = "",
+        tagline: str = "",
+        accent_color: str = "",
+        summary: str = "",
+        post_profile_variant: str = "bio",
+        post_accent_style: str = "soft",
+        post_border_style: str = "hairline",
+        post_title_style: str = "standard",
+        post_density: str = "calm",
+    ) -> Character: ...
+
+    def set_default_character(
+        self, community_id: int, membership_id: int, character_id: int
+    ) -> CommunityMembership: ...
+
+    def create_board(
+        self,
+        community_id: int,
+        slug: str,
+        name: str,
+        description: str = "",
+        *,
+        parent_board_id: int | None = None,
+        board_kind: str = "location",
+        sidebar_section: str | None = None,
+        tagline: str = "",
+        image_url: str | None = None,
+        image_alt: str = "",
+        image_treatment: str = "poster",
+        image_focal_point: str = "center",
+        image_overlay: str = "medium",
+        sort_order: int = 0,
+        navigation_order: int | None = None,
+        show_in_navigation: bool = True,
+        is_private: bool = False,
+    ) -> Board: ...
+
+    def update_board(
+        self,
+        community_id: int,
+        board_id: int,
+        *,
+        name: str,
+        description: str,
+        sort_order: int,
+        parent_board_id: int | None = None,
+        board_kind: str = "location",
+        sidebar_section: str | None = None,
+        tagline: str = "",
+        image_url: str | None = None,
+        image_alt: str = "",
+        image_treatment: str | None = None,
+        image_focal_point: str | None = None,
+        image_overlay: str | None = None,
+        is_private: bool = False,
+        navigation_order: int | None = None,
+        show_in_navigation: bool | None = None,
+    ) -> Board: ...
+
+    def create_material(
+        self,
+        community_id: int,
+        slug: str,
+        title: str,
+        *,
+        material_type: str = "guide",
+        presentation_variant: str = "chapter",
+        summary: str = "",
+        body: str = "",
+        status: str = "published",
+        sort_order: int = 0,
+        is_featured: bool = False,
+    ) -> Material: ...
+
+    def update_material(
+        self,
+        community_id: int,
+        material_id: int,
+        *,
+        title: str,
+        material_type: str,
+        presentation_variant: str | None = None,
+        summary: str,
+        body: str,
+        status: str = "published",
+        sort_order: int = 0,
+        is_featured: bool = False,
+    ) -> Material: ...
+
+    def create_wanted_ad(
+        self,
+        community_id: int,
+        creator_membership_id: int,
+        slug: str,
+        title: str,
+        *,
+        creator_character_id: int | None = None,
+        related_material_id: int | None = None,
+        wanted_type: str = "plot_role",
+        summary: str = "",
+        body: str = "",
+        status: str = "open",
+    ) -> WantedAd: ...
+
+    def update_wanted_ad(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        *,
+        title: str,
+        wanted_type: str,
+        summary: str,
+        body: str,
+        related_material_id: int | None,
+    ) -> WantedAd: ...
+
+    def upsert_default_theme(
+        self,
+        community_id: int,
+        *,
+        slug: str,
+        name: str,
+        tokens_json: str,
+    ) -> CommunityTheme: ...
+
+    def reserve_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> bool: ...
+
+    def complete_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+        result_path: str,
+    ) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +268,11 @@ def preview_program_blueprint(
     preview = preview_program_blueprint_yaml(source)
     if not preview.is_valid or preview.blueprint is None:
         return preview
-    diff_rows = plan_program_blueprint_hydration(repo, preview.blueprint)
+    diff_rows = plan_program_blueprint_hydration(
+        repo,
+        preview.blueprint,
+        target_community=viewer.community,
+    )
     return replace(
         preview,
         diff_rows=diff_rows,
@@ -80,13 +297,14 @@ def program_blueprint_apply_readiness(
     items = [
         _diff_action_readiness_summary(action_counts),
         _collision_readiness_summary(preview.diff_rows),
-        "Duplicate handling must stay tenant-scoped.",
-        "Starter faces need explicit ownership defaults.",
-        "Hydration must run inside one rollback-tested transaction.",
-        "Unsupported keys must remain visible before apply.",
+        "Create only rejects live content collisions; skip existing preserves them.",
+        "Explicit update replaces only current-realm rows and same-writer faces or wanted hooks.",
+        "Starter faces and wanted hooks are owned by the importing director membership.",
+        "Apply uses one rollback-tested transaction and a fingerprint-scoped idempotency key.",
     ]
     return BlueprintApplyReadiness(
-        can_check_gate=bool(preview.preview_fingerprint),
+        can_check_gate=bool(preview.preview_fingerprint)
+        and not any(row.action == "blocked" for row in preview.diff_rows),
         items=tuple(items),
     )
 
@@ -96,21 +314,327 @@ def apply_program_blueprint_preview(
     viewer: ForumView,
     source: str,
     accepted_fingerprint: str,
+    *,
+    mode: BlueprintApplyMode = "create_only",
+    on_applied: Callable[[], None] | None = None,
 ) -> ProgramBlueprintPreview:
     preview = preview_program_blueprint(repo, viewer, source)
     if not preview.is_valid:
         raise ValueError("Preview a valid Program Blueprint before applying.")
     if not accepted_fingerprint or accepted_fingerprint != preview.preview_fingerprint:
         raise ValueError("Program Blueprint preview changed; preview again before applying.")
+    if mode == "dry_run":
+        return replace(preview, apply_mode=mode)
+    if mode not in {"create_only", "skip_existing", "explicit_update"}:
+        raise ValueError("Choose create only, skip existing, explicit update, or dry run.")
+    blueprint = preview.blueprint
+    if blueprint is None:
+        raise ValueError("Preview a valid Program Blueprint before applying.")
+    if blueprint.slug != viewer.community.slug:
+        raise ValueError("Program Blueprint must target the current realm before apply.")
+    blocked = [row for row in preview.diff_rows if row.action == "blocked"]
+    if blocked:
+        raise ValueError(blocked[0].detail)
+    _validate_create_only_collisions(repo, viewer, blueprint, preview, mode)
+    command_token = f"{preview.preview_fingerprint}:{mode}"
     with repo.transaction():
-        raise ValueError("Program Blueprint apply remains gated; no rows were written.")
+        if not repo.reserve_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key="program_blueprint_apply",
+            token=command_token,
+        ):
+            raise ValueError(f"This Program Blueprint preview was already applied in {mode} mode.")
+        _hydrate_program_blueprint(repo, viewer, blueprint, mode)
+        if on_applied is not None:
+            on_applied()
+        repo.complete_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key="program_blueprint_apply",
+            token=command_token,
+            result_path="/studio/intake?blueprint=applied",
+        )
+    return replace(preview, apply_mode=mode, applied=True)
+
+
+def _validate_create_only_collisions(
+    repo: BlueprintPlanRepository,
+    viewer: ForumView,
+    blueprint: ProgramBlueprint,
+    preview: ProgramBlueprintPreview,
+    mode: BlueprintApplyMode,
+) -> None:
+    if mode != "create_only":
+        return
+    community = repo.get_community(viewer.community.id)
+    if community.name != blueprint.name:
+        raise ValueError("Create-only mode cannot replace the current realm name.")
+    try:
+        role = repo.get_role_by_slug(community.id, blueprint.role_slug)
+    except LookupError:
+        role = None
+    if role is not None:
+        expected_capabilities = blueprint.role_capabilities
+        if role.name != blueprint.role_name or role.capabilities != expected_capabilities:
+            raise ValueError("Create-only mode cannot replace the existing Blueprint role.")
+    collisions = [
+        row
+        for row in preview.diff_rows
+        if row.section not in {"program", "role", "appearance"} and row.action in {"update", "skip"}
+    ]
+    if collisions:
+        collision = collisions[0]
+        raise ValueError(f"Create-only mode found existing {collision.section}: {collision.label}.")
+
+
+def _hydrate_program_blueprint(
+    repo: BlueprintPlanRepository,
+    viewer: ForumView,
+    blueprint: ProgramBlueprint,
+    mode: BlueprintApplyMode,
+) -> None:
+    community = repo.get_community(viewer.community.id)
+    if mode == "explicit_update" and community.name != blueprint.name:
+        community = repo.update_community_name_and_slug(
+            community.id,
+            slug=blueprint.slug,
+            name=blueprint.name,
+        )
+    expected_capabilities = blueprint.role_capabilities
+    try:
+        role = repo.get_role_by_slug(community.id, blueprint.role_slug)
+    except LookupError:
+        repo.create_role(
+            community.id,
+            blueprint.role_slug,
+            blueprint.role_name,
+            is_admin=bool(expected_capabilities),
+            capabilities=expected_capabilities,
+        )
+    else:
+        if mode == "explicit_update":
+            if role.id == viewer.role.id and role.capabilities != expected_capabilities:
+                raise ValueError(
+                    "Blueprint apply cannot change the importing director's own capabilities."
+                )
+            repo.update_role(
+                community.id,
+                role.id,
+                name=blueprint.role_name,
+                is_admin=bool(expected_capabilities),
+                capabilities=expected_capabilities,
+            )
+
+    style = blueprint.appearance.post_style if blueprint.appearance is not None else None
+    first_character_id: int | None = None
+    for character_seed in blueprint.characters:
+        try:
+            character = repo.get_character_by_slug(community.id, character_seed.slug)
+        except LookupError:
+            character = repo.create_character(
+                community.id,
+                viewer.membership.id,
+                character_seed.slug,
+                character_seed.name,
+                summary=character_seed.summary,
+                tagline=character_seed.tagline,
+                post_profile_variant=style.profile_variant if style is not None else "bio",
+                post_accent_style=style.accent_style if style is not None else "soft",
+                post_border_style=style.border_style if style is not None else "hairline",
+                post_title_style=style.title_style if style is not None else "standard",
+                post_density=style.density if style is not None else "calm",
+            )
+        else:
+            if mode == "explicit_update":
+                if character.membership_id != viewer.membership.id:
+                    raise ValueError(
+                        f"Existing face is owned by another writer: {character_seed.name}."
+                    )
+                character = repo.update_character(
+                    community.id,
+                    character.id,
+                    slug=character.slug,
+                    name=character_seed.name,
+                    avatar_url=character.avatar_url,
+                    poster_url=character.poster_url,
+                    poster_alt=character.poster_alt,
+                    tagline=character_seed.tagline,
+                    accent_color=character.accent_color,
+                    summary=character_seed.summary,
+                    post_profile_variant=(
+                        style.profile_variant
+                        if style is not None
+                        else character.post_profile_variant
+                    ),
+                    post_accent_style=(
+                        style.accent_style if style is not None else character.post_accent_style
+                    ),
+                    post_border_style=(
+                        style.border_style if style is not None else character.post_border_style
+                    ),
+                    post_title_style=(
+                        style.title_style if style is not None else character.post_title_style
+                    ),
+                    post_density=style.density if style is not None else character.post_density,
+                )
+        if first_character_id is None:
+            first_character_id = character.id
+    if viewer.membership.default_character_id is None and first_character_id is not None:
+        repo.set_default_character(community.id, viewer.membership.id, first_character_id)
+
+    for index, board_seed in enumerate(blueprint.boards, start=1):
+        try:
+            board = repo.get_board_by_slug(community.id, board_seed.slug)
+        except LookupError:
+            repo.create_board(
+                community.id,
+                board_seed.slug,
+                board_seed.name,
+                board_seed.description,
+                board_kind=board_seed.board_kind,
+                tagline=board_seed.tagline,
+                image_url=board_seed.image_url or None,
+                image_alt=board_seed.image_alt,
+                image_treatment=board_seed.image_treatment,
+                image_focal_point=board_seed.image_focal_point,
+                image_overlay=board_seed.image_overlay,
+                sort_order=index * 10,
+            )
+        else:
+            if mode == "explicit_update":
+                repo.update_board(
+                    community.id,
+                    board.id,
+                    name=board_seed.name,
+                    description=board_seed.description,
+                    sort_order=board.sort_order,
+                    parent_board_id=board.parent_board_id,
+                    board_kind=board_seed.board_kind,
+                    sidebar_section=board.sidebar_section,
+                    tagline=board_seed.tagline,
+                    image_url=board_seed.image_url or None,
+                    image_alt=board_seed.image_alt,
+                    image_treatment=board_seed.image_treatment,
+                    image_focal_point=board_seed.image_focal_point,
+                    image_overlay=board_seed.image_overlay,
+                    is_private=board.is_private,
+                    navigation_order=board.navigation_order,
+                    show_in_navigation=board.show_in_navigation,
+                )
+
+    material_variants = {
+        item.material_type: item.variant
+        for item in (
+            blueprint.appearance.material_variants if blueprint.appearance is not None else ()
+        )
+    }
+    materials_by_slug: dict[str, Material] = {}
+    for index, material_seed in enumerate(blueprint.materials, start=1):
+        variant = material_variants.get(material_seed.material_type, "chapter")
+        try:
+            material = repo.get_material_by_slug(community.id, material_seed.slug)
+        except LookupError:
+            material = repo.create_material(
+                community.id,
+                material_seed.slug,
+                material_seed.title,
+                material_type=material_seed.material_type,
+                presentation_variant=variant,
+                summary=material_seed.summary,
+                body=material_seed.body,
+                sort_order=index * 10,
+                is_featured=index == 1,
+            )
+        else:
+            if mode == "explicit_update":
+                material = repo.update_material(
+                    community.id,
+                    material.id,
+                    title=material_seed.title,
+                    material_type=material_seed.material_type,
+                    presentation_variant=variant,
+                    summary=material_seed.summary,
+                    body=material_seed.body,
+                    status=material.status,
+                    sort_order=material.sort_order,
+                    is_featured=material.is_featured,
+                )
+        materials_by_slug[material_seed.slug] = material
+
+    for wanted_seed in blueprint.wanted:
+        related_material_id = (
+            materials_by_slug[wanted_seed.related_material_slug].id
+            if wanted_seed.related_material_slug
+            else None
+        )
+        try:
+            wanted = repo.get_wanted_ad_by_slug(community.id, wanted_seed.slug)
+        except LookupError:
+            repo.create_wanted_ad(
+                community.id,
+                viewer.membership.id,
+                wanted_seed.slug,
+                wanted_seed.title,
+                creator_character_id=first_character_id,
+                related_material_id=related_material_id,
+                wanted_type=wanted_seed.wanted_type,
+                summary=wanted_seed.summary,
+                body=wanted_seed.body,
+            )
+        else:
+            if mode == "explicit_update":
+                if wanted.creator_membership_id != viewer.membership.id:
+                    raise ValueError(
+                        f"Existing wanted hook is owned by another writer: {wanted_seed.title}."
+                    )
+                repo.update_wanted_ad(
+                    community.id,
+                    wanted.id,
+                    title=wanted_seed.title,
+                    wanted_type=wanted_seed.wanted_type,
+                    summary=wanted_seed.summary,
+                    body=wanted_seed.body,
+                    related_material_id=related_material_id,
+                )
+
+    if blueprint.theme is not None:
+        try:
+            repo.get_theme_by_slug(community.id, blueprint.theme.slug)
+        except LookupError:
+            should_apply_theme = True
+        else:
+            should_apply_theme = mode == "explicit_update"
+        if should_apply_theme:
+            repo.upsert_default_theme(
+                community.id,
+                slug=blueprint.theme.slug,
+                name=blueprint.theme.name,
+                tokens_json=json.dumps(
+                    blueprint_theme_tokens(blueprint.theme),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
 
 
 def plan_program_blueprint_hydration(
     repo: BlueprintPlanRepository,
     blueprint: ProgramBlueprint,
+    *,
+    target_community: Community | None = None,
 ) -> tuple[BlueprintDiffRow, ...]:
     rows: list[BlueprintDiffRow] = []
+    if target_community is not None and blueprint.slug != target_community.slug:
+        return (
+            BlueprintDiffRow(
+                "program",
+                blueprint.slug,
+                blueprint.name,
+                "blocked",
+                "Blueprint program slug does not match the current realm.",
+            ),
+        )
     try:
         community = repo.get_community_by_slug(blueprint.slug)
     except LookupError:

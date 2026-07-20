@@ -128,6 +128,42 @@ class WantedRepositoryMixin(MaterialRepositoryMixin):
             raise LookupError(f"wanted ad not found in community {community_id}: {slug}")
         return _wanted_ad_from_row(row)
 
+    def update_wanted_ad(
+        self,
+        community_id: int,
+        wanted_ad_id: int,
+        *,
+        title: str,
+        wanted_type: str,
+        summary: str,
+        body: str,
+        related_material_id: int | None,
+    ) -> WantedAd:
+        wanted_ad = self.get_wanted_ad(community_id, wanted_ad_id)
+        _require_wanted_type(wanted_type)
+        if related_material_id is not None:
+            self.get_material(community_id, related_material_id)
+        self.connection.execute(
+            """
+            UPDATE wanted_ads
+            SET title = ?, wanted_type = ?, summary = ?, body = ?,
+                related_material_id = ?, updated_at = ?
+            WHERE community_id = ? AND id = ?
+            """,
+            (
+                title,
+                wanted_type,
+                summary,
+                body,
+                related_material_id,
+                _utc_now(),
+                community_id,
+                wanted_ad.id,
+            ),
+        )
+        self._commit()
+        return self.get_wanted_ad(community_id, wanted_ad.id)
+
     def list_wanted_ad_communities_by_slug(self, slug: str) -> list[Community]:
         rows = self.connection.execute(
             """

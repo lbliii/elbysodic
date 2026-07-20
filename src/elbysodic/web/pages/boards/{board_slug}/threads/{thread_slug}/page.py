@@ -9,11 +9,11 @@ from chirp.templating.returns import Page
 
 from elbysodic.domain import Character
 from elbysodic.services import Mentionable
-from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES
+from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES, THREAD_VISIBILITIES
 from elbysodic.web.commands import idempotency_key
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
-from elbysodic.web.tenant import request_scoped_path
+from elbysodic.web.tenant import request_scoped_path, request_tenant_slug
 
 
 def get(request: Request, board_slug: str, thread_slug: str) -> Page:
@@ -87,10 +87,12 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
 
     if intent == "scene":
         try:
+            raw_visibility = form.get("visibility")
             services.update_thread_scene(
                 board_slug,
                 thread_slug,
                 status=str(form.get("status") or "active"),
+                visibility=None if raw_visibility is None else str(raw_visibility),
                 location=str(form.get("location") or ""),
                 timeline=str(form.get("timeline") or ""),
                 summary=str(form.get("summary") or ""),
@@ -145,7 +147,14 @@ def _render_thread(
     body: str = "",
     selected_character_id: int | None = None,
 ) -> Page:
-    services = get_services(request)
+    tenant_slug = request_tenant_slug(request)
+    try:
+        services = get_services(request)
+        services.viewer()
+    except LookupError, PermissionError:
+        if tenant_slug is None:
+            raise
+        return _render_public_thread(request, tenant_slug, board_slug, thread_slug)
     scene_context = services.read_scene_context(board_slug, thread_slug)
     thread_view = scene_context.thread_view
     viewer = services.viewer()
@@ -181,6 +190,7 @@ def _render_thread(
             composer_config_id="reply-composer-config",
             idempotency_key=idempotency_key(),
             thread_statuses=THREAD_STATUSES,
+            thread_visibilities=THREAD_VISIBILITIES,
             posting_modes=POSTING_MODES,
             cast_picker_config_id="scene-cast-picker-config",
             cast_picker_config=cast_picker_config,
@@ -214,9 +224,37 @@ def _render_thread(
         composer_config_id=config_id,
         idempotency_key=idempotency_key(),
         thread_statuses=THREAD_STATUSES,
+        thread_visibilities=THREAD_VISIBILITIES,
         posting_modes=POSTING_MODES,
         cast_picker_config_id="scene-cast-picker-config",
         cast_picker_config=cast_picker_config,
+    )
+
+
+def _render_public_thread(
+    request: Request,
+    community_slug: str,
+    board_slug: str,
+    thread_slug: str,
+) -> Page:
+    services = get_services()
+    try:
+        preview = services.public_scene_preview(community_slug, board_slug, thread_slug)
+    except LookupError as exc:
+        raise HTTPError(status=404, detail=str(exc)) from exc
+    return Page.mounted(
+        "boards/{board_slug}/threads/{thread_slug}/_public_page.html",
+        current_path=request.url,
+        page_title=f"{preview.thread_title} · {preview.community.name}",
+        viewer=None,
+        account_visitor=services.account_visitor(
+            request,
+            current_community=preview.community,
+        ),
+        community=preview.community,
+        preview=preview,
+        show_community_shell=False,
+        robots_noindex=True,
     )
 
 

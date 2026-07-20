@@ -25,6 +25,7 @@ from elbysodic.blueprints import (
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.db import seed as seed_module
 from elbysodic.db.seed import DemoSeed, seed_demo_forum
+from elbysodic.domain import Material
 from elbysodic.services import AppServices
 
 
@@ -902,7 +903,11 @@ materials:
     assert preview.is_valid
     assert preview.preview_fingerprint
     assert len(preview.preview_fingerprint) == 16
-    assert preview.diff_action_summary == "Preflight: 5 create actions."
+    assert preview.diff_action_summary == "Preflight: 1 blocked action."
+    assert preview.diff_rows[0].detail == (
+        "Blueprint program slug does not match the current realm."
+    )
+    assert not admin_services.program_blueprint_apply_readiness(preview).can_check_gate
     assert changed.preview_fingerprint != preview.preview_fingerprint
 
 
@@ -927,7 +932,7 @@ def test_program_blueprint_apply_rejects_live_collision_stale_fingerprint(
 elbysodic_blueprint: 1
 program:
   slug: x-men-apocalypse
-  name: "X-Men: Apocalypse"
+  name: X-Men Apocalypse
   role:
     slug: staff
     name: Staff
@@ -1067,7 +1072,7 @@ def test_program_blueprint_preview_scopes_existing_seed_collisions_by_section() 
 elbysodic_blueprint: 1
 program:
   slug: x-men-apocalypse
-  name: "X-Men: Apocalypse"
+  name: X-Men Apocalypse
   role:
     slug: staff
     name: Staff
@@ -1178,7 +1183,304 @@ def test_program_blueprint_apply_rejects_stale_fingerprint_before_transaction(
         )
 
 
-def test_program_blueprint_apply_gate_rolls_back_transaction_probe(
+def test_program_blueprint_create_only_hydrates_every_supported_primitive() -> None:
+    repo, services = _blueprint_staff_services()
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+
+    applied = services.apply_program_blueprint_preview(
+        source,
+        preview.preview_fingerprint,
+        mode="create_only",
+    )
+
+    community = services.viewer().community
+    face = repo.get_character_by_slug(community.id, "blueprint-apply-face")
+    board = repo.get_board_by_slug(community.id, "blueprint-apply-board")
+    premise = repo.get_material_by_slug(community.id, "blueprint-apply-premise")
+    event = repo.get_material_by_slug(community.id, "blueprint-apply-event")
+    wanted = repo.get_wanted_ad_by_slug(community.id, "blueprint-apply-wanted")
+    theme = repo.get_theme_by_slug(community.id, "blueprint-apply-theme")
+    default_theme = repo.get_default_theme(community.id)
+    audit_events = services.staff_audit_trail(target_family="program_blueprint")
+
+    assert applied.applied
+    assert applied.apply_mode == "create_only"
+    assert face.membership_id == services.viewer().membership.id
+    assert face.post_profile_variant == "poster"
+    assert face.post_accent_style == "line"
+    assert face.post_title_style == "serif"
+    assert board.image_url == "/elbysodic-static/blueprint-apply-board.svg"
+    assert board.image_alt == "Blueprint apply board at dusk."
+    assert premise.presentation_variant == "chapter"
+    assert event.presentation_variant == "noticeboard"
+    assert wanted.creator_membership_id == services.viewer().membership.id
+    assert wanted.creator_character_id == face.id
+    assert wanted.related_material_id == event.id
+    assert default_theme == theme
+    assert audit_events[0].action == "blueprint_applied"
+    assert audit_events[0].outcome == "accepted"
+    command = repo.connection.execute(
+        """
+        SELECT result_path
+        FROM command_submissions
+        WHERE community_id = ? AND membership_id = ?
+          AND command_key = 'program_blueprint_apply'
+        """,
+        (community.id, services.viewer().membership.id),
+    ).fetchone()
+    assert command["result_path"] == "/studio/intake?blueprint=applied"
+
+    with pytest.raises(ValueError, match="preview changed"):
+        services.apply_program_blueprint_preview(
+            source,
+            preview.preview_fingerprint,
+            mode="create_only",
+        )
+
+
+def test_program_blueprint_dry_run_writes_no_rows_command_or_audit() -> None:
+    repo, services = _blueprint_staff_services()
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+
+    dry_run = services.apply_program_blueprint_preview(
+        source,
+        preview.preview_fingerprint,
+        mode="dry_run",
+    )
+
+    community = services.viewer().community
+    assert not dry_run.applied
+    assert dry_run.apply_mode == "dry_run"
+    with pytest.raises(LookupError):
+        repo.get_character_by_slug(community.id, "blueprint-apply-face")
+    assert (
+        repo.connection.execute(
+            "SELECT COUNT(*) FROM command_submissions WHERE command_key = 'program_blueprint_apply'"
+        ).fetchone()[0]
+        == 0
+    )
+    assert services.staff_audit_trail(target_family="program_blueprint") == []
+
+
+def test_program_blueprint_skip_existing_preserves_live_rows_and_creates_missing() -> None:
+    repo, services = _blueprint_staff_services()
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+    services.apply_program_blueprint_preview(
+        source,
+        preview.preview_fingerprint,
+        mode="create_only",
+    )
+    community = services.viewer().community
+    live_board = repo.get_board_by_slug(community.id, "blueprint-apply-board")
+    repo.update_board(
+        community.id,
+        live_board.id,
+        name="Director-edited Board",
+        description="Director-edited description that skip mode must preserve.",
+        sort_order=live_board.sort_order,
+        parent_board_id=live_board.parent_board_id,
+        board_kind=live_board.board_kind,
+        sidebar_section=live_board.sidebar_section,
+        tagline=live_board.tagline,
+        image_url=live_board.image_url,
+        image_alt=live_board.image_alt,
+        image_treatment=live_board.image_treatment,
+        image_focal_point=live_board.image_focal_point,
+        image_overlay=live_board.image_overlay,
+        is_private=live_board.is_private,
+        navigation_order=live_board.navigation_order,
+        show_in_navigation=live_board.show_in_navigation,
+    )
+    expanded_source = source.replace(
+        "materials:\n",
+        """  - slug: blueprint-skip-new-board
+    name: Blueprint Skip New Board
+    kind: community
+    tagline: Created while existing rows are preserved.
+    description: A second safe scene hub.
+materials:
+""",
+    )
+    expanded_preview = services.preview_program_blueprint(expanded_source)
+
+    applied = services.apply_program_blueprint_preview(
+        expanded_source,
+        expanded_preview.preview_fingerprint,
+        mode="skip_existing",
+    )
+
+    preserved = repo.get_board_by_slug(community.id, "blueprint-apply-board")
+    created = repo.get_board_by_slug(community.id, "blueprint-skip-new-board")
+    assert applied.applied
+    assert applied.apply_mode == "skip_existing"
+    assert preserved.name == "Director-edited Board"
+    assert preserved.description == "Director-edited description that skip mode must preserve."
+    assert created.name == "Blueprint Skip New Board"
+
+
+def test_program_blueprint_apply_ignores_same_slugs_in_another_community() -> None:
+    repo, services = _blueprint_staff_services()
+    hosted = repo.create_community("blueprint-hosted", "Blueprint Hosted")
+    hosted_role = repo.create_role(hosted.id, "staff", "Staff", is_admin=True)
+    hosted_user = repo.create_user("blueprint-hosted@example.com", "hash")
+    hosted_membership = repo.create_membership(
+        hosted.id,
+        hosted_user.id,
+        hosted_role.id,
+        "blueprint-hosted",
+        "Blueprint Hosted",
+    )
+    hosted_face = repo.create_character(
+        hosted.id,
+        hosted_membership.id,
+        "blueprint-apply-face",
+        "Hosted Blueprint Face",
+    )
+    hosted_board = repo.create_board(
+        hosted.id,
+        "blueprint-apply-board",
+        "Hosted Blueprint Board",
+    )
+    hosted_material = repo.create_material(
+        hosted.id,
+        "blueprint-apply-event",
+        "Hosted Blueprint Event",
+        material_type="event",
+    )
+    hosted_wanted = repo.create_wanted_ad(
+        hosted.id,
+        hosted_membership.id,
+        "blueprint-apply-wanted",
+        "Hosted Blueprint Wanted",
+        creator_character_id=hosted_face.id,
+        related_material_id=hosted_material.id,
+    )
+    hosted_theme = repo.create_theme(
+        hosted.id,
+        "blueprint-apply-theme",
+        "Hosted Blueprint Theme",
+        "{}",
+    )
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+
+    services.apply_program_blueprint_preview(
+        source,
+        preview.preview_fingerprint,
+        mode="create_only",
+    )
+
+    current = services.viewer().community
+    assert repo.get_board_by_slug(current.id, hosted_board.slug).name == "Blueprint Apply Board"
+    assert repo.get_board_by_slug(hosted.id, hosted_board.slug).name == "Hosted Blueprint Board"
+    assert repo.get_wanted_ad_by_slug(current.id, hosted_wanted.slug).title == (
+        "Blueprint Apply Wanted"
+    )
+    assert repo.get_wanted_ad_by_slug(hosted.id, hosted_wanted.slug).title == (
+        "Hosted Blueprint Wanted"
+    )
+    assert repo.get_theme_by_slug(current.id, hosted_theme.slug).name == "Blueprint Apply Theme"
+    assert repo.get_theme_by_slug(hosted.id, hosted_theme.slug).name == ("Hosted Blueprint Theme")
+
+
+def test_program_blueprint_explicit_update_replaces_reviewed_same_owner_rows_once() -> None:
+    repo, services = _blueprint_staff_services()
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+    services.apply_program_blueprint_preview(
+        source,
+        preview.preview_fingerprint,
+        mode="create_only",
+    )
+    changed_source = (
+        source.replace("Blueprint Apply Face", "Blueprint Apply Face Revised")
+        .replace("A safe starter face.", "A revised safe starter face.")
+        .replace("A safe scene hub.", "A revised safe scene hub.")
+        .replace("A safe premise.", "A revised safe premise.")
+        .replace("Blueprint Apply Wanted", "Blueprint Apply Wanted Revised")
+        .replace("A safe wanted hook.", "A revised safe wanted hook.")
+        .replace("Blueprint Apply Theme", "Blueprint Apply Theme Revised")
+    )
+    changed_preview = services.preview_program_blueprint(changed_source)
+
+    applied = services.apply_program_blueprint_preview(
+        changed_source,
+        changed_preview.preview_fingerprint,
+        mode="explicit_update",
+    )
+
+    community = services.viewer().community
+    assert applied.applied
+    assert (
+        repo.get_character_by_slug(community.id, "blueprint-apply-face").name
+        == "Blueprint Apply Face Revised"
+    )
+    assert (
+        repo.get_board_by_slug(community.id, "blueprint-apply-board").description
+        == "A revised safe scene hub."
+    )
+    assert (
+        repo.get_material_by_slug(community.id, "blueprint-apply-premise").summary
+        == "A revised safe premise."
+    )
+    assert (
+        repo.get_wanted_ad_by_slug(community.id, "blueprint-apply-wanted").title
+        == "Blueprint Apply Wanted Revised"
+    )
+    assert (
+        repo.get_theme_by_slug(community.id, "blueprint-apply-theme").name
+        == "Blueprint Apply Theme Revised"
+    )
+
+    with pytest.raises(ValueError, match="already applied in explicit_update mode"):
+        services.apply_program_blueprint_preview(
+            changed_source,
+            changed_preview.preview_fingerprint,
+            mode="explicit_update",
+        )
+
+
+def test_program_blueprint_explicit_update_refuses_another_writer_face() -> None:
+    repo, services = _blueprint_staff_services()
+    community = services.viewer().community
+    writer = repo.get_membership_by_username(community.id, "starlane")
+    repo.create_character(
+        community.id,
+        writer.id,
+        "blueprint-apply-face",
+        "Writer-owned Blueprint Face",
+    )
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+
+    with pytest.raises(ValueError, match="Existing face is owned by another writer"):
+        services.apply_program_blueprint_preview(
+            source,
+            preview.preview_fingerprint,
+            mode="explicit_update",
+        )
+
+    assert (
+        repo.get_character_by_slug(community.id, "blueprint-apply-face").name
+        == "Writer-owned Blueprint Face"
+    )
+    with pytest.raises(LookupError):
+        repo.get_board_by_slug(community.id, "blueprint-apply-board")
+    assert (
+        repo.connection.execute(
+            "SELECT COUNT(*) FROM command_submissions WHERE command_key = 'program_blueprint_apply'"
+        ).fetchone()[0]
+        == 0
+    )
+    audit_events = services.staff_audit_trail(target_family="program_blueprint")
+    assert audit_events[0].action == "blueprint_apply_rejected"
+    assert audit_events[0].outcome == "rejected"
+
+
+def test_program_blueprint_apply_rolls_back_when_transaction_fails_after_hydration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     connection = connect()
@@ -1214,19 +1516,30 @@ def test_program_blueprint_apply_gate_rolls_back_transaction_probe(
                 """
             )
             yield
+            raise RuntimeError("late Blueprint transaction probe")
 
     monkeypatch.setattr(repo, "transaction", transaction_with_probe)
 
-    with pytest.raises(ValueError, match="apply remains gated"):
+    with pytest.raises(RuntimeError, match="late Blueprint transaction probe"):
         services.apply_program_blueprint_preview(source, preview.preview_fingerprint)
 
     assert entered
     assert not repo.connection.in_transaction
     with pytest.raises(LookupError):
         repo.get_community_by_slug("blueprint-rollback-probe")
+    with pytest.raises(LookupError):
+        repo.get_character_by_slug(seed.community.id, "blueprint-transaction-face")
+    with pytest.raises(LookupError):
+        repo.get_board_by_slug(seed.community.id, "blueprint-transaction-board")
+    with pytest.raises(LookupError):
+        repo.get_material_by_slug(seed.community.id, "blueprint-transaction-material")
+    audit_events = services.staff_audit_trail(target_family="program_blueprint")
+    assert audit_events[0].action == "blueprint_apply_failed"
+    assert audit_events[0].outcome == "failed"
+    assert audit_events[0].reason == "Blueprint apply failed before commit."
 
 
-def test_program_blueprint_apply_gate_rolls_back_nested_repository_writes(
+def test_program_blueprint_apply_rolls_back_earlier_rows_after_late_material_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     connection = connect()
@@ -1246,54 +1559,34 @@ def test_program_blueprint_apply_gate_rolls_back_nested_repository_writes(
     source = _transaction_probe_blueprint_source()
     preview = services.preview_program_blueprint(source)
     assert preview.preview_fingerprint
-    original_transaction = repo.transaction
-    entered = False
 
-    @contextmanager
-    def transaction_with_nested_repo_writes() -> Iterator[None]:
-        nonlocal entered
-        with original_transaction():
-            entered = True
-            repo.create_board(
-                seed.community.id,
-                "blueprint-nested-rollback-board",
-                "Blueprint Nested Rollback Board",
-                description="A scene hub probe for Blueprint apply rollback.",
-            )
-            repo.create_material(
-                seed.community.id,
-                "blueprint-nested-rollback-material",
-                "Blueprint Nested Rollback Material",
-                material_type="premise",
-                summary="A material probe for Blueprint apply rollback.",
-            )
-            repo.create_theme(
-                seed.community.id,
-                "blueprint-nested-rollback-theme",
-                "Blueprint Nested Rollback Theme",
-                "{}",
-            )
-            yield
+    def fail_material(*args: object, **kwargs: object) -> Material:
+        raise RuntimeError("late Blueprint material failure")
 
-    monkeypatch.setattr(repo, "transaction", transaction_with_nested_repo_writes)
+    monkeypatch.setattr(repo, "create_material", fail_material)
 
-    with pytest.raises(ValueError, match="apply remains gated"):
+    with pytest.raises(RuntimeError, match="late Blueprint material failure"):
         services.apply_program_blueprint_preview(source, preview.preview_fingerprint)
 
-    assert entered
     assert not repo.connection.in_transaction
     with pytest.raises(LookupError):
-        repo.get_board_by_slug(seed.community.id, "blueprint-nested-rollback-board")
+        repo.get_character_by_slug(seed.community.id, "blueprint-transaction-face")
     with pytest.raises(LookupError):
-        repo.get_material_by_slug(seed.community.id, "blueprint-nested-rollback-material")
+        repo.get_board_by_slug(seed.community.id, "blueprint-transaction-board")
     with pytest.raises(LookupError):
-        repo.get_theme_by_slug(seed.community.id, "blueprint-nested-rollback-theme")
+        repo.get_material_by_slug(seed.community.id, "blueprint-transaction-material")
+    assert (
+        repo.connection.execute(
+            "SELECT COUNT(*) FROM command_submissions WHERE command_key = 'program_blueprint_apply'"
+        ).fetchone()[0]
+        == 0
+    )
 
     recovered = repo.create_board(
         seed.community.id,
-        "blueprint-nested-recovery-board",
-        "Blueprint Nested Recovery Board",
-        description="A scene hub created after the gated rollback.",
+        "blueprint-recovery-board",
+        "Blueprint Recovery Board",
+        description="A scene hub created after rollback.",
     )
     assert repo.get_board_by_slug(seed.community.id, recovered.slug) == recovered
 
@@ -1302,28 +1595,144 @@ def _transaction_probe_blueprint_source() -> str:
     return """
 elbysodic_blueprint: 1
 program:
-  slug: rl-small-town-preview
-  name: RL Small Town Preview
+  slug: x-men-apocalypse
+  name: X-Men Apocalypse
   role:
-    slug: director
-    name: Director
+    slug: staff
+    name: Staff
     is_admin: true
 characters:
-  - slug: june-calloway
-    name: June Calloway
+  - slug: blueprint-transaction-face
+    name: Blueprint Transaction Face
     summary: Florist and town council note-taker.
 boards:
-  - slug: main-street
-    name: Main Street
+  - slug: blueprint-transaction-board
+    name: Blueprint Transaction Board
     kind: location
     tagline: One stoplight, twelve opinions.
     description: The town's public spine.
 materials:
-  - slug: premise
-    title: Premise
+  - slug: blueprint-transaction-material
+    title: Blueprint Transaction Material
     type: premise
     summary: A small-town ensemble.
     body: Founder's Week should be a cozy pressure cooker.
+"""
+
+
+def _blueprint_staff_services() -> tuple[ForumRepository, AppServices]:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    seed = seed_demo_forum(repo)
+    moira = repo.get_membership_by_username(seed.community.id, "moira")
+    services = AppServices(
+        repo,
+        DemoSeed(
+            seed.community,
+            repo.get_user(moira.user_id),
+            moira,
+            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
+        ),
+    )
+    return repo, services
+
+
+def _complete_apply_blueprint_source() -> str:
+    return """
+elbysodic_blueprint: 1
+program:
+  slug: x-men-apocalypse
+  name: X-Men Apocalypse
+  role:
+    slug: staff
+    name: Staff
+    is_admin: true
+characters:
+  - slug: blueprint-apply-face
+    name: Blueprint Apply Face
+    summary: A safe starter face.
+    tagline: Imported with an intentional owner.
+boards:
+  - slug: blueprint-apply-board
+    name: Blueprint Apply Board
+    kind: location
+    tagline: A safe playable scene hub.
+    description: A safe scene hub.
+    media:
+      url: /elbysodic-static/blueprint-apply-board.svg
+      alt: Blueprint apply board at dusk.
+      treatment: poster
+      focal_point: center
+      overlay: medium
+materials:
+  - slug: blueprint-apply-premise
+    title: Blueprint Apply Premise
+    type: premise
+    summary: A safe premise.
+    body: The current realm stays the only hydration target.
+  - slug: blueprint-apply-event
+    title: Blueprint Apply Event
+    type: event
+    summary: A safe event.
+    body: The current event gives the wanted hook a source.
+wanted:
+  - slug: blueprint-apply-wanted
+    title: Blueprint Apply Wanted
+    type: plot_role
+    related_material: blueprint-apply-event
+    summary: A safe wanted hook.
+    body: The importing director owns this hook.
+theme:
+  slug: blueprint-apply-theme
+  name: Blueprint Apply Theme
+  typography:
+    display: serif
+    body: serif
+    mono: mono
+  light:
+    bg: "#fbf5e8"
+    bg_subtle: "#eee3cf"
+    surface: "#fffaf0"
+    surface_elevated: "#f4ead7"
+    border: "#c8b89a"
+    text: "#2b2318"
+    text_muted: "#75684f"
+    accent: "#8d3f4a"
+    accent_hover: "#6e2f38"
+    accent_dim: "#c9878f"
+    accent_secondary: "#4f7c5b"
+    success: "#4f7c5b"
+    warning: "#a06d2a"
+    error: "#a64242"
+  dark:
+    bg: "#16130f"
+    bg_subtle: "#211c16"
+    surface: "#282219"
+    surface_elevated: "#332b1f"
+    border: "#675942"
+    text: "#f6eddf"
+    text_muted: "#c9b99e"
+    accent: "#e38991"
+    accent_hover: "#f0a7ad"
+    accent_dim: "#7d4248"
+    accent_secondary: "#91c49a"
+    success: "#91c49a"
+    warning: "#dbb168"
+    error: "#ee8d8d"
+  radius: md
+  density: calm
+  texture: paper
+appearance:
+  post_style:
+    profile_variant: poster
+    accent_style: line
+    border_style: hairline
+    title_style: serif
+    density: calm
+  material_variants:
+    premise: chapter
+    event: noticeboard
 """
 
 

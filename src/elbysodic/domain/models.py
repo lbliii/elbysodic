@@ -354,6 +354,7 @@ class Material:
     slug: str
     title: str
     material_type: str
+    presentation_variant: str
     summary: str
     body: str
     status: str
@@ -621,6 +622,7 @@ class Thread:
     slug: str
     title: str
     status: str
+    visibility: str
     location: str
     timeline: str
     summary: str

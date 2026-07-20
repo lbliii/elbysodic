@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from typing import cast
 
 from chirp.contracts import FormContract, contract
 from chirp.errors import HTTPError
@@ -12,7 +13,7 @@ from chirp.http.response import Redirect
 from chirp.pages.shell_actions import ShellAction, ShellActions, ShellActionZone
 from chirp.templating.returns import Page
 
-from elbysodic.blueprints import ProgramBlueprintPreview
+from elbysodic.blueprints import BlueprintApplyMode, ProgramBlueprintPreview
 from elbysodic.web.state import get_services
 
 
@@ -21,6 +22,7 @@ class IntakeEditorForm:
     intent: str
     blueprint_yaml: str = ""
     preview_fingerprint: str = ""
+    apply_mode: str = "create_only"
     name: str = ""
     claim_kind: str = ""
     sort_order: str = ""
@@ -47,6 +49,7 @@ async def post(request: Request) -> Page | Redirect:
     services = get_services(request)
     form = await request.form()
     intent = str(form.get("intent") or "")
+    blueprint_yaml = ""
     try:
         if intent == "preview_blueprint":
             blueprint_yaml = str(form.get("blueprint_yaml") or "")
@@ -57,9 +60,15 @@ async def post(request: Request) -> Page | Redirect:
             )
         elif intent == "apply_blueprint":
             blueprint_yaml = str(form.get("blueprint_yaml") or "")
-            services.apply_program_blueprint_preview(
+            applied_preview = services.apply_program_blueprint_preview(
                 blueprint_yaml,
                 str(form.get("preview_fingerprint") or ""),
+                mode=_blueprint_apply_mode(form.get("apply_mode")),
+            )
+            return _render_intake_editor(
+                request,
+                blueprint_yaml=blueprint_yaml,
+                blueprint_preview=applied_preview,
             )
         elif intent == "create_claim_type":
             services.create_claim_type_config(
@@ -112,7 +121,14 @@ async def post(request: Request) -> Page | Redirect:
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
     except (LookupError, ValueError) as exc:
-        return _render_intake_editor(request, error=str(exc))
+        return _render_intake_editor(
+            request,
+            error=str(exc),
+            blueprint_yaml=blueprint_yaml,
+            blueprint_preview=(
+                services.preview_program_blueprint(blueprint_yaml) if blueprint_yaml else None
+            ),
+        )
     return Redirect("/studio/intake")
 
 
@@ -144,6 +160,13 @@ def _required_int(raw: object, message: str) -> int:
     if not value:
         raise ValueError(message)
     return int(value)
+
+
+def _blueprint_apply_mode(raw: object) -> BlueprintApplyMode:
+    value = str(raw or "create_only")
+    if value not in {"create_only", "skip_existing", "explicit_update", "dry_run"}:
+        raise ValueError("choose a supported Blueprint apply mode")
+    return cast(BlueprintApplyMode, value)
 
 
 def _options_json(raw: str) -> str:

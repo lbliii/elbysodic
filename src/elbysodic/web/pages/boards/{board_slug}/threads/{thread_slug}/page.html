@@ -68,7 +68,7 @@
 {% block page_root_inner %}
 {% block page_content %}
 {% call container(max_width="94rem") %}
-{% call scene_context_shell(scene_context, thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, selected_character) %}
+{% call scene_context_shell(scene_context, thread_view, thread_statuses, thread_visibilities, posting_modes, cast_picker_config_id, cast_picker_config, selected_character) %}
 {% call stack(gap="lg") %}
   <div class="elbysodic-thread-toolbar">
     <div class="elbysodic-place-toolbar__breadcrumbs" role="group" aria-label="Scene path">

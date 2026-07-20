@@ -38,6 +38,12 @@ Director-authored world structure is also community-local. Facet names,
 application templates, wanted-hook categories, claims, reserves, and event pages
 should be configurable per community rather than shared globally.
 
+Program Blueprint Studio apply is a current-realm operation. The packet's
+program slug must match the resolved community before mutation, all slug
+lookups remain inside that `community_id`, and starter faces and wanted hooks
+belong to the importing membership in that same community. A same-slug object
+in another realm neither counts as a collision nor becomes an apply target.
+
 ## Query Rule
 
 Forum-domain queries should include community scope:

@@ -750,6 +750,159 @@ def test_production_signed_out_public_realm_keeps_anonymous_posture(monkeypatch)
     asyncio.run(run())
 
 
+def test_production_signed_out_public_scene_stops_after_four_posts(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("x-men-apocalypse")
+        board = services.repo.get_board_by_slug(community.id, "danger-room")
+        thread = services.repo.get_thread_by_slug(
+            community.id,
+            board.id,
+            "sentinel-drill",
+        )
+        rogue = services.repo.get_character_by_slug(community.id, "rogue")
+        xavier = services.repo.get_character_by_slug(community.id, "charles-xavier")
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            xavier.id,
+            "PUBLIC PREVIEW SECOND POST",
+        )
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            rogue.id,
+            "PUBLIC PREVIEW THIRD POST",
+        )
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            xavier.id,
+            "PUBLIC PREVIEW FOURTH POST",
+        )
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            rogue.id,
+            "MEMBER ONLY FIFTH POST",
+        )
+        app = create_app(debug=False, services=services)
+        path = "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill"
+
+        async with TestClient(app) as client:
+            public = await client.get(path)
+            login, cookies = await _production_login(
+                client,
+                email="writer@example.com",
+                next_url=path,
+            )
+            cookies.update(_cookie_values(login))
+            member = await client.get(path, headers={"Cookie": _cookie_header(cookies)})
+
+        assert public.status == 200
+        assert "Public scene preview" in public.text
+        assert "PUBLIC PREVIEW SECOND POST" in public.text
+        assert "PUBLIC PREVIEW FOURTH POST" in public.text
+        assert "MEMBER ONLY FIFTH POST" not in public.text
+        assert "The scene continues inside the realm" in public.text
+        assert 'href="/c/x-men-apocalypse/request-access"' in public.text
+        assert '<meta name="robots" content="noindex, nofollow">' in public.text
+        assert "writer starlane" not in public.text
+        assert "reply-composer" not in public.text
+        assert "Staff controls" not in public.text
+        assert "active face" not in public.text.lower()
+        assert not _response_headers(public, "set-cookie")
+
+        assert member.status == 200
+        assert "MEMBER ONLY FIFTH POST" in member.text
+        assert "Public scene preview" not in member.text
+
+    asyncio.run(run())
+
+
+def test_production_public_scene_route_fails_closed_for_member_only_and_private_scenes(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("x-men-apocalypse")
+        board = services.repo.get_board_by_slug(community.id, "danger-room")
+        rogue = services.repo.get_character_by_slug(community.id, "rogue")
+        member_only = services.repo.create_thread(
+            community.id,
+            board.id,
+            rogue.id,
+            "member-only-preview-check",
+            "MEMBER ONLY SCENE TITLE",
+            visibility="members",
+        )
+        services.repo.create_post(
+            community.id,
+            member_only.id,
+            rogue.id,
+            "MEMBER ONLY SCENE BODY",
+        )
+        private_board = services.repo.get_board_by_slug(community.id, "staff-room")
+        private = services.repo.create_thread(
+            community.id,
+            private_board.id,
+            rogue.id,
+            "private-preview-check",
+            "PRIVATE SCENE TITLE",
+            visibility="public_preview",
+        )
+        services.repo.create_post(
+            community.id,
+            private.id,
+            rogue.id,
+            "PRIVATE SCENE BODY",
+        )
+        draft_face = services.repo.create_character(
+            community.id,
+            rogue.membership_id,
+            "draft-preview-face",
+            "DRAFT PREVIEW FACE",
+            application_status="draft",
+        )
+        draft_scene = services.repo.create_thread(
+            community.id,
+            board.id,
+            draft_face.id,
+            "draft-face-preview-check",
+            "DRAFT FACE SCENE TITLE",
+            visibility="public_preview",
+        )
+        services.repo.create_post(
+            community.id,
+            draft_scene.id,
+            draft_face.id,
+            "DRAFT FACE SCENE BODY",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            member_response = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/member-only-preview-check"
+            )
+            private_response = await client.get(
+                "/c/x-men-apocalypse/boards/staff-room/threads/private-preview-check"
+            )
+            draft_response = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/draft-face-preview-check"
+            )
+
+        assert member_response.status == 404
+        assert "MEMBER ONLY SCENE BODY" not in member_response.text
+        assert private_response.status == 404
+        assert "PRIVATE SCENE BODY" not in private_response.text
+        assert draft_response.status == 404
+        assert "DRAFT FACE SCENE BODY" not in draft_response.text
+
+    asyncio.run(run())
+
+
 def test_production_account_cannot_withdraw_another_access_request(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)

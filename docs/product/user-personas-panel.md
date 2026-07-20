@@ -275,8 +275,8 @@ Expectations:
 
 - Studio is a production room organized by board-running work, not database
   tables.
-- Blueprint preview remains dry-run until diff, transaction, rollback, and
-  tenant proof exist.
+- Blueprint apply follows a reviewed diff, explicit collision mode,
+  fingerprint, transaction rollback, tenant, ownership, and audit contract.
 - Staff power is always capability-gated through community membership.
 - Appearance controls preserve readability, composer stability, permissions,
   and mobile layout.

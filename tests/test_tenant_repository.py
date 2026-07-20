@@ -75,6 +75,154 @@ def test_schema_migration_versions_are_contiguous_after_baseline() -> None:
     assert len({migration.name for migration in MIGRATIONS}) == len(MIGRATIONS)
 
 
+def test_schema_v26_adds_fail_closed_thread_visibility() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Legacy Scene Visibility")
+    role = repo.create_role(community.id, "member", "Member")
+    user = repo.create_user("legacy-visibility@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "legacy-visibility",
+        "Legacy Visibility",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "legacy-face",
+        "Legacy Face",
+        make_default=True,
+    )
+    board = repo.create_board(community.id, "legacy-scenes", "Legacy Scenes")
+    active = repo.create_thread(
+        community.id,
+        board.id,
+        character.id,
+        "legacy-active",
+        "Legacy Active",
+    )
+    private = repo.create_thread(
+        community.id,
+        board.id,
+        character.id,
+        "legacy-private",
+        "Legacy Private",
+        status="private",
+    )
+
+    connection.execute("ALTER TABLE threads DROP COLUMN visibility")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        "INSERT INTO schema_migrations (version, name, applied_at) VALUES (25, ?, ?)",
+        ("material-presentation-variant", "2026-07-20T00:00:00+00:00"),
+    )
+    connection.execute("PRAGMA user_version = 25")
+    connection.commit()
+
+    create_schema(connection)
+
+    rows = connection.execute(
+        "SELECT id, visibility FROM threads WHERE id IN (?, ?) ORDER BY id",
+        (active.id, private.id),
+    ).fetchall()
+    assert [(row["id"], row["visibility"]) for row in rows] == [
+        (active.id, "members"),
+        (private.id, "private"),
+    ]
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 26
+
+
+def test_schema_v25_preserves_materials_and_adds_presentation_variant() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+    community = repo.seed_default_community("Legacy Material Variant")
+    material = repo.create_material(
+        community.id,
+        "legacy-premise",
+        "Legacy Premise",
+        material_type="premise",
+        summary="Preserve this director-authored premise.",
+    )
+
+    connection.execute("ALTER TABLE materials DROP COLUMN presentation_variant")
+    connection.execute("ALTER TABLE threads DROP COLUMN visibility")
+    connection.execute("DELETE FROM schema_migrations")
+    connection.execute(
+        "INSERT INTO schema_migrations (version, name, applied_at) VALUES (24, ?, ?)",
+        ("role-capabilities-and-staff-audit-events", "2026-07-20T00:00:00+00:00"),
+    )
+    connection.execute("PRAGMA user_version = 24")
+    connection.commit()
+
+    create_schema(connection)
+
+    migrated = ForumRepository(connection).get_material(community.id, material.id)
+    assert migrated.title == "Legacy Premise"
+    assert migrated.summary == "Preserve this director-authored premise."
+    assert migrated.presentation_variant == "chapter"
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 26
+
+
+def test_thread_visibility_is_tenant_scoped_and_validated(repo: ForumRepository) -> None:
+    community = repo.get_community(1)
+    role = repo.create_role(community.id, "scene-writer", "Scene Writer")
+    user = repo.create_user("scene-visibility@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "scene-visibility",
+        "Scene Visibility",
+    )
+    character = repo.create_character(
+        community.id,
+        membership.id,
+        "preview-face",
+        "Preview Face",
+        make_default=True,
+    )
+    public_board = repo.create_board(community.id, "preview-room", "Preview Room")
+    private_board = repo.create_board(
+        community.id,
+        "private-preview-room",
+        "Private Preview Room",
+        is_private=True,
+    )
+
+    preview = repo.create_thread(
+        community.id,
+        public_board.id,
+        character.id,
+        "preview-scene",
+        "Preview Scene",
+        visibility="public_preview",
+    )
+    private = repo.create_thread(
+        community.id,
+        private_board.id,
+        character.id,
+        "forced-private-scene",
+        "Forced Private Scene",
+        visibility="public_preview",
+    )
+
+    assert preview.visibility == "public_preview"
+    assert private.visibility == "private"
+    with pytest.raises(ValueError, match="visibility must be one of"):
+        repo.create_thread(
+            community.id,
+            public_board.id,
+            character.id,
+            "invalid-visibility",
+            "Invalid Visibility",
+            visibility="everyone",
+        )
+
+
 def test_schema_enforces_selected_session_identity_pair(repo: ForumRepository) -> None:
     default = repo.get_community(1)
     hosted = repo.create_community("hosted-session-pair", "Hosted Session Pair")
