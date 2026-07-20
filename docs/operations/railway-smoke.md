@@ -251,6 +251,32 @@ production run so staging proof and production proof stay distinct.
 Latest known staging smoke:
 
 ```text
+Railway password-rehash smoke:
+- Date: 2026-07-20
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 2611569d-2ce6-4a02-8af0-784f87d4f607 (SUCCESS)
+- Commit: a13832d2df6e3cf00065b4c6a236e9da83b3f091
+- Railway project: Elbysodic
+- Railway service: elbysodic
+- Railway environment: staging
+- Volume path: /app/var
+- Replica count: 1
+- Deploy posture: /ready healthcheck, 5-second overlap, 15-second drain
+- Pounce: staging startup reported Pounce 0.9.1 on Python 3.14.2 with the GIL
+  enabled and process workers
+- Fixture preparation: a fixed seeded-writer demo hash was explicitly replaced
+  with a staging-only scrypt fixture; the helper printed no credential or raw
+  hash material
+- Negative login proof: a wrong password was rejected and the hash remained
+  scrypt
+- Upgrade proof: a correct rendered login resolved the intended seeded-writer
+  identity and persisted argon2id
+- Public probes: the standard readiness smoke passed after the upgrade
+- Result: Elbysodic #273 staging password-rehash acceptance passed; this does
+  not constitute production sign-off
+
+Previous complete staging smoke:
+
 Railway smoke:
 - Date: 2026-07-14
 - URL: https://elbysodic-staging.up.railway.app
@@ -276,10 +302,10 @@ Railway smoke:
 - Password hash posture: aggregate-only inspection reported 11 demo-seed
   hashes and no scrypt or argon2id rows. The requested rehash proof is blocked
   on Elbysodic #273 and lbliii/chirp#751.
-- Result: staging deployment, probes, and browser QA passed; this is not a
-  complete production or password-migration sign-off
+- Result: staging deployment, probes, and browser QA passed; the password
+  migration criterion was subsequently proven by the 2026-07-20 smoke above
 
-Previous complete staging smoke:
+Earlier complete staging smoke:
 
 Railway smoke:
 - Date: 2026-06-15

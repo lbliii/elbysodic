@@ -10,6 +10,32 @@ Production smoke has not been run yet.
 ## Attempt Log
 
 ```text
+Railway staging password-rehash smoke:
+- Date: 2026-07-20
+- Operator: Codex local workspace
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: 2611569d-2ce6-4a02-8af0-784f87d4f607 (SUCCESS)
+- Commit: a13832d2df6e3cf00065b4c6a236e9da83b3f091, deployed from the
+  verified local branch through Railway CLI
+- Railway project/service/environment: Elbysodic / elbysodic / staging
+- Deploy posture: one replica, /ready healthcheck, 5-second overlap,
+  15-second drain, and /app/var volume mount
+- Staging runtime: startup log reported Pounce 0.9.1, Python 3.14.2, GIL
+  enabled, and process-worker mode.
+- Fixture preparation: the fixed seeded-writer demo account began with a
+  demo-seed hash. The staging-only helper replaced it with a scrypt hash after
+  an explicit staging-write confirmation.
+- Negative login proof: a wrong password was rejected by the rendered login
+  route, created no authenticated session, and left the stored hash as scrypt.
+- Upgrade proof: the correct password through the rendered login route resolved
+  the intended seeded-writer identity and persisted an argon2id replacement.
+- Public probes: the standard Railway readiness probe passed after the login
+  smoke.
+- Privacy: no credentials, cookies, email addresses, or raw password hashes
+  were printed or recorded.
+- Result: Elbysodic #273 staging acceptance passed. Production smoke remains
+  unrun.
+
 Railway staging upgrade smoke:
 - Date: 2026-07-14
 - Operator: Codex local workspace
