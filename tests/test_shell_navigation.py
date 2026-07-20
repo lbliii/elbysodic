@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from typing import Any, cast
 
+from elbysodic.services import policies
 from elbysodic.web.navigation import (
     active_route_path,
     primary_nav_items,
@@ -119,7 +120,12 @@ def test_shell_navigation_builds_inner_sections_from_shared_model() -> None:
 
 
 def _viewer(*, is_admin: bool) -> SimpleNamespace:
-    role = SimpleNamespace(id=1, community_id=1, is_admin=is_admin)
+    role = SimpleNamespace(
+        id=1,
+        community_id=1,
+        is_admin=is_admin,
+        capabilities=policies.ADMIN_CAPABILITIES if is_admin else frozenset(),
+    )
     membership = SimpleNamespace(
         id=1,
         community_id=1,

@@ -49,6 +49,7 @@ from elbysodic.domain.models import (
     RealmInteractionResponse,
     Role,
     SidebarSectionConfig,
+    StaffAuditEvent,
     Thread,
     ThreadParticipant,
     ThreadWatch,
@@ -187,6 +188,7 @@ def _community_access_request_event_from_row(row: sqlite3.Row) -> CommunityAcces
 
 
 def _role_from_row(row: sqlite3.Row) -> Role:
+    raw_capabilities = str(row["capabilities"] or "")
     return Role(
         id=row["id"],
         community_id=row["community_id"],
@@ -195,6 +197,24 @@ def _role_from_row(row: sqlite3.Row) -> Role:
         is_admin=bool(row["is_admin"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        capabilities=frozenset(value for value in raw_capabilities.split(",") if value),
+    )
+
+
+def _staff_audit_event_from_row(row: sqlite3.Row) -> StaffAuditEvent:
+    return StaffAuditEvent(
+        id=row["id"],
+        community_id=row["community_id"],
+        actor_membership_id=row["actor_membership_id"],
+        actor_character_id=row["actor_character_id"],
+        capability=row["capability"],
+        target_family=row["target_family"],
+        target_id=row["target_id"],
+        action=row["action"],
+        outcome=row["outcome"],
+        reason=row["reason"],
+        public_aftermath=row["public_aftermath"],
+        created_at=row["created_at"],
     )
 
 

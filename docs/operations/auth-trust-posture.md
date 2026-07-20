@@ -60,11 +60,10 @@ wrong password. Elbysodic keeps its legacy PBKDF2 and demo-seed adapters around
 that contract until those stored formats disappear. Malformed PBKDF2, scrypt,
 argon2, and unsupported hashes fail closed without a session or password write.
 
-Elbysodic does not currently register Chirp `AuditMiddleware` or consume
-`authz.permission.denied` events, so the upstream `details["missing"]`
-sorted-list shape has no downstream consumer in this release. Issue #277 owns
-the metadata-audit adopt/defer decision, and #104 owns any future persistent
-staff capability audit trail.
+Elbysodic does not register Chirp `AuditMiddleware` or consume
+`authz.permission.denied` events. Product staff actions instead use the durable
+community-local `staff_audit_events` contract, which records membership and
+capability context that generic request metadata cannot supply.
 
 ## Request Identity And Session Signing
 
@@ -82,14 +81,13 @@ staff capability audit trail.
   `Vary: Cookie`. Login, passkey, invite-acceptance, and access-request pages
   intentionally establish CSRF or ceremony session state.
 
-Chirp `AuditMiddleware(level="metadata")` is **deferred** for Studio/director
-mutations. Its HTTP event identifies only the global `request.user` plus request
-metadata; it does not provide #104's required `community_id`, actor membership,
-capability, target family/id, action outcome, durable retention, or
-capability-scoped reads. Enabling it now would create a second, non-durable
-trail that could be mistaken for the product audit contract. Issue #104 remains
-the owner of the tenant-scoped persistent event design; generic request
-metadata can be reconsidered there as optional operational telemetry.
+Chirp `AuditMiddleware(level="metadata")` remains **deferred** for
+Studio/director mutations. Its HTTP event identifies only the global
+`request.user` plus request metadata. The product trail now persists
+`community_id`, actor membership, optional owned face, capability, target
+family/id, action outcome, and time with capability-scoped reads. Generic
+request metadata can be reconsidered later only as clearly separate optional
+operational telemetry.
 
 ## Production Readiness
 

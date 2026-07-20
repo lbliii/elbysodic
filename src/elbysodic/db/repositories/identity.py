@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
@@ -20,6 +21,7 @@ from elbysodic.db.repositories.rows import (
     _user_from_row,
     _user_session_from_row,
 )
+from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 from elbysodic.domain.context import DEFAULT_COMMUNITY_ID, DEFAULT_COMMUNITY_SLUG
 from elbysodic.domain.models import (
     Community,
@@ -328,7 +330,13 @@ class IdentityRepositoryMixin(RepositoryBase):
                 roles.name,
                 roles.is_admin,
                 roles.created_at,
-                roles.updated_at
+                roles.updated_at,
+                COALESCE((
+                    SELECT group_concat(role_capabilities.capability, ',')
+                    FROM role_capabilities
+                    WHERE role_capabilities.community_id = roles.community_id
+                      AND role_capabilities.role_id = roles.id
+                ), '') AS capabilities
             FROM community_memberships
             JOIN roles
               ON roles.community_id = community_memberships.community_id
@@ -958,24 +966,46 @@ class IdentityRepositoryMixin(RepositoryBase):
         name: str,
         *,
         is_admin: bool = False,
+        capabilities: Iterable[str] | None = None,
     ) -> Role:
-        now = _utc_now()
-        cursor = self.connection.execute(
-            """
-            INSERT INTO roles (community_id, slug, name, is_admin, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (community_id, slug, name, int(is_admin), now, now),
+        grants = set(
+            STAFF_CAPABILITIES if capabilities is None and is_admin else capabilities or ()
         )
-        self._commit()
-        return self.get_role(community_id, _last_id(cursor))
+        unknown = grants - STAFF_CAPABILITIES
+        if unknown:
+            raise ValueError(f"unknown staff capabilities: {', '.join(sorted(unknown))}")
+        now = _utc_now()
+        with self.transaction():
+            cursor = self.connection.execute(
+                """
+                INSERT INTO roles (community_id, slug, name, is_admin, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (community_id, slug, name, int(is_admin), now, now),
+            )
+            role_id = _last_id(cursor)
+            self.connection.executemany(
+                """
+                INSERT INTO role_capabilities (community_id, role_id, capability, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                ((community_id, role_id, capability, now) for capability in sorted(grants)),
+            )
+        return self.get_role(community_id, role_id)
 
     def get_role(self, community_id: int, role_id: int) -> Role:
         row = self.connection.execute(
             """
-            SELECT id, community_id, slug, name, is_admin, created_at, updated_at
+            SELECT roles.id, roles.community_id, roles.slug, roles.name, roles.is_admin,
+                   roles.created_at, roles.updated_at,
+                   COALESCE((
+                       SELECT group_concat(role_capabilities.capability, ',')
+                       FROM role_capabilities
+                       WHERE role_capabilities.community_id = roles.community_id
+                         AND role_capabilities.role_id = roles.id
+                   ), '') AS capabilities
             FROM roles
-            WHERE community_id = ? AND id = ?
+            WHERE roles.community_id = ? AND roles.id = ?
             """,
             (community_id, role_id),
         ).fetchone()
@@ -986,15 +1016,48 @@ class IdentityRepositoryMixin(RepositoryBase):
     def get_role_by_slug(self, community_id: int, slug: str) -> Role:
         row = self.connection.execute(
             """
-            SELECT id, community_id, slug, name, is_admin, created_at, updated_at
+            SELECT roles.id, roles.community_id, roles.slug, roles.name, roles.is_admin,
+                   roles.created_at, roles.updated_at,
+                   COALESCE((
+                       SELECT group_concat(role_capabilities.capability, ',')
+                       FROM role_capabilities
+                       WHERE role_capabilities.community_id = roles.community_id
+                         AND role_capabilities.role_id = roles.id
+                   ), '') AS capabilities
             FROM roles
-            WHERE community_id = ? AND slug = ?
+            WHERE roles.community_id = ? AND roles.slug = ?
             """,
             (community_id, slug),
         ).fetchone()
         if row is None:
             raise LookupError(f"role not found in community {community_id}: {slug}")
         return _role_from_row(row)
+
+    def set_role_capabilities(
+        self,
+        community_id: int,
+        role_id: int,
+        capabilities: Iterable[str],
+    ) -> Role:
+        self.get_role(community_id, role_id)
+        grants = set(capabilities)
+        unknown = grants - STAFF_CAPABILITIES
+        if unknown:
+            raise ValueError(f"unknown staff capabilities: {', '.join(sorted(unknown))}")
+        now = _utc_now()
+        with self.transaction():
+            self.connection.execute(
+                "DELETE FROM role_capabilities WHERE community_id = ? AND role_id = ?",
+                (community_id, role_id),
+            )
+            self.connection.executemany(
+                """
+                INSERT INTO role_capabilities (community_id, role_id, capability, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                ((community_id, role_id, capability, now) for capability in sorted(grants)),
+            )
+        return self.get_role(community_id, role_id)
 
     def create_membership(
         self,

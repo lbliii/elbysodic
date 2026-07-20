@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
+from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 from elbysodic.domain.models import Board, Character, CommunityMembership, Post, Role, Thread
 
 type Capability = Literal[
@@ -15,15 +16,7 @@ type Capability = Literal[
     "manage_world",
 ]
 
-ADMIN_CAPABILITIES: frozenset[Capability] = frozenset(
-    {
-        "manage_applications",
-        "manage_casting",
-        "manage_navigation",
-        "manage_threads",
-        "manage_world",
-    }
-)
+ADMIN_CAPABILITIES = cast(frozenset[Capability], STAFF_CAPABILITIES)
 
 type CapabilityDenialReason = Literal[
     "allowed",
@@ -58,7 +51,7 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
     "manage_applications": StaffCapabilityContract(
         capability="manage_applications",
         helper_name="can_manage_applications",
-        storage_contract="roles.is_admin grants every V1 staff capability",
+        storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor; optional public character context",
         protected_workflows=(
             "application review queue",
@@ -74,7 +67,7 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
     "manage_casting": StaffCapabilityContract(
         capability="manage_casting",
         helper_name="can_manage_casting",
-        storage_contract="roles.is_admin grants every V1 staff capability",
+        storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor; optional public character context",
         protected_workflows=(
             "claims directory maintenance",
@@ -92,7 +85,7 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
     "manage_navigation": StaffCapabilityContract(
         capability="manage_navigation",
         helper_name="can_manage_navigation",
-        storage_contract="roles.is_admin grants every V1 staff capability",
+        storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor",
         protected_workflows=(
             "board structure editing",
@@ -108,7 +101,7 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
     "manage_threads": StaffCapabilityContract(
         capability="manage_threads",
         helper_name="can_manage_threads",
-        storage_contract="roles.is_admin grants every V1 staff capability",
+        storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor; optional public character context",
         protected_workflows=(
             "private board access",
@@ -126,7 +119,7 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
     "manage_world": StaffCapabilityContract(
         capability="manage_world",
         helper_name="can_manage_world",
-        storage_contract="roles.is_admin grants every V1 staff capability",
+        storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor",
         protected_workflows=(
             "Studio structure and launch management",
@@ -199,7 +192,7 @@ def explain_capability(
             reason="role_not_assigned",
             message="Resolved role is not assigned to this membership.",
         )
-    if not role.is_admin:
+    if capability not in role.capabilities:
         return CapabilityDiagnostic(
             capability=capability,
             allowed=False,

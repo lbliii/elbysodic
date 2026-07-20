@@ -113,7 +113,9 @@ Elbysodic currently has three relevant modes:
   [Route And Link Contract](#route-and-link-contract).
 
 These modes share the same identity model. Users are global login accounts,
-memberships are community-local, and staff power belongs to membership roles.
+memberships are community-local, and staff power belongs to explicit
+capabilities granted to community-local membership roles. Staff audit actors
+are memberships, with an optional face owned by that same membership.
 
 ## First Realm Boundary
 

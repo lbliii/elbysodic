@@ -36,6 +36,7 @@ def admin_role() -> Role:
         is_admin=True,
         created_at="2026-01-01T00:00:00+00:00",
         updated_at="2026-01-01T00:00:00+00:00",
+        capabilities=policies.ADMIN_CAPABILITIES,
     )
 
 
@@ -84,7 +85,9 @@ def test_staff_capability_contracts_cover_named_helpers(
     for contract in contracts:
         helper = getattr(policies, contract.helper_name)
         assert helper(membership, admin_role) is True
-        assert contract.storage_contract == "roles.is_admin grants every V1 staff capability"
+        assert contract.storage_contract == (
+            "community-scoped role_capabilities grant named staff power"
+        )
         assert "membership" in contract.actor_contract
         assert "global user" not in contract.actor_contract
         assert contract.protected_workflows
@@ -129,7 +132,7 @@ def test_capabilities_require_active_membership_and_matching_role(
         ({"is_active": False}, {}, "inactive_membership"),
         ({}, {"community_id": 2}, "role_community_mismatch"),
         ({}, {"id": 99}, "role_not_assigned"),
-        ({}, {"is_admin": False}, "role_lacks_staff_power"),
+        ({}, {"capabilities": frozenset()}, "role_lacks_staff_power"),
     ],
 )
 def test_capability_denial_diagnostics_are_safe_and_specific(
@@ -174,11 +177,34 @@ def test_same_global_user_can_have_different_capabilities_per_community(
     staffed_membership = replace(membership, community_id=2, role_id=40)
     staffed_role = replace(admin_role, id=40, community_id=2, slug="director", is_admin=True)
     writer_membership = replace(membership, community_id=3, role_id=41)
-    writer_role = replace(admin_role, id=41, community_id=3, slug="member", is_admin=False)
+    writer_role = replace(
+        admin_role,
+        id=41,
+        community_id=3,
+        slug="member",
+        is_admin=False,
+        capabilities=frozenset(),
+    )
 
     assert staffed_membership.user_id == writer_membership.user_id
     assert policies.can_manage_applications(staffed_membership, staffed_role)
     assert not policies.can_manage_applications(writer_membership, writer_role)
+
+
+def test_partial_staff_role_grants_only_its_named_capability(
+    membership: CommunityMembership,
+    member_role: Role,
+) -> None:
+    application_reviewer = replace(
+        member_role,
+        capabilities=frozenset({"manage_applications"}),
+    )
+
+    assert policies.can_manage_applications(membership, application_reviewer)
+    assert not policies.can_manage_casting(membership, application_reviewer)
+    assert not policies.can_manage_navigation(membership, application_reviewer)
+    assert not policies.can_manage_threads(membership, application_reviewer)
+    assert not policies.can_manage_world(membership, application_reviewer)
 
 
 def test_private_board_and_locked_thread_use_named_capabilities(

@@ -62,6 +62,12 @@ is moved, cleared, or deleted automatically. A clean database receives
 insert/update triggers that reject tenant reassignment and invalid peer ids.
 Fresh databases install the identical trigger set through `create_schema()`.
 
+Schema version `24` adds explicit `role_capabilities` and durable
+`staff_audit_events`. Existing admin roles are backfilled with every registered
+staff capability. Tenant-pair triggers require each grant's role and each audit
+actor membership/optional face to belong to the stored community; no role or
+audit event can be reassigned across realms.
+
 ## Tenant Integrity Audit Matrix
 
 This matrix is the planning spine for #55, #56, and #141. It does not approve
@@ -72,6 +78,7 @@ it hardens and include the proof group named below.
 | Row Family | Invalid Pairings To Reject | Runtime Owner | Storage/Diagnostic Owner | Current Proof Or Gap | Migration Risk |
 |---|---|---|---|---|---|
 | Memberships and roles | Membership role from another community; inactive membership selected as active viewer; user-level staff power inferred outside membership. | Request identity resolver and policy helpers. | `community_memberships`, roles, session diagnostics, and v23 guards. | Negative writes, corrupt-row audit, migration rejection, and selected-session triggers are covered. | Legacy drift blocks upgrade for deliberate repair. |
+| Role capabilities and staff audit | Capability grant points at another realm's role; audit actor membership or optional face crosses community/ownership; partial staff reads another capability trail. | Named policy helpers and audit service. | `role_capabilities`, `staff_audit_events`, and v24 tenant-pair guards. | Partial grants, legacy admin backfill, cross-realm raw writes, actor-face ownership, durable export audit, and capability-scoped reads are covered. | Unknown capabilities fail closed; audit reasons and public aftermath must remain content-minimal. |
 | Characters and default faces | Character owned by another membership or community; default face points at a wrong-community or inactive face. | Character services and viewer resolution. | Character/default-face diagnostics and v23 guards. | Wrong-community and wrong-owner writes are rejected; legacy drift remains auditable. | Legacy drift blocks upgrade for deliberate repair. |
 | Threads, posts, and participants | Thread board, author membership, author face, post author face, participants, watches, and read state cross community or membership. | Posting/thread services and explicit-character validation. | Thread/post/revision/participant/read/watch diagnostics and v23 guards. | Repository boundaries, storage-negative tests, rollback proof, and trigger parity are covered. | Story-visible drift is never auto-repaired. |
 | Command submissions | Idempotency key reserved for a membership or community that does not match the executed command. | Command binding and service transaction owners. | `command_submissions` diagnostics and v23 guards. | Scoped retries remain service-owned; storage rejects cross-realm reservations. | Stale invalid reservations block upgrade. |

@@ -66,6 +66,7 @@ from elbysodic.domain.models import (
     Post,
     Role,
     SidebarSectionConfig,
+    StaffAuditEvent,
     Thread,
     User,
     WantedAd,
@@ -91,6 +92,8 @@ from elbysodic.services.applications import (
 )
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
+from elbysodic.services.audit import record_staff_audit_event as _record_staff_audit_event
+from elbysodic.services.audit import staff_audit_trail as _staff_audit_trail
 from elbysodic.services.auth import (
     SESSION_TTL,
     LoginSession,
@@ -1044,14 +1047,24 @@ class AppServices:
             role = self.repo.create_role(viewer.community.id, "member", "Member")
         token = secrets.token_urlsafe(32)
         expires_at = (datetime.now(UTC) + timedelta(days=days_valid)).isoformat(timespec="seconds")
-        invitation = self.repo.create_community_invitation(
-            viewer.community.id,
-            email=clean_email,
-            role_id=role.id,
-            invited_by_membership_id=viewer.membership.id,
-            token_hash=session_token_hash(token),
-            expires_at=expires_at,
-        )
+        with self.repo.transaction():
+            invitation = self.repo.create_community_invitation(
+                viewer.community.id,
+                email=clean_email,
+                role_id=role.id,
+                invited_by_membership_id=viewer.membership.id,
+                token_hash=session_token_hash(token),
+                expires_at=expires_at,
+            )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="invitation",
+                target_id=invitation.id,
+                action="invitation_created",
+                public_aftermath="invitation issued",
+            )
         return CreatedInvitation(invitation=invitation, token=token)
 
     def writer_invitations(self) -> list[InvitationManagementItem]:
@@ -1168,6 +1181,14 @@ class AppServices:
                     to_status=updated.status,
                     actor_membership_id=viewer.membership.id,
                 )
+                _record_staff_audit_event(
+                    self.repo,
+                    viewer,
+                    capability="manage_world",
+                    target_family="access_request",
+                    target_id=request_id,
+                    action="access_request_reviewed",
+                )
         return updated
 
     def decline_access_request(self, request_id: int) -> CommunityAccessRequest:
@@ -1189,6 +1210,15 @@ class AppServices:
                     from_status=before.status,
                     to_status=updated.status,
                     actor_membership_id=viewer.membership.id,
+                )
+                _record_staff_audit_event(
+                    self.repo,
+                    viewer,
+                    capability="manage_world",
+                    target_family="access_request",
+                    target_id=request_id,
+                    action="access_request_declined",
+                    public_aftermath="request declined",
                 )
         return updated
 
@@ -1291,6 +1321,15 @@ class AppServices:
                 actor_membership_id=viewer.membership.id,
                 invitation_id=created.invitation.id,
             )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="access_request",
+                target_id=request_id,
+                action="access_request_invited",
+                public_aftermath="invitation issued",
+            )
         return created
 
     def revoke_writer_invitation(self, invitation_id: int) -> CommunityInvitation:
@@ -1325,6 +1364,15 @@ class AppServices:
                     actor_membership_id=viewer.membership.id,
                     invitation_id=invitation.id,
                 )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="invitation",
+                target_id=invitation.id,
+                action="invitation_revoked",
+                public_aftermath="invitation revoked",
+            )
         return revoked
 
     def reissue_writer_invitation(self, invitation_id: int) -> CreatedInvitation:
@@ -1358,7 +1406,16 @@ class AppServices:
                     actor_membership_id=viewer.membership.id,
                     invitation_id=created.invitation.id,
                 )
-            return created
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="invitation",
+                target_id=created.invitation.id,
+                action="invitation_reissued",
+                public_aftermath="replacement invitation issued",
+            )
+        return created
 
     def update_realm_launch_status(self, launch_status: str) -> Community:
         viewer = self.viewer()
@@ -1743,7 +1800,33 @@ class AppServices:
         )
 
     def community_export_manifest(self) -> CommunityExportManifest:
-        return _community_export_manifest(self.repo, self.viewer())
+        viewer = self.viewer()
+        with self.repo.transaction():
+            manifest = _community_export_manifest(self.repo, viewer)
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="community_export",
+                target_id=viewer.community.id,
+                action="community_export_created",
+            )
+        return manifest
+
+    def staff_audit_trail(
+        self,
+        *,
+        capability: policies.Capability | None = None,
+        target_family: str | None = None,
+        limit: int = 100,
+    ) -> list[StaffAuditEvent]:
+        return _staff_audit_trail(
+            self.repo,
+            self.viewer(),
+            capability=capability,
+            target_family=target_family,
+            limit=limit,
+        )
 
     def update_discovery_profile(
         self,
@@ -2163,15 +2246,26 @@ class AppServices:
         claim_status = _normalize_claim_status(status)
         if claim_status == "claimed" and character_id is None:
             raise ValueError("claimed rows need a face")
-        return self.repo.create_character_claim(
-            viewer.community.id,
-            claim_type_id,
-            _claim_value_key(clean_label),
-            clean_label,
-            character_id=character_id,
-            status=claim_status,
-            notes=notes.strip(),
-        )
+        with self.repo.transaction():
+            claim = self.repo.create_character_claim(
+                viewer.community.id,
+                claim_type_id,
+                _claim_value_key(clean_label),
+                clean_label,
+                character_id=character_id,
+                status=claim_status,
+                notes=notes.strip(),
+            )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_applications",
+                target_family="claim",
+                target_id=claim.id,
+                action="claim_created",
+                public_aftermath=f"claim {claim_status}",
+            )
+        return claim
 
     def update_director_claim(
         self,
@@ -2191,15 +2285,26 @@ class AppServices:
         claim_status = _normalize_claim_status(status)
         if claim_status == "claimed" and character_id is None:
             raise ValueError("claimed rows need a face")
-        return self.repo.update_character_claim(
-            viewer.community.id,
-            claim_id,
-            value=_claim_value_key(clean_label),
-            label=clean_label,
-            character_id=character_id,
-            status=claim_status,
-            notes=notes.strip(),
-        )
+        with self.repo.transaction():
+            claim = self.repo.update_character_claim(
+                viewer.community.id,
+                claim_id,
+                value=_claim_value_key(clean_label),
+                label=clean_label,
+                character_id=character_id,
+                status=claim_status,
+                notes=notes.strip(),
+            )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_applications",
+                target_family="claim",
+                target_id=claim.id,
+                action="claim_updated",
+                public_aftermath=f"claim {claim_status}",
+            )
+        return claim
 
     def create_claim_type_config(
         self,
@@ -2680,12 +2785,33 @@ class AppServices:
         source: str,
         accepted_fingerprint: str,
     ) -> ProgramBlueprintPreview:
-        return _apply_program_blueprint_preview(
+        viewer = self.viewer()
+        try:
+            preview = _apply_program_blueprint_preview(
+                self.repo,
+                viewer,
+                source,
+                accepted_fingerprint,
+            )
+        except ValueError as error:
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="program_blueprint",
+                action="blueprint_apply_rejected",
+                outcome="rejected",
+                reason=str(error),
+            )
+            raise
+        _record_staff_audit_event(
             self.repo,
-            self.viewer(),
-            source,
-            accepted_fingerprint,
+            viewer,
+            capability="manage_world",
+            target_family="program_blueprint",
+            action="blueprint_applied",
         )
+        return preview
 
     def update_board_taxonomy(
         self,
@@ -2710,23 +2836,33 @@ class AppServices:
             normalized_kind,
             parent_board_id,
         )
-        return self.repo.update_board(
-            viewer.community.id,
-            board.id,
-            name=board.name,
-            description=board.description,
-            sort_order=board.sort_order,
-            parent_board_id=normalized_parent_id,
-            board_kind=normalized_kind,
-            sidebar_section=normalized_sidebar_section,
-            tagline=board.tagline,
-            image_url=board.image_url,
-            image_alt=board.image_alt,
-            image_treatment=board.image_treatment,
-            image_focal_point=board.image_focal_point,
-            image_overlay=board.image_overlay,
-            is_private=board.is_private,
-        )
+        with self.repo.transaction():
+            updated = self.repo.update_board(
+                viewer.community.id,
+                board.id,
+                name=board.name,
+                description=board.description,
+                sort_order=board.sort_order,
+                parent_board_id=normalized_parent_id,
+                board_kind=normalized_kind,
+                sidebar_section=normalized_sidebar_section,
+                tagline=board.tagline,
+                image_url=board.image_url,
+                image_alt=board.image_alt,
+                image_treatment=board.image_treatment,
+                image_focal_point=board.image_focal_point,
+                image_overlay=board.image_overlay,
+                is_private=board.is_private,
+            )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_navigation",
+                target_family="board",
+                target_id=board.id,
+                action="board_taxonomy_updated",
+            )
+        return updated
 
     def update_board_navigation(
         self,
@@ -3066,17 +3202,28 @@ class AppServices:
             raise ValueError("choose a supported material type")
         if cleaned_status not in MATERIAL_STATUSES:
             raise ValueError("choose a supported material status")
-        return self.repo.update_material(
-            viewer.community.id,
-            material.id,
-            title=cleaned_title,
-            material_type=cleaned_material_type,
-            summary=summary.strip(),
-            body=body.strip(),
-            status=cleaned_status,
-            sort_order=material.sort_order,
-            is_featured=is_featured,
-        )
+        with self.repo.transaction():
+            updated = self.repo.update_material(
+                viewer.community.id,
+                material.id,
+                title=cleaned_title,
+                material_type=cleaned_material_type,
+                summary=summary.strip(),
+                body=body.strip(),
+                status=cleaned_status,
+                sort_order=material.sort_order,
+                is_featured=is_featured,
+            )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="material",
+                target_id=material.id,
+                action="material_updated",
+                public_aftermath=f"material {cleaned_status}",
+            )
+        return updated
 
     def update_material_production_state(
         self,
@@ -3142,12 +3289,25 @@ class AppServices:
         wanted_slug: str,
         interest_id: int,
     ) -> CharacterReserve:
-        return _create_reserve_for_wanted_interest(
-            self.repo,
-            self.viewer(),
-            wanted_slug,
-            interest_id,
-        )
+        viewer = self.viewer()
+        with self.repo.transaction():
+            reserve = _create_reserve_for_wanted_interest(
+                self.repo,
+                viewer,
+                wanted_slug,
+                interest_id,
+            )
+            if policies.can_manage_casting(viewer.membership, viewer.role):
+                _record_staff_audit_event(
+                    self.repo,
+                    viewer,
+                    capability="manage_casting",
+                    target_family="reserve",
+                    target_id=reserve.id,
+                    action="reserve_created",
+                    public_aftermath="wanted hook reserved",
+                )
+        return reserve
 
     def notifications(self, *, limit: int = 50) -> NotificationInbox:
         return _notification_inbox(self.repo, self.viewer(), limit=limit)
@@ -3187,7 +3347,17 @@ class AppServices:
     def accept_character_application(self, character_slug: str) -> Character:
         viewer = self.viewer()
         with self.repo.transaction():
-            return _accept_character_application(self.repo, viewer, character_slug)
+            character = _accept_character_application(self.repo, viewer, character_slug)
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_applications",
+                target_family="application",
+                target_id=character.id,
+                action="application_accepted",
+                public_aftermath="face accepted for play",
+            )
+        return character
 
     def request_character_application_revision(
         self,
@@ -3196,12 +3366,23 @@ class AppServices:
         note: str = "",
     ) -> Character:
         viewer = self.viewer()
-        return _request_character_application_revision(
-            self.repo,
-            viewer,
-            character_slug,
-            note=note,
-        )
+        with self.repo.transaction():
+            character = _request_character_application_revision(
+                self.repo,
+                viewer,
+                character_slug,
+                note=note,
+            )
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_applications",
+                target_family="application",
+                target_id=character.id,
+                action="application_revision_requested",
+                public_aftermath="revision requested",
+            )
+        return character
 
     def read_application_review_room(self, character_slug: str) -> ApplicationReviewRoom:
         return _read_application_review_room(self.repo, self.viewer(), character_slug)
@@ -3665,12 +3846,24 @@ class AppServices:
             raise PermissionError(
                 f"membership {viewer.membership.id} cannot moderate thread {thread.id}"
             )
-        return self.repo.update_thread_flags(
-            viewer.community.id,
-            thread.id,
-            is_locked=is_locked,
-            is_pinned=is_pinned,
-        )
+        with self.repo.transaction():
+            updated = self.repo.update_thread_flags(
+                viewer.community.id,
+                thread.id,
+                is_locked=is_locked,
+                is_pinned=is_pinned,
+            )
+            if policies.can_manage_threads(viewer.membership, viewer.role):
+                _record_staff_audit_event(
+                    self.repo,
+                    viewer,
+                    capability="manage_threads",
+                    target_family="thread",
+                    target_id=thread.id,
+                    action="thread_flags_updated",
+                    public_aftermath="thread moderation state updated",
+                )
+        return updated
 
     def update_thread_scene(
         self,

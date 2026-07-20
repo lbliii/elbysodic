@@ -246,8 +246,10 @@ contract is Program Blueprints, not a general plugin system.
 - Live Railway production smoke remains an operations record, not a local test.
 - Browser-only findings belong in operations QA notes and should be promoted
   into rendered tests only when behavior can be proven semantically.
-- Partial staff capability storage and audit-event rows are future work; this
-  pack maps the V1 policy helper contract.
+- Partial staff capability storage and tenant-scoped audit-event rows are
+  covered by policy, repository, migration, raw storage-negative, service-read,
+  and representative workflow integration tests. Rendered role editing and an
+  audit room remain separate product-surface work.
 - Real UXR and observed UAT are outside this test pack and must keep consent
   and evidence labels in `research/`.
 

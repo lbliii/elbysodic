@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from elbysodic.db.repositories.gateway import GatewayRepositoryMixin
+from elbysodic.db.repositories.audit import AuditRepositoryMixin
 
 
 class ForumRepository(
-    GatewayRepositoryMixin,
+    AuditRepositoryMixin,
 ):
     """Small repository layer that keeps community scope explicit."""
