@@ -665,6 +665,19 @@ def test_production_signed_in_duplicate_access_request_links_existing_record(
                 ).encode(),
                 headers={**_FORM, "Cookie": _cookie_header(request_cookies)},
             )
+            response_cookies = {**request_cookies, **_cookie_values(response)}
+            withdrawn = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "intent": "withdraw_access_request",
+                        "access_request_id": str(existing.id),
+                        "community_slug": community.slug,
+                        "_csrf_token": _csrf_token(response.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(response_cookies)},
+            )
 
         requests = [
             item
@@ -675,10 +688,16 @@ def test_production_signed_in_duplicate_access_request_links_existing_record(
 
         assert response.status == 200
         assert "Access request received for your Elbysodic account" in response.text
+        assert "Withdraw access request" in response.text
+        assert withdrawn.status == 200
+        assert "Your access request was withdrawn" in withdrawn.text
+        assert "Anonymous Moira" not in withdrawn.text
+        assert "Submitted before logging in" not in withdrawn.text
         assert len(requests) == 1
         assert requests[0].id == existing.id
         assert requests[0].account_user_id == moira.id
         assert requests[0].display_name == "Anonymous Moira"
+        assert requests[0].status == "withdrawn"
         assert services.repo.list_memberships(community.id) == before_memberships
         assert services.repo.list_community_characters(community.id) == before_characters
         assert services.repo.list_community_invitations(community.id) == before_invitations
@@ -727,6 +746,65 @@ def test_production_signed_out_public_realm_keeps_anonymous_posture(monkeypatch)
         assert "Send access request" in request_access.text
         assert 'value="moira@example.com"' not in request_access.text
         assert "Not a member of Afterlight Accord yet" not in request_access.text
+
+    asyncio.run(run())
+
+
+def test_production_account_cannot_withdraw_another_access_request(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("afterlight-accord")
+        owner = services.repo.get_user_by_email("moira@example.com")
+        access_request = services.repo.create_community_access_request(
+            community.id,
+            email=owner.email,
+            display_name="Private Moira Request",
+            face_concept="Private sealed archivist",
+            wanted_hook="Private archive opening",
+            notes="PRIVATE WITHDRAWAL NOTE",
+            account_user_id=owner.id,
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(client, email="writer@example.com")
+            page = await client.get(
+                "/c/afterlight-accord/request-access",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+            request_cookies = {**cookies, **_cookie_values(page)}
+            response = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "intent": "withdraw_access_request",
+                        "access_request_id": str(access_request.id),
+                        "community_slug": community.slug,
+                        "_csrf_token": _csrf_token(page.text),
+                    }
+                ).encode(),
+                headers={**_FORM, "Cookie": _cookie_header(request_cookies)},
+            )
+
+        unchanged = services.repo.get_community_access_request(
+            community.id,
+            access_request.id,
+        )
+
+        assert response.status == 200
+        assert "That access request is not available." in response.text
+        assert "Private Moira Request" not in response.text
+        assert "Private sealed archivist" not in response.text
+        assert "PRIVATE WITHDRAWAL NOTE" not in response.text
+        assert unchanged.status == "pending"
+        assert [
+            event.event_type
+            for event in services.repo.list_community_access_request_events(
+                community.id,
+                access_request.id,
+            )
+        ] == ["submitted"]
 
     asyncio.run(run())
 

@@ -34,6 +34,29 @@ from elbysodic.domain.models import (
 )
 
 COMMUNITY_LAUNCH_STATUSES = {"backstage", "invite-only", "public-preview"}
+ACCESS_REQUEST_TRANSITIONS = {
+    "pending": {"reviewed", "invited", "declined", "withdrawn", "expired"},
+    "reviewed": {"invited", "declined", "withdrawn", "expired"},
+    "invited": {"accepted", "reviewed", "withdrawn", "expired"},
+    "accepted": {"archived"},
+    "declined": {"archived"},
+    "withdrawn": {"archived"},
+    "expired": {"archived"},
+    "archived": set(),
+}
+ACCESS_REQUEST_EVENT_TYPES = {
+    "accepted",
+    "account_linked",
+    "archived",
+    "declined",
+    "expired",
+    "invitation_reissued",
+    "invitation_revoked",
+    "invited",
+    "reviewed",
+    "submitted",
+    "withdrawn",
+}
 
 
 class _SidebarDefaultsRepository(Protocol):
@@ -1184,11 +1207,22 @@ class IdentityRepositoryMixin(RepositoryBase):
             """
             WHERE community_id = ?
               AND lower(email) = lower(?)
-              AND status IN ('pending', 'reviewed')
+              AND status IN ('pending', 'reviewed', 'invited')
             ORDER BY created_at DESC, id DESC
             LIMIT 1
             """,
             (community_id, email),
+        )
+        return None if row is None else _community_access_request_from_row(row)
+
+    def find_community_access_request_by_invitation(
+        self,
+        community_id: int,
+        invitation_id: int,
+    ) -> CommunityAccessRequest | None:
+        row = self._community_access_request_row(
+            "WHERE community_id = ? AND invitation_id = ?",
+            (community_id, invitation_id),
         )
         return None if row is None else _community_access_request_from_row(row)
 
@@ -1231,22 +1265,26 @@ class IdentityRepositoryMixin(RepositoryBase):
         status: str,
         invitation_id: int | None = None,
     ) -> CommunityAccessRequest:
-        if status not in {"pending", "reviewed", "invited", "declined"}:
-            raise ValueError(
-                "access request status must be pending, reviewed, invited, or declined"
-            )
+        if status not in ACCESS_REQUEST_TRANSITIONS:
+            allowed = ", ".join(ACCESS_REQUEST_TRANSITIONS)
+            raise ValueError(f"access request status must be one of: {allowed}")
         access_request = self.get_community_access_request(community_id, request_id)
+        if access_request.status not in ACCESS_REQUEST_TRANSITIONS:
+            raise ValueError(f"access request has unsupported status: {access_request.status}")
         if status == access_request.status and (
             invitation_id is None or invitation_id == access_request.invitation_id
         ):
             return access_request
-        allowed_transitions = {
-            "pending": {"reviewed", "invited", "declined"},
-            "reviewed": {"invited", "declined"},
-            "invited": set(),
-            "declined": set(),
-        }
-        if status not in allowed_transitions[access_request.status]:
+        replacing_invitation = (
+            status == "invited"
+            and status == access_request.status
+            and invitation_id is not None
+            and invitation_id != access_request.invitation_id
+        )
+        if (
+            not replacing_invitation
+            and status not in ACCESS_REQUEST_TRANSITIONS[access_request.status]
+        ):
             raise ValueError(f"cannot move access request from {access_request.status} to {status}")
         if status == "invited" and invitation_id is None and access_request.invitation_id is None:
             raise ValueError("invited access requests require an invitation")
@@ -1277,13 +1315,7 @@ class IdentityRepositoryMixin(RepositoryBase):
         actor_membership_id: int | None = None,
         invitation_id: int | None = None,
     ) -> CommunityAccessRequestEvent:
-        if event_type not in {
-            "account_linked",
-            "submitted",
-            "reviewed",
-            "invited",
-            "declined",
-        }:
+        if event_type not in ACCESS_REQUEST_EVENT_TYPES:
             raise ValueError("access request event type is not supported")
         access_request = self.get_community_access_request(community_id, request_id)
         if actor_membership_id is not None:

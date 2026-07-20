@@ -88,7 +88,10 @@ hidden state.
 - Community access requests are public-submitted but director-private after
   creation. Public and account-visitor previews must not reveal request notes,
   email addresses, face concepts, wanted-hook interest, invitation links, or
-  review state; same-community directors inspect and act on them from Studio.
+  review state. A signed-in owner may receive a minimal account receipt and
+  withdraw that request; forged or cross-account withdrawal returns generic
+  unavailable copy. Same-community directors inspect lifecycle history and act
+  on requests from Studio.
   The lifecycle and visibility matrix lives in
   `docs/architecture/security-boundaries.md`.
 - Inactive memberships are absent from `/members`, `/members/{username}`, and

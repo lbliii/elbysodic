@@ -80,7 +80,12 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
             request,
             launch_status_message=f"Opening changed to {updated.launch_status}.",
         )
-    if form.intent in {"review_access_request", "decline_access_request"}:
+    if form.intent in {
+        "review_access_request",
+        "decline_access_request",
+        "expire_access_request",
+        "archive_access_request",
+    }:
         try:
             access_request_id = int(form.access_request_id)
         except ValueError:
@@ -91,10 +96,20 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
                 access_request_message = (
                     f"Access request from {_access_request_label(updated_request)} was reviewed."
                 )
-            else:
+            elif form.intent == "decline_access_request":
                 updated_request = get_services(request).decline_access_request(access_request_id)
                 access_request_message = (
                     f"Access request from {_access_request_label(updated_request)} was declined."
+                )
+            elif form.intent == "expire_access_request":
+                updated_request = get_services(request).expire_access_request(access_request_id)
+                access_request_message = (
+                    f"Access request from {_access_request_label(updated_request)} was expired."
+                )
+            else:
+                updated_request = get_services(request).archive_access_request(access_request_id)
+                access_request_message = (
+                    f"Access request from {_access_request_label(updated_request)} was archived."
                 )
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc

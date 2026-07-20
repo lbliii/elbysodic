@@ -42,6 +42,15 @@ replica, and explicit smoke evidence before writers are invited.
   duplicate for the same email should link that account to the existing open
   request instead of creating a second queue item or granting membership. Studio
   records that account-link event in the director-visible request history.
+- Account-linked prospects can withdraw only their own open request from the
+  receipt surface. The public response never renders lifecycle state, director
+  notes, invitation linkage, or the applicant fields. A pending linked invite
+  is revoked in the same transaction.
+- Directors can expire stale pending/reviewed/invited requests and archive
+  accepted, declined, withdrawn, or expired history. Reissuing or revoking an
+  invitation from Studio updates the linked request and records a durable event.
+- Invite acceptance moves a linked request to accepted in the same transaction
+  that creates membership and records invitation acceptance.
 - Use the access-request lifecycle matrix in
   `docs/architecture/security-boundaries.md` before changing request review,
   duplicate, invitation, withdrawal, expiry, or replay behavior.

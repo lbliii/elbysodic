@@ -125,7 +125,12 @@ Access-request recovery follows the lifecycle matrix in
 `docs/architecture/security-boundaries.md`: duplicate, account-link, replayed
 invite, decline, withdrawal, and expiry states cannot reveal request notes,
 invitation links, raw tokens, staff review state, or another community's
-request history.
+request history. The public route receives a minimal receipt read model rather
+than a `CommunityAccessRequest`. An account may withdraw only when the stored
+`account_user_id` matches the authenticated global user; membership, role, and
+active face are neither required nor granted by that command. Wrong-account,
+cross-community, missing, terminal, and malformed attempts render the same
+generic unavailable copy.
 
 ## Notification Read Models
 

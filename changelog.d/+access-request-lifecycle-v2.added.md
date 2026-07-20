@@ -1,0 +1,1 @@
+Access requests now carry a complete private lifecycle through review, invite, linked reissue or revocation, acceptance, owner withdrawal, expiry, and archival, with generic applicant receipts and durable director-only history.

@@ -47,6 +47,21 @@
       from Studio Launch before sending an invitation.
       {% end %}
     </div>
+    {% if withdraw_request_id %}
+    <form method="post" action="/request-access" hx-boost="false">
+      {{ csrf_field() }}
+      <input type="hidden" name="intent" value="withdraw_access_request">
+      <input type="hidden" name="access_request_id" value="{{ withdraw_request_id }}">
+      <input type="hidden" name="community_slug" value="{{ withdraw_community_slug }}">
+      <button class="chirpui-btn chirpui-btn--secondary" type="submit">Withdraw access request</button>
+    </form>
+    {% end %}
+    {% end %}
+    {% if withdrawn %}
+    <div class="elbysodic-quiet-empty" role="status">
+      Your access request was withdrawn. Directors retain private lifecycle
+      history, but the request can no longer open the roster gate.
+    </div>
     {% end %}
     {% if error %}
     <p class="elbysodic-form-error" role="alert">{{ error }}</p>
