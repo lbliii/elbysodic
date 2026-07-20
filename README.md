@@ -203,6 +203,8 @@ Useful commands:
 - `make format` formats the project.
 - `make format-check` checks Ruff formatting.
 - `make ty` runs Astral's `ty` checker.
+- `make milo-check` verifies typed command schemas plus the documented CLI,
+  LLM-discovery, and MCP surface allowlist.
 - `make changelog-draft` previews Towncrier fragments.
 - `make build` builds distribution packages.
 - `uv run pounce check --app elbysodic.web:create_app --format plain` validates
