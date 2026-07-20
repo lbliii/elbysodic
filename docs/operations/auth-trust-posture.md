@@ -40,6 +40,19 @@ Local development may report:
 Those are acceptable for local fixture work only. They are not evidence that a
 shared Railway, staging, or production deployment is safe.
 
+## Password Hash Lifecycle
+
+- New real accounts use argon2id through the installed `bengal-chirp[auth]`
+  extra.
+- Successful logins accept legacy Elbysodic PBKDF2 and Chirp scrypt hashes and
+  replace them with argon2id through an atomic compare-and-swap.
+- Failed passwords, current argon2id hashes, and `dev-password-hash` demo
+  accounts do not trigger replacement writes.
+- The compare-and-swap is global-user scoped. It does not modify a writer's
+  community memberships, roles, default faces, or active session identity.
+- Smoke records name hash formats only. Never record hashes, passwords, email
+  addresses, session cookies, or reset material.
+
 ## Production Readiness
 
 A launch-readiness record should treat `production_blocking: yes` as a blocker

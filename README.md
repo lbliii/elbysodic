@@ -357,6 +357,9 @@ host list; values are comma-separated hostnames without `https://`.
 When demo mode is enabled, seed users can log in with password `password`,
 including `writer@example.com`, `moira@example.com`, and `alex@example.com`.
 Without `ELBYSODIC_DEMO_MODE=1`, production rejects those seed password hashes.
+New real accounts use argon2id password hashes. A successful login upgrades
+legacy Elbysodic PBKDF2 or Chirp scrypt hashes to argon2id with a compare-and-swap
+write; failed logins and demo-seed hashes never trigger that write.
 
 Post-deploy smoke for the shared Railway host:
 
