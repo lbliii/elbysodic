@@ -49,8 +49,11 @@ Railway deploy overlap/drain settings (Pounce 0.9 bundle, lbliii/pounce #248/#29
   `shutdown_timeout` is `10` seconds, leaving a five-second safety margin.
 - `healthcheckPath`: `/ready` — SQLite-backed Chirp readiness, not the app-owned
   `/health` alias.
-- Pounce built-in readiness: `/readyz` returns JSON `{"status":"ok"}` and flips to
-  `503 {"status":"draining"}` while the worker is draining.
+- Pounce built-in readiness: `/readyz` returns JSON `{"status":"ok"}`. Pounce
+  0.9.1 does not deliver its explicit drain command to GIL/process workers
+  (lbliii/pounce#316), so Elbysodic pins Railway to one worker until the
+  retiring-listener `503 {"status":"draining"}` contract is fixed upstream and
+  reproven here. Do not cite the current staging runtime as `503` drain proof.
 - `POUNCE_BUILD_ID`: set to the git SHA or immutable release fingerprint, for
   example `${{RAILWAY_GIT_COMMIT_SHA}}`. `/_pounce/info` reports this value with
   Pounce/Python versions and GIL state when `POUNCE_INTROSPECTION=1` is enabled
@@ -141,8 +144,9 @@ Staging smoke should include:
 - `HEAD /ready`, `HEAD /livez`, and `HEAD /health` return `200` with correct
   bodyless semantics (no Railway-edge 502).
 - `GET /readyz` returns JSON `{"status":"ok"}`.
-- When `POUNCE_INTROSPECTION=1` and `POUNCE_BUILD_ID` are set,
-  `GET /_pounce/info` reports the build id and `gil_enabled: false`.
+- When `POUNCE_INTROSPECTION=1` and `POUNCE_BUILD_ID` are set on an
+  operator-gated environment, `GET /_pounce/info` reports the build id and the
+  actual `gil_enabled` posture. Do not assume a free-threaded build.
 - During a redeploy overlap, the retiring instance should answer `/readyz` with
   `503 {"status":"draining"}` while in-flight requests finish inside the overlap
   window.
@@ -251,6 +255,39 @@ production run so staging proof and production proof stay distinct.
 Latest known staging smoke:
 
 ```text
+Railway plotting-stream drain attempt:
+- Date: 2026-07-20
+- URL: https://elbysodic-staging.up.railway.app
+- Active deployment: 64120b47-4cc5-4e22-b1ed-823f376e0ae0 (SUCCESS)
+- Replacement: 1349d70f-fe0b-4311-89cf-213736285420 (SUCCESS)
+- Commit: c017ca6742af7cd41b8f24ffedb7ff6b5f23448e
+- Railway project/service/environment: Elbysodic / elbysodic / staging
+- Deploy posture: one Railway replica, /app/var volume, /ready healthcheck,
+  5-second overlap, and 15-second drain
+- Runtime: Pounce 0.9.1, Python 3.14.2, GIL enabled, two process workers for
+  this diagnostic attempt; both workers logged the immutable build id and a
+  zero active-stream baseline
+- Authenticated stream: the seeded-writer plotting SSE opened with aggregate
+  gauge 1; a unique pre-deploy write returned 302, persisted, and was
+  acknowledged by the stream; the replacement accepted a reconnect
+- Operator readiness observation: an exact-instance SSH loopback probe saw
+  /readyz 200 ok until Railway disconnected the retiring instance. It did not
+  observe 503 draining.
+- Drain lifecycle: failed. The retiring process emitted no worker-draining
+  event and could not prove a lifecycle-driven return to gauge 0.
+- Root cause/follow-up: lbliii/pounce#316. Pounce 0.9.1 process handles do not
+  receive start_draining(), so this attempt does not satisfy Elbysodic #276.
+  Corrected deployment cb5e8924-1ba1-4167-a6e6-b75ecaa76036 (commit
+  c2cdb855e01358318df9b50fabd4f66cdf2f8c82) restored staging to one worker;
+  startup reported the matching build id, GIL enabled, and gauge 0.
+- Privacy: /_pounce/info remained behind the application login boundary; no
+  credentials, cookies, account identifiers, message bodies, or secrets were
+  printed or recorded
+- Production: untouched; production smoke remains unrun
+- Result: partial staging evidence only. Build/runtime identity, authenticated
+  pre-deploy acknowledgement, persistence, and reconnect passed; retiring 503
+  and lifecycle-driven stream close remain blocked on lbliii/pounce#316.
+
 Railway password-rehash smoke:
 - Date: 2026-07-20
 - URL: https://elbysodic-staging.up.railway.app

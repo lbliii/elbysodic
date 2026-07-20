@@ -12,6 +12,7 @@ from elbysodic.db import ForumRepository, connect
 from elbysodic.services import create_services
 from elbysodic.web.state import close_request_services, configure_services, get_services
 from elbysodic.web.surface_contracts import SURFACE_CONTRACTS, validate_surface_contracts
+from elbysodic.web.worker_draining import DrainingAwareApp
 
 REPO_ROOT = Path(__file__).parents[1]
 WEB_DIR = REPO_ROOT / "src" / "elbysodic" / "web"
@@ -57,6 +58,35 @@ class TrackingDatabase:
         return self.context
 
 
+def test_draining_proxy_is_the_runtime_asgi_application() -> None:
+    captured: dict[str, object] = {}
+
+    class ServerStub:
+        def run(self, app: object, **kwargs: object) -> None:
+            captured["app"] = app
+            captured.update(kwargs)
+
+    class AppStub:
+        def __init__(self) -> None:
+            self._server = ServerStub()
+            self.frozen = False
+
+        def _ensure_frozen(self) -> None:
+            self.frozen = True
+
+    inner = AppStub()
+    proxy = DrainingAwareApp(cast(Any, inner))
+    proxy.run(host="127.0.0.1", port=8765)
+
+    assert inner.frozen is True
+    assert captured == {
+        "app": proxy,
+        "host": "127.0.0.1",
+        "port": 8765,
+        "lifecycle_collector": None,
+    }
+
+
 def test_file_backed_request_services_are_cached_and_closed(tmp_path: Path) -> None:
     root_services = create_services(path=tmp_path / "elbysodic.sqlite3")
     configure_services(root_services)
@@ -75,6 +105,15 @@ def test_file_backed_request_services_are_cached_and_closed(tmp_path: Path) -> N
         with pytest.raises(sqlite3.ProgrammingError, match="closed"):
             first.repo.connection.execute("SELECT 1")
         assert request._cache == {}
+
+        # Streaming response bodies begin after ordinary response middleware
+        # cleanup under Pounce, so the same request can open one fresh facade
+        # for the generator lifetime and close it explicitly afterward.
+        streaming = get_services(request)
+        assert streaming is not first
+        assert streaming.repo.connection.execute("SELECT 1").fetchone()[0] == 1
+        close_request_services(request)
+
         assert (
             root_services.repo.connection.execute("SELECT COUNT(*) FROM communities").fetchone()[0]
             > 0

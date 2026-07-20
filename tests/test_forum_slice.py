@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 import sqlite3
 from pathlib import Path
@@ -42,7 +43,7 @@ from elbysodic.services.operations import (
 from elbysodic.web import create_app
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, scope_response_urls
-from elbysodic.web.worker_draining import emit_worker_draining
+from elbysodic.web.worker_draining import active_plotting_streams, emit_worker_draining
 from tests._db_lifecycle import preserve_test_connection, release_test_connection
 from tests._sql_probe import trace_sql
 
@@ -9728,7 +9729,9 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
     asyncio.run(run())
 
 
-def test_plotting_room_sse_closes_cleanly_on_worker_draining() -> None:
+def test_plotting_room_sse_closes_cleanly_on_worker_draining(caplog) -> None:
+    caplog.set_level(logging.INFO, logger="pounce.elbysodic")
+
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
@@ -9769,6 +9772,7 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining() -> None:
                 charlie_client.sse(stream_path, max_events=5, disconnect_after=5.0)
             )
             await asyncio.sleep(0.1)
+            assert active_plotting_streams() == 1
 
             message = await charlie_client.post(
                 f"/plotting/{room.id}",
@@ -9785,6 +9789,7 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining() -> None:
 
             await emit_worker_draining(charlie_app)
             stream = await stream_task
+            assert active_plotting_streams() == 0
 
             room_page = await charlie_client.get(f"/plotting/{room.id}")
             assert 'sse-close="pounce.worker.draining"' in room_page.text
@@ -9800,6 +9805,9 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining() -> None:
         close_events = [event for event in stream.events if event.event == "pounce.worker.draining"]
         assert len(close_events) == 1
         assert close_events[0].data == "complete"
+        messages = [record.getMessage() for record in caplog.records]
+        assert "event=worker_draining plotting_streams_active=1" in messages
+        assert "event=plotting_stream_closed plotting_streams_active=0" in messages
 
     asyncio.run(run())
 
