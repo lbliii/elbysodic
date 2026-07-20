@@ -8453,6 +8453,50 @@ def test_application_start_rolls_back_when_review_room_creation_fails(monkeypatc
         services.repo.get_character_by_slug(community.id, "rollback-face")
 
 
+def test_application_acceptance_rolls_back_claims_and_status_on_late_failure(
+    monkeypatch,
+) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    fields = {
+        field.field_key: field for field in repo.list_application_template_fields(community.id)
+    }
+    character = services.create_character(
+        name="Acceptance Rollback Face",
+        summary="A submitted face used to prove atomic staff acceptance.",
+        application_body="Mapped claims must roll back with a late notification failure.",
+        application_field_values={
+            fields["face_claim"].id: "Acceptance Rollback Visual",
+            fields["faction_claim"].id: "Acceptance Rollback Faction",
+        },
+    )
+    services.submit_character_application(character.slug)
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    def fail_notification(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated application acceptance notification failure")
+
+    monkeypatch.setattr(repo, "create_notification", fail_notification)
+
+    with pytest.raises(
+        RuntimeError,
+        match="simulated application acceptance notification failure",
+    ):
+        staff_services.accept_character_application(character.slug)
+
+    stored = repo.get_character(community.id, character.id)
+    claims = repo.list_character_claims_for_character(community.id, character.id, status=None)
+    assert stored.application_status == "submitted"
+    assert claims == []
+    assert not repo.connection.in_transaction
+    assert repo.get_character_by_slug(community.id, character.slug).id == character.id
+
+
 def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None:
     async def run() -> None:
         _app()
@@ -9526,6 +9570,101 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
         assert any(item.label == "Wanted interest" for item in inbox.items)
 
     asyncio.run(run())
+
+
+def test_wanted_interest_rolls_back_when_notification_fanout_fails(monkeypatch) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+    assert services.seed.default_character is not None
+
+    def fail_notification(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated wanted-interest notification failure")
+
+    monkeypatch.setattr(repo, "create_notification", fail_notification)
+
+    with pytest.raises(RuntimeError, match="simulated wanted-interest notification failure"):
+        services.express_wanted_interest(wanted_ad.slug)
+
+    with pytest.raises(LookupError):
+        repo.get_wanted_ad_interest_for_character(
+            community.id,
+            wanted_ad.id,
+            services.seed.default_character.id,
+        )
+    assert not repo.connection.in_transaction
+    assert repo.get_wanted_ad(community.id, wanted_ad.id).status == "open"
+
+
+def test_plotting_room_start_rolls_back_room_participants_and_interest(
+    monkeypatch,
+) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    wanted_ad = repo.get_wanted_ad_by_slug(community.id, "human-un-liaison-for-b24")
+    interest = services.express_wanted_interest(wanted_ad.slug)
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    staff_services = AppServices(
+        repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    def fail_notification(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated plotting-room notification failure")
+
+    monkeypatch.setattr(repo, "create_notification", fail_notification)
+
+    with pytest.raises(RuntimeError, match="simulated plotting-room notification failure"):
+        staff_services.create_plotting_room_from_wanted_interest(wanted_ad.slug, interest.id)
+
+    with pytest.raises(LookupError):
+        repo.get_plotting_room_for_wanted_interest(community.id, interest.id)
+    assert repo.get_wanted_ad_interest(community.id, interest.id).status == "interested"
+    assert not repo.connection.in_transaction
+    assert repo.get_wanted_ad(community.id, wanted_ad.id).status == "open"
+
+
+def test_plot_hook_room_start_rolls_back_room_participants_and_hook(monkeypatch) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    community = services.seed.community
+    assert services.seed.default_character is not None
+    hook = services.create_plot_hook(
+        services.seed.default_character.slug,
+        title="Rollback Hook Room",
+        hook_type="scene",
+        summary="A hook used to prove atomic plotting-room creation.",
+        body="The room and every participant must disappear on a late failure.",
+        facet_slugs=[],
+    )
+    outsider_services, _outsider_character_id = _outsider_services(
+        services,
+        prefix="rollback-hook-room",
+    )
+    interest = outsider_services.express_plot_hook_interest(
+        services.seed.default_character.slug,
+        hook.slug,
+    )
+
+    def fail_notification(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("simulated plot-hook room notification failure")
+
+    monkeypatch.setattr(repo, "create_notification", fail_notification)
+
+    with pytest.raises(RuntimeError, match="simulated plot-hook room notification failure"):
+        services.create_plotting_room_from_plot_hook_interest(
+            services.seed.default_character.slug,
+            hook.slug,
+            interest.id,
+        )
+
+    with pytest.raises(LookupError):
+        repo.get_plotting_room_for_plot_hook_interest(community.id, interest.id)
+    assert repo.get_character_plot_hook_interest(community.id, interest.id).status == "interested"
+    assert repo.get_character_plot_hook(community.id, hook.id).status == "open"
+    assert not repo.connection.in_transaction
 
 
 def test_plotting_rooms_start_from_wanted_interest() -> None:

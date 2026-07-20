@@ -2925,7 +2925,8 @@ class AppServices:
         return _read_wanted_ad(self.repo, self.viewer(), wanted_slug)
 
     def express_wanted_interest(self, wanted_slug: str) -> WantedAdInterest:
-        return _express_wanted_interest(self.repo, self.viewer(), wanted_slug)
+        with self.repo.transaction():
+            return _express_wanted_interest(self.repo, self.viewer(), wanted_slug)
 
     def express_prospective_wanted_interest(
         self,
@@ -2934,13 +2935,14 @@ class AppServices:
         prospective_character_name: str,
         note: str = "",
     ) -> WantedAdInterest:
-        return _express_prospective_wanted_interest(
-            self.repo,
-            self.viewer(),
-            wanted_slug,
-            prospective_character_name=prospective_character_name,
-            note=note,
-        )
+        with self.repo.transaction():
+            return _express_prospective_wanted_interest(
+                self.repo,
+                self.viewer(),
+                wanted_slug,
+                prospective_character_name=prospective_character_name,
+                note=note,
+            )
 
     def reserve_wanted_interest(
         self,
@@ -3006,7 +3008,8 @@ class AppServices:
 
     def accept_character_application(self, character_slug: str) -> Character:
         viewer = self.viewer()
-        return _accept_character_application(self.repo, viewer, character_slug)
+        with self.repo.transaction():
+            return _accept_character_application(self.repo, viewer, character_slug)
 
     def request_character_application_revision(
         self,
@@ -3113,7 +3116,13 @@ class AppServices:
         )
 
     def express_plot_hook_interest(self, character_slug: str, hook_slug: str):
-        return _express_plot_hook_interest(self.repo, self.viewer(), character_slug, hook_slug)
+        with self.repo.transaction():
+            return _express_plot_hook_interest(
+                self.repo,
+                self.viewer(),
+                character_slug,
+                hook_slug,
+            )
 
     def plotting_desk(self) -> PlottingDesk:
         return _plotting_desk(self.repo, self.viewer())
@@ -3183,21 +3192,23 @@ class AppServices:
         hook_slug: str,
         interest_id: int,
     ):
-        return _create_plotting_room_from_plot_hook_interest(
-            self.repo,
-            self.viewer(),
-            character_slug,
-            hook_slug,
-            interest_id,
-        )
+        with self.repo.transaction():
+            return _create_plotting_room_from_plot_hook_interest(
+                self.repo,
+                self.viewer(),
+                character_slug,
+                hook_slug,
+                interest_id,
+            )
 
     def create_plotting_room_from_wanted_interest(self, wanted_slug: str, interest_id: int):
-        return _create_plotting_room_from_wanted_interest(
-            self.repo,
-            self.viewer(),
-            wanted_slug,
-            interest_id,
-        )
+        with self.repo.transaction():
+            return _create_plotting_room_from_wanted_interest(
+                self.repo,
+                self.viewer(),
+                wanted_slug,
+                interest_id,
+            )
 
     def read_post_editor(
         self,
