@@ -74,8 +74,9 @@ ELBYSODIC_ENV=development uv run python scripts/passkey_qa.py \
 ```
 
 The script registers a passkey, logs out, signs back in with the passkey, and
-checks browser-visible regressions for revoked credentials and unknown
-authenticator credentials. Wrong-origin rejection is covered by
+removes the exact timestamped QA credential before it exits. It also checks
+browser-visible regressions for revoked credentials and unknown authenticator
+credentials. Wrong-origin rejection is covered by
 `tests/test_passkey_contracts.py`; to exercise it in the browser, restart the
 server with a pinned localhost origin while browsing via `127.0.0.1`, then run:
 
@@ -91,6 +92,24 @@ PASSKEY_QA_WRONG_ORIGIN=1 \
 ELBYSODIC_ENV=development uv run python scripts/passkey_qa.py \
   --base-url http://localhost:8007 \
   --profile wrong-origin
+```
+
+Latest staging passkey smoke:
+
+```text
+- Date: 2026-07-20
+- URL: https://elbysodic-staging.up.railway.app
+- Deployment: cb5e8924-1ba1-4167-a6e6-b75ecaa76036 (SUCCESS)
+- Profile: happy, Playwright Chromium virtual authenticator
+- Account class: seeded staging writer
+- Registration: passed through the rendered identity-settings flow
+- Logout and passkey sign-in: passed; the writer returned to identity settings
+- Cleanup: passed; the exact timestamped QA credential was removed and the
+  cleanup session was logged out
+- Privacy: no credential id, public key, cookie, password, email address, or
+  WebAuthn challenge was printed or recorded
+- Production: untouched; this is staging proof only
+- Result: passkey staging acceptance for Elbysodic #223 passed
 ```
 
 ## Manual Inspection

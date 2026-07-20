@@ -115,6 +115,19 @@ async def _remove_registered_passkey(page: Page, base_url: str, label: str) -> N
     )
 
 
+async def _cleanup_registered_passkey(page: Page, base_url: str, label: str) -> None:
+    """Remove the exact QA credential and revoke the cleanup session."""
+    await page.goto(urljoin(base_url, "/logout"), wait_until="domcontentloaded")
+    await _password_login(page, base_url, QA_EMAIL)
+    await page.goto(urljoin(base_url, "/identity"), wait_until="domcontentloaded")
+    item = page.locator(".elbysodic-passkey-list__item").filter(has_text=label)
+    if await item.count():
+        await item.get_by_role("button", name="Remove").click()
+        await page.wait_for_url("**/identity")
+        await item.wait_for(state="detached")
+    await _logout(page, base_url)
+
+
 def _bump_passkey_sign_count(db_path: str, label: str) -> None:
     connection = sqlite3.connect(db_path)
     try:
@@ -155,7 +168,10 @@ async def _run_happy_path(browser: Browser, base_url: str) -> None:
         await _passkey_login(page, base_url, next_path="/identity")
         await page.locator("strong", has_text=QA_EMAIL).wait_for()
     finally:
-        await context.close()
+        try:
+            await _cleanup_registered_passkey(page, base_url, label)
+        finally:
+            await context.close()
 
 
 async def _run_revoked_credential(browser: Browser, base_url: str) -> None:
