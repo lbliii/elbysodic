@@ -8,6 +8,8 @@ from pounce._health import build_health_response
 from pounce._request_pipeline import maybe_build_builtin_response
 from pounce.config import ServerConfig
 
+from elbysodic.web.pounce_railway import _railway_server_config_kwargs
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RAILWAY_JSON = REPO_ROOT / "railway.json"
 
@@ -44,6 +46,13 @@ def test_readyz_draining_contract_returns_json_503() -> None:
     assert head is not None
     assert head.status == 503
     assert json.loads(head.body.decode("utf-8"))["status"] == "draining"
+
+
+def test_railway_bundle_uses_single_worker_until_process_drain_is_fixed() -> None:
+    config = _railway_server_config_kwargs({"workers": 48})
+
+    assert config["workers"] == 1
+    assert config["health_check_path"] == "/readyz"
 
 
 @pytest.mark.process

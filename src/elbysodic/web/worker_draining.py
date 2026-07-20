@@ -10,12 +10,19 @@ the worker exits.
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+import logging
+import os
+import sys
+import threading
+from typing import Any, cast
 
 from chirp._internal.asgi import Receive, Scope, Send
 from chirp.app import App
 
 _DRAIN_EVENT: asyncio.Event | None = None
+_PLOTTING_STREAMS_ACTIVE = 0
+_PLOTTING_STREAMS_LOCK = threading.Lock()
+_LOGGER = logging.getLogger("pounce.elbysodic")
 
 
 def _drain_event() -> asyncio.Event:
@@ -28,11 +35,26 @@ def _drain_event() -> asyncio.Event:
 def reset_worker_draining() -> None:
     """Clear the draining flag at worker startup (TestClient + Pounce)."""
     global _DRAIN_EVENT
+    global _PLOTTING_STREAMS_ACTIVE
     _DRAIN_EVENT = asyncio.Event()
+    with _PLOTTING_STREAMS_LOCK:
+        _PLOTTING_STREAMS_ACTIVE = 0
+    gil_probe = getattr(sys, "_is_gil_enabled", None)
+    gil_enabled = bool(gil_probe()) if callable(gil_probe) else True
+    build_id = os.environ.get("POUNCE_BUILD_ID", "unset")
+    _LOGGER.info(
+        "event=worker_started plotting_streams_active=0 build_id=%s gil_enabled=%s",
+        build_id,
+        str(gil_enabled).lower(),
+    )
 
 
 def signal_worker_draining() -> None:
     """Mark the current worker as draining so SSE generators exit."""
+    _LOGGER.info(
+        "event=worker_draining plotting_streams_active=%d",
+        active_plotting_streams(),
+    )
     _drain_event().set()
 
 
@@ -42,6 +64,32 @@ def is_worker_draining() -> bool:
 
 async def wait_for_worker_draining() -> None:
     await _drain_event().wait()
+
+
+def active_plotting_streams() -> int:
+    """Return this worker's aggregate plotting-stream gauge."""
+    with _PLOTTING_STREAMS_LOCK:
+        return _PLOTTING_STREAMS_ACTIVE
+
+
+def plotting_stream_opened() -> int:
+    """Increment and report the aggregate plotting-stream gauge."""
+    global _PLOTTING_STREAMS_ACTIVE
+    with _PLOTTING_STREAMS_LOCK:
+        _PLOTTING_STREAMS_ACTIVE += 1
+        active = _PLOTTING_STREAMS_ACTIVE
+    _LOGGER.info("event=plotting_stream_opened plotting_streams_active=%d", active)
+    return active
+
+
+def plotting_stream_closed() -> int:
+    """Decrement and report the aggregate plotting-stream gauge."""
+    global _PLOTTING_STREAMS_ACTIVE
+    with _PLOTTING_STREAMS_LOCK:
+        _PLOTTING_STREAMS_ACTIVE = max(0, _PLOTTING_STREAMS_ACTIVE - 1)
+        active = _PLOTTING_STREAMS_ACTIVE
+    _LOGGER.info("event=plotting_stream_closed plotting_streams_active=%d", active)
+    return active
 
 
 async def _worker_lifecycle_receive() -> dict[str, Any]:
@@ -71,6 +119,22 @@ class DrainingAwareApp:
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._app, name)
+
+    def run(
+        self,
+        host: str | None = None,
+        port: int | None = None,
+        *,
+        lifecycle_collector: Any | None = None,
+    ) -> None:
+        """Launch Pounce with this proxy as the runtime ASGI application."""
+        self._app._ensure_frozen()
+        self._app._server.run(
+            cast(App, self),
+            host=host,
+            port=port,
+            lifecycle_collector=lifecycle_collector,
+        )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope.get("type") == "pounce.worker.draining":

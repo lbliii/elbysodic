@@ -1,9 +1,11 @@
 """Pounce 0.9 Railway bundle defaults for Elbysodic production launch.
 
 Aligns with lbliii/pounce ``examples/deploy/railway`` (#248, #291):
-``/readyz`` exposes JSON ``{"status":"draining"}`` during deploy overlap,
-``shutdown_timeout`` stays within Railway's ``drainingSeconds`` window, and
-``POUNCE_BUILD_ID`` surfaces through ``/_pounce/info`` when introspection is on.
+``shutdown_timeout`` stays within Railway's ``drainingSeconds`` window and
+``POUNCE_BUILD_ID`` surfaces through ``/_pounce/info`` when introspection is
+on. Pounce 0.9.1 process workers do not receive the explicit drain command
+(lbliii/pounce#316), so Railway stays on one worker until that upstream
+lifecycle contract is released and proven here.
 """
 
 from __future__ import annotations
@@ -25,8 +27,7 @@ def _railway_server_config_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     patched = dict(kwargs)
     patched["health_check_path"] = POUNCE_HEALTH_CHECK_PATH
     patched["shutdown_timeout"] = POUNCE_SHUTDOWN_TIMEOUT
-    if os.environ.get("ELBYSODIC_RAILWAY_PROBE_SMOKE") == "1":
-        patched["workers"] = 1
+    patched["workers"] = 1
     if _introspection_enabled():
         patched["introspection_enabled"] = True
         patched["introspection_bind"] = "0.0.0.0"  # noqa: S104 -- Railway public bind when introspection is explicitly enabled

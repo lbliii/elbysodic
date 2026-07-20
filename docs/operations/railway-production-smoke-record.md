@@ -10,6 +10,37 @@ Production smoke has not been run yet.
 ## Attempt Log
 
 ```text
+Railway staging plotting-stream drain attempt:
+- Date: 2026-07-20
+- Operator: Codex local workspace
+- URL: https://elbysodic-staging.up.railway.app
+- Active deployment: 64120b47-4cc5-4e22-b1ed-823f376e0ae0 (SUCCESS)
+- Replacement: 1349d70f-fe0b-4311-89cf-213736285420 (SUCCESS)
+- Commit: c017ca6742af7cd41b8f24ffedb7ff6b5f23448e, deployed from the
+  verified local branch through Railway CLI
+- Railway project/service/environment: Elbysodic / elbysodic / staging
+- Deploy posture: one Railway replica, /app/var volume, /ready healthcheck,
+  5-second overlap, and 15-second drain
+- Staging runtime: Pounce 0.9.1, Python 3.14.2, GIL enabled, two process
+  workers for the diagnostic attempt. Both workers logged the immutable build
+  id and a zero active-stream baseline.
+- Authenticated stream/write proof: a seeded-writer plotting SSE opened with
+  aggregate gauge 1; a unique pre-deploy write returned 302, persisted, and
+  was acknowledged before the replacement accepted a reconnect.
+- Retiring readiness observation: an operator-only SSH loopback probe attached
+  to the exact retiring instance saw /readyz 200 ok until Railway disconnected
+  it. No 503 draining response or app worker-draining event was observed.
+- Root cause/follow-up: lbliii/pounce#316. Pounce 0.9.1 process-mode handles do
+  not receive start_draining(), so this run does not close Elbysodic #276. The
+  corrected deployment cb5e8924-1ba1-4167-a6e6-b75ecaa76036 (commit
+  c2cdb855e01358318df9b50fabd4f66cdf2f8c82) restored staging to one worker;
+  startup reported the matching build id, GIL enabled, and gauge 0.
+- Privacy: /_pounce/info remained behind the app login boundary; no
+  credentials, cookies, account identifiers, message bodies, or secrets were
+  recorded.
+- Result: partial staging evidence only. Production was not mutated or
+  restarted, and production smoke remains unrun.
+
 Railway staging password-rehash smoke:
 - Date: 2026-07-20
 - Operator: Codex local workspace
