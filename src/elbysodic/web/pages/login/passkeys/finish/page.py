@@ -19,7 +19,7 @@ from chirp.security.passkeys import PasskeyChallengeError, PasskeyVerificationEr
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
 from elbysodic.services.auth import SESSION_COOKIE
 from elbysodic.web import passkeys as passkey_rp
-from elbysodic.web.security import session_cookie
+from elbysodic.web.security import expose_global_account, session_cookie
 from elbysodic.web.state import get_services, get_web_security_config
 
 logger = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ async def post(request: Request) -> JSONResponse:
     except PermissionError as exc:
         return _rejected(str(exc))
 
+    expose_global_account(session.user)
     security = get_web_security_config()
     # The same SetCookie material password login attaches in login/page.py.
     cookies = [

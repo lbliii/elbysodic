@@ -12,7 +12,7 @@ from chirp.templating.returns import Page
 
 from elbysodic.services import AppServices
 from elbysodic.services.access import DEV_IDENTITY_COOKIE, dev_identity_cookie_value
-from elbysodic.services.auth import SESSION_COOKIE
+from elbysodic.services.auth import request_session_token
 from elbysodic.web.recovery import recover_next_url
 from elbysodic.web.security import session_cookie
 from elbysodic.web.state import get_services, get_web_security_config
@@ -54,7 +54,7 @@ async def post(request: Request) -> Redirect:
         if security.production:
             try:
                 identity = services.switch_session_identity(
-                    _cookie_value(request, SESSION_COOKIE) or "",
+                    request_session_token(request) or "",
                     membership_id,
                 )
             except PermissionError as exc:
@@ -112,11 +112,6 @@ def _safe_next(next_url: str) -> str:
     if not next_url.startswith("/") or next_url.startswith("//"):
         return "/"
     return next_url
-
-
-def _cookie_value(request: Request, name: str) -> str | None:
-    value = request.cookies.get(name)
-    return str(value) if value is not None else None
 
 
 def _form_int(value: object, field_name: str) -> int:

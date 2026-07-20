@@ -66,6 +66,31 @@ sorted-list shape has no downstream consumer in this release. Issue #277 owns
 the metadata-audit adopt/defer decision, and #104 owns any future persistent
 staff capability audit trail.
 
+## Request Identity And Session Signing
+
+- `elbysodic_session` remains the database-backed revocation, expiry, and
+  selected-identity authority. Its cookie name, schema, and 30-day TTL are
+  unchanged.
+- One request adapter validates that app session, caches its global account,
+  and exposes the account through Chirp `request.user` before membership and
+  active-face resolution.
+- Chirp signs every newly issued `chirp_session` with SHA-256. Its temporary
+  SHA-1 fallback reads a pre-rollout cookie and immediately reissues it with
+  SHA-256. Review fallback removal on or after **2026-08-20**, after the 30-day
+  app-session window and a production check for remaining legacy cookies.
+- Untouched anonymous catalog reads do not receive a Chirp session cookie or
+  `Vary: Cookie`. Login, passkey, invite-acceptance, and access-request pages
+  intentionally establish CSRF or ceremony session state.
+
+Chirp `AuditMiddleware(level="metadata")` is **deferred** for Studio/director
+mutations. Its HTTP event identifies only the global `request.user` plus request
+metadata; it does not provide #104's required `community_id`, actor membership,
+capability, target family/id, action outcome, durable retention, or
+capability-scoped reads. Enabling it now would create a second, non-durable
+trail that could be mistaken for the product audit contract. Issue #104 remains
+the owner of the tenant-scoped persistent event design; generic request
+metadata can be reconsidered there as optional operational telemetry.
+
 ## Production Readiness
 
 A launch-readiness record should treat `production_blocking: yes` as a blocker

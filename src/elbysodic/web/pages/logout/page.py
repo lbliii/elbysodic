@@ -6,8 +6,8 @@ from chirp.http.request import Request
 from chirp.http.response import Response
 
 from elbysodic.services.access import DEV_IDENTITY_COOKIE
-from elbysodic.services.auth import SESSION_COOKIE
-from elbysodic.web.security import clear_session_cookie
+from elbysodic.services.auth import SESSION_COOKIE, request_session_token
+from elbysodic.web.security import clear_global_account, clear_session_cookie
 from elbysodic.web.state import get_services, get_web_security_config
 
 
@@ -22,9 +22,10 @@ async def post(request: Request) -> Response:
 
 def _logout(request: Request) -> Response:
     services = get_services()
-    token = _cookie_value(request, SESSION_COOKIE)
+    token = request_session_token(request)
     if token is not None:
         services.logout(token)
+    clear_global_account()
     security = get_web_security_config()
     return Response(
         "",
@@ -35,8 +36,3 @@ def _logout(request: Request) -> Response:
             clear_session_cookie(DEV_IDENTITY_COOKIE, security=security),
         ),
     )
-
-
-def _cookie_value(request: Request, name: str) -> str | None:
-    value = request.cookies.get(name)
-    return str(value) if value is not None else None

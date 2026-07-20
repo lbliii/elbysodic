@@ -28,8 +28,11 @@ from elbysodic.web.routes import (
 )
 from elbysodic.web.security import (
     PRODUCTION_CONTENT_SECURITY_POLICY,
+    AnonymousCatalogSessionMiddleware,
+    AppSessionIdentityMiddleware,
     IdentityFailureMiddleware,
     RequireLoginMiddleware,
+    request_auth_config,
     resolve_web_security_config,
 )
 from elbysodic.web.shell import sidebar_is_hidden
@@ -162,21 +165,28 @@ def create_app(
         ),
         priority=-10,
     )
-    # secure_stack wires SessionMiddleware -> CSRFMiddleware ->
-    # SecurityHeadersMiddleware in contract-passing order in ALL envs. The
+    # secure_stack wires SessionMiddleware -> AuthMiddleware ->
+    # CSRFMiddleware -> SecurityHeadersMiddleware in contract-passing order in
+    # ALL envs. The app-session adapter sits between Session and Auth so the
+    # existing DB-backed global account is exposed through request.user before
+    # any community membership or active-face selection. The
     # session cookie's Secure flag stays at SessionConfig's "auto" default,
     # resolved at freeze from AppConfig.env (True for production/staging,
     # False for local development) — never from debug. The all-env Chirp
     # session also carries the single-use WebAuthn challenge between the
     # passkey begin and finish ceremonies; app auth still rides the
     # elbysodic_session cookie.
-    for middleware in secure_stack(
+    security_stack = secure_stack(
         config,
+        auth=request_auth_config(),
         headers=SecurityHeadersConfig(
             content_security_policy=PRODUCTION_CONTENT_SECURITY_POLICY,
             strict_transport_security=security.strict_transport_security,
         ),
-    ):
+    )
+    security_stack.insert(1, AppSessionIdentityMiddleware())
+    security_stack.insert(-1, AnonymousCatalogSessionMiddleware())
+    for middleware in security_stack:
         app.add_middleware(middleware, priority=0)
     app.add_middleware(RequireLoginMiddleware(security), priority=10)
     app.add_middleware(IdentityFailureMiddleware(), priority=20)

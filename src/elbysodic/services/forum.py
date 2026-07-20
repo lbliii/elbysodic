@@ -92,12 +92,13 @@ from elbysodic.services.applications import (
 from elbysodic.services.applications import update_application_draft as _update_application_draft
 from elbysodic.services.applications import update_application_review as _update_application_review
 from elbysodic.services.auth import (
-    SESSION_COOKIE,
     SESSION_TTL,
     LoginSession,
+    RequestLogin,
     create_login_session,
     create_passkey_login_session,
     hash_password,
+    request_login,
     session_for_session_token,
     session_token_hash,
     verify_password,
@@ -561,6 +562,14 @@ class AppServices:
             owns_repo=False,
         )
 
+    def request_login(self, request: object | None) -> RequestLogin | None:
+        """Resolve the request's global account without selecting a membership."""
+
+        if self._database is None or self._repo_context is not None:
+            return request_login(self.repo, request)
+        with self._database.repository() as repo:
+            return request_login(repo, request)
+
     def with_request_auth(self, *, production: bool) -> AppServices:
         """Return a facade with request identity rules for the runtime mode."""
 
@@ -722,17 +731,11 @@ class AppServices:
     ) -> AccountVisitorView | None:
         """Return signed-in account posture without requiring a local membership."""
 
-        cookies = getattr(request, "cookies", None)
-        getter = getattr(cookies, "get", None)
-        if getter is None:
+        login = self.request_login(request)
+        if login is None:
             return None
-        token = getter(SESSION_COOKIE)
-        if token is None:
-            return None
-        session = session_for_session_token(self.repo, str(token))
-        if session is None:
-            return None
-        user = self.repo.get_user(session.user_id)
+        session = login.session
+        user = login.user
         contexts = self._membership_contexts_for_user(user.id)
         return AccountVisitorView(
             user=user,

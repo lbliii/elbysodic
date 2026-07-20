@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from elbysodic.services import AppServices
+from elbysodic.services.auth import REQUEST_LOGIN_CACHE_KEY
 from elbysodic.web.security import WebSecurityConfig
 
 _services: AppServices | None = None
@@ -46,6 +47,7 @@ def close_request_services(request: object) -> None:
     if not isinstance(cache, dict):
         return
     services = cache.pop(_REQUEST_SERVICES_CACHE_KEY, None)
+    cache.pop(REQUEST_LOGIN_CACHE_KEY, None)
     if isinstance(services, AppServices):
         services.close()
 
