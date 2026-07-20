@@ -15,6 +15,8 @@ from elbysodic.web.tenant import request_tenant_slug
 
 @dataclass(frozen=True, slots=True)
 class RequestAccessForm:
+    intent: str = ""
+    access_request_id: str = ""
     community_slug: str = ""
     email: str = ""
     display_name: str = ""
@@ -34,8 +36,27 @@ async def post(request: Request, form: RequestAccessForm) -> Page:
     community_slug = form.community_slug.strip()
     if not community_slug:
         return _render_request_access(request, error="Choose a realm before requesting access.")
+    if form.intent == "withdraw_access_request":
+        if account_visitor is None:
+            return _render_request_access(
+                request,
+                error="That access request is not available.",
+            )
+        try:
+            request_id = int(form.access_request_id)
+            services.withdraw_access_request_for_account(
+                community_slug,
+                request_id,
+                account_visitor.user.id,
+            )
+        except LookupError, PermissionError, ValueError:
+            return _render_request_access(
+                request,
+                error="That access request is not available.",
+            )
+        return _render_request_access(request, withdrawn=True)
     try:
-        access_request = services.create_access_request(
+        receipt = services.create_access_request_receipt(
             community_slug,
             email=account_visitor.user.email if account_visitor else form.email,
             display_name=form.display_name,
@@ -51,8 +72,10 @@ async def post(request: Request, form: RequestAccessForm) -> Page:
     return _render_request_access(
         request,
         form=RequestAccessForm(),
-        submitted_email=access_request.email,
-        submitted_account=account_visitor is not None,
+        submitted_email=receipt.submitted_email,
+        submitted_account=receipt.submitted_account,
+        withdraw_request_id=receipt.withdraw_request_id,
+        withdraw_community_slug=(receipt.community_slug if receipt.submitted_account else ""),
     )
 
 
@@ -63,6 +86,9 @@ def _render_request_access(
     form: RequestAccessForm | None = None,
     submitted_email: str = "",
     submitted_account: bool = False,
+    withdraw_request_id: int | None = None,
+    withdraw_community_slug: str = "",
+    withdrawn: bool = False,
 ) -> Page:
     services = get_services()
     tenant_slug = request_tenant_slug(request)
@@ -85,5 +111,8 @@ def _render_request_access(
         error=error,
         submitted_email=submitted_email,
         submitted_account=submitted_account,
+        withdraw_request_id=withdraw_request_id,
+        withdraw_community_slug=withdraw_community_slug,
+        withdrawn=withdrawn,
         show_community_shell=False,
     )

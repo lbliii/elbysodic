@@ -470,6 +470,14 @@ class AccessRequestManagementItem:
 
 
 @dataclass(frozen=True, slots=True)
+class AccessRequestReceipt:
+    community_slug: str
+    submitted_email: str
+    submitted_account: bool
+    withdraw_request_id: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class AccessRequestActivityItem:
     event: CommunityAccessRequestEvent
     label: str
@@ -1070,6 +1078,10 @@ class AppServices:
         clean_email = email.strip().lower()
         if "@" not in clean_email:
             raise ValueError("writer email is required")
+        if account_user_id is not None:
+            account_user = self.repo.get_user(account_user_id)
+            if account_user.email.strip().lower() != clean_email:
+                raise PermissionError("access request cannot be linked to this account")
         existing = self.repo.find_open_community_access_request(
             community.id,
             email=clean_email[:240],
@@ -1090,6 +1102,34 @@ class AppServices:
             wanted_hook=wanted_hook.strip()[:240],
             notes=notes.strip()[:2000],
             account_user_id=account_user_id,
+        )
+
+    def create_access_request_receipt(
+        self,
+        community_slug: str,
+        *,
+        email: str,
+        display_name: str,
+        face_concept: str,
+        wanted_hook: str,
+        notes: str,
+        account_user_id: int | None = None,
+    ) -> AccessRequestReceipt:
+        access_request = self.create_access_request(
+            community_slug,
+            email=email,
+            display_name=display_name,
+            face_concept=face_concept,
+            wanted_hook=wanted_hook,
+            notes=notes,
+            account_user_id=account_user_id,
+        )
+        submitted_account = account_user_id is not None
+        return AccessRequestReceipt(
+            community_slug=community_slug,
+            submitted_email=access_request.email,
+            submitted_account=submitted_account,
+            withdraw_request_id=access_request.id if submitted_account else None,
         )
 
     def writer_access_requests(self) -> list[AccessRequestManagementItem]:
@@ -1152,6 +1192,81 @@ class AppServices:
                 )
         return updated
 
+    def expire_access_request(self, request_id: int) -> CommunityAccessRequest:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        return self._close_access_request(
+            viewer.community.id,
+            request_id,
+            status="expired",
+            event_type="expired",
+            actor_membership_id=viewer.membership.id,
+        )
+
+    def archive_access_request(self, request_id: int) -> CommunityAccessRequest:
+        viewer = self.viewer()
+        if not policies.can_manage_world(viewer.membership, viewer.role):
+            raise PermissionError("director access is required to manage access requests")
+        return self._close_access_request(
+            viewer.community.id,
+            request_id,
+            status="archived",
+            event_type="archived",
+            actor_membership_id=viewer.membership.id,
+        )
+
+    def withdraw_access_request_for_account(
+        self,
+        community_slug: str,
+        request_id: int,
+        account_user_id: int,
+    ) -> CommunityAccessRequest:
+        community = self.repo.get_community_by_slug(community_slug)
+        access_request = self.repo.get_community_access_request(community.id, request_id)
+        if access_request.account_user_id != account_user_id:
+            raise PermissionError("access request is not available")
+        return self._close_access_request(
+            community.id,
+            request_id,
+            status="withdrawn",
+            event_type="withdrawn",
+        )
+
+    def _close_access_request(
+        self,
+        community_id: int,
+        request_id: int,
+        *,
+        status: str,
+        event_type: str,
+        actor_membership_id: int | None = None,
+    ) -> CommunityAccessRequest:
+        with self.repo.transaction():
+            before = self.repo.get_community_access_request(community_id, request_id)
+            if before.status == status:
+                return before
+            invitation_id = before.invitation_id
+            if invitation_id is not None:
+                invitation = self.repo.get_community_invitation(community_id, invitation_id)
+                if invitation.status == "pending":
+                    self.repo.revoke_community_invitation(community_id, invitation.id)
+            updated = self.repo.update_community_access_request_status(
+                community_id,
+                request_id,
+                status=status,
+            )
+            self.repo.create_community_access_request_event(
+                community_id,
+                request_id,
+                event_type=event_type,
+                from_status=before.status,
+                to_status=updated.status,
+                actor_membership_id=actor_membership_id,
+                invitation_id=invitation_id,
+            )
+        return updated
+
     def invite_access_request(self, request_id: int) -> CreatedInvitation:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
@@ -1182,11 +1297,35 @@ class AppServices:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to revoke invitations")
-        invitation = self.repo.get_community_invitation(viewer.community.id, invitation_id)
-        item = _invitation_management_item(invitation)
-        if not item.can_revoke:
-            raise ValueError("only pending invitations can be revoked")
-        return self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
+        with self.repo.transaction():
+            invitation = self.repo.get_community_invitation(viewer.community.id, invitation_id)
+            item = _invitation_management_item(invitation)
+            if not item.can_revoke:
+                raise ValueError("only pending invitations can be revoked")
+            revoked = self.repo.revoke_community_invitation(
+                viewer.community.id,
+                invitation.id,
+            )
+            access_request = self.repo.find_community_access_request_by_invitation(
+                viewer.community.id,
+                invitation.id,
+            )
+            if access_request is not None and access_request.status == "invited":
+                updated = self.repo.update_community_access_request_status(
+                    viewer.community.id,
+                    access_request.id,
+                    status="reviewed",
+                )
+                self.repo.create_community_access_request_event(
+                    viewer.community.id,
+                    access_request.id,
+                    event_type="invitation_revoked",
+                    from_status=access_request.status,
+                    to_status=updated.status,
+                    actor_membership_id=viewer.membership.id,
+                    invitation_id=invitation.id,
+                )
+        return revoked
 
     def reissue_writer_invitation(self, invitation_id: int) -> CreatedInvitation:
         viewer = self.viewer()
@@ -1198,7 +1337,28 @@ class AppServices:
             if not item.can_revoke:
                 raise ValueError("only pending invitations can be reissued")
             self.repo.revoke_community_invitation(viewer.community.id, invitation.id)
-            return self.create_writer_invitation(invitation.email)
+            created = self.create_writer_invitation(invitation.email)
+            access_request = self.repo.find_community_access_request_by_invitation(
+                viewer.community.id,
+                invitation.id,
+            )
+            if access_request is not None and access_request.status == "invited":
+                self.repo.update_community_access_request_status(
+                    viewer.community.id,
+                    access_request.id,
+                    status="invited",
+                    invitation_id=created.invitation.id,
+                )
+                self.repo.create_community_access_request_event(
+                    viewer.community.id,
+                    access_request.id,
+                    event_type="invitation_reissued",
+                    from_status="invited",
+                    to_status="invited",
+                    actor_membership_id=viewer.membership.id,
+                    invitation_id=created.invitation.id,
+                )
+            return created
 
     def update_realm_launch_status(self, launch_status: str) -> Community:
         viewer = self.viewer()
@@ -1349,6 +1509,24 @@ class AppServices:
                 user_id=user.id,
                 membership_id=membership.id,
             )
+            access_request = self.repo.find_community_access_request_by_invitation(
+                invitation.community_id,
+                invitation.id,
+            )
+            if access_request is not None and access_request.status == "invited":
+                updated_request = self.repo.update_community_access_request_status(
+                    invitation.community_id,
+                    access_request.id,
+                    status="accepted",
+                )
+                self.repo.create_community_access_request_event(
+                    invitation.community_id,
+                    access_request.id,
+                    event_type="accepted",
+                    from_status=access_request.status,
+                    to_status=updated_request.status,
+                    invitation_id=invitation.id,
+                )
             session = self._create_session_for_user(
                 user.id,
                 community_id=invitation.community_id,
@@ -5273,11 +5451,17 @@ def _access_request_activity_item(
     event: CommunityAccessRequestEvent,
 ) -> AccessRequestActivityItem:
     labels = {
+        "accepted": "Invitation accepted",
         "account_linked": "Account linked",
+        "archived": "Request archived",
         "submitted": "Requested access",
         "reviewed": "Marked for review",
         "invited": "Invitation created",
         "declined": "Request declined",
+        "expired": "Request expired",
+        "invitation_reissued": "Invitation reissued",
+        "invitation_revoked": "Invitation revoked",
+        "withdrawn": "Request withdrawn",
     }
     detail = f"{_access_request_status_label(event.from_status)} to {event.to_status.title()}"
     if event.event_type == "account_linked":

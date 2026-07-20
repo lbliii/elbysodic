@@ -4151,6 +4151,37 @@ def test_studio_launch_moderates_access_requests() -> None:
         )
         assert services.repo.list_community_invitations(staff.community.id) == []
 
+        async with TestClient(app) as client:
+            archived_response = await client.post(
+                "/studio/launch",
+                body=urlencode(
+                    {
+                        "intent": "archive_access_request",
+                        "access_request_id": str(access_request.id),
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        archived_request = services.repo.get_community_access_request(
+            staff.community.id,
+            access_request.id,
+        )
+        archived_events = services.repo.list_community_access_request_events(
+            staff.community.id,
+            access_request.id,
+        )
+
+        assert archived_response.status == 200
+        assert "was archived" in archived_response.text
+        assert archived_request.status == "archived"
+        assert [event.event_type for event in archived_events] == [
+            "submitted",
+            "reviewed",
+            "declined",
+            "archived",
+        ]
+
     asyncio.run(run())
 
 
@@ -4300,6 +4331,8 @@ def test_access_request_detail_shows_linked_invitation_status() -> None:
         assert invited.status == 200
         assert updated.invitation_id is not None
         assert f"#{updated.invitation_id} · Pending" in detail.text
+        assert "Reissue invitation" in detail.text
+        assert "Revoke invitation" in detail.text
 
     asyncio.run(run())
 
@@ -4621,6 +4654,189 @@ def test_access_request_invitation_rolls_back_when_status_update_fails(monkeypat
     assert after_request.invitation_id is None
     assert after_invitation_ids == before_invitation_ids
     assert [event.event_type for event in events] == ["submitted"]
+
+
+def test_access_request_acceptance_updates_lifecycle_without_exposing_token() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    request = services.repo.create_community_access_request(
+        staff.community.id,
+        email="accepted-prospect@example.com",
+        display_name="Accepted Prospect",
+        face_concept="Accepted transfer",
+        wanted_hook="Accepted opening",
+        notes="Private acceptance context.",
+    )
+    director_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+
+    created = director_services.invite_access_request(request.id)
+    accepted = director_services.accept_invitation(
+        created.token,
+        password="-".join(("accepted", "password")),
+        username="accepted-prospect",
+        display_name="Accepted Prospect",
+    )
+
+    updated = services.repo.get_community_access_request(staff.community.id, request.id)
+    events = services.repo.list_community_access_request_events(staff.community.id, request.id)
+    memberships = services.repo.list_memberships_for_user(accepted.identity.user_id)
+
+    assert updated.status == "accepted"
+    assert updated.invitation_id == created.invitation.id
+    assert [event.event_type for event in events] == ["submitted", "invited", "accepted"]
+    assert events[-1].invitation_id == created.invitation.id
+    assert created.token not in repr(updated)
+    assert created.token not in repr(events)
+    assert [(membership.community_id, membership.user_id) for membership in memberships] == [
+        (staff.community.id, accepted.identity.user_id)
+    ]
+
+
+def test_access_request_invitation_reissue_and_revoke_keep_request_linked() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    request = services.repo.create_community_access_request(
+        staff.community.id,
+        email="linked-reissue@example.com",
+        display_name="Linked Reissue",
+        face_concept="Signal keeper",
+        wanted_hook="Reissue opening",
+        notes="Keep lifecycle history private.",
+    )
+    director_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    original = director_services.invite_access_request(request.id)
+
+    reissued = director_services.reissue_writer_invitation(original.invitation.id)
+    after_reissue = services.repo.get_community_access_request(staff.community.id, request.id)
+    old_invitation = services.repo.get_community_invitation(
+        staff.community.id,
+        original.invitation.id,
+    )
+
+    assert old_invitation.status == "revoked"
+    assert after_reissue.status == "invited"
+    assert after_reissue.invitation_id == reissued.invitation.id
+    assert reissued.token != original.token
+
+    revoked = director_services.revoke_writer_invitation(reissued.invitation.id)
+    after_revoke = services.repo.get_community_access_request(staff.community.id, request.id)
+    events = services.repo.list_community_access_request_events(staff.community.id, request.id)
+
+    assert revoked.status == "revoked"
+    assert after_revoke.status == "reviewed"
+    assert after_revoke.invitation_id == reissued.invitation.id
+    assert [event.event_type for event in events] == [
+        "submitted",
+        "invited",
+        "invitation_reissued",
+        "invitation_revoked",
+    ]
+
+
+def test_access_request_withdraw_expire_and_archive_are_idempotent() -> None:
+    services = create_services(path=":memory:")
+    staff = resolve_seed_persona(services.repo, "xmen_staff")
+    account = services.repo.create_user("withdraw-request@example.com", "hash")
+    other_account = services.repo.create_user("other-withdraw@example.com", "hash")
+    request = services.create_access_request(
+        staff.community.slug,
+        email=account.email,
+        display_name="Withdraw Prospect",
+        face_concept="Quiet transfer",
+        wanted_hook="Withdrawal opening",
+        notes="Private withdrawal context.",
+        account_user_id=account.id,
+    )
+    director_services = AppServices(
+        services.repo,
+        DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+    )
+    created = director_services.invite_access_request(request.id)
+
+    with pytest.raises(PermissionError, match="access request is not available"):
+        services.withdraw_access_request_for_account(
+            staff.community.slug,
+            request.id,
+            other_account.id,
+        )
+
+    withdrawn = services.withdraw_access_request_for_account(
+        staff.community.slug,
+        request.id,
+        account.id,
+    )
+    withdrawn_again = services.withdraw_access_request_for_account(
+        staff.community.slug,
+        request.id,
+        account.id,
+    )
+    revoked_invitation = services.repo.get_community_invitation(
+        staff.community.id,
+        created.invitation.id,
+    )
+    archived = director_services.archive_access_request(request.id)
+    archived_again = director_services.archive_access_request(request.id)
+    events = services.repo.list_community_access_request_events(staff.community.id, request.id)
+
+    assert withdrawn == withdrawn_again
+    assert withdrawn.status == "withdrawn"
+    assert revoked_invitation.status == "revoked"
+    assert archived == archived_again
+    assert archived.status == "archived"
+    assert [event.event_type for event in events] == [
+        "submitted",
+        "invited",
+        "withdrawn",
+        "archived",
+    ]
+    assert services.repo.list_memberships_for_user(account.id) == []
+
+    expiring = services.repo.create_community_access_request(
+        staff.community.id,
+        email="expire-request@example.com",
+        display_name="Expire Prospect",
+        face_concept="Stale transfer",
+        wanted_hook="Expired opening",
+        notes="Stale private context.",
+    )
+    expired = director_services.expire_access_request(expiring.id)
+    expired_again = director_services.expire_access_request(expiring.id)
+
+    assert expired == expired_again
+    assert expired.status == "expired"
+    assert [
+        event.event_type
+        for event in services.repo.list_community_access_request_events(
+            staff.community.id,
+            expiring.id,
+        )
+    ] == ["submitted", "expired"]
+
+
+def test_account_linked_access_request_requires_matching_global_email() -> None:
+    services = create_services(path=":memory:")
+    account = services.repo.create_user("account-owner@example.com", "hash")
+
+    with pytest.raises(PermissionError, match="cannot be linked to this account"):
+        services.create_access_request(
+            "afterlight-accord",
+            email="different-applicant@example.com",
+            display_name="Wrong account",
+            face_concept="Wrong link",
+            wanted_hook="Wrong opening",
+            notes="Must not persist.",
+            account_user_id=account.id,
+        )
+
+    community = services.repo.get_community_by_slug("afterlight-accord")
+    assert services.repo.list_community_access_requests(community.id) == []
+    assert services.repo.list_memberships_for_user(account.id) == []
 
 
 def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
@@ -4963,7 +5179,15 @@ def test_invitation_acceptance_rolls_back_when_session_creation_fails(
         repo,
         DemoSeed(staff.community, staff.user, staff.membership, staff.character),
     )
-    created = staff_services.create_writer_invitation("rollback-invite@example.com")
+    access_request = repo.create_community_access_request(
+        staff.community.id,
+        email="rollback-invite@example.com",
+        display_name="Rollback Invite",
+        face_concept="Rollback face",
+        wanted_hook="Rollback opening",
+        notes="Acceptance must roll back all lifecycle writes.",
+    )
+    created = staff_services.invite_access_request(access_request.id)
     session_count_before = repo.connection.execute("SELECT COUNT(*) FROM user_sessions").fetchone()[
         0
     ]
@@ -4991,6 +5215,19 @@ def test_invitation_acceptance_rolls_back_when_session_creation_fails(
     assert invitation.accepted_user_id is None
     assert invitation.accepted_membership_id is None
     assert invitation.accepted_at is None
+    unchanged_request = repo.get_community_access_request(
+        staff.community.id,
+        access_request.id,
+    )
+    assert unchanged_request.status == "invited"
+    assert unchanged_request.invitation_id == invitation.id
+    assert [
+        event.event_type
+        for event in repo.list_community_access_request_events(
+            staff.community.id,
+            access_request.id,
+        )
+    ] == ["submitted", "invited"]
     assert session_count_after == session_count_before
     with pytest.raises(LookupError):
         repo.get_user_by_email("rollback-invite@example.com")

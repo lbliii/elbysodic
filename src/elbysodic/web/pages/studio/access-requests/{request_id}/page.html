@@ -105,6 +105,32 @@
         <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
         <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Decline request</button>
       </form>
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="expire_access_request">
+        <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Expire request</button>
+      </form>
+      {% elif item.request.status == "invited" and item.invitation and item.invitation.can_revoke %}
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="reissue_invite">
+        <input type="hidden" name="invitation_id" value="{{ item.invitation.invitation.id }}">
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Reissue invitation</button>
+      </form>
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="revoke_invite">
+        <input type="hidden" name="invitation_id" value="{{ item.invitation.invitation.id }}">
+        <button class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined" type="submit">Revoke invitation</button>
+      </form>
+      {% elif item.request.status in ("accepted", "declined", "withdrawn", "expired") %}
+      <form method="post" action="/studio/launch" hx-boost="false">
+        {{ csrf_field() }}
+        <input type="hidden" name="intent" value="archive_access_request">
+        <input type="hidden" name="access_request_id" value="{{ item.request.id }}">
+        <button class="chirpui-btn chirpui-btn--secondary" type="submit">Archive request</button>
+      </form>
       {% end %}
     </div>
   </article>

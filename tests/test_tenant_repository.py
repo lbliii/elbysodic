@@ -902,6 +902,50 @@ def test_community_access_request_status_transitions(repo: ForumRepository) -> N
             access_request.id,
             status="declined",
         )
+    accepted = repo.update_community_access_request_status(
+        default.id,
+        access_request.id,
+        status="accepted",
+    )
+    archived = repo.update_community_access_request_status(
+        default.id,
+        access_request.id,
+        status="archived",
+    )
+
+    assert accepted.status == "accepted"
+    assert archived.status == "archived"
+    assert archived.invitation_id == invitation.id
+    assert repo.find_community_access_request_by_invitation(default.id, invitation.id) == archived
+    with pytest.raises(ValueError, match="cannot move access request from archived to pending"):
+        repo.update_community_access_request_status(
+            default.id,
+            access_request.id,
+            status="pending",
+        )
+
+    expiring = repo.create_community_access_request(
+        default.id,
+        email="expiring-transition@example.com",
+        display_name="Expiring Transition",
+        face_concept="Archivist",
+        wanted_hook="Seal pressure",
+        notes="Needs expiry proof.",
+    )
+    expired = repo.update_community_access_request_status(
+        default.id,
+        expiring.id,
+        status="expired",
+    )
+    assert expired.status == "expired"
+    assert (
+        repo.update_community_access_request_status(
+            default.id,
+            expiring.id,
+            status="expired",
+        )
+        == expired
+    )
 
 
 def test_access_request_account_linking_preserves_existing_open_request(
