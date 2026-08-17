@@ -8255,7 +8255,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
             interest_response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert interest_response.status == 302
@@ -8300,7 +8300,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
                 reserve_response = await charlie_client.post(
                     "/wanted/human-un-liaison-for-b24",
-                    body=f"intent=reserve_interest&interest_id={interest.id}".encode(),
+                    body=f"_action=reserve_interest&interest_id={interest.id}".encode(),
                     headers=_FORM,
                 )
                 assert reserve_response.status == 302
@@ -8313,7 +8313,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
                 reserve_create = await charlie_client.post(
                     "/wanted/human-un-liaison-for-b24",
-                    body=f"intent=create_reserve&interest_id={interest.id}".encode(),
+                    body=f"_action=create_reserve&interest_id={interest.id}".encode(),
                     headers=_FORM,
                 )
                 assert reserve_create.status == 302
@@ -8368,7 +8368,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                     "/wanted/human-un-liaison-for-b24",
                     body=urlencode(
                         {
-                            "intent": "update_lifecycle_status",
+                            "_action": "update_lifecycle_status",
                             "status": "filled",
                         }
                     ).encode(),
@@ -8380,7 +8380,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                     "/wanted/human-un-liaison-for-b24",
                     body=urlencode(
                         {
-                            "intent": "update_lifecycle_status",
+                            "_action": "update_lifecycle_status",
                             "status": "archived",
                         }
                     ).encode(),
@@ -8392,7 +8392,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                     "/wanted/human-un-liaison-for-b24",
                     body=urlencode(
                         {
-                            "intent": "update_lifecycle_status",
+                            "_action": "update_lifecycle_status",
                             "status": "open",
                         }
                     ).encode(),
@@ -10008,7 +10008,7 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10030,7 +10030,7 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10092,7 +10092,7 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10116,7 +10116,7 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10149,7 +10149,7 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining(caplog) -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10173,7 +10173,7 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining(caplog) -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10230,7 +10230,7 @@ def test_tenant_prefixed_plotting_room_id_does_not_leak_cross_realm_room() -> No
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10252,7 +10252,7 @@ def test_tenant_prefixed_plotting_room_id_does_not_leak_cross_realm_room() -> No
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10283,7 +10283,7 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10305,7 +10305,7 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10442,7 +10442,7 @@ def test_plotting_room_scene_handoff_rolls_back_on_attach_failure(
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10464,7 +10464,7 @@ def test_plotting_room_scene_handoff_rolls_back_on_attach_failure(
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10505,7 +10505,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10527,7 +10527,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
