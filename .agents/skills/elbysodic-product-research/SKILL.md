@@ -35,7 +35,7 @@ For most requests, read only the files needed:
 - Research operating model: `research/README.md`
 - Research steward rules: `research/AGENTS.md`
 - Persona panel: `docs/product/user-personas-panel.md`
-- Research system plan: `plans/in-progress/product-research-system-2026-05-10.md`
+- Research system plan (archived methodology): `plans/archive/2026/product-research-system-2026-05-10.md`
 - Templates: `research/templates/`
 - UAT protocols: `research/uat/protocols/`
 

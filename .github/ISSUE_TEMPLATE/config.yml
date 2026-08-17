@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Issue lifecycle standard
+    url: https://github.com/lbliii/elbysodic/blob/main/docs/plan/issue-lifecycle.md
+    about: Saga → epic → design → leaf process for swarm-ready specs.
+  - name: Product strategy spine
+    url: https://github.com/lbliii/elbysodic/blob/main/docs/product/strategy-spine.md
+    about: Realm Studio, Writer Network, and Continuity Graph — not a backlog.

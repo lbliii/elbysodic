@@ -1,0 +1,52 @@
+name: Saga
+description: North-star product or strategy thread (planner-owned).
+title: "Saga: "
+labels: ["type:saga"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sagas are planner-owned threads. Do not implement code under a saga issue.
+        Standard: https://github.com/lbliii/elbysodic/blob/main/docs/plan/issue-lifecycle.md
+  - type: textarea
+    id: north_star
+    attributes:
+      label: North star
+      description: One sharpened sentence for the thread.
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Provenance
+      description: Docs, ADRs, related sagas, mocks.
+    validations:
+      required: true
+  - type: textarea
+    id: workstreams
+    attributes:
+      label: Workstreams (epics)
+      description: Links or names of child epics — not a code checklist.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Architectural boundaries
+      description: What this saga owns vs other pillars, Chirp, or later waves.
+    validations:
+      required: true
+  - type: textarea
+    id: not_now
+    attributes:
+      label: Not now
+      description: Explicit non-goals for this thread.
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Success signal
+      description: Observable signal that the saga landed.
+    validations:
+      required: true

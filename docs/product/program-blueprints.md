@@ -312,4 +312,5 @@ File upload, background import jobs, public Blueprint marketplaces, and
 unreviewed realm generation remain out of scope.
 
 The implemented hydration design snapshot and its closure proof live in
-`plans/in-progress/program-blueprint-hydration-2026-05-02.md`.
+`plans/archive/2026/program-blueprint-hydration-2026-05-02.md`. GitHub is the
+live work DAG; see `docs/plan/issue-lifecycle.md`.
