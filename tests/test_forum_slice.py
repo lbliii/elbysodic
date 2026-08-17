@@ -1146,6 +1146,159 @@ def test_tenant_prefix_does_not_wrap_app_global_routes() -> None:
     asyncio.run(run())
 
 
+def test_tenant_prefixed_access_request_post_ignores_foreign_community_slug() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        url_community = services.seed.community
+        foreign_community = services.repo.get_community_by_slug("afterlight-accord")
+        email = "prefix-bound-prospect@example.com"
+
+        async with TestClient(app) as client:
+            page = await client.get(f"/c/{url_community.slug}/request-access")
+            submitted = await client.post(
+                f"/c/{url_community.slug}/request-access",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(page.text),
+                        "community_slug": foreign_community.slug,
+                        "email": email,
+                        "display_name": "Prefix Bound Prospect",
+                        "face_concept": "Archive thief",
+                        "wanted_hook": "Sealed branch",
+                        "notes": "Posted under a foreign form slug.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert page.status == 200
+        assert submitted.status == 200
+        assert "Access request received" in submitted.text
+        url_requests = [
+            item
+            for item in services.repo.list_community_access_requests(url_community.id)
+            if item.email == email
+        ]
+        foreign_requests = [
+            item
+            for item in services.repo.list_community_access_requests(foreign_community.id)
+            if item.email == email
+        ]
+        assert len(url_requests) == 1
+        assert url_requests[0].status == "pending"
+        assert foreign_requests == []
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_access_request_withdraw_ignores_foreign_community_slug() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        url_community = services.seed.community
+        foreign_community = services.repo.get_community_by_slug("afterlight-accord")
+        account = services.repo.create_user(
+            "prefix-withdraw@example.com",
+            hash_password("password"),
+        )
+        role = services.repo.get_role_by_slug(url_community.id, "member")
+        services.repo.create_membership(
+            url_community.id,
+            account.id,
+            role.id,
+            "prefix-withdraw",
+            "Prefix Withdraw",
+        )
+        foreign_request = services.create_access_request(
+            foreign_community.slug,
+            email=account.email,
+            display_name="Prefix Withdraw",
+            face_concept="Rebel heir",
+            wanted_hook="Town politics",
+            notes="Should stay in the foreign realm.",
+            account_user_id=account.id,
+        )
+
+        async with TestClient(app) as client:
+            login_page = await client.get("/login")
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(login_page.text),
+                        "email": account.email,
+                        "password": "password",
+                        "next": f"/c/{url_community.slug}/request-access",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            page = await client.get(f"/c/{url_community.slug}/request-access")
+            withdrawn = await client.post(
+                f"/c/{url_community.slug}/request-access",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(page.text),
+                        "intent": "withdraw_access_request",
+                        "access_request_id": str(foreign_request.id),
+                        "community_slug": foreign_community.slug,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert login.status == 302
+        assert withdrawn.status == 200
+        assert "Your access request was withdrawn" not in withdrawn.text
+        remaining = services.repo.get_community_access_request(
+            foreign_community.id,
+            foreign_request.id,
+        )
+        assert remaining.status == "pending"
+
+    asyncio.run(run())
+
+
+def test_unscoped_request_access_post_accepts_chosen_realm_slug() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        chosen = services.repo.get_community_by_slug("afterlight-accord")
+        email = "unscoped-chosen-realm@example.com"
+
+        async with TestClient(app) as client:
+            page = await client.get(f"/c/{chosen.slug}/request-access")
+            submitted = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(page.text),
+                        "community_slug": chosen.slug,
+                        "email": email,
+                        "display_name": "Unscoped Prospect",
+                        "face_concept": "Forbidden envoy",
+                        "wanted_hook": "Transit gate",
+                        "notes": "Chose a realm without a tenant prefix.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert page.status == 200
+        assert submitted.status == 200
+        assert "Access request received" in submitted.text
+        chosen_requests = [
+            item
+            for item in services.repo.list_community_access_requests(chosen.id)
+            if item.email == email
+        ]
+        assert len(chosen_requests) == 1
+        assert chosen_requests[0].status == "pending"
+
+    asyncio.run(run())
+
+
 def test_boosted_main_navigation_uses_chirp_shell_outlet() -> None:
     async def run() -> None:
         app = _app()
