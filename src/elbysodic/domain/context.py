@@ -16,7 +16,12 @@ DEFAULT_COMMUNITY_SLUG = "x-men-apocalypse"
 
 @dataclass(frozen=True, slots=True)
 class CommunityContext:
-    """The tenant scope attached to a request."""
+    """The tenant scope attached to a request.
+
+    Field defaults exist for seed data and tests. They are not a request minting
+    path. Web request identity uses `AppServices.for_request()` and
+    `RequestIdentityResolver` only.
+    """
 
     community_id: int = DEFAULT_COMMUNITY_ID
     slug: str = DEFAULT_COMMUNITY_SLUG
@@ -35,9 +40,11 @@ class RequestIdentityContext:
 def resolve_current_community(request: object | None = None) -> CommunityContext:
     """Return the legacy default community context.
 
-    Web routes should use `AppServices.for_request()` and
-    `RequestIdentityResolver` instead. This helper remains for old call sites
-    that need an explicit default context without request-aware resolution.
+    This helper ignores the request and returns `CommunityContext()` defaults.
+    It is not a request minting path. Web routes must use
+    `AppServices.for_request()` and `RequestIdentityResolver` instead. Seed
+    and session code may still use `DEFAULT_COMMUNITY_SLUG` /
+    `DEFAULT_COMMUNITY_ID` directly.
     """
 
     _ = request

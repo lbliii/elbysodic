@@ -173,6 +173,14 @@ development. A shared `AppServices` instance owns the repository, then
 - membership from the resolved user inside the resolved community, with inactive
   memberships rejected
 
+Web request identity uses `AppServices.for_request()` and
+`RequestIdentityResolver` only. `CommunityContext()` defaults and
+`resolve_current_community()` are not a request minting path.
+`resolve_current_community()` remains a legacy helper; it is not called from
+request resolution. Seed and session setup may still use
+`DEFAULT_COMMUNITY_SLUG` / `DEFAULT_COMMUNITY_ID`. Unknown-host fallthrough
+is unchanged.
+
 Production mode requires a valid `elbysodic_session` for normal app routes and
 ignores development identity headers and unsigned development identity cookies.
 Development mode can keep seed fallback identity and `/dev/personas` for QA,
