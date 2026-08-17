@@ -1,8 +1,13 @@
-/* Elbysodic theming for Chirp-UI primitives.
+/* Elbysodic primitive CSS (ADR 0002).
  *
- * Keep this file narrow: use Chirp's tone and appearance classes before adding
- * custom selectors here.
+ * Public API: elbysodic-btn, elbysodic-field, elbysodic-cluster, elbysodic-stack.
+ * Leftover chirpui-* selectors are a drain bridge until page markup moves.
+ * Do not add new Chirp-UI class names here.
  */
+
+/* -------------------------------------------------------------------------- */
+/* Drain bridge — existing chirpui-* markup                                   */
+/* -------------------------------------------------------------------------- */
 
 .chirpui-surface {
     border-color: var(--chirpui-border-subtle);
@@ -30,6 +35,276 @@
 
 .chirpui-theme-toggle {
     border-color: var(--chirpui-border);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stack                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.elbysodic-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--elbysodic-stack-gap);
+}
+
+.elbysodic-stack--xs {
+    gap: var(--elbysodic-space-xs);
+}
+
+.elbysodic-stack--sm {
+    gap: var(--elbysodic-space-sm);
+}
+
+.elbysodic-stack--md {
+    gap: var(--elbysodic-space-md);
+}
+
+.elbysodic-stack--lg {
+    gap: var(--elbysodic-space-lg);
+}
+
+.elbysodic-stack--xl {
+    gap: var(--elbysodic-space-xl);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cluster                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.elbysodic-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--elbysodic-cluster-gap);
+}
+
+.elbysodic-cluster--xs {
+    gap: var(--elbysodic-space-xs);
+}
+
+.elbysodic-cluster--sm {
+    gap: var(--elbysodic-space-sm);
+}
+
+.elbysodic-cluster--md {
+    gap: var(--elbysodic-space-md);
+}
+
+.elbysodic-cluster--lg {
+    gap: var(--elbysodic-space-lg);
+}
+
+.elbysodic-cluster--between,
+.chirpui-cluster.elbysodic-cluster--between {
+    justify-content: space-between;
+}
+
+.elbysodic-cluster--end,
+.chirpui-cluster.elbysodic-cluster--end {
+    justify-content: flex-end;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Field                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.elbysodic-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--elbysodic-space-xs);
+    margin-bottom: var(--elbysodic-space);
+}
+
+.elbysodic-field__label {
+    display: block;
+    font-size: var(--elbysodic-font-sm);
+    font-weight: 500;
+}
+
+.elbysodic-field__input {
+    display: block;
+    width: 100%;
+    padding: var(--elbysodic-space-sm);
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--elbysodic-radius-sm);
+    font: inherit;
+    background: var(--chirpui-surface);
+    color: var(--chirpui-text);
+    transition:
+        border-color var(--elbysodic-motion-feedback),
+        box-shadow var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-field__input:focus {
+    outline: none;
+    border-color: var(--elbysodic-identity-dye);
+    box-shadow: 0 0 0 3px var(--chirpui-focus-ring);
+}
+
+.elbysodic-field__input:focus-visible {
+    outline: var(--elbysodic-focus-outline);
+    outline-offset: var(--elbysodic-focus-offset);
+}
+
+.elbysodic-field__input:disabled,
+.elbysodic-field__input[readonly] {
+    background: var(--chirpui-bg-subtle);
+    color: var(--chirpui-text-muted);
+    border-color: var(--chirpui-border);
+}
+
+.elbysodic-field__input[readonly] {
+    cursor: default;
+    opacity: 1;
+}
+
+.elbysodic-field__input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.elbysodic-field__input[type="checkbox"],
+.elbysodic-field__input[type="radio"] {
+    width: auto;
+    accent-color: var(--elbysodic-identity-dye);
+}
+
+.elbysodic-field--error .elbysodic-field__input {
+    border-color: var(--elbysodic-state-error);
+}
+
+.elbysodic-field__hint {
+    display: block;
+    font-size: var(--elbysodic-font-sm);
+    color: var(--chirpui-text-muted);
+}
+
+.elbysodic-field__error {
+    display: block;
+    font-size: var(--elbysodic-font-sm);
+    color: var(--elbysodic-state-error);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Button                                                                     */
+/* -------------------------------------------------------------------------- */
+
+button.elbysodic-btn,
+a.elbysodic-btn {
+    cursor: pointer;
+}
+
+.elbysodic-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--elbysodic-space-xs);
+    padding: var(--elbysodic-control-padding-block) var(--elbysodic-control-padding-inline);
+    font-size: var(--elbysodic-font-sm);
+    font-weight: 500;
+    line-height: 1.25;
+    text-decoration: none;
+    border: 1px solid var(--chirpui-border);
+    border-radius: var(--elbysodic-radius);
+    background: var(--chirpui-surface);
+    color: var(--chirpui-text);
+    cursor: pointer;
+    box-shadow: var(--chirpui-shadow-sm);
+    transition:
+        background var(--elbysodic-motion-feedback),
+        border-color var(--elbysodic-motion-feedback),
+        color var(--elbysodic-motion-feedback),
+        transform var(--elbysodic-motion-feedback),
+        box-shadow var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-btn:hover:not(:disabled) {
+    background: var(--chirpui-bg-subtle);
+}
+
+.elbysodic-btn:active:not(:disabled) {
+    background: var(--chirpui-border);
+}
+
+.elbysodic-btn:focus-visible {
+    outline: var(--elbysodic-focus-outline);
+    outline-offset: var(--elbysodic-focus-offset);
+}
+
+.elbysodic-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.elbysodic-btn--primary {
+    background: var(--elbysodic-identity-dye);
+    border-color: var(--elbysodic-identity-dye);
+    color: var(--chirpui-on-accent);
+}
+
+.elbysodic-btn--primary:hover:not(:disabled) {
+    background: var(--elbysodic-identity-dye-hover);
+    border-color: var(--elbysodic-identity-dye-hover);
+}
+
+.elbysodic-btn--primary:active:not(:disabled) {
+    background: var(--elbysodic-identity-dye-hover);
+    border-color: var(--elbysodic-identity-dye-hover);
+}
+
+.elbysodic-btn--secondary {
+    background: var(--chirpui-bg-subtle);
+    border-color: var(--chirpui-border);
+}
+
+.elbysodic-btn--secondary:hover:not(:disabled) {
+    background: var(--chirpui-border);
+}
+
+.elbysodic-btn--ghost {
+    background: transparent;
+    border-color: var(--chirpui-border);
+    box-shadow: none;
+}
+
+.elbysodic-btn--ghost:hover:not(:disabled) {
+    background: var(--chirpui-bg-subtle);
+}
+
+.elbysodic-btn--danger {
+    background: var(--elbysodic-state-error);
+    border-color: var(--elbysodic-state-error);
+    color: var(--chirpui-on-accent);
+}
+
+.elbysodic-btn--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--elbysodic-state-error) 85%, black);
+    border-color: color-mix(in srgb, var(--elbysodic-state-error) 85%, black);
+}
+
+.elbysodic-btn--sm {
+    padding: var(--elbysodic-space-xs) var(--elbysodic-space-sm);
+    font-size: var(--elbysodic-font-xs);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .elbysodic-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: var(--chirpui-shadow-md);
+    }
+
+    .elbysodic-btn:active:not(:disabled) {
+        transition: none;
+        transform: scale(0.98) translateY(0);
+        box-shadow: var(--chirpui-shadow-sm);
+    }
+
+    .elbysodic-btn--ghost:hover:not(:disabled),
+    .elbysodic-btn--ghost:active:not(:disabled) {
+        box-shadow: none;
+    }
 }
 
 @layer app.overrides {
