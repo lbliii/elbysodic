@@ -1,0 +1,87 @@
+name: Leaf
+description: Worker-executable unit with owned paths and machine acceptance.
+title: ""
+labels: ["type:leaf"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Leaves are the only issues workers should claim — and only when labeled
+        `ready`. Do not invent design decisions here; cite them.
+        Standard: https://github.com/lbliii/elbysodic/blob/main/docs/plan/issue-lifecycle.md
+        After create: add readiness (`ready` or `blocked`), priority, pillar, and
+        category labels.
+  - type: input
+    id: parent_epic
+    attributes:
+      label: Parent epic
+      description: Issue number (or parent design if this leaf only implements that freeze).
+      placeholder: "54"
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: One sentence — what is true when this leaf closes.
+    validations:
+      required: true
+  - type: textarea
+    id: owned_paths
+    attributes:
+      label: Owned paths
+      description: Allowlist of files/dirs this worker may change.
+      placeholder: |
+        - src/elbysodic/web/pages/example/
+        - tests/test_forum_slice.py
+        - docs/product/example.md
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope paths
+      description: Optional explicit deny list (megafile protection).
+      placeholder: |
+        - src/elbysodic/web/app.py
+        - src/elbysodic/web/surface_contracts.py
+  - type: textarea
+    id: decisions_frozen
+    attributes:
+      label: Decisions frozen
+      description: ADR / design issue cites. Workers must not re-decide these.
+      placeholder: "ADR 0001; design #62"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Machine acceptance
+      description: Commands or checks CI/a worker can run. Prefer pytest / make check / contract-diff / documented smoke.
+      placeholder: |
+        - uv run pytest tests/test_forum_slice.py -q
+        - uv run ruff check .
+    validations:
+      required: true
+  - type: dropdown
+    id: readiness
+    attributes:
+      label: Readiness
+      options:
+        - blocked
+        - ready
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+      default: 1
+    validations:
+      required: true
