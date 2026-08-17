@@ -68,6 +68,17 @@ existing Elbysodic primitive or `_components/` pattern:
   row, director queue) stay Elbysodic-named even while a leaf still maps old
   Chirp-UI classes underneath.
 
+Public primitive classes live in `10-chirp-primitives.css`:
+
+| Class | Job |
+|---|---|
+| `elbysodic-btn` | Buttons and button-styled links (`--primary`, `--secondary`, `--ghost`, `--danger`, `--sm`). |
+| `elbysodic-field` | Labels, inputs, hints, and errors (`__label`, `__input`, `__hint`, `__error`, `--error`). |
+| `elbysodic-cluster` | Horizontal wrapped groups (`--xs`–`--lg`, `--between`, `--end`). |
+| `elbysodic-stack` | Vertical stacks (`--xs`–`--xl`). |
+
+Page leaves should use these names instead of importing `chirpui/*` macros.
+
 ## Decomposition Rule
 
 Moving CSS is not enough. Every touched selector should be classified as one of:
@@ -92,6 +103,7 @@ Use this table before adding a new card, row, poster, metric, or editor shell:
 | Media poster/fallback/overlay | Product-family CSS until shared behavior repeats across three families | Board, thread, character, post, and Network posters currently have different content and interaction contracts. |
 | Metric/signal rows | `_components/vocabulary.html` plus product-family wrappers | Use `metric()` and Elbysodic badges/counts; keep wrappers for needs reply, waiting, caught up, staff, and director signal language. |
 | Page command, pulse, preview, empty policy | `30-page-patterns.css` | These are route-level page vocabulary, not product-family cards. |
+| Button / field / cluster / stack | `10-chirp-primitives.css` (`elbysodic-btn`, `elbysodic-field`, `elbysodic-cluster`, `elbysodic-stack`) | Public primitive API. Leftover `chirpui-*` selectors in that file are a drain bridge. |
 | Form primitive | Elbysodic field classes | Product CSS may arrange fields; labels/inputs/tone come from Elbysodic primitives, not new Chirp-UI field classes. |
 | Responsive override | Owning CSS file | Put the media query after the base selector in the same family file. |
 
