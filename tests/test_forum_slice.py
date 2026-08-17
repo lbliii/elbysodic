@@ -3404,7 +3404,7 @@ def test_new_realm_locations_use_actionable_empty_states() -> None:
 
         assert response.status == 200
         content = _page_content(response.text)
-        assert "chirpui-section-header" in content
+        assert "elbysodic-page-section__header" in content
         assert "No scenes have opened here yet." in content
         assert 'href="/c/rl-nyc/boards/brooklyn/threads/new"' in content
         assert 'href="/c/rl-nyc/boards/queens-night-market/threads/new"' in content

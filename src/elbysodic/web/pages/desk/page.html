@@ -1,5 +1,4 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack %}
   {% from "_components/ui.html" import empty_policy_block, page_section %}
   {% from "_components/vocabulary.html" import command_action, lane_preview, metric_item, page_pulse %}
 {% end %}
@@ -8,11 +7,10 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
+<div class="elbysodic-stack elbysodic-stack--lg">
 <div class="elbysodic-editorial-page elbysodic-desk-page">
   <section class="elbysodic-desk-hero elbysodic-desk-hero--v2">
-    <div class="chirpui-stack chirpui-stack--sm">
+    <div class="elbysodic-stack elbysodic-stack--sm">
       <h1>Writer Desk</h1>
       <p class="elbysodic-copy-lead">Return to a scene, catch up on reading, or move a plot forward.</p>
     </div>
@@ -76,9 +74,8 @@
   {% end %}
   {% end %}
 </div>
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}

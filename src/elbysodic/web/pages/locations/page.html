@@ -1,5 +1,4 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "_components/boards.html" import board_signal %}
   {% from "_components/thread_summary.html" import activity_item %}
   {% from "_components/ui.html" import empty_policy_block %}
@@ -9,8 +8,7 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="76rem") %}
-{% call stack(gap="xl") %}
+<div class="elbysodic-stack elbysodic-stack--xl">
   <section class="elbysodic-world-hero">
     <div class="elbysodic-world-hero__copy">
       <p class="elbysodic-kicker">Locations</p>
@@ -26,9 +24,10 @@
     </div>
   </section>
 
-  {% call section_header("Major locations") %}
-  Parent locations stay cinematic; sublocations open inside each place.
-  {% end %}
+  <header class="elbysodic-page-section__header">
+    <h2>Major locations</h2>
+    <p>Parent locations stay cinematic; sublocations open inside each place.</p>
+  </header>
 
   {% if location_boards %}
   <div class="elbysodic-location-grid">
@@ -42,19 +41,19 @@
 
   {% if attention %}
   <section class="elbysodic-location-attention-pulse" aria-label="Location scenes needing reply">
-    {% call section_header("Scene turns here") %}
-    Location scenes where another writer has the last beat.
-    {% end %}
-  <div class="chirpui-stack chirpui-stack--sm elbysodic-activity-list">
+    <header class="elbysodic-page-section__header">
+      <h2>Scene turns here</h2>
+      <p>Location scenes where another writer has the last beat.</p>
+    </header>
+  <div class="elbysodic-stack elbysodic-stack--sm elbysodic-activity-list">
     {% for item in attention %}
     {{ activity_item(item.board, item.thread, item.latest_post, item.snippet, "needs reply", "warning") }}
     {% end %}
   </div>
   </section>
   {% end %}
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}
