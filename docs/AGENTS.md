@@ -17,6 +17,7 @@ Related docs:
 - `plans/README.md`
 - `docs/plan/issue-lifecycle.md`
 - `docs/adr/0001-issue-lifecycle.md`
+- `docs/adr/0002-chirp-ui-exit.md`
 
 ## Point Of View
 

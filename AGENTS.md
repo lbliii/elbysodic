@@ -39,8 +39,9 @@ The canonical product strategy spine lives in
   authorship or story context when a flow has both.
 - Prefer server-rendered Chirp pages and small progressive-enhancement islands.
   Do not turn the app into an SPA.
-- Use Chirp-UI patterns and token names first. Put Elbysodic theme tokens in
-  `src/elbysodic/web/static/elbysodic-theme.css`.
+- Keep Chirp + Kida + HTMX + Alpine. Do not adopt Chirp-UI as the design
+  system (ADR 0002). Put Elbysodic primitives and theme tokens in
+  `_components/` and `src/elbysodic/web/static/elbysodic-theme.css`.
 - Repeated PBP UI concepts belong in
   `src/elbysodic/web/pages/_components/` before they become page-local CSS.
 - Prefer repository and service methods over ad hoc SQL in page handlers.
