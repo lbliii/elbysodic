@@ -9,14 +9,19 @@ promoting page-local UI into `src/elbysodic/web/pages/_components/`.
 
 ## Current Product Layer
 
-Elbysodic already has a real product-design layer on top of Chirp-UI:
+Elbysodic already has a real product-design layer. Chirp-UI leftovers remain
+in templates and token aliases; they are an exit target (ADR 0002), not the
+foundation:
 
-- Chirp primitives provide structure: `surface`, `badge`, `avatar`,
-  `avatar_stack`, `timeline`, `description_list`, buttons, chips, fields,
-  clusters, stacks, breadcrumbs, and tooltips.
-- Elbysodic theme tokens map product colors, prose, focus, shell, media, card,
-  radius, and shadow behavior through Chirp token names in
-  `src/elbysodic/web/static/elbysodic-theme.css`.
+- Elbysodic primitives and `_components/` own structure going forward.
+  Leftover Chirp-UI names (`surface`, `badge`, `avatar`, `avatar_stack`,
+  `timeline`, `description_list`, buttons, chips, fields, clusters, stacks,
+  breadcrumbs, and tooltips) still appear in markup as a migration layer
+  to drain.
+- Elbysodic theme tokens map product colors, prose, focus, shell, media,
+  card, radius, and shadow behavior in
+  `src/elbysodic/web/static/elbysodic-theme.css`. Leftover `--chirpui-*`
+  names are aliases to drain, not new foundation tokens.
 - Shared PBP concepts are partially promoted into
   `src/elbysodic/web/pages/_components/`.
 - Ritual surfaces already exist for world, board/location, thread, character,
@@ -63,8 +68,9 @@ and some are repeated card patterns that need clearer product roles.
 
 ## Token Roles To Add Or Audit
 
-Current CSS already maps Chirp-UI core tokens. The next token pass should audit
-or introduce Elbysodic aliases for product meaning:
+Current CSS still maps leftover Chirp-UI core tokens. The next token pass
+should audit or introduce Elbysodic aliases for product meaning and stop
+adding `--chirpui-*` aliases:
 
 - `--elbysodic-key-dark`
 - `--elbysodic-key-light`
@@ -82,9 +88,9 @@ or introduce Elbysodic aliases for product meaning:
 - `--elbysodic-glass-border`
 - `--elbysodic-motion-*`
 
-These aliases should feed Chirp tokens or component CSS. They should not become
+These aliases should feed Elbysodic component CSS. They should not become
 director-editable contract fields until Appearance Studio and Blueprint
-contracts are explicitly reviewed.
+contracts are explicitly reviewed. Do not add new `--chirpui-*` aliases.
 
 ## First Canonical Proof Patterns
 

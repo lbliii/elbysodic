@@ -64,10 +64,13 @@ saturation.
    material use, and restraint rules. This can help a director generate a
    coherent board without raw CSS or skin work.
 
-## Relationship To Chirp-UI
+## Relationship To Chirp
 
-Chirp-UI is the foundation. Elbysodic should use its primitives, accessibility
-contracts, and token system first. The design system layer adds:
+Keep Chirp + Kida + HTMX + Alpine. Chirp-UI is leftover, not the foundation
+(ADR 0002). Elbysodic owns primitives and PBP components in
+`src/elbysodic/web/pages/_components/` and
+`src/elbysodic/web/static/elbysodic-theme.css`. The design system layer
+adds:
 
 - product-specific token aliases and defaults
 - PBP component vocabulary
@@ -76,10 +79,11 @@ contracts, and token system first. The design system layer adds:
 - state language for writing workflows
 - Appearance Studio constraints and warnings
 
-When a visual decision cannot be expressed through existing Chirp-UI tokens,
-prefer adding a small Elbysodic token with product meaning in
-`src/elbysodic/web/static/elbysodic-theme.css`. Do not create page-local color
-systems that bypass the theme.
+When a visual decision cannot be expressed through existing Elbysodic
+tokens, prefer adding a small Elbysodic token with product meaning in
+`src/elbysodic/web/static/elbysodic-theme.css`. Do not create page-local
+color systems that bypass the theme. Do not add new `chirpui-*` classes
+or `--chirpui-*` aliases.
 
 ## Token Direction
 
@@ -215,7 +219,7 @@ Ask these before accepting a UI or theme change:
 - Does this feel purpose-built for PBP, or could it be any SaaS dashboard?
 - Can a writer read a long thread here without fighting the styling?
 - Is the active face, scene, queue state, or staff/privacy boundary clearer?
-- Are Chirp-UI tokens doing the structural work?
+- Are Elbysodic tokens and `_components/` doing the structural work?
 - Is any new visual language repeated enough to become a component?
 - Does the page still work on mobile as a designed surface?
 - Are color, glow, blur, media, or motion serving hierarchy rather than noise?
