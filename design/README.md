@@ -2,14 +2,14 @@
 
 This folder is the home for Elbysodic's product design steward: the agent that
 cares about the design system, visual direction, product polish, interaction
-quality, and how Chirp-UI becomes an Elbysodic experience instead of a generic
-component library.
+quality, and how Chirp (Kida + HTMX + Alpine) plus Elbysodic primitives
+become a PBP experience instead of a generic component library.
 
-Chirp-UI gives Elbysodic the bones: accessible primitives, component structure,
-theme hooks, and a token system. This folder defines the product layer on top:
+Chirp gives Elbysodic the bones: filesystem pages, Kida templates, HTMX
+boosting, and Alpine islands. This folder defines the product layer:
 art direction, composition, hierarchy, editorial rhythm, PBP-specific visual
 vocabulary, and the standards for when a pattern should become shared product
-design.
+design. Chirp-UI is an exit target (ADR 0002), not the foundation.
 
 Current direction:
 
@@ -23,7 +23,7 @@ Current direction:
 ## What Belongs Here
 
 - Product design principles and visual direction.
-- Design-system rules for Elbysodic's use of Chirp-UI tokens.
+- Design-system rules for Elbysodic tokens and primitives (ADR 0002).
 - Component vocabulary guidance before patterns move into
   `src/elbysodic/web/pages/_components/`.
 - Review checklists for UI, theme, responsive, media, accessibility, and

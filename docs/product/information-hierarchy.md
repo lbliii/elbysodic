@@ -805,7 +805,7 @@ These tokens map to CSS classes and design tokens, not user-authored CSS.
 Post-level atmosphere should attach to the post surface/container when possible;
 the semantic article should remain focused on identity, metadata, and prose.
 This keeps decorative borders and washes outside the reading grid and lets
-Chirp-UI surface padding protect the text from tight custom frames.
+Elbysodic surface padding protect the text from tight custom frames.
 
 ## Size Strategy
 

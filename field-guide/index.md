@@ -21,6 +21,8 @@ Line budget: **80** (body below). Prefer links over essays.
   (orchestrator delegates); escape hatches `claim #N`, `board`, …
 - Standard: [`docs/plan/issue-lifecycle.md`](../docs/plan/issue-lifecycle.md)
 - ADR: [`docs/adr/0001-issue-lifecycle.md`](../docs/adr/0001-issue-lifecycle.md)
+- UI stack: [`docs/adr/0002-chirp-ui-exit.md`](../docs/adr/0002-chirp-ui-exit.md)
+  — keep Chirp + Kida + HTMX + Alpine; exit Chirp-UI.
 - Workers claim only issues labeled `type:leaf` **and** `ready`.
 - Leaves must list **owned paths** + **machine acceptance**; do not re-decide ADRs.
 - Templates: `.github/ISSUE_TEMPLATE/` (saga / epic / design / leaf / bug).

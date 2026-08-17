@@ -14,12 +14,12 @@ not by whichever page first needed the selector.
 
 Use these layers when adding or moving CSS:
 
-- **tokens**: Elbysodic brand, state, motion, density, media, and Chirp-UI token
-  mappings. This layer may define CSS custom properties and base document
-  defaults, but should not define product components.
-- **chirp-primitives**: narrow Elbysodic theming overrides for Chirp-UI
-  primitives. Prefer Chirp's native tone and appearance classes before adding a
-  custom override.
+- **tokens**: Elbysodic brand, state, motion, density, media, and remaining
+  Chirp-UI token aliases during the ADR 0002 drain. This layer may define CSS
+  custom properties and base document defaults, but should not define product
+  components.
+- **chirp-primitives**: migration overrides for leftover `chirpui-*` markup.
+  Drain toward Elbysodic primitive classes; do not add new Chirp-UI bridges.
 - **shell**: app chrome, sidebar, top navigation, mobile drawer, route tabs,
   identity menu, notification shell affordances, and global navigation
   behavior.
@@ -56,32 +56,27 @@ Responsive overrides live in the same layer as the selector they adapt. Do not
 add a catch-all responsive file unless it is a short-lived migration staging
 step that is immediately drained back to owner layers.
 
-## Chirp Adoption Rule
+## Primitive Rule (ADR 0002)
 
-Before adding an Elbysodic selector that styles a primitive UI shape, check
-whether Chirp-UI already owns the shape:
+Before adding an Elbysodic selector that styles a primitive UI shape, prefer an
+existing Elbysodic primitive or `_components/` pattern:
 
-- buttons: use Chirp button size, tone, and appearance classes.
-- badges/chips: use Chirp badge or facet-chip classes unless the text carries a
-  PBP lifecycle meaning that needs an Elbysodic wrapper.
-- cards/surfaces: use Chirp card/surface tone and appearance classes for generic
-  panels. Keep Elbysodic wrappers for PBP concepts.
-- fields: use Chirp field tone and appearance classes for form state.
-- overlays: use Chirp z-index tokens before introducing local numeric layers.
-
-When the component is product-semantic, compose Chirp primitives underneath an
-Elbysodic name. A wanted hook card, face card, thread state lane, claim row, or
-director queue is Elbysodic-owned even if its border, badge, or button comes
-from Chirp.
+- buttons, badges, cards, fields, and overlays are Elbysodic-owned. Do not add
+  new `chirpui-*` classes or `--chirpui-*` custom properties.
+- leftover `chirpui-*` markup is a drain queue, not a pattern to copy.
+- PBP-semantic objects (wanted hook card, face card, thread state lane, claim
+  row, director queue) stay Elbysodic-named even while a leaf still maps old
+  Chirp-UI classes underneath.
 
 ## Decomposition Rule
 
 Moving CSS is not enough. Every touched selector should be classified as one of:
 
-- **Chirp primitive**: replace or reduce local CSS with Chirp classes/tokens.
+- **Elbysodic primitive**: buttons, fields, cluster, stack, surface chrome
+  owned by theme tokens / primitive CSS (ADR 0002).
 - **Elbysodic PBP component**: keep and move into the named product layer.
 - **Page composition**: keep temporarily with a clear route/surface owner.
-- **Legacy**: list in the ledger with the intended replacement path.
+- **Legacy**: leftover `chirpui-*` listed in the ledger with a drain path.
 
 This keeps the CSS split aligned with the product architecture instead of only
 making the file tree look cleaner.
@@ -92,18 +87,18 @@ Use this table before adding a new card, row, poster, metric, or editor shell:
 
 | Pattern | Owner | Rule |
 |---|---|---|
-| Generic panel/card chrome | Chirp `surface` or `card` | Use Chirp appearance and tone classes; keep an Elbysodic class only for product semantics. |
+| Generic panel/card chrome | Elbysodic primitive / surface | Use Elbysodic classes; do not add new `chirpui-*` chrome. |
 | Product card body/layout | Product-family CSS | Boards, threads, faces, wanted hooks, claims, world materials, Network, and plotting own their internal grids and PBP labels. |
 | Media poster/fallback/overlay | Product-family CSS until shared behavior repeats across three families | Board, thread, character, post, and Network posters currently have different content and interaction contracts. |
-| Metric/signal rows | `_components/vocabulary.html` plus product-family wrappers | Use `metric()` and Chirp badges/stats where possible; keep wrappers for needs reply, waiting, caught up, staff, and director signal language. |
+| Metric/signal rows | `_components/vocabulary.html` plus product-family wrappers | Use `metric()` and Elbysodic badges/counts; keep wrappers for needs reply, waiting, caught up, staff, and director signal language. |
 | Page command, pulse, preview, empty policy | `30-page-patterns.css` | These are route-level page vocabulary, not product-family cards. |
-| Form primitive | Chirp field classes | Product CSS may arrange fields, but labels/inputs/tone/appearance should come from Chirp. |
+| Form primitive | Elbysodic field classes | Product CSS may arrange fields; labels/inputs/tone come from Elbysodic primitives, not new Chirp-UI field classes. |
 | Responsive override | Owning CSS file | Put the media query after the base selector in the same family file. |
 
 If a selector only sets background, border, radius, padding, hover elevation, or
-form/control chrome, try Chirp first. If a selector encodes PBP state,
-identity, authorship, continuity, or staff visibility, keep an Elbysodic
-wrapper and compose Chirp underneath it.
+form/control chrome, add or reuse an Elbysodic primitive. If a selector encodes
+PBP state, identity, authorship, continuity, or staff visibility, keep an
+Elbysodic wrapper. Do not expand Chirp-UI usage.
 
 ## Browser QA Coverage
 
