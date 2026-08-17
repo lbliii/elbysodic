@@ -9756,7 +9756,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 interest = await outsider_client.post(
                     "/characters/rogue/hooks/coffee-before-the-crisis",
-                    body=b"intent=express_interest",
+                    body=b"_action=express_interest",
                     headers=_FORM,
                 )
                 assert interest.status == 302
@@ -9825,7 +9825,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 room_response = await owner_client.post(
                     "/characters/rogue/hooks/coffee-before-the-crisis",
-                    body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                    body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                     headers=_FORM,
                 )
                 assert room_response.status == 302
