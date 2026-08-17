@@ -9598,14 +9598,14 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                 leak_inbox = await leak_client.get("/notifications")
                 leak_mark_all = await leak_client.post(
                     "/notifications",
-                    body=b"intent=mark_all_read",
+                    body=b"_action=mark_all_read",
                     headers=_FORM,
                 )
                 leak_open = await leak_client.post(
                     "/notifications",
                     body=urlencode(
                         {
-                            "intent": "open",
+                            "_action": "open",
                             "notification_id": str(leak_notification.id),
                         }
                     ).encode(),
@@ -9796,7 +9796,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
                 "/notifications",
                 body=urlencode(
                     {
-                        "intent": "open",
+                        "_action": "open",
                         "notification_id": str(notification.id),
                     }
                 ).encode(),
@@ -10545,7 +10545,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
                 "/notifications",
                 body=urlencode(
                     {
-                        "intent": "open",
+                        "_action": "open",
                         "notification_id": str(notification.id),
                     }
                 ).encode(),
@@ -11001,11 +11001,13 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
             assert "A watched reply arrives." in notifications.text
             assert "Notify Face" in notifications.text
             assert "new" in notifications.text
+            assert 'name="_action" value="mark_all_read"' in notifications.text
+            assert 'name="_action" value="open"' in notifications.text
 
             item = services.notifications().items[0]
             marked_all = await client.post(
                 "/notifications",
-                body=b"intent=mark_all_read",
+                body=b"_action=mark_all_read",
                 headers=_FORM,
             )
             assert marked_all.status == 302
@@ -11019,7 +11021,7 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
 
             opened = await client.post(
                 "/notifications",
-                body=f"intent=open&notification_id={item.notification.id}".encode(),
+                body=f"_action=open&notification_id={item.notification.id}".encode(),
                 headers=_FORM,
             )
             assert opened.status == 302
