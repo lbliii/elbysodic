@@ -9758,7 +9758,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
                 "/wanted/human-un-liaison-for-b24",
                 body=urlencode(
                     {
-                        "intent": "express_prospective_interest",
+                        "_action": "express_prospective_interest",
                         "prospective_character_name": "Val Cooper",
                         "note": "I would app her as a UN pressure point.",
                     }
@@ -9830,7 +9830,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
 
             reserve = await creator_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=reserve_interest&interest_id={prospective.id}".encode(),
+                body=f"_action=reserve_interest&interest_id={prospective.id}".encode(),
                 headers=_FORM,
             )
             assert reserve.status == 302
@@ -9946,7 +9946,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -9972,7 +9972,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
 
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
