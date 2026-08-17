@@ -9247,7 +9247,7 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
                 "/claims",
                 body=urlencode(
                     {
-                        "intent": "create_claim",
+                        "_action": "create_claim",
                         "claim_type_id": str(face_claim.id),
                         "label": "Cyclops tactical visor",
                         "status": "claimed",
@@ -9270,7 +9270,7 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
                 "/claims",
                 body=urlencode(
                     {
-                        "intent": "update_claim",
+                        "_action": "update_claim",
                         "claim_id": str(created_claim.id),
                         "label": "Cyclops visor reserve",
                         "status": "reserved",
@@ -9299,6 +9299,10 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
         assert directory.status == 200
         assert "Record claim" in directory.text
         assert "Cyclops" in directory.text
+        assert 'name="_action" value="create_claim"' in directory.text
+        assert 'name="_action" value="update_claim"' in directory.text
+        assert 'name="intent" value="create_claim"' not in directory.text
+        assert 'name="intent" value="update_claim"' not in directory.text
         assert response.status == 302
         assert update_response.status == 302
         assert manual_claim.label == "Cyclops visor reserve"
