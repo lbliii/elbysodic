@@ -1,0 +1,219 @@
+{% imports %}
+  {% from "chirpui/badge.html" import badge %}
+  {% from "chirpui/layout.html" import section_header %}
+  {% from "chirpui/surface.html" import surface %}
+  {% from "_components/ui.html" import empty_policy_block %}
+{% end %}
+
+{% def operations_card(card) %}
+<article class="elbysodic-operations-card elbysodic-operations-card--{{ card.variant }}">
+  <header class="elbysodic-operations-card__header">
+    <div>
+      <p class="elbysodic-section-kicker">{{ card.kicker }}</p>
+      <h2><a class="chirpui-link" href="{{ card.href }}">{{ card.title }}</a></h2>
+    </div>
+    <strong>{{ card.count }}</strong>
+  </header>
+  <p class="elbysodic-copy-summary">{{ card.summary }}</p>
+  {% if card.items %}
+  <ul class="elbysodic-operations-list">
+    {% for item in card.items %}
+    <li>{{ item }}</li>
+    {% end %}
+  </ul>
+  {% end %}
+  <a class="chirpui-btn chirpui-btn--secondary" href="{{ card.href }}">{{ card.cta }}</a>
+</article>
+{% end %}
+
+{% def operations_desk(operations) %}
+  <section class="elbysodic-operations-hero elbysodic-editorial-hero" aria-labelledby="operations-heading">
+    <div>
+      <p class="elbysodic-section-kicker">Director desk</p>
+      <h2 id="operations-heading">Operations</h2>
+      <p class="elbysodic-copy-section">
+        Applications, claims, reserves, hooks, and health signals that need a decision today.
+      </p>
+    </div>
+    <div class="elbysodic-operations-hero__badges">
+      {{ badge("read-only", variant="muted") if not operations.can_manage else "" }}
+      {{ badge(operations.ready_applications | length ~ " ready apps", variant="success") }}
+      {{ badge(operations.blocked_applications | length ~ " blocked apps", variant="warning") }}
+    </div>
+  </section>
+
+  {% if operations.lanes %}
+  <nav class="elbysodic-operations-lanes" aria-label="Operations attention lanes">
+    {% for lane in operations.lanes %}
+    <a class="elbysodic-operations-lane elbysodic-operations-lane--{{ lane.variant }}" href="{{ lane.href }}">
+      <strong>{{ lane.count }}</strong>
+      <span>
+        <em>{{ lane.label }}</em>
+        <small>{{ lane.summary }}</small>
+      </span>
+    </a>
+    {% end %}
+  </nav>
+  {% end %}
+
+  <nav class="elbysodic-operations-shortcuts" aria-label="Operations queue shortcuts">
+    {% for shortcut in operations.shortcuts %}
+    <a href="{{ shortcut.href }}">
+      <strong>{{ shortcut.label }}</strong>
+      <span>{{ shortcut.count }}</span>
+      <small>{{ shortcut.summary }}</small>
+    </a>
+    {% end %}
+  </nav>
+
+  {% if operations.cards %}
+  <section id="director-operation-signals" class="elbysodic-operations-grid" aria-label="Director operation signals">
+    {% for card in operations.cards %}
+    {{ operations_card(card) }}
+    {% end %}
+  </section>
+  {% else %}
+  {{ empty_policy_block("No director operations need attention right now.", "Applications, claim conflicts, reserves, wanted movement, ready-for-scene handoffs, drafts, and health warnings will appear here when they need movement.", "Operations clear") }}
+  {% end %}
+
+  <details class="elbysodic-operations-diagnostics">
+    <summary>
+      <span>Technical checks</span>
+      <small>Queue contracts, runtime, and persistence</small>
+    </summary>
+  <div class="elbysodic-operations-diagnostics__body">
+  <section class="elbysodic-operations-panel" aria-labelledby="operations-parity-heading">
+    <p class="elbysodic-section-kicker">Parity check</p>
+    <h2 id="operations-parity-heading">Queue contracts</h2>
+    <ul class="elbysodic-operations-list">
+      {% for row in operations.parity_rows %}
+      <li>
+        <a class="chirpui-link" href="{{ row.first_action_href }}">{{ row.label }}</a>
+        <span>{{ row.count }} - list <a class="chirpui-link" href="{{ row.list_href }}">source</a></span>
+        <small>{{ row.action_scope }} - {{ row.notification_scope }} - {{ row.diagnostic_scope }}</small>
+      </li>
+      {% end %}
+    </ul>
+  </section>
+
+  {% if operations.inspection %}
+  <section class="elbysodic-operations-panel" aria-labelledby="hosted-inspection-heading">
+    <p class="elbysodic-section-kicker">Live check</p>
+    <h2 id="hosted-inspection-heading">Runtime and persistence</h2>
+    <dl class="elbysodic-definition-grid">
+      <div>
+        <dt>App version</dt>
+        <dd>{{ operations.inspection.app_version }}</dd>
+      </div>
+      <div>
+        <dt>Environment</dt>
+        <dd>{{ operations.inspection.environment }}</dd>
+      </div>
+      <div>
+        <dt>Secure cookies</dt>
+        <dd>{{ "enabled" if operations.inspection.secure_cookies else "disabled" }}</dd>
+      </div>
+      <div>
+        <dt>Database path</dt>
+        <dd>{{ operations.inspection.database_path }}</dd>
+      </div>
+      <div>
+        <dt>Database directory</dt>
+        <dd>{{ operations.inspection.database_parent_path }} - {{ "present" if operations.inspection.database_parent_present else "missing" }}</dd>
+      </div>
+      <div>
+        <dt>Database file</dt>
+        <dd>{{ "present" if operations.inspection.database_file_present else "missing" }}</dd>
+      </div>
+      <div>
+        <dt>Volume mount</dt>
+        <dd>{{ operations.inspection.volume_mount_path }} - {{ "present" if operations.inspection.volume_mount_present else "not present" }}</dd>
+      </div>
+      <div>
+        <dt>Journal mode</dt>
+        <dd>{{ operations.inspection.journal_mode }}</dd>
+      </div>
+      <div>
+        <dt>Integrity check</dt>
+        <dd>{{ operations.inspection.integrity_check }}</dd>
+      </div>
+      <div>
+        <dt>Schema</dt>
+        <dd>{{ operations.inspection.sqlite_user_version }} / {{ operations.inspection.current_schema_version }}</dd>
+      </div>
+      <div>
+        <dt>Migration ledger</dt>
+        <dd>{{ operations.inspection.latest_migration_version }}</dd>
+      </div>
+      <div>
+        <dt>Realms</dt>
+        <dd>{{ operations.inspection.community_count }}</dd>
+      </div>
+      <div>
+        <dt>Public-ready realms</dt>
+        <dd>{{ operations.inspection.public_ready_realm_count }}</dd>
+      </div>
+      <div>
+        <dt>Seed demo mode</dt>
+        <dd>{{ "enabled" if operations.inspection.demo_mode_enabled else "disabled" }}</dd>
+      </div>
+      <div>
+        <dt>Auto seed demo</dt>
+        <dd>{{ "enabled" if operations.inspection.auto_seed_demo_enabled else "disabled" }}</dd>
+      </div>
+      <div>
+        <dt>Opening</dt>
+        <dd>{{ operations.inspection.launch_status }}</dd>
+      </div>
+    </dl>
+  </section>
+  {% end %}
+  </div>
+  </details>
+
+  {% if operations.ready_applications or operations.blocked_applications %}
+  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">
+    {% call section_header("Applications") %}
+    The fastest split between ready review and claim-blocked submissions.
+    {% end %}
+    <div class="elbysodic-operations-columns">
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-operations-panel">
+        <h2 id="application-triage-heading">Ready to review</h2>
+        {% if operations.ready_applications %}
+        <ul class="elbysodic-operations-list">
+          {% for item in operations.ready_applications %}
+          <li>
+            <a class="chirpui-link" href="/applications/{{ item.character.slug }}">{{ item.character.name }}</a>
+            <span>{{ item.membership.display_name }}</span>
+          </li>
+          {% end %}
+        </ul>
+        {% else %}
+        <p class="elbysodic-empty-state">No submitted applications are ready right now.</p>
+        {% end %}
+      </article>
+      {% end %}
+
+      {% call surface(variant="elevated") %}
+      <article class="elbysodic-operations-panel">
+        <h2>Blocked by claims</h2>
+        {% if operations.blocked_applications %}
+        <ul class="elbysodic-operations-list">
+          {% for item in operations.blocked_applications %}
+          <li>
+            <a class="chirpui-link" href="/applications/{{ item.character.slug }}">{{ item.character.name }}</a>
+            <span>{{ item.claim_conflict_summary }}</span>
+          </li>
+          {% end %}
+        </ul>
+        {% else %}
+        <p class="elbysodic-empty-state">No submitted applications are blocked by claims.</p>
+        {% end %}
+      </article>
+      {% end %}
+    </div>
+  </section>
+  {% end %}
+
+{% end %}

@@ -375,6 +375,28 @@ def _build_lanes(
                 "",
             )
         )
+    if first_playable_openings and activation.stage == "active_scene":
+        lanes.append(
+            DeskLane(
+                "discovery",
+                "Discovery",
+                "Wanted hooks and openings that can start the next scene.",
+                "/discover",
+                "Open discovery",
+                len(first_playable_openings),
+                [
+                    DeskPreviewItem(
+                        opening.href,
+                        opening.label,
+                        opening.detail,
+                        opening.summary,
+                        opening.kind,
+                    )
+                    for opening in first_playable_openings[:3]
+                ],
+                "",
+            )
+        )
     unread_items = [item for item in notifications.items if item.is_unread]
     if unread_items:
         lanes.append(

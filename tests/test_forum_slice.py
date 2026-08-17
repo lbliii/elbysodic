@@ -1718,7 +1718,7 @@ def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
         assert "playing as Moira MacTaggert" in studio.text
-        assert 'href="/studio/appearance"' in studio.text
+        assert 'href="/studio/structure"' in studio.text
         assert "Director Studio is visible as a preview" not in studio.text
 
     asyncio.run(run())
@@ -1783,7 +1783,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
         assert any(cookie.startswith("elbysodic_dev_identity=") for cookie in set_cookies)
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
-        assert 'href="/studio/appearance"' in studio.text
+        assert 'href="/studio/structure"' in studio.text
 
     asyncio.run(run())
 
@@ -3309,6 +3309,20 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "elbysodic-identity-menu__quick-links" in index.text
             assert "elbysodic-identity-menu__notification-link" in index.text
             assert "elbysodic-identity-menu__theme-row" in index.text
+            identity_panel = re.search(
+                r'<div class="elbysodic-identity-menu__panel">(?P<body>.*?)</details>',
+                index.text,
+                re.S,
+            )
+            assert identity_panel is not None
+            identity_menu = identity_panel.group("body")
+            assert "/members/" in identity_menu
+            assert ">Writer</a>" in identity_menu
+            assert "/notifications" in identity_menu
+            assert "Identity &amp; security" in identity_menu
+            assert "/my/threads" not in identity_menu
+            assert ">Queue</a>" not in identity_menu
+            assert ">Threads</a>" not in identity_menu
             assert "playing as Rogue" in index.text
             assert "Recent activity" not in index.text
             assert "Latest details:" not in index.text
@@ -3708,13 +3722,14 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
             assert "playing as Rogue" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
-            assert "Roster" in desk.text
-            assert "Discovery" in desk.text
             assert "/my/threads" in desk.text
             assert "/notifications" in desk.text
-            assert "/characters" in desk.text
-            assert "/applications" in desk.text
-            assert "/discover" in desk.text
+            assert '<span class="chirpui-sidebar__label">Queue</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Inbox</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Roster</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Plotting</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Applications</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Discovery</span>' not in desk.text
 
     asyncio.run(run())
 
@@ -3990,20 +4005,12 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Needs attention" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
-            assert "Studio rooms" in studio.text
-            assert "Operations" in studio.text
-            assert "Discovery profile" in studio.text
-            assert "Structure" in studio.text
-            assert "Intake" in studio.text
-            assert "Appearance" in studio.text
-            assert "Content" in studio.text
-            assert 'href="/studio/operations"' in studio.text
+            assert "Studio rooms" not in studio.text
+            assert "Today" in studio.text
+            assert "Shape" in studio.text
+            assert "Open" in studio.text
             assert 'href="/studio/launch"' in studio.text
-            assert 'href="/studio/discovery"' in studio.text
             assert 'href="/studio/structure"' in studio.text
-            assert 'href="/studio/intake"' in studio.text
-            assert 'href="/studio/appearance"' in studio.text
-            assert 'href="/studio/content"' in studio.text
             assert 'id="chirp-shell-actions"' in studio.text
             assert "Daily director console" not in studio.text
             assert 'id="world-structure"' not in _page_content(studio.text)
@@ -4012,6 +4019,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'id="casting-applications"' not in _page_content(studio.text)
             assert 'id="continuity-events"' not in _page_content(studio.text)
             assert structure.status == 200
+            assert "Shape" in structure.text
+            assert 'href="/studio/appearance"' in structure.text
+            assert 'href="/studio/intake"' in structure.text
+            assert 'href="/studio/content"' in structure.text
             assert "data-elbysodic-spotlight-composer" not in structure.text
             assert "Board map" in structure.text
             assert "Board map audit" in structure.text
@@ -4042,25 +4053,25 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/applications"' in content.text
             assert 'href="/wanted"' in content.text
             assert "Current event" in content.text
-            assert operations.status == 200
-            assert "Director desk" in operations.text
-            assert '<h1 id="operations-heading">Operations</h1>' in operations.text
-            assert "Technical checks" in operations.text
-            assert '<details class="elbysodic-operations-diagnostics">' in operations.text
-            assert "No director operations need attention right now." in operations.text
-            assert "Operations clear" in operations.text
-            assert "Review queue" not in operations.text
-            assert "Claim conflicts" not in operations.text
-            assert "Active reserves" not in operations.text
-            assert "Hooks with movement" not in operations.text
-            assert "Ready for scene" not in operations.text
-            assert "Staff notifications" not in operations.text
-            assert "Production health" not in operations.text
-            assert "Draft materials" not in operations.text
-            assert "Dry-run intake" not in operations.text
-            assert "Release smoke" not in operations.text
-            assert "Community builder checklist" not in operations.text
-            assert "Ready to review" not in operations.text
+            assert operations.status == 302
+            assert _response_header(operations, "location").endswith("/studio")
+            assert "Director desk" in studio.text
+            assert 'id="operations-heading"' in studio.text
+            assert "Technical checks" in studio.text
+            assert '<details class="elbysodic-operations-diagnostics">' in studio.text
+            assert "No director operations need attention right now." in studio.text
+            assert "Operations clear" in studio.text
+            assert "Claim conflicts" not in studio.text
+            assert "Active reserves" not in studio.text
+            assert "Hooks with movement" not in studio.text
+            assert "Ready for scene" not in studio.text
+            assert "Staff notifications" not in studio.text
+            assert "Production health" not in studio.text
+            assert "Draft materials" not in studio.text
+            assert "Dry-run intake" not in studio.text
+            assert "Release smoke" not in studio.text
+            assert "Community builder checklist" not in studio.text
+            assert "Ready to review" not in studio.text
 
         services = create_services(path=":memory:")
         staff = resolve_seed_persona(services.repo, "xmen_staff")
@@ -4087,6 +4098,8 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Intake and claims" in launch.text
         assert "Wanted hooks" in launch.text
         assert "Appearance" in launch.text
+        assert "Discovery profile" in launch.text
+        assert 'href="/studio/discovery"' in launch.text
         assert "Invite-only before public self-serve." in launch.text
         assert "Open Studio" not in _page_content(launch.text)
         assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
@@ -4175,8 +4188,11 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         operations_model = staff_services.director_operations()
         parity = {row.label: row for row in operations_model.parity_rows}
         async with TestClient(app) as client:
-            operations = await client.get("/studio/operations")
+            operations_redirect = await client.get("/studio/operations")
+            operations = await client.get("/studio")
 
+        assert operations_redirect.status == 302
+        assert "/studio" in _response_header(operations_redirect, "location")
         assert [(lane.label, lane.href) for lane in operations_model.lanes] == [
             ("Needs decision", f"/studio/access-requests/{access_request.id}")
         ]
@@ -5843,7 +5859,8 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         )
         member_app = create_app(debug=False, services=member_services)
         async with TestClient(member_app) as member_client:
-            member_operations = await member_client.get("/studio/operations")
+            member_redirect = await member_client.get("/studio/operations")
+            member_operations = await member_client.get("/studio")
 
         alex_membership = repo.get_membership_by_username(community.id, "alex")
         alex_user = repo.get_user(alex_membership.user_id)
@@ -5853,8 +5870,9 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
             services=AppServices(repo, DemoSeed(community, alex_user, alex_membership, cyclops)),
         )
         async with TestClient(staff_app) as staff_client:
-            staff_operations = await staff_client.get("/studio/operations")
+            staff_operations = await staff_client.get("/studio")
 
+        assert member_redirect.status == 302
         assert member_operations.status == 200
         assert "read-only" in member_operations.text
         assert "Privacy Queue Face" not in member_operations.text
@@ -5958,7 +5976,6 @@ appearance:
             page = await client.get("/studio/intake")
             assert 'id="chirp-shell-actions"' in page.text
             assert 'href="/studio"' in page.text
-            assert 'href="/studio/operations"' in page.text
             response = await client.post(
                 "/studio/intake",
                 body=urlencode(
@@ -6665,16 +6682,21 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Writer Desk" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
-            assert "Roster" in desk.text
             assert "World Map" not in desk.text
             assert 'class="chirpui-sidebar__section-title">On Your Desk</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Queue</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Inbox</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Roster</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Plotting</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Applications</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Discovery</span>' not in desk.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in desk.text
 
             studio = await client.get("/studio")
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Production" in studio.text
-            assert "Studio rooms" in studio.text
+            assert "Needs attention" in studio.text
             assert "World Map" not in studio.text
             assert 'class="chirpui-sidebar__section-title">In Studio</span>' not in studio.text
             assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
@@ -6688,6 +6710,11 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
             assert 'class="chirpui-sidebar__section-title">In Wanted</span>' in wanted.text
+            assert '<span class="chirpui-sidebar__label">Casting desk</span>' in wanted.text
+            assert '<span class="chirpui-sidebar__label">Claims</span>' in wanted.text
+            assert '<span class="chirpui-sidebar__label">Applications</span>' not in wanted.text
+            assert '<span class="chirpui-sidebar__label">Plotting</span>' not in wanted.text
+            assert '<span class="chirpui-sidebar__label">Discovery</span>' not in wanted.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in wanted.text
 
         services = create_services(path=":memory:")
@@ -6706,6 +6733,11 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
         assert 'aria-label="Studio"' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">In Studio</span>' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">Production</span>' not in staff_studio.text
+        assert '<span class="chirpui-sidebar__label">Today</span>' in staff_studio.text
+        assert '<span class="chirpui-sidebar__label">Shape</span>' in staff_studio.text
+        assert '<span class="chirpui-sidebar__label">Open</span>' in staff_studio.text
+        assert 'href="/studio/structure"' in staff_studio.text
+        assert 'href="/studio/launch"' in staff_studio.text
 
     asyncio.run(run())
 
@@ -9572,6 +9604,7 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
             )
             updated_editor = await client.get("/studio/intake")
             studio = await client.get("/studio")
+            structure = await client.get("/studio/structure")
             claims = await client.get("/claims")
             application_form = await client.get("/applications/new")
 
@@ -9608,7 +9641,8 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
         assert "Visual Claim" in updated_editor.text
         assert "Story lane" in updated_editor.text
         assert studio.status == 200
-        assert 'href="/studio/intake"' in studio.text
+        assert structure.status == 200
+        assert 'href="/studio/intake"' in structure.text
         assert claims.status == 200
         assert "Birthright Claim" in claims.text
         assert "Visual Claim" in claims.text

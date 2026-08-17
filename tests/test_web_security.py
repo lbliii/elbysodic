@@ -1057,7 +1057,19 @@ def test_access_request_notes_do_not_leak_to_public_or_member_surfaces(monkeypat
                 headers={"Cookie": _cookie_header(cookies)},
             )
 
-        for response in (public_realm, network, request_access, member_studio, member_operations):
+            member_today = await client.get(
+                "/c/x-men-apocalypse/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        for response in (
+            public_realm,
+            network,
+            request_access,
+            member_studio,
+            member_operations,
+            member_today,
+        ):
             assert "PRIVATE ACCESS NOTE" not in response.text
             assert "private-prospect@example.com" not in response.text
             assert "Secret transfer" not in response.text
@@ -1066,7 +1078,13 @@ def test_access_request_notes_do_not_leak_to_public_or_member_surfaces(monkeypat
         assert network.status == 200
         assert request_access.status == 200
         assert member_studio.status == 403
-        assert member_operations.status == 200
+        assert member_operations.status == 302
+        assert _response_headers(member_operations, "location")
+        assert any(
+            value.endswith("/studio") or "/studio" in value
+            for value in _response_headers(member_operations, "location")
+        )
+        assert member_today.status == 200
 
     asyncio.run(run())
 

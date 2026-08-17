@@ -116,9 +116,11 @@ Scoped pages own durable workflows:
 - `/applications` owns draft, submitted, and revision-requested intake.
   Accepted applications become character pages.
 - `/plotting` owns planning rooms and interest handoffs.
-- `/studio/operations` owns daily director production work.
-- `/studio/launch` owns launch readiness and setup sequencing.
-- `/studio/discovery` owns the Writer Network listing and public fit signals.
+- `/studio` owns Today: attention lanes plus the daily operations console.
+  `/studio/operations` redirects to `/studio`.
+- `/studio/launch` owns Open: launch readiness, invitations, access requests,
+  and the discovery-profile entry.
+- `/studio/discovery` remains the discovery-profile editor, reached from Open.
 - `/studio/structure` owns the audit view for Public Home Spotlight, board
   map, sidebar language, and navigation health. Object-local surfaces own the
   first edit path: realm home controls manage the home spotlight, and board or
