@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
+import io
 import re
+import tokenize
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, cast
@@ -13,7 +16,14 @@ from chirp.testing import TestClient
 from itsdangerous import BadData, URLSafeTimedSerializer
 
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
-from elbysodic.services import create_services
+from elbysodic.domain.context import (
+    DEFAULT_COMMUNITY_ID,
+    DEFAULT_COMMUNITY_SLUG,
+    CommunityContext,
+    resolve_current_community,
+)
+from elbysodic.services import AppServices, create_services
+from elbysodic.services.access import RequestIdentityResolver
 from elbysodic.services.auth import session_token_hash
 from elbysodic.services.network import (
     network_explore,
@@ -32,6 +42,38 @@ _POST_FORM_TEMPLATE_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 _PAGES_DIR = Path(__file__).parents[1] / "src" / "elbysodic" / "web" / "pages"
+_SRC_DIR = Path(__file__).parents[1] / "src" / "elbysodic"
+_MULTI_TENANCY_DOC = Path(__file__).parents[1] / "docs" / "architecture" / "multi-tenancy.md"
+
+
+def _python_call_sites(source: str, name: str) -> list[tuple[int, str]]:
+    """Return executable `name(` sites, ignoring comments and string literals."""
+
+    previous: tokenize.TokenInfo | None = None
+    sites: list[tuple[int, str]] = []
+    for token in tokenize.generate_tokens(io.StringIO(source).readline):
+        if token.type in {
+            tokenize.COMMENT,
+            tokenize.NL,
+            tokenize.NEWLINE,
+            tokenize.ENCODING,
+            tokenize.INDENT,
+            tokenize.DEDENT,
+            tokenize.ENDMARKER,
+        }:
+            continue
+        if token.type == tokenize.STRING:
+            previous = None
+            continue
+        if (
+            previous is not None
+            and previous.type == tokenize.NAME
+            and previous.string == name
+            and token.exact_type == tokenize.LPAR
+        ):
+            sites.append((previous.start[0], previous.line.strip()))
+        previous = token
+    return sites
 
 
 def _package_version(name: str) -> str:
@@ -2147,3 +2189,59 @@ def test_session_cookies_stay_http_local_in_development(monkeypatch) -> None:
         assert "Secure" not in set_cookie
 
     asyncio.run(run())
+
+
+def _request_identity_call_offenders(name: str) -> list[str]:
+    offenders: list[str] = []
+    for directory in (_SRC_DIR / "web", _SRC_DIR / "services"):
+        for path in sorted(directory.rglob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            relative = path.relative_to(_SRC_DIR)
+            for lineno, line in _python_call_sites(source, name):
+                offenders.append(f"{relative}:{lineno}:{line}")
+    return offenders
+
+
+def test_request_identity_resolution_never_calls_resolve_current_community() -> None:
+    assert _request_identity_call_offenders("resolve_current_community") == []
+    assert _request_identity_call_offenders("CommunityContext") == []
+
+    resolver_source = inspect.getsource(RequestIdentityResolver)
+    assert "resolve_current_community(" not in resolver_source
+    assert "CommunityContext(" not in resolver_source
+
+    for_request_source = inspect.getsource(AppServices.for_request)
+    assert "RequestIdentityResolver" in for_request_source
+    assert "resolve_current_community(" not in for_request_source
+    assert "CommunityContext(" not in for_request_source
+
+    get_services_source = inspect.getsource(get_services)
+    assert ".for_request(request)" in get_services_source
+    assert "resolve_current_community(" not in get_services_source
+
+
+def test_for_request_identity_does_not_mint_from_community_context_defaults() -> None:
+    assert DEFAULT_COMMUNITY_ID == 1
+    assert DEFAULT_COMMUNITY_SLUG == "x-men-apocalypse"
+    community_doc = " ".join((CommunityContext.__doc__ or "").split())
+    assert "not a request minting path" in community_doc
+    assert "for_request" in community_doc
+    assert "RequestIdentityResolver" in community_doc
+
+    helper_doc = " ".join((resolve_current_community.__doc__ or "").split())
+    assert "legacy" in helper_doc
+    assert "not a request minting path" in helper_doc
+    assert "for_request" in helper_doc
+    assert "RequestIdentityResolver" in helper_doc
+
+    identity_docs = _MULTI_TENANCY_DOC.read_text(encoding="utf-8")
+    boundary = identity_docs.split("## Request Identity Boundary", 1)[1]
+    assert "AppServices.for_request()" in boundary
+    assert "RequestIdentityResolver" in boundary
+    assert "`CommunityContext()` defaults" in boundary
+    assert "not a request minting path" in boundary
+    assert "`resolve_current_community()`" in boundary
+    assert "legacy helper" in boundary
+    assert "DEFAULT_COMMUNITY_SLUG" in boundary
+    assert "DEFAULT_COMMUNITY_ID" in boundary
+    assert "Unknown-host fallthrough" in boundary
