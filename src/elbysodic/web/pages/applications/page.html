@@ -15,7 +15,7 @@
       {% end %}
     </a>
     <div class="elbysodic-application-card__identity">
-      <h3><a href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h3>
+      <h2><a href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h2>
       <p class="elbysodic-copy-meta">
         writer
         <a href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
@@ -151,7 +151,7 @@
       {% for item in desk.application_materials %}
       <article class="elbysodic-stack elbysodic-stack--sm">
         <div class="elbysodic-cluster elbysodic-cluster--between">
-          <h3><a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h3>
+          <h2><a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
           <span class="elbysodic-reader-chip">{{ item.type_label }}</span>
         </div>
         <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
