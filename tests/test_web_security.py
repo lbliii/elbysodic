@@ -1982,7 +1982,7 @@ def test_production_application_room_requires_csrf_and_accepts_rendered_token(
                 "/applications/kitty-pryde",
                 body=urlencode(
                     {
-                        "intent": "save_review",
+                        "_action": "save_review",
                         "staff_notes": "Private staff note.",
                         "checklist": "Voice\nHooks",
                     }
@@ -1993,7 +1993,7 @@ def test_production_application_room_requires_csrf_and_accepts_rendered_token(
                 "/applications/kitty-pryde",
                 body=urlencode(
                     {
-                        "intent": "save_review",
+                        "_action": "save_review",
                         "staff_notes": "Private staff note.",
                         "checklist": "Voice\nHooks",
                         "_csrf_token": _csrf_token(room.text),
