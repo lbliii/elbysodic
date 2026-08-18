@@ -361,10 +361,8 @@
         <a href="/members/{{ viewer.membership.username }}">Writer</a>
         {% if viewer.current_character %}
         <a href="/characters/{{ viewer.current_character.slug }}">Face</a>
-        <a href="/my/threads?character={{ viewer.current_character.slug }}">Queue</a>
         {% else %}
         <a href="/characters">Choose face</a>
-        <a href="/my/threads">Threads</a>
         {% end %}
       </div>
       {% if viewer.current_character %}

@@ -186,9 +186,9 @@ def _intake_shell_actions() -> ShellActions:
                     variant="secondary",
                 ),
                 ShellAction(
-                    id="intake-operations",
-                    label="Operations",
-                    href="/studio/operations",
+                    id="intake-today",
+                    label="Today",
+                    href="/studio",
                     icon="logs",
                     variant="secondary",
                 ),

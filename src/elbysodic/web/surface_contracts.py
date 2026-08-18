@@ -226,7 +226,7 @@ SURFACE_CONTRACTS: tuple[SurfaceContract, ...] = (
     SurfaceContract(
         key="studio_operations",
         route_family="/studio/operations",
-        page_path="src/elbysodic/web/pages/studio/operations/page.py",
+        page_path="src/elbysodic/web/pages/studio/page.py",
         service_calls=("services.director_operations(",),
         read_models=("DirectorOperations", "OperationsInspection"),
         viewer_modes=("member", "staff", "director", "inactive", "cross_tenant"),

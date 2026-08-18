@@ -97,9 +97,9 @@ card title, poster image, metric, and sidebar row all go to the same target
 from the same scanning area.
 
 Use command/search shortcuts for cross-cutting movement once available. A
-future command menu can carry recently used rooms, Queue, Inbox, Roster,
-Discovery, Casting, Studio rooms, and context-aware actions without requiring
-each page to repeat a shortcut strip.
+future command menu can carry recently used rooms, Queue, Inbox, Casting,
+Today, Shape, Open, and context-aware actions without requiring each page to
+repeat a shortcut strip.
 
 Recent thread-page decision: breadcrumbs should have breathing room at the top.
 Previous/next scene navigation is useful for skimming and should stay visible,

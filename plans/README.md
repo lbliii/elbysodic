@@ -62,6 +62,7 @@ Review by 2026-08-31. Rows point at GitHub, not at plan files.
 | Production trust and Railway | Active | saga [#141](https://github.com/lbliii/elbysodic/issues/141), epic [#54](https://github.com/lbliii/elbysodic/issues/54), epic [#220](https://github.com/lbliii/elbysodic/issues/220), design [#294](https://github.com/lbliii/elbysodic/issues/294), leaves [#276](https://github.com/lbliii/elbysodic/issues/276) [#292](https://github.com/lbliii/elbysodic/issues/292) | 2026-08-31 | Live Railway smoke recorded or explicit blocked-by owner |
 | Account security AuthSpec | Parked | saga [#215](https://github.com/lbliii/elbysodic/issues/215), epic [#224](https://github.com/lbliii/elbysodic/issues/224) | later | Own design before any `ready` leaf (Stop And Ask) |
 | Continuity / scene media / wanted-scene | Deferred | archived plans; no ready leaves | not-now | Provenance, review, and schema design issues exist before implementation |
+| Realm Studio 2026 CP | Active | saga [#329](https://github.com/lbliii/elbysodic/issues/329), epic [#330](https://github.com/lbliii/elbysodic/issues/330), design [#331](https://github.com/lbliii/elbysodic/issues/331), ADR [0003](../docs/adr/0003-studio-shell-jobs.md), leaves [#334](https://github.com/lbliii/elbysodic/issues/334)–[#339](https://github.com/lbliii/elbysodic/issues/339) | 2026-08-31 | Studio Today/Shape/Open; Desk Queue/Inbox; Wanted without Applications/Plotting/Discovery; `/studio/operations` aliases `/studio` |
 
 ## Archived 2026-08-17
 

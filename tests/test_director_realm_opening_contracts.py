@@ -42,9 +42,11 @@ def test_director_opening_templates_and_docs_use_realm_studio_language() -> None
         "Writer invitations",
         "Create invitation",
         "Access requests",
+        "Discovery profile",
+        "Edit discovery profile",
     ]:
         assert snippet in launch
-    for snippet in ["Director Studio", "Studio rooms", "Open hooks"]:
+    for snippet in ["Director Studio", "Needs attention", "Open hooks", "Today"]:
         assert snippet in studio
     for snippet in [
         "No realm",
@@ -79,6 +81,8 @@ def test_director_launch_room_renders_opening_contract() -> None:
         assert "Application guide" in launch.text
         assert "Invite-only before public self-serve." in launch.text
         assert "Writer invitations" in launch.text
+        assert "Discovery profile" in launch.text
+        assert "Edit discovery profile" in launch.text
         assert "Create invitation" in launch.text
         assert "global login account if needed" in launch.text
         assert "writer's membership inside X-Men Apocalypse" in launch.text
