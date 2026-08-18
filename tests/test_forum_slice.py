@@ -6617,7 +6617,7 @@ def test_board_sidebar_section_controls_direct_board_sidebar_realm() -> None:
                 r'[^>]*href="/boards/applications"[^>]*aria-current="page"',
                 board_page.text,
             )
-            assert "Structure" in board_page.text
+            assert "Shape" in board_page.text
 
     asyncio.run(run())
 
