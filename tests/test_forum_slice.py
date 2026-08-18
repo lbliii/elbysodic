@@ -8188,7 +8188,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 "/applications/jubilee",
                 body=urlencode(
                     {
-                        "intent": "save_application",
+                        "_action": "save_application",
                         "summary": "Fireworks, mall instincts, and a very loud jacket.",
                         "body": "Jubilee is looking for a found-family first scene.",
                     }
@@ -8269,7 +8269,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications/jubilee",
                     body=urlencode(
                         {
-                            "intent": "save_review",
+                            "_action": "save_review",
                             "revision_notes": "",
                             "staff_notes": "Voice is clear.",
                             "checklist": "Starter hook\nCast tie",
@@ -8283,7 +8283,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications/jubilee",
                     body=urlencode(
                         {
-                            "intent": "accept_application",
+                            "_action": "accept_application",
                         }
                     ).encode(),
                     headers=_FORM,
@@ -8294,7 +8294,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications/kitty-pryde",
                     body=urlencode(
                         {
-                            "intent": "request_revision",
+                            "_action": "request_revision",
                             "revision_notes": "Add one concrete school-life pressure point.",
                         }
                     ).encode(),
@@ -8769,7 +8769,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications/jean-grey",
                 body=urlencode(
                     {
-                        "intent": "save_application",
+                        "_action": "save_application",
                         "summary": "A powerful telepath trying to stay gentle.",
                         "body": "Trying a visual that directors should catch.",
                         f"application_field_{fields['face_claim'].id}": "Magneto Visual",
@@ -8795,7 +8795,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications/jean-grey",
                 body=urlencode(
                     {
-                        "intent": "save_application",
+                        "_action": "save_application",
                         "summary": "A powerful telepath trying to stay gentle.",
                         "body": "Updated notes for school pressure and rescue work.",
                         f"application_field_{fields['face_claim'].id}": "Sophie Turner",
@@ -8850,7 +8850,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
             review_room = await alex_client.get("/applications/jean-grey")
             accept_response = await alex_client.post(
                 "/applications/jean-grey",
-                body=urlencode({"intent": "accept_application"}).encode(),
+                body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
             claims = await alex_client.get("/claims")
@@ -8999,14 +8999,14 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
             review_room = await alex_client.get("/applications/duplicate-face")
             accept_response = await alex_client.post(
                 "/applications/duplicate-face",
-                body=urlencode({"intent": "accept_application"}).encode(),
+                body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
             revision_response = await alex_client.post(
                 "/applications/duplicate-face",
                 body=urlencode(
                     {
-                        "intent": "request_revision",
+                        "_action": "request_revision",
                         "revision_notes": expected_revision_note,
                     }
                 ).encode(),
