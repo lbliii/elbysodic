@@ -1,7 +1,4 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/vocabulary.html" import metric_item, page_pulse %}
 {% end %}
@@ -10,11 +7,13 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header("Notifications") %}
-  Watched threads and direct mentions for {{ viewer.community.name }}.
-  {% end %}
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h1>Notifications</h1>
+    <p class="elbysodic-copy-lead">
+      Watched threads and direct mentions for {{ viewer.community.name }}.
+    </p>
+  </section>
 
   {% call page_pulse("Signals", "What changed while you were writing", "Mentions, watched thread replies, applications, and plotting movement land here.", "notification-signals-heading", "elbysodic-notification-command") %}
     <div class="elbysodic-command-panel__metrics" aria-label="Notification totals">
@@ -25,24 +24,25 @@
     <form method="post" hx-boost="false">
       {{ csrf_field() }}
       <input type="hidden" name="_action" value="mark_all_read">
-      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Mark all read</button>
+      <button type="submit" class="elbysodic-btn">Mark all read</button>
     </form>
     {% end %}
   {% end %}
 
-  <div class="chirpui-stack chirpui-stack--sm">
+  <div class="elbysodic-stack elbysodic-stack--sm">
     {% if inbox.items %}
     {% for item in inbox.items %}
-    {% call surface(variant="elevated") %}
     <article class="elbysodic-notification-card {{ "elbysodic-notification-card--unread" if item.is_unread else "" }}">
       <div class="elbysodic-notification-card__body">
-        <div class="chirpui-cluster chirpui-cluster--sm">
-          {{ badge(item.label, variant="info" if item.is_unread else "muted") }}
-          {{ badge("new", variant="warning") if item.is_unread else "" }}
+        <div class="elbysodic-cluster">
+          <span class="elbysodic-reader-chip{{ " elbysodic-reader-chip--strong" if item.is_unread else "" }}">{{ item.label }}</span>
+          {% if item.is_unread %}
+          <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">new</span>
+          {% end %}
         </div>
         <h2>{{ item.title }}</h2>
         <p class="elbysodic-copy-meta">
-          {{ item.actor.name if item.actor else item.actor_membership.display_name }} · writer <a class="chirpui-link" href="/members/{{ item.actor_membership.username }}">{{ item.actor_membership.username }}</a>
+          {{ item.actor.name if item.actor else item.actor_membership.display_name }} · writer <a href="/members/{{ item.actor_membership.username }}">{{ item.actor_membership.username }}</a>
           · {{ item.created_at_label }}
         </p>
         <p class="elbysodic-copy-summary">{{ item.snippet }}</p>
@@ -51,18 +51,16 @@
         {{ csrf_field() }}
         <input type="hidden" name="_action" value="open">
         <input type="hidden" name="notification_id" value="{{ item.notification.id }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--primary">Open</button>
+        <button type="submit" class="elbysodic-btn elbysodic-btn--primary">Open</button>
       </form>
     </article>
-    {% end %}
     {% end %}
     {% else %}
     {{ empty_policy_block("No notifications are waiting on you.", "Watched scenes, mentions, review movement, and plotting room updates will appear here.", "Caught up") }}
     {% end %}
   </div>
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}
