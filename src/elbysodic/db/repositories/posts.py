@@ -222,6 +222,35 @@ class PostRepositoryMixin(ClaimRepositoryMixin):
             )
         return _post_from_row(row)
 
+    def list_posts_by_ids(
+        self,
+        community_id: int,
+        post_ids: list[int],
+    ) -> dict[int, Post]:
+        if not post_ids:
+            return {}
+        rows = self.connection.execute(
+            """
+            SELECT
+                id,
+                community_id,
+                thread_id,
+                post_number,
+                author_membership_id,
+                author_character_id,
+                body,
+                created_at,
+                updated_at
+            FROM posts
+            WHERE community_id = ?
+              AND id IN (SELECT value FROM json_each(?))
+            ORDER BY id
+            """,
+            (community_id, json.dumps(post_ids)),
+        ).fetchall()
+        posts = [_post_from_row(row) for row in rows]
+        return {post.id: post for post in posts}
+
     def list_posts(self, community_id: int, thread_id: int) -> list[Post]:
         rows = self.connection.execute(
             """

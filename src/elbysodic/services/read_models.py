@@ -1575,6 +1575,12 @@ class PlottingRoomMessageView:
 
 
 @dataclass(frozen=True, slots=True)
+class PlottingRoomMessageBatch:
+    messages: list[PlottingRoomMessageView]
+    last_message_id: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class PlottingRoomSummary:
     room: PlottingRoom
     participants: list[PlottingRoomParticipantView]

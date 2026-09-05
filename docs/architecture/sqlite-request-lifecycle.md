@@ -76,6 +76,11 @@ slowness:
 - Inspect the response `Server-Timing` header for server-side route duration.
   Use this when the browser timing is high and you need to separate template or
   SQLite work from client-side rendering and network overhead.
+- Production JSON access logs already carry Pounce's end-to-end
+  `duration_ms`. The app-owned timing middleware remains intentionally narrower:
+  it supplies the response `Server-Timing`/`X-Elbysodic-Route-Time-Ms` headers
+  used by browser QA and the local diagnostic harness. It does not emit a
+  second request log or replace the framework access-log clock.
 - Reproduce suspicious fanout with the query-budget tests in
   `tests/test_forum_slice.py`. Budgets are the regression contract; browser and
   `Server-Timing` captures explain where to look before changing them.

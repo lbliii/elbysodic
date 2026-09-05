@@ -21,7 +21,12 @@ from elbysodic.domain.models import (
     WantedAdInterest,
 )
 from elbysodic.services import policies
-from elbysodic.services.posts import PostViewRepository, post_view
+from elbysodic.services.posts import (
+    PostViewContext,
+    PostViewRepository,
+    build_post_view_context,
+    post_view,
+)
 from elbysodic.services.read_models import ForumView, NotificationInbox, NotificationItem
 from elbysodic.services.timestamps import timestamp_label
 
@@ -35,6 +40,14 @@ class NotificationTargetContract:
     visibility_rule: str
     redirect_behavior: str
     fallback_behavior: str
+
+
+@dataclass(frozen=True, slots=True)
+class NotificationReadContext:
+    actor_memberships: dict[int, CommunityMembership]
+    actors: dict[int, Character]
+    posts: dict[int, Post]
+    post_view_context: PostViewContext | None
 
 
 NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
@@ -167,6 +180,12 @@ class NotificationRepository(PostViewRepository, Protocol):
 
     def get_post(self, community_id: int, post_id: int) -> Post: ...
 
+    def list_posts_by_ids(
+        self,
+        community_id: int,
+        post_ids: list[int],
+    ) -> dict[int, Post]: ...
+
     def get_wanted_ad(self, community_id: int, wanted_ad_id: int) -> WantedAd: ...
 
     def get_wanted_ad_interest(
@@ -257,9 +276,10 @@ def notification_inbox(
         viewer.role,
         limit=limit,
     )
+    context = _notification_read_context(repo, viewer, visible_notifications)
     items: list[NotificationItem] = []
     for notification in visible_notifications:
-        item = notification_item(repo, viewer, notification)
+        item = notification_item(repo, viewer, notification, context=context)
         if item is not None:
             items.append(item)
     return NotificationInbox(
@@ -478,17 +498,17 @@ def notification_item(
     repo: NotificationRepository,
     viewer: ForumView,
     notification: Notification,
+    *,
+    context: NotificationReadContext | None = None,
 ) -> NotificationItem | None:
     if notification_target_contract(
         notification.kind
     ) is None or not notification_has_required_target(notification):
         return None
-    actor_membership = repo.get_membership(
-        viewer.community.id,
-        notification.actor_membership_id,
-    )
+    context = context or _notification_read_context(repo, viewer, [notification])
+    actor_membership = context.actor_memberships[notification.actor_membership_id]
     actor = (
-        repo.get_character(viewer.community.id, notification.actor_character_id)
+        context.actors[notification.actor_character_id]
         if notification.actor_character_id is not None
         else None
     )
@@ -630,8 +650,13 @@ def notification_item(
     board = repo.get_board(viewer.community.id, thread.board_id)
     if not policies.can_view_board(viewer.membership, board, viewer.role):
         return None
-    post = repo.get_post(viewer.community.id, notification.post_id)
-    rendered_post = post_view(repo, viewer.community.id, post)
+    post = context.posts[notification.post_id]
+    rendered_post = post_view(
+        repo,
+        viewer.community.id,
+        post,
+        context=context.post_view_context,
+    )
     return NotificationItem(
         notification=notification,
         board=board,
@@ -647,6 +672,46 @@ def notification_item(
         created_at_label=rendered_post.created_at_label,
         snippet=rendered_post.snippet,
         href=f"/boards/{board.slug}/threads/{thread.slug}#{rendered_post.anchor}",
+    )
+
+
+def _notification_read_context(
+    repo: NotificationRepository,
+    viewer: ForumView,
+    notifications: list[Notification],
+) -> NotificationReadContext:
+    community_id = viewer.community.id
+    actor_membership_ids = {item.actor_membership_id for item in notifications}
+    actor_character_ids = {
+        item.actor_character_id for item in notifications if item.actor_character_id is not None
+    }
+    post_ids = {item.post_id for item in notifications if item.post_id is not None}
+    posts = repo.list_posts_by_ids(community_id, sorted(post_ids))
+    if posts:
+        post_view_context = build_post_view_context(
+            repo,
+            community_id,
+            list(posts.values()),
+            extra_character_ids=actor_character_ids,
+            extra_membership_ids=actor_membership_ids,
+        )
+        actor_memberships = post_view_context.memberships
+        actors = post_view_context.authors
+    else:
+        post_view_context = None
+        actor_memberships = repo.list_memberships_by_ids(
+            community_id,
+            sorted(actor_membership_ids),
+        )
+        actors = repo.list_characters_by_ids(
+            community_id,
+            sorted(actor_character_ids),
+        )
+    return NotificationReadContext(
+        actor_memberships=actor_memberships,
+        actors=actors,
+        posts=posts,
+        post_view_context=post_view_context,
     )
 
 
