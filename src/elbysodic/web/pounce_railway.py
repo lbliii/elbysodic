@@ -12,11 +12,61 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol, cast
+
+from chirp.app import App
 
 POUNCE_HEALTH_CHECK_PATH = "/readyz"
 POUNCE_SHUTDOWN_TIMEOUT = 10.0
 POUNCE_INTROSPECTION_PATH = "/_pounce/info"
+
+
+class _ChirpServerLauncher(Protocol):
+    def run(
+        self,
+        app: App,
+        *,
+        host: str | None,
+        port: int | None,
+        lifecycle_collector: Any | None,
+    ) -> None: ...
+
+
+def run_chirp_asgi_adapter(
+    chirp_app: App,
+    runtime_app: object,
+    *,
+    host: str | None,
+    port: int | None,
+    lifecycle_collector: Any | None,
+) -> None:
+    """Launch a wrapped ASGI app through Chirp's frozen server configuration.
+
+    Chirp 0.10 exposes public ``freeze`` and ASGI call seams, but its public
+    ``run`` method always serves the Chirp object itself. The one private
+    launcher lookup below is the compatibility bridge that lets Pounce send
+    ``pounce.worker.draining`` to Elbysodic's wrapper without duplicating
+    Chirp's development and production configuration mapping.
+    """
+
+    freeze = getattr(chirp_app, "freeze", None)
+    if callable(freeze):
+        freeze()
+    else:
+        # Compatibility for the pre-0.10 shape retained by existing canaries.
+        ensure_frozen = getattr(chirp_app, "_ensure_frozen", None)
+        if not callable(ensure_frozen):
+            raise TypeError("Chirp launch adapter requires a supported freeze seam")
+        ensure_frozen()
+    launcher = cast(_ChirpServerLauncher | None, getattr(chirp_app, "_server", None))
+    if launcher is None or not callable(getattr(launcher, "run", None)):
+        raise RuntimeError("Chirp 0.10 server launcher compatibility seam changed")
+    launcher.run(
+        cast(App, runtime_app),
+        host=host,
+        port=port,
+        lifecycle_collector=lifecycle_collector,
+    )
 
 
 def _introspection_enabled() -> bool:

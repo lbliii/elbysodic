@@ -233,6 +233,9 @@ from elbysodic.services.plotting import (
 )
 from elbysodic.services.plotting import plotting_desk as _plotting_desk
 from elbysodic.services.plotting import read_plotting_room as _read_plotting_room
+from elbysodic.services.plotting import (
+    read_plotting_room_messages as _read_plotting_room_messages,
+)
 from elbysodic.services.plotting import subscribe_plotting_room_live, unsubscribe_plotting_room_live
 from elbysodic.services.plotting import update_plotting_room_plan as _update_plotting_room_plan
 from elbysodic.services.posting import join_thread_as_current_character as _join_thread
@@ -300,6 +303,7 @@ from elbysodic.services.read_models import (
     PlotDiscovery,
     PlottingDesk,
     PlottingRoomDetail,
+    PlottingRoomMessageBatch,
     PostRevisionHistory,
     PostStylePolicy,
     PublicCatalogCard,
@@ -3546,6 +3550,21 @@ class AppServices:
 
     def read_plotting_room(self, room_id: int) -> PlottingRoomDetail:
         return _read_plotting_room(self.repo, self.viewer(), room_id)
+
+    def read_plotting_room_messages(
+        self,
+        room_id: int,
+        *,
+        after_id: int | None,
+        limit: int = 100,
+    ) -> PlottingRoomMessageBatch:
+        return _read_plotting_room_messages(
+            self.repo,
+            self.viewer(),
+            room_id,
+            after_id=after_id,
+            limit=limit,
+        )
 
     def update_plotting_room_plan(
         self,

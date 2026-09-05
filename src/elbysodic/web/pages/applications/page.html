@@ -1,14 +1,10 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/ui.html" import empty_policy_block, page_section %}
   {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
 {% def application_card(item) %}
-{% call surface(variant="elevated") %}
 <article class="elbysodic-application-card">
   <div class="elbysodic-application-card__face">
     <a class="elbysodic-application-card__avatar" href="/characters/{{ item.character.slug }}" aria-label="{{ item.character.name }}">
@@ -19,10 +15,10 @@
       {% end %}
     </a>
     <div class="elbysodic-application-card__identity">
-      <h3><a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h3>
+      <h2><a href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a></h2>
       <p class="elbysodic-copy-meta">
         writer
-        <a class="chirpui-link" href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
+        <a href="/members/{{ item.membership.username }}">{{ item.membership.display_name }}</a>
       </p>
     </div>
   </div>
@@ -34,17 +30,24 @@
   </div>
   <div class="elbysodic-application-card__review">
     <div class="elbysodic-application-card__badges">
-      {{ badge(item.status_label, variant=item.status_variant) }}
-      {{ badge("yours", variant="success") if item.is_owned_by_viewer else "" }}
-      {{ badge(item.reserves | length ~ " reserves", variant="info") if item.reserves else "" }}
-      {{ badge(item.claim_conflict_count ~ " claim conflict", variant="warning") if item.claim_conflict_count == 1 else "" }}
-      {{ badge(item.claim_conflict_count ~ " claim conflicts", variant="warning") if item.claim_conflict_count > 1 else "" }}
+      <span class="elbysodic-reader-chip{{ " elbysodic-reader-chip--strong" if item.status_variant in ("warning", "success") else "" }}">{{ item.status_label }}</span>
+      {% if item.is_owned_by_viewer %}
+      <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">yours</span>
+      {% end %}
+      {% if item.reserves %}
+      <span class="elbysodic-reader-chip">{{ item.reserves | length }} reserves</span>
+      {% end %}
+      {% if item.claim_conflict_count == 1 %}
+      <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">1 claim conflict</span>
+      {% elif item.claim_conflict_count > 1 %}
+      <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">{{ item.claim_conflict_count }} claim conflicts</span>
+      {% end %}
     </div>
     {% if item.has_claim_conflicts %}
     <p class="elbysodic-copy-meta">{{ item.claim_conflict_summary }} Open the review room to resolve it.</p>
     {% end %}
     <div class="elbysodic-application-card__actions">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">
+      <a class="elbysodic-btn" href="/applications/{{ item.character.slug }}">
         {{ "Open review room" if desk.can_review else "Open application room" }}
       </a>
       {% if item.is_owned_by_viewer and item.character.application_status == "draft" %}
@@ -53,7 +56,7 @@
         <input type="hidden" name="intent" value="submit_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
-                class="chirpui-btn chirpui-btn--primary"
+                class="elbysodic-btn elbysodic-btn--primary"
                 {{ "disabled" if item.has_claim_conflicts else "" }}>
           Submit application
         </button>
@@ -64,7 +67,7 @@
         <input type="hidden" name="intent" value="submit_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
-                class="chirpui-btn chirpui-btn--primary"
+                class="elbysodic-btn elbysodic-btn--primary"
                 {{ "disabled" if item.has_claim_conflicts else "" }}>
           Resubmit application
         </button>
@@ -76,12 +79,12 @@
         <input type="hidden" name="intent" value="accept_application">
         <input type="hidden" name="character_slug" value="{{ item.character.slug }}">
         <button type="submit"
-                class="chirpui-btn chirpui-btn--primary"
+                class="elbysodic-btn elbysodic-btn--primary"
                 {{ "disabled" if item.has_claim_conflicts else "" }}>
           Accept
         </button>
       </form>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/applications/{{ item.character.slug }}">
+      <a class="elbysodic-btn" href="/applications/{{ item.character.slug }}">
         Request revisions
       </a>
       {% end %}
@@ -89,32 +92,31 @@
   </div>
 </article>
 {% end %}
-{% end %}
 
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header("Applications") %}
-  Character drafts, submissions, and review queues for {{ viewer.community.name }}.
-  {% end %}
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h1>Applications</h1>
+    <p class="elbysodic-copy-lead">
+      Character drafts, submissions, and review queues for {{ viewer.community.name }}.
+    </p>
+  </section>
 
-  {% call surface(variant="elevated") %}
   {% call command_panel("Applications", "Active application work", "Drafts, submissions, and requested revisions stay here. Accepted faces move to the roster and profile pages.", "application-pipeline-heading") %}
     <div class="elbysodic-command-panel__actions">
       {% if desk.application_materials %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/world/{{ desk.application_materials[0].material.slug }}">Open guide</a>
+      <a class="elbysodic-btn" href="/world/{{ desk.application_materials[0].material.slug }}">Open guide</a>
       {% end %}
-      <a class="chirpui-btn chirpui-btn--primary" href="/applications/new">Start application</a>
+      <a class="elbysodic-btn elbysodic-btn--primary" href="/applications/new">Start application</a>
     </div>
     <div class="elbysodic-command-panel__metrics" aria-label="Application pipeline totals">
       {{ metric_item(active_my_applications | length, "Active drafts") }}
       {{ metric_item(desk.review_queue | length, "Review queue") }}
       {{ metric_item(desk.application_materials | length, "Guide materials") }}
     </div>
-  {% end %}
   {% end %}
 
   {% call page_section("My Applications", "Drafts, submitted faces, and revision requests that still need movement.") %}
@@ -147,24 +149,21 @@
     {% if desk.application_materials %}
     <div class="elbysodic-wanted-grid">
       {% for item in desk.application_materials %}
-      {% call surface(variant="elevated") %}
-      <article class="chirpui-stack chirpui-stack--sm">
-        <div class="chirpui-cluster elbysodic-cluster--between">
-          <h3><a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h3>
-          {{ badge(item.type_label, variant="info") }}
+      <article class="elbysodic-stack elbysodic-stack--sm">
+        <div class="elbysodic-cluster elbysodic-cluster--between">
+          <h2><a href="/world/{{ item.material.slug }}">{{ item.material.title }}</a></h2>
+          <span class="elbysodic-reader-chip">{{ item.type_label }}</span>
         </div>
         <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
       </article>
-      {% end %}
       {% end %}
     </div>
     {% else %}
     {{ empty_policy_block("No application guidance has been published yet.", "Directors can publish application materials from Studio when the realm is ready for structured intake.", "Guide missing") }}
     {% end %}
   {% end %}
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}

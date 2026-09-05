@@ -1,5 +1,4 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/wanted.html" import wanted_card %}
 {% end %}
@@ -8,11 +7,13 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header("Wanted") %}
-  Character connections, event roles, faction needs, and plot hooks.
-  {% end %}
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h1>Wanted</h1>
+    <p class="elbysodic-copy-lead">
+      Character connections, event roles, faction needs, and plot hooks.
+    </p>
+  </section>
 
   {% if board.open_ads %}
   <div class="elbysodic-wanted-grid">
@@ -23,9 +24,8 @@
   {% else %}
   {{ empty_policy_block("No open wanted hooks yet.", "When directors or writers publish wanted hooks, they will appear here for browsing.", "Quiet board") }}
   {% end %}
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}
