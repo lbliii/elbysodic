@@ -58,7 +58,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.14t"
+          python-version: "3.14.2"
 
       - name: Cache uv dependencies
         uses: actions/cache@v5
@@ -71,12 +71,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --frozen
 
+      - name: Install Node for client behavior tests
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
       - name: Lint, format, typecheck, and template gates
         run: make check
 
       - name: Hypermedia contract drift (chirp diff)
-        env:
-          PYTHON_GIL: "0"
         run: make contract-diff CONTRACT_DIFF_BASE=origin/${{ github.base_ref || 'main' }}
 
       - name: Changelog enforcement
@@ -92,16 +95,30 @@ jobs:
           fi
 
   tests:
-    name: Test suite with coverage
+    name: Tests on Python ${{ matrix.python }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.14.2"
+            gil: "1"
+            free-threaded: "0"
+          - python: "3.14.2t"
+            gil: "0"
+            free-threaded: "1"
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+      PYTHON_GIL: ${{ matrix.gil }}
+      EXPECT_FREE_THREADED: ${{ matrix.free-threaded }}
     steps:
       - uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.14t"
+          python-version: ${{ matrix.python }}
 
       - name: Cache uv dependencies
         uses: actions/cache@v5
@@ -114,7 +131,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --frozen
 
+      - name: Verify selected runtime
+        run: |
+          uv run python - <<'PY'
+          import os
+          import sys
+          import sysconfig
+          assert bool(sysconfig.get_config_var("Py_GIL_DISABLED")) == bool(int(os.environ["EXPECT_FREE_THREADED"]))
+          assert sys._is_gil_enabled() == bool(int(os.environ["PYTHON_GIL"]))
+          PY
+
       - name: Test suite with coverage
-        env:
-          PYTHON_GIL: "0"
         run: make test-cov

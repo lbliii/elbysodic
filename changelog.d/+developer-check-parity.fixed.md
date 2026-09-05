@@ -1,0 +1,1 @@
+Developer checks now consistently validate command schemas, documentation, templates, hypermedia contracts, and composer behavior, ignore changelog guidance files, and check local server health on both supported Python runtimes.

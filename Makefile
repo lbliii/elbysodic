@@ -1,7 +1,7 @@
 # Elbysodic Makefile
-# Wraps uv commands to ensure Python 3.14t is used.
+# Standard Python matches .python-version; override for free-threaded validation.
 
-PYTHON_VERSION ?= 3.14t
+PYTHON_VERSION ?= 3.14.2
 VENV_DIR ?= .venv
 
 CHIRP_APP ?= elbysodic.web.contract_app:app
@@ -32,7 +32,7 @@ help:
 	@echo "  make milo-check      - Verify the typed CLI and MCP contracts"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
-	@echo "  make check           - Run lint, format-check, ty, app-check, kida-check, and contract-baseline-check"
+	@echo "  make check           - Run lint, types, app, Kida, Milo, docs, contract, and client checks"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
 	@echo "  make docs            - Build the Bengal handbook into public/"
 	@echo "  make docs-check      - Validate, build, and audit the Bengal handbook"
@@ -101,9 +101,11 @@ contract-baseline-check:
 milo-check:
 	uv run milo verify src/elbysodic/cli.py
 
-check: lint format-check ty app-check kida-check milo-check contract-baseline-check
+check:
+	uv run python -m elbysodic.checks
 
-ci: check contract-diff test
+ci:
+	uv run python -m elbysodic.checks --full --base $(CONTRACT_DIFF_BASE)
 
 docs:
 	uv run --group docs --frozen python scripts/bengal_docs.py build
@@ -139,5 +141,5 @@ clean:
 	find . -type d -name ".ty_cache" -exec rm -rf {} + 2>/dev/null || true
 
 shell:
-	@echo "Activating environment with GIL disabled..."
-	@bash -c 'source $(VENV_DIR)/bin/activate && export PYTHON_GIL=0 && echo "venv active, GIL disabled" && exec bash'
+	@echo "Activating environment..."
+	@bash -c 'source $(VENV_DIR)/bin/activate && echo "venv active" && exec bash'

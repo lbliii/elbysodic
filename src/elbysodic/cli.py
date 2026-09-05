@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import signal
 import sqlite3
-import subprocess
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -13,6 +12,7 @@ from typing import Annotated
 
 from milo import CLI, Context, Description, Option
 
+from elbysodic.checks import check_commands, run_commands
 from elbysodic.services import (
     bootstrap_first_realm,
     create_services,
@@ -343,41 +343,12 @@ def build_cli() -> CLI:
 
 
 def developer_check_commands(*, quick: bool = False) -> list[list[str]]:
-    test_command = ["uv", "run", "pytest", "tests/test_cli.py", "-q", "--tb=short"]
-    if not quick:
-        test_command = ["uv", "run", "pytest", "-q", "--tb=short"]
-    return [
-        ["uv", "run", "ruff", "check", "."],
-        ["uv", "run", "ruff", "format", ".", "--check"],
-        test_command,
-        ["uv", "run", "ty", "check", "src/elbysodic/", "tests/"],
-        ["uv", "run", "milo", "verify", "src/elbysodic/cli.py"],
-        [
-            "uv",
-            "run",
-            "python",
-            "-c",
-            "from elbysodic.web import create_app; "
-            "create_app(debug=False, db_path=':memory:').check()",
-        ],
-    ]
+    return check_commands(full=True, quick=quick)
 
 
 def run_developer_checks(*, quick: bool = False, ctx: Context | None = None) -> None:
     active_context = ctx or Context(color=False)
-    for command in developer_check_commands(quick=quick):
-        active_context.log(f"$ {' '.join(command)}")
-        completed = subprocess.run(  # noqa: S603 - commands are fixed gates.
-            command,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        if completed.stdout:
-            active_context.log(completed.stdout.rstrip())
-        if completed.returncode != 0:
-            raise SystemExit(completed.returncode)
+    run_commands(developer_check_commands(quick=quick), log=active_context.log)
 
 
 class CheckpointResult:

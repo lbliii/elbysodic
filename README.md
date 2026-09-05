@@ -78,10 +78,10 @@ The development app currently includes:
   notification-backed writing/workflow handoffs.
 - Character profile hubs with identity, plotter hooks, tracker context, and
   recent posts.
-- Studio production surfaces for operations, boards, Blueprint intake dry-run,
+- Studio production surfaces for operations, boards, Blueprint intake,
   and board-running controls.
-- Safe Program Blueprint parsing/validation and dry-run preview. Apply/hydrate
-  remains intentionally gated behind a future diff and transaction contract.
+- Safe Program Blueprint parsing, validation, and dry-run preview, followed by
+  transactional apply with stale-preview checks and idempotent replay.
 
 Gated production-readiness work is tracked on GitHub saga
 [#141](https://github.com/lbliii/elbysodic/issues/141) and the live index in
@@ -162,8 +162,9 @@ Important invariants:
 The package declares normal published dependencies:
 
 ```toml
-bengal-chirp[config,forms,sessions,ui]>=0.8.0
-chirp-ui>=0.10.0
+bengal-chirp[auth,config,forms,passkeys,sessions,ui]>=0.10.0
+bengal-pounce>=0.9.1,<0.10.0
+chirp-ui>=0.11.0
 ```
 
 For local development, you can keep editable sibling checkout overrides in an
@@ -183,12 +184,19 @@ from the registry. Third-party dependencies still resolve from the lockfile.
 
 ## Development
 
-Create the Python 3.14t environment and install the project:
+Create the pinned Python 3.14.2 environment and install the project. Install
+Node.js 22 or newer for executable composer behavior tests (no npm packages
+are required). Node is a development prerequisite, not an app runtime:
 
 ```bash
 make setup
 make install
 ```
+
+Standard and free-threaded Python are supported. To exercise the CI runtime,
+use `make setup PYTHON_VERSION=3.14.2t` in a separate checkout, then
+`make install` and `PYTHON_GIL=0 make test-cov`. Local process smoke verifies
+the subprocess reports the same GIL posture as its interpreter.
 
 Run the local gate:
 
@@ -216,15 +224,18 @@ Useful commands:
 - `uv run pounce check --app elbysodic.web:create_app --format plain` validates
   the Pounce import/config path used by the Chirp production server.
 
-The full handoff gate used by agents is:
+Make, Poe, and `elbysodic dev check` share `elbysodic.checks`. The full
+handoff gate includes lint, formatting, types, strict app checks, Kida, Milo
+surface verification, Bengal handbook validation, the hypermedia baseline,
+executable client tests, pytest, and contract diff:
 
 ```bash
-uv run ruff check .
-uv run ruff format . --check
-uv run pytest -q --tb=short
-uv run ty check src/elbysodic/ tests/
-uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"
+uv run python -m elbysodic.checks --full
 ```
+
+`make check` runs the same checks without pytest or contract diff. The CLI's
+`dev check --quick` retains all static/client checks, narrows pytest to the CLI,
+and omits contract diff.
 
 ## Running Locally
 
@@ -305,8 +316,8 @@ Before handing off a branch, run the developer gate:
 elbysodic dev check
 ```
 
-Use `--quick` when iterating on the CLI itself; it keeps the lint/type/app
-checks but narrows pytest to the CLI tests.
+Use `--quick` when iterating on the CLI itself; it keeps all static and client
+checks, narrows pytest to the CLI tests, and skips the hypermedia contract diff.
 
 In this workspace, the direct app form is also useful:
 
@@ -320,12 +331,9 @@ registry so Railway can build the app. Local-only uv config belongs in ignored
 `uv.toml`, and committed lockfile updates should be regenerated without local
 editable path sources.
 
-The checked-in lockfile tracks the current stack intake: Chirp 0.8, Chirp-UI
-0.10, Kida 0.9, and Pounce 0.8. With Chirp 0.8 and Chirp-UI 0.10, the strict
-app check may report a false `chirpui-context-rail` OOB target warning from a
-Chirp-UI helper macro; Chirp upstream already skips library-owned templates for
-that rule, so the warning should self-resolve in the next Chirp release. When
-moving templates inside a folder, prefer Kida's `./` relative imports for sibling
+The checked-in lockfile tracks Chirp 0.10, Chirp-UI 0.11, Kida 0.11, and
+Pounce 0.9.1. The strict app check treats warnings as failures. When moving
+templates inside a folder, prefer Kida's `./` relative imports for sibling
 `_components` references so local component groups stay refactor-safe.
 
 ## Deploying To Railway
