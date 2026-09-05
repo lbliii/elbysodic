@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import pytest
 
@@ -372,7 +374,7 @@ def test_continuity_notifications_filter_targets_by_source_and_affected_object_v
         writer.character.id,
         "continuity-notification-private-source",
         "Continuity notification private source",
-        status="private",
+        visibility="private",
     )
     repo.create_post(
         writer.community.id,
@@ -540,6 +542,126 @@ def test_continuity_review_rolls_back_state_canon_review_and_audit_on_late_failu
     )
 
 
+def test_public_canon_revalidates_source_visibility_inside_review_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    writer = resolve_seed_persona(repo, "xmen_writer")
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    assert writer.character is not None
+    board = repo.get_board_by_slug(writer.community.id, "new-york-city")
+    thread = repo.create_thread(
+        writer.community.id,
+        board.id,
+        writer.character.id,
+        "continuity-public-review-race",
+        "Continuity public review race",
+        visibility="public_preview",
+    )
+    writer_services = _services(repo, writer)
+    proposal = writer_services.create_continuity_proposal(
+        title="Source visibility changes before approval",
+        summary="The public gate must use the state protected by the review transaction.",
+        citations=(ContinuitySourceCitationDraft(writer.community.id, "thread", thread.id),),
+        affected_objects=(
+            ContinuityAffectedObjectDraft(
+                writer.community.id,
+                "character",
+                writer.character.id,
+            ),
+        ),
+    )
+    writer_services.submit_continuity_proposal(proposal.id)
+    original_transaction = repo.transaction
+    made_private = False
+
+    @contextmanager
+    def transaction_after_privacy_change() -> Iterator[None]:
+        nonlocal made_private
+        if not made_private:
+            repo.connection.execute(
+                "UPDATE threads SET visibility = 'private' WHERE id = ?",
+                (thread.id,),
+            )
+            repo.connection.commit()
+            made_private = True
+        with original_transaction():
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_after_privacy_change)
+
+    with pytest.raises(ValueError, match="public-safe source citations"):
+        _services(repo, staff).review_continuity_proposal(
+            proposal.id,
+            action="approved",
+            visibility="public",
+        )
+
+    assert repo.get_continuity_proposal(writer.community.id, proposal.id).state == "submitted"
+    assert repo.get_continuity_canon_entry_for_proposal(writer.community.id, proposal.id) is None
+
+
+def test_continuity_review_revalidates_staff_membership_inside_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    writer = resolve_seed_persona(repo, "xmen_writer")
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    assert writer.character is not None
+    board = repo.get_board_by_slug(writer.community.id, "new-york-city")
+    thread = repo.create_thread(
+        writer.community.id,
+        board.id,
+        writer.character.id,
+        "continuity-review-revocation-race",
+        "Continuity review revocation race",
+    )
+    writer_services = _services(repo, writer)
+    proposal = writer_services.create_continuity_proposal(
+        title="Reviewer authority changes before approval",
+        summary="A revoked reviewer must not commit a continuity decision.",
+        citations=(ContinuitySourceCitationDraft(writer.community.id, "thread", thread.id),),
+        affected_objects=(
+            ContinuityAffectedObjectDraft(
+                writer.community.id,
+                "character",
+                writer.character.id,
+            ),
+        ),
+    )
+    writer_services.submit_continuity_proposal(proposal.id)
+    original_transaction = repo.transaction
+    revoked = False
+
+    @contextmanager
+    def transaction_after_revocation() -> Iterator[None]:
+        nonlocal revoked
+        if not revoked:
+            repo.connection.execute(
+                "UPDATE community_memberships SET is_active = 0 WHERE id = ?",
+                (staff.membership.id,),
+            )
+            repo.connection.commit()
+            revoked = True
+        with original_transaction():
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_after_revocation)
+
+    with pytest.raises(PermissionError, match="active membership"):
+        _services(repo, staff).review_continuity_proposal(
+            proposal.id,
+            action="approved",
+        )
+
+    assert repo.get_continuity_proposal(writer.community.id, proposal.id).state == "submitted"
+    assert repo.list_continuity_review_events(writer.community.id, proposal.id)[-1].action == (
+        "submitted"
+    )
+
+
 def test_continuity_storage_guards_cover_every_persisted_row_family() -> None:
     services = create_services(path=":memory:")
     trigger_names = {
@@ -573,6 +695,60 @@ def test_continuity_storage_guards_cover_every_persisted_row_family() -> None:
             ) VALUES (?, ?, 'cross-tenant raw row', ?, ?)
             """,
             (writer.community.id, hp.membership.id, now, now),
+        )
+
+
+def test_storage_rejects_public_canon_for_nonpublic_approved_proposal() -> None:
+    services = create_services(path=":memory:")
+    repo = services.repo
+    writer = resolve_seed_persona(repo, "xmen_writer")
+    staff = resolve_seed_persona(repo, "xmen_staff")
+    assert writer.character is not None
+    board = repo.get_board_by_slug(writer.community.id, "new-york-city")
+    thread = repo.create_thread(
+        writer.community.id,
+        board.id,
+        writer.character.id,
+        "continuity-nonpublic-canon-guard",
+        "Continuity nonpublic canon guard",
+    )
+    writer_services = _services(repo, writer)
+    proposal = writer_services.create_continuity_proposal(
+        title="Participant continuity must stay nonpublic",
+        summary="The storage guard must preserve the review visibility decision.",
+        citations=(ContinuitySourceCitationDraft(writer.community.id, "thread", thread.id),),
+        affected_objects=(
+            ContinuityAffectedObjectDraft(
+                writer.community.id,
+                "character",
+                writer.character.id,
+            ),
+        ),
+    )
+    writer_services.submit_continuity_proposal(proposal.id)
+    _services(repo, staff).review_continuity_proposal(
+        proposal.id,
+        action="approved",
+        visibility="participants",
+    )
+    now = "2026-09-05T00:00:00+00:00"
+
+    with pytest.raises(sqlite3.IntegrityError, match="canon_entries"):
+        repo.connection.execute(
+            """
+            INSERT INTO canon_entries (
+                community_id, approved_proposal_id, approved_by_membership_id,
+                title, summary, visibility, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, '', 'public', ?, ?)
+            """,
+            (
+                writer.community.id,
+                proposal.id,
+                staff.membership.id,
+                proposal.title,
+                now,
+                now,
+            ),
         )
 
 

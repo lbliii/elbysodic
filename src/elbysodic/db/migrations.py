@@ -901,6 +901,7 @@ TENANT_PAIR_RULES: tuple[tuple[str, str], ...] = (
             WHERE proposal.id = {row}.approved_proposal_id
               AND proposal.community_id = {row}.community_id
               AND proposal.state = 'approved'
+              AND proposal.visibility = 'public'
         )
         AND EXISTS (
             SELECT 1 FROM community_memberships AS approver

@@ -332,7 +332,7 @@ def _can_view_thread(
             and thread.status in {"active", "open"}
             and not thread.is_locked
         )
-    if thread.status != "private":
+    if thread.status != "private" and thread.visibility != "private":
         return True
     if _can_moderate_thread(viewer, thread):
         return True
@@ -563,31 +563,41 @@ def create_manual_continuity_proposal(
     affected_rows = tuple(affected_objects)
     if not citation_rows or not affected_rows:
         raise ValueError("continuity proposals require source and affected-object links")
-    _require_active_continuity_viewer(viewer)
-    for citation in citation_rows:
-        result = continuity_source_visibility(repo, viewer, _citation_reference(citation))
-        if not result.visible:
-            raise PermissionError("continuity proposal source is not visible to its author")
-    for affected in affected_rows:
-        result = continuity_source_visibility(repo, viewer, _affected_reference(affected))
-        if not result.visible:
-            raise PermissionError("continuity affected object is not visible to its author")
-    if not policies.can_manage_world(viewer.membership, viewer.role) and not any(
-        _membership_participates_in_citation(repo, viewer.membership.id, citation)
-        for citation in citation_rows
-    ):
-        raise PermissionError(
-            "continuity proposal authors must start or participate in a source scene"
+    with repo.transaction():
+        source_viewer = _authoritative_continuity_viewer(repo, viewer)
+        membership = _require_active_continuity_source_viewer(source_viewer)
+        for citation in citation_rows:
+            result = continuity_source_visibility(
+                repo,
+                source_viewer,
+                _citation_reference(citation),
+            )
+            if not result.visible:
+                raise PermissionError("continuity proposal source is not visible to its author")
+        for affected in affected_rows:
+            result = continuity_source_visibility(
+                repo,
+                source_viewer,
+                _affected_reference(affected),
+            )
+            if not result.visible:
+                raise PermissionError("continuity affected object is not visible to its author")
+        if not policies.can_manage_world(membership, source_viewer.role) and not any(
+            _membership_participates_in_citation(repo, membership.id, citation)
+            for citation in citation_rows
+        ):
+            raise PermissionError(
+                "continuity proposal authors must start or participate in a source scene"
+            )
+        return repo.create_continuity_proposal(
+            viewer.community.id,
+            membership.id,
+            title=title,
+            summary=summary,
+            author_character_id=author_character_id,
+            citations=citation_rows,
+            affected_objects=affected_rows,
         )
-    return repo.create_continuity_proposal(
-        viewer.community.id,
-        viewer.membership.id,
-        title=title,
-        summary=summary,
-        author_character_id=author_character_id,
-        citations=citation_rows,
-        affected_objects=affected_rows,
-    )
 
 
 def submit_manual_continuity_proposal(
@@ -595,19 +605,20 @@ def submit_manual_continuity_proposal(
     viewer: ForumView,
     proposal_id: int,
 ) -> ContinuityProposal:
-    _require_active_continuity_viewer(viewer)
-    proposal = repo.get_continuity_proposal(viewer.community.id, proposal_id)
-    if proposal.author_membership_id != viewer.membership.id:
-        raise PermissionError("only the proposal author can submit continuity work")
-    if proposal.state == "submitted":
-        return proposal
-    if not can_transition_continuity_proposal(proposal.state, "submitted"):
-        raise ValueError(f"continuity proposal cannot move from {proposal.state} to submitted")
-    if not repo.list_continuity_source_citations(
-        viewer.community.id, proposal.id
-    ) or not repo.list_continuity_affected_objects(viewer.community.id, proposal.id):
-        raise ValueError("submitted continuity proposals require source and affected links")
     with repo.transaction():
+        source_viewer = _authoritative_continuity_viewer(repo, viewer)
+        membership = _require_active_continuity_source_viewer(source_viewer)
+        proposal = repo.get_continuity_proposal(viewer.community.id, proposal_id)
+        if proposal.author_membership_id != membership.id:
+            raise PermissionError("only the proposal author can submit continuity work")
+        if proposal.state == "submitted":
+            return proposal
+        if not can_transition_continuity_proposal(proposal.state, "submitted"):
+            raise ValueError(f"continuity proposal cannot move from {proposal.state} to submitted")
+        if not repo.list_continuity_source_citations(
+            viewer.community.id, proposal.id
+        ) or not repo.list_continuity_affected_objects(viewer.community.id, proposal.id):
+            raise ValueError("submitted continuity proposals require source and affected links")
         updated = repo.update_continuity_proposal_state(
             viewer.community.id,
             proposal.id,
@@ -617,7 +628,7 @@ def submit_manual_continuity_proposal(
         repo.create_continuity_review_event(
             viewer.community.id,
             proposal.id,
-            viewer.membership.id,
+            membership.id,
             action="submitted",
             actor_character_id=viewer.current_character.id if viewer.current_character else None,
         )
@@ -633,26 +644,29 @@ def review_manual_continuity_proposal(
     note: str = "",
     visibility: ContinuityVisibility = "staff",
 ) -> ContinuityProposal:
-    _require_active_continuity_viewer(viewer)
-    if not policies.can_manage_world(viewer.membership, viewer.role):
-        raise PermissionError("manage_world is required to review continuity proposals")
-    proposal = repo.get_continuity_proposal(viewer.community.id, proposal_id)
-    target_state = action
-    if proposal.state == target_state:
-        if action != "approved" or proposal.visibility == visibility:
-            return proposal
-        if proposal.visibility == "public" or visibility != "public":
-            raise ValueError("approved continuity visibility cannot be rewritten in place")
-    if not can_transition_continuity_proposal(proposal.state, target_state, reviewer=True):
-        raise ValueError(f"continuity proposal cannot move from {proposal.state} to {target_state}")
-    if action == "revision_requested" and not note.strip():
-        raise ValueError("revision requests require an author-facing note")
-    if action == "approved" and visibility == "public":
-        _require_public_continuity_sources(repo, viewer.community.id, proposal.id)
-    elif visibility == "public":
-        raise ValueError("public continuity visibility requires approval")
-    next_visibility: ContinuityVisibility = visibility if action == "approved" else "staff"
     with repo.transaction():
+        source_viewer = _authoritative_continuity_viewer(repo, viewer)
+        membership = _require_active_continuity_source_viewer(source_viewer)
+        if not policies.can_manage_world(membership, source_viewer.role):
+            raise PermissionError("manage_world is required to review continuity proposals")
+        proposal = repo.get_continuity_proposal(viewer.community.id, proposal_id)
+        target_state = action
+        if proposal.state == target_state:
+            if action != "approved" or proposal.visibility == visibility:
+                return proposal
+            if proposal.visibility == "public" or visibility != "public":
+                raise ValueError("approved continuity visibility cannot be rewritten in place")
+        if not can_transition_continuity_proposal(proposal.state, target_state, reviewer=True):
+            raise ValueError(
+                f"continuity proposal cannot move from {proposal.state} to {target_state}"
+            )
+        if action == "revision_requested" and not note.strip():
+            raise ValueError("revision requests require an author-facing note")
+        if action == "approved" and visibility == "public":
+            _require_public_continuity_sources(repo, viewer.community.id, proposal.id)
+        elif visibility == "public":
+            raise ValueError("public continuity visibility requires approval")
+        next_visibility: ContinuityVisibility = visibility if action == "approved" else "staff"
         updated = repo.update_continuity_proposal_state(
             viewer.community.id,
             proposal.id,
@@ -663,7 +677,7 @@ def review_manual_continuity_proposal(
         repo.create_continuity_review_event(
             viewer.community.id,
             proposal.id,
-            viewer.membership.id,
+            membership.id,
             action=action,
             actor_character_id=viewer.current_character.id if viewer.current_character else None,
             note=note,
@@ -672,13 +686,13 @@ def review_manual_continuity_proposal(
             repo.create_continuity_canon_entry(
                 viewer.community.id,
                 proposal.id,
-                viewer.membership.id,
+                membership.id,
                 title=proposal.title,
                 summary=proposal.summary,
             )
         repo.create_staff_audit_event(
             viewer.community.id,
-            viewer.membership.id,
+            membership.id,
             capability="manage_world",
             target_family="continuity_proposal",
             target_id=proposal.id,
@@ -828,6 +842,27 @@ def continuity_notification_targets(
 def _require_active_continuity_viewer(viewer: ForumView) -> None:
     if not viewer.membership.is_active:
         raise PermissionError("continuity workflows require an active membership")
+
+
+def _authoritative_continuity_viewer(
+    repo: ContinuityWorkflowRepository,
+    viewer: ForumView,
+) -> ContinuitySourceViewer:
+    membership = repo.get_membership(viewer.community.id, viewer.membership.id)
+    return ContinuitySourceViewer(
+        community_id=viewer.community.id,
+        membership=membership,
+        role=repo.get_role(viewer.community.id, membership.role_id),
+    )
+
+
+def _require_active_continuity_source_viewer(
+    viewer: ContinuitySourceViewer,
+) -> CommunityMembership:
+    membership = viewer.membership
+    if membership is None or not membership.is_active:
+        raise PermissionError("continuity workflows require an active membership")
+    return membership
 
 
 def _citation_reference(citation: ContinuitySourceCitationDraft) -> ContinuitySourceReference:

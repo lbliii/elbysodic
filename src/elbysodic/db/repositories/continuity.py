@@ -47,20 +47,20 @@ class ContinuityRepositoryMixin(GatewayRepositoryMixin):
         citations: Iterable[ContinuitySourceCitationDraft] = (),
         affected_objects: Iterable[ContinuityAffectedObjectDraft] = (),
     ) -> ContinuityProposal:
-        membership = self.get_membership(community_id, author_membership_id)
-        if not membership.is_active:
-            raise PermissionError("continuity proposal authors must be active members")
-        if author_character_id is not None:
-            character = self.get_character(community_id, author_character_id)
-            if character.membership_id != membership.id:
-                raise TenantBoundaryError("continuity proposal face must belong to its author")
         cleaned_title = title.strip()
         if not cleaned_title:
             raise ValueError("continuity proposal title is required")
         citation_rows = tuple(citations)
         affected_rows = tuple(affected_objects)
-        now = _utc_now()
         with self.transaction():
+            membership = self.get_membership(community_id, author_membership_id)
+            if not membership.is_active:
+                raise PermissionError("continuity proposal authors must be active members")
+            if author_character_id is not None:
+                character = self.get_character(community_id, author_character_id)
+                if character.membership_id != membership.id:
+                    raise TenantBoundaryError("continuity proposal face must belong to its author")
+            now = _utc_now()
             cursor = self.connection.execute(
                 """
                 INSERT INTO continuity_proposals (
