@@ -105,6 +105,7 @@ def test_public_export_profile_includes_only_public_safe_realm_domains() -> None
         "open_wanted_hooks",
         "claimed_claims",
         "published_material_metadata",
+        "approved_public_canon",
     }
     assert {
         "member_identities",
@@ -114,6 +115,7 @@ def test_public_export_profile_includes_only_public_safe_realm_domains() -> None
         "draft_materials",
         "notification_rows",
         "cross_community_records",
+        "unreviewed_continuity",
     }.issubset(_domain_names(public.excluded_domains))
     assert public.sensitive_domains == ()
 
@@ -130,6 +132,7 @@ def test_member_export_profile_excludes_staff_and_other_writer_private_state() -
         "open_wanted_hooks",
         "claimed_claims",
         "published_material_metadata",
+        "approved_public_canon",
     }.issubset(_domain_names(member.included_domains))
     assert {
         "other_writer_private_records",
@@ -139,6 +142,7 @@ def test_member_export_profile_excludes_staff_and_other_writer_private_state() -
         "draft_materials",
         "notification_rows",
         "cross_community_records",
+        "unreviewed_continuity",
     }.issubset(_domain_names(member.excluded_domains))
     assert member.sensitive_domains == ()
 
@@ -156,6 +160,7 @@ def test_staff_export_profile_is_current_community_operational_state() -> None:
         "claims_reserves_wanted",
         "plot_hooks_plotting_rooms",
         "staff_queues",
+        "continuity_proposals_canon",
     }.issubset(_domain_names(staff.included_domains))
     assert {
         "global_users",
@@ -169,6 +174,7 @@ def test_staff_export_profile_is_current_community_operational_state() -> None:
         "roles",
         "draft_materials",
         "staff_queues",
+        "continuity_review_material",
     }.issubset(_domain_names(staff.sensitive_domains))
 
 
@@ -199,6 +205,7 @@ def test_director_archive_profile_names_sensitive_domains_and_cross_tenant_exclu
         "invitations",
         "notification_rows",
         "staff_queues",
+        "continuity_proposals_canon",
     }.issubset(_domain_names(director.included_domains))
     assert {
         "memberships",
@@ -210,6 +217,7 @@ def test_director_archive_profile_names_sensitive_domains_and_cross_tenant_exclu
         "invitations",
         "notification_rows",
         "staff_queues",
+        "continuity_review_material",
     }.issubset(_domain_names(director.sensitive_domains))
     assert {
         "global_users",

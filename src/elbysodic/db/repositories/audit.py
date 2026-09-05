@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from elbysodic.db.repositories.base import _last_id, _utc_now
-from elbysodic.db.repositories.gateway import GatewayRepositoryMixin
+from elbysodic.db.repositories.continuity import ContinuityRepositoryMixin
 from elbysodic.db.repositories.rows import _staff_audit_event_from_row
 from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 from elbysodic.domain.models import StaffAuditEvent
@@ -11,7 +11,7 @@ from elbysodic.domain.models import StaffAuditEvent
 AUDIT_OUTCOMES = frozenset({"accepted", "rejected", "failed"})
 
 
-class AuditRepositoryMixin(GatewayRepositoryMixin):
+class AuditRepositoryMixin(ContinuityRepositoryMixin):
     def create_staff_audit_event(
         self,
         community_id: int,

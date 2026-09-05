@@ -193,6 +193,11 @@ def _tenant_pair_severity(issue: TenantPairIntegrityIssue) -> TenantIntegritySev
         "community_access_request_events",
         "character_applications",
         "character_application_events",
+        "continuity_proposals",
+        "continuity_source_citations",
+        "continuity_affected_objects",
+        "continuity_review_events",
+        "canon_entries",
     }:
         return "critical"
     return "high"
@@ -212,6 +217,8 @@ def _tenant_pair_domain(table_name: str) -> str:
         return "casting"
     if table_name == "notifications":
         return "notifications"
+    if table_name.startswith("continuity_") or table_name == "canon_entries":
+        return "continuity"
     return "tenant_pairs"
 
 
@@ -226,6 +233,8 @@ def _tenant_pair_remediation(table_name: str) -> str:
         return "repair access-request ownership before reviewing or inviting"
     if table_name == "community_invitations":
         return "revoke and recreate the invitation in the correct community"
+    if table_name.startswith("continuity_") or table_name == "canon_entries":
+        return "remove the invalid continuity link and recreate it through reviewed workflow APIs"
     return "repair or remove the cross-community reference before production use"
 
 

@@ -383,8 +383,15 @@ stable seeded account, membership, role, and active-face combination.
 
 ## Continuity Graph Gate
 
-Continuity Graph schema, services, routes, notifications, and export behavior
-must satisfy `docs/architecture/continuity-graph-readiness.md` before shipping.
-Until that gate moves with implementation proof, there should be no public
-continuity route family and no automatic canon publication from thread text,
-plotting-room notes, application review, staff notes, or access-request notes.
+Schema version 27 and its repository/service/export backend satisfy the manual
+backend gates in `docs/architecture/continuity-graph-readiness.md`. Proposal
+authors must be active source participants (unless they hold `manage_world`),
+reviewers need active community-local `manage_world`, public approval rechecks
+every source and affected object through an anonymous viewer, and review writes,
+canon materialization, and audit writes commit atomically.
+
+There is still no continuity route family and no notification fanout. Public or
+member routes, unread-count effects, notification copy, additional source
+families, archive formats, or automatic canon from thread text, plotting-room
+notes, application review, staff notes, or access-request notes require a new
+privacy review and rendered proof.
