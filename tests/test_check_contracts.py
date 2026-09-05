@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import tomllib
 from pathlib import Path
@@ -74,6 +75,16 @@ def test_make_and_poe_share_the_canonical_gate() -> None:
     make = Path("Makefile").read_text()
     assert "check:\n\tuv run python -m elbysodic.checks\n" in make
     assert "ci:\n\tuv run python -m elbysodic.checks --full --base $(CONTRACT_DIFF_BASE)" in make
+
+
+def test_shell_does_not_override_the_selected_python_runtime() -> None:
+    make = shutil.which("make")
+    assert make is not None
+    result = subprocess.run(  # noqa: S603 -- fixed Make dry-run, resolved executable
+        [make, "-n", "shell"], capture_output=True, text=True, check=True
+    )
+    assert "activate" in result.stdout
+    assert "PYTHON_GIL=" not in result.stdout
 
 
 def test_fragment_guidance_is_ignored_but_invalid_release_notes_fail(tmp_path, capsys) -> None:
