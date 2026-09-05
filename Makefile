@@ -125,5 +125,5 @@ clean:
 	find . -type d -name ".ty_cache" -exec rm -rf {} + 2>/dev/null || true
 
 shell:
-	@echo "Activating environment with GIL disabled..."
-	@bash -c 'source $(VENV_DIR)/bin/activate && export PYTHON_GIL=0 && echo "venv active, GIL disabled" && exec bash'
+	@echo "Activating environment..."
+	@bash -c 'source $(VENV_DIR)/bin/activate && echo "venv active" && exec bash'

@@ -5,6 +5,23 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _client_test_command(repo_root: Path | None = None) -> list[str]:
+    root = repo_root or REPO_ROOT
+    client_root = root / "tests" / "client"
+    paths = sorted(client_root.glob("*.test.cjs"))
+    if not paths:
+        # The tooling leaf integrates before the composer test leaf.
+        paths = [client_root / "composer.test.cjs"]
+    return [
+        "node",
+        "--test",
+        *(path.relative_to(root).as_posix() for path in paths),
+    ]
 
 
 def check_commands(
@@ -32,7 +49,7 @@ def check_commands(
             "--baseline",
             "tests/fixtures/chirp_hypermedia_baseline.json",
         ],
-        ["node", "--test", "tests/client/composer.test.cjs"],
+        _client_test_command(),
     ]
     if full:
         tests = ["tests/test_cli.py"] if quick else []
