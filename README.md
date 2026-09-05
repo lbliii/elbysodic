@@ -162,8 +162,9 @@ Important invariants:
 The package declares normal published dependencies:
 
 ```toml
-bengal-chirp[config,forms,sessions,ui]>=0.8.0
-chirp-ui>=0.10.0
+bengal-chirp[auth,config,forms,passkeys,sessions,ui]>=0.10.0
+bengal-pounce>=0.9.1,<0.10.0
+chirp-ui>=0.11.0
 ```
 
 For local development, you can keep editable sibling checkout overrides in an
@@ -183,12 +184,19 @@ from the registry. Third-party dependencies still resolve from the lockfile.
 
 ## Development
 
-Create the Python 3.14t environment and install the project:
+Create the pinned Python 3.14.2 environment and install the project. Install
+Node.js 22 or newer for executable composer behavior tests (no npm packages
+are required). Node is a development prerequisite, not an app runtime:
 
 ```bash
 make setup
 make install
 ```
+
+Standard and free-threaded Python are supported. To exercise the CI runtime,
+use `make setup PYTHON_VERSION=3.14.2t` in a separate checkout, then
+`make install` and `PYTHON_GIL=0 make test-cov`. Local process smoke verifies
+the subprocess reports the same GIL posture as its interpreter.
 
 Run the local gate:
 
@@ -211,15 +219,17 @@ Useful commands:
 - `uv run pounce check --app elbysodic.web:create_app --format plain` validates
   the Pounce import/config path used by the Chirp production server.
 
-The full handoff gate used by agents is:
+Make, Poe, and `elbysodic dev check` share `elbysodic.checks`. The full
+handoff gate includes lint, formatting, types, strict app checks, Kida,
+hypermedia baseline, executable client tests, pytest, and contract diff:
 
 ```bash
-uv run ruff check .
-uv run ruff format . --check
-uv run pytest -q --tb=short
-uv run ty check src/elbysodic/ tests/
-uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)"
+uv run python -m elbysodic.checks --full
 ```
+
+`make check` runs the same checks without pytest or contract diff. The CLI's
+`dev check --quick` retains all static/client checks, narrows pytest to the CLI,
+and omits contract diff.
 
 ## Running Locally
 

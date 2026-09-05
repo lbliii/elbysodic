@@ -4,6 +4,13 @@ Use this runbook before sharing a production Railway URL with writers or
 directors. A local test can prove the route contract, but this run records the
 real host, volume, cookie, static media, and restart posture.
 
+Local probe smoke supports standard and free-threaded Python 3.14.2. It
+requires the subprocess to report the interpreter's actual GIL posture. A
+remote `--build-id` check requires a valid reported runtime; add
+`--expect-gil disabled` (or `enabled`) with `--origin` and `--build-id` when the
+target explicitly requires that mode. This separates general health checks
+from a deliberate free-threaded runtime assertion.
+
 ## Required Posture
 
 - `ELBYSODIC_ENV=production`

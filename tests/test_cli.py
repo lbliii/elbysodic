@@ -16,7 +16,7 @@ from urllib.request import urlopen
 import pytest
 from chirp.testing import TestClient
 
-from elbysodic import cli
+from elbysodic import checks, cli
 from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.services import AppServices, create_services, initialize_database
 from elbysodic.web import app as web_app
@@ -306,11 +306,16 @@ def test_dev_check_runs_standard_gate(monkeypatch) -> None:
         calls.append(command)
         return subprocess.CompletedProcess(command, 0)
 
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(checks.subprocess, "run", fake_run)
 
     cli.main(["dev", "check"])
 
-    assert calls == cli.developer_check_commands(quick=False)
+    assert ["uv", "run", "python", "scripts/kida_check.py"] in calls
+    assert ["node", "--test", "tests/client/composer.test.cjs"] in calls
+    assert any("--baseline" in command for command in calls)
+    assert any("warnings_as_errors=True" in argument for command in calls for argument in command)
+    assert ["uv", "run", "pytest", "-q", "--tb=short"] in calls
+    assert any("diff" in command for command in calls)
 
 
 def test_dev_check_quick_runs_focused_pytest(monkeypatch) -> None:
@@ -320,7 +325,7 @@ def test_dev_check_quick_runs_focused_pytest(monkeypatch) -> None:
         calls.append(command)
         return subprocess.CompletedProcess(command, 0)
 
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(checks.subprocess, "run", fake_run)
 
     cli.main(["dev", "check", "--quick"])
 
@@ -334,7 +339,7 @@ def test_dev_check_exits_on_first_failure(monkeypatch) -> None:
         calls.append(command)
         return subprocess.CompletedProcess(command, 2)
 
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(checks.subprocess, "run", fake_run)
 
     with pytest.raises(SystemExit) as exc_info:
         cli.run_developer_checks()

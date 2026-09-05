@@ -1,7 +1,7 @@
 # Elbysodic Makefile
-# Wraps uv commands to ensure Python 3.14t is used.
+# Standard Python matches .python-version; override for free-threaded validation.
 
-PYTHON_VERSION ?= 3.14t
+PYTHON_VERSION ?= 3.14.2
 VENV_DIR ?= .venv
 
 CHIRP_APP ?= elbysodic.web.contract_app:app
@@ -94,9 +94,11 @@ contract-diff:
 contract-baseline-check:
 	uv run chirp check $(CHIRP_APP) --baseline $(CONTRACT_BASELINE)
 
-check: lint format-check ty app-check kida-check contract-baseline-check
+check:
+	uv run python -m elbysodic.checks
 
-ci: check contract-diff test
+ci:
+	uv run python -m elbysodic.checks --full --base $(CONTRACT_DIFF_BASE)
 
 changelog:
 	uv run towncrier build --yes
