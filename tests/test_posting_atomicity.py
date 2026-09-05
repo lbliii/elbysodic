@@ -13,6 +13,7 @@ from chirp.testing import TestClient
 
 from elbysodic.db import ForumRepository, connect
 from elbysodic.services import AppServices, create_services
+from elbysodic.services.commands import PendingCommandError
 from elbysodic.web import create_app
 from elbysodic.web.commands import draft_ack_path
 
@@ -147,6 +148,40 @@ def test_command_completion_failure_rolls_back_post_and_token(
     assert replay.replayed is True
     assert replay.result_path == first.result_path == result_path
     assert len(services.repo.list_posts(viewer.community.id, thread.id)) == len(before_posts) + 1
+
+
+def test_legacy_pending_command_fails_closed_without_reposting() -> None:
+    services = create_services(path=":memory:")
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    board = services.repo.get_board_by_slug(viewer.community.id, "danger-room")
+    thread = services.repo.get_thread_by_slug(viewer.community.id, board.id, "sentinel-drill")
+    command_key = "reply:danger-room:sentinel-drill"
+    submission_id = "legacy-ambiguous-command"
+
+    assert services.reserve_command(command_key, submission_id)
+    committed_post = services.reply_to_thread(
+        "danger-room",
+        "sentinel-drill",
+        viewer.current_character.id,
+        "This post committed before the old command result write failed.",
+    )
+
+    invoked = False
+
+    def duplicate_operation() -> str:
+        nonlocal invoked
+        invoked = True
+        return "/must-not-run"
+
+    with pytest.raises(PendingCommandError, match="may already have completed"):
+        services.execute_command(command_key, submission_id, duplicate_operation)
+
+    assert invoked is False
+    assert services.command_result(command_key, submission_id) is None
+    posts = services.repo.list_posts(viewer.community.id, thread.id)
+    assert [post.id for post in posts].count(committed_post.id) == 1
+    assert posts[-1].body == ("This post committed before the old command result write failed.")
 
 
 def test_concurrent_same_title_threads_receive_distinct_slugs(tmp_path) -> None:

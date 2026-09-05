@@ -44,20 +44,15 @@ class CommandRepository(Protocol):
         result_path: str,
     ) -> None: ...
 
-    def discard_command_submission(
-        self,
-        community_id: int,
-        membership_id: int,
-        *,
-        command_key: str,
-        token: str,
-    ) -> bool: ...
-
 
 @dataclass(frozen=True, slots=True)
 class CommandExecution:
     result_path: str
     replayed: bool
+
+
+class PendingCommandError(ValueError):
+    """Raised when an older command reservation has no trustworthy result."""
 
 
 def execute_command(
@@ -81,14 +76,9 @@ def execute_command(
             if submission is not None and submission.result_path is not None:
                 return CommandExecution(submission.result_path, replayed=True)
             if submission is not None:
-                # Reservations written by older releases had no enclosing
-                # transaction. They are safe to retry because they carry no
-                # persisted result.
-                repo.discard_command_submission(
-                    community_id,
-                    membership_id,
-                    command_key=command_key,
-                    token=token,
+                raise PendingCommandError(
+                    "This submission may already have completed, but its result was not "
+                    "recorded. Reload the scene before posting again."
                 )
             if not repo.reserve_command_submission(
                 community_id,
