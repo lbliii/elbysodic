@@ -1,7 +1,7 @@
 # Elbysodic Makefile
-# Wraps uv commands to ensure Python 3.14t is used.
+# Standard Python matches .python-version; override for free-threaded validation.
 
-PYTHON_VERSION ?= 3.14t
+PYTHON_VERSION ?= 3.14.2
 VENV_DIR ?= .venv
 
 CHIRP_APP ?= elbysodic.web.contract_app:app
@@ -31,7 +31,7 @@ help:
 	@echo "  make kida-check      - Run kida static template validation"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
-	@echo "  make check           - Run lint, format-check, ty, app-check, kida-check, and contract-baseline-check"
+	@echo "  make check           - Run lint, format, types, strict app, Kida, contract baseline, and client tests"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
 	@echo "  make changelog       - Compile changelog.d fragments into CHANGELOG.md"
 	@echo "  make changelog-draft - Preview changelog from fragments"
@@ -94,9 +94,11 @@ contract-diff:
 contract-baseline-check:
 	uv run chirp check $(CHIRP_APP) --baseline $(CONTRACT_BASELINE)
 
-check: lint format-check ty app-check kida-check contract-baseline-check
+check:
+	uv run python -m elbysodic.checks
 
-ci: check contract-diff test
+ci:
+	uv run python -m elbysodic.checks --full --base $(CONTRACT_DIFF_BASE)
 
 changelog:
 	uv run towncrier build --yes
@@ -123,5 +125,5 @@ clean:
 	find . -type d -name ".ty_cache" -exec rm -rf {} + 2>/dev/null || true
 
 shell:
-	@echo "Activating environment with GIL disabled..."
-	@bash -c 'source $(VENV_DIR)/bin/activate && export PYTHON_GIL=0 && echo "venv active, GIL disabled" && exec bash'
+	@echo "Activating environment..."
+	@bash -c 'source $(VENV_DIR)/bin/activate && echo "venv active" && exec bash'

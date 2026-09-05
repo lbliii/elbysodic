@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import http.client
 import json
 import os
 import signal
@@ -12,7 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
@@ -44,12 +43,10 @@ def _request(
             body = response.read()
             headers = list(response.headers.items())
             return int(response.status), body, headers
-    except http.client.HTTPException as exc:
-        if exc.response is None:
-            raise
-        body = exc.response.read()
-        headers = list(exc.response.headers.items())
-        return int(exc.response.status), body, headers
+    except HTTPError as exc:
+        body = exc.read()
+        headers = list(exc.headers.items())
+        return int(exc.code), body, headers
 
 
 def _wait_for_status(
@@ -123,7 +120,7 @@ def verify_readyz_ok(origin: str) -> None:
         raise RuntimeError(f"/readyz returned HTTP {status}")
 
 
-def verify_pounce_info(origin: str, *, build_id: str) -> None:
+def verify_pounce_info(origin: str, *, build_id: str, expected_gil: bool | None = None) -> None:
     status, body, _ = _request(origin, "/_pounce/info")
     if status != 200:
         raise RuntimeError(f"/_pounce/info returned HTTP {status}")
@@ -133,8 +130,11 @@ def verify_pounce_info(origin: str, *, build_id: str) -> None:
         raise RuntimeError(
             f"/_pounce/info build_id expected {build_id!r}, got {runtime.get('build_id')!r}"
         )
-    if runtime.get("gil_enabled") is not False:
-        raise RuntimeError(f"/_pounce/info expected gil_enabled=false, got {payload!r}")
+    gil_enabled = runtime.get("gil_enabled")
+    if not isinstance(gil_enabled, bool):
+        raise TypeError("/_pounce/info did not report a boolean gil_enabled value")
+    if expected_gil is not None and gil_enabled is not expected_gil:
+        raise RuntimeError(f"/_pounce/info expected gil_enabled={expected_gil}, got {gil_enabled}")
 
 
 def verify_readyz_draining_contract() -> None:
@@ -177,7 +177,7 @@ def run_local_smoke() -> int:
         _wait_for_status(origin, "/ready", expected=200)
         verify_head_probes(origin)
         verify_readyz_ok(origin)
-        verify_pounce_info(origin, build_id=build_id)
+        verify_pounce_info(origin, build_id=build_id, expected_gil=sys._is_gil_enabled())
         verify_readyz_draining_contract()
         process.send_signal(signal.SIGTERM)
         process.wait(timeout=15)
@@ -197,13 +197,13 @@ def run_local_smoke() -> int:
     return 0
 
 
-def run_remote_smoke(origin: str, *, build_id: str | None) -> int:
+def run_remote_smoke(origin: str, *, build_id: str | None, expected_gil: bool | None = None) -> int:
     origin = origin.rstrip("/")
     verify_head_probes(origin)
     _wait_for_status(origin, "/ready", expected=200)
     verify_readyz_ok(origin)
     if build_id:
-        verify_pounce_info(origin, build_id=build_id)
+        verify_pounce_info(origin, build_id=build_id, expected_gil=expected_gil)
     print(f"Railway probe smoke passed against {origin}")
     return 0
 
@@ -218,13 +218,22 @@ def _parser() -> argparse.ArgumentParser:
         "--build-id",
         help="Expected POUNCE_BUILD_ID value when checking /_pounce/info on a remote origin.",
     )
+    parser.add_argument(
+        "--expect-gil",
+        choices=("enabled", "disabled"),
+        help="Require a specific remote runtime posture (requires --origin and --build-id).",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.expect_gil and not (args.origin and args.build_id):
+        parser.error("--expect-gil requires --origin and --build-id")
     if args.origin:
-        return run_remote_smoke(args.origin, build_id=args.build_id)
+        expected_gil = None if args.expect_gil is None else args.expect_gil == "enabled"
+        return run_remote_smoke(args.origin, build_id=args.build_id, expected_gil=expected_gil)
     return run_local_smoke()
 
 

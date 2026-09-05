@@ -203,8 +203,8 @@ kida-check = { cmd = "python scripts/kida_check.py", help = "Static kida templat
 contract-diff = { cmd = "chirp diff elbysodic.web.contract_app:app --base origin/main", help = "Diff hypermedia contracts vs origin/main" }
 contract-baseline-check = { cmd = "chirp check elbysodic.web.contract_app:app --baseline tests/fixtures/chirp_hypermedia_baseline.json", help = "Verify committed chirp contract JSON baseline" }
 
-ci = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check", "contract-baseline-check", "contract-diff", "test"], help = "Full CI check" }
-check = { sequence = ["lint", "format-check", "ty", "app-check", "kida-check", "contract-baseline-check"], help = "Quick check without tests" }
+ci = { cmd = "python -m elbysodic.checks --full", help = "Full developer gate with tests and contract diff" }
+check = { cmd = "python -m elbysodic.checks", help = "Static, template, hypermedia, and client behavior checks" }
 
 dist = { shell = "rm -rf dist/ && uv build && ls -la dist/", help = "Build distribution" }
 
