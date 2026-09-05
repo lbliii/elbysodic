@@ -31,9 +31,12 @@ and the fragment.
 Storage and History APIs are browser effects rather than posting authority.
 Access failures must leave the textarea, face selector, preview, validation, and
 submission usable. The status reports `Draft autosave unavailable.` instead of
-claiming that a draft was saved. The receipt only controls local cleanup; it
-does not grant permission, bypass validation, or alter server idempotency.
+claiming that a draft was saved. In-memory face snapshots keep identity switches
+independent for the life of the page even when persistent storage is unavailable.
+The receipt only controls local cleanup; it does not grant permission, bypass
+validation, or alter server idempotency.
 
 Mention searches use monotonically increasing request generations. Only the
 latest generation may update results, selection, open state, or loading state,
-so a slow older response cannot replace suggestions for newer text.
+so a slow older response cannot replace suggestions for newer text or reopen a
+picker the writer dismissed.
