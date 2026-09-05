@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
 
@@ -138,6 +139,15 @@ def test_valid_program_blueprint_has_no_validation_errors() -> None:
     )
 
     assert validate_program_blueprint(blueprint) == ()
+
+
+def test_documented_program_blueprint_example_is_executable() -> None:
+    document = Path("docs/product/program-blueprints.md").read_text()
+    source = document.split("```yaml\n", 1)[1].split("```", 1)[0]
+
+    preview = preview_program_blueprint_yaml(source)
+
+    assert preview.is_valid, preview.errors
 
 
 def test_program_blueprint_accepts_complete_theme_tokens() -> None:
@@ -911,7 +921,7 @@ materials:
     assert changed.preview_fingerprint != preview.preview_fingerprint
 
 
-def test_program_blueprint_apply_rejects_live_collision_stale_fingerprint(
+def test_program_blueprint_apply_rejects_live_collision_stale_fingerprint_in_transaction(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     connection = connect()
@@ -1043,14 +1053,21 @@ theme:
     assert changed_rows[("wanted hook", "blueprint-stale-wanted")].action == "skip"
     assert changed_rows[("theme", "blueprint-stale-theme")].action == "update"
 
-    def fail_transaction() -> Iterator[None]:
-        raise AssertionError("stale collision apply should not enter a transaction")
-        yield
+    original_transaction = repo.transaction
+    entered = False
 
-    monkeypatch.setattr(repo, "transaction", fail_transaction)
+    @contextmanager
+    def transaction_with_probe() -> Iterator[None]:
+        nonlocal entered
+        entered = True
+        with original_transaction():
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_with_probe)
 
     with pytest.raises(ValueError, match="preview changed"):
         services.apply_program_blueprint_preview(source, preview.preview_fingerprint)
+    assert entered
 
 
 def test_program_blueprint_preview_scopes_existing_seed_collisions_by_section() -> None:
@@ -1152,35 +1169,63 @@ def test_program_blueprint_apply_rejects_non_staff_before_transaction(
         )
 
 
-def test_program_blueprint_apply_rejects_stale_fingerprint_before_transaction(
+def test_program_blueprint_apply_revalidates_live_values_after_entering_transaction(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    connection = connect()
-    create_schema(connection)
-    repo = ForumRepository(connection)
-    seed = seed_demo_forum(repo)
-    moira = repo.get_membership_by_username(seed.community.id, "moira")
-    services = AppServices(
-        repo,
-        DemoSeed(
-            seed.community,
-            repo.get_user(moira.user_id),
-            moira,
-            repo.get_character_by_slug(seed.community.id, "moira-mactaggert"),
-        ),
+    repo, services = _blueprint_staff_services()
+    source = _complete_apply_blueprint_source()
+    initial = services.preview_program_blueprint(source)
+    services.apply_program_blueprint_preview(
+        source,
+        initial.preview_fingerprint,
+        mode="create_only",
     )
+    reviewed_source = source.replace("A safe scene hub.", "A reviewed scene hub.")
+    reviewed = services.preview_program_blueprint(reviewed_source)
+    community = services.viewer().community
+    original_transaction = repo.transaction
+    entered = False
 
-    def fail_transaction() -> Iterator[None]:
-        raise AssertionError("stale apply should not enter a transaction")
-        yield
+    @contextmanager
+    def transaction_with_concurrent_edit() -> Iterator[None]:
+        nonlocal entered
+        entered = True
+        board = repo.get_board_by_slug(community.id, "blueprint-apply-board")
+        repo.update_board(
+            community.id,
+            board.id,
+            name=board.name,
+            description="Another director edited this after the outer preflight.",
+            sort_order=board.sort_order,
+            parent_board_id=board.parent_board_id,
+            board_kind=board.board_kind,
+            sidebar_section=board.sidebar_section,
+            tagline=board.tagline,
+            image_url=board.image_url,
+            image_alt=board.image_alt,
+            image_treatment=board.image_treatment,
+            image_focal_point=board.image_focal_point,
+            image_overlay=board.image_overlay,
+            is_private=board.is_private,
+            navigation_order=board.navigation_order,
+            show_in_navigation=board.show_in_navigation,
+        )
+        with original_transaction():
+            yield
 
-    monkeypatch.setattr(repo, "transaction", fail_transaction)
+    monkeypatch.setattr(repo, "transaction", transaction_with_concurrent_edit)
 
     with pytest.raises(ValueError, match="preview changed"):
         services.apply_program_blueprint_preview(
-            _transaction_probe_blueprint_source(),
-            "stale-preview",
+            reviewed_source,
+            reviewed.preview_fingerprint,
+            mode="explicit_update",
         )
+    assert entered
+    assert (
+        repo.get_board_by_slug(community.id, "blueprint-apply-board").description
+        == "Another director edited this after the outer preflight."
+    )
 
 
 def test_program_blueprint_create_only_hydrates_every_supported_primitive() -> None:
@@ -1231,7 +1276,7 @@ def test_program_blueprint_create_only_hydrates_every_supported_primitive() -> N
     ).fetchone()
     assert command["result_path"] == "/studio/intake?blueprint=applied"
 
-    with pytest.raises(ValueError, match="preview changed"):
+    with pytest.raises(ValueError, match="already applied in create_only mode"):
         services.apply_program_blueprint_preview(
             source,
             preview.preview_fingerprint,
@@ -1319,6 +1364,45 @@ materials:
     assert preserved.name == "Director-edited Board"
     assert preserved.description == "Director-edited description that skip mode must preserve."
     assert created.name == "Blueprint Skip New Board"
+
+
+def test_program_blueprint_skip_existing_never_reuses_another_writer_face() -> None:
+    repo, seeded_services = _blueprint_staff_services()
+    community = seeded_services.viewer().community
+    staff_role = repo.get_role_by_slug(community.id, "staff")
+    importer_user = repo.create_user("blueprint-importer@example.com", "hash")
+    importer = repo.create_membership(
+        community.id,
+        importer_user.id,
+        staff_role.id,
+        "blueprint-importer",
+        "Blueprint Importer",
+    )
+    writer = repo.get_membership_by_username(community.id, "starlane")
+    foreign_face = repo.create_character(
+        community.id,
+        writer.id,
+        "blueprint-apply-face",
+        "Writer-owned Blueprint Face",
+    )
+    services = AppServices(
+        repo,
+        DemoSeed(community, importer_user, importer, None),
+    )
+    source = _complete_apply_blueprint_source()
+    preview = services.preview_program_blueprint(source)
+
+    services.apply_program_blueprint_preview(
+        source,
+        preview.preview_fingerprint,
+        mode="skip_existing",
+    )
+
+    refreshed_importer = repo.get_membership(community.id, importer.id)
+    wanted = repo.get_wanted_ad_by_slug(community.id, "blueprint-apply-wanted")
+    assert refreshed_importer.default_character_id is None
+    assert wanted.creator_character_id is None
+    assert repo.get_character_by_slug(community.id, foreign_face.slug) == foreign_face
 
 
 def test_program_blueprint_apply_ignores_same_slugs_in_another_community() -> None:
