@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
+from chirp.app import App
 from pounce._health import build_health_response
 from pounce._request_pipeline import maybe_build_builtin_response
 from pounce.config import ServerConfig
 
-from elbysodic.web.pounce_railway import _railway_server_config_kwargs
+from elbysodic.web.pounce_railway import (
+    _railway_server_config_kwargs,
+    run_chirp_asgi_adapter,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RAILWAY_JSON = REPO_ROOT / "railway.json"
@@ -53,6 +58,45 @@ def test_railway_bundle_uses_single_worker_until_process_drain_is_fixed() -> Non
 
     assert config["workers"] == 1
     assert config["health_check_path"] == "/readyz"
+
+
+def test_chirp_launch_adapter_uses_public_freeze_and_serves_wrapper() -> None:
+    calls: list[tuple[object, ...]] = []
+    runtime_app = object()
+    lifecycle_collector = object()
+
+    class Launcher:
+        def run(
+            self,
+            app: object,
+            *,
+            host: str | None,
+            port: int | None,
+            lifecycle_collector: Any | None,
+        ) -> None:
+            calls.append(("run", app, host, port, lifecycle_collector))
+
+    class ChirpCanary:
+        _server = Launcher()
+
+        def freeze(self) -> None:
+            calls.append(("freeze",))
+
+        def _ensure_frozen(self) -> None:
+            raise AssertionError("Chirp 0.10 public freeze must be preferred")
+
+    run_chirp_asgi_adapter(
+        cast(App, ChirpCanary()),
+        runtime_app,
+        host="127.0.0.1",
+        port=8080,
+        lifecycle_collector=lifecycle_collector,
+    )
+
+    assert calls == [
+        ("freeze",),
+        ("run", runtime_app, "127.0.0.1", 8080, lifecycle_collector),
+    ]
 
 
 @pytest.mark.process

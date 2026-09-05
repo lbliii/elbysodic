@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 from elbysodic.domain.models import (
@@ -17,6 +17,7 @@ from elbysodic.domain.models import (
     PlottingRoom,
     PlottingRoomMessage,
     PlottingRoomParticipant,
+    Role,
     Thread,
     WantedAd,
     WantedAdInterest,
@@ -42,6 +43,7 @@ from elbysodic.services.read_models import (
     PlotHookInterestInboxItem,
     PlottingDesk,
     PlottingRoomDetail,
+    PlottingRoomMessageBatch,
     PlottingRoomMessageView,
     PlottingRoomParticipantView,
     PlottingRoomSummary,
@@ -82,6 +84,8 @@ class PlottingRepository(
         community_id: int,
         membership_id: int,
     ) -> CommunityMembership: ...
+
+    def get_role(self, community_id: int, role_id: int) -> Role: ...
 
     def get_material(self, community_id: int, material_id: int) -> Material: ...
 
@@ -430,18 +434,60 @@ def read_plotting_room(
             if policies.can_start_thread(viewer.membership, board, viewer.role)
         ],
         scene_character_options=_scene_character_options(viewer, participants),
-        messages=[
-            plotting_room_message_view(repo, viewer.community.id, message)
-            for message in repo.list_plotting_room_messages(
+        messages=plotting_room_message_views(
+            repo,
+            viewer.community.id,
+            repo.list_plotting_room_messages(
                 viewer.community.id,
                 room.id,
                 limit=100,
-            )
-        ],
+            ),
+        ),
         created_at_label=timestamp_label(room.created_at),
         can_manage=can_create_scene,
         can_edit_plan=can_edit_plan,
         can_create_scene=can_create_scene and room.target_thread_id is None,
+    )
+
+
+def read_plotting_room_messages(
+    repo: PlottingRepository,
+    viewer: ForumView,
+    room_id: int,
+    *,
+    after_id: int | None,
+    limit: int = 100,
+) -> PlottingRoomMessageBatch:
+    membership = repo.get_membership(viewer.community.id, viewer.membership.id)
+    role = repo.get_role(viewer.community.id, membership.role_id)
+    if not membership.is_active:
+        raise PermissionError(f"membership {membership.id} cannot view room {room_id}")
+    current_viewer = replace(viewer, membership=membership, role=role)
+    room = repo.get_plotting_room(current_viewer.community.id, room_id)
+    participants = repo.list_plotting_room_participants(
+        current_viewer.community.id,
+        room.id,
+    )
+    participant_membership_ids = {item.membership_id for item in participants}
+    if not _can_edit_plotting_room_plan(
+        current_viewer,
+        room,
+        participant_membership_ids,
+    ):
+        raise PermissionError(f"membership {membership.id} cannot view room {room.id}")
+    messages = repo.list_plotting_room_messages(
+        current_viewer.community.id,
+        room.id,
+        after_id=after_id,
+        limit=limit,
+    )
+    return PlottingRoomMessageBatch(
+        messages=plotting_room_message_views(
+            repo,
+            current_viewer.community.id,
+            messages,
+        ),
+        last_message_id=messages[-1].id if messages else after_id,
     )
 
 
@@ -580,6 +626,40 @@ def plotting_room_message_view(
         ),
         created_at_label=timestamp_label(message.created_at),
     )
+
+
+def plotting_room_message_views(
+    repo: PlottingRepository,
+    community_id: int,
+    messages: list[PlottingRoomMessage],
+) -> list[PlottingRoomMessageView]:
+    memberships = repo.list_memberships_by_ids(
+        community_id,
+        sorted({message.author_membership_id for message in messages}),
+    )
+    characters = repo.list_characters_by_ids(
+        community_id,
+        sorted(
+            {
+                message.author_character_id
+                for message in messages
+                if message.author_character_id is not None
+            }
+        ),
+    )
+    return [
+        PlottingRoomMessageView(
+            message=message,
+            author_membership=memberships[message.author_membership_id],
+            author_character=(
+                characters[message.author_character_id]
+                if message.author_character_id is not None
+                else None
+            ),
+            created_at_label=timestamp_label(message.created_at),
+        )
+        for message in messages
+    ]
 
 
 async def subscribe_plotting_room_live(room_id: int) -> asyncio.Queue[PlottingRoomLiveEvent]:
