@@ -33,6 +33,7 @@ def test_required_checks_are_present_in_every_developer_gate() -> None:
         assert ["uv", "run", "ruff", "format", ".", "--check"] in commands
         assert ["uv", "run", "ty", "check", "src/elbysodic/", "tests/"] in commands
         assert ["uv", "run", "python", "scripts/kida_check.py"] in commands
+        assert ["uv", "run", "milo", "verify", "src/elbysodic/cli.py"] in commands
         assert ["node", "--test", "tests/client/composer.test.cjs"] in commands
         assert any("--baseline" in command for command in commands)
         assert any("warnings_as_errors=True" in arg for command in commands for arg in command)
@@ -88,6 +89,18 @@ def test_missing_client_runtime_has_actionable_failure(monkeypatch, capsys) -> N
         checks.run_commands([["node", "--test", "tests/client/composer.test.cjs"]])
     assert exc.value.code == 127
     assert "'node' on PATH" in capsys.readouterr().err
+
+
+def test_canonical_gate_can_route_output_to_a_host_owned_sink(monkeypatch) -> None:
+    messages: list[str] = []
+
+    def run(command, **kwargs):
+        return subprocess.CompletedProcess(command, 0, stdout="check output")
+
+    monkeypatch.setattr(checks.subprocess, "run", run)
+    checks.run_commands([["example", "check"]], log=messages.append)
+
+    assert messages == ["$ example check", "check output"]
 
 
 def test_make_and_poe_share_the_canonical_gate() -> None:

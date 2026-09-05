@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -40,6 +41,7 @@ def check_commands(
             "create_app(debug=False, db_path=':memory:').check(warnings_as_errors=True)",
         ],
         ["uv", "run", "python", "scripts/kida_check.py"],
+        ["uv", "run", "milo", "verify", "src/elbysodic/cli.py"],
         [
             "uv",
             "run",
@@ -61,15 +63,39 @@ def check_commands(
     return commands
 
 
-def run_commands(commands: list[list[str]]) -> None:
+def run_commands(
+    commands: list[list[str]], *, log: Callable[[str], None] | None = None
+) -> None:
     for command in commands:
-        sys.stdout.write(f"$ {' '.join(command)}\n")
-        sys.stdout.flush()
+        message = f"$ {' '.join(command)}"
+        if log is None:
+            sys.stdout.write(f"{message}\n")
+            sys.stdout.flush()
+        else:
+            log(message)
         try:
-            result = subprocess.run(command, check=False)  # noqa: S603 -- fixed gate commands
+            if log is None:
+                result = subprocess.run(  # noqa: S603 -- fixed gate commands
+                    command,
+                    check=False,
+                )
+            else:
+                result = subprocess.run(  # noqa: S603 -- fixed gate commands
+                    command,
+                    check=False,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
         except FileNotFoundError as exc:
-            sys.stderr.write(f"Developer check requires {command[0]!r} on PATH.\n")
+            message = f"Developer check requires {command[0]!r} on PATH."
+            if log is None:
+                sys.stderr.write(f"{message}\n")
+            else:
+                log(message)
             raise SystemExit(127) from exc
+        if log is not None and result.stdout:
+            log(result.stdout.rstrip())
         if result.returncode:
             raise SystemExit(result.returncode)
 

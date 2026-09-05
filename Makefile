@@ -8,7 +8,7 @@ CHIRP_APP ?= elbysodic.web.contract_app:app
 CONTRACT_DIFF_BASE ?= origin/main
 CONTRACT_BASELINE ?= tests/fixtures/chirp_hypermedia_baseline.json
 
-.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
+.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check milo-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
 
 all: help
 
@@ -29,6 +29,7 @@ help:
 	@echo "  make ty              - Run ty type checker"
 	@echo "  make app-check       - Run Chirp route/template check"
 	@echo "  make kida-check      - Run kida static template validation"
+	@echo "  make milo-check      - Verify the typed CLI and MCP contracts"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
 	@echo "  make check           - Run lint, format, types, strict app, Kida, contract baseline, and client tests"
@@ -93,6 +94,9 @@ contract-diff:
 
 contract-baseline-check:
 	uv run chirp check $(CHIRP_APP) --baseline $(CONTRACT_BASELINE)
+
+milo-check:
+	uv run milo verify src/elbysodic/cli.py
 
 check:
 	uv run python -m elbysodic.checks
