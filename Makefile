@@ -8,7 +8,7 @@ CHIRP_APP ?= elbysodic.web.contract_app:app
 CONTRACT_DIFF_BASE ?= origin/main
 CONTRACT_BASELINE ?= tests/fixtures/chirp_hypermedia_baseline.json
 
-.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check milo-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
+.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check milo-check contract-diff contract-baseline-check check ci docs docs-check docs-preview changelog changelog-draft changelog-check build clean shell
 
 all: help
 
@@ -34,6 +34,9 @@ help:
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
 	@echo "  make check           - Run lint, format-check, ty, app-check, kida-check, and contract-baseline-check"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
+	@echo "  make docs            - Build the Bengal handbook into public/"
+	@echo "  make docs-check      - Validate, build, and audit the Bengal handbook"
+	@echo "  make docs-preview    - Build and serve the handbook for local review"
 	@echo "  make changelog       - Compile changelog.d fragments into CHANGELOG.md"
 	@echo "  make changelog-draft - Preview changelog from fragments"
 	@echo "  make build           - Build distribution packages"
@@ -101,6 +104,15 @@ milo-check:
 check: lint format-check ty app-check kida-check milo-check contract-baseline-check
 
 ci: check contract-diff test
+
+docs:
+	uv run --group docs --frozen python scripts/bengal_docs.py build
+
+docs-check:
+	uv run --group docs --frozen python scripts/bengal_docs.py check
+
+docs-preview:
+	uv run --group docs --frozen python scripts/bengal_docs.py preview
 
 changelog:
 	uv run towncrier build --yes
