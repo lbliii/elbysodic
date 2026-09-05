@@ -10,7 +10,7 @@ from chirp.templating.returns import Page
 from elbysodic.domain import Character
 from elbysodic.services import Mentionable
 from elbysodic.services.forum import POSTING_MODES, THREAD_STATUSES, THREAD_VISIBILITIES
-from elbysodic.web.commands import idempotency_key
+from elbysodic.web.commands import draft_ack_path, idempotency_key
 from elbysodic.web.composer import composer_config, mention_picker_config
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path, request_tenant_slug
@@ -107,20 +107,24 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             return _render_thread(request, board_slug, thread_slug, error=str(exc))
         return Redirect(request.path)
 
-    character_id = _parse_character_id(form.get("character_id"))
+    character_id: int | None = None
+    raw_character_id = form.get("character_id")
     body = str(form.get("body") or "")
     key = str(form.get("idempotency_key") or "")
     command_key = f"reply:{board_slug}:{thread_slug}"
-    existing_result = services.command_result(command_key, key)
-    if existing_result is not None:
-        return Redirect(existing_result)
-    if not services.reserve_command(command_key, key):
-        return Redirect(request.path)
-
     try:
-        post = services.reply_to_thread(board_slug, thread_slug, character_id, body)
+
+        def reply() -> str:
+            nonlocal character_id
+            character_id = _parse_character_id(raw_character_id)
+            created_post = services.reply_to_thread(board_slug, thread_slug, character_id, body)
+            return draft_ack_path(
+                f"{request.path}#post-{created_post.post_number}",
+                key,
+            )
+
+        execution = services.execute_command(command_key, key, reply)
     except (LookupError, PermissionError, ValueError) as exc:
-        services.discard_command(command_key, key)
         return _render_thread(
             request,
             board_slug,
@@ -128,14 +132,9 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             error=str(exc),
             body=body,
             selected_character_id=character_id,
+            command_token=key,
         )
-    except Exception:
-        services.discard_command(command_key, key)
-        raise
-
-    result_path = f"{request.path}#post-{post.post_number}"
-    services.complete_command(command_key, key, result_path)
-    return Redirect(result_path)
+    return Redirect(execution.result_path)
 
 
 def _render_thread(
@@ -146,6 +145,7 @@ def _render_thread(
     error: str | None = None,
     body: str = "",
     selected_character_id: int | None = None,
+    command_token: str | None = None,
 ) -> Page:
     tenant_slug = request_tenant_slug(request)
     try:
@@ -188,7 +188,7 @@ def _render_thread(
             body=body,
             composer_config={},
             composer_config_id="reply-composer-config",
-            idempotency_key=idempotency_key(),
+            idempotency_key=command_token or idempotency_key(),
             thread_statuses=THREAD_STATUSES,
             thread_visibilities=THREAD_VISIBILITIES,
             posting_modes=POSTING_MODES,
@@ -222,7 +222,7 @@ def _render_thread(
             mention_endpoint=mention_endpoint,
         ),
         composer_config_id=config_id,
-        idempotency_key=idempotency_key(),
+        idempotency_key=command_token or idempotency_key(),
         thread_statuses=THREAD_STATUSES,
         thread_visibilities=THREAD_VISIBILITIES,
         posting_modes=POSTING_MODES,
