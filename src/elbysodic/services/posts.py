@@ -79,10 +79,18 @@ class PostViewContextBuilder:
     _community: Community | None = None
     _mention_links: list[MentionLink] | None = None
 
-    def context(self, posts: list[Post]) -> PostViewContext:
+    def context(
+        self,
+        posts: list[Post],
+        *,
+        extra_character_ids: set[int] | None = None,
+        extra_membership_ids: set[int] | None = None,
+    ) -> PostViewContext:
         community = self.community()
         author_ids = {post.author_character_id for post in posts}
         membership_ids = {post.author_membership_id for post in posts}
+        author_ids.update(extra_character_ids or ())
+        membership_ids.update(extra_membership_ids or ())
         authors = self.repo.list_characters_by_ids(self.community_id, sorted(author_ids))
         memberships = self.repo.list_memberships_by_ids(self.community_id, sorted(membership_ids))
         inherited_accent_character_ids = [
@@ -126,8 +134,15 @@ def build_post_view_context(
     repo: PostViewRepository,
     community_id: int,
     posts: list[Post],
+    *,
+    extra_character_ids: set[int] | None = None,
+    extra_membership_ids: set[int] | None = None,
 ) -> PostViewContext:
-    return PostViewContextBuilder(repo, community_id).context(posts)
+    return PostViewContextBuilder(repo, community_id).context(
+        posts,
+        extra_character_ids=extra_character_ids,
+        extra_membership_ids=extra_membership_ids,
+    )
 
 
 def post_view(

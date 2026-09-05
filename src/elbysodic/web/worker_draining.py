@@ -14,10 +14,16 @@ import logging
 import os
 import sys
 import threading
-from typing import Any, cast
+from collections.abc import Awaitable, Callable, MutableMapping
+from typing import Any
 
-from chirp._internal.asgi import Receive, Scope, Send
 from chirp.app import App
+
+from elbysodic.web.pounce_railway import run_chirp_asgi_adapter
+
+type Scope = MutableMapping[str, Any]
+type Receive = Callable[[], Awaitable[MutableMapping[str, Any]]]
+type Send = Callable[[MutableMapping[str, Any]], Awaitable[None]]
 
 _DRAIN_EVENT: asyncio.Event | None = None
 _PLOTTING_STREAMS_ACTIVE = 0
@@ -92,11 +98,11 @@ def plotting_stream_closed() -> int:
     return active
 
 
-async def _worker_lifecycle_receive() -> dict[str, Any]:
+async def _worker_lifecycle_receive() -> MutableMapping[str, Any]:
     return {"type": "http.disconnect"}
 
 
-async def _worker_lifecycle_send(_message: object) -> None:
+async def _worker_lifecycle_send(_message: MutableMapping[str, Any]) -> None:
     return None
 
 
@@ -113,10 +119,6 @@ class DrainingAwareApp:
         """Inner Chirp app for contract checks (not the ASGI drain proxy)."""
         return self._app
 
-    @property
-    def _runtime(self):
-        return self._app._runtime
-
     def __getattr__(self, name: str) -> Any:
         return getattr(self._app, name)
 
@@ -128,9 +130,9 @@ class DrainingAwareApp:
         lifecycle_collector: Any | None = None,
     ) -> None:
         """Launch Pounce with this proxy as the runtime ASGI application."""
-        self._app._ensure_frozen()
-        self._app._server.run(
-            cast(App, self),
+        run_chirp_asgi_adapter(
+            self._app,
+            self,
             host=host,
             port=port,
             lifecycle_collector=lifecycle_collector,
