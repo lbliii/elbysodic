@@ -1,6 +1,95 @@
 (function () {
   const linkPattern = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
   const mentionPattern = /(?<![\w-])@([A-Za-z0-9][\w-]*)/g;
+  const draftStoragePrefix = "elbysodic:draft:";
+  const draftStorageVersion = 2;
+
+  function browserStorage() {
+    try {
+      return window.localStorage || null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function draftSnapshot(draft) {
+    return {
+      body: typeof draft.body === "string" ? draft.body : "",
+      title: typeof draft.title === "string" ? draft.title : "",
+    };
+  }
+
+  function snapshotsMatch(left, right) {
+    return left.body === right.body && left.title === right.title;
+  }
+
+  function stripDraftAcknowledgement(url) {
+    url.searchParams.delete("draft_ack");
+    const visibleUrl = `${url.pathname}${url.search}${url.hash}`;
+    try {
+      if (window.history && typeof window.history.replaceState === "function") {
+        window.history.replaceState(window.history.state, "", visibleUrl);
+      }
+    } catch (_error) {
+      // A restricted history API must not prevent the composer from loading.
+    }
+  }
+
+  function consumeDraftAcknowledgement() {
+    if (!window.location || !window.location.href) {
+      return;
+    }
+    let url;
+    try {
+      url = new URL(window.location.href);
+    } catch (_error) {
+      return;
+    }
+    const token = url.searchParams.get("draft_ack");
+    if (!token) {
+      return;
+    }
+
+    const storage = browserStorage();
+    try {
+      if (storage && typeof storage.key === "function") {
+        const keys = [];
+        for (let index = 0; index < storage.length; index += 1) {
+          const key = storage.key(index);
+          if (key && key.startsWith(draftStoragePrefix)) {
+            keys.push(key);
+          }
+        }
+        for (const key of keys) {
+          const saved = storage.getItem(key);
+          if (!saved) {
+            continue;
+          }
+          let draft;
+          try {
+            draft = JSON.parse(saved);
+          } catch (_error) {
+            continue;
+          }
+          if (!draft.submitted || draft.submitted.token !== token) {
+            continue;
+          }
+          if (snapshotsMatch(draftSnapshot(draft), draftSnapshot(draft.submitted))) {
+            storage.removeItem(key);
+          } else {
+            delete draft.submitted;
+            storage.setItem(key, JSON.stringify(draft));
+          }
+        }
+      }
+    } catch (_error) {
+      // Receipt cleanup is best effort; failure must not block writing.
+    } finally {
+      stripDraftAcknowledgement(url);
+    }
+  }
+
+  consumeDraftAcknowledgement();
 
   function escapeHtml(value) {
     return String(value)
@@ -326,6 +415,7 @@
       loading: false,
       open: false,
       query: "",
+      requestGeneration: 0,
       results: [],
       selected: config.selected || [],
 
@@ -374,6 +464,7 @@
       },
 
       async search() {
+        const generation = (this.requestGeneration += 1);
         const term = this.query.trim().replace(/^@+/, "");
         if (!term) {
           this.results = [];
@@ -389,20 +480,33 @@
           const response = await fetch(`${this.config.endpoint}?${params.toString()}`, {
             credentials: "same-origin",
           });
+          if (generation !== this.requestGeneration) {
+            return;
+          }
           if (!response.ok) {
             this.results = [];
             this.close();
             return;
           }
           const payload = await response.json();
+          if (generation !== this.requestGeneration) {
+            return;
+          }
           const selected = this.selectedKeys();
           this.results = (payload.items || []).filter(
             (item) => !selected.has(this.selectedKey(item)),
           );
           this.highlightedIndex = 0;
           this.open = this.results.length > 0;
+        } catch (_error) {
+          if (generation === this.requestGeneration) {
+            this.results = [];
+            this.close();
+          }
         } finally {
-          this.loading = false;
+          if (generation === this.requestGeneration) {
+            this.loading = false;
+          }
         }
       },
     };
@@ -417,10 +521,13 @@
       bodyMentionHighlightedIndex: 0,
       bodyMentionOpen: false,
       bodyMentionQuery: "",
+      bodyMentionRequestGeneration: 0,
       bodyMentionResults: [],
       config: config,
       draftState: "",
       knownMentionables: {},
+      previousCharacterId: String(config.selectedCharacterId || ""),
+      restoringDraft: false,
       selectedCharacterId: String(config.selectedCharacterId || ""),
       title: config.initialTitle || "",
       viewMode: "write",
@@ -430,12 +537,29 @@
       },
 
       init() {
-        if (this.loadDraft()) {
+        if (this.loadDraft(this.selectedCharacterId, true)) {
           this.draftState = "restored";
         }
-        this.$watch("body", () => this.saveDraft());
-        this.$watch("title", () => this.saveDraft());
-        this.$watch("selectedCharacterId", () => this.loadDraft());
+        this.$watch("body", () => {
+          if (!this.restoringDraft) {
+            this.saveDraft();
+          }
+        });
+        this.$watch("title", () => {
+          if (!this.restoringDraft) {
+            this.saveDraft();
+          }
+        });
+        this.$watch("selectedCharacterId", (characterId, previousCharacterId) => {
+          const outgoingCharacterId = previousCharacterId || this.previousCharacterId;
+          this.saveDraft(outgoingCharacterId);
+          this.restoringDraft = true;
+          this.loadDraft(characterId, false);
+          this.previousCharacterId = String(characterId || "");
+          this.$nextTick(() => {
+            this.restoringDraft = false;
+          });
+        });
       },
 
       character() {
@@ -490,13 +614,24 @@
         );
       },
 
-      clearDraft() {
-        window.localStorage.removeItem(this.storageKey());
-        this.draftState = "";
+      clearDraft(characterId) {
+        const storage = browserStorage();
+        if (!storage) {
+          this.draftState = "unavailable";
+          return false;
+        }
+        try {
+          storage.removeItem(this.storageKey(characterId));
+          this.draftState = "";
+          return true;
+        } catch (_error) {
+          this.draftState = "unavailable";
+          return false;
+        }
       },
 
       submitDraft() {
-        this.saveDraft();
+        this.saveDraft(this.selectedCharacterId, this.submissionToken());
       },
 
       closeBodyMention() {
@@ -504,11 +639,21 @@
         this.bodyMentionHighlightedIndex = 0;
       },
 
-      draftPayload() {
-        return JSON.stringify({
+      draftRecord(submissionToken, previousRecord) {
+        const record = {
+          version: this.config.draftStorageVersion || draftStorageVersion,
           body: this.body,
           title: this.title,
-        });
+        };
+        if (submissionToken) {
+          record.submitted = {
+            token: submissionToken,
+            ...draftSnapshot(record),
+          };
+        } else if (previousRecord && previousRecord.submitted) {
+          record.submitted = previousRecord.submitted;
+        }
+        return record;
       },
 
       hasPreview() {
@@ -552,20 +697,46 @@
         });
       },
 
-      loadDraft() {
-        const saved = window.localStorage.getItem(this.storageKey());
+      loadDraft(characterId, preserveInitial) {
+        const storage = browserStorage();
+        if (!storage) {
+          this.draftState = "unavailable";
+          return false;
+        }
+        let saved;
+        try {
+          saved = storage.getItem(this.storageKey(characterId));
+        } catch (_error) {
+          this.draftState = "unavailable";
+          return false;
+        }
         if (!saved) {
+          if (!preserveInitial) {
+            this.body = "";
+            this.title = "";
+          }
           this.draftState = "";
           return false;
         }
         try {
           const draft = JSON.parse(saved);
-          this.body = draft.body || this.body;
-          this.title = draft.title || this.title;
+          const snapshot = draftSnapshot(draft);
+          this.body = snapshot.body;
+          this.title = snapshot.title;
           this.draftState = "restored";
           return true;
         } catch (_error) {
-          window.localStorage.removeItem(this.storageKey());
+          try {
+            storage.removeItem(this.storageKey(characterId));
+          } catch (_storageError) {
+            this.draftState = "unavailable";
+            return false;
+          }
+          if (!preserveInitial) {
+            this.body = "";
+            this.title = "";
+          }
+          this.draftState = "";
           return false;
         }
       },
@@ -577,6 +748,9 @@
         if (this.draftState === "saved") {
           return "Draft saved.";
         }
+        if (this.draftState === "unavailable") {
+          return "Draft autosave unavailable.";
+        }
         return "";
       },
 
@@ -584,18 +758,49 @@
         return renderPostBody(this.body, this.mentionMap());
       },
 
-      saveDraft() {
-        if (!this.body.trim() && !this.title.trim()) {
-          window.localStorage.removeItem(this.storageKey());
-          this.draftState = "";
-          return;
+      saveDraft(characterId, submissionToken) {
+        const storage = browserStorage();
+        if (!storage) {
+          this.draftState = "unavailable";
+          return false;
         }
-        window.localStorage.setItem(this.storageKey(), this.draftPayload());
-        this.draftState = "saved";
+        const key = this.storageKey(characterId);
+        try {
+          let previousRecord = null;
+          const previous = storage.getItem(key);
+          if (previous) {
+            try {
+              previousRecord = JSON.parse(previous);
+            } catch (_error) {
+              previousRecord = null;
+            }
+          }
+          storage.setItem(key, JSON.stringify(this.draftRecord(submissionToken, previousRecord)));
+          this.draftState = "saved";
+          return true;
+        } catch (_error) {
+          this.draftState = "unavailable";
+          return false;
+        }
       },
 
-      storageKey() {
-        return `elbysodic:draft:${this.config.draftKey}:${this.selectedCharacterId}`;
+      storageKey(characterId) {
+        const configuredKey =
+          this.config.draftStorageKey || `${draftStoragePrefix}${this.config.draftKey}`;
+        return `${configuredKey}:${
+          characterId === undefined ? this.selectedCharacterId : characterId
+        }`;
+      },
+
+      submissionToken() {
+        const form = this.$root;
+        if (!form || typeof form.querySelector !== "function") {
+          return "";
+        }
+        const tokenField = form.querySelector(
+          "[name='draft_token'], [name='idempotency_key']",
+        );
+        return tokenField ? String(tokenField.value || "") : "";
       },
 
       mentionKey(item) {
@@ -635,6 +840,7 @@
       },
 
       async searchBodyMention(fieldId) {
+        const generation = (this.bodyMentionRequestGeneration += 1);
         const active = this.activeBodyMention(fieldId);
         if (!active || !active.query) {
           this.bodyMentionResults = [];
@@ -647,19 +853,32 @@
           q: active.query,
           scope: this.config.mentionScope || "all",
         });
-        const response = await fetch(`${this.config.mentionEndpoint}?${params.toString()}`, {
-          credentials: "same-origin",
-        });
-        if (!response.ok) {
-          this.bodyMentionResults = [];
-          this.closeBodyMention();
-          return;
+        try {
+          const response = await fetch(`${this.config.mentionEndpoint}?${params.toString()}`, {
+            credentials: "same-origin",
+          });
+          if (generation !== this.bodyMentionRequestGeneration) {
+            return;
+          }
+          if (!response.ok) {
+            this.bodyMentionResults = [];
+            this.closeBodyMention();
+            return;
+          }
+          const payload = await response.json();
+          if (generation !== this.bodyMentionRequestGeneration) {
+            return;
+          }
+          this.bodyMentionResults = payload.items || [];
+          this.rememberMentions(this.bodyMentionResults);
+          this.bodyMentionHighlightedIndex = 0;
+          this.bodyMentionOpen = this.bodyMentionResults.length > 0;
+        } catch (_error) {
+          if (generation === this.bodyMentionRequestGeneration) {
+            this.bodyMentionResults = [];
+            this.closeBodyMention();
+          }
         }
-        const payload = await response.json();
-        this.bodyMentionResults = payload.items || [];
-        this.rememberMentions(this.bodyMentionResults);
-        this.bodyMentionHighlightedIndex = 0;
-        this.bodyMentionOpen = this.bodyMentionResults.length > 0;
       },
     };
   });
