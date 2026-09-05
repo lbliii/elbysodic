@@ -206,6 +206,9 @@ Useful commands:
 - `make format` formats the project.
 - `make format-check` checks Ruff formatting.
 - `make ty` runs Astral's `ty` checker.
+- `make docs` builds the searchable product, architecture, and operations
+  handbook into `public/`; `make docs-check` adds Bengal validation and artifact
+  auditing, and `make docs-preview` opens Bengal's local preview server.
 - `make changelog-draft` previews Towncrier fragments.
 - `make build` builds distribution packages.
 - `uv run pounce check --app elbysodic.web:create_app --format plain` validates
