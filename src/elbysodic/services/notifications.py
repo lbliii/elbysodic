@@ -180,11 +180,11 @@ class NotificationRepository(PostViewRepository, Protocol):
 
     def get_post(self, community_id: int, post_id: int) -> Post: ...
 
-    def list_posts_for_threads(
+    def list_posts_by_ids(
         self,
         community_id: int,
-        thread_ids: list[int],
-    ) -> dict[int, list[Post]]: ...
+        post_ids: list[int],
+    ) -> dict[int, Post]: ...
 
     def get_wanted_ad(self, community_id: int, wanted_ad_id: int) -> WantedAd: ...
 
@@ -686,13 +686,7 @@ def _notification_read_context(
         item.actor_character_id for item in notifications if item.actor_character_id is not None
     }
     post_ids = {item.post_id for item in notifications if item.post_id is not None}
-    thread_ids = sorted({item.thread_id for item in notifications if item.thread_id is not None})
-    posts = {
-        post.id: post
-        for thread_posts in repo.list_posts_for_threads(community_id, thread_ids).values()
-        for post in thread_posts
-        if post.id in post_ids
-    }
+    posts = repo.list_posts_by_ids(community_id, sorted(post_ids))
     if posts:
         post_view_context = build_post_view_context(
             repo,
