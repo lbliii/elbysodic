@@ -34,6 +34,16 @@ def test_required_checks_are_present_in_every_developer_gate() -> None:
         assert ["uv", "run", "ty", "check", "src/elbysodic/", "tests/"] in commands
         assert ["uv", "run", "python", "scripts/kida_check.py"] in commands
         assert ["uv", "run", "milo", "verify", "src/elbysodic/cli.py"] in commands
+        assert [
+            "uv",
+            "run",
+            "--group",
+            "docs",
+            "--frozen",
+            "python",
+            "scripts/bengal_docs.py",
+            "check",
+        ] in commands
         assert ["node", "--test", "tests/client/composer.test.cjs"] in commands
         assert any("--baseline" in command for command in commands)
         assert any("warnings_as_errors=True" in arg for command in commands for arg in command)
@@ -62,7 +72,14 @@ def test_canonical_gate_discovers_every_client_test_in_sorted_order(tmp_path, mo
 
 
 @pytest.mark.parametrize(
-    "failure", ["scripts/kida_check.py", "--baseline", "warnings_as_errors=True"]
+    "failure",
+    [
+        "scripts/kida_check.py",
+        "src/elbysodic/cli.py",
+        "scripts/bengal_docs.py",
+        "--baseline",
+        "warnings_as_errors=True",
+    ],
 )
 def test_gate_stops_on_template_contract_or_warning_failure(monkeypatch, failure: str) -> None:
     calls = []

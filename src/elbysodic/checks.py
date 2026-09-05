@@ -45,6 +45,16 @@ def check_commands(
         [
             "uv",
             "run",
+            "--group",
+            "docs",
+            "--frozen",
+            "python",
+            "scripts/bengal_docs.py",
+            "check",
+        ],
+        [
+            "uv",
+            "run",
             "chirp",
             "check",
             "elbysodic.web.contract_app:app",
@@ -63,9 +73,7 @@ def check_commands(
     return commands
 
 
-def run_commands(
-    commands: list[list[str]], *, log: Callable[[str], None] | None = None
-) -> None:
+def run_commands(commands: list[list[str]], *, log: Callable[[str], None] | None = None) -> None:
     for command in commands:
         message = f"$ {' '.join(command)}"
         if log is None:
@@ -95,7 +103,10 @@ def run_commands(
                 log(message)
             raise SystemExit(127) from exc
         if log is not None and result.stdout:
-            log(result.stdout.rstrip())
+            output = result.stdout
+            if isinstance(output, bytes):
+                output = output.decode(errors="replace")
+            log(output.rstrip())
         if result.returncode:
             raise SystemExit(result.returncode)
 

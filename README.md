@@ -225,8 +225,9 @@ Useful commands:
   the Pounce import/config path used by the Chirp production server.
 
 Make, Poe, and `elbysodic dev check` share `elbysodic.checks`. The full
-handoff gate includes lint, formatting, types, strict app checks, Kida,
-hypermedia baseline, executable client tests, pytest, and contract diff:
+handoff gate includes lint, formatting, types, strict app checks, Kida, Milo
+surface verification, Bengal handbook validation, the hypermedia baseline,
+executable client tests, pytest, and contract diff:
 
 ```bash
 uv run python -m elbysodic.checks --full

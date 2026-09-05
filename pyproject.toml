@@ -204,7 +204,7 @@ contract-diff = { cmd = "chirp diff elbysodic.web.contract_app:app --base origin
 contract-baseline-check = { cmd = "chirp check elbysodic.web.contract_app:app --baseline tests/fixtures/chirp_hypermedia_baseline.json", help = "Verify committed chirp contract JSON baseline" }
 
 ci = { cmd = "python -m elbysodic.checks --full", help = "Full developer gate with tests and contract diff" }
-check = { cmd = "python -m elbysodic.checks", help = "Static, template, hypermedia, and client behavior checks" }
+check = { cmd = "python -m elbysodic.checks", help = "Static, CLI, docs, template, hypermedia, and client behavior checks" }
 
 dist = { shell = "rm -rf dist/ && uv build && ls -la dist/", help = "Build distribution" }
 

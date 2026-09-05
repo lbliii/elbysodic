@@ -32,7 +32,7 @@ help:
 	@echo "  make milo-check      - Verify the typed CLI and MCP contracts"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
-	@echo "  make check           - Run lint, format, types, strict app, Kida, contract baseline, and client tests"
+	@echo "  make check           - Run lint, types, app, Kida, Milo, docs, contract, and client checks"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
 	@echo "  make docs            - Build the Bengal handbook into public/"
 	@echo "  make docs-check      - Validate, build, and audit the Bengal handbook"
