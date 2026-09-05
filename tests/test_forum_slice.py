@@ -8,7 +8,7 @@ import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from urllib.parse import urlencode, urljoin
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
 
 import pytest
 from chirp.app import App
@@ -12978,9 +12978,10 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                 headers=_FORM,
             )
             assert response.status == 302
-            assert dict(response.headers)["location"].startswith(
-                "/boards/danger-room/threads/metal-and-memory#post-"
-            )
+            response_location = urlsplit(dict(response.headers)["location"])
+            assert response_location.path == ("/boards/danger-room/threads/metal-and-memory")
+            assert response_location.fragment.startswith("post-")
+            assert parse_qs(response_location.query) == {"draft_ack": [key]}
             assert duplicate.status == 302
             assert dict(duplicate.headers)["location"] == dict(response.headers)["location"]
 
@@ -13060,9 +13061,10 @@ def test_start_thread_validation_error_discards_idempotency_reservation() -> Non
         assert invalid.status == 200
         assert "thread title is required" in invalid.text
         assert corrected.status == 302
-        assert dict(corrected.headers)["location"].startswith(
-            "/boards/danger-room/threads/retryable-scene-command#post-"
-        )
+        corrected_location = urlsplit(dict(corrected.headers)["location"])
+        assert corrected_location.path == ("/boards/danger-room/threads/retryable-scene-command")
+        assert corrected_location.fragment.startswith("post-")
+        assert parse_qs(corrected_location.query) == {"draft_ack": [key]}
         board = services.repo.get_board_by_slug(services.seed.community.id, "danger-room")
         thread = services.repo.get_thread_by_slug(
             services.seed.community.id,

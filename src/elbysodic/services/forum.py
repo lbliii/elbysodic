@@ -7,6 +7,7 @@ import re
 import secrets
 import sqlite3
 import sys
+from collections.abc import Callable
 from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -147,6 +148,8 @@ from elbysodic.services.claims import (
     application_template_field_view as _application_template_field_view,
 )
 from elbysodic.services.claims import claims_directory as _claims_directory
+from elbysodic.services.commands import CommandExecution
+from elbysodic.services.commands import execute_command as _execute_command
 from elbysodic.services.discovery import discover_plots as _discover_plots
 from elbysodic.services.exports import CommunityExportManifest
 from elbysodic.services.exports import community_export_manifest as _community_export_manifest
@@ -856,6 +859,22 @@ class AppServices:
             viewer.membership.id,
             command_key=command_key,
             token=token,
+        )
+
+    def execute_command(
+        self,
+        command_key: str,
+        token: str,
+        operation: Callable[[], str],
+    ) -> CommandExecution:
+        viewer = self.viewer()
+        return _execute_command(
+            self.repo,
+            community_id=viewer.community.id,
+            membership_id=viewer.membership.id,
+            command_key=command_key,
+            token=token,
+            operation=operation,
         )
 
     def recovery_view(self, *, kind: RecoveryKind, slug: str) -> RecoveryView:
