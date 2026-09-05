@@ -81,4 +81,4 @@ def test_posting_templates_submit_the_token_used_for_draft_acknowledgement() -> 
         assert '@submit="submitDraft()"' in template
     assert 'name="idempotency_key" value="{{ idempotency_key }}"' in new_thread
     assert 'name="idempotency_key" value="{{ idempotency_key }}"' in reply
-    assert 'name="draft_token" value="{{ draft_token | default(\'\') }}"' in edit
+    assert 'name="draft_token" value="{{ draft_receipt }}"' in edit
