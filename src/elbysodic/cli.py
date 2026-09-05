@@ -24,6 +24,16 @@ from elbysodic.web.pounce_railway import apply_railway_pounce_defaults
 
 HUMAN_COMMAND_SURFACES = ("cli", "llms")
 COMMAND_NAMES = frozenset({"serve", "init-db", "seed-demo", "bootstrap-first-realm", "dev"})
+OPTIONS_WITH_VALUES = frozenset(
+    {
+        "--db-path",
+        "--host",
+        "--port",
+        "--completions",
+        "-o",
+        "--output-file",
+    }
+)
 BUILTIN_FLAGS = frozenset(
     {
         "-h",
@@ -472,10 +482,7 @@ def _normalize_argv(raw_args: list[str]) -> list[str]:
     if not raw_args:
         return ["serve"]
 
-    command_index = next(
-        (index for index, argument in enumerate(raw_args) if argument in COMMAND_NAMES),
-        None,
-    )
+    command_index = _command_index(raw_args)
     if command_index is not None:
         if command_index == 0:
             normalized = raw_args
@@ -487,6 +494,23 @@ def _normalize_argv(raw_args: list[str]) -> list[str]:
     if any(argument in BUILTIN_FLAGS for argument in raw_args):
         return raw_args
     return _normalize_true_default_flags(["serve", *raw_args])
+
+
+def _command_index(args: list[str]) -> int | None:
+    """Find a command token without mistaking an option value for one."""
+
+    expects_value = False
+    for index, argument in enumerate(args):
+        if expects_value:
+            expects_value = False
+            continue
+        option, separator, _value = argument.partition("=")
+        if option in OPTIONS_WITH_VALUES and not separator:
+            expects_value = True
+            continue
+        if argument in COMMAND_NAMES:
+            return index
+    return None
 
 
 def _normalize_true_default_flags(args: list[str]) -> list[str]:

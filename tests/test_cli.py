@@ -129,8 +129,19 @@ def test_cli_can_start_production_server_on_railway_host_and_port(monkeypatch) -
     monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
-    cli.main(["--host", RAILWAY_HOST, "--port", "1234", "--no-debug"])
+    cli.main(
+        [
+            "--db-path",
+            "serve",
+            "--host",
+            RAILWAY_HOST,
+            "--port",
+            "1234",
+            "--no-debug",
+        ]
+    )
 
+    assert calls["db_path"] == Path("serve")
     assert calls["debug"] is False
     assert calls["seed_demo"] is False
     assert calls["host"] == RAILWAY_HOST
@@ -327,6 +338,24 @@ def test_milo_normalization_preserves_mature_argparse_forms() -> None:
         "dev",
         "preview",
         "--no-seed-demo",
+    ]
+
+
+def test_milo_normalization_does_not_treat_option_values_as_commands() -> None:
+    assert cli._normalize_argv(["--db-path", "serve"]) == [
+        "serve",
+        "--db-path",
+        "serve",
+    ]
+    assert cli._normalize_argv(["--db-path", "seed-demo", "init-db"]) == [
+        "init-db",
+        "--db-path",
+        "seed-demo",
+    ]
+    assert cli._normalize_argv(["--output-file", "serve", "--llms-txt"]) == [
+        "--output-file",
+        "serve",
+        "--llms-txt",
     ]
 
 
