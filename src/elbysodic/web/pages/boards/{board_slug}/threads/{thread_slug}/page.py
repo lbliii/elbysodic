@@ -107,13 +107,16 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             return _render_thread(request, board_slug, thread_slug, error=str(exc))
         return Redirect(request.path)
 
-    character_id = _parse_character_id(form.get("character_id"))
+    character_id: int | None = None
+    raw_character_id = form.get("character_id")
     body = str(form.get("body") or "")
     key = str(form.get("idempotency_key") or "")
     command_key = f"reply:{board_slug}:{thread_slug}"
     try:
 
         def reply() -> str:
+            nonlocal character_id
+            character_id = _parse_character_id(raw_character_id)
             created_post = services.reply_to_thread(board_slug, thread_slug, character_id, body)
             return draft_ack_path(
                 f"{request.path}#post-{created_post.post_number}",
