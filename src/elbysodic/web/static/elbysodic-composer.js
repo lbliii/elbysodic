@@ -61,24 +61,26 @@
           }
         }
         for (const key of keys) {
-          const saved = storage.getItem(key);
-          if (!saved) {
-            continue;
-          }
-          let draft;
           try {
-            draft = JSON.parse(saved);
+            const saved = storage.getItem(key);
+            if (!saved) {
+              continue;
+            }
+            const draft = JSON.parse(saved);
+            if (!draft || typeof draft !== "object") {
+              continue;
+            }
+            if (!draft.submitted || draft.submitted.token !== token) {
+              continue;
+            }
+            if (snapshotsMatch(draftSnapshot(draft), draftSnapshot(draft.submitted))) {
+              storage.removeItem(key);
+            } else {
+              delete draft.submitted;
+              storage.setItem(key, JSON.stringify(draft));
+            }
           } catch (_error) {
             continue;
-          }
-          if (!draft.submitted || draft.submitted.token !== token) {
-            continue;
-          }
-          if (snapshotsMatch(draftSnapshot(draft), draftSnapshot(draft.submitted))) {
-            storage.removeItem(key);
-          } else {
-            delete draft.submitted;
-            storage.setItem(key, JSON.stringify(draft));
           }
         }
       }
@@ -428,6 +430,8 @@
       },
 
       close() {
+        this.requestGeneration += 1;
+        this.loading = false;
         this.open = false;
         this.highlightedIndex = 0;
       },
@@ -526,6 +530,7 @@
       config: config,
       draftState: "",
       knownMentionables: {},
+      memoryDrafts: {},
       previousCharacterId: String(config.selectedCharacterId || ""),
       restoringDraft: false,
       selectedCharacterId: String(config.selectedCharacterId || ""),
@@ -615,6 +620,7 @@
       },
 
       clearDraft(characterId) {
+        delete this.memoryDrafts[this.storageKey(characterId)];
         const storage = browserStorage();
         if (!storage) {
           this.draftState = "unavailable";
@@ -635,6 +641,7 @@
       },
 
       closeBodyMention() {
+        this.bodyMentionRequestGeneration += 1;
         this.bodyMentionOpen = false;
         this.bodyMentionHighlightedIndex = 0;
       },
@@ -654,6 +661,36 @@
           record.submitted = previousRecord.submitted;
         }
         return record;
+      },
+
+      applyDraftRecord(record) {
+        const snapshot = draftSnapshot(record);
+        this.body = snapshot.body;
+        this.title = snapshot.title;
+      },
+
+      rememberDraftRecord(characterId, record) {
+        this.memoryDrafts[this.storageKey(characterId)] = record;
+      },
+
+      loadMemoryDraft(characterId, preserveInitial) {
+        const record = this.memoryDrafts[this.storageKey(characterId)];
+        if (record) {
+          this.applyDraftRecord(record);
+        } else if (!preserveInitial) {
+          this.body = "";
+          this.title = "";
+          this.rememberDraftRecord(characterId, this.draftRecord("", null));
+        }
+        this.draftState = "unavailable";
+        return Boolean(record);
+      },
+
+      initializeEmptyDraft(characterId) {
+        this.body = "";
+        this.title = "";
+        this.saveDraft(characterId);
+        return false;
       },
 
       hasPreview() {
@@ -700,41 +737,38 @@
       loadDraft(characterId, preserveInitial) {
         const storage = browserStorage();
         if (!storage) {
-          this.draftState = "unavailable";
-          return false;
+          return this.loadMemoryDraft(characterId, preserveInitial);
         }
         let saved;
         try {
           saved = storage.getItem(this.storageKey(characterId));
         } catch (_error) {
-          this.draftState = "unavailable";
-          return false;
+          return this.loadMemoryDraft(characterId, preserveInitial);
         }
         if (!saved) {
           if (!preserveInitial) {
-            this.body = "";
-            this.title = "";
+            return this.initializeEmptyDraft(characterId);
           }
           this.draftState = "";
           return false;
         }
         try {
           const draft = JSON.parse(saved);
-          const snapshot = draftSnapshot(draft);
-          this.body = snapshot.body;
-          this.title = snapshot.title;
+          if (!draft || typeof draft !== "object") {
+            throw new TypeError("invalid draft record");
+          }
+          this.rememberDraftRecord(characterId, draft);
+          this.applyDraftRecord(draft);
           this.draftState = "restored";
           return true;
         } catch (_error) {
           try {
             storage.removeItem(this.storageKey(characterId));
           } catch (_storageError) {
-            this.draftState = "unavailable";
-            return false;
+            return this.loadMemoryDraft(characterId, preserveInitial);
           }
           if (!preserveInitial) {
-            this.body = "";
-            this.title = "";
+            return this.initializeEmptyDraft(characterId);
           }
           this.draftState = "";
           return false;
@@ -759,23 +793,31 @@
       },
 
       saveDraft(characterId, submissionToken) {
-        const storage = browserStorage();
-        if (!storage) {
-          this.draftState = "unavailable";
-          return false;
-        }
         const key = this.storageKey(characterId);
+        const storage = browserStorage();
+        let storageReadable = Boolean(storage);
+        let previousRecord = this.memoryDrafts[key] || null;
         try {
-          let previousRecord = null;
-          const previous = storage.getItem(key);
+          const previous = storage ? storage.getItem(key) : null;
           if (previous) {
             try {
-              previousRecord = JSON.parse(previous);
+              const parsed = JSON.parse(previous);
+              previousRecord = parsed && typeof parsed === "object" ? parsed : null;
             } catch (_error) {
               previousRecord = null;
             }
           }
-          storage.setItem(key, JSON.stringify(this.draftRecord(submissionToken, previousRecord)));
+        } catch (_error) {
+          storageReadable = false;
+        }
+        const record = this.draftRecord(submissionToken, previousRecord);
+        this.rememberDraftRecord(characterId, record);
+        if (!storage || !storageReadable) {
+          this.draftState = "unavailable";
+          return false;
+        }
+        try {
+          storage.setItem(key, JSON.stringify(record));
           this.draftState = "saved";
           return true;
         } catch (_error) {

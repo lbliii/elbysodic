@@ -106,6 +106,11 @@ test("face switches save outgoing empty and nonempty drafts and initialize a mis
     body: "Rogue's private reply",
     title: "",
   });
+  assert.deepEqual(JSON.parse(loaded.storage.values.get("elbysodic:draft:reply:7:11:2")), {
+    version: 2,
+    body: "",
+    title: "",
+  });
 
   composer.body = "Logan's private reply";
   watchers.body();
@@ -142,6 +147,25 @@ test("a matching redirect receipt removes the exact submitted draft across desti
   });
 
   assert.equal(storage.values.size, 0);
+});
+
+test("a corrupt null record cannot block receipt cleanup for a later valid record", () => {
+  const storage = createStorage();
+  storage.setItem("elbysodic:draft:reply:7:corrupt:1", "null");
+  const origin = loadComposer({ config: baseConfig, storage });
+  const { composer } = makeComposer(origin, "token-after-corrupt");
+  composer.body = "Valid submitted draft";
+  composer.submitDraft();
+
+  const destination = loadComposer({
+    config: baseConfig,
+    storage,
+    href: "https://realm.test/boards/danger-room/threads/scene?draft_ack=token-after-corrupt#post-8",
+  });
+
+  assert.equal(storage.values.get("elbysodic:draft:reply:7:corrupt:1"), "null");
+  assert.equal(storage.values.has("elbysodic:draft:reply:7:11:1"), false);
+  assert.deepEqual(destination.replacedUrls, ["/boards/danger-room/threads/scene#post-8"]);
 });
 
 test("a redirect receipt preserves edits made after the submitted snapshot and strips itself", () => {
@@ -184,7 +208,16 @@ test("storage failures leave the composer usable and report that autosave is una
 
   assert.doesNotThrow(() => composer.init());
   assert.deepEqual(Object.keys(watchers).sort(), ["body", "selectedCharacterId", "title"]);
-  assert.equal(composer.saveDraft(), false);
+  composer.body = "Rogue remains private in memory";
+  watchers.body();
+  composer.selectedCharacterId = "2";
+  watchers.selectedCharacterId("2", "1");
+  assert.equal(composer.body, "");
+  composer.body = "Logan remains private in memory";
+  watchers.body();
+  composer.selectedCharacterId = "1";
+  watchers.selectedCharacterId("1", "2");
+  assert.equal(composer.body, "Rogue remains private in memory");
   assert.equal(composer.draftStatusText(), "Draft autosave unavailable.");
 });
 
@@ -214,6 +247,27 @@ test("body mentions apply only the latest request generation", async () => {
   assert.equal(composer.bodyMentionResults[0].handle, "bob");
 });
 
+test("closing body mentions invalidates a pending response", async () => {
+  const bodyField = { selectionStart: 3 };
+  const loaded = loadComposer({ config: baseConfig, fields: { body: bodyField } });
+  const { composer } = makeComposer(loaded);
+  const requests = [];
+  loaded.context.fetch = () => new Promise((resolve) => requests.push(resolve));
+
+  composer.body = "@al";
+  composer.bodyMentionOpen = true;
+  const pending = composer.searchBodyMention("body");
+  composer.closeBodyMention();
+  requests[0]({
+    json: async () => ({ items: [{ handle: "alice", id: 1, kind: "character" }] }),
+    ok: true,
+  });
+  await pending;
+
+  assert.equal(composer.bodyMentionOpen, false);
+  assert.equal(composer.bodyMentionResults.length, 0);
+});
+
 test("standalone mention picker applies only the latest request generation", async () => {
   const loaded = loadComposer({
     config: { endpoint: "/mentionables/search", scope: "all", selected: [] },
@@ -239,4 +293,27 @@ test("standalone mention picker applies only the latest request generation", asy
 
   assert.equal(picker.results.length, 1);
   assert.equal(picker.results[0].handle, "bob");
+});
+
+test("closing the standalone picker invalidates a pending response", async () => {
+  const loaded = loadComposer({
+    config: { endpoint: "/mentionables/search", scope: "all", selected: [] },
+  });
+  const picker = loaded.factories.elbysodicMentionPicker("config");
+  const requests = [];
+  loaded.context.fetch = () => new Promise((resolve) => requests.push(resolve));
+
+  picker.query = "al";
+  picker.open = true;
+  const pending = picker.search();
+  picker.close();
+  requests[0]({
+    json: async () => ({ items: [{ handle: "alice", id: 1, kind: "character" }] }),
+    ok: true,
+  });
+  await pending;
+
+  assert.equal(picker.open, false);
+  assert.equal(picker.results.length, 0);
+  assert.equal(picker.loading, false);
 });

@@ -47,7 +47,23 @@ def test_composer_config_names_a_tenant_object_key_and_versioned_storage_base() 
     assert config["draftStorageKey"] == "elbysodic:draft:reply:7:11"
     assert config["draftStorageVersion"] == 2
     assert config["selectedCharacterId"] == 1
-    assert [character["id"] for character in config["characters"]] == [1, 2]
+    characters = config["characters"]
+    assert isinstance(characters, list)
+    assert len(characters) == 2
+    assert characters[0] == {
+        "id": 1,
+        "name": "Rogue",
+        "summary": "Rogue's face summary",
+        "avatar_url": None,
+        "initial": "R",
+    }
+    assert characters[1] == {
+        "id": 2,
+        "name": "Logan",
+        "summary": "Logan's face summary",
+        "avatar_url": None,
+        "initial": "L",
+    }
     assert config["initialBody"] == ""
     assert config["initialTitle"] == ""
 
