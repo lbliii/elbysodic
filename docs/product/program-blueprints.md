@@ -145,8 +145,8 @@ wanted:
   - slug: returning-sibling-with-the-missing-deed
     title: Returning sibling with the missing deed
     type: relationship
-    related_material: current-event
-    summary: "A homecoming character tied to the time capsule letter."
+    related_material: premise
+    summary: "A homecoming character tied to the disputed property lines."
     body: |
       This role gives the town an emotional fuse: someone who left, came back
       at the worst possible moment, and may have the document everyone else is
@@ -287,6 +287,13 @@ stable result. A late failure rolls back hydrated rows and the command
 reservation; the failed attempt is then recorded without exposing exception or
 Blueprint source content.
 
+The reviewed fingerprint covers the packet, planned actions, and current values
+of every matched realm row the packet can affect. Apply recalculates that state
+after entering the write transaction and rejects the packet when a director has
+edited any reviewed row since preview. In `skip_existing` mode, a face owned by
+another writer remains untouched and is never selected as the importing
+director's default face or as the author of a newly created wanted hook.
+
 ## Import Flow
 
 Studio intake implements a reviewed two-step flow:
@@ -294,8 +301,8 @@ Studio intake implements a reviewed two-step flow:
 1. Paste YAML and preview it. Parsing, validation, current-realm matching, and
    the typed create/update/skip/blocked diff are read-only.
 2. Choose a collision mode and apply that exact fingerprint. The service
-   re-runs preview and permission checks before any transaction, then commits
-   hydration and audit together.
+   re-runs preview and permission checks inside the write transaction, then
+   commits hydration and audit together.
 
 The preview summarizes the packet in director language, such as “1 program, 3
 starter faces, 5 scene hubs, 3 materials, 2 wanted hooks,” then names each

@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from typing import Literal, Protocol
 
 from elbysodic.blueprints import (
@@ -37,6 +37,10 @@ class BlueprintPlanRepository(Protocol):
     def get_community(self, community_id: int) -> Community: ...
 
     def get_community_by_slug(self, slug: str) -> Community: ...
+
+    def get_membership(self, community_id: int, membership_id: int) -> CommunityMembership: ...
+
+    def get_role(self, community_id: int, role_id: int) -> Role: ...
 
     def get_role_by_slug(self, community_id: int, slug: str) -> Role: ...
 
@@ -239,6 +243,15 @@ class BlueprintPlanRepository(Protocol):
         token: str,
     ) -> bool: ...
 
+    def get_command_submission(
+        self,
+        community_id: int,
+        membership_id: int,
+        *,
+        command_key: str,
+        token: str,
+    ) -> object | None: ...
+
     def complete_command_submission(
         self,
         community_id: int,
@@ -261,6 +274,7 @@ def preview_program_blueprint(
     viewer: ForumView,
     source: str,
 ) -> ProgramBlueprintPreview:
+    viewer = _current_blueprint_viewer(repo, viewer)
     if not policies.can_manage_world(viewer.membership, viewer.role):
         raise PermissionError(
             f"membership {viewer.membership.id} cannot preview program blueprints"
@@ -276,7 +290,11 @@ def preview_program_blueprint(
     return replace(
         preview,
         diff_rows=diff_rows,
-        preview_fingerprint=_preview_fingerprint(source, diff_rows),
+        preview_fingerprint=_preview_fingerprint(
+            source,
+            diff_rows,
+            _blueprint_live_records(repo, viewer, preview.blueprint),
+        ),
     )
 
 
@@ -321,9 +339,11 @@ def apply_program_blueprint_preview(
     preview = preview_program_blueprint(repo, viewer, source)
     if not preview.is_valid:
         raise ValueError("Preview a valid Program Blueprint before applying.")
-    if not accepted_fingerprint or accepted_fingerprint != preview.preview_fingerprint:
+    if not accepted_fingerprint:
         raise ValueError("Program Blueprint preview changed; preview again before applying.")
     if mode == "dry_run":
+        if accepted_fingerprint != preview.preview_fingerprint:
+            raise ValueError("Program Blueprint preview changed; preview again before applying.")
         return replace(preview, apply_mode=mode)
     if mode not in {"create_only", "skip_existing", "explicit_update"}:
         raise ValueError("Choose create only, skip existing, explicit update, or dry run.")
@@ -332,30 +352,64 @@ def apply_program_blueprint_preview(
         raise ValueError("Preview a valid Program Blueprint before applying.")
     if blueprint.slug != viewer.community.slug:
         raise ValueError("Program Blueprint must target the current realm before apply.")
-    blocked = [row for row in preview.diff_rows if row.action == "blocked"]
-    if blocked:
-        raise ValueError(blocked[0].detail)
-    _validate_create_only_collisions(repo, viewer, blueprint, preview, mode)
-    command_token = f"{preview.preview_fingerprint}:{mode}"
+    _validate_blueprint_apply_target(preview, blueprint, viewer)
+    command_token = f"{accepted_fingerprint}:{mode}"
     with repo.transaction():
+        current_viewer = _current_blueprint_viewer(repo, viewer)
+        if (
+            repo.get_command_submission(
+                current_viewer.community.id,
+                current_viewer.membership.id,
+                command_key="program_blueprint_apply",
+                token=command_token,
+            )
+            is not None
+        ):
+            raise ValueError(f"This Program Blueprint preview was already applied in {mode} mode.")
+        current_preview = preview_program_blueprint(repo, current_viewer, source)
+        if accepted_fingerprint != current_preview.preview_fingerprint:
+            raise ValueError("Program Blueprint preview changed; preview again before applying.")
+        current_blueprint = current_preview.blueprint
+        if current_blueprint is None:
+            raise ValueError("Preview a valid Program Blueprint before applying.")
+        _validate_blueprint_apply_target(current_preview, current_blueprint, current_viewer)
+        _validate_create_only_collisions(
+            repo,
+            current_viewer,
+            current_blueprint,
+            current_preview,
+            mode,
+        )
         if not repo.reserve_command_submission(
-            viewer.community.id,
-            viewer.membership.id,
+            current_viewer.community.id,
+            current_viewer.membership.id,
             command_key="program_blueprint_apply",
             token=command_token,
         ):
             raise ValueError(f"This Program Blueprint preview was already applied in {mode} mode.")
-        _hydrate_program_blueprint(repo, viewer, blueprint, mode)
+        _hydrate_program_blueprint(repo, current_viewer, current_blueprint, mode)
         if on_applied is not None:
             on_applied()
         repo.complete_command_submission(
-            viewer.community.id,
-            viewer.membership.id,
+            current_viewer.community.id,
+            current_viewer.membership.id,
             command_key="program_blueprint_apply",
             token=command_token,
             result_path="/studio/intake?blueprint=applied",
         )
-    return replace(preview, apply_mode=mode, applied=True)
+    return replace(current_preview, apply_mode=mode, applied=True)
+
+
+def _validate_blueprint_apply_target(
+    preview: ProgramBlueprintPreview,
+    blueprint: ProgramBlueprint,
+    viewer: ForumView,
+) -> None:
+    if blueprint.slug != viewer.community.slug:
+        raise ValueError("Program Blueprint must target the current realm before apply.")
+    blocked = [row for row in preview.diff_rows if row.action == "blocked"]
+    if blocked:
+        raise ValueError(blocked[0].detail)
 
 
 def _validate_create_only_collisions(
@@ -427,7 +481,7 @@ def _hydrate_program_blueprint(
             )
 
     style = blueprint.appearance.post_style if blueprint.appearance is not None else None
-    first_character_id: int | None = None
+    first_owned_character_id: int | None = None
     for character_seed in blueprint.characters:
         try:
             character = repo.get_character_by_slug(community.id, character_seed.slug)
@@ -478,10 +532,15 @@ def _hydrate_program_blueprint(
                     ),
                     post_density=style.density if style is not None else character.post_density,
                 )
-        if first_character_id is None:
-            first_character_id = character.id
-    if viewer.membership.default_character_id is None and first_character_id is not None:
-        repo.set_default_character(community.id, viewer.membership.id, first_character_id)
+        if first_owned_character_id is None and character.membership_id == viewer.membership.id:
+            first_owned_character_id = character.id
+    current_membership = repo.get_membership(community.id, viewer.membership.id)
+    if current_membership.default_character_id is None and first_owned_character_id is not None:
+        repo.set_default_character(
+            community.id,
+            current_membership.id,
+            first_owned_character_id,
+        )
 
     for index, board_seed in enumerate(blueprint.boards, start=1):
         try:
@@ -576,7 +635,7 @@ def _hydrate_program_blueprint(
                 viewer.membership.id,
                 wanted_seed.slug,
                 wanted_seed.title,
-                creator_character_id=first_character_id,
+                creator_character_id=first_owned_character_id,
                 related_material_id=related_material_id,
                 wanted_type=wanted_seed.wanted_type,
                 summary=wanted_seed.summary,
@@ -825,7 +884,104 @@ def _row_for_existing(
     return BlueprintDiffRow(section, slug, label, existing_action, update_detail)
 
 
-def _preview_fingerprint(source: str, rows: tuple[BlueprintDiffRow, ...]) -> str:
+type BlueprintLiveRecord = (
+    Community
+    | CommunityMembership
+    | Role
+    | Character
+    | Board
+    | Material
+    | WantedAd
+    | CommunityTheme
+)
+
+
+def _current_blueprint_viewer(
+    repo: BlueprintPlanRepository,
+    viewer: ForumView,
+) -> ForumView:
+    community = repo.get_community(viewer.community.id)
+    membership = repo.get_membership(community.id, viewer.membership.id)
+    role = repo.get_role(community.id, membership.role_id)
+    return replace(viewer, community=community, membership=membership, role=role)
+
+
+def _blueprint_live_records(
+    repo: BlueprintPlanRepository,
+    viewer: ForumView,
+    blueprint: ProgramBlueprint,
+) -> tuple[tuple[str, str, BlueprintLiveRecord], ...]:
+    community_id = viewer.community.id
+    records: list[tuple[str, str, BlueprintLiveRecord]] = [
+        ("program", blueprint.slug, viewer.community),
+        ("membership", str(viewer.membership.id), viewer.membership),
+        ("viewer role", str(viewer.role.id), viewer.role),
+    ]
+
+    def add_existing(
+        section: str,
+        slug: str,
+        load: Callable[[], BlueprintLiveRecord],
+    ) -> None:
+        try:
+            record = load()
+        except LookupError:
+            return
+        records.append((section, slug, record))
+
+    add_existing(
+        "role",
+        blueprint.role_slug,
+        lambda: repo.get_role_by_slug(community_id, blueprint.role_slug),
+    )
+    for character in blueprint.characters:
+        add_existing(
+            "face",
+            character.slug,
+            lambda character=character: repo.get_character_by_slug(
+                community_id,
+                character.slug,
+            ),
+        )
+    for board in blueprint.boards:
+        add_existing(
+            "scene hub",
+            board.slug,
+            lambda board=board: repo.get_board_by_slug(community_id, board.slug),
+        )
+    for material in blueprint.materials:
+        add_existing(
+            "material",
+            material.slug,
+            lambda material=material: repo.get_material_by_slug(
+                community_id,
+                material.slug,
+            ),
+        )
+    for wanted in blueprint.wanted:
+        add_existing(
+            "wanted hook",
+            wanted.slug,
+            lambda wanted=wanted: repo.get_wanted_ad_by_slug(
+                community_id,
+                wanted.slug,
+            ),
+        )
+    theme = blueprint.theme
+    if theme is not None:
+        add_existing(
+            "theme",
+            theme.slug,
+            lambda: repo.get_theme_by_slug(community_id, theme.slug),
+        )
+    return tuple(records)
+
+
+def _preview_fingerprint(
+    source: str,
+    rows: tuple[BlueprintDiffRow, ...],
+    live_records: tuple[tuple[str, str, BlueprintLiveRecord], ...],
+) -> str:
     digest = hashlib.sha256()
     digest.update(source.encode("utf-8"))
     for row in rows:
@@ -837,7 +993,30 @@ def _preview_fingerprint(source: str, rows: tuple[BlueprintDiffRow, ...]) -> str
         digest.update(row.action.encode("utf-8"))
         digest.update(b"\0")
         digest.update(row.detail.encode("utf-8"))
+    for section, slug, record in live_records:
+        values = asdict(record)
+        values.pop("created_at", None)
+        values.pop("updated_at", None)
+        digest.update(b"\0live\0")
+        digest.update(section.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(slug.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(
+            json.dumps(
+                values,
+                sort_keys=True,
+                separators=(",", ":"),
+                default=_fingerprint_json_default,
+            ).encode("utf-8")
+        )
     return digest.hexdigest()[:16]
+
+
+def _fingerprint_json_default(value: object) -> object:
+    if isinstance(value, (frozenset, set)):
+        return sorted(value)
+    raise TypeError(f"Unsupported Blueprint fingerprint value: {type(value).__name__}")
 
 
 def _diff_action_counts(rows: tuple[BlueprintDiffRow, ...]) -> dict[str, int]:
