@@ -236,20 +236,21 @@ def update_post(
     post_number: int,
     body: str,
 ) -> Post:
-    _board, _thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_number)
-    cleaned = body.strip()
-    if not cleaned:
-        raise ValueError("post body is required")
-    if cleaned == post.body:
-        return post
-    repo.create_post_revision(
-        viewer.community.id,
-        post.id,
-        viewer.membership.id,
-        post.body,
-        cleaned,
-    )
-    return repo.update_post_body(viewer.community.id, post.id, cleaned)
+    with repo.transaction():
+        _board, _thread, post = editable_post(repo, viewer, board_slug, thread_slug, post_number)
+        cleaned = body.strip()
+        if not cleaned:
+            raise ValueError("post body is required")
+        if cleaned == post.body:
+            return post
+        repo.create_post_revision(
+            viewer.community.id,
+            post.id,
+            viewer.membership.id,
+            post.body,
+            cleaned,
+        )
+        return repo.update_post_body(viewer.community.id, post.id, cleaned)
 
 
 def update_thread_scene(
@@ -266,44 +267,47 @@ def update_thread_scene(
     posting_mode: str = "freeform",
     participant_ids: list[int] | None = None,
 ) -> Thread:
-    _board, thread = visible_thread(repo, viewer, board_slug, thread_slug)
-    if not can_manage_scene(viewer, thread):
-        raise PermissionError(f"membership {viewer.membership.id} cannot manage scene {thread.id}")
-    cleaned_status = clean_thread_status(status)
-    cleaned_visibility = None if visibility is None else clean_thread_visibility(visibility)
-    cleaned_posting_mode = clean_posting_mode(posting_mode)
-    repo.update_thread_scene(
-        viewer.community.id,
-        thread.id,
-        status=cleaned_status,
-        visibility=cleaned_visibility,
-        location=location.strip(),
-        timeline=timeline.strip(),
-        summary=summary.strip(),
-        posting_mode=cleaned_posting_mode,
-    )
-    posted_character_ids = {
-        post.author_character_id for post in repo.list_posts(viewer.community.id, thread.id)
-    }
-    required_ids = [thread.author_character_id, *posted_character_ids]
-    taggable_ids = {
-        character.id
-        for character in taggable_characters(
-            repo.list_community_characters(viewer.community.id),
-            viewer.roster,
+    with repo.transaction():
+        _board, thread = visible_thread(repo, viewer, board_slug, thread_slug)
+        if not can_manage_scene(viewer, thread):
+            raise PermissionError(
+                f"membership {viewer.membership.id} cannot manage scene {thread.id}"
+            )
+        cleaned_status = clean_thread_status(status)
+        cleaned_visibility = None if visibility is None else clean_thread_visibility(visibility)
+        cleaned_posting_mode = clean_posting_mode(posting_mode)
+        repo.update_thread_scene(
+            viewer.community.id,
+            thread.id,
+            status=cleaned_status,
+            visibility=cleaned_visibility,
+            location=location.strip(),
+            timeline=timeline.strip(),
+            summary=summary.strip(),
+            posting_mode=cleaned_posting_mode,
         )
-    }
-    tag_ids = [
-        character_id
-        for character_id in clean_participant_ids(participant_ids or [])
-        if character_id in taggable_ids
-    ]
-    repo.set_thread_participants(
-        viewer.community.id,
-        thread.id,
-        clean_participant_ids([*required_ids, *tag_ids]),
-    )
-    return repo.get_thread(viewer.community.id, thread.id)
+        posted_character_ids = {
+            post.author_character_id for post in repo.list_posts(viewer.community.id, thread.id)
+        }
+        required_ids = [thread.author_character_id, *posted_character_ids]
+        taggable_ids = {
+            character.id
+            for character in taggable_characters(
+                repo.list_community_characters(viewer.community.id),
+                viewer.roster,
+            )
+        }
+        tag_ids = [
+            character_id
+            for character_id in clean_participant_ids(participant_ids or [])
+            if character_id in taggable_ids
+        ]
+        repo.set_thread_participants(
+            viewer.community.id,
+            thread.id,
+            clean_participant_ids([*required_ids, *tag_ids]),
+        )
+        return repo.get_thread(viewer.community.id, thread.id)
 
 
 def join_thread_as_current_character(
@@ -408,8 +412,8 @@ def start_thread(
         if participant_id in taggable_ids
     ]
     cleaned_participant_ids = clean_participant_ids([character.id, *tag_ids])
-    slug = unique_thread_slug(repo, viewer.community.id, board.id, cleaned_title)
     with repo.transaction():
+        slug = unique_thread_slug(repo, viewer.community.id, board.id, cleaned_title)
         thread = repo.create_thread(
             viewer.community.id,
             board.id,
