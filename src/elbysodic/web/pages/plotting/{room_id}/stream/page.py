@@ -66,18 +66,16 @@ def get(request: Request, room_id: str) -> EventStream:
                     event = get_task.result()
                     if event.kind == "ready":
                         yield SSEEvent(event="plotting-room-ready", data="connected")
-                    elif (
-                        event.kind == "message"
-                        and event.message is not None
-                        and event.message.message.id not in seen_message_ids
-                    ):
-                        seen_message_ids.add(event.message.message.id)
-                        yield _message_fragment(request, event.message)
-                if poll_task in done:
-                    batch = stream_services.read_plotting_room_messages(
-                        parsed_room_id,
-                        after_id=poll_after_id,
-                    )
+                    elif event.kind != "message":
+                        continue
+                if poll_task in done or (get_task in done and event.kind == "message"):
+                    try:
+                        batch = stream_services.read_plotting_room_messages(
+                            parsed_room_id,
+                            after_id=poll_after_id,
+                        )
+                    except LookupError, PermissionError:
+                        break
                     poll_after_id = batch.last_message_id
                     for message in _unseen_messages(
                         batch.messages,
@@ -89,17 +87,13 @@ def get(request: Request, room_id: str) -> EventStream:
                         queued = queue.get_nowait()
                         if queued.kind == "ready":
                             yield SSEEvent(event="plotting-room-ready", data="connected")
-                        elif (
-                            queued.kind == "message"
-                            and queued.message is not None
-                            and queued.message.message.id not in seen_message_ids
-                        ):
-                            seen_message_ids.add(queued.message.message.id)
-                            yield _message_fragment(request, queued.message)
-                    batch = stream_services.read_plotting_room_messages(
-                        parsed_room_id,
-                        after_id=poll_after_id,
-                    )
+                    try:
+                        batch = stream_services.read_plotting_room_messages(
+                            parsed_room_id,
+                            after_id=poll_after_id,
+                        )
+                    except LookupError, PermissionError:
+                        break
                     for message in _unseen_messages(batch.messages, seen_message_ids):
                         yield _message_fragment(request, message)
                     break
