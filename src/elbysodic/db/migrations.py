@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 
-CURRENT_SCHEMA_VERSION = 26
+CURRENT_SCHEMA_VERSION = 28
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -818,6 +818,99 @@ TENANT_PAIR_RULES: tuple[tuple[str, str], ...] = (
         """,
     ),
     (
+        "continuity_proposals",
+        """
+        EXISTS (
+            SELECT 1 FROM community_memberships AS author
+            WHERE author.id = {row}.author_membership_id
+              AND author.community_id = {row}.community_id
+        )
+        AND (
+            {row}.author_character_id IS NULL
+            OR EXISTS (
+                SELECT 1 FROM characters AS character
+                WHERE character.id = {row}.author_character_id
+                  AND character.community_id = {row}.community_id
+                  AND character.membership_id = {row}.author_membership_id
+            )
+        )
+        """,
+    ),
+    (
+        "continuity_source_citations",
+        """
+        EXISTS (
+            SELECT 1 FROM continuity_proposals AS proposal
+            WHERE proposal.id = {row}.proposal_id
+              AND proposal.community_id = {row}.community_id
+        )
+        AND EXISTS (
+            SELECT 1 FROM threads AS thread
+            WHERE thread.id = {row}.source_thread_id
+              AND thread.community_id = {row}.community_id
+        )
+        AND (
+            ({row}.source_type = 'thread' AND {row}.source_id = {row}.source_thread_id)
+            OR ({row}.source_type = 'post' AND EXISTS (
+                SELECT 1 FROM posts AS post
+                WHERE post.id = {row}.source_id
+                  AND post.community_id = {row}.community_id
+                  AND post.thread_id = {row}.source_thread_id
+            ))
+        )
+        """,
+    ),
+    (
+        "continuity_affected_objects",
+        """
+        EXISTS (
+            SELECT 1 FROM continuity_proposals AS proposal
+            WHERE proposal.id = {row}.proposal_id
+              AND proposal.community_id = {row}.community_id
+        )
+        AND (
+            ({row}.object_type = 'board' AND EXISTS (SELECT 1 FROM boards AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'character' AND EXISTS (SELECT 1 FROM characters AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'claim' AND EXISTS (SELECT 1 FROM character_claims AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'material' AND EXISTS (SELECT 1 FROM materials AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'plot_hook' AND EXISTS (SELECT 1 FROM character_plot_hooks AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'reserve' AND EXISTS (SELECT 1 FROM character_reserves AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'thread' AND EXISTS (SELECT 1 FROM threads AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+            OR ({row}.object_type = 'wanted_ad' AND EXISTS (SELECT 1 FROM wanted_ads AS target WHERE target.id = {row}.object_id AND target.community_id = {row}.community_id))
+        )
+        """,
+    ),
+    (
+        "continuity_review_events",
+        """
+        EXISTS (SELECT 1 FROM continuity_proposals AS proposal WHERE proposal.id = {row}.proposal_id AND proposal.community_id = {row}.community_id)
+        AND EXISTS (SELECT 1 FROM community_memberships AS actor WHERE actor.id = {row}.actor_membership_id AND actor.community_id = {row}.community_id)
+        AND ({row}.actor_character_id IS NULL OR EXISTS (
+            SELECT 1 FROM characters AS character
+            WHERE character.id = {row}.actor_character_id
+              AND character.community_id = {row}.community_id
+              AND character.membership_id = {row}.actor_membership_id
+        ))
+        """,
+    ),
+    (
+        "canon_entries",
+        """
+        EXISTS (
+            SELECT 1 FROM continuity_proposals AS proposal
+            WHERE proposal.id = {row}.approved_proposal_id
+              AND proposal.community_id = {row}.community_id
+              AND proposal.state = 'approved'
+              AND proposal.visibility = 'public'
+        )
+        AND EXISTS (
+            SELECT 1 FROM community_memberships AS approver
+            WHERE approver.id = {row}.approved_by_membership_id
+              AND approver.community_id = {row}.community_id
+        )
+        """,
+    ),
+    (
         "command_submissions",
         """
         EXISTS (
@@ -1556,6 +1649,102 @@ def _add_thread_visibility(connection: sqlite3.Connection) -> None:
     connection.execute("UPDATE threads SET visibility = 'private' WHERE status = 'private'")
 
 
+def _add_manual_continuity_backend(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS continuity_proposals (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            author_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+            summary TEXT NOT NULL DEFAULT '',
+            state TEXT NOT NULL DEFAULT 'draft' CHECK (state IN ('draft', 'submitted', 'revision_requested', 'approved', 'rejected', 'archived')),
+            visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('private', 'participants', 'staff', 'public')),
+            revision_note TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            CHECK (visibility != 'public' OR state = 'approved')
+        );
+        CREATE TABLE IF NOT EXISTS continuity_source_citations (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+            source_type TEXT NOT NULL CHECK (source_type IN ('thread', 'post')),
+            source_id INTEGER NOT NULL,
+            source_thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+            created_at TEXT NOT NULL,
+            UNIQUE (community_id, proposal_id, source_type, source_id),
+            CHECK (source_type != 'thread' OR source_id = source_thread_id)
+        );
+        CREATE TABLE IF NOT EXISTS continuity_affected_objects (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+            object_type TEXT NOT NULL CHECK (object_type IN ('board', 'character', 'claim', 'material', 'plot_hook', 'reserve', 'thread', 'wanted_ad')),
+            object_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE (community_id, proposal_id, object_type, object_id)
+        );
+        CREATE TABLE IF NOT EXISTS continuity_review_events (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+            actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            action TEXT NOT NULL CHECK (action IN ('submitted', 'revision_requested', 'approved', 'rejected', 'archived')),
+            note TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS canon_entries (
+            id INTEGER PRIMARY KEY,
+            community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+            approved_proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+            approved_by_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+            title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+            summary TEXT NOT NULL DEFAULT '',
+            visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility = 'public'),
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (community_id, approved_proposal_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_continuity_proposals_state ON continuity_proposals(community_id, state, updated_at, id);
+        CREATE INDEX IF NOT EXISTS idx_continuity_proposals_author ON continuity_proposals(community_id, author_membership_id, updated_at, id);
+        CREATE INDEX IF NOT EXISTS idx_continuity_sources_proposal ON continuity_source_citations(community_id, proposal_id, id);
+        CREATE INDEX IF NOT EXISTS idx_continuity_affected_proposal ON continuity_affected_objects(community_id, proposal_id, id);
+        CREATE INDEX IF NOT EXISTS idx_continuity_reviews_proposal ON continuity_review_events(community_id, proposal_id, created_at, id);
+        CREATE INDEX IF NOT EXISTS idx_canon_entries_visibility ON canon_entries(community_id, visibility, updated_at, id);
+        """
+    )
+
+
+def _tighten_canon_entry_public_visibility(connection: sqlite3.Connection) -> None:
+    invalid = connection.execute(
+        """
+        SELECT canon.rowid AS row_id
+        FROM canon_entries AS canon
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM continuity_proposals AS proposal
+            WHERE proposal.id = canon.approved_proposal_id
+              AND proposal.community_id = canon.community_id
+              AND proposal.state = 'approved'
+              AND proposal.visibility = 'public'
+        )
+        LIMIT 1
+        """
+    ).fetchone()
+    if invalid is not None:
+        raise sqlite3.IntegrityError(
+            "canon visibility migration blocked: "
+            f"canon_entries row {invalid['row_id']} requires repair; "
+            "run the tenant integrity audit"
+        )
+    connection.execute("DROP TRIGGER IF EXISTS trg_canon_entries_tenant_pair_insert")
+    connection.execute("DROP TRIGGER IF EXISTS trg_canon_entries_tenant_pair_update")
+    ensure_tenant_pair_triggers(connection)
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -1594,6 +1783,12 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(25, "material-presentation-variant", _add_material_presentation_variant),
     Migration(26, "thread-visibility", _add_thread_visibility),
+    Migration(27, "manual-continuity-backend", _add_manual_continuity_backend),
+    Migration(
+        28,
+        "canon-entry-public-visibility-constraint",
+        _tighten_canon_entry_public_visibility,
+    ),
 )
 
 

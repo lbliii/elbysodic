@@ -267,6 +267,75 @@ CREATE TABLE IF NOT EXISTS staff_audit_events (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS continuity_proposals (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    author_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    author_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+    summary TEXT NOT NULL DEFAULT '',
+    state TEXT NOT NULL DEFAULT 'draft' CHECK (
+        state IN ('draft', 'submitted', 'revision_requested', 'approved', 'rejected', 'archived')
+    ),
+    visibility TEXT NOT NULL DEFAULT 'private' CHECK (
+        visibility IN ('private', 'participants', 'staff', 'public')
+    ),
+    revision_note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    CHECK (visibility != 'public' OR state = 'approved')
+);
+
+CREATE TABLE IF NOT EXISTS continuity_source_citations (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+    source_type TEXT NOT NULL CHECK (source_type IN ('thread', 'post')),
+    source_id INTEGER NOT NULL,
+    source_thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, proposal_id, source_type, source_id),
+    CHECK (source_type != 'thread' OR source_id = source_thread_id)
+);
+
+CREATE TABLE IF NOT EXISTS continuity_affected_objects (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+    object_type TEXT NOT NULL CHECK (
+        object_type IN ('board', 'character', 'claim', 'material', 'plot_hook', 'reserve', 'thread', 'wanted_ad')
+    ),
+    object_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (community_id, proposal_id, object_type, object_id)
+);
+
+CREATE TABLE IF NOT EXISTS continuity_review_events (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+    actor_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    actor_character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    action TEXT NOT NULL CHECK (
+        action IN ('submitted', 'revision_requested', 'approved', 'rejected', 'archived')
+    ),
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS canon_entries (
+    id INTEGER PRIMARY KEY,
+    community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    approved_proposal_id INTEGER NOT NULL REFERENCES continuity_proposals(id) ON DELETE CASCADE,
+    approved_by_membership_id INTEGER NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
+    title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+    summary TEXT NOT NULL DEFAULT '',
+    visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility = 'public'),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (community_id, approved_proposal_id)
+);
+
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY,
     community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
@@ -908,6 +977,18 @@ CREATE INDEX IF NOT EXISTS idx_thread_watches_membership ON thread_watches(commu
 CREATE INDEX IF NOT EXISTS idx_notifications_membership ON notifications(community_id, membership_id, read_at, created_at);
 CREATE INDEX IF NOT EXISTS idx_command_submissions_membership
 ON command_submissions(community_id, membership_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_continuity_proposals_state
+ON continuity_proposals(community_id, state, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_continuity_proposals_author
+ON continuity_proposals(community_id, author_membership_id, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_continuity_sources_proposal
+ON continuity_source_citations(community_id, proposal_id, id);
+CREATE INDEX IF NOT EXISTS idx_continuity_affected_proposal
+ON continuity_affected_objects(community_id, proposal_id, id);
+CREATE INDEX IF NOT EXISTS idx_continuity_reviews_proposal
+ON continuity_review_events(community_id, proposal_id, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_canon_entries_visibility
+ON canon_entries(community_id, visibility, updated_at, id);
 
 CREATE TRIGGER IF NOT EXISTS trg_user_sessions_selected_identity_insert
 BEFORE INSERT ON user_sessions

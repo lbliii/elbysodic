@@ -12,6 +12,7 @@ from contextlib import AbstractContextManager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlencode
 
 from elbysodic.blueprints import BlueprintApplyMode, ProgramBlueprintPreview
@@ -52,6 +53,12 @@ from elbysodic.domain.boards import (
     normalize_board_sidebar_section,
 )
 from elbysodic.domain.context import RequestIdentityContext
+from elbysodic.domain.continuity import (
+    ContinuityAffectedObjectDraft,
+    ContinuityProposal,
+    ContinuitySourceCitationDraft,
+    ContinuityVisibility,
+)
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -150,6 +157,25 @@ from elbysodic.services.claims import (
 from elbysodic.services.claims import claims_directory as _claims_directory
 from elbysodic.services.commands import CommandExecution
 from elbysodic.services.commands import execute_command as _execute_command
+from elbysodic.services.continuity import (
+    ContinuityNotificationTarget,
+    ContinuityProposalView,
+    ContinuityReviewQueue,
+)
+from elbysodic.services.continuity import (
+    continuity_notification_targets as _continuity_notification_targets,
+)
+from elbysodic.services.continuity import continuity_proposal_view as _continuity_proposal_view
+from elbysodic.services.continuity import continuity_review_queue as _continuity_review_queue
+from elbysodic.services.continuity import (
+    create_manual_continuity_proposal as _create_manual_continuity_proposal,
+)
+from elbysodic.services.continuity import (
+    review_manual_continuity_proposal as _review_manual_continuity_proposal,
+)
+from elbysodic.services.continuity import (
+    submit_manual_continuity_proposal as _submit_manual_continuity_proposal,
+)
 from elbysodic.services.discovery import discover_plots as _discover_plots
 from elbysodic.services.exports import CommunityExportManifest
 from elbysodic.services.exports import community_export_manifest as _community_export_manifest
@@ -1852,6 +1878,57 @@ class AppServices:
                 action="community_export_created",
             )
         return manifest
+
+    def create_continuity_proposal(
+        self,
+        *,
+        title: str,
+        summary: str,
+        citations: tuple[ContinuitySourceCitationDraft, ...],
+        affected_objects: tuple[ContinuityAffectedObjectDraft, ...],
+        author_character_id: int | None = None,
+    ) -> ContinuityProposal:
+        return _create_manual_continuity_proposal(
+            self.repo,
+            self.viewer(),
+            title=title,
+            summary=summary,
+            citations=citations,
+            affected_objects=affected_objects,
+            author_character_id=author_character_id,
+        )
+
+    def submit_continuity_proposal(self, proposal_id: int) -> ContinuityProposal:
+        return _submit_manual_continuity_proposal(self.repo, self.viewer(), proposal_id)
+
+    def review_continuity_proposal(
+        self,
+        proposal_id: int,
+        *,
+        action: Literal["revision_requested", "approved", "rejected", "archived"],
+        note: str = "",
+        visibility: ContinuityVisibility = "staff",
+    ) -> ContinuityProposal:
+        return _review_manual_continuity_proposal(
+            self.repo,
+            self.viewer(),
+            proposal_id,
+            action=action,
+            note=note,
+            visibility=visibility,
+        )
+
+    def continuity_proposal_view(self, proposal_id: int) -> ContinuityProposalView:
+        return _continuity_proposal_view(self.repo, self.viewer(), proposal_id)
+
+    def continuity_review_queue(self) -> ContinuityReviewQueue:
+        return _continuity_review_queue(self.repo, self.viewer())
+
+    def continuity_notification_targets(
+        self,
+        proposal_id: int,
+    ) -> tuple[ContinuityNotificationTarget, ...]:
+        return _continuity_notification_targets(self.repo, self.viewer(), proposal_id)
 
     def staff_audit_trail(
         self,

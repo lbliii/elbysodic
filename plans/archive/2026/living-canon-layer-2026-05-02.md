@@ -1,16 +1,16 @@
 # Living Canon Layer
 
-
 ## Archival Note
 
 Lifecycle: Deferred
 
-Archived 2026-08-17 as not-now. Continuity Graph stays behind production trust. Related closed saga #137; do not mint ready leaves until provenance/review gates exist.
+Archived 2026-08-17 as not-now. The manual backend foundation is implemented;
+rendered continuity remains deferred behind route-specific privacy proof.
 
-Status: deferred until production trust gates close
+Status: backend foundation implemented; rendered continuity remains gated
 Owner: Product, domain, storage, service, and web stewardship  
 Created: 2026-05-02  
-Last updated: 2026-05-09
+Last updated: 2026-09-05
 Review by: 2026-06-13
 Closure criteria: split into PR-sized work for scene outcomes, source-linked
 canon entries, proposal review, rendered privacy coverage, and any later
@@ -23,6 +23,17 @@ should wait behind production trust gates: Railway smoke, schema/seed
 persistence, transaction boundaries, rendered privacy matrix expansion, and
 core flow browser QA. The first future slice should still be manual scene
 outcomes, not automation or public canon indexing.
+
+## 2026-07-20 Backend Update
+
+Schema version 27 implements the first manual proposal foundation with explicit
+thread/post citations, typed affected objects, review lifecycle, public-safe
+approval, canon materialization, audit, one-community export provenance, and
+notification target planning. This supersedes the speculative table shapes
+later in this plan where they disagree with the implemented contract.
+
+Public/member pages, Studio review routes, notification fanout, scene-reader
+grounding, retraction/supersession, and any automation remain gated follow-ups.
 
 ## Purpose
 
