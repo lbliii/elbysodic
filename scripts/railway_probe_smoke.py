@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import http.client
 import json
 import os
 import signal
@@ -12,7 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
@@ -44,12 +43,10 @@ def _request(
             body = response.read()
             headers = list(response.headers.items())
             return int(response.status), body, headers
-    except http.client.HTTPException as exc:
-        if exc.response is None:
-            raise
-        body = exc.response.read()
-        headers = list(exc.response.headers.items())
-        return int(exc.response.status), body, headers
+    except HTTPError as exc:
+        body = exc.read()
+        headers = list(exc.headers.items())
+        return int(exc.code), body, headers
 
 
 def _wait_for_status(

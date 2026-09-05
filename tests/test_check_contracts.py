@@ -7,7 +7,10 @@ import json
 import shutil
 import subprocess
 import tomllib
+from email.message import Message
+from io import BytesIO
 from pathlib import Path
+from urllib.error import HTTPError
 
 import pytest
 
@@ -36,6 +39,25 @@ def test_required_checks_are_present_in_every_developer_gate() -> None:
     full_gate = checks.check_commands(full=True, base="test/base")
     assert ["uv", "run", "pytest", "-q", "--tb=short"] in full_gate
     assert full_gate[-1][-2:] == ["--base", "test/base"]
+
+
+def test_canonical_gate_discovers_every_client_test_in_sorted_order(tmp_path, monkeypatch) -> None:
+    client_root = tmp_path / "tests" / "client"
+    client_root.mkdir(parents=True)
+    (client_root / "z-last.test.cjs").write_text("")
+    (client_root / "composer.test.cjs").write_text("")
+    monkeypatch.setattr(checks, "REPO_ROOT", tmp_path)
+
+    client_command = next(
+        command for command in checks.check_commands() if command[:2] == ["node", "--test"]
+    )
+
+    assert client_command == [
+        "node",
+        "--test",
+        "tests/client/composer.test.cjs",
+        "tests/client/z-last.test.cjs",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -115,6 +137,30 @@ def test_probe_does_not_treat_missing_or_malformed_runtime_as_valid(monkeypatch,
     monkeypatch.setattr(smoke, "_request", lambda *a, **k: (200, json.dumps(payload).encode(), []))
     with pytest.raises(TypeError, match="boolean gil_enabled"):
         smoke.verify_pounce_info("http://localhost", build_id="audit")
+
+
+def test_probe_returns_http_error_status_body_and_headers(monkeypatch) -> None:
+    smoke = _script("railway_probe_smoke")
+    headers = Message()
+    headers["Retry-After"] = "1"
+    response = HTTPError(
+        "http://localhost/readyz",
+        503,
+        "Service Unavailable",
+        headers,
+        BytesIO(b'{"status":"draining"}'),
+    )
+
+    def raise_http_error(*_args, **_kwargs):
+        raise response
+
+    monkeypatch.setattr(smoke, "urlopen", raise_http_error)
+
+    assert smoke._request("http://localhost", "/readyz") == (
+        503,
+        b'{"status":"draining"}',
+        [("Retry-After", "1")],
+    )
 
 
 def test_explicit_remote_runtime_check_requires_target_and_build_id() -> None:
