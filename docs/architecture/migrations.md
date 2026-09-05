@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `27`. Calling
+The checked-in schema currently creates databases at version `28`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -49,6 +49,11 @@ Every table carries `community_id`; fresh and upgraded schemas install matching
 indexes and tenant-pair triggers. Existing scene, post, material, and identity
 rows are not rewritten, and legacy tenant drift is diagnosed rather than
 auto-repaired.
+
+Version `28` tightens the canon-entry storage guard so a public canon row can
+only reference a proposal whose review visibility is also public. The migration
+rejects diagnosed legacy violations, then replaces the version `27` canon
+insert/update triggers with the stricter predicate.
 
 Fresh-schema and upgraded-schema parity is a production-readiness requirement:
 new tables, columns, indexes, and constraints must be represented in both the

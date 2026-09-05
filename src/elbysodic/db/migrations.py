@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 
-CURRENT_SCHEMA_VERSION = 27
+CURRENT_SCHEMA_VERSION = 28
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -1718,6 +1718,33 @@ def _add_manual_continuity_backend(connection: sqlite3.Connection) -> None:
     )
 
 
+def _tighten_canon_entry_public_visibility(connection: sqlite3.Connection) -> None:
+    invalid = connection.execute(
+        """
+        SELECT canon.rowid AS row_id
+        FROM canon_entries AS canon
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM continuity_proposals AS proposal
+            WHERE proposal.id = canon.approved_proposal_id
+              AND proposal.community_id = canon.community_id
+              AND proposal.state = 'approved'
+              AND proposal.visibility = 'public'
+        )
+        LIMIT 1
+        """
+    ).fetchone()
+    if invalid is not None:
+        raise sqlite3.IntegrityError(
+            "canon visibility migration blocked: "
+            f"canon_entries row {invalid['row_id']} requires repair; "
+            "run the tenant integrity audit"
+        )
+    connection.execute("DROP TRIGGER IF EXISTS trg_canon_entries_tenant_pair_insert")
+    connection.execute("DROP TRIGGER IF EXISTS trg_canon_entries_tenant_pair_update")
+    ensure_tenant_pair_triggers(connection)
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -1757,6 +1784,11 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(25, "material-presentation-variant", _add_material_presentation_variant),
     Migration(26, "thread-visibility", _add_thread_visibility),
     Migration(27, "manual-continuity-backend", _add_manual_continuity_backend),
+    Migration(
+        28,
+        "canon-entry-public-visibility-constraint",
+        _tighten_canon_entry_public_visibility,
+    ),
 )
 
 
