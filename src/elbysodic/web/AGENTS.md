@@ -2,7 +2,8 @@
 
 This domain represents the Chirp application surface: app setup, filesystem
 pages, templates, static assets, navigation, composer behavior, security
-wrappers, rendered privacy, and Chirp-UI integration.
+wrappers, rendered privacy, and Chirp (Kida + HTMX + Alpine) integration.
+  Chirp-UI is an exit target (ADR 0002), not a dependency to deepen.
 
 Related docs:
 

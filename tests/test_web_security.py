@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
+import io
 import re
+import tokenize
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, cast
@@ -13,7 +16,14 @@ from chirp.testing import TestClient
 from itsdangerous import BadData, URLSafeTimedSerializer
 
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
-from elbysodic.services import create_services
+from elbysodic.domain.context import (
+    DEFAULT_COMMUNITY_ID,
+    DEFAULT_COMMUNITY_SLUG,
+    CommunityContext,
+    resolve_current_community,
+)
+from elbysodic.services import AppServices, create_services
+from elbysodic.services.access import RequestIdentityResolver
 from elbysodic.services.auth import session_token_hash
 from elbysodic.services.network import (
     network_explore,
@@ -32,6 +42,38 @@ _POST_FORM_TEMPLATE_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 _PAGES_DIR = Path(__file__).parents[1] / "src" / "elbysodic" / "web" / "pages"
+_SRC_DIR = Path(__file__).parents[1] / "src" / "elbysodic"
+_MULTI_TENANCY_DOC = Path(__file__).parents[1] / "docs" / "architecture" / "multi-tenancy.md"
+
+
+def _python_call_sites(source: str, name: str) -> list[tuple[int, str]]:
+    """Return executable `name(` sites, ignoring comments and string literals."""
+
+    previous: tokenize.TokenInfo | None = None
+    sites: list[tuple[int, str]] = []
+    for token in tokenize.generate_tokens(io.StringIO(source).readline):
+        if token.type in {
+            tokenize.COMMENT,
+            tokenize.NL,
+            tokenize.NEWLINE,
+            tokenize.ENCODING,
+            tokenize.INDENT,
+            tokenize.DEDENT,
+            tokenize.ENDMARKER,
+        }:
+            continue
+        if token.type == tokenize.STRING:
+            previous = None
+            continue
+        if (
+            previous is not None
+            and previous.type == tokenize.NAME
+            and previous.string == name
+            and token.exact_type == tokenize.LPAR
+        ):
+            sites.append((previous.start[0], previous.line.strip()))
+        previous = token
+    return sites
 
 
 def _package_version(name: str) -> str:
@@ -750,6 +792,179 @@ def test_production_signed_out_public_realm_keeps_anonymous_posture(monkeypatch)
     asyncio.run(run())
 
 
+def test_production_signed_out_public_scene_stops_after_four_posts(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("x-men-apocalypse")
+        board = services.repo.get_board_by_slug(community.id, "danger-room")
+        thread = services.repo.get_thread_by_slug(
+            community.id,
+            board.id,
+            "sentinel-drill",
+        )
+        rogue = services.repo.get_character_by_slug(community.id, "rogue")
+        xavier = services.repo.get_character_by_slug(community.id, "charles-xavier")
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            xavier.id,
+            "PUBLIC PREVIEW SECOND POST",
+        )
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            rogue.id,
+            "PUBLIC PREVIEW THIRD POST",
+        )
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            xavier.id,
+            "PUBLIC PREVIEW FOURTH POST",
+        )
+        services.repo.create_post(
+            community.id,
+            thread.id,
+            rogue.id,
+            "MEMBER ONLY FIFTH POST",
+        )
+        app = create_app(debug=False, services=services)
+        path = "/c/x-men-apocalypse/boards/danger-room/threads/sentinel-drill"
+
+        async with TestClient(app) as client:
+            public = await client.get(path)
+            login, cookies = await _production_login(
+                client,
+                email="writer@example.com",
+                next_url=path,
+            )
+            cookies.update(_cookie_values(login))
+            member = await client.get(path, headers={"Cookie": _cookie_header(cookies)})
+
+        assert public.status == 200
+        assert "Public scene preview" in public.text
+        assert "PUBLIC PREVIEW SECOND POST" in public.text
+        assert "PUBLIC PREVIEW FOURTH POST" in public.text
+        assert "MEMBER ONLY FIFTH POST" not in public.text
+        assert "The scene continues inside the realm" in public.text
+        assert 'href="/c/x-men-apocalypse/request-access"' in public.text
+        assert '<meta name="robots" content="noindex, nofollow">' in public.text
+        assert "writer starlane" not in public.text
+        assert "reply-composer" not in public.text
+        assert "Staff controls" not in public.text
+        assert "active face" not in public.text.lower()
+        assert not _response_headers(public, "set-cookie")
+
+        assert member.status == 200
+        assert "MEMBER ONLY FIFTH POST" in member.text
+        assert "Public scene preview" not in member.text
+
+    asyncio.run(run())
+
+
+def test_production_public_scene_route_fails_closed_for_member_only_and_private_scenes(
+    monkeypatch,
+) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        services = create_services(path=":memory:")
+        community = services.repo.get_community_by_slug("x-men-apocalypse")
+        board = services.repo.get_board_by_slug(community.id, "danger-room")
+        rogue = services.repo.get_character_by_slug(community.id, "rogue")
+        member_only = services.repo.create_thread(
+            community.id,
+            board.id,
+            rogue.id,
+            "member-only-preview-check",
+            "MEMBER ONLY SCENE TITLE",
+            visibility="members",
+        )
+        services.repo.create_post(
+            community.id,
+            member_only.id,
+            rogue.id,
+            "MEMBER ONLY SCENE BODY",
+        )
+        private_board = services.repo.get_board_by_slug(community.id, "staff-room")
+        private = services.repo.create_thread(
+            community.id,
+            private_board.id,
+            rogue.id,
+            "private-preview-check",
+            "PRIVATE SCENE TITLE",
+            visibility="public_preview",
+        )
+        services.repo.create_post(
+            community.id,
+            private.id,
+            rogue.id,
+            "PRIVATE SCENE BODY",
+        )
+        draft_face = services.repo.create_character(
+            community.id,
+            rogue.membership_id,
+            "draft-preview-face",
+            "DRAFT PREVIEW FACE",
+            application_status="draft",
+        )
+        draft_scene = services.repo.create_thread(
+            community.id,
+            board.id,
+            draft_face.id,
+            "draft-face-preview-check",
+            "DRAFT FACE SCENE TITLE",
+            visibility="public_preview",
+        )
+        services.repo.create_post(
+            community.id,
+            draft_scene.id,
+            draft_face.id,
+            "DRAFT FACE SCENE BODY",
+        )
+        closed_scene = services.repo.create_thread(
+            community.id,
+            board.id,
+            rogue.id,
+            "closed-preview-check",
+            "CLOSED SCENE TITLE",
+            status="closed",
+            visibility="public_preview",
+        )
+        services.repo.create_post(
+            community.id,
+            closed_scene.id,
+            rogue.id,
+            "CLOSED SCENE BODY",
+        )
+        app = create_app(debug=False, services=services)
+
+        async with TestClient(app) as client:
+            member_response = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/member-only-preview-check"
+            )
+            private_response = await client.get(
+                "/c/x-men-apocalypse/boards/staff-room/threads/private-preview-check"
+            )
+            draft_response = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/draft-face-preview-check"
+            )
+            closed_response = await client.get(
+                "/c/x-men-apocalypse/boards/danger-room/threads/closed-preview-check"
+            )
+
+        assert member_response.status == 404
+        assert "MEMBER ONLY SCENE BODY" not in member_response.text
+        assert private_response.status == 404
+        assert "PRIVATE SCENE BODY" not in private_response.text
+        assert draft_response.status == 404
+        assert "DRAFT FACE SCENE BODY" not in draft_response.text
+        assert closed_response.status == 404
+        assert "CLOSED SCENE BODY" not in closed_response.text
+
+    asyncio.run(run())
+
+
 def test_production_account_cannot_withdraw_another_access_request(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
@@ -842,7 +1057,19 @@ def test_access_request_notes_do_not_leak_to_public_or_member_surfaces(monkeypat
                 headers={"Cookie": _cookie_header(cookies)},
             )
 
-        for response in (public_realm, network, request_access, member_studio, member_operations):
+            member_today = await client.get(
+                "/c/x-men-apocalypse/studio",
+                headers={"Cookie": _cookie_header(cookies)},
+            )
+
+        for response in (
+            public_realm,
+            network,
+            request_access,
+            member_studio,
+            member_operations,
+            member_today,
+        ):
             assert "PRIVATE ACCESS NOTE" not in response.text
             assert "private-prospect@example.com" not in response.text
             assert "Secret transfer" not in response.text
@@ -851,7 +1078,13 @@ def test_access_request_notes_do_not_leak_to_public_or_member_surfaces(monkeypat
         assert network.status == 200
         assert request_access.status == 200
         assert member_studio.status == 403
-        assert member_operations.status == 200
+        assert member_operations.status == 302
+        assert _response_headers(member_operations, "location")
+        assert any(
+            value.endswith("/studio") or "/studio" in value
+            for value in _response_headers(member_operations, "location")
+        )
+        assert member_today.status == 200
 
     asyncio.run(run())
 
@@ -1749,7 +1982,7 @@ def test_production_application_room_requires_csrf_and_accepts_rendered_token(
                 "/applications/kitty-pryde",
                 body=urlencode(
                     {
-                        "intent": "save_review",
+                        "_action": "save_review",
                         "staff_notes": "Private staff note.",
                         "checklist": "Voice\nHooks",
                     }
@@ -1760,7 +1993,7 @@ def test_production_application_room_requires_csrf_and_accepts_rendered_token(
                 "/applications/kitty-pryde",
                 body=urlencode(
                     {
-                        "intent": "save_review",
+                        "_action": "save_review",
                         "staff_notes": "Private staff note.",
                         "checklist": "Voice\nHooks",
                         "_csrf_token": _csrf_token(room.text),
@@ -1974,3 +2207,59 @@ def test_session_cookies_stay_http_local_in_development(monkeypatch) -> None:
         assert "Secure" not in set_cookie
 
     asyncio.run(run())
+
+
+def _request_identity_call_offenders(name: str) -> list[str]:
+    offenders: list[str] = []
+    for directory in (_SRC_DIR / "web", _SRC_DIR / "services"):
+        for path in sorted(directory.rglob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            relative = path.relative_to(_SRC_DIR)
+            for lineno, line in _python_call_sites(source, name):
+                offenders.append(f"{relative}:{lineno}:{line}")
+    return offenders
+
+
+def test_request_identity_resolution_never_calls_resolve_current_community() -> None:
+    assert _request_identity_call_offenders("resolve_current_community") == []
+    assert _request_identity_call_offenders("CommunityContext") == []
+
+    resolver_source = inspect.getsource(RequestIdentityResolver)
+    assert "resolve_current_community(" not in resolver_source
+    assert "CommunityContext(" not in resolver_source
+
+    for_request_source = inspect.getsource(AppServices.for_request)
+    assert "RequestIdentityResolver" in for_request_source
+    assert "resolve_current_community(" not in for_request_source
+    assert "CommunityContext(" not in for_request_source
+
+    get_services_source = inspect.getsource(get_services)
+    assert ".for_request(request)" in get_services_source
+    assert "resolve_current_community(" not in get_services_source
+
+
+def test_for_request_identity_does_not_mint_from_community_context_defaults() -> None:
+    assert DEFAULT_COMMUNITY_ID == 1
+    assert DEFAULT_COMMUNITY_SLUG == "x-men-apocalypse"
+    community_doc = " ".join((CommunityContext.__doc__ or "").split())
+    assert "not a request minting path" in community_doc
+    assert "for_request" in community_doc
+    assert "RequestIdentityResolver" in community_doc
+
+    helper_doc = " ".join((resolve_current_community.__doc__ or "").split())
+    assert "legacy" in helper_doc
+    assert "not a request minting path" in helper_doc
+    assert "for_request" in helper_doc
+    assert "RequestIdentityResolver" in helper_doc
+
+    identity_docs = _MULTI_TENANCY_DOC.read_text(encoding="utf-8")
+    boundary = identity_docs.split("## Request Identity Boundary", 1)[1]
+    assert "AppServices.for_request()" in boundary
+    assert "RequestIdentityResolver" in boundary
+    assert "`CommunityContext()` defaults" in boundary
+    assert "not a request minting path" in boundary
+    assert "`resolve_current_community()`" in boundary
+    assert "legacy helper" in boundary
+    assert "DEFAULT_COMMUNITY_SLUG" in boundary
+    assert "DEFAULT_COMMUNITY_ID" in boundary
+    assert "Unknown-host fallthrough" in boundary

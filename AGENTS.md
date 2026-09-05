@@ -39,8 +39,9 @@ The canonical product strategy spine lives in
   authorship or story context when a flow has both.
 - Prefer server-rendered Chirp pages and small progressive-enhancement islands.
   Do not turn the app into an SPA.
-- Use Chirp-UI patterns and token names first. Put Elbysodic theme tokens in
-  `src/elbysodic/web/static/elbysodic-theme.css`.
+- Keep Chirp + Kida + HTMX + Alpine. Do not adopt Chirp-UI as the design
+  system (ADR 0002). Put Elbysodic primitives and theme tokens in
+  `_components/` and `src/elbysodic/web/static/elbysodic-theme.css`.
 - Repeated PBP UI concepts belong in
   `src/elbysodic/web/pages/_components/` before they become page-local CSS.
 - Prefer repository and service methods over ad hoc SQL in page handlers.
@@ -63,8 +64,162 @@ The canonical product strategy spine lives in
   distilled into `docs/`, `plans/`, or steward guidance.
 - `tests/` owns regression proof for repository boundaries, services, policies,
   rendered pages, markup, CLI behavior, and security.
-- `plans/` owns durable roadmap and steward rollup snapshots, not scratch notes.
+- `plans/` owns a live index and evidence packets, not executable specs.
+  GitHub issues are the work DAG. See `docs/plan/issue-lifecycle.md`.
 - `changelog.d/` owns user-visible release fragments.
+- `field-guide/` owns budgeted agent surprises while building Elbysodic.
+- `docs/adr/` owns lasting decisions leaves must cite.
+
+## Work lifecycle
+
+How to work on this repo with agents. **Default:** you talk to the
+**orchestrator** (this chat). It reads the board, plans, and **delegates**
+planner/worker work to subagents.
+
+| Doc | Role |
+| --- | --- |
+| [`docs/plan/issue-lifecycle.md`](docs/plan/issue-lifecycle.md) | Saga → epic → design → leaf standard |
+| [`docs/adr/0001-issue-lifecycle.md`](docs/adr/0001-issue-lifecycle.md) | Process freeze (labels, DAG, Stop And Ask) |
+| [`field-guide/index.md`](field-guide/index.md) | Budgeted surprises |
+| [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) | Intake forms |
+| [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) | PR shape |
+
+**Invariant:** Workers claim only GitHub issues labeled `type:leaf` **and**
+`ready`. Planners own `type:saga` / `type:epic` / `type:design`. Do not
+re-decide ADRs in a leaf.
+
+### Simple invokes
+
+| You say | Mode | What happens |
+| --- | --- | --- |
+| **`swarm`** / **`drive`** / **`orchestrate`** | **Orchestrator (default)** | Parent stays in this chat; runs board → plan/unblock → delegate workers via subagents; loops until cap or you stop |
+| **`swarm #N`** / **`drive epic #N`** / **`drive saga #N`** | Orchestrator scoped | Same, but only that epic/saga subtree |
+| **`board`** / **`status`** | Read-only | Counts + ready list + DAG hygiene; no edits |
+| **`burndown`** / **`unblock`** | Planner-only | Unblock queue (no product code); may be a subagent |
+| **`plan #N`** | Planner-only | Design/epic freeze; usually a subagent |
+| **`claim #N`** / **`work #N`** / **`ship #N`** | Worker escape hatch | Single leaf in-process or one subagent |
+| **`triage #N`** | Planner escape hatch | Make one issue swarm-ready |
+
+If you give a goal in plain language (“clear production-trust ready queue”),
+treat it as **`swarm`** with that scope.
+
+### Orchestrator mode (default contract)
+
+The parent agent in this chat is the **orchestrator**. It does **not**
+implement every leaf itself when parallel work is possible.
+
+1. **Board** — `gh` summary: ready / blocked / open designs; ready count
+   **per root saga**. Print DAG hygiene: orphan epics, leaves missing
+   parent/owned-paths/acceptance, `ready`+`blocked` collisions, owned-path
+   overlap pairs that must serialize.
+2. **Plan gate** — If ready queue is empty or leaves lack owned paths, run
+   or delegate **planner** work first (`burndown` / `plan #N` / `triage`).
+3. **Delegate workers** — For each `type:leaf`+`ready` in scope (respect
+   caps), launch a **Task subagent** with the worker contract below. Prefer
+   **parallel** subagents when owned paths do not overlap.
+4. **Integrate** — Track PRs, merge when asked, close issues, **drop
+   `ready` on close**, refresh the board, report status in plain language.
+5. **Stop conditions** — Hit the turn/leaf cap, empty ready queue, path
+   conflict, or user interrupt. Caps are intentional pauses.
+
+Caps (per orchestrator turn unless the user overrides):
+
+| Knob | Default |
+| --- | --- |
+| Planner unblocks | ≤5 leaves → `ready`, or ≤2 designs closed |
+| Parallel workers | ≤3 subagents (raise only if paths disjoint) |
+| Leaves closed this drive | ≤5 unless user says “keep going” / `drive` |
+| Megafile conflict | Serialize; do not parallelize overlapping owned paths |
+
+**Plan gate bias:** A closed design/ADR that unblocks many leaves beats
+shipping one more half-specified worker.
+
+Status lines before each major step, e.g.:
+
+- `Orchestrator: board — 3 ready, 41 blocked`
+- `Orchestrator: planner — unblock #N deps`
+- `Orchestrator: worker ×2 — #A, #B`
+- `Orchestrator: integrate — PR …`
+
+**Planner subagent** — read-only product code; may edit issues/ADRs/docs:
+
+```text
+You are an Elbysodic planner. Read AGENTS.md + docs/plan/issue-lifecycle.md.
+No product implementation. Goal: <GOAL>.
+Follow the burndown/plan/triage contract. Return: ready now / newly
+unblocked / still blocked (why) / ADR paths touched.
+```
+
+**Worker subagent** — one leaf only:
+
+```text
+You are an Elbysodic worker. Read AGENTS.md + field-guide/index.md.
+Claim ONLY GitHub issue #<N> if labels include type:leaf AND ready.
+Restate outcome, owned paths, frozen decisions, acceptance.
+Implement only owned paths; one PR with PR template; run acceptance.
+Before push: `uv run ruff check .`.
+If paths/acceptance missing, stop and report triage needed.
+Do NOT merge; leave PR open for the orchestrator.
+Neighborhood only: leaf body + cited ADR/design + owned paths + nearest
+AGENTS.md. Do not ingest the parent saga essay or plans pile.
+Return: PR URL, acceptance command + result, ruff clean, files touched.
+```
+
+### Mode contracts
+
+**`board` / `status`**
+
+1. `gh issue list` (open) and summarize counts by kind/gate **per root saga**.
+2. Print `type:leaf`+`ready` titles (claimable now).
+3. Print DAG hygiene: orphan epics, missing parent/owned-paths/acceptance,
+   `ready`+`blocked` collisions, path-overlap serialize pairs.
+4. Do not edit issues or code unless asked.
+
+**`burndown` / `unblock` (planner)**
+
+1. Read this file + `docs/plan/issue-lifecycle.md` + `field-guide/index.md`.
+2. **No product implementation.** Issue/ADR/docs edits OK.
+3. For each candidate: missing design / ADR / owned paths / acceptance /
+   parent gate → fix, file design, or leave blocked with one-line reason.
+4. Never fake-unblock. Cap: ≤5 leaves → `ready`, or ≤2 designs closed.
+5. End with: **ready now / newly unblocked / still blocked (why)**.
+
+**`plan #N` (planner)**
+
+1. Fetch issue `#N`. If it is a leaf, stop and suggest `claim` or `triage`.
+2. Freeze the decision; link or write ADR when it outlives the epic.
+3. File or update child **leaves** with owned paths + machine acceptance.
+4. Set `ready` only when deps are actually clear and Stop And Ask does not
+   apply (or is already frozen); otherwise `blocked`.
+
+**`claim #N` / `work #N` / `ship #N` (worker)**
+
+1. Fetch `#N`. Abort unless labels include `type:leaf` and `ready`.
+2. Restate: outcome, owned paths, frozen decisions, acceptance command.
+3. If owned paths or machine acceptance are missing → stop; suggest
+   `triage #N`.
+4. Touch **only** owned paths.
+5. Do not invent schema/policy; open a design issue or comment instead.
+6. One PR using the PR template; run the acceptance command; report results.
+7. **Before push:** `uv run ruff check .` must be clean.
+8. Optional: one field-guide line for a true surprise (respect line budget).
+9. Do not merge unless the user pinned `ship #N` with merge intent.
+
+**Integrate hygiene** — when a leaf PR merges and the issue closes:
+
+1. Remove `ready` (and `blocked` if somehow still present).
+2. Confirm the board’s `type:leaf`+`ready` list no longer includes it.
+3. If the merge unblocks dependents, either flip them to `ready` or leave a
+   one-line comment on why they stay `blocked`.
+
+**`triage #N` (planner)** — rewrite or comment so `#N` matches the
+leaf/design template. Add `type:leaf` / `ready` / `blocked` correctly. No
+feature code in this mode.
+
+### Intelligence tiers
+
+Frontier models belong on planner/design work and on intentional breakage.
+Inexpensive models belong on explicit ready leaves.
 
 ## Stakes
 
@@ -87,6 +242,10 @@ Check in with a human before:
 - concurrency, lifecycle, startup, request-context, or persistence changes
 - test/code disagreement where the intended product behavior is unclear
 - unreproduced bugs or fixes based only on speculation
+
+A leaf that would change a Stop And Ask surface cannot carry `ready` until a
+closed `type:design` issue or an ADR exists. See
+`docs/plan/issue-lifecycle.md` and `docs/adr/0001-issue-lifecycle.md`.
 
 ## Anti-Patterns
 
@@ -281,12 +440,14 @@ contract is Program Blueprints:
 
 ## Done Criteria
 
+- Agent work that implements a feature starts from a `type:leaf` + `ready`
+  GitHub issue with owned paths and a machine acceptance command.
 - Run the relevant local gate: `uv run ruff check .`,
   `uv run ruff format . --check`, `uv run pytest -q --tb=short`,
   `uv run ty check src/elbysodic/ tests/`, and
   `uv run python -c "from elbysodic.web import create_app; create_app(debug=False, db_path=':memory:').check()"`.
 - For doc-only changes, run the lightest relevant checks and say what was not
-  run.
+  run. Run the leaf's named acceptance command when one exists.
 - Update docs, changelog fragments, migration notes, examples, scaffold, or
   templates when user-facing behavior or public contracts change.
 - Add performance, concurrency, security, or privacy notes when relevant.

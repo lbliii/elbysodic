@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 
-from elbysodic.blueprints import ProgramBlueprintPreview
+from elbysodic.blueprints import BlueprintApplyMode, ProgramBlueprintPreview
 from elbysodic.db import Database, ForumRepository, connect, create_schema
 from elbysodic.db.repositories.discovery import DiscoveryTagInput
 from elbysodic.db.repositories.gateway import (
@@ -300,6 +300,7 @@ from elbysodic.services.read_models import (
     PostRevisionHistory,
     PostStylePolicy,
     PublicCatalogCard,
+    PublicScenePreview,
     RealmGatewayAction,
     RealmGatewayAtmosphere,
     RealmGatewayAudienceContract,
@@ -347,6 +348,9 @@ from elbysodic.services.read_models import (
 from elbysodic.services.read_models import (
     THREAD_STATUSES as THREAD_STATUSES,
 )
+from elbysodic.services.read_models import (
+    THREAD_VISIBILITIES as THREAD_VISIBILITIES,
+)
 from elbysodic.services.recovery import RecoveryKind, RecoveryView
 from elbysodic.services.recovery import recovery_view as _recovery_view
 from elbysodic.services.themes import (
@@ -364,6 +368,7 @@ from elbysodic.services.threads import (
 from elbysodic.services.threads import is_live_queue_thread as _is_live_queue_thread
 from elbysodic.services.threads import is_unread as _is_unread
 from elbysodic.services.threads import next_unread_thread as _next_unread_thread
+from elbysodic.services.threads import public_scene_preview as _public_scene_preview
 from elbysodic.services.threads import read_scene_context as _read_scene_context
 from elbysodic.services.threads import read_thread_view as _read_thread_view
 from elbysodic.services.threads import thread_needs_attention as _thread_needs_attention
@@ -1729,6 +1734,15 @@ class AppServices:
         community = self._public_preview_community(community_slug)
         return _public_realm_gateway(self.repo, community)
 
+    def public_scene_preview(
+        self,
+        community_slug: str,
+        board_slug: str,
+        thread_slug: str,
+    ) -> PublicScenePreview:
+        community = self._public_preview_community(community_slug)
+        return _public_scene_preview(self.repo, community, board_slug, thread_slug)
+
     def realm_gateway(self) -> RealmGatewayView:
         viewer = self.viewer()
         gateway = _public_realm_gateway(self.repo, viewer.community)
@@ -2784,14 +2798,30 @@ class AppServices:
         self,
         source: str,
         accepted_fingerprint: str,
+        *,
+        mode: BlueprintApplyMode = "create_only",
     ) -> ProgramBlueprintPreview:
         viewer = self.viewer()
+
+        def record_applied() -> None:
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="program_blueprint",
+                target_id=viewer.community.id,
+                action="blueprint_applied",
+                public_aftermath=f"blueprint applied in {mode} mode",
+            )
+
         try:
             preview = _apply_program_blueprint_preview(
                 self.repo,
                 viewer,
                 source,
                 accepted_fingerprint,
+                mode=mode,
+                on_applied=record_applied if mode != "dry_run" else None,
             )
         except ValueError as error:
             _record_staff_audit_event(
@@ -2804,13 +2834,19 @@ class AppServices:
                 reason=str(error),
             )
             raise
-        _record_staff_audit_event(
-            self.repo,
-            viewer,
-            capability="manage_world",
-            target_family="program_blueprint",
-            action="blueprint_applied",
-        )
+        except PermissionError:
+            raise
+        except Exception:
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_world",
+                target_family="program_blueprint",
+                action="blueprint_apply_failed",
+                outcome="failed",
+                reason="Blueprint apply failed before commit.",
+            )
+            raise
         return preview
 
     def update_board_taxonomy(
@@ -3871,6 +3907,7 @@ class AppServices:
         thread_slug: str,
         *,
         status: str,
+        visibility: str | None = None,
         location: str = "",
         timeline: str = "",
         summary: str = "",
@@ -3883,6 +3920,7 @@ class AppServices:
             board_slug,
             thread_slug,
             status=status,
+            visibility=visibility,
             location=location,
             timeline=timeline,
             summary=summary,
@@ -3942,6 +3980,7 @@ class AppServices:
         title: str,
         body: str,
         status: str = "active",
+        visibility: str = "members",
         location: str = "",
         timeline: str = "",
         summary: str = "",
@@ -3954,6 +3993,7 @@ class AppServices:
             title=title,
             body=body,
             status=status,
+            visibility=visibility,
             location=location,
             timeline=timeline,
             summary=summary,
@@ -3969,6 +4009,7 @@ class AppServices:
         title: str,
         body: str,
         status: str = "active",
+        visibility: str = "members",
         location: str = "",
         timeline: str = "",
         summary: str = "",
@@ -3983,6 +4024,7 @@ class AppServices:
             title=title,
             body=body,
             status=status,
+            visibility=visibility,
             location=location,
             timeline=timeline,
             summary=summary,
@@ -5141,7 +5183,9 @@ def _realm_gateway_scene_hubs(
     threads_by_board = repo.list_threads_for_boards(community_id, [board.id for board in boards])
     thread_counts = {
         board.id: sum(
-            1 for thread in threads_by_board.get(board.id, []) if thread.status != "private"
+            1
+            for thread in threads_by_board.get(board.id, [])
+            if _is_gateway_public_scene_thread(thread)
         )
         for board in boards
     }
@@ -5255,26 +5299,47 @@ def _realm_gateway_scene_previews(
     }
     if not boards:
         return ()
+    candidate_threads = [
+        thread
+        for thread in repo.list_threads(program.community.id)
+        if thread.board_id in boards and _is_gateway_public_scene_thread(thread)
+    ]
+    posts_by_thread = repo.list_posts_for_threads(
+        program.community.id,
+        [thread.id for thread in candidate_threads],
+    )
+    preview_author_ids = {
+        post.author_character_id
+        for thread in candidate_threads
+        for post in posts_by_thread.get(thread.id, ())[:4]
+    }
+    preview_authors = repo.list_characters_by_ids(
+        program.community.id,
+        list(preview_author_ids),
+    )
     previews = []
     participants_by_thread = repo.list_thread_participants_for_threads(
         program.community.id,
-        [
-            thread.id
-            for thread in repo.list_threads(program.community.id)
-            if thread.board_id in boards and _is_gateway_public_scene_thread(thread)
-        ],
+        [thread.id for thread in candidate_threads],
     )
-    for thread in repo.list_threads(program.community.id):
+    for thread in candidate_threads:
         board = boards.get(thread.board_id)
-        if board is None or not _is_gateway_public_scene_thread(thread):
+        if board is None:
             continue
-        try:
-            author = repo.get_character(program.community.id, thread.author_character_id)
-        except LookupError:
+        preview_posts = posts_by_thread.get(thread.id, ())[:4]
+        if not preview_posts or any(
+            preview_authors.get(post.author_character_id) is None
+            or preview_authors[post.author_character_id].application_status != "accepted"
+            for post in preview_posts
+        ):
             continue
-        if author.application_status != "accepted":
-            continue
-        cast_count = max(len(participants_by_thread.get(thread.id, ())), 1)
+        cast_count = max(
+            sum(
+                participant.application_status == "accepted"
+                for participant in participants_by_thread.get(thread.id, ())
+            ),
+            1,
+        )
         previews.append(
             RealmGatewayScenePreview(
                 title=thread.title,
@@ -5290,7 +5355,11 @@ def _realm_gateway_scene_previews(
 
 
 def _is_gateway_public_scene_thread(thread: Thread) -> bool:
-    return thread.status in {"active", "open"} and not thread.is_locked
+    return (
+        thread.visibility == "public_preview"
+        and thread.status in {"active", "open"}
+        and not thread.is_locked
+    )
 
 
 def _realm_gateway_entry_paths(

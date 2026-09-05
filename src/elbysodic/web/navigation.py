@@ -451,41 +451,6 @@ def _desk_sections(
                 icon_id="inbox",
                 count=viewer.unread_notification_count if viewer else None,
             ),
-            ShellNavItem(
-                key="roster",
-                label="Roster",
-                href="/characters",
-                active=state.roster_active,
-                icon_id="roster",
-            ),
-            ShellNavItem(
-                key="plotting",
-                label="Plotting",
-                href="/plotting",
-                active=state.plotting_active,
-                icon_id="plotting",
-            ),
-            ShellNavItem(
-                key="applications",
-                label="Applications",
-                href="/applications",
-                active=state.applications_active,
-                icon_id="applications",
-            ),
-            ShellNavItem(
-                key="artifacts",
-                label="Realm Artifacts",
-                href="/interactions",
-                active=state.interactions_active,
-                icon_id="artifacts",
-            ),
-            ShellNavItem(
-                key="discovery",
-                label="Discovery",
-                href="/discover",
-                active=state.discovery_active,
-                icon_id="discovery",
-            ),
         ]
     )
     if viewer:
@@ -511,71 +476,29 @@ def _studio_sections(
 ) -> tuple[ShellNavSection, ...]:
     if not _can_view_studio(viewer):
         return ()
-    studio_items: list[ShellNavItem] = []
-    if state.path != "/studio":
-        studio_items.append(
-            ShellNavItem(
-                key="studio-home",
-                label="Studio home",
-                href="/studio",
-                active=False,
-                icon_id="studio",
-            )
-        )
-    studio_items.extend(
-        [
-            ShellNavItem(
-                key="operations",
-                label="Operations",
-                href="/studio/operations",
-                active=_path_in(state.path, "/studio/operations"),
-                icon_id="operations",
-            ),
-            ShellNavItem(
-                key="launch",
-                label="Launch",
-                href="/studio/launch",
-                active=_path_in(state.path, "/studio/launch")
-                or _path_in(state.path, "/studio/access-requests"),
-                icon_id="launch",
-            ),
-            ShellNavItem(
-                key="discovery",
-                label="Discovery profile",
-                href="/studio/discovery",
-                active=_path_in(state.path, "/studio/discovery"),
-                icon_id="discovery",
-            ),
-            ShellNavItem(
-                key="structure",
-                label="Structure",
-                href="/studio/structure",
-                active=_path_in(state.path, "/studio/structure"),
-                icon_id="boards",
-            ),
-            ShellNavItem(
-                key="intake",
-                label="Intake",
-                href="/studio/intake",
-                active=_path_in(state.path, "/studio/intake"),
-                icon_id="intake",
-            ),
-            ShellNavItem(
-                key="appearance",
-                label="Appearance",
-                href="/studio/appearance",
-                active=_path_in(state.path, "/studio/appearance"),
-                icon_id="appearance",
-            ),
-            ShellNavItem(
-                key="content",
-                label="Content",
-                href="/studio/content",
-                active=_path_in(state.path, "/studio/content"),
-                icon_id="materials",
-            ),
-        ]
-    )
+    studio_items: list[ShellNavItem] = [
+        ShellNavItem(
+            key="today",
+            label="Today",
+            href="/studio",
+            active=_studio_today_active(state.path),
+            icon_id="studio",
+        ),
+        ShellNavItem(
+            key="shape",
+            label="Shape",
+            href="/studio/structure",
+            active=_studio_shape_active(state.path),
+            icon_id="boards",
+        ),
+        ShellNavItem(
+            key="open",
+            label="Open",
+            href="/studio/launch",
+            active=_studio_open_active(state.path),
+            icon_id="launch",
+        ),
+    ]
     if viewer:
         studio_items.extend(
             _board_shell_item(item.board, item.unread_thread_count, current_board=board)
@@ -623,27 +546,6 @@ def _wanted_sections(
                 href="/claims",
                 active=state.claims_active,
                 icon_id="claims",
-            ),
-            ShellNavItem(
-                key="applications",
-                label="Applications",
-                href="/applications",
-                active=state.applications_active,
-                icon_id="applications",
-            ),
-            ShellNavItem(
-                key="plotting",
-                label="Plotting",
-                href="/plotting",
-                active=state.plotting_active,
-                icon_id="plotting",
-            ),
-            ShellNavItem(
-                key="discovery",
-                label="Discovery",
-                href="/discover",
-                active=state.discovery_active,
-                icon_id="discovery",
             ),
         ]
     )
@@ -1019,6 +921,30 @@ def _can_view_studio(viewer: ForumView | None) -> bool:
         policies.can_manage_world(viewer.membership, viewer.role)
         or policies.can_manage_casting(viewer.membership, viewer.role)
         or policies.can_manage_navigation(viewer.membership, viewer.role)
+    )
+
+
+def _studio_today_active(path: str) -> bool:
+    return path == "/studio" or _path_in(path, "/studio/operations")
+
+
+def _studio_shape_active(path: str) -> bool:
+    return any(
+        _path_in(path, prefix)
+        for prefix in (
+            "/studio/structure",
+            "/studio/appearance",
+            "/studio/content",
+            "/studio/intake",
+            "/studio/boards",
+        )
+    )
+
+
+def _studio_open_active(path: str) -> bool:
+    return any(
+        _path_in(path, prefix)
+        for prefix in ("/studio/launch", "/studio/discovery", "/studio/access-requests")
     )
 
 

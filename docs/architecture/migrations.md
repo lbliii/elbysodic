@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `24`. Calling
+The checked-in schema currently creates databases at version `26`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -32,6 +32,15 @@ Version `24` adds community-scoped `role_capabilities` and durable
 registered capability set, then installs the same role, actor-membership, and
 optional actor-face tenant-pair triggers used by fresh databases. It never
 infers global staff power or copies an audit actor across communities.
+
+Version `25` adds the allowlisted presentation variant used by world materials.
+Existing rows receive the safe `chapter` default; Blueprint apply may then set
+`chapter`, `dossier`, `noticeboard`, or `archive` through the validated
+material-type mapping without storing CSS or templates.
+Version `26` separates scene audience from scene lifecycle by adding
+`threads.visibility`. Existing scenes migrate to `members`; legacy scenes whose
+status is `private` migrate to `private`. The migration never infers public
+publication from an open/active status or a non-private board.
 
 Fresh-schema and upgraded-schema parity is a production-readiness requirement:
 new tables, columns, indexes, and constraints must be represented in both the

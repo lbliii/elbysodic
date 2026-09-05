@@ -121,7 +121,7 @@
                   data-elbysodic-submit-label="Saving claim..."
                   class="chirpui-stack chirpui-stack--sm">
         {{ csrf_field() }}
-              <input type="hidden" name="intent" value="update_claim">
+              <input type="hidden" name="_action" value="update_claim">
               <input type="hidden" name="claim_id" value="{{ item.claim.id }}">
               <div class="elbysodic-form-grid">
                 <label>
@@ -176,7 +176,7 @@
             data-elbysodic-submit-label="Adding claim..."
             class="elbysodic-claim-create-form">
         {{ csrf_field() }}
-        <input type="hidden" name="intent" value="create_claim">
+        <input type="hidden" name="_action" value="create_claim">
         <input type="hidden" name="claim_type_id" value="{{ group.claim_type.id }}">
         <header>
           <p class="elbysodic-section-kicker">Director entry</p>

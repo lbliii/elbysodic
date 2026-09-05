@@ -1,7 +1,4 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/thread_summary.html" import thread_card %}
   {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
@@ -14,11 +11,9 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  <a class="chirpui-link" href="/members">← Members</a>
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <a href="/members">← Members</a>
 
-  {% call surface(variant="elevated") %}
   <article class="elbysodic-member-profile-hero">
     <div class="elbysodic-member-profile-hero__identity">
       <div class="elbysodic-character-avatar elbysodic-character-avatar--lg" aria-hidden="true">
@@ -29,10 +24,12 @@
         {% end %}
       </div>
       <div>
-        <div class="chirpui-cluster chirpui-cluster--sm">
+        <div class="elbysodic-cluster">
           <h2>{{ profile.membership.display_name }}</h2>
-          {{ badge("you", variant="success") if profile.is_current_member else "" }}
-          {{ badge(profile.role.name, variant=profile.role_badge_variant) }}
+          {% if profile.is_current_member %}
+          <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">you</span>
+          {% end %}
+          <span class="elbysodic-reader-chip{{ " elbysodic-reader-chip--strong" if profile.role_badge_variant == "warning" else "" }}">{{ profile.role.name }}</span>
         </div>
         <p class="elbysodic-copy-meta">@{{ profile.membership.username }}</p>
         {% if profile.default_character %}
@@ -42,7 +39,7 @@
         <p class="elbysodic-writer-known-for">
           Known for
           {% for character in profile.known_for %}
-          <a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a>
+          <a href="/characters/{{ character.slug }}">{{ character.name }}</a>
           {% end %}
         </p>
         {% end %}
@@ -55,14 +52,15 @@
       {{ metric_item(profile.collaborators | length, "Collaborators") }}
     </div>
   </article>
-  {% end %}
 
-  {% call section_header("Known For") %}
-  Roles this writer is currently most associated with.
-  {% end %}
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h2>Known For</h2>
+    <p class="elbysodic-copy-lead">
+      Roles this writer is currently most associated with.
+    </p>
+  </section>
   <div class="elbysodic-character-grid">
     {% for character in profile.known_for %}
-    {% call surface(variant="elevated") %}
     <article class="elbysodic-member-face-card">
       <div class="elbysodic-character-card__identity">
         <a class="elbysodic-character-avatar" href="/characters/{{ character.slug }}" aria-label="{{ character.name }}">
@@ -73,21 +71,22 @@
           {% end %}
         </a>
         <div>
-          <h2><a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
+          <h2><a href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
           <p class="elbysodic-copy-summary">{{ character.summary }}</p>
         </div>
       </div>
     </article>
     {% end %}
-    {% end %}
   </div>
 
-  {% call section_header("Current Roles") %}
-  Public faces in this community.
-  {% end %}
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h2>Current Roles</h2>
+    <p class="elbysodic-copy-lead">
+      Public faces in this community.
+    </p>
+  </section>
   <div class="elbysodic-character-grid">
     {% for character in profile.roster %}
-    {% call surface(variant="elevated") %}
     <article class="elbysodic-member-face-card">
       <div class="elbysodic-character-card__identity">
         <a class="elbysodic-character-avatar" href="/characters/{{ character.slug }}" aria-label="{{ character.name }}">
@@ -98,29 +97,30 @@
           {% end %}
         </a>
         <div>
-          <h2><a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
+          <h2><a href="/characters/{{ character.slug }}">{{ character.name }}</a></h2>
           <p class="elbysodic-copy-summary">{{ character.summary }}</p>
         </div>
       </div>
       {% if profile.default_character and profile.default_character.id == character.id %}
-      {{ badge("current face", variant="success") }}
+      <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">current face</span>
       {% end %}
     </article>
     {% end %}
-    {% end %}
   </div>
 
-  {% call section_header("Collaborators") %}
-  Writers this creator has recently shared scenes with.
-  {% end %}
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h2>Collaborators</h2>
+    <p class="elbysodic-copy-lead">
+      Writers this creator has recently shared scenes with.
+    </p>
+  </section>
   <div class="elbysodic-collaborator-grid">
     {% if profile.collaborators %}
     {% for collaborator in profile.collaborators %}
-    {% call surface(variant="elevated") %}
     <article class="elbysodic-collaborator-card">
       <div>
         <h3>
-          <a class="chirpui-link" href="/members/{{ collaborator.membership.username }}">
+          <a href="/members/{{ collaborator.membership.username }}">
             {{ collaborator.membership.display_name }}
           </a>
         </h3>
@@ -128,71 +128,65 @@
       </div>
       <p class="elbysodic-copy-meta">
         Latest:
-        <a class="chirpui-link"
-           href="/boards/{{ collaborator.latest_board.slug }}/threads/{{ collaborator.latest_thread.slug }}">
+        <a href="/boards/{{ collaborator.latest_board.slug }}/threads/{{ collaborator.latest_thread.slug }}">
           {{ collaborator.latest_thread.title }}
         </a>
       </p>
     </article>
     {% end %}
-    {% end %}
     {% else %}
-    {% call surface(variant="elevated") %}
     <p class="elbysodic-empty-state">No visible collaborators yet.</p>
-    {% end %}
     {% end %}
   </div>
 
-  {% call section_header("Current Scenes") %}
-  Episodes this writer's roster has touched.
-  {% end %}
-  <div class="chirpui-stack chirpui-stack--sm">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h2>Current Scenes</h2>
+    <p class="elbysodic-copy-lead">
+      Episodes this writer's roster has touched.
+    </p>
+  </section>
+  <div class="elbysodic-stack elbysodic-stack--sm">
     {% if profile.active_threads %}
     {% for item in profile.active_threads %}
       {{ profile_thread_item(item) }}
     {% end %}
     {% else %}
-    {% call surface(variant="elevated") %}
     <p class="elbysodic-empty-state">No visible scenes are in motion yet.</p>
-    {% end %}
     {% end %}
   </div>
 
-  {% call section_header("Recent posts") %}
-  Latest visible writing from this roster.
-  {% end %}
-  <div class="chirpui-stack chirpui-stack--sm">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h2>Recent posts</h2>
+    <p class="elbysodic-copy-lead">
+      Latest visible writing from this roster.
+    </p>
+  </section>
+  <div class="elbysodic-stack elbysodic-stack--sm">
     {% if profile.recent_posts %}
     {% for item in profile.recent_posts %}
-    {% call surface(variant="elevated") %}
     <article class="elbysodic-activity-item">
       <div class="elbysodic-activity-item__meta">
-        <a class="chirpui-link" href="/characters/{{ item.post.author.slug }}">{{ item.post.author.name }}</a>
+        <a href="/characters/{{ item.post.author.slug }}">{{ item.post.author.name }}</a>
         <span class="elbysodic-text-muted">
           in
-          <a class="chirpui-link" href="/boards/{{ item.board.slug }}">{{ item.board.name }}</a>
+          <a href="/boards/{{ item.board.slug }}">{{ item.board.name }}</a>
           · {{ item.post.created_at_label }}
         </span>
       </div>
       <h2>
-        <a class="chirpui-link"
-           href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.post.anchor }}">
+        <a href="/boards/{{ item.board.slug }}/threads/{{ item.thread.slug }}#{{ item.post.anchor }}">
           {{ item.thread.title }}
         </a>
       </h2>
       <p class="elbysodic-copy-summary">{{ item.post.snippet }}</p>
     </article>
     {% end %}
-    {% end %}
     {% else %}
-    {% call surface(variant="elevated") %}
     <p class="elbysodic-empty-state">No visible writing has been posted yet.</p>
     {% end %}
-    {% end %}
   </div>
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}

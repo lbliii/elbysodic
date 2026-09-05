@@ -10,6 +10,7 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import BOARD_KIND_LABELS, BOARD_SIDEBAR_SECTION_LABELS
+from elbysodic.services.operations import OperationsInspectionConfig
 from elbysodic.services.read_models import (
     POST_ACCENT_STYLE_LABELS,
     POST_BORDER_STYLE_LABELS,
@@ -25,7 +26,7 @@ from elbysodic.services.themes import (
     TEXTURE_LABELS,
     THEME_MODE_FIELDS,
 )
-from elbysodic.web.state import get_services
+from elbysodic.web.state import get_services, get_web_security_config
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,6 +210,18 @@ def render_studio_room(
         return Redirect("/studio/launch")
     cockpit_lanes = _studio_cockpit_lanes(studio)
     studio_rooms = _studio_room_cards(studio, cockpit_lanes)
+    shape_hub_rooms = tuple(
+        item for item in studio_rooms if item.key in {"intake", "appearance", "content"}
+    )
+    operations = None
+    if room == "overview":
+        security = get_web_security_config()
+        operations = services.director_operations(
+            inspection_config=OperationsInspectionConfig(
+                environment=security.env,
+                secure_cookies=security.secure_cookies,
+            )
+        )
     return Page.mounted(
         "studio/page.html",
         current_path=request.url,
@@ -216,6 +229,8 @@ def render_studio_room(
         studio=studio,
         studio_room=room,
         studio_rooms=studio_rooms,
+        shape_hub_rooms=shape_hub_rooms,
+        operations=operations,
         current_studio_room=next(
             (item for item in studio_rooms if item.key == room),
             None,
@@ -401,8 +416,8 @@ def _studio_room_cards(
             "Today",
             "Operations",
             "A daily director desk for reviews, claim conflicts, reserves, hooks, and health signals.",
-            "/studio/operations",
-            "Open operations",
+            "/studio",
+            "Open today",
             len(cockpit_lanes),
             tuple(lane.title for lane in cockpit_lanes[:4]) or ("No urgent lanes right now.",),
             "attention" if cockpit_lanes else "success",

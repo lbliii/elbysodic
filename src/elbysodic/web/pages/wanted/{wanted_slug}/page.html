@@ -159,7 +159,7 @@
             data-elbysodic-idempotency="service-duplicate-policy"
             class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
-        <input type="hidden" name="intent" value="express_interest">
+        <input type="hidden" name="_action" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
           Raise interest as {{ viewer.current_character.name }}
         </button>
@@ -198,7 +198,7 @@
               class="chirpui-stack chirpui-stack--sm"
               aria-labelledby="prospective-interest">
         {{ csrf_field() }}
-          <input type="hidden" name="intent" value="express_prospective_interest">
+          <input type="hidden" name="_action" value="express_prospective_interest">
           <div>
             <label class="chirpui-field__label" for="prospective-character-name">Face concept</label>
             <input id="prospective-character-name"
@@ -241,7 +241,7 @@
             class="chirpui-stack chirpui-stack--sm"
             aria-labelledby="wanted-lifecycle">
         {{ csrf_field() }}
-        <input type="hidden" name="intent" value="update_lifecycle_status">
+        <input type="hidden" name="_action" value="update_lifecycle_status">
         <label class="chirpui-field__label" for="wanted-status">Lifecycle status</label>
         <select id="wanted-status" class="chirpui-field__input" name="status">
           <option value="open" {{ "selected" if wanted.wanted_ad.status == "open" else "" }}>Open</option>
@@ -317,7 +317,7 @@
                   data-elbysodic-stale-behavior="service-validates-interest-state"
                   data-elbysodic-idempotency="service-duplicate-policy">
         {{ csrf_field() }}
-              <input type="hidden" name="intent" value="start_plotting_room">
+              <input type="hidden" name="_action" value="start_plotting_room">
               <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
               <button type="submit" class="chirpui-btn chirpui-btn--primary">
                 Start plotting room
@@ -332,7 +332,7 @@
                   data-elbysodic-stale-behavior="service-validates-interest-state"
                   data-elbysodic-idempotency="service-duplicate-policy">
         {{ csrf_field() }}
-              <input type="hidden" name="intent" value="reserve_interest">
+              <input type="hidden" name="_action" value="reserve_interest">
               <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
               <button type="submit" class="chirpui-btn chirpui-btn--secondary">
                 Reserve for {{ item.display_name }}
@@ -352,7 +352,7 @@
                 data-elbysodic-idempotency="service-duplicate-policy"
                 class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
-            <input type="hidden" name="intent" value="create_reserve">
+            <input type="hidden" name="_action" value="create_reserve">
             <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
             <button type="submit" class="chirpui-btn chirpui-btn--secondary">
               Create reserve

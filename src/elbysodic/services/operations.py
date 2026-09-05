@@ -603,8 +603,8 @@ def _operations_parity_rows(
         OperationsParityRow(
             label="Runtime diagnostics",
             count=1 if inspection is not None else 0,
-            list_href="/studio/operations#hosted-inspection-heading",
-            first_action_href="/studio/operations#hosted-inspection-heading",
+            list_href="/studio#hosted-inspection-heading",
+            first_action_href="/studio#hosted-inspection-heading",
             action_scope="director operations capability",
             notification_scope="not notification-backed",
             diagnostic_scope=(

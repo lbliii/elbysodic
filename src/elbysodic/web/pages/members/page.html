@@ -1,7 +1,4 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/vocabulary.html" import command_panel, metric_item %}
 {% end %}
 
@@ -9,25 +6,24 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header("Members") %}
-  Writer studio profiles and active rosters in {{ viewer.community.name }}.
-  {% end %}
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h1>Members</h1>
+    <p class="elbysodic-copy-lead">
+      Writer studio profiles and active rosters in {{ viewer.community.name }}.
+    </p>
+  </section>
 
-  {% call surface(variant="elevated") %}
   {% call command_panel("Directory", "Writers in " ~ viewer.community.name, "Community memberships, public faces, recent writing, and collaboration context.", "members-directory-heading", "elbysodic-member-directory-command") %}
     <div class="elbysodic-command-panel__metrics" aria-label="Member directory totals">
       {{ metric_item(directory.cards | length, "Writers") }}
       {{ metric_item(viewer.community.name, "Community") }}
     </div>
   {% end %}
-  {% end %}
 
   <div class="elbysodic-member-grid">
     {% for card in directory.cards %}
-    {% call surface(variant="elevated") %}
-    <article class="elbysodic-member-card chirpui-stack chirpui-stack--sm">
+    <article class="elbysodic-member-card elbysodic-stack elbysodic-stack--sm">
       <div class="elbysodic-member-card__header">
         <a class="elbysodic-character-avatar" href="/members/{{ card.membership.username }}" aria-label="{{ card.membership.display_name }}">
           {% if card.default_character and card.default_character.avatar_url %}
@@ -38,15 +34,17 @@
         </a>
         <div>
           <h2>
-            <a class="chirpui-link" href="/members/{{ card.membership.username }}">
+            <a href="/members/{{ card.membership.username }}">
               {{ card.membership.display_name }}
             </a>
           </h2>
           <p class="elbysodic-copy-meta">@{{ card.membership.username }}</p>
         </div>
-        <div class="chirpui-cluster chirpui-cluster--sm">
-          {{ badge("you", variant="success") if card.is_current_member else "" }}
-          {{ badge(card.role.name, variant=card.role_badge_variant) }}
+        <div class="elbysodic-cluster">
+          {% if card.is_current_member %}
+          <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">you</span>
+          {% end %}
+          <span class="elbysodic-reader-chip{{ " elbysodic-reader-chip--strong" if card.role_badge_variant == "warning" else "" }}">{{ card.role.name }}</span>
         </div>
       </div>
       <div class="elbysodic-command-panel__metrics elbysodic-member-card__metrics" aria-label="{{ card.membership.display_name }} writing totals">
@@ -58,7 +56,7 @@
       <p class="elbysodic-member-card__roster">
         <span>Known for</span>
         {% for character in card.known_for %}
-        <a class="chirpui-link" href="/characters/{{ character.slug }}">{{ character.name }}</a>
+        <a href="/characters/{{ character.slug }}">{{ character.name }}</a>
         {% end %}
       </p>
       {% else %}
@@ -70,19 +68,16 @@
       {% if card.latest_post %}
       <p class="elbysodic-member-card__latest">
         Latest:
-        <a class="chirpui-link"
-           href="/boards/{{ card.latest_post.board.slug }}/threads/{{ card.latest_post.thread.slug }}#{{ card.latest_post.post.anchor }}">
+        <a href="/boards/{{ card.latest_post.board.slug }}/threads/{{ card.latest_post.thread.slug }}#{{ card.latest_post.post.anchor }}">
           {{ card.latest_post.thread.title }}
         </a>
       </p>
       {% end %}
     </article>
     {% end %}
-    {% end %}
   </div>
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}

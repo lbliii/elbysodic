@@ -1059,6 +1059,28 @@ class IdentityRepositoryMixin(RepositoryBase):
             )
         return self.get_role(community_id, role_id)
 
+    def update_role(
+        self,
+        community_id: int,
+        role_id: int,
+        *,
+        name: str,
+        is_admin: bool,
+        capabilities: Iterable[str],
+    ) -> Role:
+        role = self.get_role(community_id, role_id)
+        with self.transaction():
+            self.connection.execute(
+                """
+                UPDATE roles
+                SET name = ?, is_admin = ?, updated_at = ?
+                WHERE community_id = ? AND id = ?
+                """,
+                (name, int(is_admin), _utc_now(), community_id, role.id),
+            )
+            self.set_role_capabilities(community_id, role.id, capabilities)
+        return self.get_role(community_id, role.id)
+
     def create_membership(
         self,
         community_id: int,

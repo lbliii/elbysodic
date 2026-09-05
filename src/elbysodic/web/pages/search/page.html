@@ -1,7 +1,3 @@
-{% imports %}
-  {% from "chirpui/layout.html" import container, stack %}
-{% end %}
-
 {% def scoped_search_form(search) %}
 <form class="elbysodic-scoped-search"
       action="{{ search.action_href }}"
@@ -25,8 +21,7 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
+<div class="elbysodic-stack elbysodic-stack--lg">
 <section class="elbysodic-search-hero" aria-labelledby="search-heading">
   <div>
     <p class="elbysodic-section-kicker">{{ "All realms" if scoped_search.scope_kind == "global" else "Current realm" }}</p>
@@ -91,8 +86,7 @@
   {% end %}
 </section>
 {% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
 {% endblock %}

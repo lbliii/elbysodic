@@ -1,8 +1,8 @@
 # Product Design Steward
 
 This domain represents Elbysodic's product design direction, design system
-standards, visual identity, interaction quality, and translation of Chirp-UI
-primitives into a distinctive PBP-native product experience.
+standards, visual identity, interaction quality, and translation of Chirp
+(Kida + HTMX + Alpine) into a distinctive PBP-native product experience.
 
 Related docs:
 
@@ -39,9 +39,10 @@ clarity.
 - Technicolor futurism is the default product art direction: luminescent,
   clean, striking, and editorial, with story prose and character identity
   always foregrounded.
-- Chirp-UI remains the component and token foundation. Elbysodic builds product
-  personality through named tokens, repeated PBP components, composition,
-  rhythm, media treatment, and state language.
+- Elbysodic owns the component and token foundation (ADR 0002). Chirp
+  supplies pages, Kida, HTMX, and Alpine islands. Personality comes from
+  named tokens, repeated PBP components, composition, rhythm, media
+  treatment, and state language — not Chirp-UI macros.
 - Long-form reading, posting, reviewing applications, managing queues, and
   browsing faces stay calm and legible even when surfaces carry atmosphere.
 - Visual identity supports PBP language: face, roster, thread, scene, plotter,
@@ -51,8 +52,9 @@ clarity.
 - Shared product concepts graduate into
   `src/elbysodic/web/pages/_components/` before page-local styling becomes a
   parallel design system.
-- Theme work uses `src/elbysodic/web/static/elbysodic-theme.css` and approved
-  Chirp-UI token names before inventing new CSS surfaces.
+- Theme work uses `src/elbysodic/web/static/elbysodic-theme.css` and named
+  Elbysodic tokens before inventing new CSS surfaces. Do not add new
+  `chirpui-*` classes or `--chirpui-*` aliases.
 - Design decisions preserve tenant, membership, character, staff, privacy, and
   rendered-route boundaries.
 - Accessibility, contrast, keyboard reachability, focus states, mobile rhythm,
@@ -76,7 +78,7 @@ clarity.
   anti-CRM check, progressive-disclosure plan, and rendered screenshot QA when
   composition or responsive behavior matters.
 - Tokens: colors, type, spacing, radius, density, shadows, and texture use
-  Chirp-UI or Elbysodic theme tokens; new tokens are named by product meaning.
+  Elbysodic theme tokens; new tokens are named by product meaning.
 - Components: repeated PBP UI shapes are promoted or aligned with
   `_components/`; page-local CSS is justified by local-only behavior.
 - States: empty, loading, active, focus, hover, disabled, private, staff-only,
@@ -125,8 +127,8 @@ clarity.
 
 ## Do Not
 
-- Treat Chirp-UI as the whole design system; it is the structural library, not
-  the full Elbysodic product voice.
+- Treat Chirp-UI as the design system, or add new `chirpui-*` usage. Drain
+  leftovers toward `_components/` and Elbysodic primitives (ADR 0002).
 - Add raw CSS, arbitrary template controls, external font URLs, or scriptable
   design inputs to community-facing customization.
 - Let atmospheric styling reduce prose readability, focus visibility, tap

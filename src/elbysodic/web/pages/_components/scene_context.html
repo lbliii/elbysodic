@@ -5,7 +5,7 @@
   {% from "_components/ui.html" import cast_faces, event_bridge %}
 {% end %}
 
-{% def scene_management_controls(thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, control_id_prefix="scene-context") %}
+{% def scene_management_controls(thread_view, thread_statuses, thread_visibilities, posting_modes, cast_picker_config_id, cast_picker_config, control_id_prefix="scene-context") %}
 {% if thread_view and (thread_view.can_manage_scene or thread_view.can_moderate) %}
 <section class="elbysodic-scene-grounding__section elbysodic-scene-grounding__section--operations"
          aria-label="Scene operations">
@@ -14,6 +14,7 @@
     {% if thread_view.can_manage_scene %}
     {% set scene_management_id = control_id_prefix ~ "-scene-management" %}
     {% set scene_status_id = control_id_prefix ~ "-scene-status" %}
+    {% set scene_visibility_id = control_id_prefix ~ "-scene-visibility" %}
     {% set scene_posting_mode_id = control_id_prefix ~ "-scene-posting-mode" %}
     {% set scene_location_id = control_id_prefix ~ "-scene-location" %}
     {% set scene_timeline_id = control_id_prefix ~ "-scene-timeline" %}
@@ -47,6 +48,26 @@
                 </option>
                 {% end %}
               </select>
+            </div>
+            <div>
+              <label class="chirpui-field__label" for="{{ scene_visibility_id }}">Who can read</label>
+              {% if thread_view.board.is_private %}
+              <input type="hidden" name="visibility" value="private">
+              <p class="elbysodic-copy-helper">Private scene — this location keeps every post inside the realm.</p>
+              {% else %}
+              <select id="{{ scene_visibility_id }}" name="visibility" class="chirpui-field__input">
+                {% for item_visibility in thread_visibilities %}
+                {% if item_visibility != "private" %}
+                <option value="{{ item_visibility }}" {{ "selected" if item_visibility == thread_view.thread.visibility else "" }}>
+                  {% if item_visibility == "public_preview" %}Public preview — first 4 posts{% elif item_visibility == "members" %}Realm members{% else %}Private scene{% end %}
+                </option>
+                {% elif thread_view.thread.visibility == "private" %}
+                <option value="private" selected disabled>Private scene</option>
+                {% end %}
+                {% end %}
+              </select>
+              <p class="elbysodic-copy-helper">Public preview lets signed-out visitors read only the first four posts.</p>
+              {% end %}
             </div>
             <div>
               <label class="chirpui-field__label" for="{{ scene_posting_mode_id }}">Posting mode</label>
@@ -267,7 +288,7 @@
 {% end %}
 {% end %}
 
-{% def scene_grounding_inspector(grounding, thread_view=none, thread_statuses=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none, inspector_close_btn=False, control_id_prefix="scene-context") %}
+{% def scene_grounding_inspector(grounding, thread_view=none, thread_statuses=none, thread_visibilities=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none, inspector_close_btn=False, control_id_prefix="scene-context") %}
 <div class="elbysodic-scene-grounding">
   <header class="elbysodic-scene-grounding__header">
     <div class="elbysodic-scene-grounding__header-copy">
@@ -394,7 +415,7 @@
 
   {{ scene_reader_actions(thread_view, selected_character, control_id_prefix) }}
 
-  {{ scene_management_controls(thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, control_id_prefix) }}
+  {{ scene_management_controls(thread_view, thread_statuses, thread_visibilities, posting_modes, cast_picker_config_id, cast_picker_config, control_id_prefix) }}
 </div>
 {% end %}
 
@@ -613,7 +634,7 @@
 </div>
 {% end %}
 
-{% def scene_context_shell(scene_context, thread_view=none, thread_statuses=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none) %}
+{% def scene_context_shell(scene_context, thread_view=none, thread_statuses=none, thread_visibilities=none, posting_modes=none, cast_picker_config_id="", cast_picker_config=none, selected_character=none) %}
 {% set writer_activity = scene_context | get('writer_activity', none) %}
 <div class="elbysodic-scene-context-layout"
      x-data="elbysodicSceneContextLayout()"
@@ -631,13 +652,13 @@
          aria-label="Scene context panel"
          x-bind:aria-hidden="inspectorOpen ? 'false' : 'true'"
          x-bind:inert="!inspectorOpen">
-    {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, inspector_close_btn=true, control_id_prefix="scene-context-docked") }}
+    {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, thread_visibilities, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, inspector_close_btn=true, control_id_prefix="scene-context-docked") }}
   </aside>
   {% call drawer("elbysodic-scenes-here-drawer", title="Scenes here", side="left", cls="elbysodic-scenes-here-drawer") %}
     {{ location_scene_lane(scene_context.location_lane) }}
   {% end %}
   {% call drawer("elbysodic-scene-context-drawer", title="Scene context", side="right", cls="elbysodic-scene-context-drawer") %}
-    {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, control_id_prefix="scene-context-drawer") }}
+    {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, thread_visibilities, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, control_id_prefix="scene-context-drawer") }}
   {% end %}
   {% if writer_activity %}
   {% call drawer("elbysodic-writer-activity-drawer", title="What needs you", side="right", cls="elbysodic-writer-activity-drawer") %}

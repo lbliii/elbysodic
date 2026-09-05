@@ -59,7 +59,7 @@
       {% elif hook.can_express_interest and viewer.current_character %}
       <form method="post" hx-boost="false" class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
-        <input type="hidden" name="intent" value="express_interest">
+        <input type="hidden" name="_action" value="express_interest">
         <button type="submit" class="chirpui-btn chirpui-btn--primary">
           I'm interested as {{ viewer.current_character.name }}
         </button>
@@ -100,7 +100,7 @@
           {% if hook.can_manage and item.interest.status == "interested" %}
           <form method="post" hx-boost="false" class="chirpui-cluster elbysodic-cluster--end">
         {{ csrf_field() }}
-            <input type="hidden" name="intent" value="start_plotting_room">
+            <input type="hidden" name="_action" value="start_plotting_room">
             <input type="hidden" name="interest_id" value="{{ item.interest.id }}">
             <button type="submit" class="chirpui-btn chirpui-btn--primary">
               Start plotting room
@@ -193,8 +193,8 @@
         {% end %}
       </div>
       <div class="chirpui-cluster elbysodic-cluster--between">
-        <button type="submit" name="intent" value="save" class="chirpui-btn chirpui-btn--primary">Save plot hook</button>
-        <button type="submit" name="intent" value="archive" class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined">Archive</button>
+        <button type="submit" name="_action" value="save" class="chirpui-btn chirpui-btn--primary">Save plot hook</button>
+        <button type="submit" name="_action" value="archive" class="chirpui-btn chirpui-btn--danger chirpui-btn--outlined">Archive</button>
       </div>
     </form>
   </details>
