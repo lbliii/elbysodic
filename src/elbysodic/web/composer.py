@@ -20,6 +20,8 @@ def composer_config(
     return {
         "configId": config_id,
         "draftKey": draft_key,
+        "draftStorageKey": f"elbysodic:draft:{draft_key}",
+        "draftStorageVersion": 2,
         "characters": [
             {
                 "id": character.id,
