@@ -29,6 +29,7 @@
         x-data="elbysodicComposer('{{ composer_config_id }}')"
         @submit="submitDraft()">
         {{ csrf_field() }}
+    <input type="hidden" name="draft_token" value="{{ draft_receipt }}">
     <div class="elbysodic-composer-heading">
       <div>
         <h2>{{ edit_view.thread.title }}</h2>

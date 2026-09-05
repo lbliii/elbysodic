@@ -410,9 +410,23 @@ def test_success_redirects_carry_the_submitted_draft_receipt() -> None:
             )
             assert len(services.repo.list_posts(viewer.community.id, created_thread.id)) == 2
 
-            draft_receipt = "independent-edit-draft-token"
+            edit_path = "/boards/danger-room/threads/draft-receipt-proof/posts/1/edit"
+            first_edit_form = await client.get(edit_path)
+            second_edit_form = await client.get(edit_path)
+            draft_receipt = _input_value(first_edit_form.text, "draft_token")
+            assert draft_receipt
+            assert _input_value(second_edit_form.text, "draft_token") != draft_receipt
+
+            invalid_edit = await client.post(
+                edit_path,
+                body=urlencode({"body": "", "draft_token": draft_receipt}).encode(),
+                headers=_FORM,
+            )
+            assert invalid_edit.status == 200
+            assert _input_value(invalid_edit.text, "draft_token") == draft_receipt
+
             edited = await client.post(
-                "/boards/danger-room/threads/draft-receipt-proof/posts/1/edit",
+                edit_path,
                 body=urlencode(
                     {
                         "body": "The opening is edited atomically.",

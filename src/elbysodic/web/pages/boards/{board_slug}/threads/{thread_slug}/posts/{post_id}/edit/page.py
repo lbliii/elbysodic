@@ -19,6 +19,7 @@ from elbysodic.web.tenant import request_scoped_path
 @dataclass(frozen=True, slots=True)
 class PostEditForm:
     body: str
+    draft_token: str
 
 
 def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Page:
@@ -110,7 +111,7 @@ def _render_form(
             mention_endpoint=request_scoped_path(request, "/mentionables/search"),
         ),
         composer_config_id=config_id,
-        draft_token=draft_token or idempotency_key(),
+        draft_receipt=draft_token or idempotency_key(),
     )
 
 
