@@ -3,7 +3,9 @@ from __future__ import annotations
 import asyncio
 import re
 import sqlite3
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from threading import Barrier
 from typing import Any
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -184,6 +186,117 @@ def test_legacy_pending_command_fails_closed_without_reposting() -> None:
     assert posts[-1].body == ("This post committed before the old command result write failed.")
 
 
+def test_reply_command_revalidates_membership_inside_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root_services = create_services(path=":memory:")
+    services = root_services.for_request(object())
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    character_id = viewer.current_character.id
+    repo = services.repo
+    board = repo.get_board_by_slug(viewer.community.id, "danger-room")
+    thread = repo.get_thread_by_slug(viewer.community.id, board.id, "sentinel-drill")
+    before_posts = repo.list_posts(viewer.community.id, thread.id)
+    submission_id = "revoked-reply"
+    original_transaction = repo.transaction
+    revoked = False
+
+    @contextmanager
+    def transaction_after_revocation() -> Iterator[None]:
+        nonlocal revoked
+        if not revoked:
+            repo.connection.execute(
+                "UPDATE community_memberships SET is_active = 0 WHERE id = ?",
+                (viewer.membership.id,),
+            )
+            repo.connection.commit()
+            revoked = True
+        with original_transaction():
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_after_revocation)
+
+    def reply() -> str:
+        post = services.reply_to_thread(
+            "danger-room",
+            "sentinel-drill",
+            character_id,
+            "A revoked writer must not add this reply.",
+        )
+        return f"/boards/danger-room/threads/sentinel-drill#post-{post.post_number}"
+
+    with pytest.raises(PermissionError, match=r"membership .* is not active"):
+        services.execute_command("reply:danger-room:sentinel-drill", submission_id, reply)
+
+    assert repo.list_posts(viewer.community.id, thread.id) == before_posts
+    assert (
+        repo.get_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key="reply:danger-room:sentinel-drill",
+            token=submission_id,
+        )
+        is None
+    )
+
+
+def test_start_command_revalidates_membership_inside_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root_services = create_services(path=":memory:")
+    services = root_services.for_request(object())
+    viewer = services.viewer()
+    assert viewer.current_character is not None
+    character_id = viewer.current_character.id
+    repo = services.repo
+    board = repo.get_board_by_slug(viewer.community.id, "danger-room")
+    before_thread_ids = {thread.id for thread in repo.list_threads(viewer.community.id, board.id)}
+    submission_id = "revoked-start"
+    original_transaction = repo.transaction
+    revoked = False
+
+    @contextmanager
+    def transaction_after_revocation() -> Iterator[None]:
+        nonlocal revoked
+        if not revoked:
+            repo.connection.execute(
+                "UPDATE community_memberships SET is_active = 0 WHERE id = ?",
+                (viewer.membership.id,),
+            )
+            repo.connection.commit()
+            revoked = True
+        with original_transaction():
+            yield
+
+    monkeypatch.setattr(repo, "transaction", transaction_after_revocation)
+
+    def start() -> str:
+        thread = services.start_thread(
+            board_slug="danger-room",
+            character_id=character_id,
+            title="Revoked transaction scene",
+            body="A revoked writer must not open this scene.",
+        )
+        return f"/boards/danger-room/threads/{thread.slug}"
+
+    with pytest.raises(PermissionError, match=r"membership .* is not active"):
+        services.execute_command("start-thread:danger-room", submission_id, start)
+
+    assert {
+        thread.id for thread in repo.list_threads(viewer.community.id, board.id)
+    } == before_thread_ids
+    assert (
+        repo.get_command_submission(
+            viewer.community.id,
+            viewer.membership.id,
+            command_key="start-thread:danger-room",
+            token=submission_id,
+        )
+        is None
+    )
+
+
 def test_concurrent_same_title_threads_receive_distinct_slugs(tmp_path) -> None:
     database_path = tmp_path / "atomic-slugs.sqlite3"
     seeded = create_services(path=database_path)
@@ -258,15 +371,44 @@ def test_success_redirects_carry_the_submitted_draft_receipt() -> None:
                 "/boards/danger-room/threads/new",
                 body=urlencode(
                     {
-                        "character_id": character_id,
-                        "title": "A duplicate title that must be ignored",
-                        "body": "A duplicate body that must be ignored.",
+                        "character_id": "not-an-integer",
                         "idempotency_key": command_token,
                     }
                 ).encode(),
                 headers=_FORM,
             )
             assert _header(duplicate, "location") == created_location
+
+            reply_form = await client.get(created_parts.path)
+            reply_token = _input_value(reply_form.text, "idempotency_key")
+            replied = await client.post(
+                created_parts.path,
+                body=urlencode(
+                    {
+                        "character_id": character_id,
+                        "body": "A reply with a replayable result.",
+                        "idempotency_key": reply_token,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            malformed_reply = await client.post(
+                created_parts.path,
+                body=urlencode(
+                    {
+                        "character_id": "not-an-integer",
+                        "idempotency_key": reply_token,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            assert _header(malformed_reply, "location") == _header(replied, "location")
+            created_thread = services.repo.get_thread_by_slug(
+                viewer.community.id,
+                services.repo.get_board_by_slug(viewer.community.id, "danger-room").id,
+                "draft-receipt-proof",
+            )
+            assert len(services.repo.list_posts(viewer.community.id, created_thread.id)) == 2
 
             draft_receipt = "independent-edit-draft-token"
             edited = await client.post(

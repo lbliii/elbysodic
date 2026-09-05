@@ -58,14 +58,14 @@ class PendingCommandError(ValueError):
 def execute_command(
     repo: CommandRepository,
     *,
-    community_id: int,
-    membership_id: int,
     command_key: str,
     token: str,
+    resolve_scope: Callable[[], tuple[int, int]],
     operation: Callable[[], str],
 ) -> CommandExecution:
     """Commit one command's mutation and replay result as a single unit."""
     with repo.transaction():
+        community_id, membership_id = resolve_scope()
         if token:
             submission = repo.get_command_submission(
                 community_id,

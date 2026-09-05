@@ -871,13 +871,16 @@ class AppServices:
         token: str,
         operation: Callable[[], str],
     ) -> CommandExecution:
-        viewer = self.viewer()
+        def resolve_scope() -> tuple[int, int]:
+            self._invalidate_viewer()
+            current_viewer = self.viewer()
+            return current_viewer.community.id, current_viewer.membership.id
+
         return _execute_command(
             self.repo,
-            community_id=viewer.community.id,
-            membership_id=viewer.membership.id,
             command_key=command_key,
             token=token,
+            resolve_scope=resolve_scope,
             operation=operation,
         )
 

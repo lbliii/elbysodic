@@ -22,7 +22,8 @@ def get(request: Request, board_slug: str) -> Page:
 
 async def post(request: Request, board_slug: str) -> Page | Redirect:
     form = await request.form()
-    character_id = _parse_character_id(form.get("character_id"))
+    character_id: int | None = None
+    raw_character_id = form.get("character_id")
     participant_ids = _parse_participant_ids(form)
     title = str(form.get("title") or "")
     status = str(form.get("status") or "active")
@@ -38,6 +39,8 @@ async def post(request: Request, board_slug: str) -> Page | Redirect:
     try:
 
         def start() -> str:
+            nonlocal character_id
+            character_id = _parse_character_id(raw_character_id)
             created = services.start_thread_with_post(
                 board_slug=board_slug,
                 character_id=character_id,
