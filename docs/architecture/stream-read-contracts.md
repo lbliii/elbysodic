@@ -18,9 +18,10 @@ disconnects or cancels the generator. During worker drain, queued local events
 are flushed, the database is checked once more, and the stream closes.
 
 Notification inbox rendering builds one context for the visible batch. Posts
-are selected by their thread batch, authors and memberships are selected by id,
-and the realm mention roster is loaded once. Each item keeps the existing target
-visibility checks and unread behavior while reusing that context for snippets.
+are selected by notification target id, authors and memberships are selected by
+id, and the realm mention roster is loaded once. Unrelated history in a notified
+scene is not loaded. Each item keeps the existing target visibility checks and
+unread behavior while reusing that context for snippets.
 
 ## Chirp and Pounce lifecycle compatibility
 

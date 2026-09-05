@@ -7,9 +7,11 @@ import types
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import patch
 
 import pytest
 
+from elbysodic.db import ForumRepository, connect, create_schema
 from elbysodic.services import create_services
 from elbysodic.services.notifications import notification_inbox
 from elbysodic.services.plotting import read_plotting_room_messages
@@ -28,6 +30,57 @@ STREAM_PAGE = (
     / "stream"
     / "page.py"
 )
+
+
+def test_post_id_batch_is_tenant_scoped() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+
+    def create_post(community_slug: str, index: int):
+        community = repo.create_community(community_slug, community_slug.title())
+        role = repo.create_role(community.id, "member", "Member")
+        user = repo.create_user(f"batch-{index}@example.com", "hash")
+        membership = repo.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            f"writer-{index}",
+            f"Writer {index}",
+        )
+        character = repo.create_character(
+            community.id,
+            membership.id,
+            f"face-{index}",
+            f"Face {index}",
+        )
+        board = repo.create_board(community.id, "scenes", "Scenes")
+        thread = repo.create_thread(
+            community.id,
+            board.id,
+            character.id,
+            f"scene-{index}",
+            f"Scene {index}",
+        )
+        return community, repo.create_post(
+            community.id,
+            thread.id,
+            character.id,
+            f"post {index}",
+        )
+
+    try:
+        default, default_post = create_post("default", 1)
+        _hosted, hosted_post = create_post("hosted", 2)
+
+        posts = repo.list_posts_by_ids(
+            default.id,
+            [default_post.id, hosted_post.id],
+        )
+
+        assert posts == {default_post.id: default_post}
+    finally:
+        connection.close()
 
 
 def _add_messages(services, room_id: int, *, start: int, stop: int) -> None:
@@ -144,6 +197,16 @@ def test_notification_inbox_batches_snippet_context() -> None:
         body="original",
     )
     try:
+        unrelated_post_ids = {
+            services.repo.create_post(
+                viewer.community.id,
+                created.thread.id,
+                character.id,
+                f"unrelated scene history {index}",
+            ).id
+            for index in range(200)
+        }
+        notification_post_ids: list[int] = []
         for index in range(50):
             post = services.repo.create_post(
                 viewer.community.id,
@@ -151,6 +214,7 @@ def test_notification_inbox_batches_snippet_context() -> None:
                 character.id,
                 f"inbox snippet {index}",
             )
+            notification_post_ids.append(post.id)
             services.repo.create_notification(
                 viewer.community.id,
                 viewer.membership.id,
@@ -161,7 +225,14 @@ def test_notification_inbox_batches_snippet_context() -> None:
                 actor_character_id=character.id,
             )
 
-        with trace_sql(services.repo.connection) as trace:
+        with (
+            patch.object(
+                services.repo,
+                "list_posts_by_ids",
+                wraps=services.repo.list_posts_by_ids,
+            ) as post_loader,
+            trace_sql(services.repo.connection) as trace,
+        ):
             inbox = notification_inbox(services.repo, viewer, limit=50)
 
         full_roster_queries = [
@@ -176,6 +247,15 @@ def test_notification_inbox_batches_snippet_context() -> None:
         assert inbox.items[0].snippet == "inbox snippet 49"
         assert len(full_roster_queries) <= 1
         assert len(membership_queries) <= 3
+        post_loader.assert_called_once_with(
+            viewer.community.id,
+            sorted(notification_post_ids),
+        )
+        loaded_post_ids = set(post_loader.call_args.args[1])
+        assert loaded_post_ids.isdisjoint(unrelated_post_ids)
+        assert not any(
+            "thread_id IN (SELECT value FROM json_each" in sql for sql in trace.statements
+        )
     finally:
         services.close()
 
