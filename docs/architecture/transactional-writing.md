@@ -21,8 +21,12 @@ The helper begins an immediate transaction, checks for a completed submission,
 reserves a new token, performs the posting workflow, and persists its result
 path before commit. A failure rolls back both the story writes and reservation.
 A repeated completed token returns its persisted result without running the
-posting workflow again. The older `AppServices` command lookup, reservation,
-completion, and discard methods remain available for compatibility.
+posting workflow again. A pending reservation from an older release is
+ambiguous because its story writes may have committed before result
+persistence failed, so it fails closed and asks the writer to reload instead
+of risking a duplicate post. The older `AppServices` command lookup,
+reservation, completion, and discard methods remain available for
+compatibility.
 
 Thread slug selection happens after the write transaction begins. Concurrent
 same-title requests therefore observe earlier committed threads and choose the
