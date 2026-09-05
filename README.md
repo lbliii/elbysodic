@@ -311,7 +311,7 @@ elbysodic dev check
 ```
 
 Use `--quick` when iterating on the CLI itself; it keeps all static and client
-checks, narrows pytest to the CLI tests, and skips diff coverage.
+checks, narrows pytest to the CLI tests, and skips the hypermedia contract diff.
 
 In this workspace, the direct app form is also useful:
 
