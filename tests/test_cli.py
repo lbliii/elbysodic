@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import os
 import signal
 import socket
@@ -15,6 +16,8 @@ from urllib.request import urlopen
 
 import pytest
 from chirp.testing import TestClient
+from milo import Context
+from milo.testing import MCPClient
 
 from elbysodic import cli
 from elbysodic.db import ForumRepository, connect, create_schema
@@ -126,8 +129,19 @@ def test_cli_can_start_production_server_on_railway_host_and_port(monkeypatch) -
     monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
-    cli.main(["--host", RAILWAY_HOST, "--port", "1234", "--no-debug"])
+    cli.main(
+        [
+            "--db-path",
+            "serve",
+            "--host",
+            RAILWAY_HOST,
+            "--port",
+            "1234",
+            "--no-debug",
+        ]
+    )
 
+    assert calls["db_path"] == Path("serve")
     assert calls["debug"] is False
     assert calls["seed_demo"] is False
     assert calls["host"] == RAILWAY_HOST
@@ -282,16 +296,20 @@ def test_cli_closes_services_when_server_run_raises(monkeypatch, tmp_path) -> No
     monkeypatch.setattr(cli, "create_services", fake_create_services)
     monkeypatch.setattr(cli, "create_app", fake_create_app)
 
-    with pytest.raises(RuntimeError, match="server failed"):
+    with pytest.raises(SystemExit) as exc_info:
         cli.main(["serve", "--db-path", str(tmp_path / "forum.sqlite3")])
 
+    assert exc_info.value.code == 1
     assert calls["services_closed"] is True
 
 
-def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
-    result = cli.build_dev_cli().invoke(["--llms-txt"])
+def test_single_cli_exposes_human_commands_to_milo_discovery() -> None:
+    result = cli.cli.invoke(["--llms-txt"])
 
     assert result.exit_code == 0
+    assert "serve" in result.output
+    assert "init-db" in result.output
+    assert "bootstrap-first-realm" in result.output
     assert "preview" in result.output
     assert "check" in result.output
     assert "local preview" in result.output
@@ -299,12 +317,54 @@ def test_dev_cli_exposes_preview_to_milo_discovery() -> None:
     assert "backup" in result.output
 
 
+def test_mcp_allowlist_exposes_no_stateful_or_server_commands() -> None:
+    assert MCPClient(cli.cli).list_tools() == []
+
+
+def test_milo_strictly_rejects_unknown_arguments() -> None:
+    result = cli.cli.invoke(["init-db", "--not-a-real-option"])
+
+    assert result.exit_code == 2
+    assert "unrecognized arguments" in result.stderr
+
+
+def test_milo_normalization_preserves_mature_argparse_forms() -> None:
+    assert cli._normalize_argv(["--host", RAILWAY_HOST, "serve", "--debug"]) == [
+        "serve",
+        "--host",
+        RAILWAY_HOST,
+    ]
+    assert cli._normalize_argv(["dev", "preview", "--no-debug", "--debug", "--no-seed-demo"]) == [
+        "dev",
+        "preview",
+        "--no-seed-demo",
+    ]
+
+
+def test_milo_normalization_does_not_treat_option_values_as_commands() -> None:
+    assert cli._normalize_argv(["--db-path", "serve"]) == [
+        "serve",
+        "--db-path",
+        "serve",
+    ]
+    assert cli._normalize_argv(["--db-path", "seed-demo", "init-db"]) == [
+        "init-db",
+        "--db-path",
+        "seed-demo",
+    ]
+    assert cli._normalize_argv(["--output-file", "serve", "--llms-txt"]) == [
+        "--output-file",
+        "serve",
+        "--llms-txt",
+    ]
+
+
 def test_dev_check_runs_standard_gate(monkeypatch) -> None:
     calls: list[list[str]] = []
 
-    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         calls.append(command)
-        return subprocess.CompletedProcess(command, 0)
+        return subprocess.CompletedProcess(command, 0, stdout="")
 
     monkeypatch.setattr(cli.subprocess, "run", fake_run)
 
@@ -316,9 +376,9 @@ def test_dev_check_runs_standard_gate(monkeypatch) -> None:
 def test_dev_check_quick_runs_focused_pytest(monkeypatch) -> None:
     calls: list[list[str]] = []
 
-    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         calls.append(command)
-        return subprocess.CompletedProcess(command, 0)
+        return subprocess.CompletedProcess(command, 0, stdout="")
 
     monkeypatch.setattr(cli.subprocess, "run", fake_run)
 
@@ -330,9 +390,9 @@ def test_dev_check_quick_runs_focused_pytest(monkeypatch) -> None:
 def test_dev_check_exits_on_first_failure(monkeypatch) -> None:
     calls: list[list[str]] = []
 
-    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         calls.append(command)
-        return subprocess.CompletedProcess(command, 2)
+        return subprocess.CompletedProcess(command, 2, stdout="gate failed")
 
     monkeypatch.setattr(cli.subprocess, "run", fake_run)
 
@@ -341,6 +401,27 @@ def test_dev_check_exits_on_first_failure(monkeypatch) -> None:
 
     assert exc_info.value.code == 2
     assert calls == [cli.developer_check_commands(quick=False)[0]]
+
+
+def test_dev_check_routes_diagnostics_to_host_owned_context(monkeypatch, capsys) -> None:
+    sink = io.StringIO()
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 0, stdout="check output")
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    cli.cli.call_raw(
+        "dev.check",
+        ctx=Context(color=False, output_sink=sink),
+        quick=True,
+    )
+
+    assert "$ uv run ruff check ." in sink.getvalue()
+    assert "check output" in sink.getvalue()
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
 
 
 def test_dev_db_checkpoint_requires_existing_filesystem_database(tmp_path, capsys) -> None:
@@ -551,7 +632,7 @@ def test_dev_preview_initializes_seeded_database_and_delegates_to_server(
         ]
     )
 
-    output = capsys.readouterr().out
+    output = capsys.readouterr().err
     assert "preview database ready" in output
     assert "serving local preview at http://127.0.0.1:8123/" in output
     assert calls == {
@@ -764,7 +845,7 @@ def test_cli_bootstrap_first_realm_creates_empty_configured_realm(tmp_path, caps
         "username": "starlane",
         "display_name": "Starter Director",
     }
-    with pytest.raises(ValueError, match="empty community table"):
+    with pytest.raises(SystemExit) as exc_info:
         cli.main(
             [
                 "bootstrap-first-realm",
@@ -784,6 +865,7 @@ def test_cli_bootstrap_first_realm_creates_empty_configured_realm(tmp_path, caps
                 "Second Director",
             ]
         )
+    assert exc_info.value.code == 1
 
     cli.main(["init-db", "--db-path", str(db_path)])
     restarted = connect(db_path)

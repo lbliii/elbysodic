@@ -206,6 +206,8 @@ Useful commands:
 - `make format` formats the project.
 - `make format-check` checks Ruff formatting.
 - `make ty` runs Astral's `ty` checker.
+- `make milo-check` verifies typed command schemas plus the documented CLI,
+  LLM-discovery, and MCP surface allowlist.
 - `make docs` builds the searchable product, architecture, and operations
   handbook into `public/`; `make docs-check` adds Bengal validation and artifact
   auditing, and `make docs-preview` opens Bengal's local preview server.
