@@ -15,6 +15,7 @@ from elbysodic.db.repositories.rows import (
     _thread_watch_from_row,
 )
 from elbysodic.domain.models import Character, Community, Thread, ThreadParticipant, ThreadWatch
+from elbysodic.domain.vocabulary import THREAD_VISIBILITIES
 
 
 class ThreadRepositoryMixin(ReserveRepositoryMixin):
@@ -27,6 +28,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         title: str,
         *,
         status: str = "active",
+        visibility: str = "members",
         location: str = "",
         timeline: str = "",
         summary: str = "",
@@ -34,8 +36,9 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         is_locked: bool = False,
         is_pinned: bool = False,
     ) -> Thread:
-        self.get_board(community_id, board_id)
+        board = self.get_board(community_id, board_id)
         character = self.get_character(community_id, author_character_id)
+        resolved_visibility = _thread_visibility_for_board(board.is_private, status, visibility)
         now = _utc_now()
         cursor = self.connection.execute(
             """
@@ -47,6 +50,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 slug,
                 title,
                 status,
+                visibility,
                 location,
                 timeline,
                 summary,
@@ -56,7 +60,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 community_id,
@@ -66,6 +70,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 slug,
                 title,
                 status,
+                resolved_visibility,
                 location,
                 timeline,
                 summary,
@@ -95,16 +100,25 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         thread_id: int,
         *,
         status: str | None = None,
+        visibility: str | None = None,
         location: str | None = None,
         timeline: str | None = None,
         summary: str | None = None,
         posting_mode: str | None = None,
     ) -> Thread:
         thread = self.get_thread(community_id, thread_id)
+        resolved_status = thread.status if status is None else status
+        board = self.get_board(community_id, thread.board_id)
+        resolved_visibility = _thread_visibility_for_board(
+            board.is_private,
+            resolved_status,
+            thread.visibility if visibility is None else visibility,
+        )
         self.connection.execute(
             """
             UPDATE threads
             SET status = ?,
+                visibility = ?,
                 location = ?,
                 timeline = ?,
                 summary = ?,
@@ -112,7 +126,8 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             WHERE community_id = ? AND id = ?
             """,
             (
-                thread.status if status is None else status,
+                resolved_status,
+                resolved_visibility,
                 thread.location if location is None else location,
                 thread.timeline if timeline is None else timeline,
                 thread.summary if summary is None else summary,
@@ -147,15 +162,16 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
         return self.get_thread(community_id, thread_id)
 
     def move_thread(self, community_id: int, thread_id: int, board_id: int) -> Thread:
-        self.get_thread(community_id, thread_id)
-        self.get_board(community_id, board_id)
+        thread = self.get_thread(community_id, thread_id)
+        board = self.get_board(community_id, board_id)
+        visibility = "private" if board.is_private else thread.visibility
         self.connection.execute(
             """
             UPDATE threads
-            SET board_id = ?
+            SET board_id = ?, visibility = ?
             WHERE community_id = ? AND id = ?
             """,
-            (board_id, community_id, thread_id),
+            (board_id, visibility, community_id, thread_id),
         )
         self._commit()
         return self.get_thread(community_id, thread_id)
@@ -172,6 +188,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 slug,
                 title,
                 status,
+                visibility,
                 location,
                 timeline,
                 summary,
@@ -201,6 +218,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 slug,
                 title,
                 status,
+                visibility,
                 location,
                 timeline,
                 summary,
@@ -257,6 +275,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
               AND threads.slug = ?
               AND boards.is_private = 0
               AND threads.status != 'private'
+              AND threads.visibility != 'private'
             ORDER BY communities.name, communities.id
             """,
             (board_slug, thread_slug),
@@ -276,6 +295,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                     slug,
                     title,
                     status,
+                    visibility,
                     location,
                     timeline,
                     summary,
@@ -302,6 +322,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                     slug,
                     title,
                     status,
+                    visibility,
                     location,
                     timeline,
                     summary,
@@ -336,6 +357,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 slug,
                 title,
                 status,
+                visibility,
                 location,
                 timeline,
                 summary,
@@ -422,6 +444,7 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
                 slug,
                 title,
                 status,
+                visibility,
                 location,
                 timeline,
                 summary,
@@ -772,3 +795,16 @@ class ThreadRepositoryMixin(ReserveRepositoryMixin):
             (community_id, thread_id),
         ).fetchall()
         return [int(row["membership_id"]) for row in rows]
+
+
+def _thread_visibility_for_board(
+    board_is_private: bool,
+    status: str,
+    visibility: str,
+) -> str:
+    if visibility not in THREAD_VISIBILITIES:
+        allowed = ", ".join(sorted(THREAD_VISIBILITIES))
+        raise ValueError(f"visibility must be one of: {allowed}")
+    if board_is_private or status == "private":
+        return "private"
+    return visibility

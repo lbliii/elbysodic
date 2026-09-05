@@ -83,8 +83,9 @@ The development app currently includes:
 - Safe Program Blueprint parsing/validation and dry-run preview. Apply/hydrate
   remains intentionally gated behind a future diff and transaction contract.
 
-Gated production-readiness work is tracked in
-[plans/in-progress/production-readiness-roadmap-2026-05-09.md](plans/in-progress/production-readiness-roadmap-2026-05-09.md).
+Gated production-readiness work is tracked on GitHub saga
+[#141](https://github.com/lbliii/elbysodic/issues/141) and the live index in
+[plans/README.md](plans/README.md).
 The current launch posture is invite-style access: public discovery and a
 request-access placeholder are visible, while account and membership creation
 happens through director-created invite links until a full registration
@@ -135,7 +136,9 @@ The product mission and UI vocabulary live in
 
 Future coding agents should start with [AGENTS.md](AGENTS.md). It captures the
 current product spine, architectural invariants, vocabulary, implementation
-style, and local development expectations.
+style, local development expectations, and the GitHub saga → epic → design →
+leaf work lifecycle. Specs live in issues; see
+[docs/plan/issue-lifecycle.md](docs/plan/issue-lifecycle.md).
 
 Important invariants:
 

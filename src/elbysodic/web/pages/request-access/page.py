@@ -29,11 +29,18 @@ def get(request: Request) -> Page:
     return _render_request_access(request)
 
 
+def _access_request_community_slug(request: Request, form: RequestAccessForm) -> str:
+    tenant_slug = request_tenant_slug(request)
+    if tenant_slug is not None:
+        return tenant_slug
+    return form.community_slug.strip()
+
+
 @contract(form=FormContract(RequestAccessForm, "request-access/page.html"))
 async def post(request: Request, form: RequestAccessForm) -> Page:
     services = get_services()
     account_visitor = services.account_visitor(request)
-    community_slug = form.community_slug.strip()
+    community_slug = _access_request_community_slug(request, form)
     if not community_slug:
         return _render_request_access(request, error="Choose a realm before requesting access.")
     if form.intent == "withdraw_access_request":

@@ -7,31 +7,27 @@ runtime dependencies, or Appearance Studio behavior without an explicit human
 check-in and the relevant stewards.
 
 Target vision: technicolor futurism that feels luminescent, clean, striking,
-and editorially prestigious, with reading-first PBP flow and Chirp-UI as the
-structural library. Elbysodic personality should be layered through tokens,
-surface rules, repeated PBP components, media treatment, and safe art-direction
-programming.
+and editorially prestigious, with reading-first PBP flow. Chirp + Kida +
+HTMX + Alpine stay the hypermedia stack. Elbysodic owns primitives and
+tokens; Chirp-UI is leftover (ADR 0002), not the structural library.
+Personality should be layered through tokens, surface rules, repeated PBP
+components, media treatment, and safe art-direction programming.
 
 ## Current-State Assessment
 
 ### What Is Already Working
 
 - `src/elbysodic/web/static/elbysodic-theme.css` already behaves like a
-  product layer on top of Chirp-UI instead of replacing Chirp-UI. It maps
-  Elbysodic values into Chirp token names such as `--chirpui-bg`,
-  `--chirpui-surface`, `--chirpui-accent`, `--chirpui-text`,
-  `--chirpui-border`, focus, link, radius, shadow, and mode tokens.
+  product token layer. Named Elbysodic values exist for canvas, surface,
+  accent, text, border, focus, link, radius, shadow, and mode. Leftover
+  `--chirpui-*` aliases are a migration layer to drain (ADR 0002), not
+  the design-system foundation.
 - Shared PBP vocabulary has started moving into
   `src/elbysodic/web/pages/_components/`: boards, sidebar, facets, post
   frames, composer controls, wanted cards, plot hooks, thread summaries, and
   generic vocabulary components such as `local_rail`, `preview_row`,
   `metric_item`, `command_action`, `command_panel`, `lane_preview`,
   `production_room_card`, and `room_header`.
-- The app uses Chirp-UI primitives heavily and appropriately: `container`,
-  `stack`, `cluster`, `surface`, `badge`, `breadcrumbs`, `section_header`,
-  `tooltip`, `avatar_stack`, `timeline`, `stat`, buttons, chips, and
-  form-field classes. That keeps accessibility and structural behavior rooted
-  in the library.
 - Ritual surfaces already carry visual identity: world hero, network
   billboard, board stage, board posters, thread stage, character/profile
   posters, post profile rail variants, material heroes, event actions, and
@@ -60,11 +56,16 @@ programming.
   futurism. Current anchors are ink, paper, rose, moss, and gold. They are
   tasteful and readable, but not yet luminescent, clean, cool, or striking
   enough to establish the desired first impression.
-- Color roles are not yet a full color score. The theme has useful Chirp token
-  mappings, but Elbysodic-specific product roles are still incomplete:
-  identity dye, atmosphere dye, active face, staff/private state, queue states,
-  on-media overlays, material intensity, and surface intensity are not all
-  named as stable token purposes.
+- Templates still import leftover Chirp-UI primitives (`container`, `stack`,
+  `cluster`, `surface`, `badge`, `breadcrumbs`, `section_header`, `tooltip`,
+  `avatar_stack`, `timeline`, `stat`, buttons, chips, and form-field
+  classes). ADR 0002 treats those as an exit target. New UI uses Elbysodic
+  class names and `_components/`.
+- Color roles are not yet a full color score. The theme still has leftover
+  Chirp-UI token mappings, but Elbysodic-specific product roles are still
+  incomplete: identity dye, atmosphere dye, active face, staff/private
+  state, queue states, on-media overlays, material intensity, and surface
+  intensity are not all named as stable token purposes.
 - CSS is doing a lot of product-system work in one large file. That is allowed
   by the current architecture, but the meaning of major component families is
   easier to infer from selectors than to verify from a smaller token/component
@@ -100,7 +101,7 @@ programming.
 - Need a cooler default key system: blue-black or graphite dark mode, cool
   porcelain light mode, crisp borders, high-legibility text, and less warm
   paper dominance.
-- Need explicit dye roles layered over Chirp tokens:
+- Need explicit dye roles layered over Elbysodic tokens:
   `identity_dye`, `atmosphere_dye`, `state_dyes`, `active_face`,
   `private_state`, `staff_state`, `on_media`, `focus`, and `editorial_rule`.
 - Need state colors for PBP obligations beyond generic success/warning/error:
@@ -160,9 +161,10 @@ programming.
 1. Reading is the prestige surface. Thread prose, guidebook material,
    applications, and composer preview stay calmer than heroes and network
    cards.
-2. Chirp-UI remains the structural library. Elbysodic should extend through
-   product tokens, macros, composition, and vocabulary, not by forking Chirp
-   primitives.
+2. Elbysodic owns primitives and tokens (ADR 0002). Chirp supplies pages,
+   Kida, HTMX, and Alpine. Extend through product tokens, `_components/`,
+   composition, and vocabulary. Do not treat leftover Chirp-UI as the
+   structural library.
 3. Community art direction is safe and scoped. Directors get approved tokens,
    media slots, variants, density, texture, and warnings, not raw CSS,
    arbitrary HTML, scripts, external font URLs, or layout builders.
@@ -582,7 +584,9 @@ For future visual implementation:
   directors.
 - No SPA redesign.
 - No generic SaaS dashboard redesign.
-- No replacement of Chirp-UI primitives.
+- No replacement of Chirp, Kida, HTMX, or Alpine.
+- No new Chirp-UI adoption; leftovers drain toward `_components/` and
+  Elbysodic primitives (ADR 0002).
 - No pixel-perfect design system detached from rendered PBP workflows.
 
 ## Programmatic Art Direction Without Contract Changes

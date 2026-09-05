@@ -3,7 +3,7 @@
 Status: design stress pass
 Date: 2026-05-16
 Primary artifact: `design/static-community-landing-v2-mock.html`
-Related plan: `plans/in-progress/community-landing-design-system-translation-2026-05-15.md`
+Related plan (archived): `plans/archive/2026/community-landing-design-system-translation-2026-05-15.md`
 
 ## Purpose
 

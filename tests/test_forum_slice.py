@@ -8,7 +8,7 @@ import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from urllib.parse import urlencode, urljoin
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
 
 import pytest
 from chirp.app import App
@@ -1146,6 +1146,159 @@ def test_tenant_prefix_does_not_wrap_app_global_routes() -> None:
     asyncio.run(run())
 
 
+def test_tenant_prefixed_access_request_post_ignores_foreign_community_slug() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        url_community = services.seed.community
+        foreign_community = services.repo.get_community_by_slug("afterlight-accord")
+        email = "prefix-bound-prospect@example.com"
+
+        async with TestClient(app) as client:
+            page = await client.get(f"/c/{url_community.slug}/request-access")
+            submitted = await client.post(
+                f"/c/{url_community.slug}/request-access",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(page.text),
+                        "community_slug": foreign_community.slug,
+                        "email": email,
+                        "display_name": "Prefix Bound Prospect",
+                        "face_concept": "Archive thief",
+                        "wanted_hook": "Sealed branch",
+                        "notes": "Posted under a foreign form slug.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert page.status == 200
+        assert submitted.status == 200
+        assert "Access request received" in submitted.text
+        url_requests = [
+            item
+            for item in services.repo.list_community_access_requests(url_community.id)
+            if item.email == email
+        ]
+        foreign_requests = [
+            item
+            for item in services.repo.list_community_access_requests(foreign_community.id)
+            if item.email == email
+        ]
+        assert len(url_requests) == 1
+        assert url_requests[0].status == "pending"
+        assert foreign_requests == []
+
+    asyncio.run(run())
+
+
+def test_tenant_prefixed_access_request_withdraw_ignores_foreign_community_slug() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        url_community = services.seed.community
+        foreign_community = services.repo.get_community_by_slug("afterlight-accord")
+        account = services.repo.create_user(
+            "prefix-withdraw@example.com",
+            hash_password("password"),
+        )
+        role = services.repo.get_role_by_slug(url_community.id, "member")
+        services.repo.create_membership(
+            url_community.id,
+            account.id,
+            role.id,
+            "prefix-withdraw",
+            "Prefix Withdraw",
+        )
+        foreign_request = services.create_access_request(
+            foreign_community.slug,
+            email=account.email,
+            display_name="Prefix Withdraw",
+            face_concept="Rebel heir",
+            wanted_hook="Town politics",
+            notes="Should stay in the foreign realm.",
+            account_user_id=account.id,
+        )
+
+        async with TestClient(app) as client:
+            login_page = await client.get("/login")
+            login = await client.post(
+                "/login",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(login_page.text),
+                        "email": account.email,
+                        "password": "password",
+                        "next": f"/c/{url_community.slug}/request-access",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+            page = await client.get(f"/c/{url_community.slug}/request-access")
+            withdrawn = await client.post(
+                f"/c/{url_community.slug}/request-access",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(page.text),
+                        "intent": "withdraw_access_request",
+                        "access_request_id": str(foreign_request.id),
+                        "community_slug": foreign_community.slug,
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert login.status == 302
+        assert withdrawn.status == 200
+        assert "Your access request was withdrawn" not in withdrawn.text
+        remaining = services.repo.get_community_access_request(
+            foreign_community.id,
+            foreign_request.id,
+        )
+        assert remaining.status == "pending"
+
+    asyncio.run(run())
+
+
+def test_unscoped_request_access_post_accepts_chosen_realm_slug() -> None:
+    async def run() -> None:
+        app = _app()
+        services = get_services()
+        chosen = services.repo.get_community_by_slug("afterlight-accord")
+        email = "unscoped-chosen-realm@example.com"
+
+        async with TestClient(app) as client:
+            page = await client.get(f"/c/{chosen.slug}/request-access")
+            submitted = await client.post(
+                "/request-access",
+                body=urlencode(
+                    {
+                        "_csrf_token": _csrf_token(page.text),
+                        "community_slug": chosen.slug,
+                        "email": email,
+                        "display_name": "Unscoped Prospect",
+                        "face_concept": "Forbidden envoy",
+                        "wanted_hook": "Transit gate",
+                        "notes": "Chose a realm without a tenant prefix.",
+                    }
+                ).encode(),
+                headers=_FORM,
+            )
+
+        assert page.status == 200
+        assert submitted.status == 200
+        assert "Access request received" in submitted.text
+        chosen_requests = [
+            item
+            for item in services.repo.list_community_access_requests(chosen.id)
+            if item.email == email
+        ]
+        assert len(chosen_requests) == 1
+        assert chosen_requests[0].status == "pending"
+
+    asyncio.run(run())
+
+
 def test_boosted_main_navigation_uses_chirp_shell_outlet() -> None:
     async def run() -> None:
         app = _app()
@@ -1565,7 +1718,7 @@ def test_dev_persona_switcher_can_change_seeded_user_and_membership() -> None:
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
         assert "playing as Moira MacTaggert" in studio.text
-        assert 'href="/studio/appearance"' in studio.text
+        assert 'href="/studio/structure"' in studio.text
         assert "Director Studio is visible as a preview" not in studio.text
 
     asyncio.run(run())
@@ -1630,7 +1783,7 @@ def test_login_route_creates_account_session_and_membership_context() -> None:
         assert any(cookie.startswith("elbysodic_dev_identity=") for cookie in set_cookies)
         assert studio.status == 200
         assert "Staff in X-Men Apocalypse" in studio.text
-        assert 'href="/studio/appearance"' in studio.text
+        assert 'href="/studio/structure"' in studio.text
 
     asyncio.run(run())
 
@@ -2733,7 +2886,14 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
         "public-gateway-scene",
         "Public gateway scene",
         status="open",
+        visibility="public_preview",
         summary="A public scene that can safely invite first-face readers.",
+    )
+    repo.create_post(
+        community.id,
+        public_thread.id,
+        rogue.id,
+        "A public opening beat makes this a real scene preview.",
     )
 
     gateway = services.public_realm_gateway(community.slug)
@@ -2844,6 +3004,7 @@ def test_public_realm_gateway_ranks_active_scene_hubs_before_limit() -> None:
             f"active-hub-scene-{index}",
             f"Active hub scene {index}",
             status="open",
+            visibility="public_preview",
         )
     repo.update_community_launch_status(community.id, "public-preview")
 
@@ -3148,6 +3309,20 @@ def test_forum_pages_render_seeded_boards_and_thread() -> None:
             assert "elbysodic-identity-menu__quick-links" in index.text
             assert "elbysodic-identity-menu__notification-link" in index.text
             assert "elbysodic-identity-menu__theme-row" in index.text
+            identity_panel = re.search(
+                r'<div class="elbysodic-identity-menu__panel">(?P<body>.*?)</details>',
+                index.text,
+                re.S,
+            )
+            assert identity_panel is not None
+            identity_menu = identity_panel.group("body")
+            assert "/members/" in identity_menu
+            assert ">Writer</a>" in identity_menu
+            assert "/notifications" in identity_menu
+            assert "Identity &amp; security" in identity_menu
+            assert "/my/threads" not in identity_menu
+            assert ">Queue</a>" not in identity_menu
+            assert ">Threads</a>" not in identity_menu
             assert "playing as Rogue" in index.text
             assert "Recent activity" not in index.text
             assert "Latest details:" not in index.text
@@ -3396,7 +3571,7 @@ def test_new_realm_locations_use_actionable_empty_states() -> None:
 
         assert response.status == 200
         content = _page_content(response.text)
-        assert "chirpui-section-header" in content
+        assert "elbysodic-page-section__header" in content
         assert "No scenes have opened here yet." in content
         assert 'href="/c/rl-nyc/boards/brooklyn/threads/new"' in content
         assert 'href="/c/rl-nyc/boards/queens-night-market/threads/new"' in content
@@ -3547,13 +3722,14 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
             assert "playing as Rogue" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
-            assert "Roster" in desk.text
-            assert "Discovery" in desk.text
             assert "/my/threads" in desk.text
             assert "/notifications" in desk.text
-            assert "/characters" in desk.text
-            assert "/applications" in desk.text
-            assert "/discover" in desk.text
+            assert '<span class="chirpui-sidebar__label">Queue</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Inbox</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Roster</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Plotting</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Applications</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Discovery</span>' not in desk.text
 
     asyncio.run(run())
 
@@ -3829,20 +4005,12 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Needs attention" in studio.text
             assert "No director queues need attention right now." in studio.text
             assert "Production calm" in studio.text
-            assert "Studio rooms" in studio.text
-            assert "Operations" in studio.text
-            assert "Discovery profile" in studio.text
-            assert "Structure" in studio.text
-            assert "Intake" in studio.text
-            assert "Appearance" in studio.text
-            assert "Content" in studio.text
-            assert 'href="/studio/operations"' in studio.text
+            assert "Studio rooms" not in studio.text
+            assert "Today" in studio.text
+            assert "Shape" in studio.text
+            assert "Open" in studio.text
             assert 'href="/studio/launch"' in studio.text
-            assert 'href="/studio/discovery"' in studio.text
             assert 'href="/studio/structure"' in studio.text
-            assert 'href="/studio/intake"' in studio.text
-            assert 'href="/studio/appearance"' in studio.text
-            assert 'href="/studio/content"' in studio.text
             assert 'id="chirp-shell-actions"' in studio.text
             assert "Daily director console" not in studio.text
             assert 'id="world-structure"' not in _page_content(studio.text)
@@ -3851,6 +4019,10 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'id="casting-applications"' not in _page_content(studio.text)
             assert 'id="continuity-events"' not in _page_content(studio.text)
             assert structure.status == 200
+            assert "Shape" in structure.text
+            assert 'href="/studio/appearance"' in structure.text
+            assert 'href="/studio/intake"' in structure.text
+            assert 'href="/studio/content"' in structure.text
             assert "data-elbysodic-spotlight-composer" not in structure.text
             assert "Board map" in structure.text
             assert "Board map audit" in structure.text
@@ -3881,25 +4053,25 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/applications"' in content.text
             assert 'href="/wanted"' in content.text
             assert "Current event" in content.text
-            assert operations.status == 200
-            assert "Director desk" in operations.text
-            assert '<h1 id="operations-heading">Operations</h1>' in operations.text
-            assert "Technical checks" in operations.text
-            assert '<details class="elbysodic-operations-diagnostics">' in operations.text
-            assert "No director operations need attention right now." in operations.text
-            assert "Operations clear" in operations.text
-            assert "Review queue" not in operations.text
-            assert "Claim conflicts" not in operations.text
-            assert "Active reserves" not in operations.text
-            assert "Hooks with movement" not in operations.text
-            assert "Ready for scene" not in operations.text
-            assert "Staff notifications" not in operations.text
-            assert "Production health" not in operations.text
-            assert "Draft materials" not in operations.text
-            assert "Dry-run intake" not in operations.text
-            assert "Release smoke" not in operations.text
-            assert "Community builder checklist" not in operations.text
-            assert "Ready to review" not in operations.text
+            assert operations.status == 302
+            assert _response_header(operations, "location").endswith("/studio")
+            assert "Director desk" in studio.text
+            assert 'id="operations-heading"' in studio.text
+            assert "Technical checks" in studio.text
+            assert '<details class="elbysodic-operations-diagnostics">' in studio.text
+            assert "No director operations need attention right now." in studio.text
+            assert "Operations clear" in studio.text
+            assert "Claim conflicts" not in studio.text
+            assert "Active reserves" not in studio.text
+            assert "Hooks with movement" not in studio.text
+            assert "Ready for scene" not in studio.text
+            assert "Staff notifications" not in studio.text
+            assert "Production health" not in studio.text
+            assert "Draft materials" not in studio.text
+            assert "Dry-run intake" not in studio.text
+            assert "Release smoke" not in studio.text
+            assert "Community builder checklist" not in studio.text
+            assert "Ready to review" not in studio.text
 
         services = create_services(path=":memory:")
         staff = resolve_seed_persona(services.repo, "xmen_staff")
@@ -3926,6 +4098,8 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Intake and claims" in launch.text
         assert "Wanted hooks" in launch.text
         assert "Appearance" in launch.text
+        assert "Discovery profile" in launch.text
+        assert 'href="/studio/discovery"' in launch.text
         assert "Invite-only before public self-serve." in launch.text
         assert "Open Studio" not in _page_content(launch.text)
         assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
@@ -4014,8 +4188,11 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         operations_model = staff_services.director_operations()
         parity = {row.label: row for row in operations_model.parity_rows}
         async with TestClient(app) as client:
-            operations = await client.get("/studio/operations")
+            operations_redirect = await client.get("/studio/operations")
+            operations = await client.get("/studio")
 
+        assert operations_redirect.status == 302
+        assert "/studio" in _response_header(operations_redirect, "location")
         assert [(lane.label, lane.href) for lane in operations_model.lanes] == [
             ("Needs decision", f"/studio/access-requests/{access_request.id}")
         ]
@@ -5682,7 +5859,8 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
         )
         member_app = create_app(debug=False, services=member_services)
         async with TestClient(member_app) as member_client:
-            member_operations = await member_client.get("/studio/operations")
+            member_redirect = await member_client.get("/studio/operations")
+            member_operations = await member_client.get("/studio")
 
         alex_membership = repo.get_membership_by_username(community.id, "alex")
         alex_user = repo.get_user(alex_membership.user_id)
@@ -5692,8 +5870,9 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
             services=AppServices(repo, DemoSeed(community, alex_user, alex_membership, cyclops)),
         )
         async with TestClient(staff_app) as staff_client:
-            staff_operations = await staff_client.get("/studio/operations")
+            staff_operations = await staff_client.get("/studio")
 
+        assert member_redirect.status == 302
         assert member_operations.status == 200
         assert "read-only" in member_operations.text
         assert "Privacy Queue Face" not in member_operations.text
@@ -5753,33 +5932,33 @@ def test_studio_intake_previews_program_blueprint_yaml_without_hydration() -> No
         blueprint_yaml = """
 elbysodic_blueprint: 1
 program:
-  slug: rl-small-town-preview
-  name: RL Small Town Preview
+  slug: x-men-apocalypse
+  name: X-Men Apocalypse
   role:
-    slug: director
-    name: Director
+    slug: staff
+    name: Staff
     is_admin: true
 characters:
-  - slug: june-calloway
-    name: June Calloway
+  - slug: blueprint-render-face
+    name: Blueprint Render Face
     summary: Florist and town council note-taker.
 boards:
-  - slug: main-street
-    name: Main Street
+  - slug: blueprint-render-main-street
+    name: Blueprint Render Main Street
     kind: location
     tagline: One stoplight, twelve opinions.
     description: The town's public spine.
 materials:
-  - slug: premise
-    title: Premise
+  - slug: blueprint-render-premise
+    title: Blueprint Render Premise
     type: premise
     summary: A small-town ensemble.
     body: Founder's Week should be a cozy pressure cooker.
 wanted:
-  - slug: returning-sibling
-    title: Returning sibling
+  - slug: blueprint-render-returning-sibling
+    title: Blueprint Render Returning Sibling
     type: relationship
-    related_material: premise
+    related_material: blueprint-render-premise
     summary: A homecoming character with history.
     body: Someone left, came back, and knows where the deed is hidden.
 appearance:
@@ -5797,7 +5976,6 @@ appearance:
             page = await client.get("/studio/intake")
             assert 'id="chirp-shell-actions"' in page.text
             assert 'href="/studio"' in page.text
-            assert 'href="/studio/operations"' in page.text
             response = await client.post(
                 "/studio/intake",
                 body=urlencode(
@@ -5816,24 +5994,26 @@ appearance:
                         "intent": "apply_blueprint",
                         "blueprint_yaml": blueprint_yaml,
                         "preview_fingerprint": "stale-preview",
+                        "apply_mode": "create_only",
                     }
                 ).encode(),
                 headers=_FORM,
             )
-            gated_apply = await client.post(
+            applied = await client.post(
                 "/studio/intake",
                 body=urlencode(
                     {
                         "intent": "apply_blueprint",
                         "blueprint_yaml": blueprint_yaml,
                         "preview_fingerprint": preview.preview_fingerprint,
+                        "apply_mode": "create_only",
                     }
                 ).encode(),
                 headers=_FORM,
             )
 
         assert page.status == 200
-        assert "Dry-run YAML intake" in page.text
+        assert "Reviewed YAML intake" in page.text
         assert response.status == 200
         assert "valid dry run" in response.text
         assert "1 program" in response.text
@@ -5845,31 +6025,48 @@ appearance:
         assert "postbit: poster rail, hairline frame; 1 guidebook variants" in response.text
         assert "Hydration diff preview" in response.text
         assert "Preview fingerprint:" in response.text
-        assert "Preflight: 7 create actions." in response.text
-        assert "create</strong> program: RL Small Town Preview" in response.text
-        assert "create</strong> scene hub: Main Street" in response.text
-        assert "create</strong> wanted hook: Returning sibling" in response.text
-        assert "Hydration gate: nothing has been applied." in response.text
-        assert "duplicate handling, ownership defaults, rollback behavior" in response.text
+        assert "Preflight: 4 create actions, 3 update actions." in response.text
+        assert "update</strong> program: X-Men Apocalypse" in response.text
+        assert "create</strong> scene hub: Blueprint Render Main Street" in response.text
+        assert "create</strong> wanted hook: Blueprint Render Returning Sibling" in response.text
+        assert "Hydration status: nothing has been applied from this preview." in response.text
         assert "Apply readiness review" in response.text
         assert (
-            "Preflight resolved 7 create, 0 update, 0 skip, 0 blocked, and 0 warning actions."
+            "Preflight resolved 4 create, 3 update, 0 skip, 0 blocked, and 0 warning actions."
             in (response.text)
         )
         assert "No live face or wanted-hook collisions need explicit update mode." in response.text
-        assert "Duplicate handling must stay tenant-scoped." in response.text
-        assert "Hydration must run inside one rollback-tested transaction." in response.text
-        assert "Check apply gate" in response.text
+        assert "Explicit update replaces only current-realm rows" in response.text
+        assert "Starter faces and wanted hooks are owned by the importing director" in (
+            response.text
+        )
+        assert "Apply uses one rollback-tested transaction" in response.text
+        assert "Collision mode" in response.text
+        assert "Create only — stop on live collisions" in response.text
+        assert "Apply reviewed blueprint" in response.text
         assert stale_apply.status == 200
         assert "Program Blueprint preview changed; preview again before applying." in (
             stale_apply.text
         )
-        assert gated_apply.status == 200
-        assert "Program Blueprint apply remains gated; no rows were written." in (gated_apply.text)
+        assert applied.status == 200
+        assert "Blueprint applied in create only mode." in applied.text
+        assert "Current-realm rows and the accepted audit event committed together." in (
+            applied.text
+        )
+        assert "Apply reviewed blueprint" not in applied.text
         after_count = repo.connection.execute(
             "SELECT COUNT(*) FROM communities",
         ).fetchone()[0]
         assert after_count == before_count
+        assert repo.get_character_by_slug(community.id, "blueprint-render-face").name == (
+            "Blueprint Render Face"
+        )
+        assert repo.get_board_by_slug(community.id, "blueprint-render-main-street").name == (
+            "Blueprint Render Main Street"
+        )
+        assert repo.get_material_by_slug(community.id, "blueprint-render-premise").title == (
+            "Blueprint Render Premise"
+        )
 
     asyncio.run(run())
 
@@ -6420,7 +6617,7 @@ def test_board_sidebar_section_controls_direct_board_sidebar_realm() -> None:
                 r'[^>]*href="/boards/applications"[^>]*aria-current="page"',
                 board_page.text,
             )
-            assert "Structure" in board_page.text
+            assert "Shape" in board_page.text
 
     asyncio.run(run())
 
@@ -6485,16 +6682,21 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Writer Desk" in desk.text
             assert "Queue" in desk.text
             assert "Inbox" in desk.text
-            assert "Roster" in desk.text
             assert "World Map" not in desk.text
             assert 'class="chirpui-sidebar__section-title">On Your Desk</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Queue</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Inbox</span>' in desk.text
+            assert '<span class="chirpui-sidebar__label">Roster</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Plotting</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Applications</span>' not in desk.text
+            assert '<span class="chirpui-sidebar__label">Discovery</span>' not in desk.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in desk.text
 
             studio = await client.get("/studio")
             assert studio.status == 200
             assert "Director Studio" in studio.text
             assert "Production" in studio.text
-            assert "Studio rooms" in studio.text
+            assert "Needs attention" in studio.text
             assert "World Map" not in studio.text
             assert 'class="chirpui-sidebar__section-title">In Studio</span>' not in studio.text
             assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
@@ -6508,6 +6710,11 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "Open Wants" in wanted.text
             assert "World Map" not in wanted.text
             assert 'class="chirpui-sidebar__section-title">In Wanted</span>' in wanted.text
+            assert '<span class="chirpui-sidebar__label">Casting desk</span>' in wanted.text
+            assert '<span class="chirpui-sidebar__label">Claims</span>' in wanted.text
+            assert '<span class="chirpui-sidebar__label">Applications</span>' not in wanted.text
+            assert '<span class="chirpui-sidebar__label">Plotting</span>' not in wanted.text
+            assert '<span class="chirpui-sidebar__label">Discovery</span>' not in wanted.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in wanted.text
 
         services = create_services(path=":memory:")
@@ -6526,6 +6733,11 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
         assert 'aria-label="Studio"' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">In Studio</span>' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">Production</span>' not in staff_studio.text
+        assert '<span class="chirpui-sidebar__label">Today</span>' in staff_studio.text
+        assert '<span class="chirpui-sidebar__label">Shape</span>' in staff_studio.text
+        assert '<span class="chirpui-sidebar__label">Open</span>' in staff_studio.text
+        assert 'href="/studio/structure"' in staff_studio.text
+        assert 'href="/studio/launch"' in staff_studio.text
 
     asyncio.run(run())
 
@@ -7146,8 +7358,8 @@ def test_thread_page_renders_scene_grounding_for_owner() -> None:
         assert "Mode" in content
         assert "Posting order" in content
         assert "Visibility" in content
-        assert "member-visible scene" in content
-        assert "Visible to active members who can enter this location." in content
+        assert "public preview scene" in content
+        assert "The first four posts are visible to people browsing while signed out." in content
         assert "Linked story objects" in content
         assert "Staff controls" not in content
 
@@ -7495,7 +7707,7 @@ def test_scene_grounding_for_ordinary_member_hides_staff_management_copy() -> No
         assert page.status == 200
         assert "Scene context" in content
         assert "Reading as Outsider Face" in content
-        assert "member-visible scene" in content
+        assert "public preview scene" in content
         assert "staff-manageable member-visible scene" not in content
         assert "Staff controls" not in content
         assert "Scene management" not in content
@@ -7976,7 +8188,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 "/applications/jubilee",
                 body=urlencode(
                     {
-                        "intent": "save_application",
+                        "_action": "save_application",
                         "summary": "Fireworks, mall instincts, and a very loud jacket.",
                         "body": "Jubilee is looking for a found-family first scene.",
                     }
@@ -8057,7 +8269,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications/jubilee",
                     body=urlencode(
                         {
-                            "intent": "save_review",
+                            "_action": "save_review",
                             "revision_notes": "",
                             "staff_notes": "Voice is clear.",
                             "checklist": "Starter hook\nCast tie",
@@ -8071,7 +8283,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications/jubilee",
                     body=urlencode(
                         {
-                            "intent": "accept_application",
+                            "_action": "accept_application",
                         }
                     ).encode(),
                     headers=_FORM,
@@ -8082,7 +8294,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications/kitty-pryde",
                     body=urlencode(
                         {
-                            "intent": "request_revision",
+                            "_action": "request_revision",
                             "revision_notes": "Add one concrete school-life pressure point.",
                         }
                     ).encode(),
@@ -8228,7 +8440,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
             interest_response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert interest_response.status == 302
@@ -8273,7 +8485,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
                 reserve_response = await charlie_client.post(
                     "/wanted/human-un-liaison-for-b24",
-                    body=f"intent=reserve_interest&interest_id={interest.id}".encode(),
+                    body=f"_action=reserve_interest&interest_id={interest.id}".encode(),
                     headers=_FORM,
                 )
                 assert reserve_response.status == 302
@@ -8286,7 +8498,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
 
                 reserve_create = await charlie_client.post(
                     "/wanted/human-un-liaison-for-b24",
-                    body=f"intent=create_reserve&interest_id={interest.id}".encode(),
+                    body=f"_action=create_reserve&interest_id={interest.id}".encode(),
                     headers=_FORM,
                 )
                 assert reserve_create.status == 302
@@ -8341,7 +8553,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                     "/wanted/human-un-liaison-for-b24",
                     body=urlencode(
                         {
-                            "intent": "update_lifecycle_status",
+                            "_action": "update_lifecycle_status",
                             "status": "filled",
                         }
                     ).encode(),
@@ -8353,7 +8565,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                     "/wanted/human-un-liaison-for-b24",
                     body=urlencode(
                         {
-                            "intent": "update_lifecycle_status",
+                            "_action": "update_lifecycle_status",
                             "status": "archived",
                         }
                     ).encode(),
@@ -8365,7 +8577,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                     "/wanted/human-un-liaison-for-b24",
                     body=urlencode(
                         {
-                            "intent": "update_lifecycle_status",
+                            "_action": "update_lifecycle_status",
                             "status": "open",
                         }
                     ).encode(),
@@ -8557,7 +8769,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications/jean-grey",
                 body=urlencode(
                     {
-                        "intent": "save_application",
+                        "_action": "save_application",
                         "summary": "A powerful telepath trying to stay gentle.",
                         "body": "Trying a visual that directors should catch.",
                         f"application_field_{fields['face_claim'].id}": "Magneto Visual",
@@ -8583,7 +8795,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications/jean-grey",
                 body=urlencode(
                     {
-                        "intent": "save_application",
+                        "_action": "save_application",
                         "summary": "A powerful telepath trying to stay gentle.",
                         "body": "Updated notes for school pressure and rescue work.",
                         f"application_field_{fields['face_claim'].id}": "Sophie Turner",
@@ -8638,7 +8850,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
             review_room = await alex_client.get("/applications/jean-grey")
             accept_response = await alex_client.post(
                 "/applications/jean-grey",
-                body=urlencode({"intent": "accept_application"}).encode(),
+                body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
             claims = await alex_client.get("/claims")
@@ -8787,14 +8999,14 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
             review_room = await alex_client.get("/applications/duplicate-face")
             accept_response = await alex_client.post(
                 "/applications/duplicate-face",
-                body=urlencode({"intent": "accept_application"}).encode(),
+                body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
             revision_response = await alex_client.post(
                 "/applications/duplicate-face",
                 body=urlencode(
                     {
-                        "intent": "request_revision",
+                        "_action": "request_revision",
                         "revision_notes": expected_revision_note,
                     }
                 ).encode(),
@@ -9220,7 +9432,7 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
                 "/claims",
                 body=urlencode(
                     {
-                        "intent": "create_claim",
+                        "_action": "create_claim",
                         "claim_type_id": str(face_claim.id),
                         "label": "Cyclops tactical visor",
                         "status": "claimed",
@@ -9243,7 +9455,7 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
                 "/claims",
                 body=urlencode(
                     {
-                        "intent": "update_claim",
+                        "_action": "update_claim",
                         "claim_id": str(created_claim.id),
                         "label": "Cyclops visor reserve",
                         "status": "reserved",
@@ -9272,6 +9484,10 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
         assert directory.status == 200
         assert "Record claim" in directory.text
         assert "Cyclops" in directory.text
+        assert 'name="_action" value="create_claim"' in directory.text
+        assert 'name="_action" value="update_claim"' in directory.text
+        assert 'name="intent" value="create_claim"' not in directory.text
+        assert 'name="intent" value="update_claim"' not in directory.text
         assert response.status == 302
         assert update_response.status == 302
         assert manual_claim.label == "Cyclops visor reserve"
@@ -9388,6 +9604,7 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
             )
             updated_editor = await client.get("/studio/intake")
             studio = await client.get("/studio")
+            structure = await client.get("/studio/structure")
             claims = await client.get("/claims")
             application_form = await client.get("/applications/new")
 
@@ -9424,7 +9641,8 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
         assert "Visual Claim" in updated_editor.text
         assert "Story lane" in updated_editor.text
         assert studio.status == 200
-        assert 'href="/studio/intake"' in studio.text
+        assert structure.status == 200
+        assert 'href="/studio/intake"' in structure.text
         assert claims.status == 200
         assert "Birthright Claim" in claims.text
         assert "Visual Claim" in claims.text
@@ -9538,7 +9756,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 interest = await outsider_client.post(
                     "/characters/rogue/hooks/coffee-before-the-crisis",
-                    body=b"intent=express_interest",
+                    body=b"_action=express_interest",
                     headers=_FORM,
                 )
                 assert interest.status == 302
@@ -9571,14 +9789,14 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
                 leak_inbox = await leak_client.get("/notifications")
                 leak_mark_all = await leak_client.post(
                     "/notifications",
-                    body=b"intent=mark_all_read",
+                    body=b"_action=mark_all_read",
                     headers=_FORM,
                 )
                 leak_open = await leak_client.post(
                     "/notifications",
                     body=urlencode(
                         {
-                            "intent": "open",
+                            "_action": "open",
                             "notification_id": str(leak_notification.id),
                         }
                     ).encode(),
@@ -9607,7 +9825,7 @@ def test_character_plot_hooks_render_create_and_notify_interest() -> None:
 
                 room_response = await owner_client.post(
                     "/characters/rogue/hooks/coffee-before-the-crisis",
-                    body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                    body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                     headers=_FORM,
                 )
                 assert room_response.status == 302
@@ -9727,7 +9945,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
                 "/wanted/human-un-liaison-for-b24",
                 body=urlencode(
                     {
-                        "intent": "express_prospective_interest",
+                        "_action": "express_prospective_interest",
                         "prospective_character_name": "Val Cooper",
                         "note": "I would app her as a UN pressure point.",
                     }
@@ -9769,7 +9987,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
                 "/notifications",
                 body=urlencode(
                     {
-                        "intent": "open",
+                        "_action": "open",
                         "notification_id": str(notification.id),
                     }
                 ).encode(),
@@ -9799,7 +10017,7 @@ def test_wanted_hooks_accept_prospective_character_interest() -> None:
 
             reserve = await creator_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=reserve_interest&interest_id={prospective.id}".encode(),
+                body=f"_action=reserve_interest&interest_id={prospective.id}".encode(),
                 headers=_FORM,
             )
             assert reserve.status == 302
@@ -9915,7 +10133,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -9941,7 +10159,7 @@ def test_plotting_rooms_start_from_wanted_interest() -> None:
 
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -9977,7 +10195,7 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -9999,7 +10217,7 @@ def test_tenant_prefixed_plotting_room_scopes_live_and_plan_routes() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10061,7 +10279,7 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10085,7 +10303,7 @@ def test_plotting_room_sse_ready_event_uses_safe_channel() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10118,7 +10336,7 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining(caplog) -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10142,7 +10360,7 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining(caplog) -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10199,7 +10417,7 @@ def test_tenant_prefixed_plotting_room_id_does_not_leak_cross_realm_room() -> No
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10221,7 +10439,7 @@ def test_tenant_prefixed_plotting_room_id_does_not_leak_cross_realm_room() -> No
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10252,7 +10470,7 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10274,7 +10492,7 @@ def test_plotting_room_plan_can_turn_into_scene() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10411,7 +10629,7 @@ def test_plotting_room_scene_handoff_rolls_back_on_attach_failure(
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10433,7 +10651,7 @@ def test_plotting_room_scene_handoff_rolls_back_on_attach_failure(
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10474,7 +10692,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
         async with TestClient(app) as client:
             response = await client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=b"intent=express_interest",
+                body=b"_action=express_interest",
                 headers=_FORM,
             )
             assert response.status == 302
@@ -10496,7 +10714,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
         async with TestClient(charlie_app) as charlie_client:
             room_response = await charlie_client.post(
                 "/wanted/human-un-liaison-for-b24",
-                body=f"intent=start_plotting_room&interest_id={interest.id}".encode(),
+                body=f"_action=start_plotting_room&interest_id={interest.id}".encode(),
                 headers=_FORM,
             )
             assert room_response.status == 302
@@ -10518,7 +10736,7 @@ def test_plotting_room_notifications_do_not_leak_to_non_participants() -> None:
                 "/notifications",
                 body=urlencode(
                     {
-                        "intent": "open",
+                        "_action": "open",
                         "notification_id": str(notification.id),
                     }
                 ).encode(),
@@ -10974,11 +11192,13 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
             assert "A watched reply arrives." in notifications.text
             assert "Notify Face" in notifications.text
             assert "new" in notifications.text
+            assert 'name="_action" value="mark_all_read"' in notifications.text
+            assert 'name="_action" value="open"' in notifications.text
 
             item = services.notifications().items[0]
             marked_all = await client.post(
                 "/notifications",
-                body=b"intent=mark_all_read",
+                body=b"_action=mark_all_read",
                 headers=_FORM,
             )
             assert marked_all.status == 302
@@ -10992,7 +11212,7 @@ def test_notifications_track_watched_thread_replies_and_open_read_state() -> Non
 
             opened = await client.post(
                 "/notifications",
-                body=f"intent=open&notification_id={item.notification.id}".encode(),
+                body=f"_action=open&notification_id={item.notification.id}".encode(),
                 headers=_FORM,
             )
             assert opened.status == 302
@@ -12712,6 +12932,9 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                 is None
             )
             assert "Open to join" in form.text
+            assert "Who can read" in form.text
+            assert "Public preview — first 4 posts" in form.text
+            assert re.search(r'<option value="members"\s+selected>', form.text)
             assert "Posting order" in form.text
             assert 'role="toolbar"' in form.text
             assert 'aria-label="Bold"' in form.text
@@ -12729,6 +12952,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                         "participant_ids": [xavier.id, rogue.id],
                         "title": "Metal and Memory",
                         "status": "open",
+                        "visibility": "public_preview",
                         "location": "Sublevel 3",
                         "timeline": "Before breakfast",
                         "summary": "Magneto tags Xavier into an unreasonable simulation.",
@@ -12754,9 +12978,10 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                 headers=_FORM,
             )
             assert response.status == 302
-            assert dict(response.headers)["location"].startswith(
-                "/boards/danger-room/threads/metal-and-memory#post-"
-            )
+            response_location = urlsplit(dict(response.headers)["location"])
+            assert response_location.path == ("/boards/danger-room/threads/metal-and-memory")
+            assert response_location.fragment.startswith("post-")
+            assert parse_qs(response_location.query) == {"draft_ack": [key]}
             assert duplicate.status == 302
             assert dict(duplicate.headers)["location"] == dict(response.headers)["location"]
 
@@ -12784,6 +13009,7 @@ def test_start_thread_creates_opening_post_as_selected_character() -> None:
                     created_thread.id,
                 )
             } == {"magneto", "charles-xavier"}
+            assert created_thread.visibility == "public_preview"
 
             board = await client.get("/boards/danger-room")
             assert "Metal and Memory" in board.text
@@ -12835,9 +13061,10 @@ def test_start_thread_validation_error_discards_idempotency_reservation() -> Non
         assert invalid.status == 200
         assert "thread title is required" in invalid.text
         assert corrected.status == 302
-        assert dict(corrected.headers)["location"].startswith(
-            "/boards/danger-room/threads/retryable-scene-command#post-"
-        )
+        corrected_location = urlsplit(dict(corrected.headers)["location"])
+        assert corrected_location.path == ("/boards/danger-room/threads/retryable-scene-command")
+        assert corrected_location.fragment.startswith("post-")
+        assert parse_qs(corrected_location.query) == {"draft_ack": [key]}
         board = services.repo.get_board_by_slug(services.seed.community.id, "danger-room")
         thread = services.repo.get_thread_by_slug(
             services.seed.community.id,
@@ -13140,6 +13367,7 @@ def test_thread_starter_can_manage_scene_cast() -> None:
             assert "Scene management" in page.text
             assert "Tag cast" in page.text
             assert "Charles Xavier" in page.text
+            assert "Public preview — first 4 posts" in page.text
 
             response = await client.post(
                 "/boards/danger-room/threads/sentinel-drill",
@@ -13147,6 +13375,7 @@ def test_thread_starter_can_manage_scene_cast() -> None:
                     {
                         "intent": "scene",
                         "status": "paused",
+                        "visibility": "members",
                         "posting_mode": "freeform",
                         "location": "West lawn",
                         "timeline": "After inspection",
@@ -13160,6 +13389,7 @@ def test_thread_starter_can_manage_scene_cast() -> None:
 
             updated = repo.get_thread(community.id, thread.id)
             assert updated.status == "paused"
+            assert updated.visibility == "members"
             assert updated.location == "West lawn"
             assert updated.timeline == "After inspection"
             assert updated.summary == "Rogue calls a timeout before the simulation gets personal."

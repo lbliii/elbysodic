@@ -98,25 +98,32 @@ def test_shell_navigation_builds_inner_sections_from_shared_model() -> None:
     assert [(section.key, section.label) for section in member.sidebar_sections] == [
         ("desk", "On Your Desk")
     ]
-    assert [item.key for item in member.sidebar_sections[0].items[:4]] == [
+    assert [item.key for item in member.sidebar_sections[0].items] == [
         "queue",
         "inbox",
-        "roster",
-        "plotting",
     ]
     assert [(section.key, section.label) for section in staff.sidebar_sections] == [
         ("studio", "In Studio"),
     ]
     assert [item.key for item in staff.sidebar_sections[0].items] == [
-        "operations",
-        "launch",
-        "discovery",
-        "structure",
-        "intake",
-        "appearance",
-        "content",
+        "today",
+        "shape",
+        "open",
     ]
-    assert all(item.href.startswith("/studio") for item in staff.sidebar_sections[0].items)
+    assert [item.href for item in staff.sidebar_sections[0].items] == [
+        "/studio",
+        "/studio/structure",
+        "/studio/launch",
+    ]
+    wanted = shell_navigation(cast(Any, _viewer(is_admin=False)), "/wanted")
+    assert [item.key for item in wanted.sidebar_sections[0].items] == [
+        "casting",
+        "claims",
+    ]
+    shape = shell_navigation(cast(Any, _viewer(is_admin=True)), "/studio/appearance")
+    assert [item.key for item in shape.sidebar_sections[0].items if item.active] == ["shape"]
+    opened = shell_navigation(cast(Any, _viewer(is_admin=True)), "/studio/discovery")
+    assert [item.key for item in opened.sidebar_sections[0].items if item.active] == ["open"]
 
 
 def _viewer(*, is_admin: bool) -> SimpleNamespace:

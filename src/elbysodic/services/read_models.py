@@ -49,6 +49,7 @@ from elbysodic.services.timestamps import relative_timestamp_label
 
 type BoardThreadFilter = Literal["all", "unread", "attention", "mine", "pinned", "locked"]
 type ThreadStatus = Literal["open", "active", "paused", "complete", "private", "archived"]
+type ThreadVisibility = Literal["public_preview", "members", "private"]
 type PostingMode = Literal["freeform", "posting_order"]
 type MentionableKind = Literal["character", "writer"]
 type MentionableScope = Literal["all", "cast", "characters", "writers", "ooc"]
@@ -73,6 +74,11 @@ THREAD_STATUSES: tuple[ThreadStatus, ...] = (
     "complete",
     "private",
     "archived",
+)
+THREAD_VISIBILITIES: tuple[ThreadVisibility, ...] = (
+    "public_preview",
+    "members",
+    "private",
 )
 POSTING_MODES: tuple[PostingMode, ...] = ("freeform", "posting_order")
 APPLICATION_STATUS_LABELS: dict[str, str] = {
@@ -438,6 +444,49 @@ class PostView:
     updated_at_label: str
     updated_at_relative_label: str
     anchor: str
+
+
+@dataclass(frozen=True, slots=True)
+class PublicSceneFace:
+    slug: str
+    name: str
+    avatar_url: str | None
+    poster_url: str | None
+    poster_alt: str
+    tagline: str
+
+
+@dataclass(frozen=True, slots=True)
+class PublicScenePostPreview:
+    post_number: int
+    author: PublicSceneFace
+    rendered_body: object
+    created_at: str
+    created_at_label: str
+    created_at_relative_label: str
+    anchor: str
+    is_edited: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PublicScenePreview:
+    community: Community
+    board_slug: str
+    board_name: str
+    thread_slug: str
+    thread_title: str
+    thread_summary: str
+    thread_status: str
+    location: str
+    timeline: str
+    cast: tuple[PublicSceneFace, ...]
+    posts: tuple[PublicScenePostPreview, ...]
+    total_post_count: int
+    preview_limit: int = 4
+
+    @property
+    def has_more_posts(self) -> bool:
+        return self.total_post_count > len(self.posts)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1523,6 +1572,12 @@ class PlottingRoomMessageView:
         if self.author_character is not None:
             return f"/characters/{self.author_character.slug}"
         return f"/members/{self.author_membership.username}"
+
+
+@dataclass(frozen=True, slots=True)
+class PlottingRoomMessageBatch:
+    messages: list[PlottingRoomMessageView]
+    last_message_id: int | None
 
 
 @dataclass(frozen=True, slots=True)

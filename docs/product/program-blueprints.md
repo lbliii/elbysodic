@@ -145,8 +145,8 @@ wanted:
   - slug: returning-sibling-with-the-missing-deed
     title: Returning sibling with the missing deed
     type: relationship
-    related_material: current-event
-    summary: "A homecoming character tied to the time capsule letter."
+    related_material: premise
+    summary: "A homecoming character tied to the disputed property lines."
     body: |
       This role gives the town an emotional fuse: someone who left, came back
       at the worst possible moment, and may have the document everyone else is
@@ -256,77 +256,68 @@ files. Avoid raw database exceptions or stack traces in import preview flows.
 Hydration should always go through repository/service boundaries. It should not
 write ad hoc SQL from a page handler or importer.
 
-Hydration should be idempotent where practical:
+Studio apply hydrates only the director's current realm. The Blueprint program
+slug must match that realm before a transaction begins; Studio does not create
+or select a different community. Identical face, board, material, wanted, or
+theme slugs in another community are irrelevant to planning and apply.
 
-- Existing programs are looked up by slug.
-- Existing roles, starter faces, boards, materials, and wanted hooks are looked
-  up by slug inside the program community.
-- Theme tokens are stored as the community's default theme.
-- Materials and boards can be updated from the blueprint so seed and preview
-  content can improve over time.
-- Board media from blueprints can hydrate into the same board media fields used
-  by Studio, but only after passing alt-text and enum validation.
-- Wanted hooks are created if missing. A later edit workflow can decide how
-  aggressive updates should be for already-edited wanted ads.
+Every mode is explicit:
 
-Hydration should keep tenant scope explicit. Every created object belongs to
-one community, and every character or wanted hook has an intentional membership
-owner.
+- `create_only` creates missing faces, boards, materials, wanted hooks, and
+  themes, but stops on live content collisions. The current realm name and
+  matched Blueprint role must already agree with the packet.
+- `skip_existing` creates missing rows and preserves every matched live row.
+- `explicit_update` replaces reviewed current-realm rows. It may update only
+  faces and wanted hooks owned by the importing membership, and it refuses to
+  change the importing director's own capability grant.
+- `dry_run` repeats validation and diff planning without entering a write
+  transaction.
+
+Starter faces and wanted hooks are owned by the importing membership. The first
+starter face becomes that membership's default only when no default exists.
+Board media passes the same safe URL, alt-text, treatment, focal-point, and
+overlay validation as preview. Theme values remain allowlisted tokens. Material
+appearance variants are stored on each material as `chapter`, `dossier`,
+`noticeboard`, or `archive` rather than becoming raw layout input.
+
+Non-dry-run apply reserves a fingerprint-and-mode idempotency key, hydrates all
+accepted rows, records the staff audit event, and completes the command inside
+one repository transaction. A repeated accepted command is rejected with a
+stable result. A late failure rolls back hydrated rows and the command
+reservation; the failed attempt is then recorded without exposing exception or
+Blueprint source content.
+
+The reviewed fingerprint covers the packet, planned actions, and current values
+of every matched realm row the packet can affect. Apply recalculates that state
+after entering the write transaction and rejects the packet when a director has
+edited any reviewed row since preview. In `skip_existing` mode, a face owned by
+another writer remains untouched and is never selected as the importing
+director's default face or as the author of a newly created wanted hook.
 
 ## Import Flow
 
-Studio intake currently supports the first dry-run milestone:
+Studio intake implements a reviewed two-step flow:
 
-1. Paste a YAML Program Blueprint.
-2. Parse into typed blueprint objects.
-3. Validate and show a dry-run preview.
+1. Paste YAML and preview it. Parsing, validation, current-realm matching, and
+   the typed create/update/skip/blocked diff are read-only.
+2. Choose a collision mode and apply that exact fingerprint. The service
+   re-runs preview and permission checks inside the write transaction, then
+   commits hydration and audit together.
 
-The dry-run preview should summarize the resulting program in director language:
-"1 program, 3 starter faces, 5 scene hubs, 3 materials, 2 wanted hooks."
-When a hydration preflight is available, it should also summarize diff actions
-before listing rows, for example "Preflight: 5 create actions."
+The preview summarizes the packet in director language, such as “1 program, 3
+starter faces, 5 scene hubs, 3 materials, 2 wanted hooks,” then names each
+planned action. A mismatched realm slug renders a blocked row and no Apply
+control. Stale previews, unsupported modes, ordinary members, unsafe appearance
+input, and live collisions rejected by the selected mode do not hydrate rows.
 
-Do not make file import the first user-facing milestone. The first milestone is
-the shared contract: seed data and future YAML imports should describe the same
-kind of PBP hub. The current Studio preview intentionally stops before step 4:
-it validates and summarizes the packet, but does not create or update database
-state.
+After a successful apply, Studio renders the accepted mode and committed state
+instead of offering the same Apply control again. Directors preview again for a
+later reviewed change. The source of truth after apply is the normal
+community-scoped repository state, not the YAML packet or rendered diff.
 
-The planned apply flow is separate production work:
+File upload, background import jobs, public Blueprint marketplaces, and
+unreviewed realm generation remain out of scope.
 
-1. Build a typed hydration diff with create, update, skip, blocked, and warning
-   rows.
-2. Re-resolve that accepted diff through service and repository boundaries.
-3. Apply it inside one transaction after stale-preview and permission checks.
-
-Until that work lands, Program Blueprints are a validation and preview contract
-for Studio intake, plus the privileged seed-data source used by development
-fixtures.
-Studio may accept an apply-shaped POST only as a guarded no-op: it must re-run
-preview, reject stale fingerprints, enter the transaction boundary, and return
-that apply is still gated without writing rows. The readiness review shown with
-that gate is diff-aware: it summarizes create, update, skip, blocked, and
-warning counts, and it names skipped live face or wanted-hook collisions that
-need explicit update semantics before real apply can be enabled.
-Regression proof covers the current gate order: non-staff and stale-preview
-attempts do not enter a transaction, while accepted gated attempts enter the
-transaction boundary and roll back any probe writes when apply remains disabled.
-
-## Hydration Gate
-
-Keep apply disabled until the hydrator has an explicit service-layer plan for:
-
-- duplicate handling for existing program, role, face, board, material, wanted,
-  and theme slugs
-- ownership defaults for starter faces and director-authored wanted hooks
-- rollback behavior when a later object fails after earlier objects validate
-- tenant tests that prove every created object stays in the selected community
-- a dry-run diff that names create, update, and skipped objects before mutation
-- an apply readiness review that derives from the accepted diff instead of a
-  generic checklist
-
-Until those pieces exist, Studio intake should keep saying that preview is a
-hydration gate, not a launch button.
-
-The active hydration design snapshot lives in
-`plans/in-progress/program-blueprint-hydration-2026-05-02.md`.
+The implemented hydration design snapshot and its closure proof live in
+`plans/archive/2026/program-blueprint-hydration-2026-05-02.md`. GitHub is the
+live work DAG; see `docs/plan/issue-lifecycle.md`.

@@ -5,6 +5,7 @@
   {% from "_components/facets.html" import facet_pills %}
   {% from "_components/ui.html" import empty_policy_block %}
   {% from "_components/vocabulary.html" import room_header %}
+  {% from "studio/operations/_desk.html" import operations_desk %}
 {% end %}
 
 {% def studio_signal(label, value, href=None) %}
@@ -283,7 +284,7 @@
       <span aria-current="page">{{ current_studio_room.title }}</span>
     </nav>
     <div class="chirpui-cluster chirpui-cluster--sm">
-      <a class="chirpui-btn chirpui-btn--secondary" href="/studio/operations">Operations</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="/studio">Today</a>
       <a class="chirpui-btn chirpui-btn--secondary" href="/c/{{ viewer.community.slug }}">Preview realm</a>
     </div>
   </div>
@@ -326,6 +327,7 @@
 
   {% if studio_room == "overview" %}
   <section class="elbysodic-studio-attention chirpui-stack chirpui-stack--md" aria-label="Director attention">
+    <p class="elbysodic-kicker">Today</p>
     {% call section_header("Needs attention") %}
     Reviews, conflicts, drafts, and opening work that are active now.
     {% end %}
@@ -336,23 +338,33 @@
       {% end %}
     </div>
     {% else %}
-    {{ empty_policy_block("No director queues need attention right now.", "Studio subrooms stay available in the shell when you need to edit structure, intake, appearance, or materials.", "Production calm") }}
+    {{ empty_policy_block("No director queues need attention right now.", "Today stays on this page. Shape and Open stay in the shell when you need to edit structure, intake, appearance, materials, or launch posture.", "Production calm") }}
     {% end %}
+    <p class="elbysodic-copy-section">
+      Continue in
+      <a class="chirpui-link" href="/studio/structure">Shape</a>
+      or
+      <a class="chirpui-link" href="/studio/launch">Open</a>
+      without putting those editors on Today.
+    </p>
   </section>
 
-  <section class="chirpui-stack chirpui-stack--md" aria-label="Studio rooms">
-    {% call section_header("Studio rooms") %}
-    Open the room for the work you are doing. The rest stays out of the way.
+  {% if operations %}
+  {{ operations_desk(operations) }}
+  {% end %}
+  {% end %}
+
+  {% if studio_room == "structure" %}
+  <section class="chirpui-stack chirpui-stack--md" aria-label="Shape">
+    {% call section_header("Shape") %}
+    Appearance, guidebook, and intake stay here as deep links, not inner-shell rooms.
     {% end %}
-    <div class="elbysodic-director-grid elbysodic-director-grid--rooms" aria-label="Studio room shortcuts">
-      {% for room in studio_rooms %}
+    <div class="elbysodic-director-grid elbysodic-director-grid--rooms" aria-label="Shape production rooms">
+      {% for room in shape_hub_rooms %}
       {{ studio_room_card(room) }}
       {% end %}
     </div>
   </section>
-  {% end %}
-
-  {% if studio_room == "structure" %}
   {% if studio.can_manage %}
   <section id="gateway-curation" class="elbysodic-studio-room chirpui-stack chirpui-stack--md" aria-labelledby="gateway-curation-heading">
   {{ room_header("Public home", "Home spotlight audit", "Review the first scene hubs, wanted hooks, and guidebook materials visitors see before they request access or make a first face.", "gateway-curation-heading") }}

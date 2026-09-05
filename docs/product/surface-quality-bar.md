@@ -166,8 +166,9 @@ Gateway components follow these rules:
   before a writer has a face here`.
 - Section rules belong in the component or service contract. Do not solve a
   repeated gateway problem with one-off page CSS or template branches.
-- Spacing uses Chirp-UI tokens or explicit local values already justified by
-  the pattern. Do not introduce undefined `--chirpui-*` custom properties.
+- Spacing uses Elbysodic theme tokens or explicit local values already
+  justified by the pattern. Do not introduce undefined `--chirpui-*`
+  custom properties (ADR 0002: drain existing aliases; do not add new ones).
 - Color can carry faction, claim, or lane meaning, but the card still needs
   breathing room, clear text hierarchy, and enough contrast in light and dark
   modes.

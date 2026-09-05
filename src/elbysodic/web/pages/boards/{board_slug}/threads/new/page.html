@@ -152,6 +152,24 @@
         </select>
       </div>
       <div>
+        <label class="chirpui-field__label" for="thread-visibility">Who can read</label>
+        {% if audience_locked %}
+        <input type="hidden" name="visibility" value="private">
+        <p class="elbysodic-copy-helper">Private scene — this location keeps every post inside the realm.</p>
+        {% else %}
+        <select id="thread-visibility" name="visibility" class="chirpui-field__input">
+          {% for item_visibility in thread_visibilities %}
+          {% if item_visibility != "private" %}
+          <option value="{{ item_visibility }}" {{ "selected" if item_visibility == visibility else "" }}>
+            {% if item_visibility == "public_preview" %}Public preview — first 4 posts{% elif item_visibility == "members" %}Realm members{% else %}Private scene{% end %}
+          </option>
+          {% end %}
+          {% end %}
+        </select>
+        <p class="elbysodic-copy-helper">Public preview lets signed-out visitors read only the first four posts.</p>
+        {% end %}
+      </div>
+      <div>
         <label class="chirpui-field__label" for="thread-posting-mode">Posting mode</label>
         <select id="thread-posting-mode" name="posting_mode" class="chirpui-field__input">
           {% for mode in posting_modes %}

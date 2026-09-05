@@ -57,9 +57,9 @@
   <section class="chirpui-stack chirpui-stack--md" aria-labelledby="program-blueprint-preview">
     <div>
       <p class="elbysodic-kicker">Program Blueprint</p>
-      <h2 id="program-blueprint-preview">Dry-run YAML intake</h2>
+      <h2 id="program-blueprint-preview">Reviewed YAML intake</h2>
       <p class="elbysodic-copy-section">
-        Paste a director-authored Program Blueprint to parse, validate, and preview the hub counts before hydration is designed.
+        Paste a director-authored Program Blueprint to validate its current-realm diff before choosing an explicit hydration mode.
       </p>
     </div>
     <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--md">
@@ -93,6 +93,11 @@
         {{ badge(blueprint_preview.board_media_count ~ " board media", variant="muted") }}
       </div>
       {% if blueprint_preview.blueprint %}
+      {% if blueprint_preview.applied %}
+      <p class="chirpui-alert chirpui-alert--success" role="status">
+        Blueprint applied in {{ blueprint_preview.apply_mode_label }} mode.
+      </p>
+      {% end %}
       <p class="elbysodic-copy-summary">
         {{ blueprint_preview.program_count }} program, {{ blueprint_preview.character_count }} starter faces,
         {{ blueprint_preview.board_count }} scene hubs, {{ blueprint_preview.material_count }} materials,
@@ -124,10 +129,15 @@
         {% end %}
       </div>
       {% else %}
+      {% if blueprint_preview.applied %}
+      <p class="elbysodic-copy-status">
+        Current-realm rows and the accepted audit event committed together. Preview again before another reviewed change.
+      </p>
+      {% else %}
       <div class="chirpui-stack chirpui-stack--xs">
-        <p class="elbysodic-copy-status">Hydration gate: nothing has been applied.</p>
+        <p class="elbysodic-copy-status">Hydration status: nothing has been applied from this preview.</p>
         <p class="elbysodic-copy-helper">
-          Apply needs a service-layer plan for duplicate handling, ownership defaults, rollback behavior, and tenant tests.
+          Choose how existing live realm rows should be handled. Every apply rechecks this preview fingerprint and runs inside one transaction.
         </p>
         {% if blueprint_apply_readiness.can_check_gate %}
         <form method="post" hx-boost="false" class="chirpui-stack chirpui-stack--xs">
@@ -137,16 +147,26 @@
           <textarea class="chirpui-field__input elbysodic-visually-hidden"
                     name="blueprint_yaml"
                     aria-label="Blueprint YAML for gated apply">{{ blueprint_yaml }}</textarea>
+          <label>
+            <span class="chirpui-field__label">Collision mode</span>
+            <select class="chirpui-field__input" name="apply_mode">
+              <option value="create_only">Create only — stop on live collisions</option>
+              <option value="skip_existing">Skip existing — preserve live rows</option>
+              <option value="explicit_update">Explicit update — replace reviewed current-realm rows</option>
+              <option value="dry_run">Dry run — write nothing</option>
+            </select>
+          </label>
           <p class="chirpui-field__label">Apply readiness review</p>
           <ul class="elbysodic-copy-list">
             {% for item in blueprint_apply_readiness.items %}
             <li>{{ item }}</li>
             {% end %}
           </ul>
-          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Check apply gate</button>
+          <button type="submit" class="chirpui-btn chirpui-btn--primary">Apply reviewed blueprint</button>
         </form>
         {% end %}
       </div>
+      {% end %}
       {% end %}
     </div>
     {% end %}

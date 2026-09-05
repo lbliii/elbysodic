@@ -1,6 +1,4 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/access.html" import product_identity %}
 {% end %}
 
@@ -8,16 +6,17 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="42rem") %}
-{% call stack(gap="lg") %}
+<div class="elbysodic-stack elbysodic-stack--lg">
   {{ product_identity() }}
-  {% call section_header("Log In") %}
-  Choose the account first; Elbysodic will resolve the current community membership and active face after that.
-  {% end %}
+  <div class="elbysodic-stack elbysodic-stack--sm">
+    <h1>Log In</h1>
+    <p class="elbysodic-copy-lead">
+      Choose the account first; Elbysodic will resolve the current community membership and active face after that.
+    </p>
+  </div>
 
-  {% call surface(variant="elevated") %}
-  <form method="post" class="chirpui-stack chirpui-stack--md" hx-boost="false">
-        {{ csrf_field() }}
+  <form method="post" class="elbysodic-stack elbysodic-stack--md" hx-boost="false">
+    {{ csrf_field() }}
     <input type="hidden" name="next" value="{{ next_url }}">
     {% if error %}
     <p class="elbysodic-form-error">{{ error }}</p>
@@ -30,26 +29,24 @@
       <span>Password</span>
       <input name="password" type="password" autocomplete="current-password" required>
     </label>
-    <div class="chirpui-cluster elbysodic-cluster--between">
+    <div class="elbysodic-cluster elbysodic-cluster--between">
       <p class="elbysodic-copy-helper">
         {% if show_demo_login_hint %}
         Invite/demo accounts use password: <code>password</code>.
         {% else %}
         Already have an account? Use it before requesting realm access so directors can review the linked account request.
         {% end %}
-        <a class="chirpui-link" href="/request-access">Request access</a>.
+        <a href="/request-access">Request access</a>.
       </p>
-      <button class="chirpui-btn chirpui-btn--primary" type="submit">Log in</button>
+      <button class="elbysodic-btn elbysodic-btn--primary" type="submit">Log in</button>
     </div>
     <p id="passkey-login-error" class="elbysodic-form-error" hidden></p>
-    <button class="chirpui-btn" type="button" id="passkey-login" hidden>
+    <button class="elbysodic-btn" type="button" id="passkey-login" hidden>
       Sign in with a passkey
     </button>
   </form>
-  {% end %}
-{% end %}
-{% end %}
-{% end %}
+</div>
+{% endblock %}
 </div>
 {% endblock %}
 {% endblock %}

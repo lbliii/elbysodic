@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 
-CURRENT_SCHEMA_VERSION = 24
+CURRENT_SCHEMA_VERSION = 26
 BASELINE_MIGRATION_NAME = "baseline-current-schema"
 
 
@@ -1531,6 +1531,31 @@ def _add_role_capabilities_and_staff_audit_events(connection: sqlite3.Connection
         )
 
 
+def _add_material_presentation_variant(connection: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(materials)")}
+    if "presentation_variant" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE materials
+            ADD COLUMN presentation_variant TEXT NOT NULL DEFAULT 'chapter'
+                CHECK (presentation_variant IN ('chapter', 'dossier', 'noticeboard', 'archive'))
+            """
+        )
+
+
+def _add_thread_visibility(connection: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(threads)")}
+    if "visibility" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE threads
+            ADD COLUMN visibility TEXT NOT NULL DEFAULT 'members'
+                CHECK (visibility IN ('public_preview', 'members', 'private'))
+            """
+        )
+    connection.execute("UPDATE threads SET visibility = 'private' WHERE status = 'private'")
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "plotting-room-planning-fields", _add_plotting_room_planning_fields),
     Migration(3, "plotting-room-messages", _add_plotting_room_messages),
@@ -1567,6 +1592,8 @@ MIGRATIONS: tuple[Migration, ...] = (
         "role-capabilities-and-staff-audit-events",
         _add_role_capabilities_and_staff_audit_events,
     ),
+    Migration(25, "material-presentation-variant", _add_material_presentation_variant),
+    Migration(26, "thread-visibility", _add_thread_visibility),
 )
 
 

@@ -63,9 +63,9 @@ The accepted primary shell model is:
 |---|---|---|---|---|
 | World Home | `home` | Public-safe | `Start Here`, `Guidebook`, `Community`, current event/material, applicant entry points | Realm pulse, premise, orientation, public/request-access posture |
 | Locations | `locations` | Public-safe when locations are public | Location tree, active scenes here, related wants, current place context | Start scene here, local filters, watch/read, place management when authorized |
-| Wanted | `wanted` | Public/member-safe with capability-gated actions | Wanted board, Casting, Claims, Reserves, related wants, hook handoffs | Raise interest, reserve, watch, start plotting, ready for scene |
-| Desk | `desk` | Signed-in community members only | Queue, Inbox, Roster, Plotting, Applications, Discovery; applicant-state rows when relevant | Reply, mark caught up, watch, continue to next attention item |
-| Studio | `studio` | Staff/director only | Operations, Launch, Discovery profile, Structure, Intake, Appearance, Content | Save, publish, review, request revision, staff-only object actions |
+| Wanted | `wanted` | Public/member-safe with capability-gated actions | Wanted board, Casting, Claims, related wants, hook handoffs | Raise interest, reserve, watch, start plotting, ready for scene |
+| Desk | `desk` | Signed-in community members only | Queue, Inbox; Plotting/Applications/Discovery only as Desk-home work when counts are non-zero | Reply, mark caught up, watch, continue to next attention item |
+| Studio | `studio` | Staff/director only | Today, Shape, Open | Save, publish, review, request revision, staff-only object actions |
 
 `Network` stays out of the default rail until cross-realm network behavior is a
 real workflow.
@@ -147,19 +147,18 @@ current realm.
 
 Writer Desk is the operating room that cashes out the shell promise. It should
 start with "what needs me," then let the writer narrow by face lane or move to
-work lanes: Queue, Inbox, Roster, Plotting, Applications, Discovery, and
-Casting/Wanted. Desk should feel like a writing cockpit, not a generic tool
-directory.
+work lanes: Queue and Inbox. Plotting, Applications, Discovery, and roster
+work appear on Desk home only when those queues have active items. Desk should
+feel like a writing cockpit, not a generic tool directory.
 
 That means Desk links into other routes only when there is active work there.
 It should not permanently duplicate the sidebar as a shortcut panel, and it
 should hide resolved or zero-count work unless the absence itself is useful
 confirmation.
 
-Studio follows the same rule for directors. Studio home should answer "what
-needs a director now?" and hand off to scoped Studio routes. It should not be
-both the launchpad and every editor at once; dense editors belong in scoped
-production rooms.
+Studio follows the same rule for directors. Today answers "what needs a
+director now?" Shape and Open are the two non-daily jobs. Dense editors belong
+on Shape or Open deep links, not as inner-shell siblings.
 
 Plotting is also the current backstage pulse for wanted-hook handoffs. Keep the
 route as `/plotting` until a broader backstage primitive is proven. The page can
@@ -227,10 +226,13 @@ On Your Desk
   Desk home (only away from /desk)
   Queue
   Inbox
-  Roster
-  Plotting
-  Applications
-  Discovery
+```
+
+```text
+In Studio
+  Today
+  Shape
+  Open
 ```
 
 ```text
@@ -238,7 +240,6 @@ In Wanted
   Wanted board (only away from /wanted)
   Casting desk
   Claims
-  Reserves
   Related Wants
 ```
 
@@ -290,8 +291,13 @@ Recommended route-active mapping:
 - `/wanted`, `/wanted/*`, `/casting`, and `/claims`: outer `Wanted`; inner
   `Wanted`.
 - `/desk`, `/my/threads`, `/notifications`, `/characters`, `/applications`,
-  `/interactions`, `/plotting`, and `/discover`: outer `Desk` by default.
-- `/studio` and `/studio/*`: outer `Studio`; inner Studio route.
+  `/interactions`, `/plotting`, and `/discover`: outer `Desk` by default;
+  inner `Queue` or `Inbox` when those routes are the work, otherwise Desk home.
+- `/studio` and `/studio/operations`: outer `Studio`; inner `Today`.
+- `/studio/structure`, `/studio/appearance`, `/studio/content`,
+  `/studio/intake`, and `/studio/boards/*`: outer `Studio`; inner `Shape`.
+- `/studio/launch`, `/studio/discovery`, and `/studio/access-requests/*`:
+  outer `Studio`; inner `Open`.
 - `/network`: future global `Network`, outside the default community rail.
 
 If `/plotting` or `/discover` are reached from a wanted hook, the page may show
@@ -313,8 +319,8 @@ The product objects do not divide cleanly:
 Use language and grouping instead:
 
 - Story-facing: `World Home`, `Locations`, `Guidebook`, `Wanted`.
-- Writer work: `Queue`, `Roster`, `Plotting`, `Applications`, `Discovery`.
-- Director work: `Studio`, `Navigation`, `Board map`, `Production`.
+- Writer work: `Queue`, `Inbox`.
+- Director work: `Today`, `Shape`, `Open`.
 
 Active face is a lens and identity state, not a navigation mode. It may appear
 as a compact sidebar context module where relevant, but it must not hide or

@@ -116,9 +116,11 @@ Scoped pages own durable workflows:
 - `/applications` owns draft, submitted, and revision-requested intake.
   Accepted applications become character pages.
 - `/plotting` owns planning rooms and interest handoffs.
-- `/studio/operations` owns daily director production work.
-- `/studio/launch` owns launch readiness and setup sequencing.
-- `/studio/discovery` owns the Writer Network listing and public fit signals.
+- `/studio` owns Today: attention lanes plus the daily operations console.
+  `/studio/operations` redirects to `/studio`.
+- `/studio/launch` owns Open: launch readiness, invitations, access requests,
+  and the discovery-profile entry.
+- `/studio/discovery` remains the discovery-profile editor, reached from Open.
 - `/studio/structure` owns the audit view for Public Home Spotlight, board
   map, sidebar language, and navigation health. Object-local surfaces own the
   first edit path: realm home controls manage the home spotlight, and board or
@@ -805,7 +807,7 @@ These tokens map to CSS classes and design tokens, not user-authored CSS.
 Post-level atmosphere should attach to the post surface/container when possible;
 the semantic article should remain focused on identity, metadata, and prose.
 This keeps decorative borders and washes outside the reading grid and lets
-Chirp-UI surface padding protect the text from tight custom frames.
+Elbysodic surface padding protect the text from tight custom frames.
 
 ## Size Strategy
 

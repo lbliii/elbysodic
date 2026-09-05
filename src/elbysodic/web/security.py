@@ -272,9 +272,21 @@ def _is_public_request(request: Request) -> bool:
         return request.method in {"GET", "HEAD"} and (
             tenant_local_path in PUBLIC_TENANT_GET_PATHS
             or any(tenant_local_path.startswith(prefix) for prefix in PUBLIC_TENANT_GET_PREFIXES)
+            or _is_public_thread_preview_path(tenant_local_path)
         )
     return request.path in PUBLIC_PATHS or any(
         request.path.startswith(prefix) for prefix in PUBLIC_PREFIXES
+    )
+
+
+def _is_public_thread_preview_path(path: str) -> bool:
+    parts = path.strip("/").split("/")
+    return (
+        len(parts) == 4
+        and parts[0] == "boards"
+        and bool(parts[1])
+        and parts[2] == "threads"
+        and bool(parts[3])
     )
 
 

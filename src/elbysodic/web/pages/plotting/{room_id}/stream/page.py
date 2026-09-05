@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -45,6 +44,7 @@ def get(request: Request, room_id: str) -> EventStream:
         try:
             room = stream_services.read_plotting_room(parsed_room_id)
             seen_message_ids = {item.message.id for item in room.messages}
+            poll_after_id = max(seen_message_ids) if seen_message_ids else None
             queue = await stream_services.subscribe_plotting_room_live(parsed_room_id)
             plotting_stream_opened()
             stream_opened = True
@@ -52,28 +52,33 @@ def get(request: Request, room_id: str) -> EventStream:
                 get_task = asyncio.create_task(queue.get())
                 drain_task = asyncio.create_task(wait_for_worker_draining())
                 poll_task = asyncio.create_task(asyncio.sleep(_PLOTTING_POLL_INTERVAL))
-                done, pending = await asyncio.wait(
-                    {get_task, drain_task, poll_task},
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-                for task in pending:
-                    task.cancel()
-                    with contextlib.suppress(asyncio.CancelledError):
-                        await task
+                tasks = {get_task, drain_task, poll_task}
+                try:
+                    done, _pending = await asyncio.wait(
+                        tasks,
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                finally:
+                    for task in tasks:
+                        task.cancel()
+                    await asyncio.gather(*tasks, return_exceptions=True)
                 if get_task in done:
                     event = get_task.result()
                     if event.kind == "ready":
                         yield SSEEvent(event="plotting-room-ready", data="connected")
-                    elif (
-                        event.kind == "message"
-                        and event.message is not None
-                        and event.message.message.id not in seen_message_ids
-                    ):
-                        seen_message_ids.add(event.message.message.id)
-                        yield _message_fragment(request, event.message)
-                if poll_task in done:
+                    elif event.kind != "message":
+                        continue
+                if poll_task in done or (get_task in done and event.kind == "message"):
+                    try:
+                        batch = stream_services.read_plotting_room_messages(
+                            parsed_room_id,
+                            after_id=poll_after_id,
+                        )
+                    except LookupError, PermissionError:
+                        break
+                    poll_after_id = batch.last_message_id
                     for message in _unseen_messages(
-                        stream_services.read_plotting_room(parsed_room_id).messages,
+                        batch.messages,
                         seen_message_ids,
                     ):
                         yield _message_fragment(request, message)
@@ -82,17 +87,14 @@ def get(request: Request, room_id: str) -> EventStream:
                         queued = queue.get_nowait()
                         if queued.kind == "ready":
                             yield SSEEvent(event="plotting-room-ready", data="connected")
-                        elif (
-                            queued.kind == "message"
-                            and queued.message is not None
-                            and queued.message.message.id not in seen_message_ids
-                        ):
-                            seen_message_ids.add(queued.message.message.id)
-                            yield _message_fragment(request, queued.message)
-                    for message in _unseen_messages(
-                        stream_services.read_plotting_room(parsed_room_id).messages,
-                        seen_message_ids,
-                    ):
+                    try:
+                        batch = stream_services.read_plotting_room_messages(
+                            parsed_room_id,
+                            after_id=poll_after_id,
+                        )
+                    except LookupError, PermissionError:
+                        break
+                    for message in _unseen_messages(batch.messages, seen_message_ids):
                         yield _message_fragment(request, message)
                     break
         finally:

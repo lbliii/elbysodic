@@ -10,6 +10,7 @@ from chirp.http.request import Request
 from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
+from elbysodic.web.commands import draft_ack_path, idempotency_key
 from elbysodic.web.composer import composer_config
 from elbysodic.web.state import get_services
 from elbysodic.web.tenant import request_scoped_path
@@ -18,6 +19,7 @@ from elbysodic.web.tenant import request_scoped_path
 @dataclass(frozen=True, slots=True)
 class PostEditForm:
     body: str
+    draft_token: str
 
 
 def get(request: Request, board_slug: str, thread_slug: str, post_id: str) -> Page:
@@ -39,6 +41,7 @@ async def post(
     parsed_post_number = _parse_post_number(post_id)
     form = await request.form()
     body = str(form.get("body") or "")
+    draft_token = str(form.get("draft_token") or "")
 
     try:
         post_view = get_services(request).update_post(
@@ -55,13 +58,19 @@ async def post(
             post_id,
             error=str(exc),
             body=body,
+            draft_token=draft_token,
         )
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPError(status=403, detail=str(exc)) from exc
 
-    return Redirect(f"/boards/{board_slug}/threads/{thread_slug}#post-{post_view.post_number}")
+    return Redirect(
+        draft_ack_path(
+            f"/boards/{board_slug}/threads/{thread_slug}#post-{post_view.post_number}",
+            draft_token,
+        )
+    )
 
 
 def _render_form(
@@ -72,6 +81,7 @@ def _render_form(
     *,
     error: str | None = None,
     body: str | None = None,
+    draft_token: str | None = None,
 ) -> Page:
     parsed_post_number = _parse_post_number(post_id)
     services = get_services(request)
@@ -101,6 +111,7 @@ def _render_form(
             mention_endpoint=request_scoped_path(request, "/mentionables/search"),
         ),
         composer_config_id=config_id,
+        draft_receipt=draft_token or idempotency_key(),
     )
 
 

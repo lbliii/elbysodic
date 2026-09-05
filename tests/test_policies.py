@@ -243,6 +243,7 @@ def test_private_board_and_locked_thread_use_named_capabilities(
         slug="locked-scene",
         title="Locked Scene",
         status="active",
+        visibility="members",
         location="",
         timeline="",
         summary="",

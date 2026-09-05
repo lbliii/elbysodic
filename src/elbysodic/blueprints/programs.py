@@ -14,6 +14,7 @@ from elbysodic.domain.boards import (
     BOARD_IMAGE_TREATMENTS,
     BOARD_KINDS,
 )
+from elbysodic.domain.capabilities import STAFF_CAPABILITIES
 from elbysodic.domain.vocabulary import MATERIAL_TYPES, WANTED_TYPES
 
 THEME_FONT_KEYS: frozenset[str] = frozenset({"system", "serif", "condensed", "mono"})
@@ -233,6 +234,12 @@ class ProgramBlueprint:
     theme: BlueprintTheme | None = None
     appearance: BlueprintAppearance | None = None
 
+    @property
+    def role_capabilities(self) -> frozenset[str]:
+        """Translate the legacy Blueprint admin flag into named role grants."""
+
+        return STAFF_CAPABILITIES if self.is_admin else frozenset()
+
 
 class BlueprintValidationError(ValueError):
     """Raised when a Program Blueprint cannot be hydrated safely."""
@@ -243,6 +250,7 @@ class BlueprintValidationError(ValueError):
 
 
 BlueprintDiffAction = Literal["create", "update", "skip", "blocked", "warning"]
+BlueprintApplyMode = Literal["create_only", "skip_existing", "explicit_update", "dry_run"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -260,10 +268,21 @@ class ProgramBlueprintPreview:
     errors: tuple[str, ...]
     diff_rows: tuple[BlueprintDiffRow, ...] = ()
     preview_fingerprint: str = ""
+    apply_mode: BlueprintApplyMode = "dry_run"
+    applied: bool = False
 
     @property
     def is_valid(self) -> bool:
         return self.blueprint is not None and not self.errors
+
+    @property
+    def apply_mode_label(self) -> str:
+        return {
+            "create_only": "create only",
+            "skip_existing": "skip existing",
+            "explicit_update": "explicit update",
+            "dry_run": "dry run",
+        }[self.apply_mode]
 
     @property
     def program_count(self) -> int:

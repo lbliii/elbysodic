@@ -72,6 +72,25 @@
     --elbysodic-ratio-poster: 2 / 3;
     --elbysodic-ratio-tall: 1 / 2;
 
+    /* Elbysodic primitive tokens (#301). Public API for btn/field/cluster/stack. */
+    --elbysodic-space-2xs: 0.25rem;
+    --elbysodic-space-xs: 0.5rem;
+    --elbysodic-space-sm: 0.75rem;
+    --elbysodic-space: 1rem;
+    --elbysodic-space-md: 1.25rem;
+    --elbysodic-space-lg: 1.5rem;
+    --elbysodic-space-xl: 2rem;
+    --elbysodic-stack-gap: var(--elbysodic-space);
+    --elbysodic-cluster-gap: var(--elbysodic-space-xs);
+    --elbysodic-radius: 0.5rem;
+    --elbysodic-radius-sm: 0.25rem;
+    --elbysodic-font-xs: 0.75rem;
+    --elbysodic-font-sm: 0.875rem;
+    --elbysodic-control-padding-block: 0.5rem;
+    --elbysodic-control-padding-inline: 0.875rem;
+    --elbysodic-focus-outline: 2px solid var(--elbysodic-identity-dye);
+    --elbysodic-focus-offset: 2px;
+
     --chirpui-bg: var(--elbysodic-key-dark);
     --chirpui-bg-subtle: var(--elbysodic-key-dark-1);
     --chirpui-surface: var(--elbysodic-key-dark-2);

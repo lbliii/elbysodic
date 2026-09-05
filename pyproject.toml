@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "elbysodic"
 version = "0.1.0"
-description = "A modern, ergonomic play-by-post community forum built on Chirp and Chirp-UI"
+description = "A modern, ergonomic play-by-post community forum built on Chirp"
 readme = "README.md"
 requires-python = ">=3.14"
 license = "MIT"

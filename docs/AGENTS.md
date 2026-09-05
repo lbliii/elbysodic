@@ -15,6 +15,9 @@ Related docs:
 - `docs/product/ai-studio.md`
 - `docs/product/user-personas-panel.md`
 - `plans/README.md`
+- `docs/plan/issue-lifecycle.md`
+- `docs/adr/0001-issue-lifecycle.md`
+- `docs/adr/0002-chirp-ui-exit.md`
 
 ## Point Of View
 
@@ -57,7 +60,8 @@ and tests.
   assistant behavior.
 - README: setup, development, deployment, current slice, and public commands
   remain accurate.
-- Plans: durable roadmaps link to active contracts without becoming docs.
+- Plans: `plans/` is a live index into GitHub issues, not executable specs
+  or a second tracker. See `docs/plan/issue-lifecycle.md`.
 - Research: market, user, and ecosystem signal stays in `research/` and must be
   synthesized through Elbysodic's product standards before it becomes doctrine.
 - Tests/checks: run relevant tests when docs make behavioral claims; run Ruff

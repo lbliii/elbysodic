@@ -32,9 +32,14 @@ permission. Membership creation remains invitation-backed.
 ### Public Realm Preview
 
 Public previews sell the realm: premise, tone, places, wanted hooks, guidebook
-paths, application material, public activity, and access posture. They do not
-show launch blockers, staff notes, invite links, private queues, unread counts,
-Desk routes, or active-face controls.
+paths, application material, public activity, and access posture. A writer or
+director can mark an eligible scene `Public preview`, which lets signed-out
+visitors read its first four posts before a request-access/login boundary.
+Member-only remains the default, private locations cannot publish previews, and
+public previews never show writer ownership, read/watch state, reply controls,
+launch blockers, staff notes, invite links, private queues, unread counts, Desk
+routes, or active-face controls. Scene preview pages emit `noindex, nofollow` so
+opening a sample does not silently opt the writers into search indexing.
 
 ### Account Visitor Shell Posture
 
