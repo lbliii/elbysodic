@@ -31,7 +31,7 @@ help:
 	@echo "  make kida-check      - Run kida static template validation"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
-	@echo "  make check           - Run lint, format-check, ty, app-check, kida-check, and contract-baseline-check"
+	@echo "  make check           - Run lint, format, types, strict app, Kida, contract baseline, and client tests"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
 	@echo "  make changelog       - Compile changelog.d fragments into CHANGELOG.md"
 	@echo "  make changelog-draft - Preview changelog from fragments"

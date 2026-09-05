@@ -78,10 +78,10 @@ The development app currently includes:
   notification-backed writing/workflow handoffs.
 - Character profile hubs with identity, plotter hooks, tracker context, and
   recent posts.
-- Studio production surfaces for operations, boards, Blueprint intake dry-run,
+- Studio production surfaces for operations, boards, Blueprint intake,
   and board-running controls.
-- Safe Program Blueprint parsing/validation and dry-run preview. Apply/hydrate
-  remains intentionally gated behind a future diff and transaction contract.
+- Safe Program Blueprint parsing, validation, and dry-run preview, followed by
+  transactional apply with stale-preview checks and idempotent replay.
 
 Gated production-readiness work is tracked on GitHub saga
 [#141](https://github.com/lbliii/elbysodic/issues/141) and the live index in
@@ -310,8 +310,8 @@ Before handing off a branch, run the developer gate:
 elbysodic dev check
 ```
 
-Use `--quick` when iterating on the CLI itself; it keeps the lint/type/app
-checks but narrows pytest to the CLI tests.
+Use `--quick` when iterating on the CLI itself; it keeps all static and client
+checks, narrows pytest to the CLI tests, and skips diff coverage.
 
 In this workspace, the direct app form is also useful:
 
@@ -325,12 +325,9 @@ registry so Railway can build the app. Local-only uv config belongs in ignored
 `uv.toml`, and committed lockfile updates should be regenerated without local
 editable path sources.
 
-The checked-in lockfile tracks the current stack intake: Chirp 0.8, Chirp-UI
-0.10, Kida 0.9, and Pounce 0.8. With Chirp 0.8 and Chirp-UI 0.10, the strict
-app check may report a false `chirpui-context-rail` OOB target warning from a
-Chirp-UI helper macro; Chirp upstream already skips library-owned templates for
-that rule, so the warning should self-resolve in the next Chirp release. When
-moving templates inside a folder, prefer Kida's `./` relative imports for sibling
+The checked-in lockfile tracks Chirp 0.10, Chirp-UI 0.11, Kida 0.11, and
+Pounce 0.9.1. The strict app check treats warnings as failures. When moving
+templates inside a folder, prefer Kida's `./` relative imports for sibling
 `_components` references so local component groups stay refactor-safe.
 
 ## Deploying To Railway
