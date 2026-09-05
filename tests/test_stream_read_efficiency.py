@@ -241,3 +241,74 @@ def test_cancelled_plotting_stream_awaits_every_child_task() -> None:
         assert pending == []
 
     asyncio.run(exercise())
+
+
+def test_local_queue_message_rechecks_access_before_rendering() -> None:
+    source = STREAM_PAGE.read_text()
+    function = next(
+        node
+        for node in ast.parse(source).body
+        if isinstance(node, ast.FunctionDef) and node.name == "get"
+    )
+
+    class Services:
+        def __init__(self) -> None:
+            self.authorized = True
+            self.queue: asyncio.Queue[object] = asyncio.Queue()
+
+        def read_plotting_room(self, _room_id: int):
+            return types.SimpleNamespace(messages=[])
+
+        def read_plotting_room_messages(self, _room_id: int, *, after_id: int | None):
+            if not self.authorized:
+                raise PermissionError("participant access revoked")
+            return types.SimpleNamespace(messages=[], last_message_id=after_id)
+
+        async def subscribe_plotting_room_live(self, _room_id: int) -> asyncio.Queue:
+            await self.queue.put(types.SimpleNamespace(kind="ready", message=None))
+            return self.queue
+
+        async def unsubscribe_plotting_room_live(self, *_args: object) -> None:
+            return None
+
+    async def exercise() -> None:
+        drain_event = asyncio.Event()
+        services = Services()
+        namespace: dict[str, Any] = {
+            "asyncio": asyncio,
+            "get_services": lambda *_args: services,
+            "_parse_room_id": int,
+            "plotting_stream_opened": lambda: None,
+            "plotting_stream_closed": lambda: None,
+            "is_worker_draining": lambda: False,
+            "wait_for_worker_draining": drain_event.wait,
+            "_PLOTTING_POLL_INTERVAL": 30.0,
+            "close_request_services": lambda _request: None,
+            "EventStream": lambda generator: generator,
+            "SSEEvent": lambda **values: types.SimpleNamespace(**values),
+            "_message_fragment": lambda *_args: "private message",
+            "_unseen_messages": lambda messages, _seen: messages,
+        }
+        exec(  # noqa: S102 -- isolate the checked route generator with controlled fakes
+            "from __future__ import annotations\n" + ast.unparse(function),
+            namespace,
+        )
+        get_stream = cast(
+            Callable[[object, str], AsyncIterator[Any]],
+            namespace["get"],
+        )
+        stream = get_stream(object(), "1")
+        ready = await anext(stream)
+        assert ready.event == "plotting-room-ready"
+
+        services.authorized = False
+        await services.queue.put(
+            types.SimpleNamespace(
+                kind="message",
+                message=types.SimpleNamespace(message=types.SimpleNamespace(id=1)),
+            )
+        )
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+
+    asyncio.run(exercise())
