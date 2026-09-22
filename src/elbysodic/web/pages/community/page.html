@@ -1,5 +1,4 @@
 {% imports %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
   {% from "_components/boards.html" import community_board_row %}
   {% from "_components/thread_summary.html" import activity_log_item %}
 {% end %}
@@ -8,8 +7,7 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="68rem") %}
-{% call stack(gap="xl") %}
+<div class="elbysodic-community-page elbysodic-stack elbysodic-stack--xl">
   {% set has_community_media = viewer.community.world_hero_image_url %}
   <section class="elbysodic-world-hero elbysodic-world-hero--poster elbysodic-world-hero--height-compact{{ " elbysodic-world-hero--with-media" if has_community_media else "" }}">
     {% if has_community_media %}
@@ -35,9 +33,10 @@
     </div>
   </section>
 
-  {% call section_header("Community table") %}
-  Operational boards use compact rows so they feel useful rather than cinematic.
-  {% end %}
+  <header class="elbysodic-page-section__header">
+    <h2>Community table</h2>
+    <p>Operational boards use compact rows so they feel useful rather than cinematic.</p>
+  </header>
 
   <div class="elbysodic-community-table">
     {% for summary in community_boards %}
@@ -45,17 +44,17 @@
     {% end %}
   </div>
 
-  {% call section_header("Recent community pulse") %}
-  A lightweight log of visible publishing activity.
-  {% end %}
+  <header class="elbysodic-page-section__header">
+    <h2>Recent community pulse</h2>
+    <p>A lightweight log of visible publishing activity.</p>
+  </header>
 
   <div class="elbysodic-activity-log">
     {% for item in activity %}
     {{ activity_log_item(item.board, item.thread, item.post, item.snippet, "new" if item.is_unread else "", "info") }}
     {% end %}
   </div>
-{% end %}
-{% end %}
+</div>
 {% end %}
 {% endblock %}
 </div>
