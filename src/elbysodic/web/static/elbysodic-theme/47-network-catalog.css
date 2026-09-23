@@ -649,6 +649,23 @@
     inline-size: fit-content;
 }
 
+.elbysodic-network-card__lead-action {
+    align-items: center;
+    color: var(--elbysodic-network-accent);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 800;
+    gap: 0.3rem;
+    margin-block-start: 0.65rem;
+    text-decoration: none;
+    text-underline-offset: 0.2em;
+}
+
+.elbysodic-network-card__lead-action:hover,
+.elbysodic-network-card__lead-action:focus-visible {
+    text-decoration: underline;
+}
+
 .elbysodic-network-card__joining p {
     margin-block: 0.45rem 0;
 }

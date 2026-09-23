@@ -55,31 +55,33 @@ A realm ready for scenes, casting, and writer movement.
         </p>
         <h2>{{ program.community.name }}</h2>
       </div>
+      {% if viewer and viewer.community.id == program.community.id %}
       <div class="elbysodic-network-card__badges">
-        {% if viewer and viewer.community.id == program.community.id %}
         {{ badge("current membership", variant="success") }}
-        {% end %}
-        <span {% if preview %}data-elbysodic-preview-access{% end %}>{{ badge(program.access_posture_label, variant="info") }}</span>
-        {% if program.discovery_profile and program.discovery_profile.activity_pace %}
-        <span {% if preview %}data-elbysodic-preview-pace{% end %}>{{ badge(program.discovery_profile.activity_pace, variant="info") }}</span>
-        {% end %}
       </div>
+      {% end %}
     </header>
     <p class="elbysodic-copy-summary" {% if preview %}data-elbysodic-preview-summary{% end %}>{{ program_summary(program) }}</p>
+    {% if program.current_event %}
+    <a class="elbysodic-network-card__lead-action" href="{{ program.current_event_href }}">Read chapter <span aria-hidden="true">→</span></a>
+    {% elif program.premise %}
+    <a class="elbysodic-network-card__lead-action" href="{{ program.premise_href }}">Read premise <span aria-hidden="true">→</span></a>
+    {% else %}
+    <a class="elbysodic-network-card__lead-action" href="{{ program.entry_href }}">Explore realm <span aria-hidden="true">→</span></a>
+    {% end %}
     <p class="elbysodic-copy-meta">{{ program.activity_freshness_label }}</p>
     <details class="elbysodic-network-card__joining">
       <summary>Joining details</summary>
-      <p class="elbysodic-copy-meta">
-        {{ program.application_posture_label }} · {{ program.claims_posture_label }}
-      </p>
+      <div class="elbysodic-network-card__joining-meta">
+        <p>{{ badge(program.access_posture_label, variant="info") }}
+        {% if program.discovery_profile and program.discovery_profile.activity_pace %}
+          {{ badge(program.discovery_profile.activity_pace, variant="info") }}
+        {% end %}</p>
+        <p class="elbysodic-copy-meta">{{ program.application_posture_label }} · {{ program.claims_posture_label }}</p>
+      </div>
     </details>
   </div>
   <div class="elbysodic-network-card__actions">
-    {% if program.current_event %}
-    {{ compact_link_action(program.current_event_href, "Read chapter", "bolt") }}
-    {% elif program.premise %}
-    {{ compact_link_action(program.premise_href, "Premise", "list") }}
-    {% end %}
     {% if program.open_wanted_count %}
     {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "star") }}
     {% end %}
