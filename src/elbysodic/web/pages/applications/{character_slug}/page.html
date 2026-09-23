@@ -88,7 +88,7 @@
 
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Applicant Notes") %}
-    The public-facing shape staff should use to review this face.
+    The application notes the writer shared with staff.
     {% end %}
     {% call surface(variant="elevated") %}
     {% if room.can_edit_application %}
@@ -190,7 +190,7 @@
   {% if room.application.revision_notes %}
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Revision Notes") %}
-    Staff notes visible to the applicant.
+    Changes staff are asking you to make.
     {% end %}
     {% call surface(variant="elevated") %}
     <p class="elbysodic-copy-summary">{{ room.application.revision_notes }}</p>
@@ -226,7 +226,7 @@
   {% if room.can_review %}
   <section class="chirpui-stack chirpui-stack--md">
     {% call section_header("Director Review") %}
-    Private production notes and revision checklist for this application.
+    The revision note is visible to the applicant. Staff notes and checklist are staff-only.
     {% end %}
     {% call surface(variant="elevated") %}
     {% set revision_note_value = room.application.revision_notes or room.claim_conflict_revision_note %}
@@ -262,50 +262,56 @@
     <form class="chirpui-stack chirpui-stack--md"
           method="post"
           hx-boost="false"
-          data-elbysodic-submit-label="Saving review...">
+          data-elbysodic-submit-label="Processing review...">
         {{ csrf_field() }}
-      <input type="hidden" name="_action" value="save_review">
       <label>
         <span class="chirpui-field__label">Revision note for applicant</span>
         <textarea class="chirpui-field__input"
                   name="revision_notes"
                   rows="4">{{ revision_note_value }}</textarea>
+        <span class="elbysodic-field-hint">Visible to the applicant after you request revisions.</span>
       </label>
       <label>
-        <span class="chirpui-field__label">Staff notes</span>
+        <span class="chirpui-field__label">Staff notes · staff-only</span>
         <textarea class="chirpui-field__input"
                   name="staff_notes"
                   rows="5">{{ room.application.staff_notes }}</textarea>
+        <span class="elbysodic-field-hint">Only staff can see these notes.</span>
       </label>
       <label>
-        <span class="chirpui-field__label">Checklist</span>
+        <span class="chirpui-field__label">Checklist · staff-only</span>
         <textarea class="chirpui-field__input"
                   name="checklist"
                   rows="5">{{ room.application.checklist }}</textarea>
+        <span class="elbysodic-field-hint">Only staff can see this checklist.</span>
       </label>
       <div class="chirpui-cluster elbysodic-cluster--end">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save review notes</button>
-      </div>
-    </form>
-    {% if room.character_view.character.application_status == "submitted" %}
-    <div class="chirpui-cluster elbysodic-cluster--end">
-      <form method="post" hx-boost="false" data-elbysodic-submit-label="Accepting face...">
-        {{ csrf_field() }}
-        <input type="hidden" name="_action" value="accept_application">
+        <button type="submit"
+                name="_action"
+                value="save_review"
+                class="chirpui-btn chirpui-btn--secondary">Save review notes</button>
+        {% if room.character_view.character.application_status == "submitted" %}
+        {% if room.has_blocking_claim_conflicts %}
         <button type="submit"
                 class="chirpui-btn chirpui-btn--primary"
-                {{ "disabled" if room.has_blocking_claim_conflicts else "" }}>
+                disabled>
           Accept face
         </button>
-      </form>
-      <form method="post" hx-boost="false" data-elbysodic-submit-label="Requesting revisions...">
-        {{ csrf_field() }}
-        <input type="hidden" name="_action" value="request_revision">
-        <input type="hidden" name="revision_notes" value="{{ revision_note_value }}">
-        <button type="submit" class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
-      </form>
-    </div>
-    {% end %}
+        {% else %}
+        <button type="submit"
+                name="_action"
+                value="accept_application"
+                class="chirpui-btn chirpui-btn--primary">
+          Accept face
+        </button>
+        {% end %}
+        <button type="submit"
+                name="_action"
+                value="request_revision"
+                class="chirpui-btn chirpui-btn--secondary">Request revisions</button>
+        {% end %}
+      </div>
+    </form>
     {% end %}
   </section>
   {% end %}
