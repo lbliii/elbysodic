@@ -26,9 +26,7 @@ def test_xmen_moderator_seed_purpose_and_capabilities_match() -> None:
             "Thread moderation QA on readable boards: pin, lock, and move threads; "
             "update scene status and details."
         )
-        assert moderator.persona.default_path == (
-            "/boards/med-bay/threads/med-bay-lights"
-        )
+        assert moderator.persona.default_path == ("/boards/med-bay/threads/med-bay-lights")
         assert moderator.role.is_admin is False
         assert moderator.role.capabilities == X_MEN_MODERATOR_CAPABILITIES
         assert writer.role.capabilities.isdisjoint(X_MEN_ALL_STAFF_CAPABILITIES)
