@@ -116,6 +116,10 @@ class DeskOverview:
             return f"{item.thread.title} is active"
         return "Your roster is caught up"
 
+    @property
+    def next_action(self) -> DeskAction | None:
+        return self.actions[0] if self.actions else None
+
 
 def get(request: Request) -> Page:
     services = get_services(request)
