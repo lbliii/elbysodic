@@ -38,6 +38,34 @@ def _application_field_values(
     return values
 
 
+def _save_review_notes(
+    services: AppServices,
+    character_slug: str,
+    *,
+    revision_notes: str | None,
+    staff_notes: str | None,
+    checklist: str | None,
+) -> None:
+    if revision_notes is None and staff_notes is None and checklist is None:
+        return
+    try:
+        room = services.read_application_review_room(character_slug)
+        services.update_application_review(
+            character_slug,
+            revision_notes=(
+                room.application.revision_notes if revision_notes is None else revision_notes
+            ),
+            staff_notes=room.application.staff_notes if staff_notes is None else staff_notes,
+            checklist=room.application.checklist if checklist is None else checklist,
+        )
+    except LookupError as exc:
+        raise HTTPError(status=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPError(status=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPError(status=400, detail=str(exc)) from exc
+
+
 @action("save_application")
 async def save_application(
     request: Request,
@@ -88,19 +116,13 @@ async def save_review(
     staff_notes: str = "",
     checklist: str = "",
 ) -> FormAction:
-    try:
-        services.update_application_review(
-            character_slug,
-            revision_notes=revision_notes,
-            staff_notes=staff_notes,
-            checklist=checklist,
-        )
-    except LookupError as exc:
-        raise HTTPError(status=404, detail=str(exc)) from exc
-    except PermissionError as exc:
-        raise HTTPError(status=403, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPError(status=400, detail=str(exc)) from exc
+    _save_review_notes(
+        services,
+        character_slug,
+        revision_notes=revision_notes,
+        staff_notes=staff_notes,
+        checklist=checklist,
+    )
     return FormAction(f"/applications/{character_slug}", status=302)
 
 
@@ -108,7 +130,17 @@ async def save_review(
 async def accept_application(
     services: AppServices,
     character_slug: str,
+    revision_notes: str | None = None,
+    staff_notes: str | None = None,
+    checklist: str | None = None,
 ) -> FormAction:
+    _save_review_notes(
+        services,
+        character_slug,
+        revision_notes=revision_notes,
+        staff_notes=staff_notes,
+        checklist=checklist,
+    )
     try:
         services.accept_character_application(character_slug)
     except LookupError as exc:
@@ -124,12 +156,21 @@ async def accept_application(
 async def request_revision(
     services: AppServices,
     character_slug: str,
-    revision_notes: str = "",
+    revision_notes: str | None = None,
+    staff_notes: str | None = None,
+    checklist: str | None = None,
 ) -> FormAction:
+    _save_review_notes(
+        services,
+        character_slug,
+        revision_notes=revision_notes,
+        staff_notes=staff_notes,
+        checklist=checklist,
+    )
     try:
         services.request_character_application_revision(
             character_slug,
-            note=revision_notes,
+            note=revision_notes or "",
         )
     except LookupError as exc:
         raise HTTPError(status=404, detail=str(exc)) from exc
