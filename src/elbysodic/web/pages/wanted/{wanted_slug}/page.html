@@ -176,7 +176,7 @@
       </div>
       {% else %}
       <div class="chirpui-cluster elbysodic-cluster--end">
-        <a class="chirpui-btn chirpui-btn--primary" href="/login?next={{ current_path or "/" }}" hx-boost="false">Log in to raise interest</a>
+        <a class="chirpui-btn chirpui-btn--primary" href="{{ login_entry_href(current_path or "/") }}" hx-boost="false">Log in to raise interest</a>
         <a class="chirpui-btn chirpui-btn--secondary" href="{{ request_access_href }}" hx-boost="false">Request access</a>
       </div>
       {% end %}

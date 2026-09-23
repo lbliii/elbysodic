@@ -18,7 +18,7 @@ from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.errors import register_error_handlers
-from elbysodic.web.navigation import location_nav_tree_items
+from elbysodic.web.navigation import location_nav_tree_items, login_entry_href
 from elbysodic.web.routes import (
     active_route_path,
     board_section_for_path,
@@ -141,6 +141,7 @@ def create_app(
         optional=True,
     )
     app.template_global()(location_nav_tree_items)
+    app.template_global()(login_entry_href)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
     app.template_global()(active_route_path)
