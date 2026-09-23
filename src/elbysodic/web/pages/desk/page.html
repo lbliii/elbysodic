@@ -33,11 +33,9 @@
       {% end %}
     </div>
     {% end %}
-    {% if desk.actions %}
-    <div class="elbysodic-desk-queue__actions elbysodic-desk-action-grid">
-      {% for action in desk.actions %}
-      {{ command_action(action) }}
-      {% end %}
+    {% if desk.next_action %}
+    <div class="elbysodic-desk-next-action">
+      {{ command_action(desk.next_action, cls="elbysodic-command-action--next") }}
     </div>
     {% end %}
   {% end %}
