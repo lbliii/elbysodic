@@ -993,55 +993,111 @@
     color: var(--chirpui-accent);
 }
 
-@media (max-width: 48rem) {
-    .elbysodic-post {
-        grid-template-columns: 1fr;
+@media (max-width: 64rem) {
+    .elbysodic-post-list--editorial-wrap .elbysodic-post {
+        grid-template-columns: minmax(0, 1fr);
     }
 
-    .elbysodic-post-list > .chirpui-surface:nth-child(even) .elbysodic-post {
-        grid-template-columns: 1fr;
+    .elbysodic-post-list--editorial-wrap
+        > .chirpui-surface:nth-child(even)
+        .elbysodic-post {
+        grid-template-columns: minmax(0, 1fr);
     }
 
-    .elbysodic-post-list > .chirpui-surface:nth-child(even) .elbysodic-post__poster,
-    .elbysodic-post-list > .chirpui-surface:nth-child(even) .elbysodic-post__body {
+    .elbysodic-post-list--editorial-wrap
+        > .chirpui-surface:nth-child(even)
+        .elbysodic-post__poster,
+    .elbysodic-post-list--editorial-wrap
+        > .chirpui-surface:nth-child(even)
+        .elbysodic-post__body {
         order: initial;
     }
 
-    .elbysodic-post__poster {
-        --elbysodic-post-profile-rail-block: auto;
-        --elbysodic-post-profile-media-block: 12rem;
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster {
+        --elbysodic-post-profile-rail-block: 3.25rem;
+        --elbysodic-post-profile-media-block: 3.25rem;
+        align-items: center;
+        gap: 0.65rem;
+        grid-template-columns: 3.25rem minmax(0, 1fr);
+        min-block-size: 0;
         position: static;
     }
 
-    .elbysodic-post-profile--poster,
-    .elbysodic-post-profile--dock {
-        gap: 0.75rem;
-        grid-template: none;
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--poster,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--dock,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--crest {
+        block-size: auto;
+        grid-template-columns: 3.25rem minmax(0, 1fr);
+        grid-template-rows: auto;
+        max-block-size: none;
     }
 
-    .elbysodic-post-profile--poster .elbysodic-post__poster-media,
-    .elbysodic-post-profile--poster .elbysodic-post__poster-card,
-    .elbysodic-post-profile--dock .elbysodic-post__poster-media,
-    .elbysodic-post-profile--dock .elbysodic-post__poster-card {
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-media {
+        aspect-ratio: 1;
+        block-size: 3.25rem;
+        border-radius: 50%;
+        inline-size: 3.25rem;
+        min-height: 3.25rem;
+        padding: 0.35rem;
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-media span {
+        font-size: 1.8rem;
+        line-height: 1;
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--poster .elbysodic-post__poster-media,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--poster .elbysodic-post__poster-card,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--dock .elbysodic-post__poster-media,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--dock .elbysodic-post__poster-card,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--crest .elbysodic-post__poster-media,
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--crest .elbysodic-post__poster-card {
         grid-area: auto;
     }
 
-    .elbysodic-post-profile--poster .elbysodic-post__poster-card,
-    .elbysodic-post-profile--dock .elbysodic-post__poster-card {
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-card {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        inline-size: auto;
         margin: 0;
-    }
-
-    .elbysodic-post-profile--poster .elbysodic-post__poster-card {
+        max-block-size: none;
         max-height: none;
-        opacity: 1;
+        max-inline-size: none;
         overflow: visible;
+        padding: 0;
         pointer-events: auto;
         transform: none;
         visibility: visible;
     }
 
-    .elbysodic-post__poster-media {
-        aspect-ratio: 16 / 9;
-        min-height: 12rem;
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-card {
+        gap: 0.3rem;
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post-profile--poster .elbysodic-post__poster-card {
+        align-self: center;
+        justify-self: stretch;
+        opacity: 1;
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-card::before {
+        display: none;
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-name {
+        padding-top: 0;
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-name h2 {
+        font-size: var(--chirpui-font-lg);
+    }
+
+    .elbysodic-post-list--editorial-wrap .elbysodic-post__poster-tagline {
+        font-size: var(--chirpui-font-xs);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }

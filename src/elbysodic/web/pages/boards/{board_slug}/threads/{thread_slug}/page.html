@@ -94,14 +94,14 @@
     {{ board_media_image(scene_context.media_band.source_board, "elbysodic-thread-stage__media") }}
     {% end %}
     <div class="elbysodic-thread-stage__copy">
-      <nav class="elbysodic-scene-reader-breadcrumbs" aria-label="Scene breadcrumbs">
+      <nav class="elbysodic-scene-reader-breadcrumbs elbysodic-visually-hidden" aria-label="Scene breadcrumbs" aria-hidden="true" inert>
         <span class="elbysodic-scene-reader-breadcrumbs__section">{{ scene_context.location_lane | get('sidebar_section_label', '') }}</span>
         {% for placement_board in scene_context.location_lane.placement_path %}
         <span class="elbysodic-scene-reader-breadcrumbs__sep" aria-hidden="true">/</span>
         {% if placement_board.slug == thread_view.board.slug %}
         <span class="elbysodic-scene-reader-breadcrumbs__current" aria-current="location">{{ placement_board.name }}</span>
         {% else %}
-        <a href="/boards/{{ placement_board.slug }}">{{ placement_board.name }}</a>
+        <span>{{ placement_board.name }}</span>
         {% endif %}
         {% endfor %}
       </nav>
@@ -110,7 +110,7 @@
       <p class="elbysodic-thread-stage__logline">{{ thread_view.thread.summary }}</p>
       {% end %}
       {{ scene_reader_context_strip(thread_view, scene_context) }}
-      <div class="elbysodic-thread-stage__state">
+      <div class="elbysodic-thread-stage__state{% if thread_view.is_watched %} elbysodic-thread-stage__state--watching{% end %}{% if not thread_view.is_unread %} elbysodic-thread-stage__state--caught-up{% end %}">
         {{ scene_state_badges(thread_view.thread, None, not thread_view.is_unread, thread_view.is_watched) }}
       </div>
       {% if thread_view.thread_facets %}
