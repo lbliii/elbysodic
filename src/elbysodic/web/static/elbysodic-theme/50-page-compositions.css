@@ -34,10 +34,10 @@
 }
 
 .elbysodic-realm-gateway-hero h1 {
-    font-size: clamp(4rem, 9vw, 7.4rem);
+    font-size: clamp(3.25rem, 4.5vw, 4.25rem);
     line-height: 0.82;
-    max-inline-size: 8ch;
-    overflow-wrap: normal;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
     text-wrap: balance;
 }
 
@@ -353,6 +353,19 @@
     }
 }
 
+@media (max-width: 72rem) {
+    .elbysodic-realm-gateway-hero {
+        grid-template-columns: minmax(0, 1fr);
+        min-block-size: 0;
+    }
+
+    .elbysodic-realm-gateway-hero__media {
+        grid-template-rows: minmax(clamp(12rem, 32vw, 18rem), 1fr) auto;
+        min-block-size: 0;
+        transform: none;
+    }
+}
+
 @media (max-width: 48rem) {
     .elbysodic-editorial-page,
     .elbysodic-realm-gateway {
@@ -366,8 +379,8 @@
     }
 
     .elbysodic-realm-gateway-hero h1 {
-        font-size: clamp(3.25rem, 18vw, 4.8rem);
-        max-inline-size: 9ch;
+        font-size: clamp(2.75rem, 12vw, 3.75rem);
+        max-inline-size: 100%;
     }
 
     .elbysodic-realm-gateway-hero__media {
