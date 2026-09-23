@@ -5790,7 +5790,7 @@ def _realm_launch_readiness(
                     f"{viewer.community.name} has a community-local director "
                     f"membership for {viewer.membership.display_name}."
                 ),
-                href="/studio#identity-appearance",
+                href="/studio/appearance#identity-appearance",
                 cta="Review identity",
                 is_complete=(
                     bool(viewer.community.name.strip())
@@ -5802,14 +5802,14 @@ def _realm_launch_readiness(
             RealmLaunchChecklistItem(
                 label="Scene hubs",
                 summary="At least one public place or community room exists for scenes.",
-                href="/studio#world-structure",
+                href="/studio/structure#world-structure",
                 cta="Review scene hubs",
                 is_complete=bool(public_scene_hubs),
             ),
             RealmLaunchChecklistItem(
                 label="Director materials",
                 summary="Premise and guidebook material give writers the board frame.",
-                href="/studio#continuity-events",
+                href="/studio/content#continuity-events",
                 cta="Review materials",
                 is_complete=bool(premise_materials),
             ),
@@ -5832,15 +5832,15 @@ def _realm_launch_readiness(
             RealmLaunchChecklistItem(
                 label="Appearance",
                 summary="Theme tokens are valid and ready for the realm shell.",
-                href="/studio#appearance-theme",
+                href="/studio/appearance#appearance-theme",
                 cta="Review appearance",
                 is_complete=not theme_warnings,
             ),
             RealmLaunchChecklistItem(
                 label="Opening checklist",
-                summary="Public preview can open after required opening lanes are complete.",
-                href="/studio/launch",
-                cta="Open checklist",
+                summary="Review required opening lanes before inviting writers.",
+                href="/studio/launch#launch-checklist-heading",
+                cta="Review readiness",
                 is_complete=bool(public_scene_hubs)
                 and bool(premise_materials)
                 and bool(application_materials)
