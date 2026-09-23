@@ -2211,10 +2211,21 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert 'class="elbysodic-network-card__realm-link"' in response.text
         assert 'aria-label="Preview Jurassic Park Universe"' in response.text
         assert 'class="elbysodic-network-card__icon-action' in response.text
-        assert 'aria-label="Read chapter"' in response.text
+        assert (
+            'class="elbysodic-network-card__lead-action" '
+            'href="/c/jurassic-park-universe/world/paddock-twelve-incident">Read chapter'
+            in response.text
+        )
         assert 'aria-label="Open calls"' in response.text
         assert "elbysodic-network-card__tooltip" in response.text
         assert 'title="Open calls"' not in response.text
+        assert 'class="elbysodic-network-card__metrics"' not in response.text
+        assert '<details class="elbysodic-network-card__joining" open' not in response.text
+        joining_details = response.text.split(
+            '<details class="elbysodic-network-card__joining">', 1
+        )[1].split("</details>", 1)[0]
+        assert "Request access open" in joining_details
+        assert "weekly" in joining_details
         assert "elbysodic-network-search__control" in response.text
         assert "premise, pace, hooks, roster shape" in response.text
         assert "urban supernatural" in response.text
@@ -2234,8 +2245,6 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "face you want to wear next" not in response.text
         assert "elbysodic-network-card__mark" in response.text
         assert "XMA" in response.text
-        assert 'href="/c/jurassic-park-universe/characters" aria-label="3 faces"' in response.text
-        assert 'href="/c/jurassic-park-universe/wanted" aria-label="2 wanted"' in response.text
         assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' in response.text
 
     asyncio.run(run())
