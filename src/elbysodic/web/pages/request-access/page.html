@@ -138,7 +138,7 @@
         {% if account_visitor | default(none) %}
         <a class="chirpui-btn chirpui-btn--secondary" href="/network" data-elbysodic-global-link>Browse your realms</a>
         {% else %}
-        <a class="chirpui-btn chirpui-btn--secondary" href="/login?next={{ current_path or "/" }}">Log in with Elbysodic</a>
+        <a class="chirpui-btn chirpui-btn--secondary" href="{{ login_entry_href(current_path or "/") }}">Log in with Elbysodic</a>
         {% end %}
         <a class="chirpui-btn chirpui-btn--secondary" href="/network">Explore realms</a>
       </div>
