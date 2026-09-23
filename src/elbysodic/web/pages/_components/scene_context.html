@@ -167,10 +167,10 @@
     <details class="elbysodic-management-disclosure">
       <summary>
         <span id="{{ staff_controls_id }}">Staff controls</span>
-        <small>Pin, lock, or move thread</small>
+        <small>Pin, lock, or move this thread</small>
       </summary>
       <section class="elbysodic-staff-panel chirpui-stack chirpui-stack--sm" aria-labelledby="{{ staff_controls_id }}">
-        <p class="elbysodic-copy-helper">Manage this thread's visibility in the community queue.</p>
+        <p class="elbysodic-copy-helper">Pin keeps the scene near the top of its board. Lock stops member replies while keeping the scene readable. Moving carries the scene and its posts to another board.</p>
         <div class="elbysodic-staff-panel__controls">
           <div class="chirpui-cluster chirpui-cluster--sm">
             <form method="post"
@@ -200,6 +200,7 @@
               </button>
             </form>
           </div>
+          {% if thread_view.moderation_boards | length > 1 %}
           <form method="post"
                 hx-boost="false"
                 data-elbysodic-command-kind="move_thread"
@@ -210,16 +211,25 @@
                 class="elbysodic-move-thread-form">
             {{ csrf_field() }}
             <input type="hidden" name="intent" value="move">
-            <label class="chirpui-field__label" for="{{ target_board_id }}">Move to</label>
-            <select id="{{ target_board_id }}" name="target_board_id" class="chirpui-field__input">
+            <label class="chirpui-field__label" for="{{ target_board_id }}">Destination board</label>
+            <select id="{{ target_board_id }}" name="target_board_id" class="chirpui-field__input" required>
+              <option value="" selected disabled>Choose a destination board</option>
               {% for board in thread_view.moderation_boards %}
-              <option value="{{ board.id }}" {{ "selected" if board.id == thread_view.board.id else "" }}>
-                {{ board.name }}
-              </option>
+              {% if board.id != thread_view.board.id %}
+              <option value="{{ board.id }}">{{ board.name }}</option>
+              {% end %}
               {% end %}
             </select>
-            <button type="submit" class="chirpui-btn chirpui-btn--secondary">Move thread</button>
+            <p class="elbysodic-copy-helper">The scene and all its posts move together to the destination you choose. You will return to the scene on that board.</p>
+            <label class="elbysodic-checkbox">
+              <input type="checkbox" name="confirm_move" value="yes" required>
+              I confirm moving this thread and its posts to the selected board.
+            </label>
+            <button type="submit" class="chirpui-btn chirpui-btn--secondary">Move thread and posts</button>
           </form>
+          {% else %}
+          <p class="elbysodic-copy-status">No other board you can read is available as a destination.</p>
+          {% end %}
         </div>
       </section>
     </details>
@@ -643,7 +653,7 @@
   <div class="elbysodic-scene-context-layout__reader">
     <div class="elbysodic-scene-context-mobile-actions">
       {{ drawer_trigger("elbysodic-scenes-here-drawer", "Scenes here", cls="chirpui-btn chirpui-btn--secondary elbysodic-scenes-here-trigger") }}
-      {{ drawer_trigger("elbysodic-scene-context-drawer", "Scene context", cls="chirpui-btn chirpui-btn--secondary elbysodic-scene-context-trigger") }}
+      {{ drawer_trigger("elbysodic-scene-context-drawer", "Moderation & scene context" if thread_view and thread_view.can_moderate else "Scene context", cls="chirpui-btn chirpui-btn--secondary elbysodic-scene-context-trigger") }}
       {{ scene_writer_activity_trigger(writer_activity) }}
     </div>
     {% yield %}
@@ -657,7 +667,7 @@
   {% call drawer("elbysodic-scenes-here-drawer", title="Scenes here", side="left", cls="elbysodic-scenes-here-drawer") %}
     {{ location_scene_lane(scene_context.location_lane) }}
   {% end %}
-  {% call drawer("elbysodic-scene-context-drawer", title="Scene context", side="right", cls="elbysodic-scene-context-drawer") %}
+  {% call drawer("elbysodic-scene-context-drawer", title="Moderation & scene context" if thread_view and thread_view.can_moderate else "Scene context", side="right", cls="elbysodic-scene-context-drawer") %}
     {{ scene_grounding_inspector(scene_context.grounding, thread_view, thread_statuses, thread_visibilities, posting_modes, cast_picker_config_id, cast_picker_config, selected_character, control_id_prefix="scene-context-drawer") }}
   {% end %}
   {% if writer_activity %}

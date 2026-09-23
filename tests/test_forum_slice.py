@@ -12768,17 +12768,23 @@ def test_locked_threads_still_allow_editing_own_existing_post() -> None:
 
 def test_staff_can_pin_and_lock_threads() -> None:
     async def run() -> None:
-        app, repo, community, thread = _moderation_app(is_admin=True)
+        app, repo, community, thread = _moderation_app(can_manage_threads=True)
+        moderator_role = repo.get_role_by_slug(community.id, "moderator")
+        assert moderator_role.is_admin is False
+        assert moderator_role.capabilities == frozenset({"manage_threads"})
 
         async with TestClient(app) as client:
             page = await client.get("/boards/ic/threads/moderation-queue")
             assert page.status == 200
             assert "Staff controls" in page.text
+            assert "Moderation &amp; scene context" in page.text
             assert 'id="thread-staff-controls"' not in page.text
             assert 'id="scene-context-docked-thread-staff-controls"' in page.text
             assert "Pin thread" in page.text
             assert "Lock thread" in page.text
-            assert "Move thread" in page.text
+            assert "Destination board" in page.text
+            assert "Choose a destination board" in page.text
+            assert "I confirm moving this thread and its posts to the selected board." in page.text
 
             pinned = await client.post(
                 "/boards/ic/threads/moderation-queue",
@@ -12786,6 +12792,9 @@ def test_staff_can_pin_and_lock_threads() -> None:
                 headers=_FORM,
             )
             assert pinned.status == 302
+            assert _response_header(pinned, "location") == (
+                "/boards/ic/threads/moderation-queue#scene-title"
+            )
             assert repo.get_thread(community.id, thread.id).is_pinned is True
 
             locked = await client.post(
@@ -12794,6 +12803,9 @@ def test_staff_can_pin_and_lock_threads() -> None:
                 headers=_FORM,
             )
             assert locked.status == 302
+            assert _response_header(locked, "location") == (
+                "/boards/ic/threads/moderation-queue#scene-title"
+            )
             assert repo.get_thread(community.id, thread.id).is_locked is True
 
             updated = await client.get("/boards/ic/threads/moderation-queue")
@@ -12801,29 +12813,62 @@ def test_staff_can_pin_and_lock_threads() -> None:
             assert "locked" in updated.text
             assert "Unpin thread" in updated.text
             assert "Unlock thread" in updated.text
+            flag_events = repo.list_staff_audit_events(
+                community.id,
+                capability="manage_threads",
+                target_family="thread",
+            )
+            assert {event.action for event in flag_events} == {"thread_flags_updated"}
+            assert all(event.target_id == thread.id for event in flag_events)
 
+            writer_cookie = _moderation_reader_identity(repo, community)
+            writer_page = await client.get(
+                "/boards/ic/threads/moderation-queue",
+                headers={"Cookie": writer_cookie},
+            )
+            assert writer_page.status == 200
+            assert "pinned" in writer_page.text
+            assert "locked" in writer_page.text
+            assert "Replies are closed" in writer_page.text
+            assert "Staff controls" not in writer_page.text
+
+            moderator = repo.get_user_by_email("moderator@example.com")
+            moderator_membership = repo.get_membership_by_username(
+                community.id,
+                "modlane",
+            )
+            moderator_cookie = (
+                f"elbysodic_dev_identity={community.id}:{moderator.id}:{moderator_membership.id}"
+            )
             unpinned = await client.post(
                 "/boards/ic/threads/moderation-queue",
                 body=b"intent=unpin",
-                headers=_FORM,
+                headers={**_FORM, "Cookie": moderator_cookie},
             )
-            assert unpinned.status == 302
+            assert unpinned.status == 302, unpinned.text[:1200]
             assert repo.get_thread(community.id, thread.id).is_pinned is False
 
             unlocked = await client.post(
                 "/boards/ic/threads/moderation-queue",
                 body=b"intent=unlock",
-                headers=_FORM,
+                headers={**_FORM, "Cookie": moderator_cookie},
             )
             assert unlocked.status == 302
             assert repo.get_thread(community.id, thread.id).is_locked is False
+            writer_page = await client.get(
+                "/boards/ic/threads/moderation-queue",
+                headers={"Cookie": writer_cookie},
+            )
+            assert "pinned" not in writer_page.text
+            assert "locked" not in writer_page.text
+            assert "Post reply" in writer_page.text
 
     asyncio.run(run())
 
 
 def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
     async def run() -> None:
-        app, repo, community, thread = _moderation_app(is_admin=True)
+        app, repo, community, thread = _moderation_app(can_manage_threads=True)
         target_board = repo.get_board_by_slug(community.id, "archive")
         original = repo.get_thread(community.id, thread.id)
         post = repo.list_posts(community.id, thread.id)[0]
@@ -12842,13 +12887,24 @@ def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
         )
 
         async with TestClient(app) as client:
+            controls = await client.get("/boards/ic/threads/moderation-queue")
+            assert controls.status == 200
+            assert f'<option value="{target_board.id}">Archive</option>' in controls.text
+            repo.mark_thread_read(
+                community.id,
+                thread.id,
+                post.author_membership_id,
+                read_at="2026-01-01T00:00:00+00:00",
+            )
             response = await client.post(
                 "/boards/ic/threads/moderation-queue",
-                body=f"intent=move&target_board_id={target_board.id}".encode(),
+                body=f"intent=move&target_board_id={target_board.id}&confirm_move=yes".encode(),
                 headers=_FORM,
             )
             assert response.status == 302
-            assert dict(response.headers)["location"] == "/boards/archive/threads/moderation-queue"
+            assert _response_header(response, "location") == (
+                "/boards/archive/threads/moderation-queue#scene-title"
+            )
 
             moved = repo.get_thread(community.id, thread.id)
             assert moved.board_id == target_board.id
@@ -12867,13 +12923,36 @@ def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
             assert new_page.status == 200
             assert "Archive" in new_page.text
             assert "A thread ready for staff tools." in new_page.text
+            move_events = [
+                event
+                for event in repo.list_staff_audit_events(
+                    community.id,
+                    capability="manage_threads",
+                    target_family="thread",
+                )
+                if event.action == "thread_moved"
+            ]
+            assert len(move_events) == 1
+            assert move_events[0].target_id == thread.id
+            assert move_events[0].reason == ""
+            assert move_events[0].public_aftermath == "thread moved to another board"
+
+            writer_cookie = _moderation_reader_identity(repo, community)
+            writer_page = await client.get(
+                "/boards/archive/threads/moderation-queue",
+                headers={"Cookie": writer_cookie},
+            )
+            assert writer_page.status == 200
+            assert "Archive" in writer_page.text
+            assert "A thread ready for staff tools." in writer_page.text
+            assert "Staff controls" not in writer_page.text
 
     asyncio.run(run())
 
 
 def test_regular_members_cannot_manage_thread_lifecycle() -> None:
     async def run() -> None:
-        app, repo, community, thread = _moderation_app(is_admin=False)
+        app, repo, community, thread = _moderation_app(can_manage_threads=False)
         target_board = repo.get_board_by_slug(community.id, "archive")
 
         async with TestClient(app) as client:
@@ -12890,7 +12969,7 @@ def test_regular_members_cannot_manage_thread_lifecycle() -> None:
 
             move_response = await client.post(
                 "/boards/ic/threads/moderation-queue",
-                body=f"intent=move&target_board_id={target_board.id}".encode(),
+                body=f"intent=move&target_board_id={target_board.id}&confirm_move=yes".encode(),
                 headers=_FORM,
             )
             assert move_response.status == 403
@@ -14035,7 +14114,7 @@ def test_chirp_ui_alpine_runtime_is_loaded_for_interactive_layouts() -> None:
 
 def _moderation_app(
     *,
-    is_admin: bool,
+    can_manage_threads: bool,
 ) -> tuple[App, ForumRepository, Community, Thread]:
     connection = connect(check_same_thread=False)
     create_schema(connection)
@@ -14043,23 +14122,23 @@ def _moderation_app(
     community = repo.seed_default_community("Moderation Test")
     role = repo.create_role(
         community.id,
-        "staff" if is_admin else "member",
-        "Staff" if is_admin else "Member",
-        is_admin=is_admin,
+        "moderator" if can_manage_threads else "member",
+        "Moderator" if can_manage_threads else "Member",
+        capabilities={"manage_threads"} if can_manage_threads else set(),
     )
     user = repo.create_user("moderator@example.com", "hash")
     membership = repo.create_membership(
         community.id,
         user.id,
         role.id,
-        "modlane" if is_admin else "memberlane",
-        "Mod Lane" if is_admin else "Member Lane",
+        "modlane" if can_manage_threads else "memberlane",
+        "Mod Lane" if can_manage_threads else "Member Lane",
     )
     character = repo.create_character(
         community.id,
         membership.id,
-        "moderator-face" if is_admin else "member-face",
-        "Moderator Face" if is_admin else "Member Face",
+        "moderator-face" if can_manage_threads else "member-face",
+        "Moderator Face" if can_manage_threads else "Member Face",
         make_default=True,
     )
     board = repo.create_board(community.id, "ic", "In Character")
@@ -14080,5 +14159,26 @@ def _moderation_app(
             membership=repo.get_membership(community.id, membership.id),
             default_character=character,
         ),
+        owns_repo=False,
     )
     return create_app(debug=False, services=services), repo, community, thread
+
+
+def _moderation_reader_identity(repo: ForumRepository, community: Community) -> str:
+    role = repo.create_role(community.id, "reader", "Reader")
+    user = repo.create_user("reader@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "readerlane",
+        "Reader Lane",
+    )
+    repo.create_character(
+        community.id,
+        membership.id,
+        "reader-face",
+        "Reader Face",
+        make_default=True,
+    )
+    return f"elbysodic_dev_identity={community.id}:{user.id}:{membership.id}"
