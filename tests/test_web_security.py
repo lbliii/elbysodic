@@ -1992,7 +1992,7 @@ def test_production_application_room_requires_csrf_and_accepts_rendered_token(
         async with TestClient(app) as client:
             _login, cookies = await _production_login(
                 client,
-                email="alex@example.com",
+                email="moira@example.com",
                 next_url="/applications/kitty-pryde",
             )
             room = await client.get(
@@ -2057,6 +2057,44 @@ def test_production_application_room_denies_same_community_outsider(monkeypatch)
         assert "Application Review Room" not in room.text
         assert "Director Review" not in room.text
         assert "Applicant Notes" not in room.text
+
+    asyncio.run(run())
+
+
+def test_production_thread_moderator_can_moderate_but_not_review_or_launch(monkeypatch) -> None:
+    async def run() -> None:
+        _set_production_env(monkeypatch)
+        app = create_app(debug=False, services=create_services(path=":memory:"))
+
+        async with TestClient(app) as client:
+            _login, cookies = await _production_login(
+                client,
+                email="alex@example.com",
+                next_url="/boards/med-bay/threads/med-bay-lights",
+            )
+            cookie_header = {"Cookie": _cookie_header(cookies)}
+            thread = await client.get(
+                "/boards/med-bay/threads/med-bay-lights",
+                headers=cookie_header,
+            )
+            application = await client.get(
+                "/applications/kitty-pryde",
+                headers=cookie_header,
+            )
+            studio = await client.get("/studio", headers=cookie_header)
+            launch = await client.get("/studio/launch", headers=cookie_header)
+
+        assert thread.status == 200
+        assert "Staff controls" in thread.text
+        assert "Pin thread" in thread.text
+        assert "Lock thread" in thread.text
+        assert "Move thread" in thread.text
+        assert application.status == 403
+        assert "Application Review Room" not in application.text
+        assert studio.status == 200
+        assert "Director tools are read-only here" in studio.text
+        assert launch.status == 403
+        assert "Opening checklist" not in launch.text
 
     asyncio.run(run())
 
