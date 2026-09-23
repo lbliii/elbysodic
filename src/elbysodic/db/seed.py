@@ -794,7 +794,8 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "x-men-apocalypse",
         "alex",
         "cyclops",
-        "Thread lifecycle and moderation controls without changing the default writer.",
+        "Full staff QA across application review, claims/reserves, board navigation, "
+        "thread lifecycle, and world/Studio management.",
         "/studio/operations",
     ),
     SeedPersona(

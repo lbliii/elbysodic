@@ -33,7 +33,7 @@ obvious.
 | --- | --- | --- | --- | --- | --- | --- |
 | `xmen_writer` | `writer@example.com` | X-Men Apocalypse | `starlane` | Member | Rogue | ordinary writer, accepted faces, active-face queue, scene posting |
 | `xmen_staff` | `moira@example.com` | X-Men Apocalypse | `moira` | Staff | Moira MacTaggert | Studio, applications, claims, private production rooms |
-| `xmen_mod` | `alex@example.com` | X-Men Apocalypse | `alex` | Moderator | Cyclops | thread lifecycle and moderation controls |
+| `xmen_mod` | `alex@example.com` | X-Men Apocalypse | `alex` | Moderator | Cyclops | full staff QA: application review, claims/reserves, board navigation, thread lifecycle, and world/Studio management |
 | `xmen_partner` | `charlie@example.com` | X-Men Apocalypse | `charlie` | Member | Charles Xavier | wanted, plotter, plotting-room, and notification counterparty checks |
 | `xmen_applicant` | `mira@example.com` | X-Men Apocalypse | `mira` | Member | Kitty Pryde | submitted application and writer-side revision workflow |
 | `xmen_outsider` | `simon@example.com` | X-Men Apocalypse | `simon` | Member | Bolivar Trask | outsider, private-room denial, and notification visibility checks |
