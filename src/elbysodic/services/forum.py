@@ -989,6 +989,7 @@ class AppServices:
                 identity.community_id == context.community.id
                 and identity.membership_id == context.membership.id
             ),
+            can_manage_threads=policies.can_manage_threads(context.membership, context.role),
             can_manage_studio=(
                 policies.can_manage_world(context.membership, context.role)
                 or policies.can_manage_casting(context.membership, context.role)

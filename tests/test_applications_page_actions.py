@@ -23,11 +23,11 @@ async def _post(client: TestClient, action_name: str, slug: str, **fields: str):
     )
 
 
-def _director_services(services: AppServices) -> AppServices:
+def _staff_services(services: AppServices) -> AppServices:
     community = services.seed.community
-    membership = services.repo.get_membership_by_username(community.id, "alex")
+    membership = services.repo.get_membership_by_username(community.id, "moira")
     user = services.repo.get_user(membership.user_id)
-    character = services.repo.get_character_by_slug(community.id, "cyclops")
+    character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
     return AppServices(
         services.repo,
         DemoSeed(community, user, membership, character),
@@ -51,8 +51,8 @@ def test_desk_actions_submit_accept_and_request_revision() -> None:
                 assert response.status == 302
                 assert dict(response.headers)["location"] == "/applications"
 
-        director_app = create_app(debug=False, services=_director_services(services))
-        async with TestClient(director_app) as client:
+        staff_app = create_app(debug=False, services=_staff_services(services))
+        async with TestClient(staff_app) as client:
             desk = await client.get("/applications")
             assert 'name="_action" value="accept_application"' in desk.text
 

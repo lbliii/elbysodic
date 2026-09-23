@@ -794,8 +794,9 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "x-men-apocalypse",
         "alex",
         "cyclops",
-        "Thread lifecycle and moderation controls without changing the default writer.",
-        "/studio/operations",
+        "Thread moderation QA on readable boards: pin, lock, and move threads; "
+        "update scene status and details.",
+        "/boards/med-bay/threads/med-bay-lights",
     ),
     SeedPersona(
         "xmen_partner",
@@ -4399,8 +4400,23 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
     )
     moderator_role = _get_or_create(
         lambda: repo.get_role_by_slug(community.id, "moderator"),
-        lambda: repo.create_role(community.id, "moderator", "Moderator", is_admin=True),
+        lambda: repo.create_role(
+            community.id,
+            "moderator",
+            "Moderator",
+            is_admin=False,
+            capabilities={"manage_threads"},
+        ),
     )
+    moderator_capabilities = frozenset({"manage_threads"})
+    if moderator_role.is_admin or moderator_role.capabilities != moderator_capabilities:
+        moderator_role = repo.update_role(
+            community.id,
+            moderator_role.id,
+            name="Moderator",
+            is_admin=False,
+            capabilities=moderator_capabilities,
+        )
     staff_role = _get_or_create(
         lambda: repo.get_role_by_slug(community.id, "staff"),
         lambda: repo.create_role(community.id, "staff", "Staff", is_admin=True),

@@ -1883,6 +1883,7 @@ class DevPersonaView:
     can_switch: bool
     is_current: bool
     can_manage_studio: bool
+    can_manage_threads: bool
 
 
 @dataclass(frozen=True, slots=True)

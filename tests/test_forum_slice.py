@@ -5862,12 +5862,12 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
             member_redirect = await member_client.get("/studio/operations")
             member_operations = await member_client.get("/studio")
 
-        alex_membership = repo.get_membership_by_username(community.id, "alex")
-        alex_user = repo.get_user(alex_membership.user_id)
-        cyclops = repo.get_character_by_slug(community.id, "cyclops")
+        moira_membership = repo.get_membership_by_username(community.id, "moira")
+        moira_user = repo.get_user(moira_membership.user_id)
+        moira = repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_app = create_app(
             debug=False,
-            services=AppServices(repo, DemoSeed(community, alex_user, alex_membership, cyclops)),
+            services=AppServices(repo, DemoSeed(community, moira_user, moira_membership, moira)),
         )
         async with TestClient(staff_app) as staff_client:
             staff_operations = await staff_client.get("/studio")
@@ -8021,14 +8021,14 @@ def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
             member_world = await member_client.get("/world")
             member_direct = await member_client.get("/world/director-only-event")
 
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
+        staff_services = AppServices(
             services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+            DemoSeed(community, moira_user, moira_membership, moira_character),
         )
-        staff_app = create_app(debug=False, services=alex_services)
+        staff_app = create_app(debug=False, services=staff_services)
         async with TestClient(staff_app) as staff_client:
             staff_studio = await staff_client.get("/studio")
             staff_direct = await staff_client.get("/world/director-only-event")
@@ -8232,27 +8232,27 @@ def test_applications_desk_tracks_character_statuses() -> None:
             assert "Jubilee is looking for a found-family first scene." not in outsider_room.text
             assert "Director Review" not in outsider_room.text
 
-            alex_membership = services.repo.get_membership_by_username(
+            moira_membership = services.repo.get_membership_by_username(
                 services.seed.community.id,
-                "alex",
+                "moira",
             )
-            alex_user = services.repo.get_user(alex_membership.user_id)
-            cyclops = services.repo.get_character_by_slug(
+            moira_user = services.repo.get_user(moira_membership.user_id)
+            moira_character = services.repo.get_character_by_slug(
                 services.seed.community.id,
-                "cyclops",
+                "moira-mactaggert",
             )
-            alex_services = AppServices(
+            staff_services = AppServices(
                 services.repo,
-                DemoSeed(services.seed.community, alex_user, alex_membership, cyclops),
+                DemoSeed(services.seed.community, moira_user, moira_membership, moira_character),
             )
             assert any(
                 item.label == "Application submitted" and item.title == "Jubilee"
-                for item in alex_services.notifications().items
+                for item in staff_services.notifications().items
             )
 
-            alex_app = create_app(debug=False, services=alex_services)
-            async with TestClient(alex_app) as alex_client:
-                review = await alex_client.get("/applications")
+            staff_app = create_app(debug=False, services=staff_services)
+            async with TestClient(staff_app) as staff_client:
+                review = await staff_client.get("/applications")
                 assert review.status == 200
                 assert "Review Queue" in review.text
                 assert "Jubilee" in review.text
@@ -8260,12 +8260,12 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 assert "Request revisions" in review.text
                 assert 'name="intent" value="request_revision"' not in review.text
 
-                review_room = await alex_client.get("/applications/jubilee")
+                review_room = await staff_client.get("/applications/jubilee")
                 assert review_room.status == 200
                 assert "Director Review" in review_room.text
                 assert "Jubilee is looking for a found-family first scene." in review_room.text
 
-                save_review = await alex_client.post(
+                save_review = await staff_client.post(
                     "/applications/jubilee",
                     body=urlencode(
                         {
@@ -8279,7 +8279,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 )
                 assert save_review.status == 302
 
-                accept_response = await alex_client.post(
+                accept_response = await staff_client.post(
                     "/applications/jubilee",
                     body=urlencode(
                         {
@@ -8290,7 +8290,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 )
                 assert accept_response.status == 302
 
-                revision_response = await alex_client.post(
+                revision_response = await staff_client.post(
                     "/applications/kitty-pryde",
                     body=urlencode(
                         {
@@ -8838,22 +8838,22 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         }
         assert submit_response.status == 302
 
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
+        staff_services = AppServices(
             services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+            DemoSeed(community, moira_user, moira_membership, moira_character),
         )
-        alex_app = create_app(debug=False, services=alex_services)
-        async with TestClient(alex_app) as alex_client:
-            review_room = await alex_client.get("/applications/jean-grey")
-            accept_response = await alex_client.post(
+        staff_app = create_app(debug=False, services=staff_services)
+        async with TestClient(staff_app) as staff_client:
+            review_room = await staff_client.get("/applications/jean-grey")
+            accept_response = await staff_client.post(
                 "/applications/jean-grey",
                 body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
-            claims = await alex_client.get("/claims")
+            claims = await staff_client.get("/claims")
 
         accepted_claims = services.repo.list_character_claims_for_character(
             community.id,
@@ -8986,23 +8986,23 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
             note="Imported submitted application.",
         )
 
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
+        staff_services = AppServices(
             services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+            DemoSeed(community, moira_user, moira_membership, moira_character),
         )
-        alex_app = create_app(debug=False, services=alex_services)
-        async with TestClient(alex_app) as alex_client:
-            applications = await alex_client.get("/applications")
-            review_room = await alex_client.get("/applications/duplicate-face")
-            accept_response = await alex_client.post(
+        staff_app = create_app(debug=False, services=staff_services)
+        async with TestClient(staff_app) as staff_client:
+            applications = await staff_client.get("/applications")
+            review_room = await staff_client.get("/applications/duplicate-face")
+            accept_response = await staff_client.post(
                 "/applications/duplicate-face",
                 body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
-            revision_response = await alex_client.post(
+            revision_response = await staff_client.post(
                 "/applications/duplicate-face",
                 body=urlencode(
                     {
@@ -9417,16 +9417,17 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
         services = get_services()
         community = services.seed.community
         face_claim = services.repo.get_claim_type_by_slug(community.id, "face")
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
         cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
+        staff_services = AppServices(
             services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+            DemoSeed(community, moira_user, moira_membership, moira_character),
         )
-        alex_app = create_app(debug=False, services=alex_services)
+        staff_app = create_app(debug=False, services=staff_services)
 
-        async with TestClient(alex_app) as client:
+        async with TestClient(staff_app) as client:
             directory = await client.get("/claims")
             response = await client.post(
                 "/claims",
@@ -9522,16 +9523,16 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
             community.id,
             "faction_claim",
         )
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
+        staff_services = AppServices(
             services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+            DemoSeed(community, moira_user, moira_membership, moira_character),
         )
-        alex_app = create_app(debug=False, services=alex_services)
+        staff_app = create_app(debug=False, services=staff_services)
 
-        async with TestClient(alex_app) as client:
+        async with TestClient(staff_app) as client:
             editor = await client.get("/studio/intake")
             create_claim_response = await client.post(
                 "/studio/intake",
