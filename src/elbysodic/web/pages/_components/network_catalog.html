@@ -1,7 +1,6 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/tooltip.html" import tooltip %}
-  {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
 
 {% def program_summary(program) %}
@@ -25,12 +24,6 @@ A realm ready for scenes, casting, and writer movement.
   </a>
 {% end %}
 {% end %}
-{% end %}
-
-{% def program_metric_links(program) %}
-{{ metric_item(program.roster_count, "faces", href=program.entry_href ~ "/characters") }}
-{{ metric_item(program.open_wanted_count, "wanted", href=program.entry_href ~ "/wanted") }}
-{{ metric_item(program.claim_type_count, "claims", href=program.entry_href ~ "/claims") }}
 {% end %}
 
 {% def program_card(program, viewer=none, preview=false) %}
@@ -73,25 +66,13 @@ A realm ready for scenes, casting, and writer movement.
       </div>
     </header>
     <p class="elbysodic-copy-summary" {% if preview %}data-elbysodic-preview-summary{% end %}>{{ program_summary(program) }}</p>
-    <p class="elbysodic-copy-meta">
-      {{ program.access_posture_label }} · {{ program.application_posture_label }} · {{ program.claims_posture_label }} · {{ program.activity_freshness_label }}
-    </p>
-    {% if program.discovery_profile %}
-    <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>
-      {{ program.discovery_profile.premise_archetype or "Premise-led realm" }}
-      {% if program.discovery_profile.lore_aperture %}
-      · {{ program.discovery_profile.lore_aperture }}
-      {% end %}
-      {% if program.discovery_profile.forum_adjunct %}
-      · {{ program.discovery_profile.forum_adjunct }}
-      {% end %}
-    </p>
-    {% else %}
-    <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>Read the premise, roster, wanted, and first steps.</p>
-    {% end %}
-    <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
-      {{ program_metric_links(program) }}
-    </div>
+    <p class="elbysodic-copy-meta">{{ program.activity_freshness_label }}</p>
+    <details class="elbysodic-network-card__joining">
+      <summary>Joining details</summary>
+      <p class="elbysodic-copy-meta">
+        {{ program.application_posture_label }} · {{ program.claims_posture_label }}
+      </p>
+    </details>
   </div>
   <div class="elbysodic-network-card__actions">
     {% if program.current_event %}

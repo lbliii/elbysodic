@@ -186,7 +186,6 @@
     if (summary && !summary.dataset.elbysodicPreviewDefault) {
       summary.dataset.elbysodicPreviewDefault = summary.textContent.trim();
     }
-    const fit = card.querySelector("[data-elbysodic-preview-fit]");
     const access = card.querySelector("[data-elbysodic-preview-access]");
     const pace = card.querySelector("[data-elbysodic-preview-pace]");
     const tags = document.querySelector("[data-elbysodic-preview-tags]");
@@ -195,13 +194,6 @@
     setText(summary, catalogPitch || (summary ? summary.dataset.elbysodicPreviewDefault : ""));
     setBadgeText(access, selectedText(form, "access_model"));
     setBadgeText(pace, fieldValue(form, "activity_pace"));
-
-    const fitLabels = [
-      fieldValue(form, "premise_archetype") || "Premise-led realm",
-      fieldValue(form, "lore_aperture"),
-      fieldValue(form, "forum_adjunct"),
-    ].filter(Boolean);
-    setText(fit, fitLabels.join(" · "));
 
     if (tags) {
       const entries = tagEntries(fieldValue(form, "discovery_tags"));
