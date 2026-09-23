@@ -2323,3 +2323,28 @@ def test_for_request_identity_does_not_mint_from_community_context_defaults() ->
     assert "DEFAULT_COMMUNITY_SLUG" in boundary
     assert "DEFAULT_COMMUNITY_ID" in boundary
     assert "Unknown-host fallthrough" in boundary
+
+
+def test_dev_persona_moderator_card_shows_thread_moderator_badge() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        try:
+            app = create_app(debug=False, services=services, dev_tools=True)
+            async with TestClient(app) as client:
+                response = await client.get("/dev/personas")
+
+            moderator = next(
+                persona for persona in services.dev_personas() if persona.key == "xmen_mod"
+            )
+            assert moderator.can_manage_threads is True
+            assert moderator.can_manage_studio is False
+            assert response.status == 200
+            moderator_start = response.text.index("xmen_mod")
+            moderator_end = response.text.index("xmen_partner", moderator_start)
+            moderator_card = response.text[moderator_start:moderator_end]
+            assert "thread moderator" in moderator_card
+            assert "writer" not in moderator_card
+        finally:
+            services.close()
+
+    asyncio.run(run())

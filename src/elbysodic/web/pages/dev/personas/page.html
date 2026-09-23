@@ -14,7 +14,13 @@
     </div>
     <div class="chirpui-cluster chirpui-cluster--xs">
       {{ badge("current", variant="success") if persona.is_current else "" }}
-      {{ badge("staff tools", variant="info") if persona.can_manage_studio else badge("writer", variant="muted") }}
+      {% if persona.can_manage_studio %}
+      {{ badge("staff tools", variant="info") }}
+      {% elif persona.can_manage_threads %}
+      {{ badge("thread moderator", variant="info") }}
+      {% else %}
+      {{ badge("writer", variant="muted") }}
+      {% end %}
       {{ badge("inactive", variant="warning") if not persona.can_switch else "" }}
     </div>
   </header>
