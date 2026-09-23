@@ -96,8 +96,7 @@ def test_staff_capability_contracts_cover_named_helpers(
 
 def test_staff_capability_contracts_match_service_authorization_matrix() -> None:
     contracts = {
-        contract.capability: contract
-        for contract in policies.staff_capability_contracts()
+        contract.capability: contract for contract in policies.staff_capability_contracts()
     }
 
     assert contracts["manage_applications"].protected_workflows == (
