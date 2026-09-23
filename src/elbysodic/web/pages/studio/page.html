@@ -307,7 +307,6 @@
       {{ studio_signal("Materials", studio.material_count) }}
       {{ studio_signal("Locations", studio.location_count) }}
       {{ studio_signal("Open hooks", studio.open_wanted_count) }}
-      {{ studio_signal("Review queue", studio.review_queue_count) }}
     </aside>
   </section>
 
@@ -329,29 +328,19 @@
   <section class="elbysodic-studio-attention chirpui-stack chirpui-stack--md" aria-label="Director attention">
     <p class="elbysodic-kicker">Today</p>
     {% call section_header("Needs attention") %}
-    Reviews, conflicts, drafts, and opening work that are active now.
+    Current staff queues and their next actions.
     {% end %}
-    {% if cockpit_lanes %}
-    <div class="elbysodic-director-grid elbysodic-director-grid--attention" aria-label="Studio attention lanes">
-      {% for lane in cockpit_lanes %}
-      {{ studio_lane(lane.kicker, lane.title, lane.summary, lane.href, lane.cta, lane.count, lane.items) }}
-      {% end %}
-    </div>
+    {% if operations %}
+    {{ operations_desk(operations, today_queue_cards) }}
     {% else %}
-    {{ empty_policy_block("No director queues need attention right now.", "Today stays on this page. Shape and Open stay in the shell when you need to edit structure, intake, appearance, materials, or launch posture.", "Production calm") }}
+    {{ empty_policy_block("No daily staff queues need attention right now.", "Launch readiness is tracked separately in Open.", "Production calm") }}
     {% end %}
     <p class="elbysodic-copy-section">
-      Continue in
+      Realm setup stays available in
       <a class="chirpui-link" href="/studio/structure">Shape</a>
-      or
-      <a class="chirpui-link" href="/studio/launch">Open</a>
-      without putting those editors on Today.
+      and <a class="chirpui-link" href="/studio/launch">Open</a>.
     </p>
   </section>
-
-  {% if operations %}
-  {{ operations_desk(operations) }}
-  {% end %}
   {% end %}
 
   {% if studio_room == "structure" %}

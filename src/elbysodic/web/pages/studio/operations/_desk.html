@@ -1,7 +1,4 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/ui.html" import empty_policy_block %}
 {% end %}
 
@@ -26,54 +23,16 @@
 </article>
 {% end %}
 
-{% def operations_desk(operations) %}
-  <section class="elbysodic-operations-hero elbysodic-editorial-hero" aria-labelledby="operations-heading">
-    <div>
-      <p class="elbysodic-section-kicker">Director desk</p>
-      <h2 id="operations-heading">Operations</h2>
-      <p class="elbysodic-copy-section">
-        Applications, claims, reserves, hooks, and health signals that need a decision today.
-      </p>
-    </div>
-    <div class="elbysodic-operations-hero__badges">
-      {{ badge("read-only", variant="muted") if not operations.can_manage else "" }}
-      {{ badge(operations.ready_applications | length ~ " ready apps", variant="success") }}
-      {{ badge(operations.blocked_applications | length ~ " blocked apps", variant="warning") }}
-    </div>
-  </section>
-
-  {% if operations.lanes %}
-  <nav class="elbysodic-operations-lanes" aria-label="Operations attention lanes">
-    {% for lane in operations.lanes %}
-    <a class="elbysodic-operations-lane elbysodic-operations-lane--{{ lane.variant }}" href="{{ lane.href }}">
-      <strong>{{ lane.count }}</strong>
-      <span>
-        <em>{{ lane.label }}</em>
-        <small>{{ lane.summary }}</small>
-      </span>
-    </a>
-    {% end %}
-  </nav>
-  {% end %}
-
-  <nav class="elbysodic-operations-shortcuts" aria-label="Operations queue shortcuts">
-    {% for shortcut in operations.shortcuts %}
-    <a href="{{ shortcut.href }}">
-      <strong>{{ shortcut.label }}</strong>
-      <span>{{ shortcut.count }}</span>
-      <small>{{ shortcut.summary }}</small>
-    </a>
-    {% end %}
-  </nav>
-
-  {% if operations.cards %}
+{% def operations_desk(operations, queue_cards=none) %}
+  {% set visible_queue_cards = operations.cards if queue_cards is none else queue_cards %}
+  {% if visible_queue_cards %}
   <section id="director-operation-signals" class="elbysodic-operations-grid" aria-label="Director operation signals">
-    {% for card in operations.cards %}
+    {% for card in visible_queue_cards %}
     {{ operations_card(card) }}
     {% end %}
   </section>
   {% else %}
-  {{ empty_policy_block("No director operations need attention right now.", "Applications, claim conflicts, reserves, wanted movement, ready-for-scene handoffs, drafts, and health warnings will appear here when they need movement.", "Operations clear") }}
+  {{ empty_policy_block("No daily staff queues need attention right now.", "The realm is calm. Launch readiness stays separate in Open.", "Production calm") }}
   {% end %}
 
   <details class="elbysodic-operations-diagnostics">
@@ -85,6 +44,10 @@
   <section class="elbysodic-operations-panel" aria-labelledby="operations-parity-heading">
     <p class="elbysodic-section-kicker">Parity check</p>
     <h2 id="operations-parity-heading">Queue contracts</h2>
+    <p class="elbysodic-copy-summary">
+      {{ operations.ready_applications | length }} ready apps ·
+      {{ operations.blocked_applications | length }} blocked apps
+    </p>
     <ul class="elbysodic-operations-list">
       {% for row in operations.parity_rows %}
       <li>
@@ -170,50 +133,5 @@
   {% end %}
   </div>
   </details>
-
-  {% if operations.ready_applications or operations.blocked_applications %}
-  <section class="chirpui-stack chirpui-stack--md" aria-labelledby="application-triage-heading">
-    {% call section_header("Applications") %}
-    The fastest split between ready review and claim-blocked submissions.
-    {% end %}
-    <div class="elbysodic-operations-columns">
-      {% call surface(variant="elevated") %}
-      <article class="elbysodic-operations-panel">
-        <h2 id="application-triage-heading">Ready to review</h2>
-        {% if operations.ready_applications %}
-        <ul class="elbysodic-operations-list">
-          {% for item in operations.ready_applications %}
-          <li>
-            <a class="chirpui-link" href="/applications/{{ item.character.slug }}">{{ item.character.name }}</a>
-            <span>{{ item.membership.display_name }}</span>
-          </li>
-          {% end %}
-        </ul>
-        {% else %}
-        <p class="elbysodic-empty-state">No submitted applications are ready right now.</p>
-        {% end %}
-      </article>
-      {% end %}
-
-      {% call surface(variant="elevated") %}
-      <article class="elbysodic-operations-panel">
-        <h2>Blocked by claims</h2>
-        {% if operations.blocked_applications %}
-        <ul class="elbysodic-operations-list">
-          {% for item in operations.blocked_applications %}
-          <li>
-            <a class="chirpui-link" href="/applications/{{ item.character.slug }}">{{ item.character.name }}</a>
-            <span>{{ item.claim_conflict_summary }}</span>
-          </li>
-          {% end %}
-        </ul>
-        {% else %}
-        <p class="elbysodic-empty-state">No submitted applications are blocked by claims.</p>
-        {% end %}
-      </article>
-      {% end %}
-    </div>
-  </section>
-  {% end %}
 
 {% end %}

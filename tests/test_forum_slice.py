@@ -4003,7 +4003,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "<h1>Studio</h1>" in studio.text
             assert "Run X-Men Apocalypse without carrying every control at once." in studio.text
             assert "Needs attention" in studio.text
-            assert "No director queues need attention right now." in studio.text
+            assert "No daily staff queues need attention right now." in studio.text
             assert "Production calm" in studio.text
             assert "Studio rooms" not in studio.text
             assert "Today" in studio.text
@@ -4055,12 +4055,12 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Current event" in content.text
             assert operations.status == 302
             assert _response_header(operations, "location").endswith("/studio")
-            assert "Director desk" in studio.text
-            assert 'id="operations-heading"' in studio.text
+            assert "Operations attention lanes" not in studio.text
+            assert "Operations queue shortcuts" not in studio.text
             assert "Technical checks" in studio.text
             assert '<details class="elbysodic-operations-diagnostics">' in studio.text
-            assert "No director operations need attention right now." in studio.text
-            assert "Operations clear" in studio.text
+            assert "No director operations need attention right now." not in studio.text
+            assert "Operations clear" not in studio.text
             assert "Claim conflicts" not in studio.text
             assert "Active reserves" not in studio.text
             assert "Hooks with movement" not in studio.text
@@ -4202,14 +4202,26 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert parity["Runtime diagnostics"].diagnostic_scope == "hidden from this viewer"
         assert operations.status == 200
         assert "Writer activation" in operations.text
-        assert "Operations attention lanes" in operations.text
-        assert "Needs decision" in operations.text
-        assert f'href="/studio/access-requests/{access_request.id}"' in operations.text
+        primary_queues = re.search(
+            r'<section id="director-operation-signals".*?</section>',
+            operations.text,
+            re.DOTALL,
+        )
+        assert primary_queues is not None
+        assert "Writer activation" in primary_queues.group(0)
+        assert f'href="/studio/access-requests/{access_request.id}"' in primary_queues.group(0)
+        assert "Review access request" in primary_queues.group(0)
+        assert "1 access request(s)" in primary_queues.group(0)
+        assert "Prospect - Transfer student" in primary_queues.group(0)
+        assert "1 accepted member(s) without faces" in primary_queues.group(0)
+        assert "Operations attention lanes" not in operations.text
+        assert "Operations queue shortcuts" not in operations.text
+        assert "Needs decision" not in operations.text
         assert 'href="#director-operation-signals"' not in operations.text
-        assert "Queues that should move before writers stall." in operations.text
+        assert "Queues that should move before writers stall." not in operations.text
         assert "<em>Blocked</em>" not in operations.text
         assert "<em>Watching</em>" not in operations.text
-        assert "Operations queue shortcuts" in operations.text
+        assert "Operations queue shortcuts" not in operations.text
         assert 'href="/applications"' in operations.text
         assert 'href="/casting"' in operations.text
         assert 'href="/plotting#interest-inbox"' in operations.text
@@ -4222,8 +4234,9 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert "1 access request(s)" in operations.text
         assert "Prospect - Transfer student" in operations.text
         assert "accepted member(s) without faces" in operations.text
-        assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
-            operations.text
+        assert (
+            "Access requests, invitations, and application work that still needs a next step."
+            in (operations.text)
         )
 
     asyncio.run(run())
