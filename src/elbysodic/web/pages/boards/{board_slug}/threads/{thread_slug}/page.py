@@ -37,7 +37,7 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             raise HTTPError(status=403, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPError(status=400, detail=str(exc)) from exc
-        return Redirect(f"/boards/{target_board.slug}/threads/{moved_thread.slug}")
+        return Redirect(f"/boards/{target_board.slug}/threads/{moved_thread.slug}#scene-title")
 
     if intent in {"watch", "unwatch"}:
         try:
@@ -83,7 +83,7 @@ async def post(request: Request, board_slug: str, thread_slug: str) -> Page | Re
             raise HTTPError(status=404, detail=str(exc)) from exc
         except PermissionError as exc:
             raise HTTPError(status=403, detail=str(exc)) from exc
-        return Redirect(request.path)
+        return Redirect(f"{request.path}#scene-title")
 
     if intent == "scene":
         try:

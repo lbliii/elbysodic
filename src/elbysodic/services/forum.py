@@ -4081,7 +4081,17 @@ class AppServices:
             raise ValueError(
                 f"board {target_board.slug} already has a thread at slug {thread.slug}"
             )
-        moved = self.repo.move_thread(viewer.community.id, thread.id, target_board.id)
+        with self.repo.transaction():
+            moved = self.repo.move_thread(viewer.community.id, thread.id, target_board.id)
+            _record_staff_audit_event(
+                self.repo,
+                viewer,
+                capability="manage_threads",
+                target_family="thread",
+                target_id=thread.id,
+                action="thread_moved",
+                public_aftermath="thread moved to another board",
+            )
         return target_board, moved
 
     def reply_to_thread(
