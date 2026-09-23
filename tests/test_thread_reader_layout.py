@@ -36,6 +36,7 @@ def test_member_thread_reader_uses_one_path_and_compact_missing_art_context() ->
         services = create_services(path=":memory:")
         first_author_name = _remove_first_author_poster(services)
         active_face = services.seed.default_character
+        assert active_face is not None
         app = create_app(debug=False, services=services)
 
         async with TestClient(app) as client:
@@ -44,10 +45,7 @@ def test_member_thread_reader_uses_one_path_and_compact_missing_art_context() ->
         assert page.status == 200
         assert page.text.count('class="elbysodic-place-toolbar__breadcrumbs"') == 1
         assert "chirpui-breadcrumbs" in page.text
-        assert (
-            'class="elbysodic-scene-reader-breadcrumbs elbysodic-visually-hidden"'
-            in page.text
-        )
+        assert 'class="elbysodic-scene-reader-breadcrumbs elbysodic-visually-hidden"' in page.text
         assert 'aria-label="Scene breadcrumbs" aria-hidden="true" inert' in page.text
         assert 'aria-labelledby="scene-title"' in page.text
         assert page.text.index('id="scene-title"') < page.text.index('id="post-1"')
@@ -78,7 +76,7 @@ def test_public_thread_preview_keeps_its_boundary_and_reading_order() -> None:
         assert page.text.index('aria-labelledby="public-preview-posts"') < page.text.index(
             'id="post-1"'
         )
-        assert f'<span>{first_author_name[:1]}</span>' in page.text
+        assert f"<span>{first_author_name[:1]}</span>" in page.text
         assert "Request access" in page.text
         assert "realm-only posts and participate with a face of your own" in page.text
         assert 'id="reply-composer"' not in page.text
