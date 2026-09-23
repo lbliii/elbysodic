@@ -62,8 +62,7 @@ def test_world_guide_index_keeps_seeded_sections_and_empty_state() -> None:
         published = services.repo.list_materials(community_id, status="published")
         expected_pillars = sum(material.is_featured for material in published)
         expected_guides = sum(
-            not material.is_featured
-            and material.material_type in {"premise", "guide", "factions"}
+            not material.is_featured and material.material_type in {"premise", "guide", "factions"}
             for material in published
         )
         expected_events = sum(material.material_type == "event" for material in published)
@@ -76,9 +75,11 @@ def test_world_guide_index_keeps_seeded_sections_and_empty_state() -> None:
 
                 assert "World guide" in seeded.headings["h1"]
                 assert {"Start here", "Guides", "Events"}.issubset(seeded.headings["h2"])
-                assert {"/world/premise", "/world/b-24-winter", "/world/application-guide"}.issubset(
-                    {href for href, _text in seeded.links}
-                )
+                assert {
+                    "/world/premise",
+                    "/world/b-24-winter",
+                    "/world/application-guide",
+                }.issubset({href for href, _text in seeded.links})
                 _visible_count(seeded, "Pillars", expected_pillars)
                 _visible_count(seeded, "Guides", expected_guides)
                 _visible_count(seeded, "Events", expected_events)
