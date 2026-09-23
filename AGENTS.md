@@ -73,8 +73,10 @@ The canonical product strategy spine lives in
 ## Work lifecycle
 
 How to work on this repo with agents. **Default:** you talk to the
-**orchestrator** (this chat). It reads the board, plans, and **delegates**
-planner/worker work to subagents.
+**orchestrator** (this chat). It owns the outcome and chooses the lightest
+workflow that can finish it safely. It may handle bounded work directly;
+delegate only when the work is independent and delegation materially improves
+coverage, speed, or quality, or when the user asks for parallel work.
 
 | Doc | Role |
 | --- | --- |
@@ -86,7 +88,8 @@ planner/worker work to subagents.
 
 **Invariant:** Workers claim only GitHub issues labeled `type:leaf` **and**
 `ready`. Planners own `type:saga` / `type:epic` / `type:design`. Do not
-re-decide ADRs in a leaf.
+re-decide ADRs in a leaf. These roles define decision ownership; they do not
+require spawning a subagent for every step.
 
 ### Simple invokes
 
@@ -105,24 +108,29 @@ treat it as **`swarm`** with that scope.
 
 ### Orchestrator mode (default contract)
 
-The parent agent in this chat is the **orchestrator**. It does **not**
-implement every leaf itself when parallel work is possible.
+The parent agent in this chat is the **orchestrator**. It chooses direct work
+or delegation based on the task, rather than treating delegation as a required
+step.
 
-1. **Board** — `gh` summary: ready / blocked / open designs; ready count
-   **per root saga**. Print DAG hygiene: orphan epics, leaves missing
-   parent/owned-paths/acceptance, `ready`+`blocked` collisions, owned-path
-   overlap pairs that must serialize.
-2. **Plan gate** — If ready queue is empty or leaves lack owned paths, run
-   or delegate **planner** work first (`burndown` / `plan #N` / `triage`).
-3. **Delegate workers** — For each `type:leaf`+`ready` in scope (respect
-   caps), launch a **Task subagent** with the worker contract below. Prefer
-   **parallel** subagents when owned paths do not overlap.
-4. **Integrate** — Track PRs, merge when asked, close issues, **drop
-   `ready` on close**, refresh the board, report status in plain language.
-5. **Stop conditions** — Hit the turn/leaf cap, empty ready queue, path
-   conflict, or user interrupt. Caps are intentional pauses.
+1. **Board** — Read the relevant issue or subtree when the task depends on
+   backlog state. For `board`/`status` or broad `swarm` work, report ready /
+   blocked / open designs and the DAG hygiene described below. Do not require
+   a full board census for a bounded task that does not depend on it.
+2. **Plan gate** — Resolve only the design or dependency decisions that block
+   the requested work. Use `burndown` / `plan #N` / `triage` when needed; a
+   non-empty ready queue is not a prerequisite for unrelated direct work.
+3. **Delegate** — Use a Task subagent for a bounded, independent slice when
+   that improves the result, or when the user requests parallel work. Respect
+   owned-path conflicts. Do not create a subagent just to relay routine steps.
+4. **Integrate** — Track PRs, merge when asked, close issues, **drop `ready`
+   on close, and summarize the result. Refresh the board when the task changes
+   backlog state or the user asks for board status.
+5. **Stop conditions** — Stop for a user interrupt, unresolved decision,
+   genuine path conflict, or a configured safety cap. Turn and leaf caps below
+   are defaults for broad swarm runs, not a reason to pause an explicit,
+   bounded request that is still progressing safely.
 
-Caps (per orchestrator turn unless the user overrides):
+Default caps for broad orchestrator runs (unless the user overrides):
 
 | Knob | Default |
 | --- | --- |
@@ -132,14 +140,9 @@ Caps (per orchestrator turn unless the user overrides):
 | Megafile conflict | Serialize; do not parallelize overlapping owned paths |
 
 **Plan gate bias:** A closed design/ADR that unblocks many leaves beats
-shipping one more half-specified worker.
-
-Status lines before each major step, e.g.:
-
-- `Orchestrator: board — 3 ready, 41 blocked`
-- `Orchestrator: planner — unblock #N deps`
-- `Orchestrator: worker ×2 — #A, #B`
-- `Orchestrator: integrate — PR …`
+shipping one more half-specified worker. Keep the user informed with concise
+commentary when work is sustained or the plan changes; routine internal steps
+do not need a prescribed status line.
 
 **Planner subagent** — read-only product code; may edit issues/ADRs/docs:
 
