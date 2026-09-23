@@ -8206,7 +8206,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 "/applications",
                 body=urlencode(
                     {
-                        "intent": "submit_application",
+                        "_action": "submit_application",
                         "character_slug": "jubilee",
                     }
                 ).encode(),
@@ -8380,7 +8380,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications",
                     body=urlencode(
                         {
-                            "intent": "submit_application",
+                            "_action": "submit_application",
                             "character_slug": "kitty-pryde",
                         }
                     ).encode(),
@@ -8785,7 +8785,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications",
                 body=urlencode(
                     {
-                        "intent": "submit_application",
+                        "_action": "submit_application",
                         "character_slug": "jean-grey",
                     }
                 ).encode(),
@@ -8809,7 +8809,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications",
                 body=urlencode(
                     {
-                        "intent": "submit_application",
+                        "_action": "submit_application",
                         "character_slug": "jean-grey",
                     }
                 ).encode(),
