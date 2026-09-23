@@ -1,34 +1,32 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
 {% end %}
 
 {% def material_card(item) %}
-{% call surface(variant="elevated", cls="elbysodic-material-card-shell elbysodic-material-card-shell--" ~ item.material.material_type) %}
-<article class="chirpui-stack chirpui-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
-  <div class="chirpui-cluster elbysodic-cluster--between">
+<div class="elbysodic-world-guide-card-shell elbysodic-material-card-shell elbysodic-material-card-shell--{{ item.material.material_type }}">
+<article class="elbysodic-stack elbysodic-stack--sm elbysodic-material-card elbysodic-material-card--{{ item.material.material_type }}">
+  <div class="elbysodic-cluster elbysodic-cluster--between">
     <div>
       <h2>
-        <a class="chirpui-link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a>
+        <a class="elbysodic-world-guide-card__link" href="/world/{{ item.material.slug }}">{{ item.display_title }}</a>
       </h2>
     </div>
     {% if item.material.is_featured %}
-    {{ badge("featured", variant="success") }}
+    <span class="elbysodic-world-guide-featured">featured</span>
     {% end %}
   </div>
   <p class="elbysodic-copy-summary">{{ item.rendered_summary }}</p>
   {{ facet_pills(item.facets) }}
 </article>
-{% end %}
+</div>
 {% end %}
 
 {% def material_section(title, description, items, empty_text, section_id="") %}
-<section class="chirpui-stack chirpui-stack--md" {% if section_id %}id="{{ section_id }}"{% end %}>
-  {% call section_header(title) %}
-  {{ description }}
-  {% end %}
+<section class="elbysodic-stack elbysodic-stack--md" {% if section_id %}id="{{ section_id }}"{% end %}>
+  <header class="elbysodic-page-section__header">
+    <h2>{{ title }}</h2>
+    <p>{{ description }}</p>
+  </header>
   {% if items %}
   <div class="elbysodic-material-grid">
     {% for item in items %}
@@ -36,9 +34,9 @@
     {% end %}
   </div>
   {% else %}
-  {% call surface(variant="elevated") %}
+  <div class="elbysodic-world-guide-empty">
   <p class="elbysodic-empty-state">{{ empty_text }}</p>
-  {% end %}
+  </div>
   {% end %}
 </section>
 {% end %}
@@ -47,8 +45,7 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
+<div class="elbysodic-world-guide-index elbysodic-stack elbysodic-stack--lg">
   <section class="elbysodic-material-studio-hero">
     <div>
       <p class="elbysodic-kicker">Guidebook</p>
@@ -91,8 +88,7 @@
   {% if hub.application_materials %}
   {{ material_section("Applications", "Character guidance before the form.", hub.application_materials, "No application guidance is live yet.", "applications") }}
   {% end %}
-{% end %}
-{% end %}
+</div>
 {% end %}
 {% endblock %}
 </div>
