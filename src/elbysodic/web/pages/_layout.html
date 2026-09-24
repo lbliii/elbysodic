@@ -144,7 +144,7 @@
 {% set brand_viewer = viewer | default(none) %}
 {% set brand_account = account_visitor | default(none) %}
 {% set brand_community = (brand_viewer.community if brand_has_community_shell and brand_viewer else (community | default(none))) %}
-{% set brand_identity_options = brand_viewer.identity_options if brand_viewer else (brand_account.identity_options if brand_account else ()) %}
+{% set brand_identity_options = brand_viewer.identity_options if brand_viewer and brand_has_community_shell else (brand_account.identity_options if brand_account else ()) %}
 <details class="chirpui-app-shell__brand elbysodic-realm-switcher"
          x-data="{ open: false }"
          x-bind:open="open"
