@@ -125,7 +125,7 @@ boards:
     tagline: "One stoplight, twelve opinions, and a bakery that hears everything."
     description: "The town's public spine for errands, arguments, festivals, and reunions."
     media:
-      url: "/elbysodic-static/seed-media/locations/smalltown-main-street.svg"
+      url: "/elbysodic-static/seed-media/locations/smalltown-main-street.jpg"
       alt: "Storefronts and civic lights along Main Street at dusk."
       treatment: poster
       focal_point: center

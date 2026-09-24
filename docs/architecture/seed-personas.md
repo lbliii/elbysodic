@@ -14,14 +14,16 @@ literal-IP coded personas remain compatibility fixtures for older route,
 identity, and privacy tests; new discovery and seed-depth checks should prefer
 the original-premise personas below.
 
-Each of the nine original-premise realms has a dedicated seeded hero
-illustration and mark, shaped around its current chapter: Afterlight's broken
-accord, Brightline's awards-night sabotage, Crownfall's vacant throne,
-Harbor Society's Founders Gala, Nocturne Row's treaty breach, Signal Creek's
-midnight transmission, Emberhouse's tampered selection, Gaslight Ward's
-impossible murder, and Wayfarer Station's missing convoy. The public catalog
-shows how each realm can carry its own identity before a director uploads
-custom art.
+The seeded catalog includes realm-specific heroes for all 14 realms, 22
+location covers, and portraits for seeded faces and writer memberships. The
+nine original-premise realms have dedicated hero art shaped around their
+current chapter: Afterlight's broken accord, Brightline's awards-night
+sabotage, Crownfall's vacant throne, Harbor Society's Founders Gala, Nocturne
+Row's treaty breach, Signal Creek's midnight transmission, Emberhouse's
+tampered selection, Gaslight Ward's impossible murder, and Wayfarer Station's
+missing convoy. See [seed art direction](../product/seed-art-direction.md) for
+the visual brief. Seed reruns replace prior generated defaults while retaining
+media a director has customized.
 
 Original-premise communities also seed four shared ordinary writer accounts in
 addition to `starlane`: `juniper.gray@example.com`, `miles.north@example.com`,

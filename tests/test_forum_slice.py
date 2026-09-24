@@ -3560,9 +3560,7 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         services = get_services()
         hp = services.repo.get_community_by_slug("hp-universe")
         hp_membership = services.repo.get_membership_for_user(hp.id, 1)
-        cookie = (
-            f"elbysodic_dev_identity={hp.id}:{hp_membership.user_id}:{hp_membership.id}"
-        )
+        cookie = f"elbysodic_dev_identity={hp.id}:{hp_membership.user_id}:{hp_membership.id}"
 
         async with TestClient(app) as client:
             xmen = await client.get("/c/x-men-apocalypse")
@@ -3570,7 +3568,7 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
 
         assert xmen.status == 200
         assert "elbysodic-realm-gateway-hero" in xmen.text
-        assert "/elbysodic-static/seed-media/xmen-hero.svg" in xmen.text
+        assert "/elbysodic-static/seed-media/realms/xmen-hero.jpg" in xmen.text
         assert 'alt="Snow-lit academy and B-24 signal lines"' in xmen.text
         assert "B-24 Winter" in xmen.text
         assert "Iceman is infected with B-24" in xmen.text
@@ -3578,7 +3576,7 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         assert hp_home.status == 200
         assert "elbysodic-world-hero--poster" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
-        assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
+        assert "/elbysodic-static/seed-media/realms/hp-hero.jpg" in hp_home.text
         assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
         assert "No Reflection" in hp_home.text
         assert (
@@ -3645,13 +3643,13 @@ def test_seeded_location_boards_have_media_throughlines() -> None:
             xavier = await client.get("/boards/xavier-institute")
 
         assert home.status == 200
-        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in home.text
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.jpg" in home.text
         assert 'alt="Snowbound academy windows under B-24 signal arcs"' in home.text
         assert hp_home.status == 200
-        assert "/elbysodic-static/seed-media/locations/hp-castle-corridors.svg" in hp_home.text
+        assert "/elbysodic-static/seed-media/locations/hp-castle-corridors.jpg" in hp_home.text
         assert 'alt="Castle corridor with shifting stairs and portrait light"' in hp_home.text
         assert xavier.status == 200
-        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in xavier.text
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.jpg" in xavier.text
 
     asyncio.run(run())
 
@@ -6709,7 +6707,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             community = await client.get("/community")
             assert community.status == 200
             assert "elbysodic-world-hero--poster" in community.text
-            assert "/elbysodic-static/seed-media/xmen-hero.svg" in community.text
+            assert "/elbysodic-static/seed-media/realms/xmen-hero.jpg" in community.text
             assert 'alt="Snow-lit academy and B-24 signal lines"' in community.text
             assert "Writer room and record" in community.text
             assert "B-24 Winter" in community.text
@@ -6802,9 +6800,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
-            assert re.search(
-                r'href="/elbysodic-static/elbysodic-theme\.css\?v=[^"]+"', world.text
-            )
+            assert re.search(r'href="/elbysodic-static/elbysodic-theme\.css\?v=[^"]+"', world.text)
             assert "elbysodic-shell.js?v=sidebar-rail-toggle-2" in world.text
             assert "elbysodic-composer.js?v=scene-context-inspector-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
@@ -7274,7 +7270,7 @@ def test_thread_page_renders_inherited_scene_media_as_hero_background() -> None:
         assert "Sentinel drill after midnight" in content
         assert "Inherited location media" not in content
         assert "Danger Room scene atmosphere" not in content
-        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.svg" in content
+        assert "/elbysodic-static/seed-media/locations/xmen-xavier-institute.jpg" in content
         assert 'alt="Snowbound academy windows under B-24 signal arcs"' in content
         assert 'aria-label="Open scene actions and context"' in content
 

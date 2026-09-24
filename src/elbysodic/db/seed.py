@@ -181,17 +181,33 @@ class OriginalPremiseWriterSeed:
 
 SEED_MEDIA_BASE = "/elbysodic-static/seed-media"
 LOCATION_MEDIA_BASE = f"{SEED_MEDIA_BASE}/locations"
+CHARACTER_AVATAR_BASE = f"{SEED_MEDIA_BASE}/avatars/characters"
+MEMBER_AVATAR_BASE = f"{SEED_MEDIA_BASE}/avatars/members"
+SEED_MEMBER_AVATAR_SLUGS = {
+    "writer@example.com": "writer",
+    "charlie@example.com": "charlie",
+    "mira@example.com": "mira",
+    "alex@example.com": "alex",
+    "moira@example.com": "moira",
+    "simon@example.com": "simon",
+    "inactive@example.com": "inactive",
+    "juniper.gray@example.com": "juniper-gray",
+    "miles.north@example.com": "miles-north",
+    "cass.marlow@example.com": "cass-marlow",
+    "lena.wren@example.com": "lena-wren",
+    "firstface@example.com": "firstface",
+}
 X_MEN_MEDIA = CommunityMediaSeed(
     mark_url=f"{SEED_MEDIA_BASE}/xmen-mark.svg",
     mark_alt="X-Men Apocalypse academy signal mark",
-    hero_url=f"{SEED_MEDIA_BASE}/xmen-hero.svg",
+    hero_url=f"{SEED_MEDIA_BASE}/realms/xmen-hero.jpg",
     hero_alt="Snow-lit academy and B-24 signal lines",
 )
 STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "afterlight-accord": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/afterlight-mark.svg",
         mark_alt="Afterlight Accord cracked treaty seal",
-        hero_url=f"{SEED_MEDIA_BASE}/afterlight-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/afterlight-hero.jpg",
         hero_alt="A broken treaty halo above a border town at the last light",
         hero_treatment="background",
         hero_focal_point="center",
@@ -200,7 +216,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "brightline": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/brightline-mark.svg",
         mark_alt="Brightline spotlight and rising star mark",
-        hero_url=f"{SEED_MEDIA_BASE}/brightline-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/brightline-hero.jpg",
         hero_alt="Awards-night stage with a sealed contract beneath a broken spotlight",
         hero_treatment="background",
         hero_focal_point="center",
@@ -209,7 +225,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "crownfall": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/crownfall-mark.svg",
         mark_alt="Crownfall divided coronet mark",
-        hero_url=f"{SEED_MEDIA_BASE}/crownfall-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/crownfall-hero.jpg",
         hero_alt="A vacant throne beneath a split crown and rival house banners",
         hero_treatment="poster",
         hero_focal_point="top",
@@ -218,7 +234,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "hp-universe": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/hp-mark.svg",
         mark_alt="HP Universe glass staircase mark",
-        hero_url=f"{SEED_MEDIA_BASE}/hp-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/hp-hero.jpg",
         hero_alt="Glass staircase rising through castle stacks",
         hero_treatment="poster",
         hero_focal_point="top",
@@ -226,7 +242,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "jurassic-park-universe": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/jurassic-mark.svg",
         mark_alt="Jurassic Park Universe operations mark",
-        hero_url=f"{SEED_MEDIA_BASE}/jurassic-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/jurassic-hero.jpg",
         hero_alt="Island operations fence and paddock monitors",
         hero_treatment="background",
         hero_focal_point="bottom",
@@ -235,7 +251,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "rl-nyc": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/nyc-mark.svg",
         mark_alt="RL NYC late train mark",
-        hero_url=f"{SEED_MEDIA_BASE}/nyc-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/nyc-hero.jpg",
         hero_alt="Night street windows above a subway platform",
         hero_treatment="background",
         hero_overlay="heavy",
@@ -244,7 +260,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "rl-small-town": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/smalltown-mark.svg",
         mark_alt="RL Small Town founders week mark",
-        hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/smalltown-hero.jpg",
         hero_alt="Town square noticeboard and storefront lights",
         hero_treatment="poster",
         hero_focal_point="bottom",
@@ -252,7 +268,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "harbor-society": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/harbor-mark.svg",
         mark_alt="Harbor Society shoreline club mark",
-        hero_url=f"{SEED_MEDIA_BASE}/harbor-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/harbor-hero.jpg",
         hero_alt="The Harbor Society club lit for Founders Gala above a moonlit shore",
         hero_treatment="poster",
         hero_focal_point="center",
@@ -260,7 +276,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "nocturne-row": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/nocturne-mark.svg",
         mark_alt="Nocturne Row breached treaty crescent",
-        hero_url=f"{SEED_MEDIA_BASE}/nocturne-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/nocturne-hero.jpg",
         hero_alt="A rain-lit city treaty gate beneath a breached crescent",
         hero_treatment="background",
         hero_focal_point="center",
@@ -269,7 +285,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "signal-creek": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/signal-creek-mark.svg",
         mark_alt="Signal Creek mountain radio beacon",
-        hero_url=f"{SEED_MEDIA_BASE}/signal-creek-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/signal-creek-hero.jpg",
         hero_alt="A radio tower sends impossible rings over a mountain town at midnight",
         hero_treatment="background",
         hero_focal_point="center",
@@ -278,7 +294,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "emberhouse": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/emberhouse-mark.svg",
         mark_alt="Emberhouse trial lantern and rank stone",
-        hero_url=f"{SEED_MEDIA_BASE}/emberhouse-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/emberhouse-hero.jpg",
         hero_alt="An empty trial hall with one missing stone on the selection board",
         hero_treatment="background",
         hero_focal_point="center",
@@ -287,7 +303,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "gaslight-ward": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/gaslight-mark.svg",
         mark_alt="Gaslight Ward occult streetlamp",
-        hero_url=f"{SEED_MEDIA_BASE}/gaslight-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/gaslight-hero.jpg",
         hero_alt="A gas lamp cuts through fog as an occult mark appears in the wet street",
         hero_treatment="background",
         hero_focal_point="center",
@@ -296,101 +312,122 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "wayfarer-station": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/wayfarer-mark.svg",
         mark_alt="Wayfarer Station signal compass",
-        hero_url=f"{SEED_MEDIA_BASE}/wayfarer-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/wayfarer-hero.jpg",
         hero_alt="An orbital station turns its signal lantern toward a missing convoy",
         hero_treatment="background",
         hero_focal_point="center",
         hero_overlay="heavy",
     ),
 }
+
+
+def _legacy_seed_hero_url(media_seed: CommunityMediaSeed) -> tuple[str, ...]:
+    filename = media_seed.hero_url.rsplit("/", maxsplit=1)[-1].removesuffix(".jpg")
+    return (f"{SEED_MEDIA_BASE}/{filename}.svg",)
+
+
+LEGACY_SEED_HERO_URLS = {
+    "x-men-apocalypse": (f"{SEED_MEDIA_BASE}/xmen-hero.svg",),
+    **{
+        community_slug: _legacy_seed_hero_url(media)
+        for community_slug, media in STUDIO_PROGRAM_MEDIA.items()
+    },
+    "harbor-society": (
+        f"{SEED_MEDIA_BASE}/harbor-hero.svg",
+        f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
+    ),
+}
+LEGACY_SEED_BOARD_IMAGE_URLS = {
+    f"{SEED_MEDIA_BASE}/realms/harbor-hero.jpg": (f"{SEED_MEDIA_BASE}/smalltown-hero.svg",),
+}
 X_MEN_BOARD_MEDIA: dict[str, BoardMediaSeed] = {
     "xavier-institute": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-xavier-institute.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-xavier-institute.jpg",
         "Snowbound academy windows under B-24 signal arcs",
     ),
     "new-york-city": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-new-york-city.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-new-york-city.jpg",
         "Frozen New York street with emergency lights",
     ),
     "mutant-underground": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-mutant-underground.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-mutant-underground.jpg",
         "Underground safehouse platform lit by mutant network signals",
     ),
     "trask-b24-facilities": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-trask-b24-facilities.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-trask-b24-facilities.jpg",
         "Sterile B-24 server lab with containment monitors",
     ),
     "united-nations": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-united-nations.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-united-nations.jpg",
         "Emergency council chamber under blue crisis feeds",
     ),
     "genosha": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-genosha.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-genosha.jpg",
         "Island relay tower broadcasting over a red horizon",
     ),
 }
 STUDIO_PROGRAM_BOARD_MEDIA: dict[str, dict[str, BoardMediaSeed]] = {
     "hp-universe": {
         "castle-corridors": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/hp-castle-corridors.svg",
+            f"{LOCATION_MEDIA_BASE}/hp-castle-corridors.jpg",
             "Castle corridor with shifting stairs and portrait light",
         ),
         "restricted-stacks": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/hp-restricted-stacks.svg",
+            f"{LOCATION_MEDIA_BASE}/hp-restricted-stacks.jpg",
             "Restricted library stacks glowing behind locked rails",
         ),
         "hogsmeade-after-dark": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/hp-hogsmeade-after-dark.svg",
+            f"{LOCATION_MEDIA_BASE}/hp-hogsmeade-after-dark.jpg",
             "Hogsmeade lane with warm windows after dark",
         ),
     },
     "jurassic-park-universe": {
         "isla-nublar": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-isla-nublar.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-isla-nublar.jpg",
             "Rainy island ridge with operations lights beyond the trees",
         ),
         "paddock-twelve": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-paddock-twelve.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-paddock-twelve.jpg",
             "Paddock fence warning lights during a storm",
         ),
         "control-room": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-control-room.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-control-room.jpg",
             "Control room monitors showing paddock alerts",
         ),
         "worker-village": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-worker-village.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-worker-village.jpg",
             "Worker village bunks under rain and utility lights",
         ),
     },
     "rl-nyc": {
         "brooklyn": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/nyc-brooklyn.svg",
+            f"{LOCATION_MEDIA_BASE}/nyc-brooklyn.jpg",
             "Brooklyn storefronts and apartment windows at night",
         ),
         "queens-night-market": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/nyc-queens-night-market.svg",
+            f"{LOCATION_MEDIA_BASE}/nyc-queens-night-market.jpg",
             "Queens night market stalls under wet string lights",
         ),
         "shift-work": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/nyc-shift-work.svg",
+            f"{LOCATION_MEDIA_BASE}/nyc-shift-work.jpg",
             "Late shift hospital and train lights after midnight",
         ),
     },
     "rl-small-town": {
         "main-street": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-main-street.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-main-street.jpg",
             "Main Street storefronts around the town noticeboard",
         ),
         "lake-road": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-lake-road.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-lake-road.jpg",
             "Lake road cabins and dusk water beyond the trees",
         ),
         "town-hall": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-town-hall.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-town-hall.jpg",
             "Town hall windows over meeting notices and steps",
         ),
         "county-fairgrounds": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-county-fairgrounds.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-county-fairgrounds.jpg",
             "County fairgrounds with tents and founders week lights",
         ),
     },
@@ -1972,7 +2009,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "White jackets, old money, and a membership vote that turns manners into weapons.",
                 "Club politics, social climbing, charitable pressure, private conversations, and public exits.",
-                image_url="/elbysodic-static/seed-media/smalltown-hero.svg",
+                image_url="/elbysodic-static/seed-media/realms/harbor-hero.jpg",
                 image_alt="Coastal club terrace under warm evening light",
                 image_treatment="background",
             ),
@@ -1982,7 +2019,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Boutiques, campaign flyers, school boosters, and errands that become alliances.",
                 "Everyday town scenes for work ties, rivals, returns, and public reputation.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.jpg",
                 image_alt="Small-town main street with string lights",
                 image_treatment="background",
             ),
@@ -1992,7 +2029,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Guest books, quiet bars, investor meetings, and names written down wrong on purpose.",
                 "Hotel, tourism, visiting family, investor, and illicit-meeting scenes.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.jpg",
                 image_alt="Marina hotel beside dark water and lit windows",
                 image_treatment="background",
             ),
@@ -2002,7 +2039,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Minutes, permits, donor plaques, and public kindness sharpened into leverage.",
                 "Council scenes, public hearings, campaign pressure, and old-family bargaining.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.jpg",
                 image_alt="Town hall with a festival banner",
                 image_treatment="background",
             ),
@@ -2012,7 +2049,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "A weekly paper with a printer that overheats whenever the town gets interesting.",
                 "Reporter scenes, anonymous tips, editorials, public scandals, and local history.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.jpg",
                 image_alt="Harbor Ledger office with stacked newspapers and warm window light",
                 image_treatment="background",
             ),
@@ -5070,6 +5107,25 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             "Sleeping Star",
         ),
     )
+    membership = _ensure_seed_membership_avatar(repo, community.id, membership, user.email)
+    charlie_membership = _ensure_seed_membership_avatar(
+        repo, community.id, charlie_membership, charlie_user.email
+    )
+    mira_membership = _ensure_seed_membership_avatar(
+        repo, community.id, mira_membership, mira_user.email
+    )
+    alex_membership = _ensure_seed_membership_avatar(
+        repo, community.id, alex_membership, alex_user.email
+    )
+    moira_membership = _ensure_seed_membership_avatar(
+        repo, community.id, moira_membership, moira_user.email
+    )
+    simon_membership = _ensure_seed_membership_avatar(
+        repo, community.id, simon_membership, simon_user.email
+    )
+    inactive_membership = _ensure_seed_membership_avatar(
+        repo, community.id, inactive_membership, inactive_user.email
+    )
     repo.connection.execute(
         """
         UPDATE community_memberships
@@ -6645,6 +6701,21 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             if program.slug in ORIGINAL_PREMISE_SEED_SLUGS
             else {}
         )
+        membership = _ensure_seed_membership_avatar(
+            repo,
+            community.id,
+            membership,
+            user.email,
+        )
+        for writer_seed in ORIGINAL_PREMISE_WRITER_SEEDS:
+            writer_membership = original_writer_memberships.get(writer_seed.username)
+            if writer_membership is not None:
+                _ensure_seed_membership_avatar(
+                    repo,
+                    community.id,
+                    writer_membership,
+                    writer_seed.email,
+                )
         if program.slug == "signal-creek":
             _seed_first_face_writer_membership(repo, community)
         preferred_defaults: dict[int, int] = {}
@@ -6924,7 +6995,7 @@ def _seed_first_face_writer_membership(repo: ForumRepository, community: Communi
         lambda: repo.create_user("firstface@example.com", "dev-password-hash"),
     )
     member_role = repo.get_role_by_slug(community.id, "member")
-    _get_or_create(
+    membership = _get_or_create(
         lambda: repo.get_membership_for_user(community.id, user.id),
         lambda: repo.create_membership(
             community.id,
@@ -6934,6 +7005,7 @@ def _seed_first_face_writer_membership(repo: ForumRepository, community: Communi
             "Rory Bell",
         ),
     )
+    _ensure_seed_membership_avatar(repo, community.id, membership, user.email)
 
 
 def _seed_harbor_writer_entry(
@@ -7379,11 +7451,14 @@ def _ensure_community_media_defaults(
     community: Community,
     media_seed: CommunityMediaSeed,
 ) -> Community:
+    legacy_hero_urls = LEGACY_SEED_HERO_URLS.get(community.slug, ())
+    replace_legacy_seed_hero = community.world_hero_image_url in legacy_hero_urls
     replace_legacy_harbor_art = (
         community.slug == "harbor-society"
         and community.community_mark_url == f"{SEED_MEDIA_BASE}/smalltown-mark.svg"
         and community.world_hero_image_url == f"{SEED_MEDIA_BASE}/smalltown-hero.svg"
     )
+    replace_seeded_hero = replace_legacy_seed_hero or replace_legacy_harbor_art
     mark_url = (
         media_seed.mark_url
         if community.community_mark_url is None or replace_legacy_harbor_art
@@ -7394,17 +7469,17 @@ def _ensure_community_media_defaults(
         mark_alt = media_seed.mark_alt
     hero_url = (
         media_seed.hero_url
-        if community.world_hero_image_url is None or replace_legacy_harbor_art
+        if community.world_hero_image_url is None or replace_seeded_hero
         else community.world_hero_image_url
     )
     hero_alt = community.world_hero_image_alt
-    if community.world_hero_image_url is None or replace_legacy_harbor_art:
+    if community.world_hero_image_url is None or replace_seeded_hero:
         hero_alt = media_seed.hero_alt
     hero_treatment = community.world_hero_treatment
     hero_focal_point = community.world_hero_focal_point
     hero_overlay = community.world_hero_overlay
     hero_height = community.world_hero_height
-    if community.world_hero_image_url is None or replace_legacy_harbor_art:
+    if community.world_hero_image_url is None or replace_seeded_hero:
         hero_treatment = media_seed.hero_treatment
         hero_focal_point = media_seed.hero_focal_point
         hero_overlay = media_seed.hero_overlay
@@ -7973,8 +8048,13 @@ def _ensure_character_identity(
     post_title_style: str = "standard",
     post_density: str = "calm",
 ) -> Character:
+    seed_avatar_url = f"{CHARACTER_AVATAR_BASE}/{character.slug}.jpg"
+    avatar_url = character.avatar_url
+    if avatar_url is None or avatar_url.startswith(f"{CHARACTER_AVATAR_BASE}/"):
+        avatar_url = seed_avatar_url
     if (
-        character.poster_url == poster_url
+        character.avatar_url == avatar_url
+        and character.poster_url == poster_url
         and character.poster_alt == poster_alt
         and character.tagline == tagline
         and character.accent_color == accent_color
@@ -7990,7 +8070,7 @@ def _ensure_character_identity(
         character.id,
         slug=character.slug,
         name=character.name,
-        avatar_url=character.avatar_url,
+        avatar_url=avatar_url,
         poster_url=poster_url,
         poster_alt=poster_alt,
         tagline=tagline,
@@ -8002,6 +8082,34 @@ def _ensure_character_identity(
         post_title_style=post_title_style,
         post_density=post_density,
     )
+
+
+def _ensure_seed_membership_avatar(
+    repo: ForumRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    email: str,
+) -> CommunityMembership:
+    avatar_slug = SEED_MEMBER_AVATAR_SLUGS.get(email)
+    if avatar_slug is None:
+        return membership
+    avatar_url = f"{MEMBER_AVATAR_BASE}/{avatar_slug}.jpg"
+    if membership.avatar_url == avatar_url:
+        return membership
+    if membership.avatar_url is not None and not membership.avatar_url.startswith(
+        f"{MEMBER_AVATAR_BASE}/"
+    ):
+        return membership
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET avatar_url = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (avatar_url, community_id, membership.id),
+    )
+    repo.connection.commit()
+    return repo.get_membership(community_id, membership.id)
 
 
 def _ensure_board(
@@ -8049,7 +8157,11 @@ def _ensure_board_media_default(
     board: Board,
     media_seed: BoardMediaSeed,
 ) -> Board:
-    if board.image_url is not None:
+    if board.image_url == media_seed.image_url:
+        return board
+    if board.image_url is not None and board.image_url not in _legacy_seed_image_urls(
+        media_seed.image_url
+    ):
         return board
     return repo.update_board(
         community_id,
@@ -8083,7 +8195,9 @@ def _ensure_board_seed_media(
     image_focal_point: str,
     image_overlay: str,
 ) -> Board:
-    if image_url is None or board.image_url is not None:
+    if image_url is None or board.image_url == image_url:
+        return board
+    if board.image_url is not None and board.image_url not in _legacy_seed_image_urls(image_url):
         return board
     return repo.update_board(
         community_id,
@@ -8104,6 +8218,13 @@ def _ensure_board_seed_media(
         navigation_order=board.navigation_order,
         show_in_navigation=board.show_in_navigation,
     )
+
+
+def _legacy_seed_image_urls(image_url: str) -> frozenset[str]:
+    legacy_urls = set(LEGACY_SEED_BOARD_IMAGE_URLS.get(image_url, ()))
+    if image_url.endswith(".jpg"):
+        legacy_urls.add(f"{image_url[:-4]}.svg")
+    return frozenset(legacy_urls)
 
 
 def _ensure_material(

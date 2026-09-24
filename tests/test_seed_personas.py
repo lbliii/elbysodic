@@ -63,6 +63,34 @@ def test_seed_demo_forum_reconciles_an_existing_broad_moderator_role() -> None:
         services.close()
 
 
+def test_seed_demo_forum_migrates_legacy_generated_realm_hero() -> None:
+    services = create_services(path=":memory:")
+    try:
+        repo = services.repo
+        community = repo.get_community_by_slug("afterlight-accord")
+        repo.update_community_media(
+            community.id,
+            community_mark_url=community.community_mark_url,
+            community_mark_alt=community.community_mark_alt,
+            world_hero_image_url="/elbysodic-static/seed-media/afterlight-hero.svg",
+            world_hero_image_alt=community.world_hero_image_alt,
+            world_hero_treatment=community.world_hero_treatment,
+            world_hero_focal_point=community.world_hero_focal_point,
+            world_hero_overlay=community.world_hero_overlay,
+            world_hero_height=community.world_hero_height,
+        )
+
+        seed_demo_forum(repo)
+
+        updated = repo.get_community_by_slug("afterlight-accord")
+        assert (
+            updated.world_hero_image_url
+            == "/elbysodic-static/seed-media/realms/afterlight-hero.jpg"
+        )
+    finally:
+        services.close()
+
+
 def test_original_premise_sample_scenes_fill_public_preview_window() -> None:
     services = create_services(path=":memory:")
     try:
