@@ -582,8 +582,8 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         app = create_app(debug=False, services=services)
         budgets = {
             "/network": 105,
-            # The X-Men seed now renders active reserve, wanted, and plotting handoffs.
-            "/c/x-men-apocalypse": 350,
+            # The X-Men seed renders active reserve, wanted, plotting, and reply handoffs.
+            "/c/x-men-apocalypse": 360,
             "/c/x-men-apocalypse/locations": 150,
             "/c/x-men-apocalypse/community": 310,
             "/c/x-men-apocalypse/world/b-24-winter": 155,
@@ -3738,7 +3738,7 @@ def test_writer_desk_hub_keeps_meta_tools_reachable() -> None:
             assert "By face" in desk.text
             assert "Everything else" in desk.text
             assert "elbysodic-page-pulse--desk" in desk.text
-            assert "Read latest" in desk.text
+            assert "Reply where owed" in desk.text
             assert "Unread watched" in desk.text
             assert "Waiting on others" in desk.text
             assert "Desk shortcuts" not in desk.text
@@ -7407,7 +7407,7 @@ def test_thread_page_renders_scene_grounding_for_owner() -> None:
         assert "Inside" in content
         assert "Xavier Institute" in content
         assert "Present faces" in content
-        assert "Rogue is waiting" in content
+        assert "Rogue needs reply" in content
         assert "Status" in content
         assert "Active" in content
         assert "Mode" in content
@@ -12082,7 +12082,7 @@ def test_character_activity_center_tracks_identity_specific_threads() -> None:
             filtered = await client.get("/my/threads?character=rogue")
             assert filtered.status == 200
             assert "Character threads" in filtered.text
-            assert "Rogue · 1" in filtered.text
+            assert "Rogue · 2" in filtered.text
             assert "Open thread roster" in filtered.text
             assert "Sentinel drill after midnight" in filtered.text
             assert "Welcome to the rebuild" not in filtered.text
@@ -13620,8 +13620,10 @@ def test_thread_starter_can_manage_scene_cast() -> None:
             assert {
                 character.slug
                 for character in repo.list_thread_participants(community.id, thread.id)
-            } == {"rogue", "kitty-pryde"}
-            assert xavier.id not in repo.list_thread_participant_ids(community.id, thread.id)
+            } == {"rogue", "kitty-pryde", "charles-xavier"}
+            # Scene authors stay present in the cast even when the director updates
+            # the manually selected participants.
+            assert xavier.id in repo.list_thread_participant_ids(community.id, thread.id)
 
             rendered = await client.get("/boards/danger-room/threads/sentinel-drill")
             assert rendered.status == 200

@@ -827,12 +827,7 @@ def test_production_signed_out_public_scene_stops_after_four_posts(monkeypatch) 
         )
         rogue = services.repo.get_character_by_slug(community.id, "rogue")
         xavier = services.repo.get_character_by_slug(community.id, "charles-xavier")
-        services.repo.create_post(
-            community.id,
-            thread.id,
-            xavier.id,
-            "PUBLIC PREVIEW SECOND POST",
-        )
+        # The seeded scene already has Charles's reply as post two.
         services.repo.create_post(
             community.id,
             thread.id,
@@ -866,7 +861,7 @@ def test_production_signed_out_public_scene_stops_after_four_posts(monkeypatch) 
 
         assert public.status == 200
         assert "Public scene preview" in public.text
-        assert "PUBLIC PREVIEW SECOND POST" in public.text
+        assert "The second Sentinel unfolded" in public.text
         assert "PUBLIC PREVIEW FOURTH POST" in public.text
         assert "MEMBER ONLY FIFTH POST" not in public.text
         assert "The scene continues inside the realm" in public.text
