@@ -1,0 +1,13 @@
+{# Faces & Threads. Icons are decorative; the owning control supplies its label. #}
+{% def icon(name, size="md", cls="") %}
+<svg class="elbysodic-icon elbysodic-icon--{{ size }}{{ " " ~ cls if cls else "" }}" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <use href="/elbysodic-static/icons/sidebar.svg?v=faces-threads-1#elbysodic-icon-{{ name }}"></use>
+</svg>
+{% end %}
+
+{% def icon_counter(name, value, label) %}
+<span class="elbysodic-icon-counter" title="{{ value }} {{ label }}">
+  {{ icon(name, size="sm") }}
+  <span>{{ value }} <span class="elbysodic-visually-hidden">{{ label }}</span></span>
+</span>
+{% end %}

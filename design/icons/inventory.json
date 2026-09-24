@@ -1,0 +1,679 @@
+{
+  "date": "2026-09-24",
+  "scope": "Tracked SVG assets before Faces & Threads; excludes dependencies, new review artifacts, and untracked realm media.",
+  "file_count": 157,
+  "counts_by_role": {
+    "archived-exploration": 90,
+    "brand-master": 10,
+    "seed-hero": 14,
+    "seed-location": 22,
+    "seed-mark": 14,
+    "served-brand": 6,
+    "ui-sprite": 1
+  },
+  "assets": [
+    {
+      "path": "design/brand/circle-terminals/favicon.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/lockup-compact.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/lockup-horizontal.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/lockup-stacked.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/mark-bare-on-dark.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/mark-bare-on-light.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/mark-one-color-dark.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/mark-one-color-light.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/mark-primary.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/brand/circle-terminals/mark-small.svg",
+      "role": "brand-master"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/casting-constellation.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/casting-orbit.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-overlap-bleed.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-overlap-cut.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-overlap-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-overlap-registered.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-overlap-soft.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-overlap-tight.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-primary-bare.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-primary-light.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-primary-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-primary-one-color.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-primary.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-progressive-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-progressive.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-vertical-column.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-vertical-intercut.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-vertical-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-vertical-merge.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/circle-terminals-vertical-overlap.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/color-score-registration.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/director-aperture-grid.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/director-registration.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/dual-face-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-cinema-prism.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-marquee-roster.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-platinum-monogram.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-spotlight-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-studio-seal-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-technicolor-gate.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/e-title-card.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/face-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/face-thread-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-beamsplitter.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-color-record-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-face.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-prism-records.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-prism.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-roster.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-separated-records.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-thread-cut.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/lowercase-e-three-strip.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/negative-casting-slot.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/negative-director-mask.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/negative-face-e.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/negative-roster-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/negative-thread-cut.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/negative-wordmark-glyph.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-e-prism.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-roster-cut-color-circles-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-roster-cut-color-circles.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-roster-cut-color-left-green.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-roster-cut-color-left-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-roster-cut-color-left.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-roster-cut.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-thread-cut.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/online-thread-e.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/page-signal-escutcheon.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/registered-thread-monogram.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-circle-terminals-arrow.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-circle-terminals-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-circle-terminals.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-color-left-arrow-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-color-left-arrow.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-color-left-chevron.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-color-left-clean-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-cut-color-left-clean.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/roster-signal-star.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/scene-aperture-roster.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/segmented-e-aperture.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/segmented-e-four-part.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/segmented-e-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/segmented-e-tail.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-badge.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-face.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-gate.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-lockup-a.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-lockup-b.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-lockup-c.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-refined.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-roster-a.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-roster-b.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-roster-c.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-roster-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-roster.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/thread-cut-solid.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "design/logo-options/archive/2026-05-circle-terminals-exploration/wordmark-lockup.svg",
+      "role": "archived-exploration"
+    },
+    {
+      "path": "src/elbysodic/web/static/brand/elbysodic-favicon.svg",
+      "role": "served-brand"
+    },
+    {
+      "path": "src/elbysodic/web/static/brand/elbysodic-lockup-compact.svg",
+      "role": "served-brand"
+    },
+    {
+      "path": "src/elbysodic/web/static/brand/elbysodic-lockup-horizontal.svg",
+      "role": "served-brand"
+    },
+    {
+      "path": "src/elbysodic/web/static/brand/elbysodic-mark-one-color-dark.svg",
+      "role": "served-brand"
+    },
+    {
+      "path": "src/elbysodic/web/static/brand/elbysodic-mark-small.svg",
+      "role": "served-brand"
+    },
+    {
+      "path": "src/elbysodic/web/static/brand/elbysodic-mark.svg",
+      "role": "served-brand"
+    },
+    {
+      "path": "src/elbysodic/web/static/icons/sidebar.svg",
+      "role": "ui-sprite",
+      "original_symbol_ids": [
+        "elbysodic-icon-home",
+        "elbysodic-icon-world",
+        "elbysodic-icon-wanted",
+        "elbysodic-icon-desk",
+        "elbysodic-icon-studio",
+        "elbysodic-icon-network",
+        "elbysodic-icon-locations",
+        "elbysodic-icon-guidebook",
+        "elbysodic-icon-community",
+        "elbysodic-icon-members",
+        "elbysodic-icon-queue",
+        "elbysodic-icon-inbox",
+        "elbysodic-icon-roster",
+        "elbysodic-icon-plotting",
+        "elbysodic-icon-applications",
+        "elbysodic-icon-artifacts",
+        "elbysodic-icon-discovery",
+        "elbysodic-icon-casting",
+        "elbysodic-icon-claims",
+        "elbysodic-icon-reserves",
+        "elbysodic-icon-operations",
+        "elbysodic-icon-launch",
+        "elbysodic-icon-boards",
+        "elbysodic-icon-navigation",
+        "elbysodic-icon-appearance",
+        "elbysodic-icon-intake",
+        "elbysodic-icon-continuity",
+        "elbysodic-icon-materials",
+        "elbysodic-icon-events",
+        "elbysodic-icon-scene",
+        "elbysodic-icon-face",
+        "elbysodic-icon-notifications",
+        "elbysodic-icon-settings"
+      ]
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/afterlight-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/afterlight-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/brightline-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/brightline-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/crownfall-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/crownfall-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/emberhouse-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/emberhouse-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/gaslight-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/gaslight-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/harbor-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/harbor-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/hp-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/hp-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/jurassic-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/jurassic-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/hp-castle-corridors.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/hp-hogsmeade-after-dark.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/hp-restricted-stacks.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/jurassic-control-room.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/jurassic-isla-nublar.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/jurassic-paddock-twelve.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/jurassic-worker-village.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/nyc-brooklyn.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/nyc-queens-night-market.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/nyc-shift-work.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/smalltown-county-fairgrounds.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/smalltown-harbor-ledger.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/smalltown-lake-road.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/smalltown-main-street.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/smalltown-marina-hotel.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/smalltown-town-hall.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/xmen-genosha.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/xmen-mutant-underground.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/xmen-new-york-city.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/xmen-trask-b24-facilities.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/xmen-united-nations.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/locations/xmen-xavier-institute.svg",
+      "role": "seed-location"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/nocturne-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/nocturne-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/nyc-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/nyc-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/signal-creek-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/signal-creek-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/smalltown-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/smalltown-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/wayfarer-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/wayfarer-mark.svg",
+      "role": "seed-mark"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/xmen-hero.svg",
+      "role": "seed-hero"
+    },
+    {
+      "path": "src/elbysodic/web/static/seed-media/xmen-mark.svg",
+      "role": "seed-mark"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/icons.html" import icon_counter %}
   {% from "_components/ui.html" import cast_faces, latest_line %}
 {% end %}
 
@@ -93,7 +93,7 @@
     </div>
     {% if reply_count %}
     <div class="elbysodic-thread-card__metrics">
-      {{ inline_counter("chat" | icon, reply_count, "replies") }}
+      {{ icon_counter("reply", reply_count, "replies") }}
     </div>
     {% end %}
     {% if facets %}
@@ -152,7 +152,7 @@
     {% for item_badge in badges %}
     {{ badge(item_badge.label, variant=item_badge.variant) }}
     {% end %}
-    {{ inline_counter("R", reply_count, "replies") if reply_count else "" }}
+    {{ icon_counter("reply", reply_count, "replies") if reply_count else "" }}
     {{ cast_faces(participants, label="Cast") }}
   </div>
   {% if latest_post %}

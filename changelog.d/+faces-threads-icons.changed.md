@@ -1,0 +1,1 @@
+Elbysodic now uses a bespoke Faces & Threads icon family across realm navigation, board and scene summaries, discovery actions, and scene controls, with consistent shapes inspired by faces, writing, and shared story continuity.

@@ -733,21 +733,11 @@
     color: var(--elbysodic-on-media-muted);
 }
 
-.elbysodic-board-stage .chirpui-inline-counter {
-    color: var(--elbysodic-on-media-muted);
-}
-
-.elbysodic-board-stage .chirpui-inline-counter__mark {
-    background: transparent;
-    border: 0;
-    color: var(--elbysodic-on-media-muted);
-}
-
-.elbysodic-board-stage .chirpui-inline-counter__value {
+.elbysodic-board-stage .elbysodic-icon-counter {
     color: var(--elbysodic-on-media-text);
 }
 
-.elbysodic-board-stage .chirpui-inline-counter__label {
+.elbysodic-board-stage .elbysodic-icon-counter .elbysodic-icon {
     color: var(--elbysodic-on-media-muted);
 }
 

@@ -175,7 +175,7 @@ def test_metadata_hints_use_the_chirp_ui_tooltip() -> None:
     )
 
 
-def test_compact_counts_use_the_chirp_ui_inline_counter() -> None:
+def test_compact_counts_use_the_owned_icon_counter() -> None:
     migrated_templates = (
         "_components/boards.html",
         "_components/thread_summary.html",
@@ -185,8 +185,9 @@ def test_compact_counts_use_the_chirp_ui_inline_counter() -> None:
 
     for template_path in migrated_templates:
         text = (PAGES / template_path).read_text(encoding="utf-8")
-        assert 'from "chirpui/inline_counter.html" import inline_counter' in text
-        assert "inline_counter(" in text
+        assert 'from "_components/icons.html" import' in text
+        assert "icon_counter(" in text
+        assert "inline_counter(" not in text
         assert 'from "_components/ui.html" import counter' not in text
         assert "{{ counter(" not in text
 

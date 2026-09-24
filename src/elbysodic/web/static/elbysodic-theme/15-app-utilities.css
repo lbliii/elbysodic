@@ -19,3 +19,30 @@
 .elbysodic-text-muted {
     color: var(--chirpui-text-muted);
 }
+
+/* Faces & Threads: one optical grid for chrome, story objects, and actions. */
+.elbysodic-icon {
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 1.25rem;
+    pointer-events: none;
+    vertical-align: -0.2em;
+    width: 1.25rem;
+}
+
+.elbysodic-icon--sm {
+    height: 1rem;
+    width: 1rem;
+}
+
+.elbysodic-icon--lg {
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
+.elbysodic-icon-counter {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.35em;
+    white-space: nowrap;
+}

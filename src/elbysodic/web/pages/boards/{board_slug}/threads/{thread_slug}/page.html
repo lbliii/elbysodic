@@ -6,6 +6,7 @@
   {% from "_components/boards.html" import board_media_classes, board_media_image %}
   {% from "_components/composer.html" import composer_toolbar, composer_view_toggle %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/icons.html" import icon %}
   {% from "_components/posts.html" import post_frame %}
   {% from "_components/scene_context.html" import scene_context_shell, scene_writer_activity_trigger %}
   {% from "_components/ui.html" import scene_reader_context_strip, scene_state_badges %}
@@ -125,7 +126,7 @@
                 aria-label="Open scene actions and context"
                 title="Scene actions"
                 @click.prevent="toggleInspector()">
-          <span aria-hidden="true">{{ "logs" | icon }}</span>
+          {{ icon("more") }}
           <span class="elbysodic-visually-hidden">Scene actions</span>
         </button>
       </div>
@@ -271,7 +272,7 @@
     {% end %}
   {% else %}
     <aside class="elbysodic-notice elbysodic-notice--staff" aria-label="Thread locked">
-      <span class="elbysodic-notice__mark" aria-hidden="true">!</span>
+      <span class="elbysodic-notice__mark" aria-hidden="true">{{ icon("lock", size="sm") }}</span>
       <span class="elbysodic-notice__label">Thread locked</span>
       <span class="elbysodic-notice__body">
         <strong class="elbysodic-notice__title">Replies are closed</strong>

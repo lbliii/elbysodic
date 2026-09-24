@@ -2,6 +2,7 @@
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/drawer.html" import drawer, drawer_trigger %}
   {% from "_components/boards.html" import board_media_classes, board_media_image %}
+  {% from "_components/icons.html" import icon %}
   {% from "_components/ui.html" import cast_faces, event_bridge %}
 {% end %}
 
@@ -246,7 +247,7 @@
       {{ csrf_field() }}
       <input type="hidden" name="intent" value="join_scene">
       <button type="submit" class="chirpui-btn chirpui-btn--primary">
-        <span class="chirpui-btn__icon" aria-hidden="true">{{ "add" | icon }}</span>
+        {{ icon("add", cls="chirpui-btn__icon") }}
         Join as {{ selected_character.name }}
       </button>
     </form>
@@ -261,7 +262,7 @@
       {{ csrf_field() }}
       <input type="hidden" name="intent" value="{{ "unwatch" if thread_view.is_watched else "watch" }}">
       <button type="submit" class="chirpui-btn chirpui-btn--secondary">
-        <span class="chirpui-btn__icon" aria-hidden="true">{{ "watch" | icon }}</span>
+        {{ icon("watch", cls="chirpui-btn__icon") }}
         {{ "Unwatch thread" if thread_view.is_watched else "Watch thread" }}
       </button>
     </form>
@@ -279,7 +280,7 @@
     {% if thread_view.latest_post %}
     <a class="chirpui-btn chirpui-btn--secondary"
        href="#{{ thread_view.latest_post.anchor }}">
-      <span class="chirpui-btn__icon" aria-hidden="true">{{ "arrow-down" | icon }}</span>
+      {{ icon("arrow-down", cls="chirpui-btn__icon") }}
       Read latest
     </a>
     {% end %}
@@ -302,7 +303,7 @@
               class="chirpui-btn chirpui-btn--secondary elbysodic-scene-grounding__close-panel"
               @click="closeInspector()"
               aria-label="Close scene context panel">
-        <span class="elbysodic-scene-grounding__close-glyph" aria-hidden="true">×</span>
+        {{ icon("close", cls="elbysodic-scene-grounding__close-glyph") }}
       </button>
       {% end %}
     </div>

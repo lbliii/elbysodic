@@ -1,6 +1,7 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/tooltip.html" import tooltip %}
+  {% from "_components/icons.html" import icon %}
   {% from "_components/vocabulary.html" import metric_item %}
 {% end %}
 
@@ -16,11 +17,11 @@ A realm ready for scenes, casting, and writer movement.
 {% end %}
 {% end %}
 
-{% def compact_link_action(href, label, icon) %}
+{% def compact_link_action(href, label, icon_id) %}
 {% if href %}
 {% call tooltip(label, position="left", cls="elbysodic-network-card__tooltip") %}
   <a class="elbysodic-network-card__icon-action" href="{{ href }}" aria-label="{{ label }}">
-    <span aria-hidden="true">{{ icon | icon }}</span>
+    {{ icon(icon_id) }}
     <span class="elbysodic-visually-hidden">{{ label }}</span>
   </a>
 {% end %}
@@ -84,15 +85,15 @@ A realm ready for scenes, casting, and writer movement.
   </div>
   <div class="elbysodic-network-card__actions">
     {% if program.current_event %}
-    {{ compact_link_action(program.current_event_href, "Read chapter", "bolt") }}
+    {{ compact_link_action(program.current_event_href, "Read chapter", "events") }}
     {% elif program.premise %}
-    {{ compact_link_action(program.premise_href, "Premise", "list") }}
+    {{ compact_link_action(program.premise_href, "Premise", "guidebook") }}
     {% end %}
     {% if program.open_wanted_count %}
-    {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "star") }}
+    {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "wanted") }}
     {% end %}
     {% if program.request_access_href and not (viewer and viewer.community.id == program.community.id) %}
-    {{ compact_link_action(program.request_access_href, "Request access", "envelope") }}
+    {{ compact_link_action(program.request_access_href, "Request access", "inbox") }}
     {% end %}
   </div>
 </article>
