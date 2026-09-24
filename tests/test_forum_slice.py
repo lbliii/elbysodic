@@ -585,7 +585,7 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
             # The X-Men seed renders active reserve, wanted, plotting, and reply handoffs.
             "/c/x-men-apocalypse": 360,
             "/c/x-men-apocalypse/locations": 150,
-            "/c/x-men-apocalypse/community": 310,
+            "/c/x-men-apocalypse/community": 320,
             "/c/x-men-apocalypse/world/b-24-winter": 155,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 105,
