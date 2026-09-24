@@ -26,14 +26,16 @@ unread behavior while reusing that context for snippets.
 ## Chirp and Pounce lifecycle compatibility
 
 Chirp 0.10 exposes public `freeze` and ASGI application seams. Its public `run`
-method always serves the Chirp application itself, so it cannot launch the
-draining-aware ASGI wrapper required by Pounce 0.9. The compatibility bridge is
-isolated in `pounce_railway.run_chirp_asgi_adapter`: it freezes through the public
-method, then uses Chirp's private `_server` launcher to serve the wrapper. A
-pre-0.10 `_ensure_frozen` fallback remains solely for the existing lifecycle
-canary.
+method always serves the Chirp application itself, so production launches the
+draining-aware wrapper through Pounce's public `run` API with an explicit
+`ServerConfig`. `pounce_railway.railway_server_config` carries Chirp's resolved
+host and port, production worker mode, logging, proxy, and request-size settings
+while pinning Railway's one-worker, `/readyz`, and ten-second shutdown posture.
+The development path continues to use Chirp's public `run` method and retains
+its reload behavior.
 
-The adapter test verifies that public freeze happens first and that the wrapper,
-host, port, and lifecycle collector reach the launcher. Re-evaluate and remove
-the private launcher bridge whenever Chirp changes version or adds a supported
-wrapped-application startup API.
+The adapter canary verifies that public freeze happens before Pounce receives
+the wrapper and its explicit config. Chirp's private launcher and config-factory
+mutation are no longer part of the launch path. Drain logs retain Pounce's
+worker id and generation, and the worker-startup reset clears the drain event
+and plotting-stream gauge before a new generation serves requests.
