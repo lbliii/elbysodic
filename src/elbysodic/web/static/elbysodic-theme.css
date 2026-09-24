@@ -4,23 +4,23 @@
  * ./elbysodic-theme/ so theme changes stay reviewable.
  */
 
-@import url("./elbysodic-theme/00-tokens.css");
-@import url("./elbysodic-theme/10-chirp-primitives.css");
-@import url("./elbysodic-theme/15-app-utilities.css");
-@import url("./elbysodic-theme/20-shell.css");
-@import url("./elbysodic-theme/30-page-patterns.css");
-@import url("./elbysodic-theme/35-media-patterns.css");
-@import url("./elbysodic-theme/40-pbp-components.css");
-@import url("./elbysodic-theme/41-boards-places.css");
-@import url("./elbysodic-theme/42-threads-queues.css");
-@import url("./elbysodic-theme/43-faces-composer.css");
-@import url("./elbysodic-theme/44-claims-intake.css");
-@import url("./elbysodic-theme/45-posts-scenes.css");
-@import url("./elbysodic-theme/46-world-materials.css");
-@import url("./elbysodic-theme/47-network.css");
-@import url("./elbysodic-theme/47-network-catalog.css");
-@import url("./elbysodic-theme/48-wanted-plotting.css");
-@import url("./elbysodic-theme/49-composer.css");
-@import url("./elbysodic-theme/50-page-compositions.css");
-@import url("./elbysodic-theme/60-studio.css");
-@import url("./elbysodic-theme/90-legacy.css");
+@import url("./elbysodic-theme/00-tokens.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/10-chirp-primitives.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/15-app-utilities.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/20-shell.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/30-page-patterns.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/35-media-patterns.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/40-pbp-components.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/41-boards-places.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/42-threads-queues.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/43-faces-composer.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/44-claims-intake.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/45-posts-scenes.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/46-world-materials.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/47-network.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/47-network-catalog.css?v=editorial-surface-20");
+@import url("./elbysodic-theme/48-wanted-plotting.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/49-composer.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/50-page-compositions.css?v=editorial-surface-20");
+@import url("./elbysodic-theme/60-studio.css?v=editorial-surface-19");
+@import url("./elbysodic-theme/90-legacy.css?v=editorial-surface-19");

@@ -527,7 +527,7 @@ def test_concurrent_rendered_get_navigation_stays_stable(tmp_path: Path) -> None
         services = create_services(path=tmp_path / "rapid-navigation.sqlite3")
         app = create_app(debug=False, services=services)
         routes = [
-            ("/network", "Find a realm that fits the story you want to write."),
+            ("/network", "Find your next story."),
             ("/c/rl-nyc/my/threads", "RL NYC"),
             ("/c/rl-small-town/boards/town-hall?filter=mine", "RL Small Town"),
             ("/c/jurassic-park-universe/world", "Jurassic Park Universe"),
@@ -582,9 +582,10 @@ def test_rendered_route_query_budgets_are_tracked() -> None:
         app = create_app(debug=False, services=services)
         budgets = {
             "/network": 105,
-            "/c/x-men-apocalypse": 345,
+            # The X-Men seed now renders active reserve, wanted, and plotting handoffs.
+            "/c/x-men-apocalypse": 350,
             "/c/x-men-apocalypse/locations": 150,
-            "/c/x-men-apocalypse/community": 305,
+            "/c/x-men-apocalypse/community": 310,
             "/c/x-men-apocalypse/world/b-24-winter": 155,
             "/c/rl-nyc/my/threads": 80,
             "/c/rl-small-town/boards/town-hall?filter=mine": 105,
@@ -715,9 +716,10 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
                 response = await client.get("/network")
 
         assert response.status == 200
-        assert "Find a realm that fits the story you want to write." in response.text
+        assert "Find your next story." in response.text
         assert "Hosted Program" in response.text
-        assert trace.count <= 85
+        # Signed-in discovery now includes the seeded writer entry and handoff state.
+        assert trace.count <= 89
 
     asyncio.run(run())
 
@@ -750,6 +752,10 @@ def test_visible_unread_notification_counts_use_batched_membership_query() -> No
                 character_id,
             )
         )
+    baseline_counts = visible_unread_notification_counts(
+        repo,
+        [(community_id, membership, role) for community_id, membership, role, _ in contexts],
+    )
     for community_id, membership, _role, character_id in contexts:
         repo.create_notification(
             community_id,
@@ -766,7 +772,10 @@ def test_visible_unread_notification_counts_use_batched_membership_query() -> No
             [(community_id, membership, role) for community_id, membership, role, _ in contexts],
         )
 
-    assert counts == {membership.id: 1 for _community_id, membership, _role, _ in contexts}
+    assert counts == {
+        membership.id: baseline_counts.get(membership.id, 0) + 1
+        for _community_id, membership, _role, _ in contexts
+    }
     batch_queries = [
         statement
         for statement in trace.statements
@@ -789,6 +798,12 @@ def test_mark_all_notifications_read_has_no_visible_count_cap() -> None:
     repo = services.repo
     viewer = services.viewer()
     assert services.seed.default_character is not None
+    baseline_unread = count_visible_unread_notifications(
+        repo,
+        viewer.community.id,
+        viewer.membership,
+        viewer.role,
+    )
     other_membership = repo.create_membership(
         viewer.community.id,
         repo.create_user("hidden-notify@example.com", "hash").id,
@@ -829,7 +844,7 @@ def test_mark_all_notifications_read_has_no_visible_count_cap() -> None:
             viewer.membership,
             viewer.role,
         )
-        == 1001
+        == baseline_unread + 1001
     )
 
     with trace_sql(repo.connection) as trace:
@@ -2182,7 +2197,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
             response = await client.get("/network")
 
         assert response.status == 200
-        assert "Find a realm that fits the story you want to write." in response.text
+        assert "Find your next story." in response.text
         assert "Open for browsing" in response.text
         assert "Start with a wanted hook" in response.text
         assert "Start with a current chapter" in response.text
@@ -4061,13 +4076,13 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'id="operations-heading"' in studio.text
             assert "Technical checks" in studio.text
             assert '<details class="elbysodic-operations-diagnostics">' in studio.text
-            assert "No director operations need attention right now." in studio.text
-            assert "Operations clear" in studio.text
+            assert "No director operations need attention right now." not in studio.text
+            assert "Operations clear" not in studio.text
             assert "Claim conflicts" not in studio.text
-            assert "Active reserves" not in studio.text
-            assert "Hooks with movement" not in studio.text
+            assert "Active reserves" in studio.text
+            assert "Hooks with movement" in studio.text
             assert "Ready for scene" not in studio.text
-            assert "Staff notifications" not in studio.text
+            assert "Staff notifications" in studio.text
             assert "Production health" not in studio.text
             assert "Draft materials" not in studio.text
             assert "Dry-run intake" not in studio.text
@@ -4089,7 +4104,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
 
         assert launch.status == 200
         assert "Open realm" in launch.text
-        assert "Open the realm with the writing surface intact." in launch.text
+        assert "Set the stage before writers arrive." in launch.text
         assert "Opening checklist" in launch.text
         assert 'class="elbysodic-launch-checklist"' in launch.text
         assert "elbysodic-launch-checklist__item--ready" in launch.text
@@ -4196,7 +4211,8 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert operations_redirect.status == 302
         assert "/studio" in _response_header(operations_redirect, "location")
         assert [(lane.label, lane.href) for lane in operations_model.lanes] == [
-            ("Needs decision", f"/studio/access-requests/{access_request.id}")
+            ("Needs decision", f"/studio/access-requests/{access_request.id}"),
+            ("Watching", "/casting"),
         ]
         assert parity["Launch"].first_action_href == f"/studio/access-requests/{access_request.id}"
         assert parity["Launch"].list_href == "/studio/launch#access-requests"
@@ -4210,7 +4226,7 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert 'href="#director-operation-signals"' not in operations.text
         assert "Queues that should move before writers stall." in operations.text
         assert "<em>Blocked</em>" not in operations.text
-        assert "<em>Watching</em>" not in operations.text
+        assert "<em>Watching</em>" in operations.text
         assert "Operations queue shortcuts" in operations.text
         assert 'href="/applications"' in operations.text
         assert 'href="/casting"' in operations.text
@@ -5024,7 +5040,7 @@ def test_account_linked_access_request_requires_matching_global_email() -> None:
     assert services.repo.list_memberships_for_user(account.id) == []
 
 
-def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
+def test_realm_launch_room_keeps_public_preview_distinct_from_incomplete_lanes() -> None:
     async def run() -> None:
         connection = connect(":memory:", check_same_thread=False)
         create_schema(connection)
@@ -5055,12 +5071,14 @@ def test_realm_launch_room_marks_empty_configured_realm_backstage() -> None:
         assert _response_header(studio, "location") == "/studio/launch"
         assert launch.status == 200
         assert "Starter Realm" in launch.text
-        assert "required lanes still backstage" in launch.text
+        assert "Public preview is live" in launch.text
+        assert "Keep the story easy to enter." in launch.text
+        assert "Required left" in launch.text
         assert "Scene hubs" in launch.text
         assert "Director materials" in launch.text
         assert "Intake and claims" in launch.text
         assert "Needed" in launch.text
-        assert "Open the realm with the writing surface intact." in launch.text
+        assert "Set the stage before writers arrive." not in launch.text
         assert all(program.community.id != community.id for program in public_directory.programs)
 
     asyncio.run(run())
@@ -5109,6 +5127,9 @@ def test_guided_realm_builder_creates_minimum_opening_packet() -> None:
         assert (
             "Opening packet added scene hub, premise material, application guide." in response.text
         )
+        assert "<strong>Backstage</strong>" in launch.text
+        assert "Before opening" in launch.text
+        assert "Set the stage before writers arrive." in launch.text
         assert "Ready for invite-only opening" in launch.text
         assert board.community_id == community.id
         assert board.board_kind == "location"
@@ -5266,13 +5287,17 @@ def test_director_can_update_realm_launch_status() -> None:
             )
 
         assert updated.status == 200
-        assert "Opening changed to invite-only." in updated.text
+        assert "Opening changed to Invite-only." in updated.text
+        assert "Keep the first scene within reach." in updated.text
+        assert "Writers enter by invitation" in updated.text
         assert invite_only.launch_status == "invite-only"
         assert all(
             program.community.id != staff.community.id for program in public_directory.programs
         )
         assert restored.status == 200
-        assert "Opening changed to public-preview." in restored.text
+        assert "Opening changed to Public preview." in restored.text
+        assert "Keep the story easy to enter." in restored.text
+        assert "Public preview is live" in restored.text
         assert services.repo.get_community(staff.community.id).launch_status == "public-preview"
 
     asyncio.run(run())
@@ -5864,12 +5889,15 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
             member_redirect = await member_client.get("/studio/operations")
             member_operations = await member_client.get("/studio")
 
-        alex_membership = repo.get_membership_by_username(community.id, "alex")
-        alex_user = repo.get_user(alex_membership.user_id)
-        cyclops = repo.get_character_by_slug(community.id, "cyclops")
+        moira_membership = repo.get_membership_by_username(community.id, "moira")
+        moira_user = repo.get_user(moira_membership.user_id)
+        moira_character = repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_app = create_app(
             debug=False,
-            services=AppServices(repo, DemoSeed(community, alex_user, alex_membership, cyclops)),
+            services=AppServices(
+                repo,
+                DemoSeed(community, moira_user, moira_membership, moira_character),
+            ),
         )
         async with TestClient(staff_app) as staff_client:
             staff_operations = await staff_client.get("/studio")
@@ -6751,8 +6779,8 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
-            assert "elbysodic-theme.css?v=sticky-topbar-1" in world.text
-            assert "elbysodic-shell.js?v=sidebar-rail-toggle-1" in world.text
+            assert "elbysodic-theme.css?v=editorial-surface-13" in world.text
+            assert "elbysodic-shell.js?v=sidebar-rail-toggle-2" in world.text
             assert "elbysodic-composer.js?v=scene-context-inspector-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
             assert 'aria-label="Primary community rooms"' in world.text
@@ -7363,7 +7391,7 @@ def test_thread_page_renders_scene_grounding_for_owner() -> None:
         assert "public preview scene" in content
         assert "The first four posts are visible to people browsing while signed out." in content
         assert "Linked story objects" in content
-        assert "Staff controls" not in content
+        assert "Thread moderation" not in content
 
     asyncio.run(run())
 
@@ -7711,7 +7739,7 @@ def test_scene_grounding_for_ordinary_member_hides_staff_management_copy() -> No
         assert "Reading as Outsider Face" in content
         assert "public preview scene" in content
         assert "staff-manageable member-visible scene" not in content
-        assert "Staff controls" not in content
+        assert "Thread moderation" not in content
         assert "Scene management" not in content
 
     asyncio.run(run())
@@ -7787,7 +7815,7 @@ def test_scene_grounding_for_staff_uses_service_owned_visibility_copy() -> None:
         assert "Scene context" in content
         assert "staff-manageable member-visible scene" in content
         assert "Members can read this scene; staff controls remain in management panels." in content
-        assert "Staff controls" in content
+        assert "Thread moderation" in content
 
     asyncio.run(run())
 
@@ -8023,14 +8051,17 @@ def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
             member_world = await member_client.get("/world")
             member_direct = await member_client.get("/world/director-only-event")
 
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
-            services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(
+            community.id,
+            "moira-mactaggert",
         )
-        staff_app = create_app(debug=False, services=alex_services)
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(community, moira_user, moira_membership, moira_character),
+        )
+        staff_app = create_app(debug=False, services=staff_services)
         async with TestClient(staff_app) as staff_client:
             staff_studio = await staff_client.get("/studio")
             staff_direct = await staff_client.get("/world/director-only-event")
@@ -8045,6 +8076,65 @@ def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
         assert "Director Only Event" in staff_direct.text
         assert "Private director continuity that should not leak." in staff_direct.text
         assert "Edit guidebook page" in staff_direct.text
+
+    asyncio.run(run())
+
+
+def test_seeded_harbor_draft_event_is_staff_only_until_publication() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        repo = services.repo
+        director = resolve_seed_persona(repo, "harbor_director")
+        writer = resolve_seed_persona(repo, "harbor_writer")
+        draft = repo.get_material_by_slug(
+            director.community.id,
+            "founders-gala-third-copy",
+        )
+        assert draft.status == "draft"
+
+        writer_app = create_app(
+            debug=False,
+            services=AppServices(
+                repo,
+                DemoSeed(writer.community, writer.user, writer.membership, writer.character),
+            ),
+        )
+        async with TestClient(writer_app) as writer_client:
+            writer_world = await writer_client.get("/world")
+            writer_detail = await writer_client.get(f"/world/{draft.slug}")
+
+        director_app = create_app(
+            debug=False,
+            services=AppServices(
+                repo,
+                DemoSeed(
+                    director.community,
+                    director.user,
+                    director.membership,
+                    director.character,
+                ),
+            ),
+        )
+        async with TestClient(director_app) as director_client:
+            studio = await director_client.get("/studio/content")
+            operations = await director_client.get("/studio")
+            director_detail = await director_client.get(f"/world/{draft.slug}")
+
+        assert writer_world.status == 200
+        assert draft.title not in writer_world.text
+        assert "The third copy" not in writer_world.text
+        assert writer_detail.status == 200
+        assert draft.title not in writer_detail.text
+        assert "The total matches the private debt on Maris Vale's page" not in writer_detail.text
+        assert studio.status == 200
+        assert draft.title in studio.text
+        assert "Publish as current" in studio.text
+        assert operations.status == 200
+        assert "Draft materials" in operations.text
+        assert draft.title in operations.text
+        assert director_detail.status == 200
+        assert draft.title in director_detail.text
+        assert "Trace the print job" in director_detail.text
 
     asyncio.run(run())
 
@@ -8234,27 +8324,32 @@ def test_applications_desk_tracks_character_statuses() -> None:
             assert "Jubilee is looking for a found-family first scene." not in outsider_room.text
             assert "Director Review" not in outsider_room.text
 
-            alex_membership = services.repo.get_membership_by_username(
+            moira_membership = services.repo.get_membership_by_username(
                 services.seed.community.id,
-                "alex",
+                "moira",
             )
-            alex_user = services.repo.get_user(alex_membership.user_id)
-            cyclops = services.repo.get_character_by_slug(
+            moira_user = services.repo.get_user(moira_membership.user_id)
+            moira_character = services.repo.get_character_by_slug(
                 services.seed.community.id,
-                "cyclops",
+                "moira-mactaggert",
             )
-            alex_services = AppServices(
+            staff_services = AppServices(
                 services.repo,
-                DemoSeed(services.seed.community, alex_user, alex_membership, cyclops),
+                DemoSeed(
+                    services.seed.community,
+                    moira_user,
+                    moira_membership,
+                    moira_character,
+                ),
             )
             assert any(
                 item.label == "Application submitted" and item.title == "Jubilee"
-                for item in alex_services.notifications().items
+                for item in staff_services.notifications().items
             )
 
-            alex_app = create_app(debug=False, services=alex_services)
-            async with TestClient(alex_app) as alex_client:
-                review = await alex_client.get("/applications")
+            staff_app = create_app(debug=False, services=staff_services)
+            async with TestClient(staff_app) as staff_client:
+                review = await staff_client.get("/applications")
                 assert review.status == 200
                 assert "Review Queue" in review.text
                 assert "Jubilee" in review.text
@@ -8262,12 +8357,12 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 assert "Request revisions" in review.text
                 assert 'name="intent" value="request_revision"' not in review.text
 
-                review_room = await alex_client.get("/applications/jubilee")
+                review_room = await staff_client.get("/applications/jubilee")
                 assert review_room.status == 200
                 assert "Director Review" in review_room.text
                 assert "Jubilee is looking for a found-family first scene." in review_room.text
 
-                save_review = await alex_client.post(
+                save_review = await staff_client.post(
                     "/applications/jubilee",
                     body=urlencode(
                         {
@@ -8281,7 +8376,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 )
                 assert save_review.status == 302
 
-                accept_response = await alex_client.post(
+                accept_response = await staff_client.post(
                     "/applications/jubilee",
                     body=urlencode(
                         {
@@ -8292,7 +8387,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 )
                 assert accept_response.status == 302
 
-                revision_response = await alex_client.post(
+                revision_response = await staff_client.post(
                     "/applications/kitty-pryde",
                     body=urlencode(
                         {
@@ -8474,10 +8569,15 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 DemoSeed(community, charlie_user, charlie_membership, xavier),
             )
             inbox = charlie_services.notifications()
-            assert inbox.unread_count == 1
-            assert inbox.items[0].label == "Wanted interest"
-            assert inbox.items[0].title == "Human UN liaison for B-24 talks"
-            assert inbox.items[0].href == "/wanted/human-un-liaison-for-b24"
+            assert inbox.unread_count >= 1
+            wanted_interest_notice = next(
+                item
+                for item in inbox.items
+                if item.notification.wanted_ad_interest_id == interest.id
+            )
+            assert wanted_interest_notice.label == "Wanted interest"
+            assert wanted_interest_notice.title == "Human UN liaison for B-24 talks"
+            assert wanted_interest_notice.href == "/wanted/human-un-liaison-for-b24"
 
             charlie_app = create_app(debug=False, services=charlie_services)
             async with TestClient(charlie_app) as charlie_client:
@@ -8654,7 +8754,15 @@ def test_public_wanted_routes_hide_non_open_hooks() -> None:
 
 def test_handoff_desks_collapse_empty_work_sections() -> None:
     async def run() -> None:
-        app = _app()
+        services = create_services(path=":memory:")
+        persona = resolve_seed_persona(services.repo, "harbor_writer")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(persona.community, persona.user, persona.membership, persona.character),
+            ),
+        )
         async with TestClient(app) as client:
             casting = await client.get("/casting")
             plotting = await client.get("/plotting")
@@ -8668,6 +8776,7 @@ def test_handoff_desks_collapse_empty_work_sections() -> None:
         assert "No plotting handoffs need work right now." in _page_content(plotting.text)
         assert "Nothing is at the planning table yet." not in _page_content(plotting.text)
         assert "Nothing is waiting for a room." not in _page_content(plotting.text)
+        services.close()
 
     asyncio.run(run())
 
@@ -8840,22 +8949,25 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
         }
         assert submit_response.status == 302
 
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
-            services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(
+            community.id,
+            "moira-mactaggert",
         )
-        alex_app = create_app(debug=False, services=alex_services)
-        async with TestClient(alex_app) as alex_client:
-            review_room = await alex_client.get("/applications/jean-grey")
-            accept_response = await alex_client.post(
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(community, moira_user, moira_membership, moira_character),
+        )
+        staff_app = create_app(debug=False, services=staff_services)
+        async with TestClient(staff_app) as staff_client:
+            review_room = await staff_client.get("/applications/jean-grey")
+            accept_response = await staff_client.post(
                 "/applications/jean-grey",
                 body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
-            claims = await alex_client.get("/claims")
+            claims = await staff_client.get("/claims")
 
         accepted_claims = services.repo.list_character_claims_for_character(
             community.id,
@@ -8988,23 +9100,26 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
             note="Imported submitted application.",
         )
 
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
-            services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(
+            community.id,
+            "moira-mactaggert",
         )
-        alex_app = create_app(debug=False, services=alex_services)
-        async with TestClient(alex_app) as alex_client:
-            applications = await alex_client.get("/applications")
-            review_room = await alex_client.get("/applications/duplicate-face")
-            accept_response = await alex_client.post(
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(community, moira_user, moira_membership, moira_character),
+        )
+        staff_app = create_app(debug=False, services=staff_services)
+        async with TestClient(staff_app) as staff_client:
+            applications = await staff_client.get("/applications")
+            review_room = await staff_client.get("/applications/duplicate-face")
+            accept_response = await staff_client.post(
                 "/applications/duplicate-face",
                 body=urlencode({"_action": "accept_application"}).encode(),
                 headers=_FORM,
             )
-            revision_response = await alex_client.post(
+            revision_response = await staff_client.post(
                 "/applications/duplicate-face",
                 body=urlencode(
                     {
@@ -9419,16 +9534,20 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
         services = get_services()
         community = services.seed.community
         face_claim = services.repo.get_claim_type_by_slug(community.id, "face")
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
         cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
-            services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+        moira_character = services.repo.get_character_by_slug(
+            community.id,
+            "moira-mactaggert",
         )
-        alex_app = create_app(debug=False, services=alex_services)
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(community, moira_user, moira_membership, moira_character),
+        )
+        staff_app = create_app(debug=False, services=staff_services)
 
-        async with TestClient(alex_app) as client:
+        async with TestClient(staff_app) as client:
             directory = await client.get("/claims")
             response = await client.post(
                 "/claims",
@@ -9524,16 +9643,19 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
             community.id,
             "faction_claim",
         )
-        alex_membership = services.repo.get_membership_by_username(community.id, "alex")
-        alex_user = services.repo.get_user(alex_membership.user_id)
-        cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        alex_services = AppServices(
-            services.repo,
-            DemoSeed(community, alex_user, alex_membership, cyclops),
+        moira_membership = services.repo.get_membership_by_username(community.id, "moira")
+        moira_user = services.repo.get_user(moira_membership.user_id)
+        moira_character = services.repo.get_character_by_slug(
+            community.id,
+            "moira-mactaggert",
         )
-        alex_app = create_app(debug=False, services=alex_services)
+        staff_services = AppServices(
+            services.repo,
+            DemoSeed(community, moira_user, moira_membership, moira_character),
+        )
+        staff_app = create_app(debug=False, services=staff_services)
 
-        async with TestClient(alex_app) as client:
+        async with TestClient(staff_app) as client:
             editor = await client.get("/studio/intake")
             create_claim_response = await client.post(
                 "/studio/intake",
@@ -10888,6 +11010,7 @@ def test_inactive_membership_notifications_do_not_render_identity_option_counts(
         repo.connection.commit()
         inactive = repo.get_membership(inactive_community.id, inactive.id)
         target = repo.get_character_by_slug(active.community.id, "rogue")
+        baseline_unread = services.viewer().unread_notification_count
         repo.create_notification(
             active.community.id,
             active.membership.id,
@@ -10903,7 +11026,7 @@ def test_inactive_membership_notifications_do_not_render_identity_option_counts(
 
         viewer = services.viewer()
         assert not inactive.is_active
-        assert viewer.unread_notification_count == 1
+        assert viewer.unread_notification_count == baseline_unread + 1
         assert all(option.membership.id != inactive.id for option in viewer.identity_options)
         assert home.status == 200
         assert "Inactive Notify" not in home.text
@@ -11230,6 +11353,10 @@ def test_reply_notification_failure_rolls_back_post(monkeypatch: pytest.MonkeyPa
     services = create_services(path=":memory:")
     repo = services.repo
     services.watch_thread("plotting", "open-thread-roster")
+    baseline_unread = repo.count_unread_notifications(
+        services.seed.community.id,
+        services.seed.membership.id,
+    )
     board = repo.get_board_by_slug(services.seed.community.id, "plotting")
     thread = repo.get_thread_by_slug(
         services.seed.community.id,
@@ -11262,7 +11389,7 @@ def test_reply_notification_failure_rolls_back_post(monkeypatch: pytest.MonkeyPa
             services.seed.community.id,
             services.seed.membership.id,
         )
-        == 0
+        == baseline_unread
     )
 
 
@@ -11274,6 +11401,7 @@ def test_notification_inbox_limit_applies_after_visibility_filtering() -> None:
         community = services.seed.community
         viewer = services.viewer()
         assert viewer.current_character is not None
+        mark_all_notifications_read(repo, viewer)
         outsider_services, outsider_character_id = _outsider_services(
             services,
             prefix="notifywindow",
@@ -11743,7 +11871,7 @@ def test_attention_surfaces_threads_where_someone_else_posted_last() -> None:
             assert "Open thread roster" not in locations.text
 
             desk_after_read = await client.get("/c/x-men-apocalypse/desk")
-            assert "Queue clear" in desk_after_read.text or "caught up" in desk_after_read.text
+            assert "Active reserves" in desk_after_read.text
 
     asyncio.run(run())
 
@@ -12775,7 +12903,7 @@ def test_staff_can_pin_and_lock_threads() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/ic/threads/moderation-queue")
             assert page.status == 200
-            assert "Staff controls" in page.text
+            assert "Thread moderation" in page.text
             assert 'id="thread-staff-controls"' not in page.text
             assert 'id="scene-context-docked-thread-staff-controls"' in page.text
             assert "Pin thread" in page.text
@@ -12881,7 +13009,7 @@ def test_regular_members_cannot_manage_thread_lifecycle() -> None:
         async with TestClient(app) as client:
             page = await client.get("/boards/ic/threads/moderation-queue")
             assert page.status == 200
-            assert "Staff controls" not in page.text
+            assert "Thread moderation" not in page.text
 
             lock_response = await client.post(
                 "/boards/ic/threads/moderation-queue",
@@ -13630,10 +13758,30 @@ def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: P
         sort_order=material.sort_order,
         is_featured=material.is_featured,
     )
+    harbor = resolve_seed_persona(repo, "harbor_director")
+    draft_event = repo.get_material_by_slug(
+        harbor.community.id,
+        "founders-gala-third-copy",
+    )
+    repo.update_material(
+        harbor.community.id,
+        draft_event.id,
+        title="The Third Copy — Cleared For Play",
+        material_type=draft_event.material_type,
+        summary="Director-approved event brief.",
+        body="The director released the third copy for writers.",
+        status="published",
+        sort_order=draft_event.sort_order,
+        is_featured=draft_event.is_featured,
+    )
 
     restarted = create_services(path=db_path)
     restored_board = restarted.repo.get_board_by_slug(community.id, "danger-room")
     restored_material = restarted.repo.get_material_by_slug(community.id, "b-24-winter")
+    restored_draft_event = restarted.repo.get_material_by_slug(
+        harbor.community.id,
+        "founders-gala-third-copy",
+    )
 
     assert restored_board.name == "Danger Room After Hours"
     assert restored_board.description == "A director-customized simulation wing."
@@ -13643,6 +13791,9 @@ def test_startup_seed_preserves_director_edited_boards_and_materials(tmp_path: P
     assert restored_material.title == "B-24 Winter Custom Briefing"
     assert restored_material.summary == "Director-edited event summary."
     assert restored_material.body == "Director-edited event body."
+    assert restored_draft_event.title == "The Third Copy — Cleared For Play"
+    assert restored_draft_event.status == "published"
+    assert restored_draft_event.body == "The director released the third copy for writers."
 
 
 def test_file_backed_operations_inspection_reports_wal_and_integrity(

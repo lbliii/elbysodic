@@ -17,11 +17,9 @@
   {% call surface(variant="elevated") %}
   <section class="elbysodic-director-hero" aria-labelledby="launch-heading">
     <div>
-      <p class="elbysodic-section-kicker">Before opening</p>
-      <h1 id="launch-heading">Open the realm with the writing surface intact.</h1>
-      <p>
-        Scene hubs, director materials, intake, claims, appearance, and wanted hooks should be legible before writers arrive.
-      </p>
+      <p class="elbysodic-section-kicker">{{ launch.hero_kicker }}</p>
+      <h1 id="launch-heading">{{ launch.hero_heading }}</h1>
+      <p>{{ launch.hero_summary }}</p>
     </div>
     <aside class="elbysodic-director-hero__signals" aria-label="Launch readiness">
       <div class="elbysodic-director-signal">
@@ -34,7 +32,7 @@
       </div>
       <div class="elbysodic-director-signal">
         <span>Opening</span>
-        <strong>{{ viewer.community.launch_status }}</strong>
+        <strong>{{ viewer.community.launch_status_label }}</strong>
       </div>
     </aside>
     {% if launch_status_error %}
@@ -140,9 +138,9 @@
   {% call surface(variant="elevated") %}
   <section class="elbysodic-operations-panel" aria-labelledby="launch-boundary-heading">
     <p class="elbysodic-section-kicker">Opening boundary</p>
-    <h2 id="launch-boundary-heading">Invite-only before public self-serve.</h2>
+    <h2 id="launch-boundary-heading">Directors shape each realm’s opening.</h2>
     <p class="elbysodic-copy-section">
-      This room tracks whether a director has shaped the realm enough for invite-only opening. Public self-serve creator onboarding, billing, custom domains, and Blueprint Apply remain future work.
+      Directors choose whether a realm stays backstage, opens by invitation, or enters public preview. Public self-serve realm creation, billing, and custom domains remain future work. Studio Intake supports reviewed Program Blueprint preview and apply for this realm.
     </p>
     <div class="elbysodic-studio-actions">
       <a class="chirpui-btn chirpui-btn--secondary" href="/studio/intake#program-blueprint-preview">Preview blueprint</a>

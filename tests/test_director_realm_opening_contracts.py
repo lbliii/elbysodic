@@ -73,13 +73,22 @@ def test_director_launch_room_renders_opening_contract() -> None:
 
         assert launch.status == 200
         assert "Open realm" in launch.text
-        assert "Open the realm with the writing surface intact." in launch.text
         assert "Launch readiness" in launch.text
+        assert "<strong>Public preview</strong>" in launch.text
+        assert "Keep the story easy to enter." in launch.text
+        assert (
+            "Help a new writer move from the premise to a place, open call, or first scene."
+            in launch.text
+        )
+        assert "Public preview is live" in launch.text
+        assert "before writers arrive" not in launch.text.lower()
         assert "Opening checklist" in launch.text
         assert "Opening packet" in launch.text
         assert "Scene hub" in launch.text
         assert "Application guide" in launch.text
-        assert "Invite-only before public self-serve." in launch.text
+        assert "Directors shape each realm’s opening." in launch.text
+        assert "Studio Intake supports reviewed Program Blueprint preview and apply" in launch.text
+        assert "Blueprint Apply remain future work" not in launch.text
         assert "Writer invitations" in launch.text
         assert "Discovery profile" in launch.text
         assert "Edit discovery profile" in launch.text

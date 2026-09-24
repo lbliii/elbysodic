@@ -175,6 +175,7 @@ SURFACE_CONTRACTS: tuple[SurfaceContract, ...] = (
         privacy_matrix_label="/applications",
         proof_references=(
             "tests/test_forum_slice.py::test_applications_desk_tracks_character_statuses",
+            "tests/test_onboarding_journey_contracts.py::test_seeded_harbor_application_shows_wanted_source_to_owner_and_director",
             "tests/test_forum_slice.py::test_application_room_for_other_program_renders_realm_recovery",
         ),
     ),

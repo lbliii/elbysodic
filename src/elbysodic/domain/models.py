@@ -32,6 +32,14 @@ class Community:
     created_at: str
     updated_at: str
 
+    @property
+    def launch_status_label(self) -> str:
+        return {
+            "backstage": "Backstage",
+            "invite-only": "Invite-only",
+            "public-preview": "Public preview",
+        }.get(self.launch_status, self.launch_status.replace("-", " ").title())
+
 
 @dataclass(frozen=True, slots=True)
 class CommunityTheme:

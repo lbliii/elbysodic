@@ -118,17 +118,22 @@ class RequestIdentityResolver:
         if self._require_session and session_user is None:
             raise PermissionError("login is required")
 
-        if cookie_identity is not None and cookie_identity.community_id == community.id:
+        if cookie_identity is not None:
+            # The dev cookie records the global account as well as the last
+            # community-local membership. A tenant-prefixed link may target a
+            # different community, so carry only the account across that
+            # boundary and resolve its membership in the requested community.
             if user_id is None:
                 user_id = cookie_identity.user_id
                 user_from_cookie = True
                 user_source = "dev_cookie"
-            membership_id = (
-                membership_id if membership_id is not None else cookie_identity.membership_id
-            )
-            membership_from_cookie = header_membership_id is None
-            if membership_source == "fallback":
-                membership_source = "dev_cookie"
+            if cookie_identity.community_id == community.id:
+                membership_id = (
+                    membership_id if membership_id is not None else cookie_identity.membership_id
+                )
+                membership_from_cookie = header_membership_id is None
+                if membership_source == "fallback":
+                    membership_source = "dev_cookie"
 
         if membership_id is not None:
             try:

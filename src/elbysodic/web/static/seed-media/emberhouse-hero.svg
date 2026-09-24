@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Emberhouse tampered selection</title><desc id="desc">An empty trial hall waits before a glowing rank board with one stone missing.</desc>
+  <defs><linearGradient id="hall" x2=".15" y2="1"><stop stop-color="#211a27"/><stop offset=".56" stop-color="#593143"/><stop offset="1" stop-color="#c05e43"/></linearGradient><radialGradient id="fire"><stop stop-color="#ffd58a" stop-opacity=".72"/><stop offset=".48" stop-color="#e88750" stop-opacity=".24"/><stop offset="1" stop-color="#e88750" stop-opacity="0"/></radialGradient><linearGradient id="floor" x2="0" y2="1"><stop stop-color="#67414a"/><stop offset="1" stop-color="#1b1a25"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#hall)"/><circle cx="804" cy="317" r="390" fill="url(#fire)"/>
+  <path d="M0 0h255l166 550H0zm1600 0h-255l-166 550h421z" fill="#211b2a" fill-opacity=".76"/><path d="M122 0h77v603h-77zm1279 0h77v603h-77zM445 96h66v405h-66zm644 0h66v405h-66z" fill="#302432"/>
+  <path d="M0 568c264-81 449-86 555-14 154-130 337-143 549-39 146-66 311-49 496 53v332H0z" fill="url(#floor)"/><path d="M0 718c256-51 451-39 585 37 145 82 286 82 430 0 134-76 329-88 585-37v182H0z" fill="#191923"/>
+  <path d="M548 224h504v292H548z" fill="#272431" stroke="#df9b60" stroke-opacity=".72" stroke-width="6"/><path d="M589 269h411v210H589z" fill="#302b35" stroke="#e7bb7b" stroke-opacity=".45" stroke-width="3"/>
+  <g fill="#d88452" stroke="#ffce82" stroke-width="3"><path d="m641 322 40-24 40 24v48l-40 23-40-23z"/><path d="m749 322 40-24 40 24v48l-40 23-40-23z"/><path d="m857 322 40-24 40 24v48l-40 23-40-23z"/></g><path d="m635 420 46-27 46 27v48h-92z" fill="#312833" stroke="#bf8f78" stroke-dasharray="7 7" stroke-width="4"/>
+  <path d="M696 538h305v38H696zm43-44h219v44H739z" fill="#302833" stroke="#cf835a" stroke-width="4"/><path d="M796 494V433c0-41 22-74 51-74s51 33 51 74v61m-117-28h132" fill="none" stroke="#f3c480" stroke-width="11"/><path d="M848 359c-34-30-26-72 0-96 26 24 34 66 0 96Zm0-68-43-33m48 30 46-31" fill="none" stroke="#ffd78f" stroke-width="8" stroke-linecap="round"/>
+  <path d="m800 613 50 80-50 207-50-207z" fill="#e99b5a" fill-opacity=".18"/>
+</svg>

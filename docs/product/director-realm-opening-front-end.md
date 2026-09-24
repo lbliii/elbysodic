@@ -69,6 +69,9 @@ the Launch room body.
 - Use open a realm, director, Studio Launch, scene hubs, director materials,
   intake, claims, reserves, wanted hooks, appearance, invites, launch
   checklist, first face, and scene.
+- Keep the Launch hero and readiness headline aligned with the current opening
+  state. Only backstage copy should say writers have not arrived; invite-only
+  and public-preview rooms should describe the live entry path.
 - Avoid setup wizard, workspace, project, task board, admin dashboard,
   organization, user management, or onboarding checklist language unless a
   technical runbook is being quoted.

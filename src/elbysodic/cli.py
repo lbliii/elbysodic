@@ -257,7 +257,7 @@ def _build_parser() -> argparse.ArgumentParser:
     shared.add_argument(
         "--db-path",
         type=Path,
-        default=default_database_path(),
+        default=argparse.SUPPRESS,
         help=(
             "SQLite database path. Defaults to ELBYSODIC_DB_PATH, then "
             "RAILWAY_VOLUME_MOUNT_PATH/elbysodic.sqlite3, then var/elbysodic.sqlite3."

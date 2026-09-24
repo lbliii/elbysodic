@@ -852,7 +852,7 @@ def test_production_signed_out_public_scene_stops_after_four_posts(monkeypatch) 
         assert '<meta name="robots" content="noindex, nofollow">' in public.text
         assert "writer starlane" not in public.text
         assert "reply-composer" not in public.text
-        assert "Staff controls" not in public.text
+        assert "Thread moderation" not in public.text
         assert "active face" not in public.text.lower()
         assert not _response_headers(public, "set-cookie")
 
@@ -2263,3 +2263,28 @@ def test_for_request_identity_does_not_mint_from_community_context_defaults() ->
     assert "DEFAULT_COMMUNITY_SLUG" in boundary
     assert "DEFAULT_COMMUNITY_ID" in boundary
     assert "Unknown-host fallthrough" in boundary
+
+
+def test_dev_persona_moderator_card_shows_thread_moderator_badge() -> None:
+    async def run() -> None:
+        services = create_services(path=":memory:")
+        try:
+            app = create_app(debug=False, services=services, dev_tools=True)
+            async with TestClient(app) as client:
+                response = await client.get("/dev/personas")
+
+            moderator = next(
+                persona for persona in services.dev_personas() if persona.key == "xmen_mod"
+            )
+            assert moderator.can_manage_threads is True
+            assert moderator.can_manage_studio is False
+            assert response.status == 200
+            moderator_start = response.text.index("xmen_mod")
+            moderator_end = response.text.index("xmen_partner", moderator_start)
+            moderator_card = response.text[moderator_start:moderator_end]
+            assert "thread moderator" in moderator_card
+            assert "writer" not in moderator_card
+        finally:
+            services.close()
+
+    asyncio.run(run())

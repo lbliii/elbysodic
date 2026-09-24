@@ -968,6 +968,7 @@ class AppServices:
                 or policies.can_manage_casting(context.membership, context.role)
                 or policies.can_manage_navigation(context.membership, context.role)
             ),
+            can_manage_threads=policies.can_manage_threads(context.membership, context.role),
         )
 
     def login(self, email: str, password: str) -> tuple[LoginSession, RequestIdentityContext]:
@@ -5887,7 +5888,8 @@ def _realm_launch_readiness(
                 and bool(application_materials)
                 and viewer.membership.community_id == viewer.community.id,
             ),
-        ]
+        ],
+        launch_status=viewer.community.launch_status,
     )
 
 

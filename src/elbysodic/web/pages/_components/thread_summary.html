@@ -7,7 +7,7 @@
 {% end %}
 
 {% def thread_card(board, thread, author, author_membership, participants, facets, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post, episode=None) %}
-{% call surface(variant="elevated") %}
+{% call surface(variant="elevated", cls="elbysodic-thread-card-shell") %}
 <article class="elbysodic-thread-card {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
   <a class="elbysodic-thread-card__poster elbysodic-board-media--{{ board.slug }}"
      href="/boards/{{ board.slug }}/threads/{{ thread.slug }}"
@@ -115,7 +115,7 @@
 {% end %}
 
 {% def compact_thread_card(board, thread, author, author_membership, participants, facets, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post, episode=None) %}
-{% call surface(variant="elevated") %}
+{% call surface(variant="elevated", cls="elbysodic-thread-card-shell") %}
 <article class="elbysodic-thread-card elbysodic-thread-card--compact {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
   <div class="elbysodic-thread-card__main">
     {% if heading_level == "h2" %}

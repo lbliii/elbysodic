@@ -230,6 +230,22 @@
     });
   }
 
+  function setupSubmitOnChange(root) {
+    const controls = root.querySelectorAll("[data-elbysodic-submit-on-change]");
+    controls.forEach((control) => {
+      if (control.dataset.elbysodicSubmitOnChangeReady === "true") {
+        return;
+      }
+      control.dataset.elbysodicSubmitOnChangeReady = "true";
+      control.addEventListener("change", () => {
+        const form = control.form;
+        if (form && typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        }
+      });
+    });
+  }
+
   function gatewayItems(list) {
     return Array.from(list.querySelectorAll("[data-elbysodic-gateway-curation-item]"));
   }
@@ -498,6 +514,7 @@
   function setupEnhancements() {
     setupSidebarToggle();
     setupSubmitGuards(document);
+    setupSubmitOnChange(document);
     setupDiscoveryPreview(document);
     setupGatewayCuration(document);
   }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Crownfall mark</title>
+  <desc id="desc">Three fractured crown points rise above a divided court seal.</desc>
+  <circle cx="64" cy="67" r="45" fill="none" stroke="#d8b777" stroke-width="3" stroke-dasharray="221 62" stroke-dashoffset="16"/>
+  <path d="m30 47 17 18 17-30 17 30 17-18-8 43H38z" fill="none" stroke="#f2dda9" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <path d="m63 33 2 32-8 9 11 10-5 14" fill="none" stroke="#bf6f73" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M39 102h50" fill="none" stroke="#a8b0c2" stroke-linecap="round" stroke-width="3"/>
+</svg>

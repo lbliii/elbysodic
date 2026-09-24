@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Harbor Society Founders Gala</title><desc id="desc">A lantern-lit shore and old club prepare for the Founders Gala as the tide brings a secret to the steps.</desc>
+  <defs><linearGradient id="dusk" x2=".18" y2="1"><stop stop-color="#15233a"/><stop offset=".48" stop-color="#31505c"/><stop offset="1" stop-color="#c37a5f"/></linearGradient><radialGradient id="moonlight"><stop stop-color="#ead09c" stop-opacity=".55"/><stop offset="1" stop-color="#e8c88f" stop-opacity="0"/></radialGradient><linearGradient id="water" x2="0" y2="1"><stop stop-color="#41636c"/><stop offset="1" stop-color="#172b39"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#dusk)"/><circle cx="1230" cy="250" r="345" fill="url(#moonlight)"/><circle cx="1230" cy="250" r="61" fill="#f1dcae" fill-opacity=".76"/>
+  <path d="M0 493c191-89 365-86 522 9 149-73 293-78 431-16 186-106 404-92 647 41v229H0z" fill="#293d4b"/><path d="M0 640c214-47 414-35 600 37 225 87 441 87 650 0 125-51 242-60 350-28v251H0z" fill="url(#water)"/>
+  <path d="M0 699c245-34 437-17 575 51m468-9c172-57 358-66 557-27M102 758c170-24 294-14 375 28m534 0c145-40 300-45 465-17" fill="none" stroke="#d7b77e" stroke-opacity=".48" stroke-width="5"/>
+  <path d="M360 646V365h694v281H360zm-51 0h799v54H309z" fill="#202b36"/><path d="M430 365V285h554v80M487 365V259h441v106" fill="none" stroke="#c1a577" stroke-width="8"/><path d="M544 646V456c0-103 65-178 163-178s163 75 163 178v190" fill="#172432" stroke="#c7a675" stroke-width="12"/>
+  <g fill="#efc982" opacity=".84"><path d="M401 407h31v58h-31zM480 407h31v58h-31zM902 407h31v58h-31zM981 407h31v58h-31zM605 405h29v48h-29zM781 405h29v48h-29z"/><circle cx="342" cy="604" r="13"/><circle cx="1059" cy="604" r="13"/></g>
+  <path d="M112 579c61-19 119-19 175 0v115c-55 26-114 26-175 0z" fill="#192735"/><path d="M198 578V331m-39 0h78m-65-10c0-32 13-54 26-54s26 22 26 54m-26-63v-26" fill="none" stroke="#d9b16f" stroke-width="11" stroke-linecap="round"/><path d="M158 327h80v20h-80z" fill="#f1ca7c"/>
+  <path d="M1280 527c84 7 184 38 320 94v279h-465c58-112 106-237 145-373z" fill="#182634"/><path d="M1267 636c95 19 208 55 333 112" fill="none" stroke="#d5ad73" stroke-opacity=".54" stroke-width="4"/>
+  <path d="M0 0h1600v900H0z" fill="none" stroke="#efd9af" stroke-opacity=".12" stroke-width="26"/>
+</svg>

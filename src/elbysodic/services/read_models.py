@@ -790,6 +790,13 @@ class ApplicationReviewEventView:
 
 
 @dataclass(frozen=True, slots=True)
+class ApplicationWantedSource:
+    slug: str
+    title: str
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationReviewRoom:
     application: CharacterApplication
     character_view: ApplicationCharacterView
@@ -798,6 +805,7 @@ class ApplicationReviewRoom:
     events: list[ApplicationReviewEventView]
     can_edit_application: bool
     can_review: bool
+    source_wanted_hook: ApplicationWantedSource | None = None
 
     @property
     def blocking_claim_conflicts(self) -> list[ApplicationFieldValueView]:
@@ -1254,6 +1262,7 @@ class RealmLaunchChecklistItem:
 @dataclass(frozen=True, slots=True)
 class RealmLaunchReadiness:
     items: list[RealmLaunchChecklistItem]
+    launch_status: str
 
     @property
     def completed_count(self) -> int:
@@ -1276,7 +1285,46 @@ class RealmLaunchReadiness:
         return self.missing_required_count == 0
 
     @property
+    def hero_kicker(self) -> str:
+        return {
+            "backstage": "Before opening",
+            "invite-only": "Invite-only opening",
+            "public-preview": "Public preview",
+        }.get(self.launch_status, "Opening")
+
+    @property
+    def hero_heading(self) -> str:
+        return {
+            "backstage": "Set the stage before writers arrive.",
+            "invite-only": "Keep the first scene within reach.",
+            "public-preview": "Keep the story easy to enter.",
+        }.get(self.launch_status, "Keep the opening in view.")
+
+    @property
+    def hero_summary(self) -> str:
+        return {
+            "backstage": (
+                "Scene hubs, director materials, intake, claims, appearance, and wanted hooks "
+                "should be legible before writers arrive."
+            ),
+            "invite-only": (
+                "Give invited writers a clear place to play, a face to bring, and an open call "
+                "to follow."
+            ),
+            "public-preview": (
+                "Help a new writer move from the premise to a place, open call, or first scene."
+            ),
+        }.get(
+            self.launch_status,
+            "Keep the premise, first scenes, and open calls easy to find.",
+        )
+
+    @property
     def status_label(self) -> str:
+        if self.launch_status == "public-preview":
+            return "Public preview is live"
+        if self.launch_status == "invite-only":
+            return "Writers enter by invitation"
         if self.is_ready:
             return "Ready for invite-only opening"
         return f"{self.missing_required_count} required lanes still backstage"
@@ -1883,6 +1931,7 @@ class DevPersonaView:
     can_switch: bool
     is_current: bool
     can_manage_studio: bool
+    can_manage_threads: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -1967,7 +2016,7 @@ class StudioNetworkProgramView:
 
     @property
     def launch_status_label(self) -> str:
-        return self.community.launch_status.replace("-", " ").title()
+        return self.community.launch_status_label
 
     @property
     def application_posture_label(self) -> str:
@@ -2064,13 +2113,12 @@ class RealmGatewayStoryFrame:
             self.access_label,
             self.rating_label,
             self.cadence_label,
-            self.roster_posture,
         ]
         return tuple(label for label in labels if label)
 
     @property
     def fit_summary(self) -> str:
-        return ", ".join(self.fit_labels)
+        return " · ".join(self.fit_labels)
 
 
 @dataclass(frozen=True, slots=True)

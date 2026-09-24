@@ -35,6 +35,7 @@ from elbysodic.services.read_models import (
     ApplicationReviewEventView,
     ApplicationReviewRoom,
     ApplicationsDesk,
+    ApplicationWantedSource,
     ForumView,
 )
 from elbysodic.services.timestamps import timestamp_label
@@ -381,6 +382,21 @@ def read_application_review_room(
             f"membership {viewer.membership.id} cannot view application for character {character.id}"
         )
     application = repo.ensure_character_application(viewer.community.id, character.id)
+    source_wanted_ad_id = application.source_wanted_ad_id
+    if source_wanted_ad_id is None and application.source_wanted_ad_interest_id is not None:
+        source_interest = repo.get_wanted_ad_interest(
+            viewer.community.id,
+            application.source_wanted_ad_interest_id,
+        )
+        source_wanted_ad_id = source_interest.wanted_ad_id
+    source_wanted_hook = None
+    if source_wanted_ad_id is not None:
+        wanted_ad = repo.get_wanted_ad(viewer.community.id, source_wanted_ad_id)
+        source_wanted_hook = ApplicationWantedSource(
+            slug=wanted_ad.slug,
+            title=wanted_ad.title,
+            summary=wanted_ad.summary,
+        )
     character_view = application_character_view(repo, viewer, character)
     template_fields = [
         application_template_field_view(repo, viewer.community.id, field)
@@ -417,6 +433,7 @@ def read_application_review_room(
         can_edit_application=can_edit
         and character.application_status in {"draft", "revision_requested"},
         can_review=can_review,
+        source_wanted_hook=source_wanted_hook,
     )
 
 

@@ -40,7 +40,9 @@ A realm ready for scenes, casting, and writer movement.
   <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
     <span class="elbysodic-visually-hidden">Preview {{ program.community.name }}</span>
   </a>
-  <a class="elbysodic-network-card__poster" href="{{ program.entry_href }}">
+  <a class="elbysodic-network-card__poster"
+     href="{{ program.entry_href }}"
+     {% if not program.community.world_hero_image_url %}aria-label="Preview {{ program.community.name }}"{% end %}>
     {% if program.community.world_hero_image_url %}
     <img src="{{ program.community.world_hero_image_url }}" alt="{{ program.community.world_hero_image_alt }}">
     {% else %}
@@ -52,11 +54,11 @@ A realm ready for scenes, casting, and writer movement.
     <header class="elbysodic-network-card__header">
       <div>
         <p class="elbysodic-section-kicker">
-          {% if program.current_event %}
-          In motion
-          {% elif program.premise %}
-          Premise
-          {% else %}
+        {% if program.current_event %}
+          {{ program.current_event.material.title }}
+        {% elif program.premise %}
+          {{ program.premise.material.title }}
+        {% else %}
           Open realm
           {% end %}
         </p>
@@ -74,21 +76,8 @@ A realm ready for scenes, casting, and writer movement.
     </header>
     <p class="elbysodic-copy-summary" {% if preview %}data-elbysodic-preview-summary{% end %}>{{ program_summary(program) }}</p>
     <p class="elbysodic-copy-meta">
-      {{ program.access_posture_label }} · {{ program.application_posture_label }} · {{ program.claims_posture_label }} · {{ program.activity_freshness_label }}
+      {{ program.application_posture_label }} · {{ program.activity_freshness_label }}
     </p>
-    {% if program.discovery_profile %}
-    <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>
-      {{ program.discovery_profile.premise_archetype or "Premise-led realm" }}
-      {% if program.discovery_profile.lore_aperture %}
-      · {{ program.discovery_profile.lore_aperture }}
-      {% end %}
-      {% if program.discovery_profile.forum_adjunct %}
-      · {{ program.discovery_profile.forum_adjunct }}
-      {% end %}
-    </p>
-    {% else %}
-    <p class="elbysodic-copy-meta" {% if preview %}data-elbysodic-preview-fit{% end %}>Read the premise, roster, wanted, and first steps.</p>
-    {% end %}
     <div class="elbysodic-network-card__metrics" aria-label="{{ program.community.name }} signals">
       {{ program_metric_links(program) }}
     </div>

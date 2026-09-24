@@ -78,7 +78,7 @@ async def post(request: Request, form: LaunchActionForm) -> Page:
             return _render_launch(request, launch_status_error=str(exc))
         return _render_launch(
             request,
-            launch_status_message=f"Opening changed to {updated.launch_status}.",
+            launch_status_message=f"Opening changed to {updated.launch_status_label}.",
         )
     if form.intent in {
         "review_access_request",

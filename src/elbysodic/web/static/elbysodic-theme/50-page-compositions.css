@@ -9,11 +9,11 @@
 
 .elbysodic-editorial-page {
     display: grid;
-    gap: clamp(2.4rem, 6vw, 5rem);
+    gap: var(--elbysodic-page-section-gap);
 }
 
 .elbysodic-realm-gateway {
-    gap: clamp(2.4rem, 6vw, 5.5rem);
+    gap: var(--elbysodic-page-section-gap);
 }
 
 .elbysodic-realm-gateway-hero {
@@ -21,11 +21,11 @@
     background: transparent;
     border: 0;
     border-radius: 0;
-    gap: clamp(2rem, 5vw, 5.5rem);
-    grid-template-columns: minmax(0, 0.82fr) minmax(20rem, 1.18fr);
+    gap: clamp(1.5rem, 3vw, 3rem);
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     min-block-size: min(72vh, 44rem);
     overflow: visible;
-    padding: clamp(1.25rem, 5vw, 4.5rem) 0 clamp(0.5rem, 2vw, 1.5rem);
+    padding: clamp(1.25rem, 5vw, 4.5rem) var(--elbysodic-page-gutter) clamp(0.5rem, 2vw, 1.5rem);
 }
 
 .elbysodic-realm-gateway-hero__copy {
@@ -34,9 +34,9 @@
 }
 
 .elbysodic-realm-gateway-hero h1 {
-    font-size: clamp(4rem, 9vw, 7.4rem);
-    line-height: 0.82;
-    max-inline-size: 8ch;
+    font-size: clamp(3rem, 5.8vw, 5rem);
+    line-height: 0.86;
+    max-inline-size: 9ch;
     overflow-wrap: normal;
     text-wrap: balance;
 }
@@ -288,7 +288,18 @@
 }
 
 .elbysodic-desk-page .elbysodic-page-pulse__tools {
+    grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
+}
+
+.elbysodic-desk-page .elbysodic-desk-queue__metrics {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    max-width: none;
+}
+
+.elbysodic-desk-page .elbysodic-desk-queue__actions {
+    grid-column: 1 / -1;
 }
 
 .elbysodic-desk-page .elbysodic-desk-queue__metrics,
@@ -339,9 +350,20 @@
     padding-block-start: 1.15rem;
 }
 
-@media (max-width: 64rem) {
+@media (max-width: 80rem) {
     .elbysodic-realm-gateway-hero {
-        grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 1.1fr);
+        gap: 2rem;
+        grid-template-columns: 1fr;
+        min-block-size: 0;
+    }
+
+    .elbysodic-realm-gateway-hero h1 {
+        font-size: clamp(3.25rem, 8vw, 5.25rem);
+    }
+
+    .elbysodic-realm-gateway-hero__media {
+        min-block-size: min(58vh, 34rem);
+        transform: none;
     }
 
     .elbysodic-realm-gateway__story-field {

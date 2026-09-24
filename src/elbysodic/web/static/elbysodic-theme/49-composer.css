@@ -32,7 +32,7 @@
     background: color-mix(in srgb, var(--chirpui-surface) 94%, transparent);
     border-color: color-mix(in srgb, var(--chirpui-border-subtle) 82%, transparent);
     border-radius: var(--chirpui-radius);
-    box-shadow: 0 1rem 2rem color-mix(in srgb, var(--chirpui-shadow) 14%, transparent);
+    box-shadow: var(--chirpui-shadow-md);
 }
 
 .elbysodic-scene-composer-stick {
@@ -639,5 +639,78 @@
     .elbysodic-composer-panel__header,
     .elbysodic-composer-panel__bar {
         display: grid;
+    }
+}
+
+/* Keep the long-form scene writer open and focused instead of nesting it in
+ * another tinted card. The editor itself remains a clear, usable field. */
+.chirpui-surface:has(.elbysodic-composer--opening),
+.elbysodic-scene-composer-surface.chirpui-surface {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+.elbysodic-composer--opening {
+    gap: clamp(1.25rem, 2.4vw, 1.8rem);
+    padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1rem, 2.5vw, 2.25rem) clamp(1.75rem, 4vw, 3rem);
+}
+
+.elbysodic-composer--opening .elbysodic-composer-character--quiet {
+    background: transparent;
+    border-block: 1px solid var(--chirpui-border-subtle);
+    border-inline: 0;
+    border-radius: 0;
+    padding: 0.9rem 0;
+}
+
+.elbysodic-composer--opening #thread-title {
+    background: transparent;
+    border: 0;
+    border-block-end: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
+    font-size: var(--chirpui-font-lg);
+    min-height: 3.25rem;
+    padding-inline: 0.1rem;
+}
+
+.elbysodic-composer--opening #thread-title:focus-visible {
+    border-block-end-color: var(--chirpui-focus-ring);
+    outline: 2px solid var(--chirpui-focus-ring);
+    outline-offset: 2px;
+}
+
+.elbysodic-composer--opening .elbysodic-composer-panel--writing {
+    background: transparent;
+    border: 0;
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
+    gap: 1rem;
+    padding: 1.15rem 0 0;
+}
+
+.elbysodic-composer--opening .elbysodic-composer-panel__bar {
+    align-items: center;
+}
+
+.elbysodic-composer--opening .elbysodic-composer-tool {
+    background: transparent;
+    border-color: transparent;
+    border-radius: 0.35rem;
+}
+
+.elbysodic-composer--opening .elbysodic-composer-body textarea {
+    background: color-mix(in srgb, var(--chirpui-bg-subtle) 82%, transparent);
+    border-color: var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius-sm);
+    min-height: 18rem;
+    padding: 1rem 1.1rem;
+}
+
+@media (max-width: 48rem) {
+    .elbysodic-composer--opening {
+        padding-inline: 0;
     }
 }

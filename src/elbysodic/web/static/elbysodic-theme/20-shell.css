@@ -9,15 +9,13 @@
 
 .chirpui-app-shell {
     --elbysodic-shell-accent: var(--chirpui-accent-secondary, var(--elbysodic-atmosphere-dye));
-    --elbysodic-shell-glass-bg: color-mix(in srgb, var(--chirpui-bg-subtle) 88%, transparent);
-    --elbysodic-shell-border: color-mix(in srgb, var(--elbysodic-shell-accent) 24%, var(--chirpui-border));
+    --elbysodic-shell-glass-bg: color-mix(in srgb, var(--chirpui-bg) 94%, transparent);
+    --elbysodic-shell-border: color-mix(in srgb, var(--chirpui-border) 62%, transparent);
 }
 
 .chirpui-app-shell__topbar,
 .chirpui-app-shell__sidebar {
-    background:
-        linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-shell-accent) 12%, transparent), transparent 28rem),
-        color-mix(in srgb, var(--chirpui-bg-subtle) 92%, transparent);
+    background: color-mix(in srgb, var(--chirpui-bg) 94%, transparent);
     border-color: var(--elbysodic-shell-border);
     color: var(--chirpui-text);
 }
@@ -31,11 +29,9 @@
 @supports (backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px)) {
     .chirpui-app-shell__topbar,
     .chirpui-app-shell__sidebar {
-        backdrop-filter: blur(18px) saturate(135%);
-        -webkit-backdrop-filter: blur(18px) saturate(135%);
-        background:
-            linear-gradient(90deg, color-mix(in srgb, var(--elbysodic-shell-accent) 12%, transparent), transparent 28rem),
-            var(--elbysodic-shell-glass-bg);
+        backdrop-filter: blur(14px) saturate(112%);
+        -webkit-backdrop-filter: blur(14px) saturate(112%);
+        background: var(--elbysodic-shell-glass-bg);
     }
 }
 
@@ -89,7 +85,7 @@
     .chirpui-app-shell__sidebar {
         align-self: stretch;
         border-right-color: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
-        box-shadow: inset -1px 0 0 color-mix(in srgb, var(--chirpui-surface) 42%, transparent);
+        box-shadow: none;
         display: flex;
         height: calc(100dvh - var(--chirpui-shell-offset-top));
         max-height: calc(100dvh - var(--chirpui-shell-offset-top));
@@ -150,11 +146,9 @@
     }
 
     .elbysodic-app-shell--sidebar-hidden .chirpui-app-shell__sidebar {
-        background:
-            linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-shell-accent) 12%, transparent), transparent 24rem),
-            color-mix(in srgb, var(--chirpui-bg-subtle) 86%, transparent);
+        background: color-mix(in srgb, var(--chirpui-bg) 94%, transparent);
         border-right-color: color-mix(in srgb, var(--chirpui-border) 58%, transparent);
-        box-shadow: inset -1px 0 0 color-mix(in srgb, var(--chirpui-surface) 30%, transparent);
+        box-shadow: none;
         overflow: visible;
     }
 
@@ -174,9 +168,7 @@
 
 .elbysodic-primary-rail {
     align-items: center;
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-shell-accent) 16%, transparent), transparent 18rem),
-        color-mix(in srgb, var(--chirpui-bg-subtle) 76%, transparent);
+    background: color-mix(in srgb, var(--chirpui-bg) 94%, transparent);
     border-right: 1px solid color-mix(in srgb, var(--chirpui-border) 58%, transparent);
     display: flex;
     flex: 0 0 var(--elbysodic-primary-rail-width);
@@ -214,18 +206,25 @@
 }
 
 .elbysodic-primary-rail__link[aria-current="page"] {
-    background:
-        radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--elbysodic-shell-accent) 35%, transparent), transparent 48%),
-        color-mix(in srgb, var(--chirpui-accent) 11%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--chirpui-accent) 32%, transparent);
-    box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--elbysodic-shell-accent) 18%, transparent),
-        0 10px 28px color-mix(in srgb, var(--chirpui-accent) 18%, transparent);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.elbysodic-primary-rail__link[aria-current="page"]::before {
+    background: var(--chirpui-accent);
+    border-radius: var(--chirpui-radius-full);
+    content: "";
+    height: 40%;
+    inset-block-start: 30%;
+    inset-inline-start: 0;
+    position: absolute;
+    width: 2px;
 }
 
 .elbysodic-primary-rail__link:hover {
     background: color-mix(in srgb, var(--chirpui-accent) 8%, transparent);
-    border-color: color-mix(in srgb, var(--chirpui-border) 74%, transparent);
+    border-color: transparent;
 }
 
 .elbysodic-primary-rail__link:focus-visible {
@@ -366,10 +365,10 @@
 }
 
 .chirpui-sidebar__link {
-    border: 1px solid transparent;
-    border-radius: calc(var(--chirpui-radius-sm) * 1.15);
+    border: 0;
+    border-radius: 0.2rem;
     color: var(--chirpui-text-muted);
-    font-weight: 680;
+    font-weight: 620;
     margin-inline-start: 0;
     min-block-size: 2.25rem;
     padding: 0.42rem 0.58rem;
@@ -382,18 +381,12 @@
 }
 
 .chirpui-sidebar__link[aria-current="page"] {
-    background:
-        linear-gradient(90deg, color-mix(in srgb, var(--chirpui-accent) 13%, transparent), transparent 72%),
-        color-mix(in srgb, var(--elbysodic-shell-accent) 5%, var(--chirpui-surface));
-    border-color: color-mix(in srgb, var(--chirpui-accent) 32%, transparent);
-    box-shadow:
-        inset 2px 0 0 var(--chirpui-accent),
-        inset 5px 0 0 color-mix(in srgb, var(--elbysodic-shell-accent) 64%, transparent);
+    background: transparent;
+    box-shadow: inset 2px 0 0 var(--chirpui-accent);
 }
 
 .chirpui-sidebar__link:hover {
     background: color-mix(in srgb, var(--chirpui-accent) 7%, transparent);
-    border-color: color-mix(in srgb, var(--chirpui-border) 74%, transparent);
 }
 
 .elbysodic-community-brand {
@@ -576,23 +569,23 @@
 
 .elbysodic-sidebar-count {
     align-items: center;
-    background: color-mix(in srgb, var(--chirpui-accent) 14%, var(--chirpui-bg-subtle));
-    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 24%, var(--chirpui-border-subtle));
-    border-radius: var(--chirpui-radius-full);
-    color: var(--chirpui-text);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: var(--chirpui-text-subtle);
     display: inline-flex;
     flex: 0 0 auto;
     font-size: var(--chirpui-font-xs);
-    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
     justify-content: center;
     margin-inline-start: auto;
-    min-width: 1.4rem;
-    padding: 0.05rem 0.4rem;
+    min-width: 1rem;
+    padding: 0;
 }
 
 .elbysodic-sidebar-link--attention .elbysodic-sidebar-count {
-    background: color-mix(in srgb, var(--elbysodic-state-needs-reply) 24%, var(--chirpui-bg-subtle));
-    border-color: color-mix(in srgb, var(--elbysodic-state-needs-reply) 48%, var(--chirpui-border));
+    color: var(--elbysodic-state-needs-reply);
 }
 
 .elbysodic-sidebar-tree {
@@ -750,9 +743,9 @@
 
 .elbysodic-topbar-search {
     align-items: center;
-    background: color-mix(in srgb, var(--chirpui-bg-subtle) 86%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chirpui-border) 78%, transparent);
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border: 0;
+    border-block-end: 1px solid color-mix(in srgb, var(--chirpui-border) 76%, transparent);
     display: grid;
     flex: 0 1 28rem;
     grid-template-columns: auto minmax(8rem, 1fr) auto;
@@ -761,15 +754,19 @@
     overflow: hidden;
 }
 
+.elbysodic-topbar-search:focus-within {
+    border-block-end-color: var(--chirpui-accent);
+    box-shadow: 0 1px 0 var(--chirpui-accent);
+}
+
 .elbysodic-topbar-search__scope {
     align-items: center;
-    border-inline-end: 1px solid color-mix(in srgb, var(--chirpui-border) 78%, transparent);
     color: var(--chirpui-text-muted);
     display: inline-flex;
     font-size: var(--chirpui-font-xs);
     font-weight: 900;
     max-inline-size: 8.5rem;
-    min-block-size: 2rem;
+    min-block-size: 2.75rem;
     overflow: hidden;
     padding-inline: 0.65rem;
     text-overflow: ellipsis;
@@ -793,27 +790,27 @@
     color: var(--chirpui-text);
     font: inherit;
     font-size: var(--chirpui-font-sm);
-    min-block-size: 2rem;
+    min-block-size: 2.75rem;
     min-width: 0;
     padding: 0.35rem 0.65rem;
 }
 
 .elbysodic-topbar-search button {
-    background: color-mix(in srgb, var(--chirpui-accent) 88%, var(--chirpui-text));
+    background: transparent;
     border: 0;
-    border-inline-start: 1px solid color-mix(in srgb, var(--chirpui-border) 72%, transparent);
-    color: var(--chirpui-on-accent);
+    color: var(--chirpui-accent);
     cursor: pointer;
     font: inherit;
     font-size: var(--chirpui-font-sm);
-    font-weight: 900;
-    min-block-size: 2rem;
-    padding-inline: 0.65rem;
+    font-weight: 700;
+    min-block-size: 2.75rem;
+    padding-inline: 0.85rem;
 }
 
 .elbysodic-topbar-search button:hover,
 .elbysodic-topbar-search button:focus-visible {
-    background: color-mix(in srgb, var(--chirpui-accent) 78%, var(--chirpui-text));
+    background: color-mix(in srgb, var(--chirpui-accent) 10%, transparent);
+    color: var(--chirpui-text);
 }
 
 .elbysodic-shell-identity {

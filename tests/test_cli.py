@@ -159,6 +159,29 @@ def test_cli_serve_subcommand_accepts_same_server_options(monkeypatch) -> None:
     assert calls["port"] == 5678
 
 
+def test_cli_serve_preserves_global_db_path_before_subcommand(monkeypatch, tmp_path) -> None:
+    calls: dict[str, object] = {}
+    db_path = tmp_path / "preview.sqlite3"
+
+    def fake_create_services(path: Path, *, seed_demo: bool) -> _FakeServices:
+        calls["db_path"] = path
+        calls["seed_demo"] = seed_demo
+        return _FakeServices(calls)
+
+    def fake_create_app(*, debug: bool, services: _FakeServices) -> _FakeApp:
+        calls["debug"] = debug
+        calls["services"] = services
+        return _FakeApp(calls)
+
+    monkeypatch.setattr(cli, "create_services", fake_create_services)
+    monkeypatch.setattr(cli, "create_app", fake_create_app)
+
+    cli.main(["--db-path", str(db_path), "--seed-demo", "serve"])
+
+    assert calls["db_path"] == db_path
+    assert calls["seed_demo"] is True
+
+
 def test_cli_serve_can_explicitly_seed_demo_data(monkeypatch) -> None:
     calls: dict[str, object] = {}
 

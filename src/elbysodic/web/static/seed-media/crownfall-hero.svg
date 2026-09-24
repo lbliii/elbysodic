@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Crownfall divided court</title>
+  <desc id="desc">An empty throne waits beneath a broken crown while rival banners divide the court.</desc>
+  <defs>
+    <linearGradient id="hall" x1="0" y1="0" x2=".4" y2="1">
+      <stop stop-color="#171a30"/>
+      <stop offset=".54" stop-color="#353048"/>
+      <stop offset="1" stop-color="#a55a62"/>
+    </linearGradient>
+    <linearGradient id="dais" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#5b4257"/>
+      <stop offset="1" stop-color="#211e31"/>
+    </linearGradient>
+    <radialGradient id="window">
+      <stop stop-color="#f3d69b" stop-opacity=".74"/>
+      <stop offset=".55" stop-color="#d38d75" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#d38d75" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="stone" width="96" height="64" patternUnits="userSpaceOnUse">
+      <path d="M0 0h96M0 32h96M0 0v32m48 0v32m48-64v32" fill="none" stroke="#e6d6ba" stroke-opacity=".09" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#hall)"/>
+  <circle cx="808" cy="324" r="378" fill="url(#window)"/>
+  <path d="M0 0h300v650H0zm1300 0h300v650h-300z" fill="#171b2d" fill-opacity=".66"/>
+  <path d="M152 0h95v470h-95zm1201 0h95v470h-95z" fill="#25263a"/>
+  <path d="M0 0h300l75 105H0zm1600 0h-300l-75 105h375z" fill="#d16d75" fill-opacity=".78"/>
+  <path d="M0 0h300v375L142 474 0 407zm1600 0h-300v375l158 99 142-67z" fill="#a94760" fill-opacity=".72"/>
+  <path d="m146 474 154-99 154 64-161 106zm1308 0-154-99-154 64 161 106z" fill="#d4ad76" fill-opacity=".8"/>
+  <g fill="none" stroke="#efd7a7" stroke-opacity=".38" stroke-width="3">
+    <path d="M54 50h194v314L54 420zM1546 50h-194v314l194 56z"/>
+    <path d="m55 130 94 65 99-65m-193 125 193 0m1104-125 94 65 99-65m-193 125h193"/>
+  </g>
+  <path d="M544 114c164-80 349-80 513 0v357H544z" fill="#202237" stroke="#d5b884" stroke-opacity=".45" stroke-width="4"/>
+  <path d="M612 146c119-58 258-58 377 0v294H612z" fill="#242a3c"/>
+  <path d="M800 146v294M612 293h377" fill="none" stroke="#ce9b78" stroke-opacity=".48" stroke-width="4"/>
+  <circle cx="800" cy="294" r="34" fill="#efd79f" fill-opacity=".78"/>
+  <path d="m800 260 9 24 24 1-19 15 7 24-21-14-21 14 7-24-19-15 24-1z" fill="#453249"/>
+  <path d="m780 101 21 35 22-37m-23 1 1-37m-43 50 43-13 42 13" fill="none" stroke="#f0d69e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M0 660 266 560l276 83-269 86zm1600 0-266-100-276 83 269 86z" fill="#a8666c" fill-opacity=".55"/>
+  <path d="M0 705c267-69 467-80 600-33 133 48 267 48 400 0 133-47 333-36 600 33v195H0z" fill="url(#dais)"/>
+  <path d="M440 631h720v40H440zm86-49h548v49H526zm88-39h372v39H614z" fill="#2a263b" stroke="#c09478" stroke-width="3"/>
+  <path d="M705 541V408c0-68 43-117 95-117s95 49 95 117v133m-224 0h258m-218-57h178" fill="none" stroke="#d3b985" stroke-width="13" stroke-linecap="square"/>
+  <path d="M800 706c10-52 16-82 25-112 9 30 15 60 25 112" fill="#171a2c"/>
+  <path d="M0 0h1600v900H0z" fill="url(#stone)"/>
+  <path d="m798 0 4 121-19 26 20 28-8 31" fill="none" stroke="#bb6675" stroke-width="5" stroke-linecap="round"/>
+  <path d="M0 835c270-56 493-48 668 23 176 71 352 71 528 0 175-71 398-79 404-23v65H0z" fill="#171a2b" fill-opacity=".85"/>
+</svg>
