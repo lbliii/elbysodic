@@ -6624,16 +6624,9 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 sort_order=index * 10,
                 is_featured=index == 1,
             )
-            if material_seed.slug == "premise" or material_seed.material_type == "event":
-                material = _sync_seed_material_title(
-                    repo,
-                    community.id,
-                    material,
-                    material_seed.title,
-                )
             materials_by_slug[material_seed.slug] = material
         if program.slug == "harbor-society":
-            draft_event = _ensure_material(
+            _ensure_material(
                 repo,
                 community.id,
                 "founders-gala-third-copy",
@@ -6657,7 +6650,6 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 status="draft",
                 sort_order=100,
             )
-            _sync_seed_material_title(repo, community.id, draft_event, "The Third Copy")
         for wanted_seed in program.wanted:
             related_material_id = None
             if wanted_seed.related_material_slug:
@@ -7982,30 +7974,6 @@ def _ensure_material(
         )
 
 
-def _sync_seed_material_title(
-    repo: ForumRepository,
-    community_id: int,
-    material: Material,
-    title: str,
-) -> Material:
-    """Sync a curated seed title while retaining the material's existing story copy."""
-
-    if material.title == title:
-        return material
-    return repo.update_material(
-        community_id,
-        material.id,
-        title=title,
-        material_type=material.material_type,
-        presentation_variant=material.presentation_variant,
-        summary=material.summary,
-        body=material.body,
-        status=material.status,
-        sort_order=material.sort_order,
-        is_featured=material.is_featured,
-    )
-
-
 def _seed_discovery_profile(
     repo: ForumRepository,
     community_id: int,
@@ -8495,7 +8463,6 @@ def _seed_materials(
         is_featured=True,
         sort_order=50,
     )
-    event = _sync_seed_material_title(repo, community_id, event, "B-24 Winter")
     _assign_material_facets(
         repo,
         community_id,

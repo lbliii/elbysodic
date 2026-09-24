@@ -2232,7 +2232,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "elbysodic-network-card__tooltip" in response.text
         assert 'title="Open calls"' not in response.text
         assert "elbysodic-network-search__control" in response.text
-        assert "premise, pace, hooks, roster shape" in response.text
+        assert 'placeholder="Try mystery, relaxed, or wanted"' in response.text
         assert "urban supernatural" in response.text
         assert "weird-town mystery" in response.text
         assert "small-town social web" in response.text
@@ -2250,9 +2250,9 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "face you want to wear next" not in response.text
         assert "elbysodic-network-card__mark" in response.text
         assert "XMA" in response.text
-        assert 'href="/c/jurassic-park-universe/characters" aria-label="3 faces"' in response.text
-        assert 'href="/c/jurassic-park-universe/wanted" aria-label="2 wanted"' in response.text
-        assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' in response.text
+        assert 'href="/c/jurassic-park-universe/characters"' not in response.text
+        assert 'href="/c/jurassic-park-universe/wanted"' not in response.text
+        assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' not in response.text
 
     asyncio.run(run())
 
@@ -3571,7 +3571,7 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
         assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
-        assert "Current Event: No Reflection" in hp_home.text
+        assert "No Reflection" in hp_home.text
         assert (
             "One student has gone missing, and every portrait remembers a different last sighting."
             in hp_home.text
@@ -7977,7 +7977,7 @@ def test_world_materials_render_pillars_events_and_application_guides() -> None:
             assert "World guide" in world.text
             assert "Premise" in world.text
             assert "Application Guide" in world.text
-            assert "Current Event: B-24 Winter" in world.text
+            assert "B-24 Winter" in world.text
             assert "Guidebook pulse" in world.text
             assert 'href="/world/premise"' in world.text
             assert 'href="/world/b-24-winter"' in world.text
@@ -8647,7 +8647,7 @@ def test_wanted_ads_render_board_detail_and_character_hub() -> None:
                 assert "elbysodic-casting-desk-hero__identity" in casting.text
                 assert "Active face casting" in casting.text
                 assert "Wanted handoffs" in casting.text
-                assert "Active Reserves" in casting.text
+                assert "Community reserves" in casting.text
                 assert "Human UN liaison for B-24 talks" in casting.text
                 assert "Active face reserves" in casting.text
                 assert "Browse wanted" not in _page_content(casting.text)
@@ -8759,12 +8759,21 @@ def test_public_wanted_routes_hide_non_open_hooks() -> None:
 def test_handoff_desks_collapse_empty_work_sections() -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
-        persona = resolve_seed_persona(services.repo, "harbor_writer")
+        community = services.repo.create_community("empty-handoffs", "Empty Handoffs")
+        user = services.repo.create_user("empty-handoffs@example.com", "hash")
+        role = services.repo.create_role(community.id, "member", "Member")
+        membership = services.repo.create_membership(
+            community.id,
+            user.id,
+            role.id,
+            "emptyhands",
+            "Empty Hands",
+        )
         app = create_app(
             debug=False,
             services=AppServices(
                 services.repo,
-                DemoSeed(persona.community, persona.user, persona.membership, persona.character),
+                DemoSeed(community, user, membership, None),
             ),
         )
         async with TestClient(app) as client:

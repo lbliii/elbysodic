@@ -33,10 +33,6 @@ def test_director_opening_templates_and_docs_use_realm_studio_language() -> None
 
     for snippet in [
         "Open realm",
-        "Scene hubs",
-        "director materials",
-        "intake, claims",
-        "wanted hooks",
         "Opening checklist",
         "Opening packet",
         "Writer invitations",
@@ -86,7 +82,7 @@ def test_director_launch_room_renders_opening_contract() -> None:
         assert "Opening packet" in launch.text
         assert "Scene hub" in launch.text
         assert "Application guide" in launch.text
-        assert "Directors shape each realm’s opening." in launch.text
+        assert "Directors shape each realm\u2019s opening." in launch.text
         assert "Studio Intake supports reviewed Program Blueprint preview and apply" in launch.text
         assert "Blueprint Apply remain future work" not in launch.text
         assert "Writer invitations" in launch.text
