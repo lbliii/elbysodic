@@ -10,7 +10,7 @@ from chirp.http.response import Redirect
 from chirp.templating.returns import Page
 
 from elbysodic.domain.boards import BOARD_KIND_LABELS, BOARD_SIDEBAR_SECTION_LABELS
-from elbysodic.services.operations import OperationsInspectionConfig
+from elbysodic.services.operations import OperationsCard, OperationsInspectionConfig
 from elbysodic.services.read_models import (
     POST_ACCENT_STYLE_LABELS,
     POST_BORDER_STYLE_LABELS,
@@ -214,6 +214,7 @@ def render_studio_room(
         item for item in studio_rooms if item.key in {"intake", "appearance", "content"}
     )
     operations = None
+    today_queue_cards: list[OperationsCard] = []
     if room == "overview":
         security = get_web_security_config()
         operations = services.director_operations(
@@ -222,6 +223,22 @@ def render_studio_room(
                 secure_cookies=security.secure_cookies,
             )
         )
+        today_queue_cards = [
+            card for card in operations.cards if card.title != "Community builder checklist"
+        ]
+        if studio.theme_warnings:
+            today_queue_cards.append(
+                OperationsCard(
+                    kicker="Appearance",
+                    title="Theme health",
+                    summary="Readability warnings in the realm's light or dark palette.",
+                    count=len(studio.theme_warnings),
+                    href="/studio/appearance#appearance-theme",
+                    cta="Review theme",
+                    variant="warning",
+                    items=tuple(warning.title for warning in studio.theme_warnings[:4]),
+                )
+            )
     return Page.mounted(
         "studio/page.html",
         current_path=request.url,
@@ -231,6 +248,7 @@ def render_studio_room(
         studio_rooms=studio_rooms,
         shape_hub_rooms=shape_hub_rooms,
         operations=operations,
+        today_queue_cards=today_queue_cards,
         current_studio_room=next(
             (item for item in studio_rooms if item.key == room),
             None,

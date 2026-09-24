@@ -1,16 +1,17 @@
 # Continuity Source Grounding Contract
 
-
 ## Archival Note
 
 Lifecycle: Deferred
 
-Archived 2026-08-17 as not-now. Blocked on Continuity Graph provenance and review. No leaves until those contracts exist.
+Archived 2026-08-17 as not-now. The manual backend now supplies provenance and
+review contracts; rendered scene grounding remains deferred until its route and
+privacy contract is approved.
 
-Status: gated follow-up; blocked on Continuity Graph provenance and review
+Status: backend provenance/review gate met; rendered scene grounding remains deferred
 Owner: Continuity Graph, product, storage, service, web, privacy, and tests
 Created: 2026-05-15
-Last updated: 2026-05-15
+Last updated: 2026-09-05
 Review by: 2026-06-19
 Closure criteria: source-linked continuity/canon grounding can appear in scene
 context only after manual provenance, review state, visibility, and privacy
@@ -20,9 +21,9 @@ contracts exist; otherwise this remains deferred.
 
 The scene context reader includes a `Linked story objects` section. It now
 renders explicit plotting-room links. Canon/source grounding remains deferred
-because Elbysodic does not yet have the reviewed Continuity Graph contract that
-would make canon labels, source citations, staff-only material, and public
-visibility safe.
+even though schema version 27 now has the reviewed manual Continuity Graph
+backend. The scene reader still lacks an approved rendered contract and privacy
+proof for continuity labels, citations, and viewer-specific source redaction.
 
 Archive reference:
 `plans/archive/2026/scene-context-reader-saga-2026-05-15.md`.

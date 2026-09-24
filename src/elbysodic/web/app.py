@@ -18,7 +18,7 @@ from chirp.middleware.static import StaticFiles
 
 from elbysodic.services import AppServices, create_services
 from elbysodic.web.errors import register_error_handlers
-from elbysodic.web.navigation import location_nav_tree_items
+from elbysodic.web.navigation import location_nav_tree_items, login_entry_href
 from elbysodic.web.routes import (
     active_route_path,
     board_section_for_path,
@@ -52,6 +52,8 @@ from elbysodic.web.worker_draining import (
 PAGES_DIR = Path(__file__).parent / "pages"
 STATIC_DIR = Path(__file__).parent / "static"
 DEV_TOOLS_ENV = "ELBYSODIC_DEV_TOOLS"
+CHIRP_LOG_LEVEL_ENV = "CHIRP_LOG_LEVEL"
+_CHIRP_LOG_LEVELS = frozenset({"debug", "info", "warning", "error", "critical"})
 
 
 def create_app(
@@ -83,6 +85,13 @@ def create_app(
         # Worker lifecycle hooks (reset_worker_draining) require async workers
         # in production so Pounce emits pounce.worker.startup/shutdown scopes.
         worker_mode="async" if not debug else "auto",
+        # Railway log search depends on a stable JSON envelope. Development
+        # keeps Chirp/Pounce's TTY-aware auto format, while staging and
+        # production always emit structured records. The level remains an
+        # operator knob with the same allowlist/fallback semantics as
+        # AppConfig.from_env().
+        log_format="json" if security.production else "auto",
+        log_level=_chirp_log_level(),
     )
     app = App(config=config)
     app.on_worker_startup(reset_worker_draining)
@@ -132,6 +141,7 @@ def create_app(
         optional=True,
     )
     app.template_global()(location_nav_tree_items)
+    app.template_global()(login_entry_href)
     app.template_global()(dev_tools_enabled)
     app.template_global()(sidebar_is_hidden)
     app.template_global()(active_route_path)
@@ -209,6 +219,11 @@ def _resolve_dev_tools(*, debug: bool, dev_tools: bool | None, production: bool)
     if configured is not None:
         return configured.strip().lower() not in {"0", "false", "no", "off"}
     return debug
+
+
+def _chirp_log_level() -> str:
+    configured = (os.environ.get(CHIRP_LOG_LEVEL_ENV) or "").strip().lower()
+    return configured if configured in _CHIRP_LOG_LEVELS else "info"
 
 
 def community_initials(name: object) -> str:

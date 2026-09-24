@@ -1,7 +1,4 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/surface.html" import surface %}
   {% from "_components/ui.html" import empty_policy_block %}
 {% end %}
 
@@ -9,13 +6,14 @@
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header("Claims") %}
-  Face, canon, role, and realm-specific claims for {{ viewer.community.name }}.
-  {% end %}
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <section class="elbysodic-stack elbysodic-stack--sm">
+    <h1>Claims</h1>
+    <p class="elbysodic-copy-lead">
+      Face, canon, role, and realm-specific claims for {{ viewer.community.name }}.
+    </p>
+  </section>
 
-  {% call surface(variant="elevated") %}
   <section class="elbysodic-claims-hero" aria-labelledby="claims-heading">
     <div>
       <p class="elbysodic-section-kicker">Intake map</p>
@@ -30,7 +28,6 @@
       <span><strong>{{ directory.required_count }}</strong> required</span>
     </div>
   </section>
-  {% end %}
 
   <nav class="elbysodic-claim-lenses" aria-label="Claim status lenses">
     <a class="elbysodic-claim-lens {{ 'is-active' if not directory.status_filter else '' }}" href="/claims{{ '?q=' ~ search_query_encoded if directory.search_query else '' }}">
@@ -55,28 +52,25 @@
     {% if directory.status_filter %}
     <input type="hidden" name="status" value="{{ directory.status_filter }}">
     {% end %}
-    <label>
-      <span class="chirpui-field__label">Search claims</span>
-      <input class="chirpui-field__input" name="q" value="{{ directory.search_query }}" placeholder="Face, role, family, faction, writer-facing value...">
+    <label class="elbysodic-form-field">
+      <span>Search claims</span>
+      <input name="q" value="{{ directory.search_query }}" placeholder="Face, role, family, faction, writer-facing value...">
     </label>
-    <div class="chirpui-cluster elbysodic-cluster--end">
+    <div class="elbysodic-cluster elbysodic-cluster--end">
       {% if directory.has_active_filter %}
-      <a class="chirpui-btn chirpui-btn--secondary" href="/claims">Clear</a>
+      <a href="/claims">Clear</a>
       {% end %}
-      <button type="submit" class="chirpui-btn chirpui-btn--secondary">Search</button>
+      <button type="submit" class="elbysodic-btn elbysodic-btn--primary">Search</button>
     </div>
   </form>
 
   {% if error %}
-  {% call surface(variant="elevated") %}
-  <p class="chirpui-field__error">{{ error }}</p>
-  {% end %}
+  <p class="elbysodic-form-error">{{ error }}</p>
   {% end %}
 
   {% if directory.groups %}
   <div class="elbysodic-claim-group-list">
     {% for group in directory.groups %}
-    {% call surface(variant="elevated") %}
     <section class="elbysodic-claim-group" aria-labelledby="claim-group-{{ group.claim_type.slug }}">
       <header class="elbysodic-claim-group__header">
         <div>
@@ -85,9 +79,11 @@
           <p class="elbysodic-copy-summary">{{ group.claim_type.description }}</p>
         </div>
         <div class="elbysodic-claim-group__badges">
-          {{ badge("required", variant="warning") if group.claim_type.is_required else "" }}
-          {{ badge(group.live_count ~ " live", variant="info") }}
-          {{ badge(group.available_count ~ " open", variant="muted") }}
+          {% if group.claim_type.is_required %}
+          <span class="elbysodic-reader-chip elbysodic-reader-chip--strong">required</span>
+          {% end %}
+          <span class="elbysodic-reader-chip">{{ group.live_count }} live</span>
+          <span class="elbysodic-reader-chip">{{ group.available_count }} open</span>
         </div>
       </header>
       {% if group.template_fields %}
@@ -106,12 +102,14 @@
             </span>
             <span role="cell">
               {% if item.character %}
-              <a class="chirpui-link" href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a>
+              <a href="/characters/{{ item.character.slug }}">{{ item.character.name }}</a>
               {% else %}
               Available
               {% end %}
             </span>
-            <span role="cell">{{ badge(item.status_label, variant="success" if item.claim.status == "claimed" else ("warning" if item.claim.status == "reserved" else "muted")) }}</span>
+            <span role="cell">
+              <span class="elbysodic-reader-chip{{ " elbysodic-reader-chip--strong" if item.claim.status == "claimed" or item.claim.status == "reserved" else "" }}">{{ item.status_label }}</span>
+            </span>
           </article>
           {% if can_manage %}
           <details class="elbysodic-claim-maintenance">
@@ -119,26 +117,26 @@
             <form method="post"
                   hx-boost="false"
                   data-elbysodic-submit-label="Saving claim..."
-                  class="chirpui-stack chirpui-stack--sm">
+                  class="elbysodic-stack elbysodic-stack--sm">
         {{ csrf_field() }}
               <input type="hidden" name="_action" value="update_claim">
               <input type="hidden" name="claim_id" value="{{ item.claim.id }}">
               <div class="elbysodic-form-grid">
-                <label>
-                  <span class="chirpui-field__label">Claim</span>
-                  <input class="chirpui-field__input" name="label" value="{{ item.claim.label }}" required>
+                <label class="elbysodic-form-field">
+                  <span>Claim</span>
+                  <input name="label" value="{{ item.claim.label }}" required>
                 </label>
-                <label>
-                  <span class="chirpui-field__label">Status</span>
-                  <select class="chirpui-field__input" name="status">
+                <label class="elbysodic-form-field">
+                  <span>Status</span>
+                  <select name="status">
                     <option value="claimed" {{ "selected" if item.claim.status == "claimed" else "" }}>Claimed</option>
                     <option value="reserved" {{ "selected" if item.claim.status == "reserved" else "" }}>Reserved</option>
                     <option value="available" {{ "selected" if item.claim.status == "available" else "" }}>Open slot</option>
                   </select>
                 </label>
-                <label>
-                  <span class="chirpui-field__label">Face</span>
-                  <select class="chirpui-field__input" name="character_id">
+                <label class="elbysodic-form-field">
+                  <span>Face</span>
+                  <select name="character_id">
                     <option value="">No face yet</option>
                     {% for character in characters %}
                     <option value="{{ character.id }}" {{ "selected" if item.character and item.character.id == character.id else "" }}>{{ character.name }}</option>
@@ -146,12 +144,12 @@
                   </select>
                 </label>
               </div>
-              <label>
-                <span class="chirpui-field__label">Notes</span>
-                <input class="chirpui-field__input" name="notes" value="{{ item.claim.notes }}" placeholder="Optional director context">
+              <label class="elbysodic-form-field">
+                <span>Notes</span>
+                <input name="notes" value="{{ item.claim.notes }}" placeholder="Optional director context">
               </label>
-              <div class="chirpui-cluster elbysodic-cluster--end">
-                <button type="submit" class="chirpui-btn chirpui-btn--secondary">Save claim</button>
+              <div class="elbysodic-cluster elbysodic-cluster--end">
+                <button type="submit" class="elbysodic-btn elbysodic-btn--primary">Save claim</button>
               </div>
             </form>
           </details>
@@ -183,21 +181,21 @@
           <h3>Record claim</h3>
         </header>
         <div class="elbysodic-form-grid">
-          <label>
-            <span class="chirpui-field__label">Claim</span>
-            <input class="chirpui-field__input" name="label" placeholder="{{ group.claim_type.name }}" required>
+          <label class="elbysodic-form-field">
+            <span>Claim</span>
+            <input name="label" placeholder="{{ group.claim_type.name }}" required>
           </label>
-          <label>
-            <span class="chirpui-field__label">Status</span>
-            <select class="chirpui-field__input" name="status">
+          <label class="elbysodic-form-field">
+            <span>Status</span>
+            <select name="status">
               <option value="claimed">Claimed</option>
               <option value="reserved">Reserved</option>
               <option value="available">Open slot</option>
             </select>
           </label>
-          <label>
-            <span class="chirpui-field__label">Face</span>
-            <select class="chirpui-field__input" name="character_id">
+          <label class="elbysodic-form-field">
+            <span>Face</span>
+            <select name="character_id">
               <option value="">No face yet</option>
               {% for character in characters %}
               <option value="{{ character.id }}">{{ character.name }}</option>
@@ -205,25 +203,23 @@
             </select>
           </label>
         </div>
-        <label>
-          <span class="chirpui-field__label">Notes</span>
-          <input class="chirpui-field__input" name="notes" placeholder="Optional director context">
+        <label class="elbysodic-form-field">
+          <span>Notes</span>
+          <input name="notes" placeholder="Optional director context">
         </label>
-        <div class="chirpui-cluster elbysodic-cluster--end">
-          <button type="submit" class="chirpui-btn chirpui-btn--secondary">Add claim</button>
+        <div class="elbysodic-cluster elbysodic-cluster--end">
+          <button type="submit" class="elbysodic-btn elbysodic-btn--primary">Add claim</button>
         </div>
       </form>
       {% end %}
     </section>
     {% end %}
-    {% end %}
   </div>
   {% else %}
   {{ empty_policy_block("No claim types have been configured yet.", "Directors can add claim types from Studio intake when this realm is ready for structured claims.", "Claims missing") }}
   {% end %}
-{% end %}
-{% end %}
-{% end %}
+</div>
 {% endblock %}
 </div>
+{% endblock %}
 {% endblock %}

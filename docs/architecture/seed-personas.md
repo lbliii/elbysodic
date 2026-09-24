@@ -43,8 +43,8 @@ obvious.
 | `xmen_writer` | `writer@example.com` | X-Men Apocalypse | `starlane` | Member | Rogue | ordinary writer, active-face reserve, casting handoffs, scene posting |
 | `xmen_staff` | `moira@example.com` | X-Men Apocalypse | `moira` | Staff | Moira MacTaggert | Studio, applications, claims, private production rooms |
 | `xmen_mod` | `alex@example.com` | X-Men Apocalypse | `alex` | Moderator | Cyclops | thread moderation QA on readable boards: pin, lock, move, and update scene status |
-| `xmen_partner` | `charlie@example.com` | X-Men Apocalypse | `charlie` | Member | Charles Xavier | character plot-hook interest, private plotting rooms, and notification handoffs |
-| `xmen_applicant` | `mira@example.com` | X-Men Apocalypse | `mira` | Member | Kitty Pryde | structured submitted application, answered entry prompt, prospective-face plotting handoff, and writer-mention inbox state |
+| `xmen_partner` | `charlie@example.com` | X-Men Apocalypse | `charlie` | Member | Charles Xavier | wanted and character plot-hook interest, private plotting rooms, notification handoffs, and counterparty checks |
+| `xmen_applicant` | `mira@example.com` | X-Men Apocalypse | `mira` | Member | Kitty Pryde | structured submitted application, answered entry prompt, writer-side revision workflow, prospective-face plotting handoff, and writer-mention inbox state |
 | `xmen_outsider` | `simon@example.com` | X-Men Apocalypse | `simon` | Member | Bolivar Trask | outsider, private-room denial, and notification visibility checks |
 | `xmen_inactive` | `inactive@example.com` | X-Men Apocalypse | `sleepingstar` | Member | Sleeping Star | inactive membership denial and recovery checks |
 | `hp_director` | `writer@example.com` | HP Universe | `starlane` | Director | Rowan Ash | invite-only Studio Launch posture |

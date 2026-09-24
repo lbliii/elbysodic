@@ -214,14 +214,20 @@ Useful commands:
 - `make format` formats the project.
 - `make format-check` checks Ruff formatting.
 - `make ty` runs Astral's `ty` checker.
+- `make milo-check` verifies typed command schemas plus the documented CLI,
+  LLM-discovery, and MCP surface allowlist.
+- `make docs` builds the searchable product, architecture, and operations
+  handbook into `public/`; `make docs-check` adds Bengal validation and artifact
+  auditing, and `make docs-preview` opens Bengal's local preview server.
 - `make changelog-draft` previews Towncrier fragments.
 - `make build` builds distribution packages.
 - `uv run pounce check --app elbysodic.web:create_app --format plain` validates
   the Pounce import/config path used by the Chirp production server.
 
 Make, Poe, and `elbysodic dev check` share `elbysodic.checks`. The full
-handoff gate includes lint, formatting, types, strict app checks, Kida,
-hypermedia baseline, executable client tests, pytest, and contract diff:
+handoff gate includes lint, formatting, types, strict app checks, Kida, Milo
+surface verification, Bengal handbook validation, the hypermedia baseline,
+executable client tests, pytest, and contract diff:
 
 ```bash
 uv run python -m elbysodic.checks --full

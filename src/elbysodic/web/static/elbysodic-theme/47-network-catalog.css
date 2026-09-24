@@ -628,6 +628,40 @@
     padding: 0.15rem 0 1rem;
 }
 
+.elbysodic-network-card__joining {
+    color: var(--chirpui-text-muted);
+    font-size: var(--chirpui-font-xs);
+    line-height: 1.4;
+    position: relative;
+    z-index: 2;
+}
+
+.elbysodic-network-card__joining summary {
+    cursor: pointer;
+    inline-size: fit-content;
+}
+
+.elbysodic-network-card__lead-action {
+    align-items: center;
+    color: var(--elbysodic-network-accent);
+    display: inline-flex;
+    font-size: var(--chirpui-font-sm);
+    font-weight: 800;
+    gap: 0.3rem;
+    margin-block-start: 0.65rem;
+    text-decoration: none;
+    text-underline-offset: 0.2em;
+}
+
+.elbysodic-network-card__lead-action:hover,
+.elbysodic-network-card__lead-action:focus-visible {
+    text-decoration: underline;
+}
+
+.elbysodic-network-card__joining p {
+    margin-block: 0.45rem 0;
+}
+
 .elbysodic-network-card__header {
     align-items: start;
     display: flex;

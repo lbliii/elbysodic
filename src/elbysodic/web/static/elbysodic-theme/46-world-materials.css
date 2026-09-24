@@ -95,6 +95,54 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
+.elbysodic-world-guide-index {
+    box-sizing: border-box;
+    margin-inline: auto;
+    max-width: 72rem;
+    padding-inline: 1rem;
+    width: 100%;
+}
+
+.elbysodic-world-guide-card-shell,
+.elbysodic-world-guide-empty {
+    border: 1px solid var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius);
+}
+
+.elbysodic-world-guide-card-shell {
+    padding: 1rem;
+}
+
+.elbysodic-world-guide-empty {
+    background: var(--chirpui-surface-elevated);
+    padding: 1rem;
+}
+
+.elbysodic-world-guide-empty p {
+    margin: 0;
+}
+
+.elbysodic-world-guide-card__link {
+    color: var(--chirpui-link);
+    text-decoration: none;
+}
+
+.elbysodic-world-guide-card__link:hover {
+    color: var(--chirpui-link-hover);
+    text-decoration: underline;
+}
+
+.elbysodic-world-guide-featured {
+    background: color-mix(in srgb, var(--chirpui-success) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chirpui-success) 52%, var(--chirpui-border));
+    border-radius: 999px;
+    color: var(--chirpui-success);
+    font-size: var(--chirpui-font-xs);
+    font-weight: 800;
+    line-height: 1.2;
+    padding: 0.2rem 0.55rem;
+}
+
 .elbysodic-material-studio-hero,
 .elbysodic-material-hero,
 .elbysodic-current-event-card {

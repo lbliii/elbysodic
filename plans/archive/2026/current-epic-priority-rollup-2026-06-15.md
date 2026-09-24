@@ -10,11 +10,21 @@ Archived 2026-08-17. Ranked issues that are now mostly closed (#139, #138, #137,
 Status: active sequencing snapshot after issue burn-down
 Owner: Cross-steward planning, production trust, storage, service, web, docs, tests, Blueprint, and Continuity stewardship
 Created: 2026-06-15
-Last updated: 2026-06-15
+Last updated: 2026-07-20
 Review by: 2026-06-29
 Closure criteria: remaining open sagas/epics are split into approved PR-sized slices, approval-bound decisions are recorded on the relevant issues or docs, and the next implementation wave has local proof or a live-ops owner where required.
 
 ## Purpose
+
+### 2026-07-20 execution update
+
+The local trust sequence has advanced: transaction rollback (#56), tenant
+integrity (#55), capability/audit (#78/#104), Blueprint apply (#85), and the
+manual Continuity Graph backend (#79) now have implementation PRs or merged
+proof. For #79, schema v27, repository/service lifecycle, visibility-filtered
+notification target planning, and export provenance are implemented; routes,
+fanout, and automatic canon remain not-now. The historical ranking below is
+retained as the decision record for why those dependencies were ordered first.
 
 This plan refreshes the priority order after the June 2026 issue burn-down.
 The remaining open GitHub issues are all sagas or epics. There are no open
@@ -57,7 +67,7 @@ remaining epic as equally urgent.
 | 5 | #104, #78 | Staff audit and capability V2 become more important before sensitive operations expand. They also affect Blueprint apply and future Continuity review authority. | Capability storage shape; whether audit events are persistent now or service-neutral first; retention/redaction policy; whether partial staff roles become product-visible. | Spike the audit event primitive and capability storage options in docs/tests, then choose the smallest tenant-scoped persistent shape. |
 | 6 | #85, #138 | Program Blueprint apply can save director labor, but it writes many realm primitives and must not land before transaction, tenant, permission, collision, and optional audit decisions are settled. | Apply modes; stale-preview fingerprint behavior; collision semantics; interim no-audit behavior if audit storage is not ready; route/control exposure. | Keep apply gated; use the existing dry-run contract to specify the exact apply modes and collision decisions before implementing mutating apply. |
 | 7 | #139 | Realm opening and writer activation remain product-critical, but the hardest remaining pieces depend on production trust, access lifecycle policy, and invitation delivery decisions. | Invite delivery/resend policy; no-face continuation detail; first-scene guidance; whether email exists before alpha or copy-only remains policy. | After #107 decisions, polish the no-face and accepted-face next-move regression pack and browser QA. |
-| 8 | #79, #137 | Continuity Graph is strategically important but intentionally deferred behind production trust, tenant integrity, transaction safety, review authority, notification visibility, and export privacy. | Schema shape; review authority; notification targets; export behavior; route timing; public canon visibility; AI/automation remains not-now. | Do not add schema yet. Use the readiness contract to prepare source visibility tests and proposal lifecycle decisions for a later approved backend slice. |
+| 8 | #79, #137 | The manual Continuity Graph backend is implemented after transaction, tenant, capability, visibility, and export proof; rendered grounding remains gated. | Route timing; notification fanout/copy; retraction or supersession; public canon navigation; AI/automation remains not-now. | Use the v27 redacted read models for a separately approved rendered slice; do not infer or auto-publish canon. |
 
 ## Convergence
 

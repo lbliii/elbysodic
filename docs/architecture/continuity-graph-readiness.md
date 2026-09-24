@@ -1,15 +1,16 @@
 # Continuity Graph Readiness Contract
 
-Continuity Graph is deferred until Elbysodic can prove source-link privacy,
-review authority, notification visibility, and export boundaries for manual
-canon work. This contract is the backend gate for the first implementation PR;
-it is not a schema design and it does not authorize automatic canon.
+Continuity Graph remains gated at the rendered-surface and notification-fanout
+boundaries. Elbysodic now has the first manual backend slice with source-link
+privacy, review authority, notification-target planning, and export proof. This
+contract does not authorize automatic canon, public/member routes, or fanout.
 
 ## Current Posture
 
-- No Continuity Graph schema tables exist yet.
+- Schema version 27 stores tenant-scoped proposals, citations, affected-object
+  links, review events, and approved public canon entries.
 - No public continuity or canon route family exists yet.
-- Schema-neutral domain vocabulary exists in
+- Domain vocabulary and persisted row models exist in
   `src/elbysodic/domain/continuity.py` for manual proposals, source
   citations, affected objects, review events, lifecycle state, visibility, and
   approved canon entry drafts.
@@ -18,15 +19,19 @@ it is not a schema design and it does not authorize automatic canon.
 - Program, plotting, claims, applications, and notifications already carry
   source links in specific workflows. They are examples to inspect, not a
   generic continuity primitive.
-- `src/elbysodic/services/continuity.py` owns a schema-neutral source
-  visibility gate for future continuity read models. It resolves board,
+- `src/elbysodic/services/continuity.py` owns source visibility, proposal
+  lifecycle, review, redacted read models, review queues, and a target plan for
+  future notification fanout. It resolves board,
   location, scene/thread, post, character, material, wanted-hook, claim, and
   reserve references through tenant-aware repository methods and returns
-  redacted visible/hidden results before any route or stored proposal exists.
+  redacted visible/hidden results before any future route renders.
+- `src/elbysodic/services/exports.py` includes one-community continuity counts,
+  ownership, and citation provenance without serializing review notes or post
+  excerpts. No archive/download route or new export file format was added.
 
-## First Implementable Slice
+## Implemented Backend Slice
 
-The first real backend slice should be manual and reviewed:
+The first real backend slice is manual and reviewed:
 
 - scene outcome proposals authored by an active same-community membership
 - explicit source citations to same-community threads and posts
@@ -88,10 +93,10 @@ provenance inside that community archive, but public preview exports must not
 include private post excerpts, staff notes, reviewer checklist content, access
 request details, or cross-community identifiers.
 
-## First Implementation Test Matrix Placeholders
+## Implementation Test Matrix
 
-The first schema/service PR must add or extend tests that cover at least these
-placeholders before any continuity route renders:
+The backend now covers the first five named proofs below. The rendered-route
+placeholder remains mandatory before any continuity route is introduced:
 
 - `test_continuity_proposal_sources_reject_cross_community_threads_posts_and_objects`
 - `test_continuity_proposal_source_visibility_matrix_redacts_private_titles_and_excerpts`
@@ -105,23 +110,24 @@ placeholders before any continuity route renders:
 - AI-generated canon
 - automatic scene summarization
 - public canon marketplace or discovery
+- approved-canon retraction or supersession before that lifecycle is designed
 - public route rendering for unreviewed proposals
 - citations to private scene, plotting, application, staff, or access-request
   notes unless the viewer can already read that source
 - inferred affected objects from prose without explicit reviewer confirmation
 - global continuity records detached from `community_id`
 
-## Required Backend Gates
+## Backend Gates
 
-Before adding continuity schema, services, routes, or notifications, the PR
-must include proof for:
+The v27 backend includes proof for:
 
 - tenant ownership for every source and affected object join
 - active membership and named staff capability checks for proposal review
 - lifecycle transition rules and rollback behavior
 - same-community review actor membership and optional character context
-- source-link visibility for participant, unrelated member, staff/director,
-  inactive, public, and cross-community viewers when rendered surfaces exist
+- service read-model visibility for participant, unrelated member,
+  staff/director, inactive, public, and cross-community viewer shapes; rendered
+  proof remains deferred with the routes
 - notification target filtering that hides private source titles, notes, and
   links from unauthorized memberships
 - export behavior that includes only one community's continuity rows and
@@ -142,8 +148,8 @@ viewer already owns or can review that source.
 
 Stop for human review before:
 
-- adding continuity schema tables, migrations, repository APIs, or domain row
-  models
+- changing the v27 continuity schema, lifecycle, repository API, or public
+  visibility contract
 - adding public or member-facing continuity routes
 - changing thread, post, material, wanted, claim, reserve, plotting, or
   notification visibility to support continuity

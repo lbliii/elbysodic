@@ -282,6 +282,12 @@
     gap: 0.85rem;
 }
 
+.elbysodic-community-page {
+    margin-inline: auto;
+    max-width: 68rem;
+    width: 100%;
+}
+
 .elbysodic-empty-policy {
     align-items: center;
     border-block-start: 1px solid var(--chirpui-border-subtle);

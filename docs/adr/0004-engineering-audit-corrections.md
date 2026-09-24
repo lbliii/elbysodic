@@ -23,4 +23,3 @@
 Every leaf includes the relevant fault-injection, concurrency, JavaScript, lifecycle or query-budget regression, plus its affected docs and changelog. Existing route/identity/privacy proofs remain mandatory. Integrated validation runs lint/format/type/template/hypermedia gates, the split coverage suite, process tests on supported runtimes, and focused browser checks for draft submission flows.
 
 Source and tests shared by posting, composer acknowledgement and stream work require explicit carve-outs or integration ordering. Separate leaf branches may be integrated locally for combined validation without authorizing merge or deployment.
-

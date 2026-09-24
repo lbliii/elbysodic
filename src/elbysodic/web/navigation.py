@@ -4,13 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Literal
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from elbysodic.domain.models import Board
 from elbysodic.services import policies
 from elbysodic.services.read_models import ForumView
 
 type ShellAudience = Literal["public", "applicant", "member", "staff"]
+
+
+def login_entry_href(current_path: object = "/") -> str:
+    """Build a login link that keeps the full local path and query together."""
+
+    next_path = str(current_path or "/")
+    if not next_path.startswith("/") or next_path.startswith("//"):
+        next_path = "/"
+    return f"/login?next={quote(next_path, safe='/')}"
 
 
 def active_route_path(current_path: object) -> str:

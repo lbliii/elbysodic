@@ -8,7 +8,7 @@ ledger.
 
 ## Current Version
 
-The checked-in schema currently creates databases at version `26`. Calling
+The checked-in schema currently creates databases at version `28`. Calling
 `create_schema()` creates or upgrades the database, ensures
 `schema_migrations` exists, records the current schema as a baseline when no
 ledger row exists, and sets SQLite `PRAGMA user_version`.
@@ -41,6 +41,19 @@ Version `26` separates scene audience from scene lifecycle by adding
 `threads.visibility`. Existing scenes migrate to `members`; legacy scenes whose
 status is `private` migrate to `private`. The migration never infers public
 publication from an open/active status or a non-private board.
+
+Version `27` adds the manual Continuity Graph backend: proposals, explicit
+thread/post citations, typed affected-object links, membership-authored review
+events with optional owned face context, and approved public canon entries.
+Every table carries `community_id`; fresh and upgraded schemas install matching
+indexes and tenant-pair triggers. Existing scene, post, material, and identity
+rows are not rewritten, and legacy tenant drift is diagnosed rather than
+auto-repaired.
+
+Version `28` tightens the canon-entry storage guard so a public canon row can
+only reference a proposal whose review visibility is also public. The migration
+rejects diagnosed legacy violations, then replaces the version `27` canon
+insert/update triggers with the stricter predicate.
 
 Fresh-schema and upgraded-schema parity is a production-readiness requirement:
 new tables, columns, indexes, and constraints must be represented in both the

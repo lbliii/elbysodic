@@ -49,7 +49,7 @@ def test_continuity_readiness_contract_names_backend_gates() -> None:
     assert missing == []
 
 
-def test_no_continuity_schema_tables_exist_before_approved_backend_slice() -> None:
+def test_manual_continuity_backend_schema_exists_without_deferred_surface_tables() -> None:
     connection = connect()
     try:
         create_schema(connection)
@@ -57,16 +57,19 @@ def test_no_continuity_schema_tables_exist_before_approved_backend_slice() -> No
     finally:
         connection.close()
 
-    deferred_tables = {
+    implemented_tables = {
         "continuity_proposals",
-        "continuity_sources",
+        "continuity_source_citations",
         "continuity_affected_objects",
         "continuity_review_events",
         "canon_entries",
+    }
+    deferred_tables = {
         "canon_sources",
         "scene_outcomes",
     }
 
+    assert implemented_tables.issubset(table_names)
     assert table_names.isdisjoint(deferred_tables)
 
 

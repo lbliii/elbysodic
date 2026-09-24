@@ -289,13 +289,22 @@ def director_operations(
         ]
     )
     conflicted_applications = [item for item in conflicted_applications if item.has_claim_conflicts]
+    ready_handoff_interest_ids = {
+        item.interest.interest.id for item in plotting.wanted_ready_interests
+    }
+    hooks_with_movement = [
+        item
+        for item in casting.wanted_with_interest
+        if item.reserves
+        or any(
+            interest.interest.id not in ready_handoff_interest_ids for interest in item.interests
+        )
+    ]
     cards: list[OperationsCard] = []
     activation_card = _writer_activation_card(
         repo,
         viewer,
         studio,
-        casting,
-        plotting,
         writer_invitations=writer_invitations,
         writer_access_requests=writer_access_requests,
     )
@@ -345,32 +354,37 @@ def director_operations(
                 items=tuple(reserve.reserve.title for reserve in casting.active_reserves[:4]),
             )
         )
-    if casting.wanted_with_interest:
+    if hooks_with_movement:
         cards.append(
             OperationsCard(
                 kicker="Wanted",
                 title="Hooks with movement",
-                summary="Wanted hooks that have interest or reserves attached.",
-                count=len(casting.wanted_with_interest),
+                summary=(
+                    "Wanted hooks with reserves or casting-stage interest; ready scene handoffs "
+                    "appear in their own queue."
+                ),
+                count=len(hooks_with_movement),
                 href="/casting",
                 cta="Review casting movement",
-                items=tuple(
-                    item.wanted_ad.wanted_ad.title for item in casting.wanted_with_interest[:4]
-                ),
+                items=tuple(item.wanted_ad.wanted_ad.title for item in hooks_with_movement[:4]),
             )
         )
     if plotting.wanted_ready_interests:
         cards.append(
             OperationsCard(
                 kicker="Backstage",
-                title="Ready for scene",
-                summary="Wanted handoffs whose plotting rooms are ready to become IC scenes.",
+                title="Ready scene handoffs",
+                summary=(
+                    "Individual wanted interest handoffs whose plotting rooms are ready to become "
+                    "IC scenes."
+                ),
                 count=len(plotting.wanted_ready_interests),
                 href="/plotting#interest-inbox",
                 cta="Open plotting",
                 variant="attention",
                 items=tuple(
-                    item.wanted_ad.wanted_ad.title for item in plotting.wanted_ready_interests[:4]
+                    f"{item.wanted_ad.wanted_ad.title} - {item.interest.display_name}"
+                    for item in plotting.wanted_ready_interests[:4]
                 ),
             )
         )
@@ -1254,8 +1268,6 @@ def _writer_activation_card(
     repo: OperationsRepository,
     viewer: ForumView,
     studio: DirectorStudio,
-    casting: CastingDesk,
-    plotting: PlottingDesk,
     *,
     writer_invitations: Sequence[InvitationManagementItemLike],
     writer_access_requests: Sequence[AccessRequestManagementItemLike],
@@ -1268,6 +1280,16 @@ def _writer_activation_card(
         for character in repo.list_community_characters(viewer.community.id)
         if character.application_status in {"draft", "submitted", "revision_requested"}
     ]
+    review_character_ids = {item.character.id for item in studio.applications.review_queue}
+    activation_applications = [
+        character
+        for character in active_applications
+        if character.application_status in {"draft", "revision_requested"}
+        and character.id not in review_character_ids
+    ]
+    active_application_membership_ids = {
+        character.membership_id for character in active_applications
+    }
     no_face_members = []
     for membership in repo.list_memberships(viewer.community.id):
         if not membership.is_active:
@@ -1280,7 +1302,7 @@ def _writer_activation_card(
             for character in repo.list_characters(viewer.community.id, membership.id)
             if character.application_status == "accepted"
         ]
-        if not accepted_faces:
+        if not accepted_faces and membership.id not in active_application_membership_ids:
             no_face_members.append(membership)
     activation_items: list[str] = []
     if writer_access_requests:
@@ -1292,32 +1314,30 @@ def _writer_activation_card(
         activation_items.append(f"{len(pending_invites)} pending invite(s)")
     if no_face_members:
         activation_items.append(f"{len(no_face_members)} accepted member(s) without faces")
-    if active_applications:
-        activation_items.append(f"{len(active_applications)} draft/review face(s)")
-    if casting.wanted_with_interest:
-        activation_items.append(
-            f"{len(casting.wanted_with_interest)} wanted hook(s) with raised hands"
-        )
-    if plotting.wanted_ready_interests:
-        activation_items.append(f"{len(plotting.wanted_ready_interests)} ready scene handoff(s)")
+    if activation_applications:
+        activation_items.append(f"{len(activation_applications)} draft/revision face(s)")
     if not activation_items:
         return None
+    activation_href, activation_cta = _writer_activation_destination(
+        writer_access_requests,
+        pending_invites=pending_invites,
+        no_face_members=no_face_members,
+        activation_applications=activation_applications,
+    )
     return OperationsCard(
         kicker="Activation",
         title="Writer activation",
-        summary="Invites, first faces, applications, raised hands, and first-scene handoffs.",
+        summary="Access requests, invitations, and application work that still needs a next step.",
         count=sum(
             (
                 len(pending_invites),
                 len(writer_access_requests),
                 len(no_face_members),
-                len(active_applications),
-                len(casting.wanted_with_interest),
-                len(plotting.wanted_ready_interests),
+                len(activation_applications),
             )
         ),
-        href=_writer_activation_href(writer_access_requests),
-        cta="Open launch room",
+        href=activation_href,
+        cta=activation_cta,
         variant="attention",
         items=tuple(activation_items[:4]),
     )
@@ -1330,6 +1350,25 @@ def _access_request_item_label(access_request: CommunityAccessRequest) -> str:
     if access_request.wanted_hook:
         return f"{writer} - {access_request.wanted_hook}"
     return writer
+
+
+def _writer_activation_destination(
+    writer_access_requests: Sequence[AccessRequestManagementItemLike],
+    *,
+    pending_invites: Sequence[InvitationManagementItemLike],
+    no_face_members: Sequence[CommunityMembership],
+    activation_applications: Sequence[Character],
+) -> tuple[str, str]:
+    if writer_access_requests:
+        return (
+            f"/studio/access-requests/{writer_access_requests[0].request.id}",
+            "Review access request",
+        )
+    if pending_invites:
+        return "/studio/launch#invite-writers-heading", "Manage invitations"
+    if activation_applications or no_face_members:
+        return "/applications", "Open applications"
+    return "/studio/launch", "Open launch room"
 
 
 def _writer_activation_href(

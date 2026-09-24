@@ -94,6 +94,38 @@ def test_staff_capability_contracts_cover_named_helpers(
         assert contract.audit_event_candidates
 
 
+def test_staff_capability_contracts_match_service_authorization_matrix() -> None:
+    contracts = {
+        contract.capability: contract for contract in policies.staff_capability_contracts()
+    }
+
+    assert contracts["manage_applications"].protected_workflows == (
+        "application review queue",
+        "application review room and review-note edits",
+        "application approval and revision requests",
+        "claim conflict resolution during review",
+        "claims directory and manual claim maintenance",
+        "claim-type and application-intake field configuration",
+    )
+    assert contracts["manage_casting"].protected_workflows == (
+        "wanted-interest reservation and reserve creation",
+        "plotting-room staff access, plan editing, and scene creation",
+    )
+    assert contracts["manage_threads"].protected_workflows == (
+        "readable-thread pin, lock, and move actions",
+        "moderator scene-status and metadata updates",
+        "post edit moderation",
+    )
+    assert contracts["manage_world"].protected_workflows == (
+        "Studio structure and launch management",
+        "private-board visibility",
+        "material and appearance editing",
+        "Program Blueprint apply",
+        "community export manifest",
+        "operations inspection",
+    )
+
+
 def test_page_handlers_templates_and_services_do_not_check_admin_flag_directly() -> None:
     checked_paths = [
         *Path("src/elbysodic/web/pages").rglob("page.py"),

@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
+from elbysodic.domain.continuity import (
+    ContinuityAffectedObject,
+    ContinuityCanonEntry,
+    ContinuityProposal,
+    ContinuityProposalState,
+    ContinuityReviewEvent,
+    ContinuitySourceCitation,
+)
 from elbysodic.domain.models import (
     Board,
     Character,
@@ -161,6 +170,34 @@ class CommunityExportRepository(Protocol):
 
     def list_community_invitations(self, community_id: int) -> list[CommunityInvitation]: ...
 
+    def list_continuity_proposals(
+        self,
+        community_id: int,
+        *,
+        states: Iterable[ContinuityProposalState] | None = None,
+        author_membership_id: int | None = None,
+    ) -> list[ContinuityProposal]: ...
+
+    def list_continuity_source_citations(
+        self,
+        community_id: int,
+        proposal_id: int,
+    ) -> list[ContinuitySourceCitation]: ...
+
+    def list_continuity_affected_objects(
+        self,
+        community_id: int,
+        proposal_id: int,
+    ) -> list[ContinuityAffectedObject]: ...
+
+    def list_continuity_review_events(
+        self,
+        community_id: int,
+        proposal_id: int,
+    ) -> list[ContinuityReviewEvent]: ...
+
+    def list_continuity_canon_entries(self, community_id: int) -> list[ContinuityCanonEntry]: ...
+
 
 def community_export_manifest(
     repo: CommunityExportRepository,
@@ -187,6 +224,23 @@ def community_export_manifest(
     plotting_rooms = repo.list_plotting_rooms(community.id, status=None)
     access_requests = repo.list_community_access_requests(community.id, status=None)
     invitations = repo.list_community_invitations(community.id)
+    continuity_proposals = repo.list_continuity_proposals(community.id)
+    continuity_citations = [
+        citation
+        for proposal in continuity_proposals
+        for citation in repo.list_continuity_source_citations(community.id, proposal.id)
+    ]
+    continuity_affected = [
+        affected
+        for proposal in continuity_proposals
+        for affected in repo.list_continuity_affected_objects(community.id, proposal.id)
+    ]
+    continuity_reviews = [
+        event
+        for proposal in continuity_proposals
+        for event in repo.list_continuity_review_events(community.id, proposal.id)
+    ]
+    canon_entries = repo.list_continuity_canon_entries(community.id)
     posts = [post for thread_posts in posts_by_thread.values() for post in thread_posts]
     return CommunityExportManifest(
         community_id=community.id,
@@ -208,6 +262,27 @@ def community_export_manifest(
             CommunityExportCount(community.id, "plotting_rooms", len(plotting_rooms)),
             CommunityExportCount(community.id, "access_requests", len(access_requests)),
             CommunityExportCount(community.id, "invitations", len(invitations)),
+            CommunityExportCount(
+                community.id,
+                "continuity_proposals",
+                len(continuity_proposals),
+            ),
+            CommunityExportCount(
+                community.id,
+                "continuity_citations",
+                len(continuity_citations),
+            ),
+            CommunityExportCount(
+                community.id,
+                "continuity_affected_objects",
+                len(continuity_affected),
+            ),
+            CommunityExportCount(
+                community.id,
+                "continuity_review_events",
+                len(continuity_reviews),
+            ),
+            CommunityExportCount(community.id, "canon_entries", len(canon_entries)),
         ),
         ownership=(
             *(
@@ -265,6 +340,28 @@ def community_export_manifest(
                 )
                 for room in plotting_rooms
             ),
+            *(
+                CommunityExportOwnership(
+                    community.id,
+                    "continuity_proposal",
+                    proposal.id,
+                    proposal.author_membership_id,
+                    proposal.author_character_id,
+                    proposal.title,
+                )
+                for proposal in continuity_proposals
+            ),
+            *(
+                CommunityExportOwnership(
+                    community.id,
+                    "canon_entry",
+                    entry.id,
+                    entry.approved_by_membership_id,
+                    None,
+                    entry.title,
+                )
+                for entry in canon_entries
+            ),
         ),
         source_links=(
             *(
@@ -307,6 +404,22 @@ def community_export_manifest(
                 )
                 for wanted_ad in wanted_ads
             ),
+            *(
+                CommunityExportSourceLink(
+                    community.id,
+                    f"continuity_{citation.source_type}_citation",
+                    citation.id,
+                    _continuity_citation_href(
+                        community.slug,
+                        boards,
+                        threads,
+                        posts,
+                        citation,
+                    ),
+                    f"{citation.source_type} provenance",
+                )
+                for citation in continuity_citations
+            ),
         ),
         redactions=(
             CommunityExportRedaction(
@@ -335,6 +448,11 @@ def community_export_manifest(
                 "access_requests",
                 "private request notes and applicant emails require a director-only detail export",
             ),
+            CommunityExportRedaction(
+                community.id,
+                "continuity_review_material",
+                "public/member export tiers omit reviewer notes, private post excerpts, and hidden source labels",
+            ),
         ),
         privacy_profiles=_community_export_profiles(community),
     )
@@ -345,6 +463,29 @@ def _board_slug(boards: list[Board], board_id: int) -> str:
         if board.id == board_id:
             return board.slug
     return "missing-board"
+
+
+def _continuity_citation_href(
+    community_slug: str,
+    boards: list[Board],
+    threads: list[Thread],
+    posts: list[Post],
+    citation: ContinuitySourceCitation,
+) -> str:
+    thread = next(
+        (item for item in threads if item.id == citation.source_thread_id),
+        None,
+    )
+    if thread is None:
+        return ""
+    href = (
+        f"/c/{community_slug}/boards/{_board_slug(boards, thread.board_id)}/threads/{thread.slug}"
+    )
+    if citation.source_type == "post":
+        post = next((item for item in posts if item.id == citation.source_id), None)
+        if post is not None:
+            href = f"{href}#post-{post.post_number}"
+    return href
 
 
 def _community_export_profiles(community: Community) -> tuple[CommunityExportProfile, ...]:
@@ -369,6 +510,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                         "published_material_metadata",
                         "published guidebook titles, slugs, and summaries",
                     ),
+                    (
+                        "approved_public_canon",
+                        "approved public canon metadata with public-safe provenance",
+                    ),
                 ),
             ),
             excluded_domains=_domains(
@@ -386,6 +531,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                     ),
                     ("draft_materials", "draft guidebook and event materials stay inside Studio"),
                     ("notification_rows", "membership inbox rows are private operational state"),
+                    (
+                        "unreviewed_continuity",
+                        "proposal drafts, reviewer notes, and hidden sources are never public",
+                    ),
                     ("cross_community_records", "export rows must belong to this community only"),
                 ),
             ),
@@ -416,6 +565,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                         "published_material_metadata",
                         "published guidebook titles, slugs, and summaries",
                     ),
+                    (
+                        "approved_public_canon",
+                        "approved public canon metadata with public-safe provenance",
+                    ),
                 ),
             ),
             excluded_domains=_domains(
@@ -436,6 +589,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                     ),
                     ("draft_materials", "draft guidebook and event materials stay inside Studio"),
                     ("notification_rows", "membership inbox rows need a separate privacy contract"),
+                    (
+                        "unreviewed_continuity",
+                        "proposal drafts, reviewer notes, and hidden sources stay outside member exports",
+                    ),
                     ("cross_community_records", "export rows must belong to this community only"),
                 ),
             ),
@@ -459,6 +616,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                     ("claims_reserves_wanted", "claim, reserve, and wanted-hook workflow state"),
                     ("plot_hooks_plotting_rooms", "plotting and handoff spaces visible to staff"),
                     ("staff_queues", "operations queues visible to current-community staff"),
+                    (
+                        "continuity_proposals_canon",
+                        "current-community proposals, citations, review state, and canon",
+                    ),
                 ),
             ),
             excluded_domains=_domains(
@@ -487,6 +648,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                     ("roles", "role assignments expose current staff posture"),
                     ("draft_materials", "draft guidebook and event materials are staff-only"),
                     ("staff_queues", "operations queues can reveal private workflow state"),
+                    (
+                        "continuity_review_material",
+                        "review notes and private source provenance are staff-only",
+                    ),
                 ),
             ),
         ),
@@ -520,6 +685,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                         "community-scoped membership inbox rows after target visibility review",
                     ),
                     ("staff_queues", "operations, review, and continuation queues"),
+                    (
+                        "continuity_proposals_canon",
+                        "manual proposals, citations, affected links, review events, and canon",
+                    ),
                 ),
             ),
             excluded_domains=_domains(
@@ -566,6 +735,10 @@ def _community_export_profiles(community: Community) -> tuple[CommunityExportPro
                         "inbox rows can reveal private targets and counterparties",
                     ),
                     ("staff_queues", "operations queues can reveal private workflow state"),
+                    (
+                        "continuity_review_material",
+                        "review notes and private provenance require director archive handling",
+                    ),
                 ),
             ),
         ),

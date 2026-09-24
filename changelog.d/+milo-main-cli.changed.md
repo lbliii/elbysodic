@@ -1,0 +1,1 @@
+The `elbysodic` root and developer commands now share one typed Milo runtime with the existing command-line arguments preserved, strict unknown-option diagnostics, host-owned output sinks, and an explicitly empty MCP allowlist for stateful commands.

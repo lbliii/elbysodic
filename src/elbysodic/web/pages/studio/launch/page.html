@@ -31,7 +31,7 @@
         <strong>{{ launch.missing_required_count }}</strong>
       </div>
       <div class="elbysodic-director-signal">
-        <span>Opening</span>
+        <span>Current status</span>
         <strong>{{ viewer.community.launch_status_label }}</strong>
       </div>
     </aside>
@@ -63,11 +63,12 @@
   <section class="elbysodic-operations-panel" aria-labelledby="launch-checklist-heading">
     <div class="elbysodic-director-lane__header">
       <div>
-        <p class="elbysodic-section-kicker">Opening checklist</p>
+        <p class="elbysodic-section-kicker">Invite-only readiness</p>
         <h2 id="launch-checklist-heading">{{ launch.status_label }}</h2>
       </div>
       {{ badge(launch.completed_required_count ~ "/" ~ launch.required_count ~ " required", variant="success" if launch.is_ready else "warning") }}
     </div>
+    <p class="elbysodic-copy-section">Use the required lanes below to prepare an invite-only opening. Your current status is shown above.</p>
     <ul class="elbysodic-launch-checklist" aria-label="Opening checklist lanes">
       {% for item in launch.items %}
       <li class="elbysodic-launch-checklist__item{% if item.is_complete %} elbysodic-launch-checklist__item--ready{% elif item.is_required %} elbysodic-launch-checklist__item--needed{% else %} elbysodic-launch-checklist__item--optional{% end %}">

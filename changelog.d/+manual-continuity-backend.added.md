@@ -1,0 +1,1 @@
+Added the tenant-scoped manual Continuity Graph backend for source-linked proposals, reviewed public canon, privacy-filtered read models and notification target plans, and one-realm export provenance. No continuity routes or notification fanout are exposed yet.

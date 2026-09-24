@@ -19,7 +19,8 @@ architecture and explicit shared-host routing for seeded/demo networks.
 - Core services accept and propagate `community_id`; it must not be assumed to
   be `1`.
 - New structured primitives, including facets, materials, wanted hooks, claims,
-  reserves, and applications, should follow the same rule from their first
+  reserves, applications, continuity proposals, citations, affected objects,
+  review events, and canon entries follow the same rule from their first
   schema.
 
 ## Identity Model
@@ -62,7 +63,8 @@ another community's resolver or service layer.
 Tenant-pair diagnostics cover stored workflow rows that join community-local
 objects, including plotting-room source interests and target scenes, realm
 interaction questions/options, reactions, thread reads/watches, notifications,
-and authorship rows. These diagnostics exist for operations and migration
+continuity authors/reviewers, source citations, affected-object links, approved
+canon, and authorship rows. These diagnostics exist for operations and migration
 repair planning; repository and service methods still enforce tenant scope
 before normal writes.
 The row-family audit matrix in `docs/architecture/data-integrity.md` is the

@@ -9,11 +9,11 @@
 
 .elbysodic-editorial-page {
     display: grid;
-    gap: var(--elbysodic-page-section-gap);
+    gap: clamp(2.4rem, 6vw, 5rem);
 }
 
 .elbysodic-realm-gateway {
-    gap: var(--elbysodic-page-section-gap);
+    gap: clamp(2.4rem, 6vw, 5.5rem);
 }
 
 .elbysodic-realm-gateway-hero {
@@ -21,11 +21,11 @@
     background: transparent;
     border: 0;
     border-radius: 0;
-    gap: clamp(1.5rem, 3vw, 3rem);
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2rem, 5vw, 5.5rem);
+    grid-template-columns: minmax(0, 0.82fr) minmax(20rem, 1.18fr);
     min-block-size: min(72vh, 44rem);
     overflow: visible;
-    padding: clamp(1.25rem, 5vw, 4.5rem) var(--elbysodic-page-gutter) clamp(0.5rem, 2vw, 1.5rem);
+    padding: clamp(1.25rem, 5vw, 4.5rem) 0 clamp(0.5rem, 2vw, 1.5rem);
 }
 
 .elbysodic-realm-gateway-hero__copy {
@@ -34,10 +34,10 @@
 }
 
 .elbysodic-realm-gateway-hero h1 {
-    font-size: clamp(3rem, 5.8vw, 5rem);
-    line-height: 0.86;
-    max-inline-size: 9ch;
-    overflow-wrap: normal;
+    font-size: clamp(3.25rem, 4.5vw, 4.25rem);
+    line-height: 0.82;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
     text-wrap: balance;
 }
 
@@ -288,18 +288,7 @@
 }
 
 .elbysodic-desk-page .elbysodic-page-pulse__tools {
-    grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
-}
-
-.elbysodic-desk-page .elbysodic-desk-queue__metrics {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    max-width: none;
-}
-
-.elbysodic-desk-page .elbysodic-desk-queue__actions {
-    grid-column: 1 / -1;
 }
 
 .elbysodic-desk-page .elbysodic-desk-queue__metrics,
@@ -307,8 +296,11 @@
     justify-content: start;
 }
 
-.elbysodic-desk-page .elbysodic-desk-action-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.elbysodic-desk-next-action {
+    display: grid;
+    gap: 0.65rem;
+    max-inline-size: 28rem;
+    width: 100%;
 }
 
 .elbysodic-desk-page .elbysodic-command-action {
@@ -318,6 +310,18 @@
     border-radius: 0;
     min-height: 0;
     padding: 0.75rem 0;
+}
+
+.elbysodic-desk-page .elbysodic-command-action--next {
+    background: color-mix(in srgb, var(--chirpui-accent) 12%, var(--chirpui-surface));
+    border: 1px solid color-mix(in srgb, var(--chirpui-accent) 54%, var(--chirpui-border));
+    border-radius: var(--chirpui-radius-sm);
+    min-height: 0;
+    padding: 0.9rem;
+}
+
+.elbysodic-desk-page .elbysodic-command-action--next strong {
+    font-size: var(--chirpui-font-lg);
 }
 
 .elbysodic-desk-page .elbysodic-command-action:hover,
@@ -350,20 +354,9 @@
     padding-block-start: 1.15rem;
 }
 
-@media (max-width: 80rem) {
+@media (max-width: 64rem) {
     .elbysodic-realm-gateway-hero {
-        gap: 2rem;
-        grid-template-columns: 1fr;
-        min-block-size: 0;
-    }
-
-    .elbysodic-realm-gateway-hero h1 {
-        font-size: clamp(3.25rem, 8vw, 5.25rem);
-    }
-
-    .elbysodic-realm-gateway-hero__media {
-        min-block-size: min(58vh, 34rem);
-        transform: none;
+        grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 1.1fr);
     }
 
     .elbysodic-realm-gateway__story-field {
@@ -372,6 +365,19 @@
 
     .elbysodic-realm-stage {
         position: static;
+    }
+}
+
+@media (max-width: 72rem) {
+    .elbysodic-realm-gateway-hero {
+        grid-template-columns: minmax(0, 1fr);
+        min-block-size: 0;
+    }
+
+    .elbysodic-realm-gateway-hero__media {
+        grid-template-rows: minmax(clamp(12rem, 32vw, 18rem), 1fr) auto;
+        min-block-size: 0;
+        transform: none;
     }
 }
 
@@ -388,8 +394,8 @@
     }
 
     .elbysodic-realm-gateway-hero h1 {
-        font-size: clamp(3.25rem, 18vw, 4.8rem);
-        max-inline-size: 9ch;
+        font-size: clamp(2.75rem, 12vw, 3.75rem);
+        max-inline-size: 100%;
     }
 
     .elbysodic-realm-gateway-hero__media {
@@ -423,7 +429,7 @@
     }
 
     .elbysodic-desk-page .elbysodic-page-pulse,
-    .elbysodic-desk-page .elbysodic-desk-action-grid {
+    .elbysodic-desk-page .elbysodic-desk-next-action {
         grid-template-columns: 1fr;
     }
 }

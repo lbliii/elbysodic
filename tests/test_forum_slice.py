@@ -2221,16 +2221,27 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Request access open" in response.text
         assert "Public activity " in response.text
         assert "Application guide ready" in response.text
-        assert re.search(r"\b\d+ claims\b", _page_content(response.text))
         assert "/applications/new" not in response.text
         assert "Start application" not in response.text
         assert 'class="elbysodic-network-card__realm-link"' in response.text
         assert 'aria-label="Preview Jurassic Park Universe"' not in response.text
         assert 'class="elbysodic-network-card__icon-action' in response.text
-        assert 'aria-label="Read chapter"' in response.text
+        assert "#elbysodic-icon-arrow-right" in response.text
+        assert "#elbysodic-icon-wanted" in response.text
+        assert "#elbysodic-icon-inbox" in response.text
+        assert 'href="/c/jurassic-park-universe/characters"' not in response.text
+        assert 'href="/c/jurassic-park-universe/wanted"' not in response.text
+        assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' not in response.text
         assert 'aria-label="Open calls"' in response.text
         assert "elbysodic-network-card__tooltip" in response.text
         assert 'title="Open calls"' not in response.text
+        assert 'class="elbysodic-network-card__metrics"' not in response.text
+        assert '<details class="elbysodic-network-card__joining" open' not in response.text
+        joining_details = response.text.split(
+            '<details class="elbysodic-network-card__joining">', 1
+        )[1].split("</details>", 1)[0]
+        assert "Request access open" in joining_details
+        assert "weekly" in joining_details
         assert "elbysodic-network-search__control" in response.text
         assert 'placeholder="mystery, relaxed, wanted"' in response.text
         assert "urban supernatural" in response.text
@@ -2250,8 +2261,6 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "face you want to wear next" not in response.text
         assert "elbysodic-network-card__mark" in response.text
         assert "XMA" in response.text
-        assert 'href="/c/jurassic-park-universe/characters"' not in response.text
-        assert 'href="/c/jurassic-park-universe/wanted"' not in response.text
         assert 'href="/c/jurassic-park-universe/world/paddock-twelve-incident"' not in response.text
 
     asyncio.run(run())
@@ -4023,7 +4032,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "<h1>Studio</h1>" in studio.text
             assert "Run X-Men Apocalypse without carrying every control at once." in studio.text
             assert "Needs attention" in studio.text
-            assert "No director queues need attention right now." in studio.text
+            assert "No daily staff queues need attention right now." in studio.text
             assert "Production calm" in studio.text
             assert "Studio rooms" not in studio.text
             assert "Today" in studio.text
@@ -4075,8 +4084,8 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Current event" in content.text
             assert operations.status == 302
             assert _response_header(operations, "location").endswith("/studio")
-            assert "Director desk" in studio.text
-            assert 'id="operations-heading"' in studio.text
+            assert "Operations attention lanes" not in studio.text
+            assert "Operations queue shortcuts" not in studio.text
             assert "Technical checks" in studio.text
             assert '<details class="elbysodic-operations-diagnostics">' in studio.text
             assert "No director operations need attention right now." not in studio.text
@@ -4223,14 +4232,26 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert parity["Runtime diagnostics"].diagnostic_scope == "hidden from this viewer"
         assert operations.status == 200
         assert "Writer activation" in operations.text
-        assert "Operations attention lanes" in operations.text
-        assert "Needs decision" in operations.text
-        assert f'href="/studio/access-requests/{access_request.id}"' in operations.text
+        primary_queues = re.search(
+            r'<section id="director-operation-signals".*?</section>',
+            operations.text,
+            re.DOTALL,
+        )
+        assert primary_queues is not None
+        assert "Writer activation" in primary_queues.group(0)
+        assert f'href="/studio/access-requests/{access_request.id}"' in primary_queues.group(0)
+        assert "Review access request" in primary_queues.group(0)
+        assert "1 access request(s)" in primary_queues.group(0)
+        assert "Prospect - Transfer student" in primary_queues.group(0)
+        assert "1 accepted member(s) without faces" in primary_queues.group(0)
+        assert "Operations attention lanes" not in operations.text
+        assert "Operations queue shortcuts" not in operations.text
+        assert "Needs decision" not in operations.text
         assert 'href="#director-operation-signals"' not in operations.text
-        assert "Queues that should move before writers stall." in operations.text
+        assert "Queues that should move before writers stall." not in operations.text
         assert "<em>Blocked</em>" not in operations.text
-        assert "<em>Watching</em>" in operations.text
-        assert "Operations queue shortcuts" in operations.text
+        assert "<em>Watching</em>" not in operations.text
+        assert "Operations queue shortcuts" not in operations.text
         assert 'href="/applications"' in operations.text
         assert 'href="/casting"' in operations.text
         assert 'href="/plotting#interest-inbox"' in operations.text
@@ -4243,8 +4264,9 @@ def test_studio_operations_tracks_writer_activation_oversight() -> None:
         assert "1 access request(s)" in operations.text
         assert "Prospect - Transfer student" in operations.text
         assert "accepted member(s) without faces" in operations.text
-        assert "Invites, first faces, applications, raised hands, and first-scene handoffs." in (
-            operations.text
+        assert (
+            "Access requests, invitations, and application work that still needs a next step."
+            in (operations.text)
         )
 
     asyncio.run(run())
@@ -5895,13 +5917,10 @@ def test_studio_operations_hides_review_queue_from_non_staff_members() -> None:
 
         moira_membership = repo.get_membership_by_username(community.id, "moira")
         moira_user = repo.get_user(moira_membership.user_id)
-        moira_character = repo.get_character_by_slug(community.id, "moira-mactaggert")
+        moira = repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_app = create_app(
             debug=False,
-            services=AppServices(
-                repo,
-                DemoSeed(community, moira_user, moira_membership, moira_character),
-            ),
+            services=AppServices(repo, DemoSeed(community, moira_user, moira_membership, moira)),
         )
         async with TestClient(staff_app) as staff_client:
             staff_operations = await staff_client.get("/studio")
@@ -8060,10 +8079,7 @@ def test_draft_world_materials_are_staff_only_on_rendered_routes() -> None:
 
         moira_membership = services.repo.get_membership_by_username(community.id, "moira")
         moira_user = services.repo.get_user(moira_membership.user_id)
-        moira_character = services.repo.get_character_by_slug(
-            community.id,
-            "moira-mactaggert",
-        )
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_services = AppServices(
             services.repo,
             DemoSeed(community, moira_user, moira_membership, moira_character),
@@ -8305,7 +8321,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                 "/applications",
                 body=urlencode(
                     {
-                        "intent": "submit_application",
+                        "_action": "submit_application",
                         "character_slug": "jubilee",
                     }
                 ).encode(),
@@ -8342,12 +8358,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
             )
             staff_services = AppServices(
                 services.repo,
-                DemoSeed(
-                    services.seed.community,
-                    moira_user,
-                    moira_membership,
-                    moira_character,
-                ),
+                DemoSeed(services.seed.community, moira_user, moira_membership, moira_character),
             )
             assert any(
                 item.label == "Application submitted" and item.title == "Jubilee"
@@ -8484,7 +8495,7 @@ def test_applications_desk_tracks_character_statuses() -> None:
                     "/applications",
                     body=urlencode(
                         {
-                            "intent": "submit_application",
+                            "_action": "submit_application",
                             "character_slug": "kitty-pryde",
                         }
                     ).encode(),
@@ -8912,7 +8923,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications",
                 body=urlencode(
                     {
-                        "intent": "submit_application",
+                        "_action": "submit_application",
                         "character_slug": "jean-grey",
                     }
                 ).encode(),
@@ -8936,7 +8947,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
                 "/applications",
                 body=urlencode(
                     {
-                        "intent": "submit_application",
+                        "_action": "submit_application",
                         "character_slug": "jean-grey",
                     }
                 ).encode(),
@@ -8967,10 +8978,7 @@ def test_application_start_form_creates_draft_face_and_review_room() -> None:
 
         moira_membership = services.repo.get_membership_by_username(community.id, "moira")
         moira_user = services.repo.get_user(moira_membership.user_id)
-        moira_character = services.repo.get_character_by_slug(
-            community.id,
-            "moira-mactaggert",
-        )
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_services = AppServices(
             services.repo,
             DemoSeed(community, moira_user, moira_membership, moira_character),
@@ -9118,10 +9126,7 @@ def test_application_review_flags_mapped_claim_conflicts_before_accept() -> None
 
         moira_membership = services.repo.get_membership_by_username(community.id, "moira")
         moira_user = services.repo.get_user(moira_membership.user_id)
-        moira_character = services.repo.get_character_by_slug(
-            community.id,
-            "moira-mactaggert",
-        )
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_services = AppServices(
             services.repo,
             DemoSeed(community, moira_user, moira_membership, moira_character),
@@ -9553,10 +9558,7 @@ def test_director_can_record_manual_claims_from_claims_directory() -> None:
         moira_membership = services.repo.get_membership_by_username(community.id, "moira")
         moira_user = services.repo.get_user(moira_membership.user_id)
         cyclops = services.repo.get_character_by_slug(community.id, "cyclops")
-        moira_character = services.repo.get_character_by_slug(
-            community.id,
-            "moira-mactaggert",
-        )
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_services = AppServices(
             services.repo,
             DemoSeed(community, moira_user, moira_membership, moira_character),
@@ -9661,10 +9663,7 @@ def test_studio_intake_editor_updates_claims_and_application_fields() -> None:
         )
         moira_membership = services.repo.get_membership_by_username(community.id, "moira")
         moira_user = services.repo.get_user(moira_membership.user_id)
-        moira_character = services.repo.get_character_by_slug(
-            community.id,
-            "moira-mactaggert",
-        )
+        moira_character = services.repo.get_character_by_slug(community.id, "moira-mactaggert")
         staff_services = AppServices(
             services.repo,
             DemoSeed(community, moira_user, moira_membership, moira_character),
@@ -12914,7 +12913,10 @@ def test_locked_threads_still_allow_editing_own_existing_post() -> None:
 
 def test_staff_can_pin_and_lock_threads() -> None:
     async def run() -> None:
-        app, repo, community, thread = _moderation_app(is_admin=True)
+        app, repo, community, thread = _moderation_app(can_manage_threads=True)
+        moderator_role = repo.get_role_by_slug(community.id, "moderator")
+        assert moderator_role.is_admin is False
+        assert moderator_role.capabilities == frozenset({"manage_threads"})
 
         async with TestClient(app) as client:
             page = await client.get("/boards/ic/threads/moderation-queue")
@@ -12924,7 +12926,9 @@ def test_staff_can_pin_and_lock_threads() -> None:
             assert 'id="scene-context-docked-thread-staff-controls"' in page.text
             assert "Pin thread" in page.text
             assert "Lock thread" in page.text
-            assert "Move thread" in page.text
+            assert "Destination board" in page.text
+            assert "Choose a destination board" in page.text
+            assert "I confirm moving this thread and its posts to the selected board." in page.text
 
             pinned = await client.post(
                 "/boards/ic/threads/moderation-queue",
@@ -12932,6 +12936,9 @@ def test_staff_can_pin_and_lock_threads() -> None:
                 headers=_FORM,
             )
             assert pinned.status == 302
+            assert _response_header(pinned, "location") == (
+                "/boards/ic/threads/moderation-queue#scene-title"
+            )
             assert repo.get_thread(community.id, thread.id).is_pinned is True
 
             locked = await client.post(
@@ -12940,6 +12947,9 @@ def test_staff_can_pin_and_lock_threads() -> None:
                 headers=_FORM,
             )
             assert locked.status == 302
+            assert _response_header(locked, "location") == (
+                "/boards/ic/threads/moderation-queue#scene-title"
+            )
             assert repo.get_thread(community.id, thread.id).is_locked is True
 
             updated = await client.get("/boards/ic/threads/moderation-queue")
@@ -12947,29 +12957,62 @@ def test_staff_can_pin_and_lock_threads() -> None:
             assert "locked" in updated.text
             assert "Unpin thread" in updated.text
             assert "Unlock thread" in updated.text
+            flag_events = repo.list_staff_audit_events(
+                community.id,
+                capability="manage_threads",
+                target_family="thread",
+            )
+            assert {event.action for event in flag_events} == {"thread_flags_updated"}
+            assert all(event.target_id == thread.id for event in flag_events)
 
+            writer_cookie = _moderation_reader_identity(repo, community)
+            writer_page = await client.get(
+                "/boards/ic/threads/moderation-queue",
+                headers={"Cookie": writer_cookie},
+            )
+            assert writer_page.status == 200
+            assert "pinned" in writer_page.text
+            assert "locked" in writer_page.text
+            assert "Replies are closed" in writer_page.text
+            assert "Staff controls" not in writer_page.text
+
+            moderator = repo.get_user_by_email("moderator@example.com")
+            moderator_membership = repo.get_membership_by_username(
+                community.id,
+                "modlane",
+            )
+            moderator_cookie = (
+                f"elbysodic_dev_identity={community.id}:{moderator.id}:{moderator_membership.id}"
+            )
             unpinned = await client.post(
                 "/boards/ic/threads/moderation-queue",
                 body=b"intent=unpin",
-                headers=_FORM,
+                headers={**_FORM, "Cookie": moderator_cookie},
             )
-            assert unpinned.status == 302
+            assert unpinned.status == 302, unpinned.text[:1200]
             assert repo.get_thread(community.id, thread.id).is_pinned is False
 
             unlocked = await client.post(
                 "/boards/ic/threads/moderation-queue",
                 body=b"intent=unlock",
-                headers=_FORM,
+                headers={**_FORM, "Cookie": moderator_cookie},
             )
             assert unlocked.status == 302
             assert repo.get_thread(community.id, thread.id).is_locked is False
+            writer_page = await client.get(
+                "/boards/ic/threads/moderation-queue",
+                headers={"Cookie": writer_cookie},
+            )
+            assert "pinned" not in writer_page.text
+            assert "locked" not in writer_page.text
+            assert "Post reply" in writer_page.text
 
     asyncio.run(run())
 
 
 def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
     async def run() -> None:
-        app, repo, community, thread = _moderation_app(is_admin=True)
+        app, repo, community, thread = _moderation_app(can_manage_threads=True)
         target_board = repo.get_board_by_slug(community.id, "archive")
         original = repo.get_thread(community.id, thread.id)
         post = repo.list_posts(community.id, thread.id)[0]
@@ -12988,13 +13031,24 @@ def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
         )
 
         async with TestClient(app) as client:
+            controls = await client.get("/boards/ic/threads/moderation-queue")
+            assert controls.status == 200
+            assert f'<option value="{target_board.id}">Archive</option>' in controls.text
+            repo.mark_thread_read(
+                community.id,
+                thread.id,
+                post.author_membership_id,
+                read_at="2026-01-01T00:00:00+00:00",
+            )
             response = await client.post(
                 "/boards/ic/threads/moderation-queue",
-                body=f"intent=move&target_board_id={target_board.id}".encode(),
+                body=f"intent=move&target_board_id={target_board.id}&confirm_move=yes".encode(),
                 headers=_FORM,
             )
             assert response.status == 302
-            assert dict(response.headers)["location"] == "/boards/archive/threads/moderation-queue"
+            assert _response_header(response, "location") == (
+                "/boards/archive/threads/moderation-queue#scene-title"
+            )
 
             moved = repo.get_thread(community.id, thread.id)
             assert moved.board_id == target_board.id
@@ -13013,13 +13067,36 @@ def test_staff_can_move_thread_without_rewriting_thread_history() -> None:
             assert new_page.status == 200
             assert "Archive" in new_page.text
             assert "A thread ready for staff tools." in new_page.text
+            move_events = [
+                event
+                for event in repo.list_staff_audit_events(
+                    community.id,
+                    capability="manage_threads",
+                    target_family="thread",
+                )
+                if event.action == "thread_moved"
+            ]
+            assert len(move_events) == 1
+            assert move_events[0].target_id == thread.id
+            assert move_events[0].reason == ""
+            assert move_events[0].public_aftermath == "thread moved to another board"
+
+            writer_cookie = _moderation_reader_identity(repo, community)
+            writer_page = await client.get(
+                "/boards/archive/threads/moderation-queue",
+                headers={"Cookie": writer_cookie},
+            )
+            assert writer_page.status == 200
+            assert "Archive" in writer_page.text
+            assert "A thread ready for staff tools." in writer_page.text
+            assert "Staff controls" not in writer_page.text
 
     asyncio.run(run())
 
 
 def test_regular_members_cannot_manage_thread_lifecycle() -> None:
     async def run() -> None:
-        app, repo, community, thread = _moderation_app(is_admin=False)
+        app, repo, community, thread = _moderation_app(can_manage_threads=False)
         target_board = repo.get_board_by_slug(community.id, "archive")
 
         async with TestClient(app) as client:
@@ -13036,7 +13113,7 @@ def test_regular_members_cannot_manage_thread_lifecycle() -> None:
 
             move_response = await client.post(
                 "/boards/ic/threads/moderation-queue",
-                body=f"intent=move&target_board_id={target_board.id}".encode(),
+                body=f"intent=move&target_board_id={target_board.id}&confirm_move=yes".encode(),
                 headers=_FORM,
             )
             assert move_response.status == 403
@@ -14204,7 +14281,7 @@ def test_chirp_ui_alpine_runtime_is_loaded_for_interactive_layouts() -> None:
 
 def _moderation_app(
     *,
-    is_admin: bool,
+    can_manage_threads: bool,
 ) -> tuple[App, ForumRepository, Community, Thread]:
     connection = connect(check_same_thread=False)
     create_schema(connection)
@@ -14212,23 +14289,23 @@ def _moderation_app(
     community = repo.seed_default_community("Moderation Test")
     role = repo.create_role(
         community.id,
-        "staff" if is_admin else "member",
-        "Staff" if is_admin else "Member",
-        is_admin=is_admin,
+        "moderator" if can_manage_threads else "member",
+        "Moderator" if can_manage_threads else "Member",
+        capabilities={"manage_threads"} if can_manage_threads else set(),
     )
     user = repo.create_user("moderator@example.com", "hash")
     membership = repo.create_membership(
         community.id,
         user.id,
         role.id,
-        "modlane" if is_admin else "memberlane",
-        "Mod Lane" if is_admin else "Member Lane",
+        "modlane" if can_manage_threads else "memberlane",
+        "Mod Lane" if can_manage_threads else "Member Lane",
     )
     character = repo.create_character(
         community.id,
         membership.id,
-        "moderator-face" if is_admin else "member-face",
-        "Moderator Face" if is_admin else "Member Face",
+        "moderator-face" if can_manage_threads else "member-face",
+        "Moderator Face" if can_manage_threads else "Member Face",
         make_default=True,
     )
     board = repo.create_board(community.id, "ic", "In Character")
@@ -14249,5 +14326,26 @@ def _moderation_app(
             membership=repo.get_membership(community.id, membership.id),
             default_character=character,
         ),
+        owns_repo=False,
     )
     return create_app(debug=False, services=services), repo, community, thread
+
+
+def _moderation_reader_identity(repo: ForumRepository, community: Community) -> str:
+    role = repo.create_role(community.id, "reader", "Reader")
+    user = repo.create_user("reader@example.com", "hash")
+    membership = repo.create_membership(
+        community.id,
+        user.id,
+        role.id,
+        "readerlane",
+        "Reader Lane",
+    )
+    repo.create_character(
+        community.id,
+        membership.id,
+        "reader-face",
+        "Reader Face",
+        make_default=True,
+    )
+    return f"elbysodic_dev_identity={community.id}:{user.id}:{membership.id}"

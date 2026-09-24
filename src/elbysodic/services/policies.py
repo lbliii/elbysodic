@@ -55,8 +55,11 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
         actor_contract="community membership actor; optional public character context",
         protected_workflows=(
             "application review queue",
+            "application review room and review-note edits",
             "application approval and revision requests",
             "claim conflict resolution during review",
+            "claims directory and manual claim maintenance",
+            "claim-type and application-intake field configuration",
         ),
         audit_event_candidates=(
             "application_reviewed",
@@ -70,10 +73,8 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
         storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor; optional public character context",
         protected_workflows=(
-            "claims directory maintenance",
-            "reserve lifecycle movement",
-            "wanted-hook interest handoff",
-            "plotting room staff recovery",
+            "wanted-interest reservation and reserve creation",
+            "plotting-room staff access, plan editing, and scene creation",
         ),
         audit_event_candidates=(
             "claim_updated",
@@ -104,9 +105,8 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
         storage_contract="community-scoped role_capabilities grant named staff power",
         actor_contract="community membership actor; optional public character context",
         protected_workflows=(
-            "private board access",
-            "locked thread replies",
-            "thread moderation",
+            "readable-thread pin, lock, and move actions",
+            "moderator scene-status and metadata updates",
             "post edit moderation",
         ),
         audit_event_candidates=(
@@ -123,6 +123,7 @@ STAFF_CAPABILITY_CONTRACTS: dict[Capability, StaffCapabilityContract] = {
         actor_contract="community membership actor",
         protected_workflows=(
             "Studio structure and launch management",
+            "private-board visibility",
             "material and appearance editing",
             "Program Blueprint apply",
             "community export manifest",

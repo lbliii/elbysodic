@@ -96,7 +96,7 @@ CONTINUITY_REVIEWER_TRANSITIONS: dict[
     "draft": frozenset(),
     "submitted": frozenset({"revision_requested", "approved", "rejected", "archived"}),
     "revision_requested": frozenset({"archived"}),
-    "approved": frozenset({"archived"}),
+    "approved": frozenset(),
     "rejected": frozenset({"archived"}),
     "archived": frozenset(),
 }
@@ -198,6 +198,67 @@ class ContinuityCanonEntryDraft:
         _require_known(self.visibility, CONTINUITY_VISIBILITIES, "visibility")
         if self.visibility != "public":
             raise ValueError("canon entries must use public visibility after approval")
+
+
+@dataclass(frozen=True, slots=True)
+class ContinuityProposal:
+    id: int
+    community_id: int
+    author_membership_id: int
+    author_character_id: int | None
+    title: str
+    summary: str
+    state: ContinuityProposalState
+    visibility: ContinuityVisibility
+    revision_note: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ContinuitySourceCitation:
+    id: int
+    community_id: int
+    proposal_id: int
+    source_type: ContinuitySourceType
+    source_id: int
+    source_thread_id: int
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ContinuityAffectedObject:
+    id: int
+    community_id: int
+    proposal_id: int
+    object_type: ContinuityAffectedObjectType
+    object_id: int
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ContinuityReviewEvent:
+    id: int
+    community_id: int
+    proposal_id: int
+    actor_membership_id: int
+    actor_character_id: int | None
+    action: ContinuityReviewAction
+    note: str
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ContinuityCanonEntry:
+    id: int
+    community_id: int
+    approved_proposal_id: int
+    approved_by_membership_id: int
+    title: str
+    summary: str
+    visibility: ContinuityVisibility
+    created_at: str
+    updated_at: str
 
 
 def can_transition_continuity_proposal(

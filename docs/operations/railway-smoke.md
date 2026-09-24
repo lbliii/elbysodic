@@ -46,6 +46,30 @@ Required staging variables:
 - `ELBYSODIC_AUTO_SEED_DEMO=1`
 - `ELBYSODIC_SECRET_KEY=<staging-only random secret>`
 - `ELBYSODIC_DB_PATH=/app/var/elbysodic.sqlite3`
+- `CHIRP_LOG_LEVEL=info` (or an allowlisted operational override: `debug`,
+  `warning`, `error`, or `critical`)
+
+Elbysodic forces Chirp/Pounce `log_format=json` whenever
+`ELBYSODIC_ENV` resolves to staging or production. Do not set a Railway
+`CHIRP_LOG_FORMAT` override: production JSON is an application contract, while
+local development keeps the framework's TTY-aware `auto` format.
+
+Structured framework records use the common `ts`, `level`, `logger`, and
+`message` envelope. Access records add `method`, `path`, `status`, `bytes`,
+`duration_ms`, `client`, and the full `req_id` when present, so Railway searches
+can correlate a response with its `X-Request-ID`. Chirp's structured log helper
+also adds `trace_id` and `span_id` when Pounce has an active OpenTelemetry span;
+the lookup is guarded, so Elbysodic does not add an OpenTelemetry runtime
+dependency merely to keep JSON logging enabled.
+
+Alert/runbook searches should distinguish Pounce 0.9 timeout states:
+
+- `POUNCE_TIMEOUT_REQUEST_BODY`: the client did not finish sending the request
+  body inside `request_timeout`; inspect client/proxy upload behavior before
+  raising the limit.
+- `POUNCE_TIMEOUT_WRITE`: the client did not accept response bytes inside the
+  write timeout and Pounce closed the connection; inspect slow readers, proxy
+  backpressure, and large/streamed responses before changing timeouts.
 
 Railway deploy overlap/drain settings (Pounce 0.9 bundle, lbliii/pounce #248/#291):
 

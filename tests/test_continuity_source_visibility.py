@@ -29,6 +29,7 @@ def test_public_continuity_sources_hide_private_scenes_posts_and_drafts() -> Non
         writer.character.id,
         "continuity-public-scene",
         "Continuity public scene",
+        visibility="public_preview",
     )
     public_post = repo.create_post(
         community_id,

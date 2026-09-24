@@ -1,0 +1,55 @@
+[site]
+title = "Elbysodic Handbook"
+description = "Product, architecture, and operations guidance for the Elbysodic play-by-post studio."
+baseurl = ""
+language = "en"
+
+[build]
+content_dir = "docs"
+output_dir = "public"
+parallel = true
+incremental = true
+strict_mode = true
+validate_build = true
+validate_links = true
+transform_links = true
+
+[content]
+dir = "docs"
+
+[theme]
+name = "default"
+default_appearance = "system"
+show_reading_time = true
+show_author = false
+show_prev_next = true
+
+[features]
+rss = false
+sitemap = true
+search = true
+json = true
+llm_txt = true
+
+[search]
+enabled = true
+
+[search.lunr]
+prebuilt = false
+min_query_length = 2
+max_results = 50
+preload = "smart"
+
+[assets]
+minify = true
+optimize = true
+fingerprint = true
+pipeline = false
+
+[capabilities]
+mermaid = false
+katex = false
+iconify = false
+
+[social_cards]
+enabled = false

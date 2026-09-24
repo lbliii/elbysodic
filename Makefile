@@ -8,7 +8,7 @@ CHIRP_APP ?= elbysodic.web.contract_app:app
 CONTRACT_DIFF_BASE ?= origin/main
 CONTRACT_BASELINE ?= tests/fixtures/chirp_hypermedia_baseline.json
 
-.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check contract-diff contract-baseline-check check ci changelog changelog-draft changelog-check build clean shell
+.PHONY: all help setup install test test-cov test-cov-parallel-safe test-cov-process lint lint-fix format format-check ty app-check kida-check milo-check contract-diff contract-baseline-check check ci docs docs-check docs-preview changelog changelog-draft changelog-check build clean shell
 
 all: help
 
@@ -29,10 +29,14 @@ help:
 	@echo "  make ty              - Run ty type checker"
 	@echo "  make app-check       - Run Chirp route/template check"
 	@echo "  make kida-check      - Run kida static template validation"
+	@echo "  make milo-check      - Verify the typed CLI and MCP contracts"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
-	@echo "  make check           - Run lint, format, types, strict app, Kida, contract baseline, and client tests"
+	@echo "  make check           - Run lint, format, types, strict app, Kida, Milo, docs, contract baseline, and client checks"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
+	@echo "  make docs            - Build the Bengal handbook into public/"
+	@echo "  make docs-check      - Validate, build, and audit the Bengal handbook"
+	@echo "  make docs-preview    - Build and serve the handbook for local review"
 	@echo "  make changelog       - Compile changelog.d fragments into CHANGELOG.md"
 	@echo "  make changelog-draft - Preview changelog from fragments"
 	@echo "  make build           - Build distribution packages"
@@ -99,6 +103,18 @@ check:
 
 ci:
 	uv run python -m elbysodic.checks --full --base $(CONTRACT_DIFF_BASE)
+
+milo-check:
+	uv run milo verify src/elbysodic/cli.py
+
+docs:
+	uv run --group docs --frozen python scripts/bengal_docs.py build
+
+docs-check:
+	uv run --group docs --frozen python scripts/bengal_docs.py check
+
+docs-preview:
+	uv run --group docs --frozen python scripts/bengal_docs.py preview
 
 changelog:
 	uv run towncrier build --yes

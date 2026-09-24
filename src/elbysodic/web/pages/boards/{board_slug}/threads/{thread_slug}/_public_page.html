@@ -91,7 +91,7 @@
     </p>
     {% call cluster(gap="sm") %}
       <a class="chirpui-btn chirpui-btn--primary" href="/request-access">Request access</a>
-      <a class="chirpui-btn chirpui-btn--secondary" href="/login?next={{ current_path }}" data-elbysodic-global-link>Log in</a>
+      <a class="chirpui-btn chirpui-btn--secondary" href="{{ login_entry_href(current_path) }}" data-elbysodic-global-link>Log in</a>
     {% end %}
   </section>
   {% end %}

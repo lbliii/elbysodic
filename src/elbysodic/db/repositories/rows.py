@@ -12,6 +12,13 @@ from elbysodic.domain.boards import (
     normalize_board_kind,
     normalize_board_sidebar_section,
 )
+from elbysodic.domain.continuity import (
+    ContinuityAffectedObject,
+    ContinuityCanonEntry,
+    ContinuityProposal,
+    ContinuityReviewEvent,
+    ContinuitySourceCitation,
+)
 from elbysodic.domain.models import (
     ApplicationFieldValue,
     ApplicationTemplateField,
@@ -215,6 +222,72 @@ def _staff_audit_event_from_row(row: sqlite3.Row) -> StaffAuditEvent:
         reason=row["reason"],
         public_aftermath=row["public_aftermath"],
         created_at=row["created_at"],
+    )
+
+
+def _continuity_proposal_from_row(row: sqlite3.Row) -> ContinuityProposal:
+    return ContinuityProposal(
+        id=row["id"],
+        community_id=row["community_id"],
+        author_membership_id=row["author_membership_id"],
+        author_character_id=row["author_character_id"],
+        title=row["title"],
+        summary=row["summary"],
+        state=row["state"],
+        visibility=row["visibility"],
+        revision_note=row["revision_note"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def _continuity_source_citation_from_row(row: sqlite3.Row) -> ContinuitySourceCitation:
+    return ContinuitySourceCitation(
+        id=row["id"],
+        community_id=row["community_id"],
+        proposal_id=row["proposal_id"],
+        source_type=row["source_type"],
+        source_id=row["source_id"],
+        source_thread_id=row["source_thread_id"],
+        created_at=row["created_at"],
+    )
+
+
+def _continuity_affected_object_from_row(row: sqlite3.Row) -> ContinuityAffectedObject:
+    return ContinuityAffectedObject(
+        id=row["id"],
+        community_id=row["community_id"],
+        proposal_id=row["proposal_id"],
+        object_type=row["object_type"],
+        object_id=row["object_id"],
+        created_at=row["created_at"],
+    )
+
+
+def _continuity_review_event_from_row(row: sqlite3.Row) -> ContinuityReviewEvent:
+    return ContinuityReviewEvent(
+        id=row["id"],
+        community_id=row["community_id"],
+        proposal_id=row["proposal_id"],
+        actor_membership_id=row["actor_membership_id"],
+        actor_character_id=row["actor_character_id"],
+        action=row["action"],
+        note=row["note"],
+        created_at=row["created_at"],
+    )
+
+
+def _continuity_canon_entry_from_row(row: sqlite3.Row) -> ContinuityCanonEntry:
+    return ContinuityCanonEntry(
+        id=row["id"],
+        community_id=row["community_id"],
+        approved_proposal_id=row["approved_proposal_id"],
+        approved_by_membership_id=row["approved_by_membership_id"],
+        title=row["title"],
+        summary=row["summary"],
+        visibility=row["visibility"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
     )
 
 
