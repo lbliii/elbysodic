@@ -2232,7 +2232,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "elbysodic-network-card__tooltip" in response.text
         assert 'title="Open calls"' not in response.text
         assert "elbysodic-network-search__control" in response.text
-        assert 'placeholder="Try mystery, relaxed, or wanted"' in response.text
+        assert 'placeholder="mystery, relaxed, wanted"' in response.text
         assert "urban supernatural" in response.text
         assert "weird-town mystery" in response.text
         assert "small-town social web" in response.text
