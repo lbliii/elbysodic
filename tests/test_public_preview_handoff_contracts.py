@@ -95,7 +95,7 @@ def test_public_preview_handoff_templates_and_docs_name_viewer_states() -> None:
         assert snippet in gateway
     for snippet in [
         "Browse public previews first",
-        "Explore cards stay public-preview safe",
+        "Find your next story.",
         "Search story fit",
     ]:
         assert snippet in network

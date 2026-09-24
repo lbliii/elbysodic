@@ -369,7 +369,7 @@ Current marks:
 - `reply`: replies
 - `locations`: child places or sublocations
 
-See [Faces & Threads](../../design/icons/README.md) for the complete SVG
+See [Faces & Threads](https://github.com/lbliii/elbysodic/blob/main/design/icons/README.md) for the complete SVG
 vocabulary and accessibility contract.
 
 ### MetaLine

@@ -227,9 +227,6 @@ from elbysodic.services.network import public_studio_network as _public_studio_n
 from elbysodic.services.network import public_studio_program as _public_studio_program
 from elbysodic.services.network import studio_network as _studio_network
 from elbysodic.services.notifications import (
-    count_visible_unread_notifications as _count_visible_unread_notifications,
-)
-from elbysodic.services.notifications import (
     mark_all_notifications_read as _mark_all_notifications_read,
 )
 from elbysodic.services.notifications import notification_inbox as _notification_inbox
@@ -260,7 +257,7 @@ from elbysodic.services.plotting import (
 from elbysodic.services.plotting import plotting_desk as _plotting_desk
 from elbysodic.services.plotting import read_plotting_room as _read_plotting_room
 from elbysodic.services.plotting import (
-    read_plotting_room_messages as _read_plotting_room_messages,
+    read_plotting_room_messages_for_scope as _read_plotting_room_messages_for_scope,
 )
 from elbysodic.services.plotting import subscribe_plotting_room_live, unsubscribe_plotting_room_live
 from elbysodic.services.plotting import update_plotting_room_plan as _update_plotting_room_plan
@@ -678,6 +675,11 @@ class AppServices:
         current_character = _resolve_current_character(self.repo, membership, roster)
         navigation_boards = _board_navigation(self.repo, community.id, membership, role)
         sidebar_sections = _sidebar_sections_by_key(self.repo, community.id)
+        identity_options = self._identity_options(identity)
+        unread_notification_count = next(
+            (option.unread_notification_count for option in identity_options if option.is_current),
+            0,
+        )
         viewer = ForumView(
             community=community,
             membership=membership,
@@ -708,13 +710,8 @@ class AppServices:
                 item for item in navigation_boards if is_studio_sidebar_board(item.board)
             ],
             studio_sidebar_section=sidebar_sections["studio"],
-            unread_notification_count=_count_visible_unread_notifications(
-                self.repo,
-                community.id,
-                membership,
-                role,
-            ),
-            identity_options=self._identity_options(identity),
+            unread_notification_count=unread_notification_count,
+            identity_options=identity_options,
             program_theme=community_theme_view(self.repo.get_default_theme(community.id)),
         )
         if self._identity_context is not None:
@@ -3638,9 +3635,26 @@ class AppServices:
         after_id: int | None,
         limit: int = 100,
     ) -> PlottingRoomMessageBatch:
-        return _read_plotting_room_messages(
+        identity = self._identity_context or self._identity_resolver.resolve()
+        try:
+            membership = self.repo.get_membership(identity.community_id, identity.membership_id)
+        except LookupError as exc:
+            raise PermissionError("realm membership is no longer available") from exc
+        if membership.user_id != identity.user_id:
+            raise PermissionError(
+                f"membership {membership.id} does not belong to user {identity.user_id}"
+            )
+        if not membership.is_active:
+            raise PermissionError(f"membership {membership.id} is not active")
+        try:
+            role = self.repo.get_role(identity.community_id, membership.role_id)
+        except LookupError as exc:
+            raise PermissionError("realm membership role is not valid for this community") from exc
+        return _read_plotting_room_messages_for_scope(
             self.repo,
-            self.viewer(),
+            identity.community_id,
+            membership,
+            role,
             room_id,
             after_id=after_id,
             limit=limit,

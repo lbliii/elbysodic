@@ -229,8 +229,8 @@
 </a>
 {% end %}
 
-{% def network_access_posture(viewer=none, account_visitor=none, home=false) %}
-{% if viewer and home %}
+{% def network_access_posture(viewer=none, account_visitor=none) %}
+{% if viewer %}
 <section class="elbysodic-network-access-note" aria-label="Network access posture">
   <strong>Signed in as {{ viewer.membership.display_name }} in {{ viewer.community.name }}</strong>
   <span>Your account is active; choose a realm card to enter, preview, or request access.</span>
@@ -341,7 +341,7 @@
   </section>
   {% else %}
   {{ home_showcase(featured) }}
-  {{ network_access_posture(viewer, account_visitor | default(none), home=true) }}
+  {{ network_access_posture(viewer, account_visitor | default(none)) }}
 
   <div class="elbysodic-network-home-stack">
     {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}

@@ -147,6 +147,8 @@ def test_unregistered_notification_kind_does_not_render_count_open_or_mark_read(
     repo = services.repo
     viewer = services.viewer()
     assert viewer.current_character is not None
+    baseline_inbox = services.notifications()
+    baseline_item_ids = {item.notification.id for item in baseline_inbox.items}
     notification = repo.create_notification(
         viewer.community.id,
         viewer.membership.id,
@@ -158,8 +160,8 @@ def test_unregistered_notification_kind_does_not_render_count_open_or_mark_read(
 
     inbox = services.notifications()
 
-    assert inbox.unread_count == 0
-    assert inbox.items == []
+    assert inbox.unread_count == baseline_inbox.unread_count
+    assert {item.notification.id for item in inbox.items} == baseline_item_ids
     with pytest.raises(LookupError, match="notification target not found"):
         services.open_notification(notification.id)
     assert repo.get_notification(viewer.community.id, notification.id).read_at is None
@@ -186,6 +188,8 @@ def test_wrong_membership_application_target_does_not_render_count_open_or_mark_
             default_character=outsider.character,
         ),
     )
+    baseline_inbox = outsider_services.notifications()
+    baseline_item_ids = {item.notification.id for item in baseline_inbox.items}
     notification = repo.create_notification(
         writer.community.id,
         outsider.membership.id,
@@ -197,8 +201,8 @@ def test_wrong_membership_application_target_does_not_render_count_open_or_mark_
 
     inbox = outsider_services.notifications()
 
-    assert inbox.unread_count == 0
-    assert all(item.notification.id != notification.id for item in inbox.items)
+    assert inbox.unread_count == baseline_inbox.unread_count
+    assert {item.notification.id for item in inbox.items} == baseline_item_ids
     with pytest.raises(LookupError, match="notification target not found"):
         outsider_services.open_notification(notification.id)
     assert repo.get_notification(writer.community.id, notification.id).read_at is None
@@ -231,6 +235,8 @@ def test_post_notification_creation_skips_memberships_that_cannot_view_target() 
     )
     repo.watch_thread(writer.community.id, private_thread.id, outsider.membership.id)
     repo.watch_thread(writer.community.id, private_thread.id, staff.membership.id)
+    outsider_before = repo.list_notifications(writer.community.id, outsider.membership.id)
+    staff_before = repo.list_notifications(writer.community.id, staff.membership.id)
     post = repo.create_post(
         writer.community.id,
         private_thread.id,
@@ -246,8 +252,22 @@ def test_post_notification_creation_skips_memberships_that_cannot_view_target() 
         outsider.membership.id,
     )
     staff_notifications = repo.list_notifications(writer.community.id, staff.membership.id)
-    assert outsider_notifications == []
-    assert [notification.kind for notification in staff_notifications] == ["thread_reply"]
+    outsider_before_ids = {notification.id for notification in outsider_before}
+    staff_before_ids = {notification.id for notification in staff_before}
+    assert [
+        notification
+        for notification in outsider_notifications
+        if notification.id not in outsider_before_ids
+    ] == []
+    staff_added = [
+        notification
+        for notification in staff_notifications
+        if notification.id not in staff_before_ids
+    ]
+    assert len(staff_added) == 1
+    assert staff_added[0].kind == "thread_reply"
+    assert staff_added[0].thread_id == private_thread.id
+    assert staff_added[0].post_id == post.id
 
 
 def test_notification_delivery_helper_rejects_inactive_or_malformed_targets() -> None:

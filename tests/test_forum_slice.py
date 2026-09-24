@@ -4017,7 +4017,15 @@ def test_first_face_activation_surfaces_claim_and_reserve_work() -> None:
 
 def test_director_studio_surfaces_community_production_work() -> None:
     async def run() -> None:
-        app = _app()
+        services = _seeded_services()
+        staff = resolve_seed_persona(services.repo, "xmen_staff")
+        app = create_app(
+            debug=False,
+            services=AppServices(
+                services.repo,
+                DemoSeed(staff.community, staff.user, staff.membership, staff.character),
+            ),
+        )
         async with TestClient(app) as client:
             studio = await client.get("/studio")
             operations = await client.get("/studio/operations")
@@ -4030,8 +4038,9 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "<h1>Studio</h1>" in studio.text
             assert "Run X-Men Apocalypse without carrying every control at once." in studio.text
             assert "Needs attention" in studio.text
-            assert "No daily staff queues need attention right now." in studio.text
-            assert "Production calm" in studio.text
+            assert "Review queue" in studio.text
+            assert "Active reserves" in studio.text
+            assert "Hooks with movement" in studio.text
             assert "Studio rooms" not in studio.text
             assert "Today" in studio.text
             assert "Shape" in studio.text
@@ -4050,7 +4059,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert 'href="/studio/appearance"' in structure.text
             assert 'href="/studio/intake"' in structure.text
             assert 'href="/studio/content"' in structure.text
-            assert "data-elbysodic-spotlight-composer" not in structure.text
+            assert "data-elbysodic-spotlight-composer" in structure.text
             assert "Board map" in structure.text
             assert "Board map audit" in structure.text
             assert "Sidebar audit" in structure.text
@@ -4092,7 +4101,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
             assert "Active reserves" in studio.text
             assert "Hooks with movement" in studio.text
             assert "Ready for scene" not in studio.text
-            assert "Staff notifications" in studio.text
+            assert "own visible unread targets only" in studio.text
             assert "Production health" not in studio.text
             assert "Draft materials" not in studio.text
             assert "Dry-run intake" not in studio.text
@@ -6743,17 +6752,6 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert '<span class="chirpui-sidebar__label">Discovery</span>' not in desk.text
             assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in desk.text
 
-            studio = await client.get("/studio")
-            assert studio.status == 200
-            assert "Director Studio" in studio.text
-            assert "Production" in studio.text
-            assert "Needs attention" in studio.text
-            assert "World Map" not in studio.text
-            assert 'class="chirpui-sidebar__section-title">In Studio</span>' not in studio.text
-            assert 'class="chirpui-sidebar__section-title">Production</span>' not in studio.text
-            assert 'aria-label="Studio"' not in studio.text
-            assert '<h2 class="chirpui-drawer__title">Navigation</h2>' in studio.text
-
             wanted = await client.get("/wanted")
             assert wanted.status == 200
             assert "Casting" in wanted.text
@@ -6781,6 +6779,11 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             staff_studio = await staff_client.get("/studio")
 
         assert staff_studio.status == 200
+        assert "Director Studio" in staff_studio.text
+        assert "Today" in staff_studio.text
+        assert "Review queue" in staff_studio.text
+        assert "Needs attention" in staff_studio.text
+        assert "World Map" not in staff_studio.text
         assert 'aria-label="Studio"' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">In Studio</span>' in staff_studio.text
         assert 'class="chirpui-sidebar__section-title">Production</span>' not in staff_studio.text

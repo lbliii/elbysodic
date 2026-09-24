@@ -65,7 +65,7 @@ EXTERNALLY_PROVIDED_PROPERTIES = {
     "--elbysodic-preview-text",
 }
 
-_IMPORT_RE = re.compile(r'@import\s+url\("\./elbysodic-theme/([^"]+\.css)"\);')
+_IMPORT_RE = re.compile(r'@import\s+url\("\./elbysodic-theme/([^"?]+\.css)(?:\?[^\"]*)?"\);')
 _SELECTOR_RE = re.compile(r"^(?:[.#]|[a-z][\w-]*(?:[.#:\[]|\s|,|>|\+|~))", re.IGNORECASE)
 _CUSTOM_PROPERTY_DEFINITION_RE = re.compile(r"(?<![\w-])(--[A-Za-z0-9_-]+)\s*:")
 _CUSTOM_PROPERTY_REFERENCE_RE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)(\s*,)?")

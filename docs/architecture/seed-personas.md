@@ -21,9 +21,9 @@ current chapter: Afterlight's broken accord, Brightline's awards-night
 sabotage, Crownfall's vacant throne, Harbor Society's Founders Gala, Nocturne
 Row's treaty breach, Signal Creek's midnight transmission, Emberhouse's
 tampered selection, Gaslight Ward's impossible murder, and Wayfarer Station's
-missing convoy. See [seed art direction](../product/seed-art-direction.md) for
-the visual brief. Seed reruns replace prior generated defaults while retaining
-media a director has customized.
+missing convoy. The visual brief is in `docs/product/seed-art-direction.md`.
+Seed reruns replace prior generated defaults while retaining media a director
+has customized.
 
 Original-premise communities also seed four shared ordinary writer accounts in
 addition to `starlane`: `juniper.gray@example.com`, `miles.north@example.com`,

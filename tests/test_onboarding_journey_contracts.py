@@ -224,7 +224,7 @@ def test_seeded_harbor_personas_show_reviewed_and_accepted_writer_entry() -> Non
             "invited",
             "accepted",
         ]
-        assert [event.event_type for event in pending_events] == ["submitted"]
+        assert [event.event_type for event in pending_events] == ["submitted", "account_linked"]
         assert launch.status == 200
         assert "Eloise Byrne" in launch.text
         assert "Pending" in launch.text
@@ -307,7 +307,7 @@ def test_harbor_writer_desk_prioritizes_a_seeded_scene_reply() -> None:
         assert "Return to a scene, catch up on reading, or move a plot forward." in desk.text
         assert "Breakfast Before The Vote needs a reply" in desk.text
         assert desk.text.count("Reply where owed") == 1
-        assert "Read latest" in desk.text
+        assert "Unread watched" in desk.text
         assert "The Ledger Page Under Table Six" in desk.text
         services.close()
 
@@ -428,7 +428,10 @@ def test_no_face_and_application_states_keep_next_move_visible_without_staff_lea
 
         assert draft_desk.status == 200
         assert "Move a face toward play" in draft_desk.text
-        assert "Continue the application, check its status, and prepare the next move." in draft_desk.text
+        assert (
+            "Continue the application, check its status, and prepare the next move."
+            in draft_desk.text
+        )
         assert "Finish Next Move Draft" in draft_desk.text
         assert "Continue application" in draft_desk.text
         assert "Application Review Room" not in draft_desk.text

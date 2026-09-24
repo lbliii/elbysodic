@@ -29,7 +29,6 @@ from elbysodic.services.network import (
     network_explore,
     network_home,
     search_public_catalog,
-    search_studio_network,
 )
 from elbysodic.web import create_app
 from elbysodic.web.security import CHIRP_GLOBAL_USER_SESSION_KEY
@@ -418,7 +417,8 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert 'href="/login?next=/"' in root.text
         assert "chirpui-theme-toggle" in root.text
         assert network.status == 200
-        assert "HP Universe" in network.text
+        assert "Crownfall" in network.text
+        assert "HP Universe" not in network.text
         assert "starlane" not in network.text
         assert "current realm" not in network.text
         assert "Request access open" in network.text
@@ -439,7 +439,7 @@ def test_production_routes_require_session(monkeypatch) -> None:
         assert "elbysodic-realm-gateway-hero" in tenant.text
         assert "What has changed" in tenant.text
         assert "Where the story is opening" in tenant.text
-        assert "Current Event: B-24 Winter" in tenant.text
+        assert "B-24 Winter" in tenant.text
         assert "starlane" not in tenant.text
         assert "playing as Rogue" not in tenant.text
         assert "elbysodic-identity-menu" not in tenant.text
@@ -1259,7 +1259,7 @@ def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch
         assert "Log out" in root.text
         assert network.status == 200
         assert "Signed in as Lane in X-Men Apocalypse" in network.text
-        assert "Explore cards stay public-preview safe" in network.text
+        assert "Browse realms by premise, pace, open calls, and scenes in motion." in network.text
         assert "Log in" not in network.text
         assert "Log out" in network.text
         assert "current membership" in network.text
@@ -1273,28 +1273,27 @@ def test_signed_in_network_marks_current_realm_without_leaking_staff(monkeypatch
 def test_public_network_search_contract_stays_service_owned() -> None:
     services = create_services(path=":memory:")
 
-    directory = services.public_studio_network()
-    magic_results = search_studio_network(directory, "glass staircase")
-    wanted_results = search_studio_network(directory, "wanted")
+    magic_results = services.network_explore("magic").results
+    wanted_results = services.network_explore("wanted").results
 
-    assert [program.community.slug for program in magic_results] == ["hp-universe"]
-    assert {program.community.slug for program in wanted_results}
-    assert all(program.membership is None for program in wanted_results)
-    assert all(program.current_character is None for program in wanted_results)
-    assert all(program.unread_notification_count == 0 for program in wanted_results)
-    assert all(program.plotting_room_count == 0 for program in wanted_results)
-    assert all(program.invite_posture_label == "Public preview" for program in wanted_results)
-    assert all(program.application_material_count >= 0 for program in wanted_results)
-    assert all(program.claim_type_count >= 0 for program in wanted_results)
+    assert [card.community.slug for card in magic_results] == ["crownfall"]
+    assert {card.community.slug for card in wanted_results}
+    assert all(not hasattr(card, "membership") for card in wanted_results)
+    assert all(not hasattr(card, "current_character") for card in wanted_results)
+    assert all(not hasattr(card, "unread_notification_count") for card in wanted_results)
+    assert all(not hasattr(card, "plotting_room_count") for card in wanted_results)
+    assert all(card.invite_posture_label == "Public preview" for card in wanted_results)
+    assert all(card.application_material_count >= 0 for card in wanted_results)
+    assert all(card.claim_type_count >= 0 for card in wanted_results)
 
 
 def test_public_network_uses_only_published_catalog_materials(monkeypatch) -> None:
     async def run() -> None:
         _set_production_env(monkeypatch)
         services = create_services(path=":memory:")
-        hp = services.repo.get_community_by_slug("hp-universe")
+        public_realm = services.repo.get_community_by_slug("x-men-apocalypse")
         services.repo.create_material(
-            hp.id,
+            public_realm.id,
             "draft-public-catalog-leak",
             "Draft Public Catalog Leak",
             material_type="premise",
@@ -1305,7 +1304,7 @@ def test_public_network_uses_only_published_catalog_materials(monkeypatch) -> No
             is_featured=True,
         )
         services.repo.create_material(
-            hp.id,
+            public_realm.id,
             "draft-event-leak",
             "Draft Event Leak",
             material_type="event",
@@ -1318,18 +1317,20 @@ def test_public_network_uses_only_published_catalog_materials(monkeypatch) -> No
         app = create_app(debug=False, services=services)
 
         directory = services.public_studio_network()
-        hp_program = next(
-            program for program in directory.programs if program.community.id == hp.id
+        public_program = next(
+            program for program in directory.programs if program.community.id == public_realm.id
         )
         explore = services.network_explore("draft-only")
 
         async with TestClient(app) as client:
             network = await client.get("/network?q=draft-only")
 
-        assert hp_program.premise is None or hp_program.premise.material.status == "published"
         assert (
-            hp_program.current_event is None
-            or hp_program.current_event.material.status == "published"
+            public_program.premise is None or public_program.premise.material.status == "published"
+        )
+        assert (
+            public_program.current_event is None
+            or public_program.current_event.material.status == "published"
         )
         assert explore.results == []
         assert network.status == 200
@@ -1829,7 +1830,8 @@ def test_production_release_smoke_core_user_flow(monkeypatch) -> None:
         assert xmen_home.status == 200
         assert "X-Men Apocalypse" in xmen_home.text
         assert network.status == 200
-        assert "HP Universe" in network.text
+        assert "Crownfall" in network.text
+        assert "HP Universe" not in network.text
         assert "playing as Rogue" in network.text
         assert thread.status == 200
         assert "Sentinel drill after midnight" in thread.text
@@ -2085,7 +2087,7 @@ def test_production_thread_moderator_can_moderate_but_not_review_or_launch(monke
             launch = await client.get("/studio/launch", headers=cookie_header)
 
         assert thread.status == 200
-        assert "Staff controls" in thread.text
+        assert "Thread moderation" in thread.text
         assert "Pin thread" in thread.text
         assert "Lock thread" in thread.text
         assert "Move thread" in thread.text
