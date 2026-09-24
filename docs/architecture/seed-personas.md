@@ -114,9 +114,12 @@ premise community. Application prompts have one answered example; general polls
 have a small spread of answers from active writer memberships, so the demo can
 show both an individual response state and aggregate results. Each original-
 premise realm also has two public sample scenes tied to its active story beat,
-with distinct titles, prose, and in-world timelines. Seeded premise and event
-materials use reader-facing titles so discovery leads with the story. X-Men's
-applicant persona has answered Pressure Lane Finder.
+with distinct titles, prose, and in-world timelines. Each scene seeds all four
+posts in the signed-out preview window, so the demo reaches the same preview
+boundary writers see when browsing a public realm; a fifth post stays behind
+the realm gate for members. Seeded premise and event materials use reader-
+facing titles so discovery leads with the story. X-Men's applicant persona has
+answered Pressure Lane Finder.
 
 Studio Launch has a seeded director entry for each opening posture: Jurassic
 Park Universe is backstage, HP Universe is invite-only, and the original-

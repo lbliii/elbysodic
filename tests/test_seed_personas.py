@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from elbysodic.db.seed import resolve_seed_persona, seed_demo_forum
+from urllib.parse import urlsplit
+
+from elbysodic.db.seed import (
+    ORIGINAL_PREMISE_SEED_SLUGS,
+    resolve_seed_persona,
+    seed_demo_forum,
+)
 from elbysodic.services import create_services
 
 X_MEN_ALL_STAFF_CAPABILITIES = frozenset(
@@ -53,5 +59,29 @@ def test_seed_demo_forum_reconciles_an_existing_broad_moderator_role() -> None:
         reconciled = resolve_seed_persona(services.repo, "xmen_mod")
         assert reconciled.role.is_admin is False
         assert reconciled.role.capabilities == X_MEN_MODERATOR_CAPABILITIES
+    finally:
+        services.close()
+
+
+def test_original_premise_sample_scenes_fill_public_preview_window() -> None:
+    services = create_services(path=":memory:")
+    try:
+        for community_slug in ORIGINAL_PREMISE_SEED_SLUGS:
+            gateway = services.public_realm_gateway(community_slug)
+            assert len(gateway.scene_previews) == 2
+
+            for scene in gateway.scene_previews:
+                path_parts = urlsplit(scene.href).path.strip("/").split("/")
+                assert path_parts[:2] == ["c", community_slug]
+                assert path_parts[2] == "boards"
+                assert path_parts[4] == "threads"
+
+                preview = services.public_scene_preview(
+                    community_slug,
+                    path_parts[3],
+                    path_parts[5],
+                )
+                assert len(preview.posts) == preview.preview_limit == 4
+                assert preview.total_post_count == 5
     finally:
         services.close()

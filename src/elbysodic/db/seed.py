@@ -839,6 +839,122 @@ ORIGINAL_PREMISE_SEED_ARCHETYPES: dict[str, str] = {
     "wayfarer-station": "strange-frontier",
 }
 
+# Each original-premise realm has two signed-out sample scenes. Seed the whole
+# four-post public window plus a fifth realm-only reply to demonstrate the gate.
+ORIGINAL_PREMISE_SAMPLE_REPLIES: dict[
+    str,
+    tuple[tuple[str, str, str], tuple[str, str, str]],
+] = {
+    "harbor-society": (
+        (
+            "The copied ledger page carried a second crease through the committee column. Someone had folded it small enough to hide beneath the gala place cards.",
+            "Maris set the seating chart over the crease. The committee chair looked at the missing name and stopped asking who had brought the copy.",
+            "Celia kept the page. 'I did not say the account was paid. I said the club recorded it that way.'",
+        ),
+        (
+            "Talia found the same donor's initials in the diner fundraiser book, dated the morning the club called the account balanced.",
+            "Celia slid the book across the table. 'Then we take this to the vote before anyone has time to teach the room a different story.'",
+            "August took the new copy and found one signature missing from the vote sheet, too.",
+        ),
+    ),
+    "signal-creek": (
+        (
+            "A second voice named Ira's cabin, then asked him to turn on a light that had been dark since 1998.",
+            "Ira cut the receiver. Outside, the observatory lights stayed off; the signal answered with the tower's old call sign.",
+            "Mae closed the search map over the receiver. The call sign on the channel belonged to her father's patrol car.",
+        ),
+        (
+            "Cal traced all three reports to the same empty stretch of lake road. The missing hour began where every watch had stopped.",
+            "Mae took the map from him. 'Then we search the place that keeps disappearing between one witness and the next.'",
+            "Lena recognized the handwriting on the napkin from the year no one remembered.",
+        ),
+    ),
+    "nocturne-row": (
+        (
+            "The playback stuttered at the same five seconds on every device. In the gap, a treaty sigil appeared on the glass behind the witness.",
+            "Marcel killed the room feed. Ren had already photographed the sigil, and it matched the covenant mark removed from last year's registry.",
+            "Eliana read the sigil as an invitation. The council would call it a threat by morning.",
+        ),
+        (
+            "Jules put the clinic roster beside the warrant; the elder's name was missing from both, but someone had drawn a fresh circle.",
+            "Eliana locked the door. 'We find the witness before the court decides which of those lists counts as a person.'",
+            "Ren opened the warrant. The name inside was the witness they had just promised to find.",
+        ),
+    ),
+    "crownfall": (
+        (
+            "Ivra put the courier's seal beside her coronation notes. The second house crest was pressed beneath the official stamp.",
+            "Seren refused the herald's call for silence. The flame stayed black while every claimant leaned toward the mark.",
+            "Maelor ordered the seal kept from the claimants. The courier had already seen the house mark.",
+        ),
+        (
+            "Torren compared the soot with the coronation record. It matched the black flame, not the tower fire, and the courier saw him notice.",
+            "Maelor closed the courtyard doors. 'We decide whether this is evidence or bait before the survivor meets the houses.'",
+            "Ivra returned to the record and found the ash had fallen before the tower burned.",
+        ),
+    ),
+    "afterlight-accord": (
+        (
+            "Sel read the second impression beneath the Accord seal; it matched a treaty mark the archive had claimed was burned.",
+            "Orin covered the ledger. The council guard had seen enough to stop calling the name a mistake.",
+            "Maia searched the prisoner's sleeve for an order. Instead she found the academy's red attendance mark.",
+        ),
+        (
+            "Kesh found the prisoner's name in a winter attendance roll from a year before the seal was made.",
+            "Maia took the roll from him. 'Someone expected him to return. The question is who kept his place open.'",
+            "Sel wrote the prisoner's name in the empty line. By morning, the ink had bled through to the next page.",
+        ),
+    ),
+    "brightline": (
+        (
+            "Dahlia pulled the cue log against the leaked clause. Viv's credentials were used before her contract ever reached the stage.",
+            "Viv stepped out of the camera light. 'If they put my signature under this, then somebody wants tonight to become my confession.'",
+            "Rex unplugged the cue system. The prompt vanished from the stage, but every teleprompter in the building kept it.",
+        ),
+        (
+            "Kit lifted a third contract from the Blue Room. It was signed by no one, but carried the only clause all three drafts shared.",
+            "Rex passed it to Viv without opening the press-room door. The line beneath the clause named the person who had copied it.",
+            "Dahlia found the press-room copy already corrected. Someone had removed the only line that pointed to her.",
+        ),
+    ),
+    "emberhouse": (
+        (
+            "Maeve compared the roster timestamp with the committee minutes. The changes had been filed before the candidates' scores were counted.",
+            "Nara took the pin from her own name. 'If the list is wrong, no one starts the trial until we know who it protects.'",
+            "Cassian moved the unaltered roster to the infirmary wall. Candidates started taking pictures before staff could pull it down.",
+        ),
+        (
+            "Ion found the safety order clipped beneath the sponsor's seating chart. The altered tier had a second signature.",
+            "Cassian held the trial bell. One more name had moved since morning, and this time it belonged to the instructor who signed the order.",
+            "Maeve lowered the bell when the instructor reached for the order. The trial had become evidence.",
+        ),
+    ),
+    "gaslight-ward": (
+        (
+            "Mira brought the missing page from the compositor's room. Its ink was still wet, though the press had stopped for the night.",
+            "Ada matched the handwriting against the three statements. 'This witness knew about the door before the police found the room.'",
+            "Lucien checked the back of the wet page. The type had left an impression there before the story was written.",
+        ),
+        (
+            "Edwin set the court copy beside the fourth account. The witness had used the same wrong date in both, down to the crossed-out month.",
+            "Lucien stopped the clerk before the page could be entered. 'Read the name at the bottom. The dead woman is listed as the witness.'",
+            "Mira read the name again; in the old register, that signature belonged to someone declared dead.",
+        ),
+    ),
+    "wayfarer-station": (
+        (
+            "Sol found frost on the empty docking collar. The convoy's clearance had been logged while the outer airlock was still sealed.",
+            "Mara held the signal transcript beside the manifest. Both carried the arrival code for a ship no one had ever seen.",
+            "Jace found the same arrival code etched into the dock seal. It had been stamped from the inside.",
+        ),
+        (
+            "Nima pulled the second ledger from the filter cage; its coordinates pointed to the far side of the station hull.",
+            "Jace shut down the ration count. 'If those numbers are real, the convoy is already here—and someone filed the airlock as empty.'",
+            "Sol saved the air record to the station's offline ledger. The system logged an unregistered crew member in the bay.",
+        ),
+    ),
+}
+
 ORIGINAL_PREMISE_WRITER_SEEDS: tuple[OriginalPremiseWriterSeed, ...] = (
     OriginalPremiseWriterSeed("juniper.gray@example.com", "junipergray", "Juniper Gray"),
     OriginalPremiseWriterSeed("miles.north@example.com", "milesnorth", "Miles North"),
@@ -7755,6 +7871,51 @@ def _seed_original_premise_depth(
         characters[2].id,
         followup_second_post,
     )
+    sample_replies = ORIGINAL_PREMISE_SAMPLE_REPLIES.get(program.slug)
+    if sample_replies is not None:
+        opening_replies, followup_replies = sample_replies
+        _ensure_post(
+            repo,
+            community.id,
+            opening.id,
+            characters[2].id,
+            opening_replies[0],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            opening.id,
+            characters[0].id,
+            opening_replies[1],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            followup.id,
+            characters[3].id,
+            followup_replies[0],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            followup.id,
+            characters[1].id,
+            followup_replies[1],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            opening.id,
+            characters[1].id,
+            opening_replies[2],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            followup.id,
+            characters[2].id,
+            followup_replies[2],
+        )
     repo.watch_thread(community.id, followup.id, membership.id)
     repo.mark_thread_read(community.id, opening.id, membership.id)
 
