@@ -717,8 +717,8 @@ def test_scaled_signed_in_network_stays_within_batched_query_budget() -> None:
 
         assert response.status == 200
         assert "Find your next story." in response.text
-        assert "Hosted Program" in response.text
-        # Signed-in discovery now includes the seeded writer entry and handoff state.
+        assert "Hosted Program" not in response.text
+        # Signed-in discovery keeps private realm memberships out of the global catalog.
         assert trace.count <= 89
 
     asyncio.run(run())
@@ -2204,8 +2204,9 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Start with a current chapter" in response.text
         assert "Home hub" not in response.text
         assert "X-Men Apocalypse" in response.text
-        assert "HP Universe" in response.text
-        assert "Jurassic Park Universe" in response.text
+        # Private memberships are only listed inside a realm shell, not on Network.
+        assert "HP Universe" not in response.text
+        assert "Jurassic Park Universe" not in response.text
         assert "RL NYC" in response.text
         assert "RL Small Town" in response.text
         assert "Harbor Society" in response.text
@@ -10982,7 +10983,7 @@ def test_faceless_identity_option_hides_unowned_character_notification_count() -
         app = create_app(debug=False, services=services)
 
         async with TestClient(app) as client:
-            home = await client.get("/")
+            home = await client.get(f"/c/{active.community.slug}")
 
         viewer = services.viewer()
         option = next(item for item in viewer.identity_options if item.membership.id == faceless.id)
