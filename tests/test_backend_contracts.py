@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from chirp.config import AppConfig
+from pounce import ServerConfig
 
 from elbysodic.db import ForumRepository, connect
 from elbysodic.services import create_services
+from elbysodic.web import pounce_railway
 from elbysodic.web.state import close_request_services, configure_services, get_services
 from elbysodic.web.surface_contracts import SURFACE_CONTRACTS, validate_surface_contracts
 from elbysodic.web.worker_draining import DrainingAwareApp
@@ -58,20 +61,21 @@ class TrackingDatabase:
         return self.context
 
 
-def test_draining_proxy_is_the_runtime_asgi_application() -> None:
+def test_draining_proxy_is_the_runtime_asgi_application(monkeypatch) -> None:
     captured: dict[str, object] = {}
 
-    class ServerStub:
-        def run(self, app: object, **kwargs: object) -> None:
-            captured["app"] = app
-            captured.update(kwargs)
+    def capture_pounce_run(app: object, *, config: ServerConfig) -> None:
+        captured["app"] = app
+        captured["config"] = config
+
+    monkeypatch.setattr(pounce_railway, "pounce_run", capture_pounce_run)
 
     class AppStub:
         def __init__(self) -> None:
-            self._server = ServerStub()
+            self.config = AppConfig(worker_mode="async")
             self.frozen = False
 
-        def _ensure_frozen(self) -> None:
+        def freeze(self) -> None:
             self.frozen = True
 
     inner = AppStub()
@@ -79,12 +83,10 @@ def test_draining_proxy_is_the_runtime_asgi_application() -> None:
     proxy.run(host="127.0.0.1", port=8765)
 
     assert inner.frozen is True
-    assert captured == {
-        "app": proxy,
-        "host": "127.0.0.1",
-        "port": 8765,
-        "lifecycle_collector": None,
-    }
+    assert captured["app"] is proxy
+    config = cast(ServerConfig, captured["config"])
+    assert config.host == "127.0.0.1"
+    assert config.port == 8765
 
 
 def test_file_backed_request_services_are_cached_and_closed(tmp_path: Path) -> None:

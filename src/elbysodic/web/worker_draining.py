@@ -15,9 +15,10 @@ import os
 import sys
 import threading
 from collections.abc import Awaitable, Callable, MutableMapping
-from typing import Any
+from typing import Any, cast
 
 from chirp.app import App
+from pounce import ASGIApp
 
 from elbysodic.web.pounce_railway import run_chirp_asgi_adapter
 
@@ -55,11 +56,13 @@ def reset_worker_draining() -> None:
     )
 
 
-def signal_worker_draining() -> None:
+def signal_worker_draining(*, worker_id: Any = None, generation: Any = None) -> None:
     """Mark the current worker as draining so SSE generators exit."""
     _LOGGER.info(
-        "event=worker_draining plotting_streams_active=%d",
+        "event=worker_draining plotting_streams_active=%d worker_id=%s generation=%s",
         active_plotting_streams(),
+        worker_id,
+        generation,
     )
     _drain_event().set()
 
@@ -132,7 +135,7 @@ class DrainingAwareApp:
         """Launch Pounce with this proxy as the runtime ASGI application."""
         run_chirp_asgi_adapter(
             self._app,
-            self,
+            cast(ASGIApp, self),
             host=host,
             port=port,
             lifecycle_collector=lifecycle_collector,
@@ -140,7 +143,10 @@ class DrainingAwareApp:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope.get("type") == "pounce.worker.draining":
-            signal_worker_draining()
+            signal_worker_draining(
+                worker_id=scope.get("worker_id"),
+                generation=scope.get("generation"),
+            )
             return
         await self._app(scope, receive, send)
 

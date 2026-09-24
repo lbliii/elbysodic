@@ -1,110 +1,104 @@
-"""Pounce 0.9 Railway bundle defaults for Elbysodic production launch.
-
-Aligns with lbliii/pounce ``examples/deploy/railway`` (#248, #291):
-``shutdown_timeout`` stays within Railway's ``drainingSeconds`` window and
-``POUNCE_BUILD_ID`` surfaces through ``/_pounce/info`` when introspection is
-on. Pounce 0.9.1 process workers do not receive the explicit drain command
-(lbliii/pounce#316), so Railway stays on one worker until that upstream
-lifecycle contract is released and proven here.
-"""
+"""Public Pounce configuration and launch path for Elbysodic production."""
 
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
-from typing import Any, Protocol, cast
+from typing import Any
 
 from chirp.app import App
+from pounce import ASGIApp, LifecycleCollector, ServerConfig
+from pounce import run as pounce_run
 
 POUNCE_HEALTH_CHECK_PATH = "/readyz"
 POUNCE_SHUTDOWN_TIMEOUT = 10.0
 POUNCE_INTROSPECTION_PATH = "/_pounce/info"
 
 
-class _ChirpServerLauncher(Protocol):
-    def run(
-        self,
-        app: App,
-        *,
-        host: str | None,
-        port: int | None,
-        lifecycle_collector: Any | None,
-    ) -> None: ...
+def railway_server_config(
+    chirp_app: App,
+    *,
+    host: str | None,
+    port: int | None,
+) -> ServerConfig:
+    """Resolve Chirp's production settings into an explicit Pounce config."""
+
+    app_config = chirp_app.config
+    kwargs: dict[str, Any] = {
+        "host": app_config.host if host is None else host,
+        "port": app_config.port if port is None else port,
+        # Pounce 0.9.1 does not deliver its explicit drain command to process
+        # workers, so Railway remains single-worker until that contract lands.
+        "workers": 1,
+        "worker_mode": app_config.worker_mode,
+        "shutdown_timeout": POUNCE_SHUTDOWN_TIMEOUT,
+        "max_request_size": app_config.max_request_body_size,
+        "health_check_path": POUNCE_HEALTH_CHECK_PATH,
+        "metrics_enabled": app_config.metrics_enabled,
+        "metrics_path": app_config.metrics_path,
+        "rate_limit_enabled": app_config.rate_limit_enabled,
+        "rate_limit_requests_per_second": app_config.rate_limit_requests_per_second,
+        "rate_limit_burst": app_config.rate_limit_burst,
+        "rate_limit_max_tracked_ips": app_config.rate_limit_max_tracked_ips,
+        "trusted_hosts": frozenset(app_config.trusted_proxies),
+        "forwarded_for_trusted_hops": app_config.forwarded_for_trusted_hops,
+        "request_queue_enabled": app_config.request_queue_enabled,
+        "request_queue_max_depth": app_config.request_queue_max_depth,
+        "sentry_dsn": app_config.sentry_dsn,
+        "sentry_environment": app_config.sentry_environment,
+        "sentry_release": app_config.sentry_release,
+        "sentry_traces_sample_rate": app_config.sentry_traces_sample_rate,
+        "reload_timeout": app_config.reload_timeout,
+        "otel_endpoint": app_config.otel_endpoint,
+        "otel_service_name": app_config.otel_service_name,
+        "websocket_compression": app_config.websocket_compression,
+        "websocket_max_message_size": app_config.websocket_max_message_size,
+        "lifecycle_logging": app_config.lifecycle_logging,
+        "log_format": app_config.log_format,
+        "log_level": app_config.log_level,
+        "max_connections": app_config.max_connections,
+        "backlog": app_config.backlog,
+        "keep_alive_timeout": app_config.keep_alive_timeout,
+        "request_timeout": app_config.request_timeout,
+        "ssl_certfile": app_config.ssl_certfile,
+        "ssl_keyfile": app_config.ssl_keyfile,
+    }
+    if _introspection_enabled():
+        kwargs.update(
+            introspection_enabled=True,
+            introspection_bind="0.0.0.0",  # noqa: S104 -- explicit Railway introspection is public.
+            introspection_path=POUNCE_INTROSPECTION_PATH,
+        )
+    return ServerConfig(**kwargs)
 
 
 def run_chirp_asgi_adapter(
     chirp_app: App,
-    runtime_app: object,
+    runtime_app: ASGIApp,
     *,
     host: str | None,
     port: int | None,
-    lifecycle_collector: Any | None,
+    lifecycle_collector: LifecycleCollector | None,
 ) -> None:
-    """Launch a wrapped ASGI app through Chirp's frozen server configuration.
+    """Serve the drain-aware ASGI wrapper without reaching into Chirp internals."""
 
-    Chirp 0.10 exposes public ``freeze`` and ASGI call seams, but its public
-    ``run`` method always serves the Chirp object itself. The one private
-    launcher lookup below is the compatibility bridge that lets Pounce send
-    ``pounce.worker.draining`` to Elbysodic's wrapper without duplicating
-    Chirp's development and production configuration mapping.
-    """
+    if chirp_app.config.debug:
+        # Keep Chirp's debug server, reload, and contract checks on its public
+        # API. Development has no Pounce worker-drain lifecycle to forward.
+        chirp_app.run(host=host, port=port, lifecycle_collector=lifecycle_collector)
+        return
 
-    freeze = getattr(chirp_app, "freeze", None)
-    if callable(freeze):
-        freeze()
-    else:
-        # Compatibility for the pre-0.10 shape retained by existing canaries.
-        ensure_frozen = getattr(chirp_app, "_ensure_frozen", None)
-        if not callable(ensure_frozen):
-            raise TypeError("Chirp launch adapter requires a supported freeze seam")
-        ensure_frozen()
-    launcher = cast(_ChirpServerLauncher | None, getattr(chirp_app, "_server", None))
-    if launcher is None or not callable(getattr(launcher, "run", None)):
-        raise RuntimeError("Chirp 0.10 server launcher compatibility seam changed")
-    launcher.run(
-        cast(App, runtime_app),
-        host=host,
-        port=port,
-        lifecycle_collector=lifecycle_collector,
-    )
+    chirp_app.freeze()
+    config = railway_server_config(chirp_app, host=host, port=port)
+    if lifecycle_collector is None:
+        pounce_run(runtime_app, config=config)
+        return
+
+    # pounce.run intentionally exposes only ServerConfig. Preserve Chirp's
+    # optional lifecycle-collector seam through Pounce's public Server API.
+    from pounce.server import Server
+
+    Server(config, runtime_app, lifecycle_collector=lifecycle_collector).run()
 
 
 def _introspection_enabled() -> bool:
     return os.environ.get("POUNCE_INTROSPECTION", "").lower() in ("1", "true", "yes", "on")
-
-
-def _railway_server_config_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
-    patched = dict(kwargs)
-    patched["health_check_path"] = POUNCE_HEALTH_CHECK_PATH
-    patched["shutdown_timeout"] = POUNCE_SHUTDOWN_TIMEOUT
-    patched["workers"] = 1
-    if _introspection_enabled():
-        patched["introspection_enabled"] = True
-        patched["introspection_bind"] = "0.0.0.0"  # noqa: S104 -- Railway public bind when introspection is explicitly enabled
-        patched["introspection_path"] = POUNCE_INTROSPECTION_PATH
-    return patched
-
-
-def apply_railway_pounce_defaults() -> None:
-    """Patch Chirp production launch with the official Railway bundle knobs."""
-    import chirp.server.production as chirp_production
-    import pounce.config as pounce_config
-
-    if getattr(chirp_production, "_elbysodic_railway_patch", False):
-        return
-
-    original_run: Callable[..., None] = chirp_production.run_production_server
-    original_config_factory = pounce_config.ServerConfig
-
-    def patched_config_factory(**kwargs: Any) -> Any:
-        return original_config_factory(**_railway_server_config_kwargs(kwargs))
-
-    def run_production_server(*args: Any, **kwargs: Any) -> None:
-        vars(pounce_config)["ServerConfig"] = patched_config_factory
-        try:
-            original_run(*args, **kwargs)
-        finally:
-            vars(pounce_config)["ServerConfig"] = original_config_factory
-
-    vars(chirp_production)["run_production_server"] = run_production_server
-    vars(chirp_production)["_elbysodic_railway_patch"] = True
