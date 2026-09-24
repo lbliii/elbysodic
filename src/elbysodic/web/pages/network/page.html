@@ -229,15 +229,11 @@
 </a>
 {% end %}
 
-{% def network_access_posture(viewer=none, account_visitor=none, home=false) %}
+{% def network_access_posture(viewer=none, account_visitor=none) %}
 {% if viewer %}
 <section class="elbysodic-network-access-note" aria-label="Network access posture">
   <strong>Signed in as {{ viewer.membership.display_name }} in {{ viewer.community.name }}</strong>
-  {% if home %}
   <span>Your account is active; choose a realm card to enter, preview, or request access.</span>
-  {% else %}
-  <span>Explore cards stay public-preview safe; your current realm is marked when it appears.</span>
-  {% end %}
 </section>
 {% elif account_visitor %}
 <section class="elbysodic-network-access-note" aria-label="Network access posture">
@@ -258,8 +254,8 @@
   <section class="elbysodic-network-explore-command" aria-labelledby="network-explore-heading">
     <div>
       <p class="elbysodic-section-kicker">Explore</p>
-      <h1 id="network-explore-heading">Find a realm that fits the story you want to write.</h1>
-      <p>Search by premise, pace, hooks, roster shape, and the chapter in motion.</p>
+      <h1 id="network-explore-heading">Find your next story.</h1>
+      <p>Browse realms by premise, pace, open calls, and scenes in motion.</p>
     </div>
     <form class="elbysodic-network-search" action="/network" method="get" role="search">
       <label for="network-search">Search story fit</label>
@@ -269,7 +265,7 @@
                name="q"
                type="search"
                value="{{ network_search_query }}"
-               placeholder="weird-town mystery, relaxed, forum-first, wanted">
+               placeholder="mystery, relaxed, wanted">
         <button class="elbysodic-network-search__submit" type="submit">Search</button>
       </div>
     </form>
@@ -345,7 +341,7 @@
   </section>
   {% else %}
   {{ home_showcase(featured) }}
-  {{ network_access_posture(viewer, account_visitor | default(none), home=true) }}
+  {{ network_access_posture(viewer, account_visitor | default(none)) }}
 
   <div class="elbysodic-network-home-stack">
     {{ home_portrait_slice(home_slices[0].title, home_slices[0].href, home_slices[0].programs) }}

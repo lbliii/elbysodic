@@ -345,7 +345,7 @@ another typographic cue that feels attached to the title rather than like a
 clickable chip.
 
 Active-face relevance, such as `Relevant to the active face`, is a smart
-contextual signal. It belongs on the image as a compact ASCII/icon overlay
+contextual signal. It belongs on the image as a compact face SVG overlay
 because it is about the relationship between the current face and the place,
 not a count, facet, or generic status. Keep the visible mark small and expose
 the full meaning through hover/focus disclosure and `aria-label`. Use the
@@ -357,17 +357,20 @@ while the explanation remains available.
 Use for small stable quantities that help scan a page but should not dominate
 it: threads, posts, replies, places, active scenes, reserves, and queue counts.
 
-Counters use an ASCII or icon mark, number, and short label. They are not
-buttons. They should stay compact and visually stable.
+Counters use the shared `icon_counter()` component: a Faces & Threads SVG,
+number, and visually hidden count label. A hover title also exposes the full
+quantity and label. They are not buttons. Keep them compact and visually stable;
+on artwork, use the on-media text and muted tokens for contrast.
 
 Current marks:
 
-- `T`: threads
-- `P`: posts
-- `R`: replies
-- `>`: child places or sublocations
-- `!`: needs attention, future use
-- `@`: mentions or cast, future use
+- `scene`: threads
+- `write`: posts
+- `reply`: replies
+- `locations`: child places or sublocations
+
+See [Faces & Threads](https://github.com/lbliii/elbysodic/blob/main/design/icons/README.md) for the complete SVG
+vocabulary and accessibility contract.
 
 ### MetaLine
 

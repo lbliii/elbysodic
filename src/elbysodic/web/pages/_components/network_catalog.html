@@ -1,6 +1,7 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
   {% from "chirpui/tooltip.html" import tooltip %}
+  {% from "_components/icons.html" import icon %}
 {% end %}
 
 {% def program_summary(program) %}
@@ -15,11 +16,11 @@ A realm ready for scenes, casting, and writer movement.
 {% end %}
 {% end %}
 
-{% def compact_link_action(href, label, icon) %}
+{% def compact_link_action(href, label, icon_id) %}
 {% if href %}
 {% call tooltip(label, position="left", cls="elbysodic-network-card__tooltip") %}
   <a class="elbysodic-network-card__icon-action" href="{{ href }}" aria-label="{{ label }}">
-    <span aria-hidden="true">{{ icon | icon }}</span>
+    {{ icon(icon_id) }}
     <span class="elbysodic-visually-hidden">{{ label }}</span>
   </a>
 {% end %}
@@ -33,7 +34,9 @@ A realm ready for scenes, casting, and writer movement.
   <a class="elbysodic-network-card__realm-link" href="{{ program.entry_href }}" aria-label="Preview {{ program.community.name }}">
     <span class="elbysodic-visually-hidden">Preview {{ program.community.name }}</span>
   </a>
-  <a class="elbysodic-network-card__poster" href="{{ program.entry_href }}">
+  <a class="elbysodic-network-card__poster"
+     href="{{ program.entry_href }}"
+     {% if not program.community.world_hero_image_url %}aria-label="Preview {{ program.community.name }}"{% end %}>
     {% if program.community.world_hero_image_url %}
     <img src="{{ program.community.world_hero_image_url }}" alt="{{ program.community.world_hero_image_alt }}">
     {% else %}
@@ -45,11 +48,11 @@ A realm ready for scenes, casting, and writer movement.
     <header class="elbysodic-network-card__header">
       <div>
         <p class="elbysodic-section-kicker">
-          {% if program.current_event %}
-          In motion
-          {% elif program.premise %}
-          Premise
-          {% else %}
+        {% if program.current_event %}
+          {{ program.current_event.material.title }}
+        {% elif program.premise %}
+          {{ program.premise.material.title }}
+        {% else %}
           Open realm
           {% end %}
         </p>
@@ -63,11 +66,11 @@ A realm ready for scenes, casting, and writer movement.
     </header>
     <p class="elbysodic-copy-summary" {% if preview %}data-elbysodic-preview-summary{% end %}>{{ program_summary(program) }}</p>
     {% if program.current_event %}
-    <a class="elbysodic-network-card__lead-action" href="{{ program.current_event_href }}">Read chapter <span aria-hidden="true">→</span></a>
+    <a class="elbysodic-network-card__lead-action" href="{{ program.current_event_href }}">Read chapter <span aria-hidden="true">{{ icon("arrow-right", size="sm") }}</span></a>
     {% elif program.premise %}
-    <a class="elbysodic-network-card__lead-action" href="{{ program.premise_href }}">Read premise <span aria-hidden="true">→</span></a>
+    <a class="elbysodic-network-card__lead-action" href="{{ program.premise_href }}">Read premise <span aria-hidden="true">{{ icon("arrow-right", size="sm") }}</span></a>
     {% else %}
-    <a class="elbysodic-network-card__lead-action" href="{{ program.entry_href }}">Explore realm <span aria-hidden="true">→</span></a>
+    <a class="elbysodic-network-card__lead-action" href="{{ program.entry_href }}">Explore realm <span aria-hidden="true">{{ icon("arrow-right", size="sm") }}</span></a>
     {% end %}
     <p class="elbysodic-copy-meta">{{ program.activity_freshness_label }}</p>
     <details class="elbysodic-network-card__joining">
@@ -83,10 +86,10 @@ A realm ready for scenes, casting, and writer movement.
   </div>
   <div class="elbysodic-network-card__actions">
     {% if program.open_wanted_count %}
-    {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "star") }}
+    {{ compact_link_action(program.entry_href ~ "/wanted", "Open calls", "wanted") }}
     {% end %}
     {% if program.request_access_href and not (viewer and viewer.community.id == program.community.id) %}
-    {{ compact_link_action(program.request_access_href, "Request access", "envelope") }}
+    {{ compact_link_action(program.request_access_href, "Request access", "inbox") }}
     {% end %}
   </div>
 </article>

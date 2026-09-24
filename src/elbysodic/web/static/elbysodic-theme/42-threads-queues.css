@@ -1100,7 +1100,7 @@
     background: #101a25;
     border: 1px solid var(--chirpui-border-subtle);
     border-radius: var(--chirpui-radius-md);
-    box-shadow: 0 1rem 2rem rgba(13, 24, 34, 0.18);
+    box-shadow: var(--chirpui-shadow-md);
     color: var(--elbysodic-on-media-text);
     grid-template-columns: minmax(0, 1fr);
     isolation: isolate;
@@ -1646,17 +1646,27 @@
     font-size: var(--chirpui-font-sm);
 }
 
+.elbysodic-thread-card-shell {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
 .elbysodic-thread-card {
     --elbysodic-scene-slate-accent: var(--chirpui-accent);
     align-items: stretch;
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-atmosphere-dye) 4%, transparent), transparent 38%),
-        var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 12%, var(--chirpui-border-subtle));
+    background: transparent;
+    border: 0;
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
+    box-shadow: none;
     display: grid;
-    gap: 1.05rem;
+    gap: 1.15rem;
     grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr);
-    overflow: hidden;
+    overflow: visible;
+    padding: 1rem 0 0;
     position: relative;
 }
 
@@ -1754,11 +1764,7 @@
 }
 
 .elbysodic-thread-card--unread {
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-unread) 8%, transparent), transparent 42%),
-        var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-state-unread) 56%, var(--chirpui-border));
-    box-shadow: inset 0.22rem 0 0 color-mix(in srgb, var(--elbysodic-state-unread) 82%, var(--chirpui-border));
+    border-block-start: 2px solid color-mix(in srgb, var(--elbysodic-state-unread) 68%, var(--chirpui-border));
 }
 
 .elbysodic-thread-card__meta,
@@ -2271,17 +2277,17 @@
 
 .elbysodic-place-section {
     display: grid;
-    gap: 1rem;
+    gap: var(--elbysodic-space);
 }
 
 .elbysodic-place-section + .elbysodic-place-section {
-    margin-block-start: 0.75rem;
+    margin-block-start: var(--elbysodic-region-gap);
 }
 
 .elbysodic-place-section__header {
     display: grid;
-    gap: 0.35rem;
-    padding-bottom: 0.15rem;
+    gap: var(--elbysodic-space-xs);
+    padding-block-end: 0.15rem;
 }
 
 .elbysodic-place-section__header--compact {
@@ -2295,8 +2301,10 @@
 }
 
 .elbysodic-place-section__header h2 {
+    font-family: var(--elbysodic-display-font-family);
     font-size: var(--chirpui-font-xl);
-    letter-spacing: 0;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     line-height: 1.1;
 }
 
@@ -2313,12 +2321,12 @@
 }
 
 .elbysodic-place-section--scenes {
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--chirpui-accent) 4%, transparent), transparent 48%),
-        color-mix(in srgb, var(--chirpui-bg-subtle) 46%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chirpui-border) 64%, transparent);
-    border-radius: var(--chirpui-radius-sm);
-    padding: 1rem;
+    background: transparent;
+    border: 0;
+    border-block-start: 1px solid var(--chirpui-border-subtle);
+    border-radius: 0;
+    gap: var(--elbysodic-space-lg);
+    padding: var(--elbysodic-space-lg) 0 0;
 }
 
 .elbysodic-activity-list {

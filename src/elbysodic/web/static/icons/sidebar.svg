@@ -1,207 +1,274 @@
 <svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Faces & Threads · Elbysodic original icon family. See design/icons/README.md. -->
   <defs>
     <symbol id="elbysodic-icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 11.5 12 5l8 6.5"/>
-      <path d="M6.5 10.5V19h11v-8.5"/>
-      <path d="M10 19v-5h4v5"/>
+      <!-- Realm gate -->
+      <path d="M4 10 12 3.5 20 10v9a1.5 1.5 0 0 1-1.5 1.5H15V13H9v7.5H5.5A1.5 1.5 0 0 1 4 19v-4"/>
+      <path d="M3 10h4"/>
     </symbol>
     <symbol id="elbysodic-icon-world" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="8"/>
-      <path d="M4 12h16"/>
-      <path d="M12 4c2.2 2.4 3.2 5 3.2 8s-1 5.6-3.2 8"/>
-      <path d="M12 4c-2.2 2.4-3.2 5-3.2 8s1 5.6 3.2 8"/>
+      <!-- Living world -->
+      <path d="M19.6 7.5A8.5 8.5 0 1 1 14 3.7M3.5 12h17M12 3.5c-4.5 4.7-4.5 12.3 0 17 2.5-2.6 3.5-5.6 3.3-8.5"/>
+      <circle cx="18" cy="4.5" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-wanted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 4 14.4 8.8 19.7 9.6 15.8 13.4 16.8 18.7 12 16.2 7.2 18.7 8.2 13.4 4.3 9.6 9.6 8.8 12 4z"/>
-      <path d="M16.5 16.5c1.6.4 2.5 1.2 2.5 2.3 0 1.4-1.6 2.2-4.1 2.2"/>
+      <!-- An open story hook -->
+      <path d="m9 3 1.8 4.7L15.5 9l-4.7 1.8L9 15.5l-1.8-4.7L2.5 9l4.7-1.3L9 3Z"/>
+      <path d="M14 14v2.5a4 4 0 0 0 8 0V12m-3 3 3-3"/>
     </symbol>
     <symbol id="elbysodic-icon-desk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 5.5h14v13H5z"/>
-      <path d="M8 15.5 15.5 8"/>
-      <path d="M14 7.5 16.5 10"/>
-      <path d="M8 15.5 7.3 18 9.8 17.3"/>
+      <!-- The writing desk -->
+      <path d="M4 7.5V20h16v-5M3 16h7M8 20v-4"/>
+      <path d="m11.5 11.5 1-4L18 2l4 4-5.5 5.5-4 1 1-4m3-4 4 4"/>
     </symbol>
     <symbol id="elbysodic-icon-studio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/>
-      <path d="M8.5 10h7"/>
-      <path d="M8.5 14h7"/>
-      <circle cx="10.5" cy="10" r="1"/>
-      <circle cx="14" cy="14" r="1"/>
+      <!-- Director controls -->
+      <path d="m12 2.5 9.5 9.5-9.5 9.5L2.5 12 12 2.5Z"/>
+      <path d="M7.5 9.5h1m3.5 0h4.5M7.5 14.5H12m3.5 0h1"/>
+      <circle cx="10.25" cy="9.5" r="1.75"/>
+      <circle cx="13.75" cy="14.5" r="1.75"/>
     </symbol>
     <symbol id="elbysodic-icon-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="2.2"/>
-      <circle cx="6" cy="7" r="2"/>
-      <circle cx="18" cy="7" r="2"/>
-      <circle cx="17" cy="18" r="2"/>
-      <path d="M7.6 8.3 10.4 10.6"/>
-      <path d="M16.4 8.4 13.6 10.6"/>
-      <path d="M13.3 13.7 15.8 16.5"/>
+      <!-- Writers in orbit -->
+      <path d="M9.5 4a8.5 8.5 0 0 1 10.7 5.6M19.5 16a8.5 8.5 0 0 1-10.7 4M4.6 16a8.5 8.5 0 0 1 .5-10"/>
+      <circle cx="6.75" cy="4.75" r="2"/>
+      <circle cx="20" cy="12.5" r="2"/>
+      <circle cx="6.25" cy="18.5" r="2"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-locations" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 6.5 10 4l4 2 5-2.5v14l-5 2.5-4-2-5 2.5z"/>
-      <path d="M10 4v14"/>
-      <path d="M14 6.5v13.5"/>
+      <!-- A folded world map -->
+      <path d="m3 6 6-2.5 6 2.5 6-2.5v15L15 21l-6-2.5L3 21V6Zm6-2.5v15m6-6V21"/>
+      <circle cx="15" cy="8.5" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-guidebook" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 5.5h6c1.2 0 2 .8 2 2v11c0-1.2-.8-2-2-2H5z"/>
-      <path d="M19 5.5h-6c-1.2 0-2 .8-2 2v11c0-1.2.8-2 2-2h6z"/>
-      <path d="M8 9h3"/>
-      <path d="M15 9h2"/>
+      <!-- An open reference -->
+      <path d="M12 6.5C9.5 4.5 6.5 4 3 4.5v14c3.5-.5 6.5 0 9 2 2.5-2 5.5-2.5 9-2v-14c-3.5-.5-6.5 0-9 2Zm0 0v14M6 9h2.5M6 12.5h2.5M15.5 9H18"/>
     </symbol>
     <symbol id="elbysodic-icon-community" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="9" cy="9" r="2.5"/>
-      <circle cx="16.5" cy="10.5" r="2"/>
-      <path d="M4.5 19c.8-2.8 2.3-4.2 4.5-4.2s3.7 1.4 4.5 4.2"/>
-      <path d="M13.5 18.5c.6-1.8 1.6-2.7 3-2.7 1.5 0 2.6.9 3.1 2.7"/>
+      <!-- Faces around a shared table -->
+      <circle cx="7" cy="7" r="2.5"/>
+      <circle cx="17" cy="7" r="2.5"/>
+      <path d="M2.5 16v-1A3.5 3.5 0 0 1 6 11.5h1m15 4.5v-1a3.5 3.5 0 0 0-3.5-3.5h-1M6 18h12M9 21h6"/>
+      <circle cx="12" cy="14" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-members" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="8" cy="9" r="2.3"/>
-      <circle cx="16" cy="9" r="2.3"/>
-      <path d="M3.8 18.5c.7-2.4 2.1-3.6 4.2-3.6s3.5 1.2 4.2 3.6"/>
-      <path d="M11.8 18.5c.7-2.4 2.1-3.6 4.2-3.6s3.5 1.2 4.2 3.6"/>
+      <!-- Writer register -->
+      <circle cx="6.5" cy="7" r="2.5"/>
+      <path d="M2.5 19v-2a4 4 0 0 1 8 0v2M15 6h6m-6 6h6m-6 6h4"/>
     </symbol>
     <symbol id="elbysodic-icon-queue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 6h11"/>
-      <path d="M5 11h9"/>
-      <path d="M5 16h7"/>
-      <path d="M16 15h3.5v-3.5"/>
-      <path d="M19.5 15c-1.3 2.2-3.1 3.3-5.5 3.3"/>
+      <!-- The next reply -->
+      <circle cx="4" cy="5.5" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="4" cy="18.5" r="1.5" fill="currentColor" stroke="none"/>
+      <path d="M8.5 5.5H20M8.5 12H17M8.5 18.5H13m5-3 3 3-3 3m-3-3h6"/>
     </symbol>
     <symbol id="elbysodic-icon-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 6h14v12H5z"/>
-      <path d="M5 8l7 5 7-5"/>
-      <path d="M8 18v-3h2.2c.6 1.1 1.2 1.6 1.8 1.6s1.2-.5 1.8-1.6H16v3"/>
+      <!-- Correspondence -->
+      <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v11A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5v-7M3.5 7l8.5 6L20.5 7"/>
     </symbol>
     <symbol id="elbysodic-icon-roster" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="5" y="4.5" width="14" height="15" rx="2"/>
-      <circle cx="12" cy="10" r="2.4"/>
-      <path d="M8.5 16.5c.7-2 1.9-3 3.5-3s2.8 1 3.5 3"/>
+      <!-- A stack of face cards -->
+      <path d="M8 3h10a3 3 0 0 1 3 3v10"/>
+      <rect x="3" y="7" width="14" height="14" rx="2"/>
+      <circle cx="10" cy="11.5" r="1.75"/>
+      <path d="M7 19a3 3 0 0 1 6 0"/>
     </symbol>
     <symbol id="elbysodic-icon-plotting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="7" cy="8" r="2"/>
-      <circle cx="17" cy="7" r="2"/>
-      <circle cx="12" cy="17" r="2"/>
-      <path d="M8.7 8.9 10.9 15.1"/>
-      <path d="M15.6 8.6 13.2 15.2"/>
-      <path d="M9 8h6"/>
+      <!-- Story branches converge -->
+      <circle cx="5" cy="5" r="2"/>
+      <circle cx="19" cy="5" r="2"/>
+      <path d="M5 7v2c0 4 7 2 7 7m7-9v2c0 4-7 2-7 7"/>
+      <circle cx="12" cy="19" r="2"/>
     </symbol>
     <symbol id="elbysodic-icon-applications" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M7 4.5h7l3 3v12H7z"/>
-      <path d="M14 4.5v3h3"/>
-      <path d="M9.5 13.5 12 16l4-5"/>
-      <path d="M9.5 9.5h4"/>
+      <!-- A face in draft -->
+      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-5"/>
+      <circle cx="9" cy="8" r="1.75"/>
+      <path d="M6.5 15a2.5 2.5 0 0 1 5 0M7 18h4m4-9 4.5-4.5L22 7l-4.5 4.5-3 .5.5-3Z"/>
     </symbol>
     <symbol id="elbysodic-icon-artifacts" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8.5 7.5h7v7h-7z"/>
-      <path d="M5 11 8.5 7.5"/>
-      <path d="M15.5 14.5 19 18"/>
-      <path d="M15.5 7.5 19 4"/>
-      <path d="M5 18 8.5 14.5"/>
+      <!-- A preserved story fragment -->
+      <path d="m12 3 8.5 5v9L12 22l-8.5-5V8L12 3Zm-8.5 5L12 13l8.5-5M12 13v9M8 5.5l8.5 5v4"/>
     </symbol>
     <symbol id="elbysodic-icon-discovery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="6"/>
-      <path d="M15.5 15.5 20 20"/>
-      <path d="M9 13.5 13.5 9l1.5-3-3 1.5L7.5 12z"/>
+      <!-- A story bearing -->
+      <path d="M20.3 9A8.5 8.5 0 1 1 15 3.7m1.5 3.8-3 6-6 3 3-6 6-3Z"/>
+      <circle cx="19.5" cy="4.5" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-casting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="9" r="3"/>
-      <path d="M6.5 19c.9-3.2 2.7-4.8 5.5-4.8s4.6 1.6 5.5 4.8"/>
-      <path d="M17.5 5.5 19 8.4l3.2.4-2.3 2.2.5 3.1-2.9-1.5"/>
+      <!-- An open casting frame -->
+      <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>
+      <circle cx="12" cy="8.5" r="2.5"/>
+      <path d="M7.5 17a4.5 4.5 0 0 1 9 0"/>
     </symbol>
     <symbol id="elbysodic-icon-claims" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M7 5h10v5c0 4.5-1.7 7.5-5 9-3.3-1.5-5-4.5-5-9z"/>
-      <path d="M9.5 12l2 2 4-5"/>
+      <!-- A named claim tag -->
+      <path d="M3.5 5A1.5 1.5 0 0 1 5 3.5h7L21 12l-9 9-8.5-9V5Z"/>
+      <circle cx="7.5" cy="7.5" r="1.25" fill="currentColor" stroke="none"/>
+      <path d="m9 13 2.5 2.5 4.5-5"/>
     </symbol>
     <symbol id="elbysodic-icon-reserves" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M7 5.5h10v14l-5-3-5 3z"/>
-      <path d="M9.5 9.5h5"/>
-      <path d="M9.5 12.5h3.5"/>
+      <!-- A place held in time -->
+      <path d="M11 3H5a1 1 0 0 0-1 1v17l5-3 5 3v-7"/>
+      <circle cx="17" cy="7" r="4"/>
+      <path d="M17 4.5V7l1.5 1"/>
     </symbol>
     <symbol id="elbysodic-icon-operations" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="4.5" y="5" width="15" height="14" rx="2"/>
-      <path d="M7.5 15h2.5l1.5-5 2 7 1.5-4h2"/>
-      <path d="M7.5 8.5h2"/>
+      <!-- Director running order -->
+      <rect x="3" y="4" width="18" height="16" rx="2"/>
+      <path d="M3 9h18M9 4 6 9m9-5-3 5m8-5-3 5M7 13h10M7 17h6"/>
     </symbol>
     <symbol id="elbysodic-icon-launch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 4c3 1.8 4.5 4.5 4.5 8l-4.5 4.5L7.5 12C7.5 8.5 9 5.8 12 4z"/>
-      <path d="M9 15.5 7 18"/>
-      <path d="M15 15.5l2 2.5"/>
-      <path d="M12 18v3"/>
-      <circle cx="12" cy="9.5" r="1.5"/>
+      <!-- Opening the realm -->
+      <path d="M4 21V5a2 2 0 0 1 2-2h10v6M4 21h10V3M10 12v2M17 13l4 4-4 4m-1-4h5"/>
     </symbol>
     <symbol id="elbysodic-icon-boards" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="4.5" y="5" width="6" height="6" rx="1"/>
-      <rect x="13.5" y="5" width="6" height="6" rx="1"/>
-      <rect x="4.5" y="14" width="6" height="5" rx="1"/>
-      <rect x="13.5" y="14" width="6" height="5" rx="1"/>
+      <!-- Scene shelves -->
+      <path d="M9 3.5H4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h5m6-7h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5M9 14H4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h5m6-7h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5"/>
     </symbol>
     <symbol id="elbysodic-icon-navigation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 4v16"/>
-      <path d="M7 6.5h8l2 2-2 2H7z"/>
-      <path d="M17 13.5H9l-2 2 2 2h8z"/>
+      <!-- A routed path -->
+      <circle cx="5" cy="5" r="2"/>
+      <path d="M5 7v10a2 2 0 0 0 2 2h13M5 11h15m-3-3 3 3-3 3m0 2 3 3-3 3"/>
     </symbol>
     <symbol id="elbysodic-icon-appearance" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 4.5c-4.1 0-7.5 3-7.5 6.8 0 3.3 2.6 6.2 6.1 6.2h1.4c1 0 1.7.7 1.7 1.5 0 .7.5 1.2 1.2 1.2 3 0 5.6-3.3 5.6-7.4 0-4.6-3.8-8.3-8.5-8.3z"/>
-      <circle cx="8.5" cy="11" r=".8"/>
-      <circle cx="11.5" cy="8.5" r=".8"/>
-      <circle cx="15" cy="10" r=".8"/>
-      <circle cx="10.5" cy="14" r=".8"/>
+      <!-- The three color records -->
+      <path d="M3 6h3m4 0h11M3 12h9m4 0h5M3 18h3m4 0h11"/>
+      <circle cx="8" cy="6" r="2"/>
+      <circle cx="14" cy="12" r="2"/>
+      <circle cx="8" cy="18" r="2"/>
     </symbol>
     <symbol id="elbysodic-icon-intake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M7 4.5h10v15H7z"/>
-      <path d="M9.5 8h5"/>
-      <path d="M9.5 11.5h5"/>
-      <path d="M9.5 15h3"/>
-      <path d="M18.5 13.5 21 16l-2.5 2.5"/>
+      <!-- A page entering review -->
+      <path d="M5 12V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7M9 7h6M3 14h5l2 3h4l2-3h5v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5"/>
     </symbol>
     <symbol id="elbysodic-icon-continuity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="7" cy="7" r="2"/>
-      <circle cx="17" cy="7" r="2"/>
-      <circle cx="12" cy="17" r="2"/>
-      <path d="M9 7h6"/>
-      <path d="M8.2 8.7 11 15"/>
-      <path d="M15.8 8.7 13 15"/>
-      <path d="M5 17h4"/>
-      <path d="M15 17h4"/>
+      <!-- Source-linked story beats -->
+      <circle cx="4" cy="6" r="2"/>
+      <circle cx="12" cy="12" r="2"/>
+      <circle cx="20" cy="18" r="2"/>
+      <path d="M6 6h4a2 2 0 0 1 2 2v2m0 4v2a2 2 0 0 0 2 2h4M11 4h9M4 20h5"/>
     </symbol>
     <symbol id="elbysodic-icon-materials" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 6.5h9l3 3v10H6z"/>
-      <path d="M15 6.5v3h3"/>
-      <path d="M9 12h6"/>
-      <path d="M9 15.5h5"/>
+      <!-- Collected world pages -->
+      <path d="M7 3h9l4 4v10a2 2 0 0 1-2 2H7V3Zm9 0v5h4M3 7v13a2 2 0 0 0 2 2h10M10 12h7M10 15.5h4"/>
     </symbol>
     <symbol id="elbysodic-icon-events" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="5" y="6.5" width="14" height="12.5" rx="2"/>
-      <path d="M8 4.5v4"/>
-      <path d="M16 4.5v4"/>
-      <path d="M5 10.5h14"/>
-      <path d="M12 13l-1.4 2.2h2.8L12 18"/>
+      <!-- A marked story date -->
+      <rect x="3" y="5" width="18" height="16" rx="2"/>
+      <path d="M7 3v4m10-4v4M3 10h18M8 15h3m3 3h3"/>
+      <circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-scene" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 6.5h14v9H9l-4 3z"/>
-      <path d="M8.5 10h7"/>
-      <path d="M8.5 13h4.5"/>
+      <!-- An exchange in a story frame -->
+      <path d="M7 4H3v16h4m10-16h4v16h-4M10 7h6M8 12h6m-4 5h6"/>
+      <circle cx="6.5" cy="7" r="1.25" fill="currentColor" stroke="none"/>
+      <circle cx="17.5" cy="12" r="1.25" fill="currentColor" stroke="none"/>
+      <circle cx="6.5" cy="17" r="1.25" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-face" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="6" y="4.5" width="12" height="15" rx="6"/>
-      <path d="M9 11h.1"/>
-      <path d="M15 11h.1"/>
-      <path d="M9.5 15c1.5 1 3.5 1 5 0"/>
+      <!-- A public posting identity -->
+      <path d="M17 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V7"/>
+      <circle cx="12" cy="9" r="2.5"/>
+      <path d="M8 18.5a4 4 0 0 1 8 0"/>
     </symbol>
     <symbol id="elbysodic-icon-notifications" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M7 10c0-3.1 2-5 5-5s5 1.9 5 5v4l2 2H5l2-2z"/>
-      <path d="M10 18c.4 1 1.1 1.5 2 1.5s1.6-.5 2-1.5"/>
+      <!-- A new story signal -->
+      <path d="M14 3.8A6 6 0 0 0 6 9.5V14l-2 3h16l-2-3v-3M9 20a3.5 3.5 0 0 0 6 0"/>
+      <circle cx="19" cy="5" r="2" fill="currentColor" stroke="none"/>
     </symbol>
     <symbol id="elbysodic-icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Precision adjustment -->
+      <path d="m9 3-.5 3L6 7.5l-2.8-1-2 3.5L3.5 12l-2.3 2 2 3.5 2.8-1L8.5 18l.5 3h6l.5-3 2.5-1.5 2.8 1 2-3.5-2.3-2 2.3-2-2-3.5-2.8 1L15.5 6 15 3H9Z"/>
       <circle cx="12" cy="12" r="3"/>
-      <path d="M12 4.5v2"/>
-      <path d="M12 17.5v2"/>
-      <path d="M4.5 12h2"/>
-      <path d="M17.5 12h2"/>
-      <path d="M6.7 6.7 8.1 8.1"/>
-      <path d="M15.9 15.9l1.4 1.4"/>
-      <path d="M17.3 6.7l-1.4 1.4"/>
-      <path d="M8.1 15.9l-1.4 1.4"/>
+    </symbol>
+    <symbol id="elbysodic-icon-add" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Add -->
+      <path d="M12 4v16M4 12h16"/>
+    </symbol>
+    <symbol id="elbysodic-icon-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Continue below -->
+      <path d="M12 3v18m-7-7 7 7 7-7"/>
+    </symbol>
+    <symbol id="elbysodic-icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Continue -->
+      <path d="M3 12h18m-7-7 7 7-7 7"/>
+    </symbol>
+    <symbol id="elbysodic-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Close -->
+      <path d="m5 5 14 14M19 5 5 19"/>
+    </symbol>
+    <symbol id="elbysodic-icon-watch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Watch a scene -->
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+    <symbol id="elbysodic-icon-reply" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Reply -->
+      <path d="m9 4-6 6 6 6M3 10h10a7 7 0 0 1 7 7v3"/>
+    </symbol>
+    <symbol id="elbysodic-icon-write" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Write -->
+      <path d="m4 15 12-12 5 5L9 20l-6 1 1-6Zm9-9 5 5M4 15l5 5"/>
+    </symbol>
+    <symbol id="elbysodic-icon-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Preserve -->
+      <rect x="3" y="3" width="18" height="5" rx="1"/>
+      <path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M9 12h6M9 17h6"/>
+    </symbol>
+    <symbol id="elbysodic-icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Search -->
+      <circle cx="10.5" cy="10.5" r="7"/>
+      <path d="m16 16 5 5"/>
+    </symbol>
+    <symbol id="elbysodic-icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Complete -->
+      <path d="m4 12 5 5L20 6"/>
+    </symbol>
+    <symbol id="elbysodic-icon-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- More actions -->
+      <circle cx="4" cy="12" r="1.75" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="12" r="1.75" fill="currentColor" stroke="none"/>
+      <circle cx="20" cy="12" r="1.75" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="elbysodic-icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Menu -->
+      <path d="M4 5h16M4 12h12M4 19h16"/>
+    </symbol>
+    <symbol id="elbysodic-icon-panel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Context panel -->
+      <rect x="3" y="4" width="18" height="16" rx="2"/>
+      <path d="M9 4v16M5.5 8h1M5.5 12h1"/>
+    </symbol>
+    <symbol id="elbysodic-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Light appearance -->
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M19 5l-1.5 1.5m-11 11L5 19"/>
+    </symbol>
+    <symbol id="elbysodic-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Dark appearance -->
+      <path d="M20.5 14A9 9 0 0 1 10 3.5 9 9 0 1 0 20.5 14Z"/>
+    </symbol>
+    <symbol id="elbysodic-icon-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- System appearance -->
+      <rect x="2.5" y="4" width="19" height="13" rx="2"/>
+      <path d="M8 21h8m-4-4v4M5.5 13.5h13"/>
+    </symbol>
+    <symbol id="elbysodic-icon-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Sign out -->
+      <path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5M10 12h11m-5-5 5 5-5 5"/>
+    </symbol>
+    <symbol id="elbysodic-icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Link -->
+      <path d="m10 7 2.5-2.5a5 5 0 0 1 7 7L17 14m-3 3-2.5 2.5a5 5 0 0 1-7-7L7 10m1 6 8-8"/>
+    </symbol>
+    <symbol id="elbysodic-icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Private -->
+      <rect x="4" y="10" width="16" height="11" rx="2"/>
+      <path d="M7 10V7a5 5 0 0 1 10 0v3"/>
+      <circle cx="12" cy="15.5" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
   </defs>
 </svg>

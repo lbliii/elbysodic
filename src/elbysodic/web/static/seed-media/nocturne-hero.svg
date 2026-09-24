@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Nocturne Row treaty breach</title>
+  <desc id="desc">Rain-dark towers gather around a crescent-lit treaty gate as a red fracture crosses the night sky.</desc>
+  <defs>
+    <linearGradient id="night" x2=".1" y2="1"><stop stop-color="#11162b"/><stop offset=".58" stop-color="#25344b"/><stop offset="1" stop-color="#733b4b"/></linearGradient>
+    <radialGradient id="moon"><stop stop-color="#c2d4ca" stop-opacity=".62"/><stop offset="1" stop-color="#a5c5c0" stop-opacity="0"/></radialGradient>
+    <linearGradient id="street" x2="0" y2="1"><stop stop-color="#4e5762" stop-opacity=".06"/><stop offset="1" stop-color="#c57a64" stop-opacity=".52"/></linearGradient>
+    <pattern id="rain" width="58" height="58" patternUnits="userSpaceOnUse" patternTransform="rotate(16)"><path d="M0 0v36" stroke="#d4e1d8" stroke-opacity=".13" stroke-width="2"/></pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#night)"/><circle cx="1130" cy="294" r="330" fill="url(#moon)"/>
+  <circle cx="1130" cy="294" r="92" fill="none" stroke="#d8d7bd" stroke-opacity=".62" stroke-width="9" stroke-dasharray="196 44 68 270" transform="rotate(-28 1130 294)"/>
+  <path d="m1134 186 21 81-31 42 40 41-26 52" fill="none" stroke="#ba6373" stroke-width="6" stroke-linecap="round"/>
+  <path d="M0 590c188-89 351-96 489-21 161-117 326-122 496-14 185-141 390-151 615-31v376H0z" fill="#1a2132"/>
+  <g fill="#151b2a"><path d="M66 440h150v309H66zM93 358h93v82H93zM246 505h146v244H246zM280 424h77v81h-77z"/><path d="M479 396h188v353H479zM518 309h109v87H518zM1330 424h201v325h-201zM1374 334h112v90h-112zM1030 477h215v272h-215zM1081 390h113v87h-113zM735 515h230v234H735z"/></g>
+  <g fill="#dda978" opacity=".75"><path d="M104 486h18v34h-18zM162 486h18v34h-18zM525 440h19v40h-19zM590 440h19v40h-19zM1095 514h19v38h-19zM1170 514h19v38h-19zM1398 458h21v41h-21zM1462 458h21v41h-21z"/></g>
+  <path d="M0 731c289-68 524-64 704 12 205 87 415 87 630 0 98-39 186-56 266-50v207H0z" fill="#101725"/>
+  <path d="M739 900c61-110 91-219 91-327 0-78 37-139 89-139s89 61 89 139c0 108 30 217 91 327" fill="url(#street)"/>
+  <path d="M0 800c294-43 522-23 685 59m230 0c163-82 391-102 685-59" fill="none" stroke="#aeb9af" stroke-opacity=".35" stroke-width="3"/><path d="M0 0h1600v900H0z" fill="url(#rain)"/>
+</svg>

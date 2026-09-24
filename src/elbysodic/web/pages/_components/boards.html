@@ -1,10 +1,9 @@
 {% imports %}
-  {% from "chirpui/ascii_icon.html" import ascii_icon %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/surface.html" import surface %}
   {% from "chirpui/tooltip.html" import tooltip %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/icons.html" import icon, icon_counter %}
   {% from "_components/ui.html" import latest_line %}
 {% end %}
 
@@ -29,7 +28,7 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
   {% call tooltip("Relevant to the active face: this location shares one of their world lenses.", position="left", cls="elbysodic-board-poster__face-signal-hint") %}
     <span class="elbysodic-board-poster__face-signal"
           aria-label="Relevant to the active face">
-      {{ ascii_icon("user" | icon, size="sm", cls="elbysodic-board-poster__face-icon") }}
+      {{ icon("face", size="sm", cls="elbysodic-board-poster__face-icon") }}
     </span>
   {% end %}
   {% end %}
@@ -64,7 +63,7 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
 <div class="elbysodic-subboard-strip" aria-label="{{ label }}">
   {% for child in children %}
   <a class="elbysodic-place-link" href="/boards/{{ child.slug }}">
-    <span aria-hidden="true">-&gt;</span>
+    {{ icon("arrow-right", size="sm") }}
     {{ child.name }}
   </a>
   {% end %}
@@ -74,10 +73,10 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
 
 {% def board_stat_row(summary, viewer, include_children=True) %}
 <div class="elbysodic-board-stat-row">
-  {{ inline_counter("T", summary.thread_count, "threads") }}
-  {{ inline_counter("P", summary.post_count, "posts") }}
+  {{ icon_counter("scene", summary.thread_count, "threads") }}
+  {{ icon_counter("write", summary.post_count, "posts") }}
   {% if include_children and summary.child_boards %}
-  {{ inline_counter(">", summary.child_boards | length, "places") }}
+  {{ icon_counter("locations", summary.child_boards | length, "places") }}
   {% end %}
   {% if summary.unread_thread_count %}
   {{ badge(summary.unread_thread_count ~ " new", variant="info") }}
@@ -103,24 +102,24 @@ elbysodic-board-media--{{ board.slug }} elbysodic-board-media-treatment--{{ boar
 
 {% def community_board_icon(summary) %}
 {% if summary.board.slug == "announcements" %}
-{{ "envelope" | icon }}
+{{ icon("notifications", size="sm") }}
 {% elif summary.board.slug == "plotting" %}
-{{ "pencil" | icon }}
+{{ icon("plotting", size="sm") }}
 {% elif summary.board.slug == "out-of-character" %}
-{{ "chat" | icon }}
+{{ icon("community", size="sm") }}
 {% elif summary.board.board_kind == "archive" %}
-{{ "logs" | icon }}
+{{ icon("archive", size="sm") }}
 {% elif summary.board.board_kind == "desk" %}
-{{ "user" | icon }}
+{{ icon("desk", size="sm") }}
 {% else %}
-{{ "grid" | icon }}
+{{ icon("boards", size="sm") }}
 {% end %}
 {% end %}
 
 {% def community_board_row(summary, viewer) %}
 <article class="elbysodic-community-row">
   <a class="elbysodic-community-row__mark" href="{{ summary.href }}" aria-label="{{ summary.board.name }}">
-    {{ ascii_icon(community_board_icon(summary), size="sm") }}
+    {{ community_board_icon(summary) }}
   </a>
   <div class="elbysodic-community-row__main">
     <div>

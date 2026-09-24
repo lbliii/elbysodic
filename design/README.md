@@ -68,12 +68,15 @@ pretend a behavior exists until code, tests, or product docs support it.
   production translation.
 - `image-dimensions.md`: aspect-ratio map for Midjourney-style image
   generation and product media surfaces.
+- [Faces & Threads icons](icons/README.md): baseline asset inventory,
+  52-symbol family, drawing rules, template usage, and integration scope;
+  [interactive specimen](icons/index.html) includes previous/new comparisons.
 - `motion-design.md`: animation and transition guidance for technicolor
   futurism, PBP reading flow, and reduced-motion-safe interaction design.
 - `rendered-qa-pass.md`: latest rendered QA notes, accepted fixes, and
   deferred visual risks.
-- `sidebar-icon-vocabulary.md`: canonical SVG icon set and route mapping for
-  sidebar destinations, compact rail behavior, and Studio/Desk route cleanup.
+- `sidebar-icon-vocabulary.md`: canonical destination meanings and route
+  mapping for sidebar icons, compact rail behavior, and Studio/Desk navigation.
 - `../docs/product/experience-direction.md`: concise product-experience
   synthesis for the current Jcink/PBP, Slack-like layered context,
   Netflix/Apple TV editorial discovery, RPHub polish, and technicolor futurism

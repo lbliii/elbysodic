@@ -184,7 +184,7 @@ Staging smoke should include:
 - `GET /network` renders seeded realms such as `Jurassic Park Universe`,
   `RL NYC`, and `X-Men Apocalypse`.
 - At least one seed media URL, such as
-  `/elbysodic-static/seed-media/xmen-hero.svg`, returns `200`.
+  `/elbysodic-static/seed-media/realms/xmen-hero.jpg`, returns `200`.
 - A restart preserves database row counts and rendered seeded realms.
 - A copied staging database reports `restore-check ok` through the read-only
   restore-check service before any destructive restore rehearsal. Use the

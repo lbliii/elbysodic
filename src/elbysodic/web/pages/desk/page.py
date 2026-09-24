@@ -86,6 +86,34 @@ class DeskOverview:
         return self.activation.needs_first_face
 
     @property
+    def hero_summary(self) -> str:
+        if self.needs_first_face:
+            return "Start with a face, then find a scene, hook, or place to begin."
+        if self.activation.has_application_work:
+            return "Continue the application, check its status, and prepare the next move."
+        if self.activation.stage == "active_scene":
+            return "Return to a scene, catch up on reading, or move a plot forward."
+        if self.activation.stage in {"plotting", "wanted_interest"}:
+            return "Follow the handoff, catch up on reading, or find another opening."
+        return "Find a playable move through claims, wanted hooks, and starter scenes."
+
+    @property
+    def focus_kicker(self) -> str:
+        return "First face" if self.needs_first_face else "Up next"
+
+    @property
+    def focus_title(self) -> str:
+        if self.needs_first_face:
+            return "Your story starts here"
+        if self.activation.has_application_work:
+            return "Move a face toward play"
+        if self.activation.stage in {"plotting", "wanted_interest"}:
+            return "Turn a handoff into a scene"
+        if self.activation.stage == "active_scene":
+            return "Pick up where you left off"
+        return "Choose your next opening"
+
+    @property
     def next_queue_href(self) -> str:
         if self.queue.needs_reply:
             item = self.queue.needs_reply[0]
@@ -106,6 +134,8 @@ class DeskOverview:
 
     @property
     def current_focus_label(self) -> str:
+        if self.needs_first_face:
+            return "Choose who enters the realm first."
         if self.activation.stage != "active_scene":
             return self.activation.headline
         if self.queue.needs_reply:

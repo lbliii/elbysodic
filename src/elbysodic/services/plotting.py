@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Protocol
 
 from elbysodic.domain.models import (
@@ -61,6 +61,12 @@ class PlottingRoomLiveEvent:
     message: PlottingRoomMessageView | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class _PlottingRoomViewerScope:
+    membership: CommunityMembership
+    role: Role
+
+
 _plotting_room_subscribers: dict[int, set[asyncio.Queue[PlottingRoomLiveEvent]]] = {}
 
 
@@ -84,6 +90,18 @@ class PlottingRepository(
         community_id: int,
         membership_id: int,
     ) -> CommunityMembership: ...
+
+    def list_memberships_by_ids(
+        self,
+        community_id: int,
+        membership_ids: list[int],
+    ) -> dict[int, CommunityMembership]: ...
+
+    def list_characters_by_ids(
+        self,
+        community_id: int,
+        character_ids: list[int],
+    ) -> dict[int, Character]: ...
 
     def get_role(self, community_id: int, role_id: int) -> Role: ...
 
@@ -387,9 +405,33 @@ def read_plotting_room(
     room_id: int,
 ) -> PlottingRoomDetail:
     room = repo.get_plotting_room(viewer.community.id, room_id)
+    participant_records = repo.list_plotting_room_participants(viewer.community.id, room.id)
+    memberships = repo.list_memberships_by_ids(
+        viewer.community.id,
+        sorted({room.owner_membership_id} | {item.membership_id for item in participant_records}),
+    )
+    characters = repo.list_characters_by_ids(
+        viewer.community.id,
+        sorted(
+            {
+                participant.character_id
+                for participant in participant_records
+                if participant.character_id is not None
+            }
+        ),
+    )
     participants = [
-        plotting_room_participant_view(repo, viewer.community.id, participant)
-        for participant in repo.list_plotting_room_participants(viewer.community.id, room.id)
+        PlottingRoomParticipantView(
+            participant=participant,
+            membership=memberships[participant.membership_id],
+            character=(
+                characters[participant.character_id]
+                if participant.character_id is not None
+                else None
+            ),
+            created_at_label=timestamp_label(participant.created_at),
+        )
+        for participant in participant_records
     ]
     participant_membership_ids = _participant_membership_ids(participants)
     can_edit_plan = _can_edit_plotting_room_plan(viewer, room, participant_membership_ids)
@@ -422,7 +464,7 @@ def read_plotting_room(
     )
     return PlottingRoomDetail(
         room=room,
-        owner_membership=repo.get_membership(viewer.community.id, room.owner_membership_id),
+        owner_membership=memberships[room.owner_membership_id],
         participants=participants,
         source_plot_hook=source_plot_hook,
         source_wanted_ad=source_wanted_ad,
@@ -460,23 +502,48 @@ def read_plotting_room_messages(
 ) -> PlottingRoomMessageBatch:
     membership = repo.get_membership(viewer.community.id, viewer.membership.id)
     role = repo.get_role(viewer.community.id, membership.role_id)
-    if not membership.is_active:
+    return read_plotting_room_messages_for_scope(
+        repo,
+        viewer.community.id,
+        membership,
+        role,
+        room_id,
+        after_id=after_id,
+        limit=limit,
+    )
+
+
+def read_plotting_room_messages_for_scope(
+    repo: PlottingRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    role: Role,
+    room_id: int,
+    *,
+    after_id: int | None,
+    limit: int = 100,
+) -> PlottingRoomMessageBatch:
+    if (
+        membership.community_id != community_id
+        or not membership.is_active
+        or role.community_id != community_id
+        or role.id != membership.role_id
+    ):
         raise PermissionError(f"membership {membership.id} cannot view room {room_id}")
-    current_viewer = replace(viewer, membership=membership, role=role)
-    room = repo.get_plotting_room(current_viewer.community.id, room_id)
+    room = repo.get_plotting_room(community_id, room_id)
     participants = repo.list_plotting_room_participants(
-        current_viewer.community.id,
+        community_id,
         room.id,
     )
     participant_membership_ids = {item.membership_id for item in participants}
     if not _can_edit_plotting_room_plan(
-        current_viewer,
+        _PlottingRoomViewerScope(membership=membership, role=role),
         room,
         participant_membership_ids,
     ):
         raise PermissionError(f"membership {membership.id} cannot view room {room.id}")
     messages = repo.list_plotting_room_messages(
-        current_viewer.community.id,
+        community_id,
         room.id,
         after_id=after_id,
         limit=limit,
@@ -484,7 +551,7 @@ def read_plotting_room_messages(
     return PlottingRoomMessageBatch(
         messages=plotting_room_message_views(
             repo,
-            current_viewer.community.id,
+            community_id,
             messages,
         ),
         last_message_id=messages[-1].id if messages else after_id,
@@ -701,7 +768,7 @@ def _participant_membership_ids(participants: list[PlottingRoomParticipantView])
 
 
 def _can_edit_plotting_room_plan(
-    viewer: ForumView,
+    viewer: ForumView | _PlottingRoomViewerScope,
     room: PlottingRoom,
     participant_membership_ids: set[int],
 ) -> bool:

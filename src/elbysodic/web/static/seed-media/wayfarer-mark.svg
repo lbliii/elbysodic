@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Wayfarer Station mark</title><desc id="desc">A compass beacon hangs inside a frontier station ring.</desc>
+  <ellipse cx="64" cy="65" rx="46" ry="28" fill="none" stroke="#8fa9a4" stroke-width="5" transform="rotate(-25 64 65)"/><path d="M64 18v29m0 28v35M22 65h31m22 0h31M64 47l10 18-10 18-10-18z" fill="none" stroke="#e1ad74" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="64" cy="65" r="5" fill="#e8d8ae"/>
+</svg>

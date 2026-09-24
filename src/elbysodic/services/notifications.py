@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from elbysodic.domain.models import (
@@ -48,6 +48,18 @@ class NotificationReadContext:
     actors: dict[int, Character]
     posts: dict[int, Post]
     post_view_context: PostViewContext | None
+
+
+@dataclass(slots=True)
+class _NotificationVisibilityCache:
+    threads: dict[tuple[int, int], Thread] = field(default_factory=dict)
+    boards: dict[tuple[int, int], Board] = field(default_factory=dict)
+    plotting_rooms: dict[tuple[int, int], PlottingRoom] = field(default_factory=dict)
+    plotting_room_memberships: dict[tuple[int, int], set[int]] = field(default_factory=dict)
+    wanted_ads: dict[tuple[int, int], WantedAd] = field(default_factory=dict)
+    wanted_interests: dict[tuple[int, int], WantedAdInterest] = field(default_factory=dict)
+    plot_hooks: dict[tuple[int, int], CharacterPlotHook] = field(default_factory=dict)
+    characters: dict[tuple[int, int], Character] = field(default_factory=dict)
 
 
 NOTIFICATION_TARGET_CONTRACTS: tuple[NotificationTargetContract, ...] = (
@@ -300,10 +312,18 @@ def count_visible_unread_notifications(
     role: Role | None,
 ) -> int:
     notifications = _unread_notifications_for_membership(repo, community_id, membership.id)
+    cache = _NotificationVisibilityCache()
     return sum(
         1
         for notification in notifications
-        if _can_view_notification_target(repo, community_id, membership, role, notification)
+        if _can_view_notification_target(
+            repo,
+            community_id,
+            membership,
+            role,
+            notification,
+            cache=cache,
+        )
     )
 
 
@@ -317,12 +337,20 @@ def visible_unread_notification_counts(
         [(community_id, membership.id) for community_id, membership, _role in contexts]
     )
     counts: dict[int, int] = {}
+    cache = _NotificationVisibilityCache()
     for community_id, membership, role in contexts:
         notifications = notifications_by_membership.get((community_id, membership.id), [])
         counts[membership.id] = sum(
             1
             for notification in notifications
-            if _can_view_notification_target(repo, community_id, membership, role, notification)
+            if _can_view_notification_target(
+                repo,
+                community_id,
+                membership,
+                role,
+                notification,
+                cache=cache,
+            )
         )
     return counts
 
@@ -721,13 +749,21 @@ def _can_view_plotting_room_notification(
     membership: CommunityMembership,
     role: Role | None,
     room: PlottingRoom,
+    *,
+    cache: _NotificationVisibilityCache | None = None,
 ) -> bool:
     if room.owner_membership_id == membership.id or policies.can_manage_casting(membership, role):
         return True
-    return any(
-        participant.membership_id == membership.id
-        for participant in repo.list_plotting_room_participants(community_id, room.id)
-    )
+    key = (community_id, room.id)
+    participant_membership_ids = None if cache is None else cache.plotting_room_memberships.get(key)
+    if participant_membership_ids is None:
+        participant_membership_ids = {
+            participant.membership_id
+            for participant in repo.list_plotting_room_participants(community_id, room.id)
+        }
+        if cache is not None:
+            cache.plotting_room_memberships[key] = participant_membership_ids
+    return membership.id in participant_membership_ids
 
 
 def _can_view_notification_target(
@@ -736,32 +772,60 @@ def _can_view_notification_target(
     membership: CommunityMembership,
     role: Role | None,
     notification: Notification,
+    *,
+    cache: _NotificationVisibilityCache | None = None,
 ) -> bool:
     contract = notification_target_contract(notification.kind)
     if contract is None or not notification_has_required_target(notification):
         return False
     try:
         if notification.thread_id is not None:
-            thread = repo.get_thread(community_id, notification.thread_id)
-            board = repo.get_board(community_id, thread.board_id)
+            thread_key = (community_id, notification.thread_id)
+            thread = None if cache is None else cache.threads.get(thread_key)
+            if thread is None:
+                thread = repo.get_thread(community_id, notification.thread_id)
+                if cache is not None:
+                    cache.threads[thread_key] = thread
+            board_key = (community_id, thread.board_id)
+            board = None if cache is None else cache.boards.get(board_key)
+            if board is None:
+                board = repo.get_board(community_id, thread.board_id)
+                if cache is not None:
+                    cache.boards[board_key] = board
             return policies.can_view_board(membership, board, role)
         if notification.plotting_room_id is not None:
-            room = repo.get_plotting_room(community_id, notification.plotting_room_id)
+            room_key = (community_id, notification.plotting_room_id)
+            room = None if cache is None else cache.plotting_rooms.get(room_key)
+            if room is None:
+                room = repo.get_plotting_room(community_id, notification.plotting_room_id)
+                if cache is not None:
+                    cache.plotting_rooms[room_key] = room
             return _can_view_plotting_room_notification(
                 repo,
                 community_id,
                 membership,
                 role,
                 room,
+                cache=cache,
             )
         if notification.wanted_ad_id is not None:
-            wanted_ad = repo.get_wanted_ad(community_id, notification.wanted_ad_id)
+            wanted_key = (community_id, notification.wanted_ad_id)
+            wanted_ad = None if cache is None else cache.wanted_ads.get(wanted_key)
+            if wanted_ad is None:
+                wanted_ad = repo.get_wanted_ad(community_id, notification.wanted_ad_id)
+                if cache is not None:
+                    cache.wanted_ads[wanted_key] = wanted_ad
             if notification.wanted_ad_interest_id is None:
                 return True
-            interest = repo.get_wanted_ad_interest(
-                community_id,
-                notification.wanted_ad_interest_id,
-            )
+            interest_key = (community_id, notification.wanted_ad_interest_id)
+            interest = None if cache is None else cache.wanted_interests.get(interest_key)
+            if interest is None:
+                interest = repo.get_wanted_ad_interest(
+                    community_id,
+                    notification.wanted_ad_interest_id,
+                )
+                if cache is not None:
+                    cache.wanted_interests[interest_key] = interest
             return _can_view_wanted_interest_notification(
                 membership,
                 role,
@@ -769,13 +833,23 @@ def _can_view_notification_target(
                 interest,
             )
         if notification.character_plot_hook_id is not None:
-            plot_hook = repo.get_character_plot_hook(
-                community_id,
-                notification.character_plot_hook_id,
-            )
+            hook_key = (community_id, notification.character_plot_hook_id)
+            plot_hook = None if cache is None else cache.plot_hooks.get(hook_key)
+            if plot_hook is None:
+                plot_hook = repo.get_character_plot_hook(
+                    community_id,
+                    notification.character_plot_hook_id,
+                )
+                if cache is not None:
+                    cache.plot_hooks[hook_key] = plot_hook
             return _can_view_plot_hook_notification(membership, role, plot_hook)
         if notification.character_id is not None:
-            character = repo.get_character(community_id, notification.character_id)
+            character_key = (community_id, notification.character_id)
+            character = None if cache is None else cache.characters.get(character_key)
+            if character is None:
+                character = repo.get_character(community_id, notification.character_id)
+                if cache is not None:
+                    cache.characters[character_key] = character
             return character.membership_id == membership.id or policies.can_manage_casting(
                 membership, role
             )

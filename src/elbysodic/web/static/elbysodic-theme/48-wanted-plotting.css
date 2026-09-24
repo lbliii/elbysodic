@@ -2,40 +2,33 @@
 
 .elbysodic-wanted-grid {
     display: grid;
-    gap: 1.1rem;
+    gap: clamp(1.1rem, 2.2vw, 1.6rem);
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
 .elbysodic-realm-wanted-grid {
     display: grid;
-    gap: 0.75rem;
+    gap: clamp(0.9rem, 1.8vw, 1.3rem);
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 }
 
 .elbysodic-realm-wanted-card {
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-state-waiting) 8%, transparent), transparent 46%),
-        color-mix(in srgb, var(--chirpui-surface) 76%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chirpui-border) 64%, transparent);
-    border-left: 3px solid color-mix(in srgb, var(--elbysodic-state-waiting) 74%, var(--chirpui-border));
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border: 0;
+    border-block-start: 2px solid color-mix(in srgb, var(--elbysodic-state-waiting) 58%, var(--chirpui-border));
+    border-radius: 0;
     color: inherit;
     display: grid;
     gap: 0.4rem;
     min-block-size: 11rem;
-    padding: 0.9rem;
+    padding: 1rem 0.25rem;
     text-decoration: none;
-    transition:
-        border-color var(--elbysodic-motion-feedback),
-        box-shadow var(--elbysodic-motion-feedback),
-        transform var(--elbysodic-motion-feedback);
+    transition: border-color var(--elbysodic-motion-feedback);
 }
 
 .elbysodic-realm-wanted-card:hover,
 .elbysodic-realm-wanted-card:focus-visible {
-    border-color: color-mix(in srgb, var(--elbysodic-state-waiting) 46%, var(--chirpui-border));
-    box-shadow: 0 14px 28px color-mix(in srgb, var(--elbysodic-state-waiting) 12%, transparent);
-    transform: translateY(-1px);
+    border-block-start-color: color-mix(in srgb, var(--elbysodic-state-waiting) 78%, var(--chirpui-border));
 }
 
 .elbysodic-realm-wanted-card strong {
@@ -112,31 +105,31 @@
 .elbysodic-wanted-card {
     --elbysodic-wanted-accent: var(--chirpui-accent);
     --elbysodic-wanted-context-accent: var(--chirpui-accent-secondary, var(--chirpui-accent));
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 6%, transparent), transparent 42%),
-        var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 18%, var(--chirpui-border));
-    border-left: 3px solid color-mix(in srgb, var(--elbysodic-wanted-accent) 76%, var(--chirpui-border));
+    background: transparent;
+    border: 0;
+    border-block-start: 2px solid color-mix(in srgb, var(--elbysodic-wanted-accent) 66%, var(--chirpui-border));
+    border-radius: 0;
     box-shadow: none;
     gap: 0.8rem;
     height: 100%;
-    padding: 1rem 1rem 0.95rem;
+    padding: 1rem 0.15rem 0.95rem;
     position: relative;
     transition:
-        background var(--chirpui-transition),
         border-color var(--chirpui-transition),
-        box-shadow var(--chirpui-transition),
-        transform var(--chirpui-transition);
+        border-block-start-color var(--chirpui-transition);
+}
+
+.elbysodic-wanted-card-shell {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
 }
 
 .elbysodic-wanted-card-shell:hover .elbysodic-wanted-card,
 .elbysodic-wanted-card-shell:focus-within .elbysodic-wanted-card {
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 9%, transparent), transparent 46%),
-        color-mix(in srgb, var(--chirpui-surface) 88%, var(--chirpui-bg-subtle));
-    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 34%, var(--chirpui-border));
-    box-shadow: 0 12px 28px color-mix(in srgb, var(--elbysodic-wanted-accent) 10%, transparent);
-    transform: translateY(-1px);
+    border-block-start-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 84%, var(--chirpui-border));
 }
 
 .elbysodic-wanted-card__header {
@@ -165,15 +158,8 @@
 
 .elbysodic-wanted-card--filled,
 .elbysodic-wanted-card--closed,
-.elbysodic-wanted-card--archived,
-.elbysodic-wanted-card-shell--filled,
-.elbysodic-wanted-card-shell--closed,
-.elbysodic-wanted-card-shell--archived {
+.elbysodic-wanted-card--archived {
     --elbysodic-wanted-accent: var(--elbysodic-state-archived);
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-wanted-accent) 8%, transparent), transparent 42%),
-        var(--chirpui-surface);
-    border-color: color-mix(in srgb, var(--elbysodic-wanted-accent) 22%, var(--chirpui-border-subtle));
 }
 
 .elbysodic-plot-hook-card {
@@ -381,6 +367,10 @@
     display: grid;
     gap: 0.75rem;
     grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.elbysodic-interest-card--reserve {
+    grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .elbysodic-lifecycle-list .elbysodic-interest-card {

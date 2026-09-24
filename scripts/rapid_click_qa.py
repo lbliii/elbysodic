@@ -168,7 +168,7 @@ async def run(iterations: int) -> list[CheckResult]:
         (
             "network",
             "/network",
-            "Find a realm that fits the story you want to write.",
+            "Find your next story.",
         ),
         ("nyc-claims", "/c/rl-nyc/claims", "RL NYC"),
         ("nyc-my-threads", "/c/rl-nyc/my/threads", "RL NYC"),

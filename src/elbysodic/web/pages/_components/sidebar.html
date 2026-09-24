@@ -1,9 +1,8 @@
 {% from "chirpui/sidebar.html" import sidebar, sidebar_section %}
+{% from "_components/icons.html" import icon %}
 
 {% def sidebar_svg_icon(icon_id) %}
-<svg class="elbysodic-sidebar-svg-icon" aria-hidden="true" focusable="false">
-  <use href="/elbysodic-static/icons/sidebar.svg#elbysodic-icon-{{ icon_id }}"></use>
-</svg>
+{{ icon(icon_id, cls="elbysodic-sidebar-svg-icon") }}
 {% end %}
 
 {% def sidebar_count(count) %}
@@ -23,13 +22,13 @@
 </a>
 {% end %}
 
-{% def sidebar_destination(href, label, icon, is_active=False, count=none) %}
+{% def sidebar_destination(href, label, icon_id, is_active=False, count=none) %}
 <a class="chirpui-sidebar__link elbysodic-sidebar-destination"
    href="{{ href }}"
    title="{{ label }}"
    hx-sync="#main:replace"
    {% if is_active %}aria-current="page"{% end %}>
-  <span class="chirpui-sidebar__icon">{{ icon | icon }}</span>
+  <span class="chirpui-sidebar__icon">{{ sidebar_svg_icon(icon_id) }}</span>
   <span class="chirpui-sidebar__label">{{ label }}</span>
   {% if count is not none %}
   {{ sidebar_count(count) }}

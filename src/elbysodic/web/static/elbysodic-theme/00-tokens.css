@@ -7,14 +7,14 @@
 :root {
     color-scheme: dark;
 
-    --elbysodic-key-dark: #05090f;
-    --elbysodic-key-dark-1: #0a1119;
-    --elbysodic-key-dark-2: #101a25;
-    --elbysodic-key-dark-3: #172739;
-    --elbysodic-key-light: #f8fbff;
-    --elbysodic-key-light-1: #eef6fb;
-    --elbysodic-key-light-2: #ffffff;
-    --elbysodic-key-light-3: #dbe9f3;
+    --elbysodic-key-dark: #0b0d11;
+    --elbysodic-key-dark-1: #11151a;
+    --elbysodic-key-dark-2: #181d23;
+    --elbysodic-key-dark-3: #20272e;
+    --elbysodic-key-light: #f6f6f2;
+    --elbysodic-key-light-1: #efeee9;
+    --elbysodic-key-light-2: #fcfbf8;
+    --elbysodic-key-light-3: #e2e1da;
     --elbysodic-identity-dye: #ff4fc8;
     --elbysodic-identity-dye-hover: #ff79d5;
     --elbysodic-identity-dye-dim: #8e2e73;
@@ -30,8 +30,8 @@
     --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
     --elbysodic-state-error: #ff6b7a;
     --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 34%, var(--chirpui-border));
-    --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-dark-1) 72%, transparent);
-    --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 22%, var(--chirpui-border));
+    --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-dark-1) 92%, transparent);
+    --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 12%, var(--chirpui-border));
     --elbysodic-on-media-text: #f7fbff;
     --elbysodic-on-media-muted: rgba(247, 251, 255, 0.76);
     --elbysodic-on-media-chip-bg: rgba(5, 14, 22, 0.72);
@@ -80,27 +80,34 @@
     --elbysodic-space-md: 1.25rem;
     --elbysodic-space-lg: 1.5rem;
     --elbysodic-space-xl: 2rem;
+    --elbysodic-space-2xl: 2.75rem;
+    --elbysodic-space-3xl: 4rem;
+    --elbysodic-page-gutter: clamp(1rem, 2.5vw, 2.25rem);
+    --elbysodic-page-section-gap: clamp(2.25rem, 5vw, 4.5rem);
+    --elbysodic-region-gap: clamp(1.75rem, 3.5vw, 2.75rem);
+    --elbysodic-editorial-inset: clamp(1.25rem, 3vw, 2rem);
+    --elbysodic-reading-measure: 68ch;
     --elbysodic-stack-gap: var(--elbysodic-space);
     --elbysodic-cluster-gap: var(--elbysodic-space-xs);
-    --elbysodic-radius: 0.5rem;
-    --elbysodic-radius-sm: 0.25rem;
+    --elbysodic-radius: 0.75rem;
+    --elbysodic-radius-sm: 0.5rem;
     --elbysodic-font-xs: 0.75rem;
     --elbysodic-font-sm: 0.875rem;
-    --elbysodic-control-padding-block: 0.5rem;
-    --elbysodic-control-padding-inline: 0.875rem;
+    --elbysodic-control-padding-block: 0.7rem;
+    --elbysodic-control-padding-inline: 0.95rem;
     --elbysodic-focus-outline: 2px solid var(--elbysodic-identity-dye);
     --elbysodic-focus-offset: 2px;
 
     --chirpui-bg: var(--elbysodic-key-dark);
     --chirpui-bg-subtle: var(--elbysodic-key-dark-1);
     --chirpui-surface: var(--elbysodic-key-dark-2);
-    --chirpui-surface-alt: #142333;
+    --chirpui-surface-alt: #1c242b;
     --chirpui-surface-elevated: var(--elbysodic-key-dark-3);
-    --chirpui-border: #24394d;
+    --chirpui-border: #303a43;
     --chirpui-border-strong: color-mix(in srgb, var(--chirpui-border) 78%, var(--chirpui-text));
     --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 64%, transparent);
-    --chirpui-text: #f4f7fb;
-    --chirpui-text-muted: #b2c0cc;
+    --chirpui-text: #f2f2ef;
+    --chirpui-text-muted: #b0b6bb;
     --chirpui-text-subtle: color-mix(in srgb, var(--chirpui-text-muted) 74%, transparent);
     --chirpui-accent: var(--elbysodic-identity-dye);
     --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
@@ -126,16 +133,16 @@
     --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, transparent);
     --chirpui-card-header-color: var(--chirpui-text);
     --chirpui-card-hover-border: color-mix(in srgb, var(--chirpui-accent) 64%, var(--chirpui-border));
-    --chirpui-card-hover-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    --chirpui-card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     --chirpui-elevation-2: var(--chirpui-shadow-md);
     --chirpui-shadow: #000000;
-    --chirpui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
-    --chirpui-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.28);
-    --chirpui-shadow-lg: 0 18px 46px rgba(0, 0, 0, 0.32);
-    --chirpui-radius: 0.5rem;
-    --chirpui-radius-sm: 0.25rem;
-    --chirpui-radius-xs: 0.125rem;
-    --chirpui-radius-md: 0.75rem;
+    --chirpui-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --chirpui-shadow-md: 0 5px 18px rgba(0, 0, 0, 0.14);
+    --chirpui-shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.18);
+    --chirpui-radius: 0.75rem;
+    --chirpui-radius-sm: 0.5rem;
+    --chirpui-radius-xs: 0.25rem;
+    --chirpui-radius-md: 1rem;
     --chirpui-radius-full: 999rem;
     --chirpui-spacing-2xs: 0.25rem;
     --chirpui-spacing-xs: 0.5rem;
@@ -188,8 +195,8 @@
     --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
     --elbysodic-state-error: #b3263a;
     --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, var(--chirpui-border));
-    --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 78%, transparent);
-    --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 20%, var(--chirpui-border));
+    --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 90%, transparent);
+    --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 10%, var(--chirpui-border));
     --elbysodic-on-media-text: #f7fbff;
     --elbysodic-on-media-muted: rgba(247, 251, 255, 0.78);
     --elbysodic-on-media-chip-bg: rgba(5, 14, 22, 0.7);
@@ -198,13 +205,13 @@
     --chirpui-bg: var(--elbysodic-key-light);
     --chirpui-bg-subtle: var(--elbysodic-key-light-1);
     --chirpui-surface: var(--elbysodic-key-light-2);
-    --chirpui-surface-alt: #edf7fc;
+    --chirpui-surface-alt: #f2f1eb;
     --chirpui-surface-elevated: #fbfdff;
-    --chirpui-border: #bfd2df;
+    --chirpui-border: #d7d7d1;
     --chirpui-border-strong: color-mix(in srgb, var(--chirpui-border) 78%, var(--chirpui-text));
     --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
-    --chirpui-text: #132231;
-    --chirpui-text-muted: #5d6e7f;
+    --chirpui-text: #202227;
+    --chirpui-text-muted: #62676d;
     --chirpui-text-subtle: color-mix(in srgb, var(--chirpui-text-muted) 74%, transparent);
     --chirpui-accent: var(--elbysodic-identity-dye);
     --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
@@ -227,11 +234,11 @@
     --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 34%, var(--chirpui-border));
     --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
     --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
-    --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
-    --chirpui-shadow: #1f394e;
-    --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
-    --chirpui-shadow-md: 0 8px 22px rgba(31, 57, 78, 0.1);
-    --chirpui-shadow-lg: 0 18px 46px rgba(31, 57, 78, 0.14);
+    --chirpui-card-hover-shadow: 0 8px 24px rgba(32, 34, 39, 0.05);
+    --chirpui-shadow: #202227;
+    --chirpui-shadow-sm: 0 1px 3px rgba(32, 34, 39, 0.04);
+    --chirpui-shadow-md: 0 5px 18px rgba(32, 34, 39, 0.055);
+    --chirpui-shadow-lg: 0 14px 36px rgba(32, 34, 39, 0.075);
 }
 
 [data-theme="system"] {
@@ -255,8 +262,8 @@
         --elbysodic-state-unread: var(--elbysodic-atmosphere-dye);
         --elbysodic-state-error: #b3263a;
         --elbysodic-editorial-rule: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 42%, var(--chirpui-border));
-        --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 78%, transparent);
-        --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 20%, var(--chirpui-border));
+        --elbysodic-glass-bg: color-mix(in srgb, var(--elbysodic-key-light-2) 90%, transparent);
+        --elbysodic-glass-border: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 10%, var(--chirpui-border));
         --elbysodic-on-media-text: #f7fbff;
         --elbysodic-on-media-muted: rgba(247, 251, 255, 0.78);
         --elbysodic-on-media-chip-bg: rgba(5, 14, 22, 0.7);
@@ -265,13 +272,13 @@
         --chirpui-bg: var(--elbysodic-key-light);
         --chirpui-bg-subtle: var(--elbysodic-key-light-1);
         --chirpui-surface: var(--elbysodic-key-light-2);
-        --chirpui-surface-alt: #edf7fc;
+        --chirpui-surface-alt: #f2f1eb;
         --chirpui-surface-elevated: #fbfdff;
-        --chirpui-border: #bfd2df;
+        --chirpui-border: #d7d7d1;
         --chirpui-border-strong: color-mix(in srgb, var(--chirpui-border) 78%, var(--chirpui-text));
         --chirpui-border-subtle: color-mix(in srgb, var(--chirpui-border) 72%, transparent);
-        --chirpui-text: #132231;
-        --chirpui-text-muted: #5d6e7f;
+        --chirpui-text: #202227;
+        --chirpui-text-muted: #62676d;
         --chirpui-text-subtle: color-mix(in srgb, var(--chirpui-text-muted) 74%, transparent);
         --chirpui-accent: var(--elbysodic-identity-dye);
         --chirpui-accent-hover: var(--elbysodic-identity-dye-hover);
@@ -294,11 +301,11 @@
         --chirpui-alert-info-border: color-mix(in srgb, var(--elbysodic-state-watching) 34%, var(--chirpui-border));
         --chirpui-muted-bg: color-mix(in srgb, var(--elbysodic-state-private) 12%, var(--chirpui-surface));
         --chirpui-focus-ring: color-mix(in srgb, var(--elbysodic-atmosphere-dye) 38%, transparent);
-        --chirpui-card-hover-shadow: 0 10px 24px rgba(31, 57, 78, 0.12);
-        --chirpui-shadow: #1f394e;
-        --chirpui-shadow-sm: 0 1px 2px rgba(31, 57, 78, 0.08);
-        --chirpui-shadow-md: 0 8px 22px rgba(31, 57, 78, 0.1);
-        --chirpui-shadow-lg: 0 18px 46px rgba(31, 57, 78, 0.14);
+        --chirpui-card-hover-shadow: 0 8px 24px rgba(32, 34, 39, 0.05);
+        --chirpui-shadow: #202227;
+        --chirpui-shadow-sm: 0 1px 3px rgba(32, 34, 39, 0.04);
+        --chirpui-shadow-md: 0 5px 18px rgba(32, 34, 39, 0.055);
+        --chirpui-shadow-lg: 0 14px 36px rgba(32, 34, 39, 0.075);
     }
 }
 

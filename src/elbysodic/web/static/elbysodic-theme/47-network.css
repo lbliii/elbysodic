@@ -6,8 +6,8 @@
     --elbysodic-network-text: var(--chirpui-text);
     --elbysodic-network-display-font: var(--elbysodic-display-font-family);
     background: var(--chirpui-bg-subtle);
-    border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius);
+    border: 0;
+    border-radius: var(--chirpui-radius-md);
     block-size: 34rem;
     color: var(--elbysodic-on-media-text);
     display: grid;
@@ -25,9 +25,21 @@
 }
 
 .elbysodic-network-billboard__media--fallback {
+    overflow: hidden;
+    position: relative;
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-network-accent) 58%, transparent), transparent 62%),
-        linear-gradient(22deg, color-mix(in srgb, var(--chirpui-bg) 76%, var(--elbysodic-network-surface)), var(--elbysodic-network-surface));
+        radial-gradient(ellipse at 78% 16%, color-mix(in srgb, var(--elbysodic-network-accent) 54%, transparent), transparent 34%),
+        radial-gradient(ellipse at 84% 90%, color-mix(in srgb, var(--elbysodic-identity-dye) 24%, transparent), transparent 38%),
+        linear-gradient(128deg, var(--chirpui-bg) 8%, var(--elbysodic-network-surface) 58%, var(--chirpui-bg-subtle));
+}
+
+.elbysodic-network-billboard__media--fallback::after,
+.elbysodic-network-home-showcase__media--fallback::after {
+    background: repeating-linear-gradient(120deg, transparent 0 4rem, rgba(255, 255, 255, 0.035) 4rem 4.06rem);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
 }
 
 .elbysodic-network-billboard__shade {
@@ -123,8 +135,8 @@
     --elbysodic-network-text: var(--chirpui-text);
     --elbysodic-network-display-font: var(--elbysodic-display-font-family);
     background: var(--chirpui-bg-subtle);
-    border: 1px solid var(--chirpui-border);
-    border-radius: var(--chirpui-radius);
+    border: 0;
+    border-radius: var(--chirpui-radius-md);
     display: grid;
     min-block-size: clamp(27rem, 62vh, 38rem);
     overflow: hidden;
@@ -144,8 +156,24 @@
 
 .elbysodic-network-home-showcase__media--fallback {
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-network-accent) 60%, transparent), transparent 58%),
-        linear-gradient(25deg, var(--chirpui-bg-subtle), var(--elbysodic-network-surface));
+        radial-gradient(ellipse at 78% 16%, color-mix(in srgb, var(--elbysodic-network-accent) 54%, transparent), transparent 34%),
+        radial-gradient(ellipse at 84% 90%, color-mix(in srgb, var(--elbysodic-identity-dye) 24%, transparent), transparent 38%),
+        linear-gradient(128deg, var(--chirpui-bg) 8%, var(--elbysodic-network-surface) 58%, var(--chirpui-bg-subtle));
+    overflow: hidden;
+    position: relative;
+}
+
+.elbysodic-network-billboard__media--fallback::before,
+.elbysodic-network-home-showcase__media--fallback::before {
+    aspect-ratio: 1;
+    background: radial-gradient(circle, color-mix(in srgb, var(--elbysodic-network-accent) 12%, transparent), transparent 66%);
+    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 26%, transparent);
+    border-radius: 50%;
+    content: "";
+    inline-size: min(56%, 34rem);
+    inset: 8% 5% auto auto;
+    position: absolute;
+    transform: scaleX(1.3) rotate(-24deg);
 }
 
 .elbysodic-network-home-showcase__shade {
@@ -161,7 +189,7 @@
     display: grid;
     gap: 0.85rem;
     max-inline-size: 48rem;
-    padding: clamp(1.25rem, 5vw, 3rem);
+    padding: clamp(1.4rem, 5vw, 4rem);
     position: relative;
     z-index: 2;
 }
@@ -193,26 +221,25 @@
 
 .elbysodic-network-home-showcase__mark {
     align-items: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.24);
-    border-radius: var(--chirpui-radius-sm);
-    display: grid;
-    inline-size: 3.5rem;
-    min-block-size: 3.5rem;
-    overflow: hidden;
-    place-items: center;
+    display: flex;
+    inline-size: max-content;
+    min-block-size: 2.25rem;
 }
 
 .elbysodic-network-home-showcase__mark img {
+    block-size: 2.75rem;
     display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
+    inline-size: auto;
+    max-inline-size: 5rem;
+    object-fit: contain;
 }
 
 .elbysodic-network-home-showcase__mark span {
     color: var(--elbysodic-on-media-text);
-    font-weight: 900;
+    font-family: var(--elbysodic-network-display-font);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
 }
 
 .elbysodic-network-home-showcase__actions {
@@ -223,12 +250,12 @@
 
 .elbysodic-network-home-stack {
     display: grid;
-    gap: clamp(1.4rem, 3vw, 2.2rem);
+    gap: clamp(2.5rem, 4.8vw, 4rem);
 }
 
 .elbysodic-network-home-slice {
     display: grid;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .elbysodic-network-home-slice__header {
@@ -241,7 +268,7 @@
 .elbysodic-network-home-slice__header h2 {
     color: var(--chirpui-text);
     font-family: var(--elbysodic-display-font-family);
-    font-size: 1.45rem;
+    font-size: clamp(1.6rem, 2.4vw, 2rem);
     letter-spacing: 0;
     line-height: 1;
     margin: 0;
@@ -256,11 +283,11 @@
 
 .elbysodic-network-home-rail {
     display: grid;
-    gap: 0.8rem;
+    gap: 1rem;
     grid-auto-columns: clamp(16.5rem, 24vw, 22rem);
     grid-auto-flow: column;
     overflow-x: auto;
-    padding-block-end: 0.35rem;
+    padding-block-end: 0.65rem;
     scroll-snap-type: inline proximity;
     scrollbar-width: none;
 }
@@ -270,17 +297,23 @@
 }
 
 .elbysodic-network-home-rail--portrait {
-    gap: 0.8rem;
+    gap: 1rem;
     grid-auto-columns: clamp(12.25rem, 16vw, 14.75rem);
 }
 
 .elbysodic-network-home-tile {
     --elbysodic-network-accent: var(--elbysodic-atmosphere-dye);
-    background: var(--chirpui-surface);
-    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 16%, var(--chirpui-border));
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border: 0;
+    border-radius: var(--chirpui-radius-md);
     overflow: hidden;
     scroll-snap-align: start;
+    transition: transform var(--elbysodic-motion-feedback);
+}
+
+.elbysodic-network-home-tile:hover,
+.elbysodic-network-home-tile:focus-within {
+    transform: translateY(-2px);
 }
 
 .elbysodic-network-home-tile a {
@@ -317,16 +350,33 @@
 }
 
 .elbysodic-network-home-tile__fallback {
-    align-items: end;
+    align-items: flex-start;
     background:
         linear-gradient(135deg, color-mix(in srgb, var(--elbysodic-network-accent) 58%, transparent), transparent 60%),
         var(--chirpui-bg-subtle);
     color: color-mix(in srgb, var(--elbysodic-network-accent) 70%, var(--chirpui-text));
     display: flex;
     font-family: var(--elbysodic-display-font-family);
-    font-size: 4rem;
-    font-weight: 900;
-    padding: 0.8rem;
+    font-size: clamp(4rem, 6vw, 5.3rem);
+    font-weight: 700;
+    isolation: isolate;
+    overflow: hidden;
+    justify-content: flex-end;
+    line-height: 0.9;
+    padding: 3.2rem 1rem 0 0;
+    position: relative;
+}
+
+.elbysodic-network-home-tile__fallback::before {
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 34%, transparent);
+    border-radius: 50%;
+    content: "";
+    inline-size: 54%;
+    inset: 12% 7% auto auto;
+    position: absolute;
+    transform: scaleX(1.3) rotate(-24deg);
+    z-index: -1;
 }
 
 .elbysodic-network-home-tile__shade {
@@ -334,21 +384,19 @@
 }
 
 .elbysodic-network-home-tile__rank {
-    align-items: center;
     align-self: start;
-    background: rgba(5, 7, 10, 0.62);
-    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 42%, rgba(255, 255, 255, 0.26));
-    border-radius: 999px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     color: var(--elbysodic-on-media-text);
-    display: inline-grid;
-    font-size: var(--chirpui-font-xs);
-    font-weight: 850;
-    inline-size: 2.25rem;
-    justify-self: end;
+    display: inline-block;
+    font-family: var(--elbysodic-display-font-family);
+    font-size: 1.35rem;
+    font-weight: 700;
+    justify-self: start;
     line-height: 1;
-    margin: 0.6rem 0.6rem 0 0;
-    min-block-size: 2.25rem;
-    place-items: center;
+    margin: 0.85rem 0 0 1rem;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
     z-index: 1;
 }
 
@@ -356,7 +404,7 @@
     align-self: end;
     display: grid;
     gap: 0.2rem;
-    padding: 0.85rem;
+    padding: 1rem;
     position: relative;
     z-index: 2;
 }
@@ -364,7 +412,7 @@
 .elbysodic-network-home-tile__copy strong {
     color: var(--elbysodic-on-media-text);
     font-family: var(--elbysodic-display-font-family);
-    font-size: 1.18rem;
+    font-size: 1.3rem;
     line-height: 1;
 }
 
@@ -411,15 +459,14 @@
 }
 
 .elbysodic-network-continue-card {
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--elbysodic-network-accent) 10%, transparent), transparent 54%),
-        var(--chirpui-surface);
-    border: 1px solid color-mix(in srgb, var(--elbysodic-network-accent) 35%, var(--chirpui-border));
-    border-radius: var(--chirpui-radius-sm);
+    background: transparent;
+    border: 0;
+    border-block-start: 2px solid color-mix(in srgb, var(--elbysodic-network-accent) 56%, var(--chirpui-border-subtle));
+    border-radius: 0;
     display: grid;
     gap: 0.7rem;
     min-block-size: 12rem;
-    padding: 1rem;
+    padding: 1.25rem 0 0;
 }
 
 .elbysodic-network-continue-card h2 {

@@ -4,8 +4,11 @@ Elbysodic needs icons that make the collapsed sidebar useful without forcing
 hub pages to repeat navigation. The icon system should clarify major product
 rooms and repeated PBP objects, while keeping the expanded sidebar text-first.
 
-The first SVG sprite lives at
-`src/elbysodic/web/static/icons/sidebar.svg`.
+The production sprite lives at `src/elbysodic/web/static/icons/sidebar.svg`.
+Its **Faces & Threads** edition redraws the 33 product symbols below and adds
+19 utilities. See the [family specification and baseline inventory](icons/README.md)
+and [interactive specimen](icons/index.html) for drawing rules, usage, and
+previous/new comparisons. This note owns destination meaning and rail rules.
 
 ## Principles
 
@@ -20,9 +23,10 @@ The first SVG sprite lives at
   plotting, claims, reserves, applications, and director studio operations.
 - Use one icon per concept across the app. Do not create page-local variants.
 - Avoid using the same star, diamond, grid, or gear for unrelated destinations.
-- Keep SVGs monoline, 24x24, `currentColor`, rounded caps/joins, and no text.
-- Let technicolor futurism come from state, color, glow, and motion tokens, not
-  from overly decorative icon shapes.
+- Keep SVGs 24x24, `currentColor`, rounded caps/joins, and free of text. Small
+  filled circular terminals complement the monoline strokes.
+- Use open frames, writing lines, and circular terminals to connect icons to
+  the brand. Let theme tokens carry color and state; keep prose foregrounded.
 
 ## SVG Contract
 
@@ -35,17 +39,21 @@ All sidebar icons use:
 - `stroke-linecap="round"`
 - `stroke-linejoin="round"`
 
-Render icons as decorative when a label is visible:
+Small circular terminals may explicitly use `fill="currentColor"` and
+`stroke="none"`. Render through the shared local macro, which sets an explicit
+viewBox and makes the SVG decorative:
 
-```html
-<svg class="elbysodic-nav-icon" aria-hidden="true">
-  <use href="/elbysodic-static/icons/sidebar.svg#elbysodic-icon-desk"></use>
-</svg>
+```jinja
+{% from "_components/icons.html" import icon %}
+{{ icon("desk", cls="elbysodic-sidebar-svg-icon") }}
 ```
 
-In compact rail mode, every icon-only link needs a stable accessible label via
-`aria-label` and a hover/focus tooltip. Counts should render as a separate badge
-overlay, not as part of the SVG.
+The owning control supplies visible text or an accessible name. In compact
+rail mode, every icon-only link needs a stable accessible label via `aria-label`
+and a hover/focus tooltip. Counts render separately, not inside the SVG.
+Shared sizes are 1rem/1.25rem/1.5rem (16/20/24 pixels at the default root size);
+the sidebar retains 1.35rem. Use the same symbol for each concept across
+navigation, rows, and actions rather than falling back to Unicode glyphs.
 
 ## Primary Rail
 
@@ -54,12 +62,12 @@ default. They are stable, app-owned, and broad enough to survive route cleanup.
 
 | Destination | Icon ID | Visual Metaphor | Notes |
 |---|---|---|---|
-| World Home | `home` | house/gate | Realm landing page: premise, current pulse, orientation, and entry points. |
-| Locations | `locations` | folded map | In-character place navigation: location tree, active scenes, and place context. |
-| Wanted | `wanted` | star hook | Writer-facing entry into wanted hooks, casting, claims, and reserves. Prefer this over a vague `Play` icon. |
+| World Home | `home` | open realm gate | Realm landing page: premise, current pulse, orientation, and entry points. |
+| Locations | `locations` | folded map with a point | In-character place navigation: location tree, active scenes, and place context. |
+| Wanted | `wanted` | open story hook | Writer-facing entry into wanted hooks, casting, claims, and reserves. Prefer this over a vague `Play` icon. |
 | Desk | `desk` | writing surface with pen | Personal attention cockpit: reply queue, inbox, roster, current work. |
 | Studio | `studio` | director diamond with controls | Staff/director operating room. Do not use a generic gear. |
-| Network | `network` | orbiting nodes | Cross-realm or global writer network when it exists as a real route. |
+| Network | `network` | writers in orbit | Cross-realm or global writer network when it exists as a real route. |
 
 Rail visibility is audience-aware:
 
@@ -113,9 +121,11 @@ page duplicating the same route.
 | Notifications | `notifications` | Yes | Notification center when separated from inbox. |
 | Settings | `settings` | No | Generic settings only. Prefer specific icons for Studio pages. |
 
-## Current Route Mapping
+## Destination Route Mapping
 
-Use this mapping as the first pass before route reorganization.
+This maps product concepts to their destination vocabulary; it is not a census
+of the current shell. `src/elbysodic/web/navigation.py` owns active placement,
+visibility, and audience rules. Redrawing an icon does not add a destination.
 
 | Current Route | Label | Icon ID | Sidebar Room |
 |---|---|---|---|

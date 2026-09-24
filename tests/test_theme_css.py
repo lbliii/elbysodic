@@ -59,6 +59,11 @@ def test_cluster_alignment_modifiers_have_owned_layout_rules() -> None:
         theme_css,
         re.DOTALL,
     )
+    assert re.search(
+        r"\.elbysodic-cluster--sm\s*\{[^}]*gap:\s*var\(--elbysodic-space-sm\)",
+        theme_css,
+        re.DOTALL,
+    )
 
     pages_root = Path(__file__).resolve().parents[1] / "src/elbysodic/web/pages"
     modifiers = {
@@ -69,7 +74,7 @@ def test_cluster_alignment_modifiers_have_owned_layout_rules() -> None:
             path.read_text(encoding="utf-8"),
         )
     }
-    assert modifiers <= {"between", "end"}
+    assert modifiers <= {"between", "end", "sm"}
 
 
 def test_director_hero_stacks_before_shell_columns_cramp_it() -> None:

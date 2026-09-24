@@ -716,6 +716,58 @@ def test_seed_hydrates_program_blueprints_into_network_programs() -> None:
     ]
 
 
+def test_seed_covers_each_studio_launch_posture() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+
+    seed_demo_forum(repo)
+
+    rows = connection.execute(
+        """
+        SELECT communities.slug, communities.launch_status,
+               community_discovery_profiles.access_model
+        FROM communities
+        LEFT JOIN community_discovery_profiles
+          ON community_discovery_profiles.community_id = communities.id
+        WHERE communities.slug IN (
+            'x-men-apocalypse',
+            'hp-universe',
+            'jurassic-park-universe',
+            'harbor-society'
+        )
+        """,
+    ).fetchall()
+
+    assert {row["slug"]: row["launch_status"] for row in rows} == {
+        "x-men-apocalypse": "public-preview",
+        "hp-universe": "invite-only",
+        "jurassic-park-universe": "backstage",
+        "harbor-society": "public-preview",
+    }
+    assert {
+        row["slug"]: row["access_model"]
+        for row in rows
+        if row["slug"] in {"hp-universe", "jurassic-park-universe"}
+    } == {
+        "hp-universe": "invite-only",
+        "jurassic-park-universe": "invite-only",
+    }
+    original_premise_launch_statuses = connection.execute(
+        """
+        SELECT launch_status
+        FROM communities
+        WHERE slug IN (
+            'harbor-society', 'signal-creek', 'nocturne-row', 'crownfall',
+            'afterlight-accord', 'brightline', 'emberhouse', 'gaslight-ward',
+            'wayfarer-station'
+        )
+        """,
+    ).fetchall()
+    assert original_premise_launch_statuses
+    assert {row["launch_status"] for row in original_premise_launch_statuses} == {"public-preview"}
+
+
 def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
     connection = connect()
     create_schema(connection)
@@ -742,6 +794,7 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
                     SELECT COUNT(*) AS character_count
                     FROM characters AS owned_characters
                     WHERE owned_characters.community_id = communities.id
+                      AND owned_characters.application_status = 'accepted'
                     GROUP BY owned_characters.membership_id
                 )
             ) AS max_characters_per_membership,
@@ -820,12 +873,74 @@ def test_original_premise_seed_contract_covers_landed_archetypes() -> None:
     }
     assert (
         harbor_board_media["marina-hotel"]
-        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
+        == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.jpg"
     )
     assert (
         harbor_board_media["harbor-ledger"]
-        == "/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg"
+        == "/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.jpg"
     )
+
+
+def test_original_premise_seed_includes_story_polls_and_application_prompts() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+
+    seed_demo_forum(repo)
+
+    first_writer = repo.get_user_by_email("juniper.gray@example.com")
+    for community_slug in seed_module.ORIGINAL_PREMISE_SEED_SLUGS:
+        community = repo.get_community_by_slug(community_slug)
+        interaction_seeds = seed_module.STUDIO_REALM_INTERACTIONS[community_slug]
+        assert len(interaction_seeds) == 1
+
+        interaction_seed = interaction_seeds[0]
+        interaction = repo.get_realm_interaction_by_slug(community.id, interaction_seed.slug)
+        questions = repo.list_realm_interaction_questions(community.id, interaction.id)
+        assert interaction.title == interaction_seed.title
+        assert interaction.interaction_type == interaction_seed.interaction_type
+        assert interaction.placement == interaction_seed.placement
+        assert len(questions) == len(interaction_seed.questions)
+        assert all(
+            repo.list_realm_interaction_options(community.id, question.id) for question in questions
+        )
+
+        writer_membership = repo.get_membership_for_user(community.id, first_writer.id)
+        writer_response = repo.get_realm_interaction_response_for_membership(
+            community.id,
+            interaction.id,
+            writer_membership.id,
+        )
+        expected_responses = 3 if interaction_seed.placement == "general" else 1
+        assert writer_response is not None
+        assert writer_response.character_id == writer_membership.default_character_id
+        assert (
+            repo.count_realm_interaction_responses(community.id, interaction.id)
+            == expected_responses
+        )
+        option_counts = repo.realm_interaction_option_counts(community.id, interaction.id)
+        assert sum(option_counts.values()) == expected_responses
+
+
+def test_xmen_applicant_has_an_answered_entry_prompt() -> None:
+    connection = connect()
+    create_schema(connection)
+    repo = ForumRepository(connection)
+
+    seed = seed_demo_forum(repo)
+
+    applicant = repo.get_user_by_email("mira@example.com")
+    membership = repo.get_membership_for_user(seed.community.id, applicant.id)
+    interaction = repo.get_realm_interaction_by_slug(seed.community.id, "pressure-lane-finder")
+    response = repo.get_realm_interaction_response_for_membership(
+        seed.community.id,
+        interaction.id,
+        membership.id,
+    )
+
+    assert interaction.placement == "application"
+    assert response is not None
+    assert response.character_id == repo.get_character_by_slug(seed.community.id, "kitty-pryde").id
 
 
 def test_original_premise_seed_restores_missing_seeded_board_media() -> None:
@@ -859,7 +974,7 @@ def test_original_premise_seed_restores_missing_seeded_board_media() -> None:
     seed_demo_forum(repo)
 
     restored = repo.get_board_by_slug(harbor.id, "marina-hotel")
-    assert restored.image_url == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg"
+    assert restored.image_url == "/elbysodic-static/seed-media/locations/smalltown-marina-hotel.jpg"
     assert restored.image_alt == "Marina hotel beside dark water and lit windows"
 
 

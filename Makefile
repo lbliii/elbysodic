@@ -32,7 +32,7 @@ help:
 	@echo "  make milo-check      - Verify the typed CLI and MCP contracts"
 	@echo "  make contract-diff   - Diff hypermedia contracts vs $(CONTRACT_DIFF_BASE)"
 	@echo "  make contract-baseline-check - Verify committed contract JSON baseline"
-	@echo "  make check           - Run lint, types, app, Kida, Milo, docs, contract, and client checks"
+	@echo "  make check           - Run lint, format, types, strict app, Kida, Milo, docs, contract baseline, and client checks"
 	@echo "  make ci              - Run the full local gate (includes contract-diff)"
 	@echo "  make docs            - Build the Bengal handbook into public/"
 	@echo "  make docs-check      - Validate, build, and audit the Bengal handbook"
@@ -98,14 +98,14 @@ contract-diff:
 contract-baseline-check:
 	uv run chirp check $(CHIRP_APP) --baseline $(CONTRACT_BASELINE)
 
-milo-check:
-	uv run milo verify src/elbysodic/cli.py
-
 check:
 	uv run python -m elbysodic.checks
 
 ci:
 	uv run python -m elbysodic.checks --full --base $(CONTRACT_DIFF_BASE)
+
+milo-check:
+	uv run milo verify src/elbysodic/cli.py
 
 docs:
 	uv run --group docs --frozen python scripts/bengal_docs.py build

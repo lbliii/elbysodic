@@ -91,7 +91,7 @@
 
 .elbysodic-material-grid {
     display: grid;
-    gap: 1rem;
+    gap: clamp(1.1rem, 2vw, 1.6rem);
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
@@ -197,7 +197,7 @@
 
 .elbysodic-material-card[class*="elbysodic-material-card--"] {
     border-block-start: 0;
-    padding-block-start: 0.7rem;
+    padding-block-start: 1rem;
     position: relative;
 }
 
@@ -484,13 +484,11 @@
 }
 
 .elbysodic-material-card-shell {
-    background:
-        linear-gradient(
-            135deg,
-            color-mix(in srgb, var(--elbysodic-material-variant-accent, var(--chirpui-accent)) 7%, transparent),
-            transparent 48%
-        ),
-        var(--chirpui-surface-elevated);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
 }
 
 .elbysodic-material-card .elbysodic-cluster--between {

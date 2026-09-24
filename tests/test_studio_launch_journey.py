@@ -41,15 +41,16 @@ class _LaunchChecklistParser(HTMLParser):
 
 
 @pytest.mark.parametrize(
-    ("launch_status", "status_copy"),
+    ("launch_status", "status_copy", "expected_readiness_copy"),
     [
-        ("invite-only", "Invite-only"),
-        ("public-preview", "Public preview"),
+        ("invite-only", "Invite-only", "Writers enter by invitation"),
+        ("public-preview", "Public preview", "Public preview is live"),
     ],
 )
 def test_studio_launch_checklist_destinations_and_status_clarity(
     launch_status: str,
     status_copy: str,
+    expected_readiness_copy: str,
 ) -> None:
     async def run() -> None:
         services = create_services(path=":memory:")
@@ -82,10 +83,7 @@ def test_studio_launch_checklist_destinations_and_status_clarity(
             assert current_status.group(1).strip() == status_copy
             assert readiness is not None
             readiness_copy = readiness.group(1).strip()
-            assert readiness_copy == "Ready for invite-only opening" or re.fullmatch(
-                r"\d+ required lanes still backstage",
-                readiness_copy,
-            )
+            assert readiness_copy == expected_readiness_copy
             assert "Use the required lanes below to prepare an invite-only opening." in launch.text
 
             checklist = _LaunchChecklistParser()

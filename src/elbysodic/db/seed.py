@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -24,6 +25,7 @@ from elbysodic.domain.models import (
     Board,
     Character,
     Community,
+    CommunityAccessRequest,
     CommunityMembership,
     Facet,
     Material,
@@ -179,17 +181,60 @@ class OriginalPremiseWriterSeed:
 
 SEED_MEDIA_BASE = "/elbysodic-static/seed-media"
 LOCATION_MEDIA_BASE = f"{SEED_MEDIA_BASE}/locations"
+CHARACTER_AVATAR_BASE = f"{SEED_MEDIA_BASE}/avatars/characters"
+MEMBER_AVATAR_BASE = f"{SEED_MEDIA_BASE}/avatars/members"
+SEED_MEMBER_AVATAR_SLUGS = {
+    "writer@example.com": "writer",
+    "charlie@example.com": "charlie",
+    "mira@example.com": "mira",
+    "alex@example.com": "alex",
+    "moira@example.com": "moira",
+    "simon@example.com": "simon",
+    "inactive@example.com": "inactive",
+    "juniper.gray@example.com": "juniper-gray",
+    "miles.north@example.com": "miles-north",
+    "cass.marlow@example.com": "cass-marlow",
+    "lena.wren@example.com": "lena-wren",
+    "firstface@example.com": "firstface",
+}
 X_MEN_MEDIA = CommunityMediaSeed(
     mark_url=f"{SEED_MEDIA_BASE}/xmen-mark.svg",
     mark_alt="X-Men Apocalypse academy signal mark",
-    hero_url=f"{SEED_MEDIA_BASE}/xmen-hero.svg",
+    hero_url=f"{SEED_MEDIA_BASE}/realms/xmen-hero.jpg",
     hero_alt="Snow-lit academy and B-24 signal lines",
 )
 STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
+    "afterlight-accord": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/afterlight-mark.svg",
+        mark_alt="Afterlight Accord cracked treaty seal",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/afterlight-hero.jpg",
+        hero_alt="A broken treaty halo above a border town at the last light",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+    "brightline": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/brightline-mark.svg",
+        mark_alt="Brightline spotlight and rising star mark",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/brightline-hero.jpg",
+        hero_alt="Awards-night stage with a sealed contract beneath a broken spotlight",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+    "crownfall": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/crownfall-mark.svg",
+        mark_alt="Crownfall divided coronet mark",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/crownfall-hero.jpg",
+        hero_alt="A vacant throne beneath a split crown and rival house banners",
+        hero_treatment="poster",
+        hero_focal_point="top",
+        hero_overlay="medium",
+    ),
     "hp-universe": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/hp-mark.svg",
         mark_alt="HP Universe glass staircase mark",
-        hero_url=f"{SEED_MEDIA_BASE}/hp-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/hp-hero.jpg",
         hero_alt="Glass staircase rising through castle stacks",
         hero_treatment="poster",
         hero_focal_point="top",
@@ -197,7 +242,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "jurassic-park-universe": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/jurassic-mark.svg",
         mark_alt="Jurassic Park Universe operations mark",
-        hero_url=f"{SEED_MEDIA_BASE}/jurassic-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/jurassic-hero.jpg",
         hero_alt="Island operations fence and paddock monitors",
         hero_treatment="background",
         hero_focal_point="bottom",
@@ -206,7 +251,7 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "rl-nyc": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/nyc-mark.svg",
         mark_alt="RL NYC late train mark",
-        hero_url=f"{SEED_MEDIA_BASE}/nyc-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/nyc-hero.jpg",
         hero_alt="Night street windows above a subway platform",
         hero_treatment="background",
         hero_overlay="heavy",
@@ -215,108 +260,174 @@ STUDIO_PROGRAM_MEDIA: dict[str, CommunityMediaSeed] = {
     "rl-small-town": CommunityMediaSeed(
         mark_url=f"{SEED_MEDIA_BASE}/smalltown-mark.svg",
         mark_alt="RL Small Town founders week mark",
-        hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/smalltown-hero.jpg",
         hero_alt="Town square noticeboard and storefront lights",
         hero_treatment="poster",
         hero_focal_point="bottom",
     ),
     "harbor-society": CommunityMediaSeed(
-        mark_url=f"{SEED_MEDIA_BASE}/smalltown-mark.svg",
+        mark_url=f"{SEED_MEDIA_BASE}/harbor-mark.svg",
         mark_alt="Harbor Society shoreline club mark",
-        hero_url=f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
-        hero_alt="Coastal town square lights before a gala",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/harbor-hero.jpg",
+        hero_alt="The Harbor Society club lit for Founders Gala above a moonlit shore",
         hero_treatment="poster",
-        hero_focal_point="bottom",
+        hero_focal_point="center",
     ),
+    "nocturne-row": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/nocturne-mark.svg",
+        mark_alt="Nocturne Row breached treaty crescent",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/nocturne-hero.jpg",
+        hero_alt="A rain-lit city treaty gate beneath a breached crescent",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+    "signal-creek": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/signal-creek-mark.svg",
+        mark_alt="Signal Creek mountain radio beacon",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/signal-creek-hero.jpg",
+        hero_alt="A radio tower sends impossible rings over a mountain town at midnight",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+    "emberhouse": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/emberhouse-mark.svg",
+        mark_alt="Emberhouse trial lantern and rank stone",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/emberhouse-hero.jpg",
+        hero_alt="An empty trial hall with one missing stone on the selection board",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+    "gaslight-ward": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/gaslight-mark.svg",
+        mark_alt="Gaslight Ward occult streetlamp",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/gaslight-hero.jpg",
+        hero_alt="A gas lamp cuts through fog as an occult mark appears in the wet street",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+    "wayfarer-station": CommunityMediaSeed(
+        mark_url=f"{SEED_MEDIA_BASE}/wayfarer-mark.svg",
+        mark_alt="Wayfarer Station signal compass",
+        hero_url=f"{SEED_MEDIA_BASE}/realms/wayfarer-hero.jpg",
+        hero_alt="An orbital station turns its signal lantern toward a missing convoy",
+        hero_treatment="background",
+        hero_focal_point="center",
+        hero_overlay="heavy",
+    ),
+}
+
+
+def _legacy_seed_hero_url(media_seed: CommunityMediaSeed) -> tuple[str, ...]:
+    filename = media_seed.hero_url.rsplit("/", maxsplit=1)[-1].removesuffix(".jpg")
+    return (f"{SEED_MEDIA_BASE}/{filename}.svg",)
+
+
+LEGACY_SEED_HERO_URLS = {
+    "x-men-apocalypse": (f"{SEED_MEDIA_BASE}/xmen-hero.svg",),
+    **{
+        community_slug: _legacy_seed_hero_url(media)
+        for community_slug, media in STUDIO_PROGRAM_MEDIA.items()
+    },
+    "harbor-society": (
+        f"{SEED_MEDIA_BASE}/harbor-hero.svg",
+        f"{SEED_MEDIA_BASE}/smalltown-hero.svg",
+    ),
+}
+LEGACY_SEED_BOARD_IMAGE_URLS = {
+    f"{SEED_MEDIA_BASE}/realms/harbor-hero.jpg": (f"{SEED_MEDIA_BASE}/smalltown-hero.svg",),
 }
 X_MEN_BOARD_MEDIA: dict[str, BoardMediaSeed] = {
     "xavier-institute": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-xavier-institute.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-xavier-institute.jpg",
         "Snowbound academy windows under B-24 signal arcs",
     ),
     "new-york-city": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-new-york-city.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-new-york-city.jpg",
         "Frozen New York street with emergency lights",
     ),
     "mutant-underground": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-mutant-underground.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-mutant-underground.jpg",
         "Underground safehouse platform lit by mutant network signals",
     ),
     "trask-b24-facilities": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-trask-b24-facilities.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-trask-b24-facilities.jpg",
         "Sterile B-24 server lab with containment monitors",
     ),
     "united-nations": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-united-nations.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-united-nations.jpg",
         "Emergency council chamber under blue crisis feeds",
     ),
     "genosha": BoardMediaSeed(
-        f"{LOCATION_MEDIA_BASE}/xmen-genosha.svg",
+        f"{LOCATION_MEDIA_BASE}/xmen-genosha.jpg",
         "Island relay tower broadcasting over a red horizon",
     ),
 }
 STUDIO_PROGRAM_BOARD_MEDIA: dict[str, dict[str, BoardMediaSeed]] = {
     "hp-universe": {
         "castle-corridors": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/hp-castle-corridors.svg",
+            f"{LOCATION_MEDIA_BASE}/hp-castle-corridors.jpg",
             "Castle corridor with shifting stairs and portrait light",
         ),
         "restricted-stacks": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/hp-restricted-stacks.svg",
+            f"{LOCATION_MEDIA_BASE}/hp-restricted-stacks.jpg",
             "Restricted library stacks glowing behind locked rails",
         ),
         "hogsmeade-after-dark": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/hp-hogsmeade-after-dark.svg",
+            f"{LOCATION_MEDIA_BASE}/hp-hogsmeade-after-dark.jpg",
             "Hogsmeade lane with warm windows after dark",
         ),
     },
     "jurassic-park-universe": {
         "isla-nublar": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-isla-nublar.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-isla-nublar.jpg",
             "Rainy island ridge with operations lights beyond the trees",
         ),
         "paddock-twelve": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-paddock-twelve.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-paddock-twelve.jpg",
             "Paddock fence warning lights during a storm",
         ),
         "control-room": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-control-room.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-control-room.jpg",
             "Control room monitors showing paddock alerts",
         ),
         "worker-village": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/jurassic-worker-village.svg",
+            f"{LOCATION_MEDIA_BASE}/jurassic-worker-village.jpg",
             "Worker village bunks under rain and utility lights",
         ),
     },
     "rl-nyc": {
         "brooklyn": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/nyc-brooklyn.svg",
+            f"{LOCATION_MEDIA_BASE}/nyc-brooklyn.jpg",
             "Brooklyn storefronts and apartment windows at night",
         ),
         "queens-night-market": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/nyc-queens-night-market.svg",
+            f"{LOCATION_MEDIA_BASE}/nyc-queens-night-market.jpg",
             "Queens night market stalls under wet string lights",
         ),
         "shift-work": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/nyc-shift-work.svg",
+            f"{LOCATION_MEDIA_BASE}/nyc-shift-work.jpg",
             "Late shift hospital and train lights after midnight",
         ),
     },
     "rl-small-town": {
         "main-street": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-main-street.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-main-street.jpg",
             "Main Street storefronts around the town noticeboard",
         ),
         "lake-road": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-lake-road.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-lake-road.jpg",
             "Lake road cabins and dusk water beyond the trees",
         ),
         "town-hall": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-town-hall.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-town-hall.jpg",
             "Town hall windows over meeting notices and steps",
         ),
         "county-fairgrounds": BoardMediaSeed(
-            f"{LOCATION_MEDIA_BASE}/smalltown-county-fairgrounds.svg",
+            f"{LOCATION_MEDIA_BASE}/smalltown-county-fairgrounds.jpg",
             "County fairgrounds with tents and founders week lights",
         ),
     },
@@ -355,7 +466,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         premise_archetype="original-canon-adjacent-au",
         play_engine="institution-driven",
         lore_aperture="canon-divergent",
-        access_model="public-preview",
+        access_model="invite-only",
         application_model="profile-app",
         age_rating="18+",
         content_rating="3/3/3",
@@ -378,7 +489,7 @@ DISCOVERY_PROFILE_SEEDS: dict[str, DiscoveryProfileSeed] = {
         premise_archetype="strange-frontier",
         play_engine="survival-driven",
         lore_aperture="canon-divergent",
-        access_model="public-preview",
+        access_model="invite-only",
         application_model="profile-app",
         age_rating="18+",
         content_rating="3/3/3",
@@ -746,6 +857,13 @@ ORIGINAL_PREMISE_SEED_SLUGS: tuple[str, ...] = (
     "wayfarer-station",
 )
 
+# Keep the public catalog focused on original-premise realms while leaving
+# legacy genre fixtures available for QA of every Studio opening posture.
+STUDIO_PROGRAM_LAUNCH_STATUSES: dict[str, str] = {
+    "hp-universe": "invite-only",
+    "jurassic-park-universe": "backstage",
+}
+
 ORIGINAL_PREMISE_SEED_ARCHETYPES: dict[str, str] = {
     "harbor-society": "small-town-social-web",
     "signal-creek": "weird-town-mystery",
@@ -756,6 +874,122 @@ ORIGINAL_PREMISE_SEED_ARCHETYPES: dict[str, str] = {
     "emberhouse": "survival-trials",
     "gaslight-ward": "occult-historical-pressure",
     "wayfarer-station": "strange-frontier",
+}
+
+# Each original-premise realm has two signed-out sample scenes. Seed the whole
+# four-post public window plus a fifth realm-only reply to demonstrate the gate.
+ORIGINAL_PREMISE_SAMPLE_REPLIES: dict[
+    str,
+    tuple[tuple[str, str, str], tuple[str, str, str]],
+] = {
+    "harbor-society": (
+        (
+            "The copied ledger page carried a second crease through the committee column. Someone had folded it small enough to hide beneath the gala place cards.",
+            "Maris set the seating chart over the crease. The committee chair looked at the missing name and stopped asking who had brought the copy.",
+            "Celia kept the page. 'I did not say the account was paid. I said the club recorded it that way.'",
+        ),
+        (
+            "Talia found the same donor's initials in the diner fundraiser book, dated the morning the club called the account balanced.",
+            "Celia slid the book across the table. 'Then we take this to the vote before anyone has time to teach the room a different story.'",
+            "August took the new copy and found one signature missing from the vote sheet, too.",
+        ),
+    ),
+    "signal-creek": (
+        (
+            "A second voice named Ira's cabin, then asked him to turn on a light that had been dark since 1998.",
+            "Ira cut the receiver. Outside, the observatory lights stayed off; the signal answered with the tower's old call sign.",
+            "Mae closed the search map over the receiver. The call sign on the channel belonged to her father's patrol car.",
+        ),
+        (
+            "Cal traced all three reports to the same empty stretch of lake road. The missing hour began where every watch had stopped.",
+            "Mae took the map from him. 'Then we search the place that keeps disappearing between one witness and the next.'",
+            "Lena recognized the handwriting on the napkin from the year no one remembered.",
+        ),
+    ),
+    "nocturne-row": (
+        (
+            "The playback stuttered at the same five seconds on every device. In the gap, a treaty sigil appeared on the glass behind the witness.",
+            "Marcel killed the room feed. Ren had already photographed the sigil, and it matched the covenant mark removed from last year's registry.",
+            "Eliana read the sigil as an invitation. The council would call it a threat by morning.",
+        ),
+        (
+            "Jules put the clinic roster beside the warrant; the elder's name was missing from both, but someone had drawn a fresh circle.",
+            "Eliana locked the door. 'We find the witness before the court decides which of those lists counts as a person.'",
+            "Ren opened the warrant. The name inside was the witness they had just promised to find.",
+        ),
+    ),
+    "crownfall": (
+        (
+            "Ivra put the courier's seal beside her coronation notes. The second house crest was pressed beneath the official stamp.",
+            "Seren refused the herald's call for silence. The flame stayed black while every claimant leaned toward the mark.",
+            "Maelor ordered the seal kept from the claimants. The courier had already seen the house mark.",
+        ),
+        (
+            "Torren compared the soot with the coronation record. It matched the black flame, not the tower fire, and the courier saw him notice.",
+            "Maelor closed the courtyard doors. 'We decide whether this is evidence or bait before the survivor meets the houses.'",
+            "Ivra returned to the record and found the ash had fallen before the tower burned.",
+        ),
+    ),
+    "afterlight-accord": (
+        (
+            "Sel read the second impression beneath the Accord seal; it matched a treaty mark the archive had claimed was burned.",
+            "Orin covered the ledger. The council guard had seen enough to stop calling the name a mistake.",
+            "Maia searched the prisoner's sleeve for an order. Instead she found the academy's red attendance mark.",
+        ),
+        (
+            "Kesh found the prisoner's name in a winter attendance roll from a year before the seal was made.",
+            "Maia took the roll from him. 'Someone expected him to return. The question is who kept his place open.'",
+            "Sel wrote the prisoner's name in the empty line. By morning, the ink had bled through to the next page.",
+        ),
+    ),
+    "brightline": (
+        (
+            "Dahlia pulled the cue log against the leaked clause. Viv's credentials were used before her contract ever reached the stage.",
+            "Viv stepped out of the camera light. 'If they put my signature under this, then somebody wants tonight to become my confession.'",
+            "Rex unplugged the cue system. The prompt vanished from the stage, but every teleprompter in the building kept it.",
+        ),
+        (
+            "Kit lifted a third contract from the Blue Room. It was signed by no one, but carried the only clause all three drafts shared.",
+            "Rex passed it to Viv without opening the press-room door. The line beneath the clause named the person who had copied it.",
+            "Dahlia found the press-room copy already corrected. Someone had removed the only line that pointed to her.",
+        ),
+    ),
+    "emberhouse": (
+        (
+            "Maeve compared the roster timestamp with the committee minutes. The changes had been filed before the candidates' scores were counted.",
+            "Nara took the pin from her own name. 'If the list is wrong, no one starts the trial until we know who it protects.'",
+            "Cassian moved the unaltered roster to the infirmary wall. Candidates started taking pictures before staff could pull it down.",
+        ),
+        (
+            "Ion found the safety order clipped beneath the sponsor's seating chart. The altered tier had a second signature.",
+            "Cassian held the trial bell. One more name had moved since morning, and this time it belonged to the instructor who signed the order.",
+            "Maeve lowered the bell when the instructor reached for the order. The trial had become evidence.",
+        ),
+    ),
+    "gaslight-ward": (
+        (
+            "Mira brought the missing page from the compositor's room. Its ink was still wet, though the press had stopped for the night.",
+            "Ada matched the handwriting against the three statements. 'This witness knew about the door before the police found the room.'",
+            "Lucien checked the back of the wet page. The type had left an impression there before the story was written.",
+        ),
+        (
+            "Edwin set the court copy beside the fourth account. The witness had used the same wrong date in both, down to the crossed-out month.",
+            "Lucien stopped the clerk before the page could be entered. 'Read the name at the bottom. The dead woman is listed as the witness.'",
+            "Mira read the name again; in the old register, that signature belonged to someone declared dead.",
+        ),
+    ),
+    "wayfarer-station": (
+        (
+            "Sol found frost on the empty docking collar. The convoy's clearance had been logged while the outer airlock was still sealed.",
+            "Mara held the signal transcript beside the manifest. Both carried the arrival code for a ship no one had ever seen.",
+            "Jace found the same arrival code etched into the dock seal. It had been stamped from the inside.",
+        ),
+        (
+            "Nima pulled the second ledger from the filter cage; its coordinates pointed to the far side of the station hull.",
+            "Jace shut down the ration count. 'If those numbers are real, the convoy is already here—and someone filed the airlock as empty.'",
+            "Sol saved the air record to the station's offline ledger. The system logged an unregistered crew member in the bay.",
+        ),
+    ),
 }
 
 ORIGINAL_PREMISE_WRITER_SEEDS: tuple[OriginalPremiseWriterSeed, ...] = (
@@ -774,8 +1008,8 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "x-men-apocalypse",
         "starlane",
         "rogue",
-        "Ordinary writer with accepted faces, active-face queue, and scene posting.",
-        "/my/threads",
+        "Writer with an active-face reserve, a ready-to-scene plot handoff, and scene posting.",
+        "/plotting",
     ),
     SeedPersona(
         "xmen_staff",
@@ -805,7 +1039,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "x-men-apocalypse",
         "charlie",
         "charles-xavier",
-        "Wanted, plotter, plotting-room, and notification counterparty checks.",
+        "Character plot-hook interest, private plotting rooms, and notification handoffs.",
         "/plotting",
     ),
     SeedPersona(
@@ -815,7 +1049,7 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "x-men-apocalypse",
         "mira",
         "kitty-pryde",
-        "Submitted application and writer-side revision workflow.",
+        "Structured application with review history, answered entry prompt, and prospective-face handoff.",
         "/applications",
     ),
     SeedPersona(
@@ -845,8 +1079,8 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "hp-universe",
         "starlane",
         "rowan-ash",
-        "Same login as X-Men writer, but with director powers in another community.",
-        "/studio",
+        "Invite-only Studio Launch posture with director powers in another community.",
+        "/studio/launch",
     ),
     SeedPersona(
         "jp_director",
@@ -855,8 +1089,8 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "jurassic-park-universe",
         "starlane",
         "lena-marquez",
-        "Director controls for a visually different action-survival community.",
-        "/studio",
+        "Backstage Studio Launch posture for a visually different action-survival realm.",
+        "/studio/launch",
     ),
     SeedPersona(
         "nyc_writer",
@@ -885,8 +1119,18 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "harbor-society",
         "starlane",
         "maris-vale",
-        "Director view for a coastal town where gala season turns favors into leverage.",
+        "Coastal gala pressure, public writer entry, and face-application review.",
         "/studio/discovery",
+    ),
+    SeedPersona(
+        "harbor_writer",
+        "Harbor Society invited writer",
+        "juniper.gray@example.com",
+        "harbor-society",
+        "junipergray",
+        "celia-fairbourne",
+        "Accepted writer identity with direct and interest-linked face applications from a wanted hook.",
+        "/desk",
     ),
     SeedPersona(
         "signal_director",
@@ -897,6 +1141,16 @@ SEED_PERSONAS: tuple[SeedPersona, ...] = (
         "ira-bell",
         "Director view for a mountain town following a signal nobody can explain.",
         "/studio/discovery",
+    ),
+    SeedPersona(
+        "signal_new_writer",
+        "Signal Creek new writer",
+        "firstface@example.com",
+        "signal-creek",
+        "newarrival",
+        "",
+        "Writer Desk first-face entry plus a pending cross-realm request to Harbor Society.",
+        "/desk",
     ),
     SeedPersona(
         "nocturne_director",
@@ -1105,7 +1359,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: The Glass Staircase",
+                "The Glass Staircase",
                 "premise",
                 "A Hogwarts mystery where the castle is showing students futures nobody has chosen yet.",
                 (
@@ -1120,7 +1374,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "current-event",
-                "Current Event: No Reflection",
+                "No Reflection",
                 "event",
                 "One student has gone missing, and every portrait remembers a different last sighting.",
                 (
@@ -1276,7 +1530,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Soft Opening",
+                "Soft Opening",
                 "premise",
                 "Jurassic Park is preparing a private preview while the island starts keeping secrets.",
                 (
@@ -1291,7 +1545,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "paddock-twelve-incident",
-                "Current Event: Paddock Twelve",
+                "Paddock Twelve",
                 "event",
                 "A juvenile raptor has vanished from a sealed paddock during a tropical storm.",
                 (
@@ -1441,7 +1695,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Rent Week",
+                "Rent Week",
                 "premise",
                 "A grounded NYC ensemble where money, love, ambition, and friendship collide in public.",
                 (
@@ -1455,7 +1709,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "current-event",
-                "Current Event: The Building Meeting",
+                "The Building Meeting",
                 "event",
                 "A rent hike turns one apartment building into the center of everyone's week.",
                 (
@@ -1629,7 +1883,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Founder's Week",
+                "Founder's Week",
                 "premise",
                 "A small-town ensemble where celebration keeps digging up history.",
                 (
@@ -1643,7 +1897,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "current-event",
-                "Current Event: The Time Capsule",
+                "The Time Capsule",
                 "event",
                 "A buried town time capsule contains a letter that makes three families nervous.",
                 (
@@ -1755,7 +2009,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "White jackets, old money, and a membership vote that turns manners into weapons.",
                 "Club politics, social climbing, charitable pressure, private conversations, and public exits.",
-                image_url="/elbysodic-static/seed-media/smalltown-hero.svg",
+                image_url="/elbysodic-static/seed-media/realms/harbor-hero.jpg",
                 image_alt="Coastal club terrace under warm evening light",
                 image_treatment="background",
             ),
@@ -1765,7 +2019,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Boutiques, campaign flyers, school boosters, and errands that become alliances.",
                 "Everyday town scenes for work ties, rivals, returns, and public reputation.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-main-street.jpg",
                 image_alt="Small-town main street with string lights",
                 image_treatment="background",
             ),
@@ -1775,7 +2029,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Guest books, quiet bars, investor meetings, and names written down wrong on purpose.",
                 "Hotel, tourism, visiting family, investor, and illicit-meeting scenes.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-marina-hotel.jpg",
                 image_alt="Marina hotel beside dark water and lit windows",
                 image_treatment="background",
             ),
@@ -1785,7 +2039,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "Minutes, permits, donor plaques, and public kindness sharpened into leverage.",
                 "Council scenes, public hearings, campaign pressure, and old-family bargaining.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-town-hall.jpg",
                 image_alt="Town hall with a festival banner",
                 image_treatment="background",
             ),
@@ -1795,7 +2049,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
                 "location",
                 "A weekly paper with a printer that overheats whenever the town gets interesting.",
                 "Reporter scenes, anonymous tips, editorials, public scandals, and local history.",
-                image_url="/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.svg",
+                image_url="/elbysodic-static/seed-media/locations/smalltown-harbor-ledger.jpg",
                 image_alt="Harbor Ledger office with stacked newspapers and warm window light",
                 image_treatment="background",
             ),
@@ -1810,7 +2064,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: The Shoreline Vote",
+                "The Shoreline Vote",
                 "premise",
                 "A coastal town where club access, civic ritual, and family history make every favor public.",
                 (
@@ -1825,7 +2079,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "founders-gala",
-                "Current Chapter: Founders Gala",
+                "Founders Gala",
                 "event",
                 "A Shoreline Club membership vote collides with a charity-accounting scandal.",
                 (
@@ -2042,7 +2296,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: The Blank Year",
+                "The Blank Year",
                 "premise",
                 "Signal Creek is a mountain town where an impossible broadcast keeps reopening an old disappearance.",
                 (
@@ -2057,7 +2311,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "midnight-signal",
-                "Current Chapter: Midnight Signal",
+                "Midnight Signal",
                 "event",
                 "During a meteor shower, the observatory receives a live broadcast from a hiker missing for twelve hours.",
                 (
@@ -2237,7 +2491,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Treaty City",
+                "Treaty City",
                 "premise",
                 "Nocturne Row is a city where supernatural visibility, law, nightlife, and old covenants are failing at once.",
                 (
@@ -2252,7 +2506,7 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
             ),
             BlueprintMaterial(
                 "treaty-breach",
-                "Current Chapter: Treaty Breach",
+                "Treaty Breach",
                 "event",
                 "A public attack outside a nightclub leaves a council elder missing and every faction blaming the wrong witness.",
                 (
@@ -2432,14 +2686,14 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: A Crown Without Witness",
+                "A Crown Without Witness",
                 "premise",
                 "A monarch dies before naming an heir, and every institution claims the right to finish the sentence.",
                 "The capital is full of people who cannot wait for certainty: houses, mages, clergy, merchants, rebels, soldiers, hostages, and servants all have reasons to care who becomes legitimate, and none of them can win alone.",
             ),
             BlueprintMaterial(
                 "broken-coronation",
-                "Current Chapter: Broken Coronation",
+                "Broken Coronation",
                 "event",
                 "The coronation is interrupted by a magical omen and a border raid timed too well to be chance.",
                 "The opening chapter starts when the crown flame turns black during Seren's public oath. Before the court can decide whether it means rejection, a border tower falls and the first survivor names a noble house as traitor. Playable lanes include court accusations, temple inquiry, mage evidence, hostage leverage, refugee arrivals, and merchants deciding which claimant gets grain.",
@@ -2612,14 +2866,14 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: The Old Ending Broke",
+                "The Old Ending Broke",
                 "premise",
                 "The Accord survived the catastrophe, but nobody agrees what victory was supposed to cost.",
                 "People inherit duties, symbols, rivalries, powers, debts, and expectations from a world that no longer agrees on what happened. Some families call that honor. Some call it a sentence.",
             ),
             BlueprintMaterial(
                 "accord-seal-fails",
-                "Current Chapter: The Seal Fails",
+                "The Seal Fails",
                 "event",
                 "The Accord seal breaks during a remembrance ceremony and frees one prisoner history says died.",
                 "The opening chapter brings public panic, council hearings, rebel movement, archive contradictions, and old names returning to circulation. Heirs, exiles, monsters, archivists, reformers, runners, officials, and people whose inherited story no longer fits all have reasons to be there.",
@@ -2792,14 +3046,14 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Image Has Teeth",
+                "Image Has Teeth",
                 "premise",
                 "Brightline is a fame and industry drama where public image, creative work, and private compromise become leverage.",
                 "Studios, clubs, magazines, patrons, lawyers, stylists, assistants, performers, producers, and gossip writers all move through the same city circuit. Careers turn on who gets seen, who gets protected, and who pays for the version of the story that sells.",
             ),
             BlueprintMaterial(
                 "awards-night-sabotage",
-                "Current Chapter: Awards Night Sabotage",
+                "Awards Night Sabotage",
                 "event",
                 "An awards-night performance is sabotaged minutes before a leaked contract hits the press.",
                 "The opening chapter starts with a failed spotlight, a missing backing track, and a contract leak that suggests a career-making deal was rigged. Playable lanes include backstage accusations, crisis PR, patron pressure, legal threats, magazine deadlines, and exes deciding whether to protect each other.",
@@ -2972,14 +3226,14 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Trial Season",
+                "Trial Season",
                 "premise",
                 "Emberhouse is a trial academy where rank, scarcity, loyalty, and adult agendas decide who gets protected.",
                 "Candidates train inside a house system that claims trials build leadership. The real story is messier: sponsors, rank boards, scarce supplies, old house debts, safety limits, instructors with competing ethics, and candidates deciding what winning should cost.",
             ),
             BlueprintMaterial(
                 "tampered-selection",
-                "Current Chapter: Tampered Selection",
+                "Tampered Selection",
                 "event",
                 "The first trial roster is altered before dawn, moving three candidates into the wrong danger tier.",
                 "Opening scenes can start in the house hall, supply depot, infirmary, council chamber, or trial grounds. The question is not only who cheated. It is who benefits when the academy calls the result tradition.",
@@ -3152,14 +3406,14 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Respectability And Rot",
+                "Respectability and Rot",
                 "premise",
                 "Gaslight Ward is a period city where class, crime, reform, newspapers, etiquette, and occult societies collide.",
                 "The city runs on public respectability and private bargains. Every institution has a front room and a cellar: society houses, newspapers, police courts, factories, theaters, hospitals, and occult circles all trade favors while pretending not to know one another.",
             ),
             BlueprintMaterial(
                 "impossible-murder",
-                "Current Chapter: Impossible Murder",
+                "Impossible Murder",
                 "event",
                 "A society-season debut is interrupted by a murder that happened in a locked room full of witnesses.",
                 "Opening scenes can begin with witness statements, newspaper panic, society damage control, factory rumors, occult debts, medical contradictions, or police pressure. The mystery is playable because every class saw a different version of the room.",
@@ -3332,14 +3586,14 @@ STUDIO_NETWORK_PROGRAMS: tuple[ProgramBlueprint, ...] = (
         materials=(
             BlueprintMaterial(
                 "premise",
-                "Premise: Edge Of The Chart",
+                "Edge of the Chart",
                 "premise",
                 "Wayfarer Station survives at the edge of known space, where fragile law, limited supplies, and contested memory shape every bargain.",
                 "The station is too remote to be comfortable and too useful to abandon. Crew, smugglers, medics, engineers, envoys, archivists, performers, quartermasters, station-born guides, and travelers all depend on systems that were never meant to hold this many secrets.",
             ),
             BlueprintMaterial(
                 "missing-convoy",
-                "Current Chapter: Missing Convoy",
+                "Missing Convoy",
                 "event",
                 "A supply convoy vanishes after transmitting an encrypted signal from outside the chart.",
                 "The opening chapter brings docking delays, ration math, corporate audits, rescue arguments, archived maps, medical exposure risks, and one signal that may be a distress call or an invitation.",
@@ -3606,6 +3860,339 @@ STUDIO_REALM_INTERACTIONS: dict[str, tuple[InteractionSeed, ...]] = {
                             "festival",
                             "The Founder's Week parade",
                             "Floats, sponsors, old grudges, and everyone outside.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "harbor-society": (
+        InteractionSeed(
+            slug="founders-gala-next-reveal",
+            title="Founders Gala: The Next Reveal",
+            interaction_type="poll",
+            placement="general",
+            summary="Choose which detail should turn the gala's seating meeting into a public problem.",
+            body=(
+                "The ledger story is already moving through the Shoreline Club. Pick the detail "
+                "that would make the next scene hardest to keep polite."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "What should surface before the guest list is final?",
+                    "Choose the pressure you would most like to write into the Founders Gala.",
+                    (
+                        InteractionOptionSeed(
+                            "changed-seating-card",
+                            "A seating card changed after printing",
+                            "One guest has been moved beside the person they were avoiding.",
+                        ),
+                        InteractionOptionSeed(
+                            "auction-provenance",
+                            "An auction lot with no clean provenance",
+                            "A donor recognizes the object and wants it withdrawn quietly.",
+                        ),
+                        InteractionOptionSeed(
+                            "pier-parcel",
+                            "The pier parcel appears on the lease",
+                            "The club's private debt now has a very public address.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "signal-creek": (
+        InteractionSeed(
+            slug="old-feed-first-impression",
+            title="The Old Feed: First Impression",
+            interaction_type="survey",
+            placement="application",
+            summary="A low-stakes entry prompt for the kind of mystery that pulls a new face toward the old signal.",
+            body=(
+                "There is no correct theory. Use the answer as a first scene lead, then let the "
+                "writers decide what the evidence means."
+            ),
+            result_mode="confirmation",
+            questions=(
+                InteractionQuestionSeed(
+                    "Which detail would make your face stay after the broadcast ends?",
+                    "Choose the clue that gives you the clearest first scene.",
+                    (
+                        InteractionOptionSeed(
+                            "impossible-road",
+                            "A road that will not exist until next month",
+                            "The map agrees with the voice, not with the town's records.",
+                        ),
+                        InteractionOptionSeed(
+                            "familiar-voice",
+                            "A voice using a family nickname",
+                            "Someone knows a private name they should never have heard.",
+                        ),
+                        InteractionOptionSeed(
+                            "missing-hour",
+                            "A timestamp skipping the same hour",
+                            "Every copy loses the same twelve minutes.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "nocturne-row": (
+        InteractionSeed(
+            slug="emberline-public-fallout",
+            title="Emberline: Public Fallout",
+            interaction_type="poll",
+            placement="general",
+            summary="Pick the next public pressure point after the nightclub footage breaks containment.",
+            body=(
+                "The missing elder appears in the footage, but the clip does not explain who "
+                "edited it or why the treaty failed on camera."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "Where should the fallout become impossible to ignore?",
+                    "Choose the public lane you would most like to write next.",
+                    (
+                        InteractionOptionSeed(
+                            "treaty-hearing",
+                            "An emergency treaty hearing",
+                            "Council members argue over which protections still count.",
+                        ),
+                        InteractionOptionSeed(
+                            "night-clinic",
+                            "A night clinic with a missing intake page",
+                            "The footage has left someone hurt and a witness unaccounted for.",
+                        ),
+                        InteractionOptionSeed(
+                            "press-line",
+                            "A press line outside Covenant Hall",
+                            "Everyone has a quote ready; nobody agrees on what happened.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "crownfall": (
+        InteractionSeed(
+            slug="black-crown-flame-next-scene",
+            title="The Black Crown Flame: Next Scene",
+            interaction_type="poll",
+            placement="general",
+            summary="Choose where the broken oath and the border attack collide next.",
+            body=(
+                "The crown flame turned black during Seren's oath. A border tower fell before "
+                "the court could agree on what the omen meant."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "Where should the first contested evidence surface?",
+                    "Choose a stage for the next succession beat.",
+                    (
+                        InteractionOptionSeed(
+                            "court-floor",
+                            "On the court floor",
+                            "A public accusation turns ceremony into a vote of confidence.",
+                        ),
+                        InteractionOptionSeed(
+                            "border-return",
+                            "With the border survivors",
+                            "The first witness arrives with a house name and a demand.",
+                        ),
+                        InteractionOptionSeed(
+                            "temple-archive",
+                            "Inside the temple archive",
+                            "An old succession record contradicts the story everyone repeats.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "afterlight-accord": (
+        InteractionSeed(
+            slug="accord-after-the-ending",
+            title="After The Ending: An Accord Check-In",
+            interaction_type="survey",
+            placement="application",
+            summary="Point a new face toward the part of the old peace they cannot leave alone.",
+            body=(
+                "Choose a story pressure, not a fixed allegiance. The old ending can shape a "
+                "face without deciding who they become."
+            ),
+            result_mode="confirmation",
+            questions=(
+                InteractionQuestionSeed(
+                    "Which unfinished duty would your face pick up first?",
+                    "Use this as a starting point for a first scene or wanted connection.",
+                    (
+                        InteractionOptionSeed(
+                            "archive-gap",
+                            "Find the name missing from the archive",
+                            "The official history leaves one person out of the victory.",
+                        ),
+                        InteractionOptionSeed(
+                            "gate-run",
+                            "Open a route the council closed",
+                            "A border family needs passage before the next vote.",
+                        ),
+                        InteractionOptionSeed(
+                            "old-vow",
+                            "Revisit a promise made during the war",
+                            "The oath was kept, but the person it was meant to protect is gone.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "brightline": (
+        InteractionSeed(
+            slug="awards-week-next-headline",
+            title="Awards Week: The Next Headline",
+            interaction_type="poll",
+            placement="general",
+            summary="Choose which awards-week complication puts the clean public story under pressure.",
+            body=(
+                "The contract leak is moving faster than the official statement. Vote for the "
+                "scene that should pull the industry into the open."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "Where should the next Brightline scene begin?",
+                    "Pick the room with the most useful witnesses.",
+                    (
+                        InteractionOptionSeed(
+                            "green-room",
+                            "In the green room before the award",
+                            "A missing credit turns a congratulations speech into a choice.",
+                        ),
+                        InteractionOptionSeed(
+                            "press-line",
+                            "On the press line",
+                            "One question makes the publicist abandon the approved script.",
+                        ),
+                        InteractionOptionSeed(
+                            "charity-auction",
+                            "At the charity auction",
+                            "A bidder knows who paid to keep the contract quiet.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "emberhouse": (
+        InteractionSeed(
+            slug="trial-pressure-check-in",
+            title="Trial Pressure Check-In",
+            interaction_type="survey",
+            placement="application",
+            summary="Give a new candidate a clear, consent-aware opening lane into the trial season.",
+            body=(
+                "This is a writing preference, not a safety waiver. Major pressure beats still "
+                "need clear opt-in between the writers involved."
+            ),
+            result_mode="confirmation",
+            questions=(
+                InteractionQuestionSeed(
+                    "Which trial pressure sounds playable for your face?",
+                    "Pick one lane to help staff offer a useful first scene.",
+                    (
+                        InteractionOptionSeed(
+                            "sponsor-terms",
+                            "A sponsor with complicated terms",
+                            "The support is real, and so is the expectation attached to it.",
+                        ),
+                        InteractionOptionSeed(
+                            "team-choice",
+                            "Choosing who to protect on a team",
+                            "The trial makes cooperation matter more than rank.",
+                        ),
+                        InteractionOptionSeed(
+                            "public-score",
+                            "A public score that misses the point",
+                            "The board rewards a result the candidate does not respect.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "gaslight-ward": (
+        InteractionSeed(
+            slug="ward-inquiry-next-lead",
+            title="The Ward Inquiry: Next Lead",
+            interaction_type="poll",
+            placement="general",
+            summary="Choose where the impossible murder inquiry finds its next credible witness.",
+            body=(
+                "A murder with no honest explanation is still a human case. Pick the lead that "
+                "could make the next room feel dangerous."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "Which lead should reach the Ward before dawn?",
+                    "Choose the investigation lane you want to see opened.",
+                    (
+                        InteractionOptionSeed(
+                            "newspaper-proof",
+                            "A newspaper proof with the wrong date",
+                            "The night editor recognizes a name in a photograph not yet taken.",
+                        ),
+                        InteractionOptionSeed(
+                            "court-ledger",
+                            "A police-court ledger with a missing page",
+                            "The clerk remembers who asked for the file to stay closed.",
+                        ),
+                        InteractionOptionSeed(
+                            "factory-shift",
+                            "A factory shift that ended before it began",
+                            "The foreman swears the night crew never came in.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    "wayfarer-station": (
+        InteractionSeed(
+            slug="missing-convoy-first-shortage",
+            title="The Missing Convoy: First Shortage",
+            interaction_type="poll",
+            placement="general",
+            summary="Decide which shortage forces the station's first hard bargain.",
+            body=(
+                "The convoy is missing and the supply ledger is already wrong. Choose the "
+                "pressure that gives the crew a decision to make together."
+            ),
+            result_mode="aggregate",
+            questions=(
+                InteractionQuestionSeed(
+                    "What should the station ration first?",
+                    "Pick the system that makes the most interesting shared problem.",
+                    (
+                        InteractionOptionSeed(
+                            "water",
+                            "Clean water",
+                            "A delivery is short, and nobody agrees which module can wait.",
+                        ),
+                        InteractionOptionSeed(
+                            "filters",
+                            "Air filters",
+                            "The reserve clock is shorter than the marshal's public estimate.",
+                        ),
+                        InteractionOptionSeed(
+                            "comms",
+                            "Long-range communications",
+                            "The only working relay is carrying a message from the missing convoy.",
                         ),
                     ),
                 ),
@@ -4520,6 +5107,25 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             "Sleeping Star",
         ),
     )
+    membership = _ensure_seed_membership_avatar(repo, community.id, membership, user.email)
+    charlie_membership = _ensure_seed_membership_avatar(
+        repo, community.id, charlie_membership, charlie_user.email
+    )
+    mira_membership = _ensure_seed_membership_avatar(
+        repo, community.id, mira_membership, mira_user.email
+    )
+    alex_membership = _ensure_seed_membership_avatar(
+        repo, community.id, alex_membership, alex_user.email
+    )
+    moira_membership = _ensure_seed_membership_avatar(
+        repo, community.id, moira_membership, moira_user.email
+    )
+    simon_membership = _ensure_seed_membership_avatar(
+        repo, community.id, simon_membership, simon_user.email
+    )
+    inactive_membership = _ensure_seed_membership_avatar(
+        repo, community.id, inactive_membership, inactive_user.email
+    )
     repo.connection.execute(
         """
         UPDATE community_memberships
@@ -5188,6 +5794,12 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         DISCOVERY_PROFILE_SEEDS.get("x-men-apocalypse"),
     )
     _seed_realm_interactions(repo, community.id, DEFAULT_REALM_INTERACTIONS)
+    _seed_realm_interaction_responses(
+        repo,
+        community.id,
+        DEFAULT_REALM_INTERACTIONS,
+        (mira_membership,),
+    )
     _seed_intake_claims(
         repo,
         community.id,
@@ -5204,7 +5816,23 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         trask=trask,
     )
     _seed_plot_hooks(repo, community.id, facets, rogue=rogue, magneto=magneto)
+    _seed_current_casting_handoffs(
+        repo,
+        community.id,
+        rogue=rogue,
+        xavier=xavier,
+        trask=trask,
+        prospective_membership=mira_membership,
+    )
     _seed_character_claims(repo, community.id, DEFAULT_CLAIMS)
+    _seed_xmen_application_review(
+        repo,
+        community.id,
+        applicant_membership=mira_membership,
+        applicant_character=kitty,
+        staff_membership=moira_membership,
+        staff_character=moira,
+    )
 
     welcome = _get_or_create(
         lambda: repo.get_thread_by_slug(
@@ -5689,7 +6317,29 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
         community.id,
         ooc_intro.id,
         xavier.id,
-        "Charlie here. I am usually available for plotting in the evenings and cannot resist a complicated mentor scene.",
+        (
+            "Charlie here. @mira, I am usually available for plotting in the evenings and "
+            "cannot resist a complicated mentor scene. If you want, we can start with "
+            "the part of the story neither of our characters has solved yet."
+        ),
+        replace_bodies=(
+            "Charlie here. I am usually available for plotting in the evenings and cannot resist a complicated mentor scene.",
+        ),
+    )
+    ooc_mention = next(
+        post
+        for post in repo.list_posts(community.id, ooc_intro.id)
+        if post.author_character_id == xavier.id and "@mira" in post.body
+    )
+    _ensure_notification(
+        repo,
+        community.id,
+        membership_id=mira_membership.id,
+        kind="mention",
+        thread_id=ooc_intro.id,
+        post_id=ooc_mention.id,
+        actor_membership_id=charlie_membership.id,
+        actor_character_id=xavier.id,
     )
 
     cerebro = _get_or_create(
@@ -6051,6 +6701,23 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             if program.slug in ORIGINAL_PREMISE_SEED_SLUGS
             else {}
         )
+        membership = _ensure_seed_membership_avatar(
+            repo,
+            community.id,
+            membership,
+            user.email,
+        )
+        for writer_seed in ORIGINAL_PREMISE_WRITER_SEEDS:
+            writer_membership = original_writer_memberships.get(writer_seed.username)
+            if writer_membership is not None:
+                _ensure_seed_membership_avatar(
+                    repo,
+                    community.id,
+                    writer_membership,
+                    writer_seed.email,
+                )
+        if program.slug == "signal-creek":
+            _seed_first_face_writer_membership(repo, community)
         preferred_defaults: dict[int, int] = {}
         default_character: Character | None = None
         for index, character_seed in enumerate(program.characters):
@@ -6145,6 +6812,31 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
                 is_featured=index == 1,
             )
             materials_by_slug[material_seed.slug] = material
+        if program.slug == "harbor-society":
+            _ensure_material(
+                repo,
+                community.id,
+                "founders-gala-third-copy",
+                "The Third Copy",
+                material_type="event",
+                summary=(
+                    "A third copy of the charity ledger turns up while the Founders Gala "
+                    "seating chart is being reset."
+                ),
+                body=(
+                    "At 8:12 p.m., while a server replaces place cards for the Founders Gala, "
+                    "a third copy of last year's charity ledger slides from the printer tray. "
+                    "The total matches the private debt on Maris Vale's page, but the initials "
+                    "belong to no one willing to claim them.\n\n"
+                    "The page puts the club secretary, gala chair, and Harbor Ledger editor in "
+                    "the same room for ten minutes after closing. No one can agree who left "
+                    "first.\n\n"
+                    "Trace the print job, ask Maris and August to compare copies, or press the "
+                    "committee for its original minutes."
+                ),
+                status="draft",
+                sort_order=100,
+            )
         for wanted_seed in program.wanted:
             related_material_id = None
             if wanted_seed.related_material_slug:
@@ -6175,6 +6867,22 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
             community.id,
             STUDIO_REALM_INTERACTIONS.get(program.slug, ()),
         )
+        if program.slug in ORIGINAL_PREMISE_SEED_SLUGS:
+            interaction_respondents = tuple(
+                repo.get_membership(
+                    community.id,
+                    original_writer_memberships[writer_seed.username].id,
+                )
+                for writer_seed in ORIGINAL_PREMISE_WRITER_SEEDS
+            )
+        else:
+            interaction_respondents = (repo.get_membership(community.id, membership.id),)
+        _seed_realm_interaction_responses(
+            repo,
+            community.id,
+            STUDIO_REALM_INTERACTIONS.get(program.slug, ()),
+            interaction_respondents,
+        )
         _seed_intake_claims(
             repo,
             community.id,
@@ -6184,6 +6892,63 @@ def _seed_studio_network_programs(repo: ForumRepository, user: User) -> None:
         _seed_discovery_profile(repo, community.id, DISCOVERY_PROFILE_SEEDS.get(program.slug))
         if program.slug in ORIGINAL_PREMISE_SEED_SLUGS:
             _seed_original_premise_depth(repo, community, program, membership)
+        if program.slug == "harbor-society":
+            _seed_harbor_writer_entry(
+                repo,
+                community,
+                director_membership=membership,
+                writer_membership=original_writer_memberships["junipergray"],
+            )
+            _seed_harbor_face_application(
+                repo,
+                community,
+                writer_membership=original_writer_memberships["junipergray"],
+            )
+            _seed_harbor_interest_application(
+                repo,
+                community,
+                writer_membership=original_writer_memberships["junipergray"],
+            )
+            first_face_writer = _get_or_create(
+                lambda: repo.get_user_by_email("firstface@example.com"),
+                lambda: repo.create_user("firstface@example.com", "dev-password-hash"),
+            )
+            first_face_request = _get_or_create(
+                lambda community=community, first_face_writer=first_face_writer: (
+                    _seed_access_request_for_email(
+                        repo,
+                        community.id,
+                        first_face_writer.email,
+                    )
+                ),
+                lambda community=community, first_face_writer=first_face_writer: (
+                    repo.create_community_access_request(
+                        community.id,
+                        email=first_face_writer.email,
+                        display_name="Rory Bell",
+                        face_concept=(
+                            "A Shoreline Club banquet runner who caught two different names "
+                            "on the Founders Gala place cards."
+                        ),
+                        wanted_hook="Reporter source at the club",
+                        notes=(
+                            "Rory already writes in Signal Creek and is looking for a second "
+                            "realm with a measured weekly pace. The first scene could begin "
+                            "with the corrected place cards still warm from the printer."
+                        ),
+                    )
+                ),
+            )
+            if first_face_request.account_user_id is None:
+                repo.link_community_access_request_account_user(
+                    community.id,
+                    first_face_request.id,
+                    first_face_writer.id,
+                )
+            elif first_face_request.account_user_id != first_face_writer.id:
+                raise ValueError(
+                    "seeded first-face access request is linked to a different account"
+                )
 
 
 def _seed_original_premise_writer_memberships(
@@ -6222,6 +6987,431 @@ def _seed_original_premise_writer_memberships(
     return memberships
 
 
+def _seed_first_face_writer_membership(repo: ForumRepository, community: Community) -> None:
+    """Keep one original-premise realm ready to show the first-face entry path."""
+
+    user = _get_or_create(
+        lambda: repo.get_user_by_email("firstface@example.com"),
+        lambda: repo.create_user("firstface@example.com", "dev-password-hash"),
+    )
+    member_role = repo.get_role_by_slug(community.id, "member")
+    membership = _get_or_create(
+        lambda: repo.get_membership_for_user(community.id, user.id),
+        lambda: repo.create_membership(
+            community.id,
+            user.id,
+            member_role.id,
+            "newarrival",
+            "Rory Bell",
+        ),
+    )
+    _ensure_seed_membership_avatar(repo, community.id, membership, user.email)
+
+
+def _seed_harbor_writer_entry(
+    repo: ForumRepository,
+    community: Community,
+    *,
+    director_membership: CommunityMembership,
+    writer_membership: CommunityMembership,
+) -> None:
+    """Seed a complete request-to-invitation path without a live invite token."""
+
+    writer = repo.get_user(writer_membership.user_id)
+    member_role = repo.get_role_by_slug(community.id, "member")
+    access_request = _get_or_create(
+        lambda: _seed_access_request_for_email(
+            repo,
+            community.id,
+            writer.email,
+        ),
+        lambda: repo.create_community_access_request(
+            community.id,
+            email=writer.email,
+            display_name=writer_membership.display_name,
+            face_concept=(
+                "Celia Fairbourne: an old-family gatekeeper who knows which guest "
+                "list entries were quietly changed."
+            ),
+            wanted_hook="Rival committee chair",
+            notes=(
+                "Writer has followed the Founders Gala arc and wants to play the "
+                "person protecting the club's standards while the ledger story opens."
+            ),
+        ),
+    )
+    invitation_token_hash = hashlib.sha256(
+        b"elbysodic-demo/harbor-society/juniper-gray/accepted-invitation"
+    ).hexdigest()
+    invitation = _get_or_create(
+        lambda: repo.get_community_invitation_by_token_hash(invitation_token_hash),
+        lambda: repo.create_community_invitation(
+            community.id,
+            email=writer.email,
+            role_id=member_role.id,
+            invited_by_membership_id=director_membership.id,
+            token_hash=invitation_token_hash,
+            expires_at=None,
+        ),
+    )
+    if invitation.status != "accepted":
+        invitation = repo.accept_community_invitation(
+            invitation.id,
+            user_id=writer.id,
+            membership_id=writer_membership.id,
+        )
+
+    if access_request.status == "pending":
+        reviewed = repo.update_community_access_request_status(
+            community.id,
+            access_request.id,
+            status="reviewed",
+        )
+        repo.create_community_access_request_event(
+            community.id,
+            access_request.id,
+            event_type="reviewed",
+            from_status="pending",
+            to_status=reviewed.status,
+            actor_membership_id=director_membership.id,
+        )
+        access_request = reviewed
+    if access_request.status == "reviewed":
+        invited = repo.update_community_access_request_status(
+            community.id,
+            access_request.id,
+            status="invited",
+            invitation_id=invitation.id,
+        )
+        repo.create_community_access_request_event(
+            community.id,
+            access_request.id,
+            event_type="invited",
+            from_status="reviewed",
+            to_status=invited.status,
+            actor_membership_id=director_membership.id,
+            invitation_id=invitation.id,
+        )
+        access_request = invited
+    if access_request.status == "invited":
+        accepted = repo.update_community_access_request_status(
+            community.id,
+            access_request.id,
+            status="accepted",
+        )
+        repo.create_community_access_request_event(
+            community.id,
+            access_request.id,
+            event_type="accepted",
+            from_status="invited",
+            to_status=accepted.status,
+            invitation_id=invitation.id,
+        )
+
+    _get_or_create(
+        lambda: _seed_access_request_for_email(
+            repo,
+            community.id,
+            "eloise.byrne@example.com",
+        ),
+        lambda: repo.create_community_access_request(
+            community.id,
+            email="eloise.byrne@example.com",
+            display_name="Eloise Byrne",
+            face_concept=(
+                "A foundation trustee who thinks a clean audit is a kindness, "
+                "even when the donor list says otherwise."
+            ),
+            wanted_hook="Secret donor with conditions",
+            notes=(
+                "Interested in a measured, weekly posting pace and a role that can "
+                "move between the gala committee and the town's public life."
+            ),
+        ),
+    )
+
+
+def _seed_harbor_face_application(
+    repo: ForumRepository,
+    community: Community,
+    *,
+    writer_membership: CommunityMembership,
+) -> None:
+    """Seed a writer-owned, submitted face application linked to a wanted hook."""
+
+    reporter_hook = repo.get_wanted_ad_by_slug(community.id, "reporter-source-at-the-club")
+    applicant = _get_or_create(
+        lambda: repo.get_character_by_slug(community.id, "daphne-pike"),
+        lambda: repo.create_character(
+            community.id,
+            writer_membership.id,
+            "daphne-pike",
+            "Daphne Pike",
+            tagline="The proofs remember.",
+            summary="A Shoreline Club banquet printer who spots changes before they reach the Harbor Ledger.",
+            application_status="draft",
+        ),
+    )
+    application = repo.ensure_character_application(
+        community.id,
+        applicant.id,
+        source_wanted_ad_id=reporter_hook.id,
+    )
+    if not application.body:
+        application = repo.update_character_application_draft(
+            community.id,
+            application.id,
+            title=application.title or applicant.name,
+            summary=application.summary
+            or "A Shoreline Club banquet printer who spots changes before they reach the Harbor Ledger.",
+            body=(
+                "Daphne Pike prints the Shoreline Club's gala cards and catches changes "
+                "before guests see them. This year's seating proof came back twice with "
+                "different ink; her job ticket can show when it changed, but not who asked.\n\n"
+                "She is interested in the reporter-source call because August can help her "
+                "compare the job ticket with the public ledger story. A first scene could "
+                "begin at the print table with two versions of the same place card. Daphne "
+                "wants to play the person who can establish what changed while leaving the "
+                "reason, the source, and the fallout open for the writers to discover."
+            ),
+        )
+
+    seeded_values = {
+        "face_claim": "Jodie Comer",
+        "family_claim": "Newcomer; renting a room above the Harbor Ledger",
+        "club_role_claim": "Staff",
+        "influence_lane_claim": "Press",
+    }
+    fields = repo.list_application_template_fields(community.id)
+    fields_by_key = {field.field_key: field for field in fields}
+    field_keys_by_id = {field.id: field.field_key for field in fields}
+    existing_values = {
+        field_keys_by_id[value.field_id]: value.value
+        for value in repo.list_application_field_values(community.id, application.id)
+        if value.field_id in field_keys_by_id
+    }
+    for field_key, value in seeded_values.items():
+        field = fields_by_key.get(field_key)
+        if field is not None and field_key not in existing_values:
+            repo.set_application_field_value(community.id, application.id, field.id, value)
+
+    events = repo.list_character_application_events(community.id, application.id)
+    if not events and application.status == "draft":
+        repo.transition_character_application_status(
+            community.id,
+            application.id,
+            status="submitted",
+            actor_membership_id=writer_membership.id,
+            actor_character_id=applicant.id,
+            note=(
+                "Submitted from the reporter-source wanted hook; the print job can date the change, "
+                "but the writers will discover who ordered it."
+            ),
+        )
+
+
+def _seed_harbor_interest_application(
+    repo: ForumRepository,
+    community: Community,
+    *,
+    writer_membership: CommunityMembership,
+) -> None:
+    """Seed an application sourced from private interest in a wanted hook."""
+
+    reporter_hook = repo.get_wanted_ad_by_slug(community.id, "reporter-source-at-the-club")
+    private_note = (
+        "Please keep my name off the first tip; the club still prints programs for my employer."
+    )
+    interest = _get_or_create(
+        lambda: repo.get_prospective_wanted_ad_interest_for_membership(
+            community.id,
+            reporter_hook.id,
+            writer_membership.id,
+        ),
+        lambda: repo.create_wanted_ad_interest(
+            community.id,
+            reporter_hook.id,
+            writer_membership.id,
+            prospective_character_name="Beatrice Crane",
+            note=private_note,
+        ),
+    )
+    applicant = _get_or_create(
+        lambda: repo.get_character_by_slug(community.id, "beatrice-crane"),
+        lambda: repo.create_character(
+            community.id,
+            writer_membership.id,
+            "beatrice-crane",
+            "Beatrice Crane",
+            tagline="The copy desk remembers.",
+            summary=(
+                "A former Harbor Ledger copy editor who knows which club rooms August "
+                "cannot enter and which names should stay out of print."
+            ),
+            application_status="draft",
+        ),
+    )
+    application = repo.ensure_character_application(
+        community.id,
+        applicant.id,
+        source_wanted_ad_interest_id=interest.id,
+    )
+    if not application.body:
+        application = repo.update_character_application_draft(
+            community.id,
+            application.id,
+            title=application.title or applicant.name,
+            summary=application.summary
+            or "Beatrice can verify what changed in the gala copy without naming who ordered it.",
+            body=(
+                "Beatrice Crane used to catch libel risk before the Harbor Ledger went to press. "
+                "Now she prepares the Shoreline Club's programs, and the gala seating proofs have "
+                "come back with two different names in the same chair. She can establish what the "
+                "printer received and when; she cannot say who changed it.\n\n"
+                "A first scene could put Beatrice and August over the discarded proof sheets after "
+                "the committee meeting. She wants a careful source relationship with room for both "
+                "faces to be wrong about the ledger, the donor, or the person trying to protect them."
+            ),
+        )
+
+    seeded_values = {
+        "face_claim": "Ruth Wilson",
+        "family_claim": "Newcomer; former copy desk",
+        "club_role_claim": "Staff",
+        "influence_lane_claim": "Press",
+    }
+    fields = repo.list_application_template_fields(community.id)
+    fields_by_key = {field.field_key: field for field in fields}
+    field_keys_by_id = {field.id: field.field_key for field in fields}
+    existing_values = {
+        field_keys_by_id[value.field_id]: value.value
+        for value in repo.list_application_field_values(community.id, application.id)
+        if value.field_id in field_keys_by_id
+    }
+    for field_key, value in seeded_values.items():
+        field = fields_by_key.get(field_key)
+        if field is not None and field_key not in existing_values:
+            repo.set_application_field_value(community.id, application.id, field.id, value)
+
+    events = repo.list_character_application_events(community.id, application.id)
+    if not events and application.status == "draft":
+        repo.transition_character_application_status(
+            community.id,
+            application.id,
+            status="submitted",
+            actor_membership_id=writer_membership.id,
+            actor_character_id=applicant.id,
+            note=(
+                "Submitted from a private interest in the Reporter source wanted hook; "
+                "the source note stays with that interest."
+            ),
+        )
+
+
+def _seed_xmen_application_review(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    applicant_membership: CommunityMembership,
+    applicant_character: Character,
+    staff_membership: CommunityMembership,
+    staff_character: Character,
+) -> None:
+    """Give the applicant and director personas a complete review-room example."""
+
+    application = repo.ensure_character_application(community_id, applicant_character.id)
+    if not application.body:
+        repo.update_character_application_draft(
+            community_id,
+            application.id,
+            title=application.title or applicant_character.name,
+            summary=application.summary
+            or "Kitty can get through the walls. The B-24 schematics cannot agree on where they lead.",
+            body=(
+                "Kitty is the first person to notice that the east-wing route markers no longer "
+                "match the school's floor plan. She can phase through the sealed corridor, but "
+                "that does not make her the answer to the B-24 mystery. She wants to play the "
+                "person who checks the record, asks who last changed it, and decides what to do "
+                "when the map shifts again.\n\n"
+                "For a first scene, Kitty volunteers for a controlled walk-through after an "
+                "evacuation drill. A route marker blinks two floors below its listed location. "
+                "The writer is looking for room to play Kitty's humor and confidence alongside "
+                "the cost of being trusted only when a wall is in the way. The cause of the "
+                "signal drift stays open for the other writers in the room."
+            ),
+        )
+
+    seeded_values = {
+        "face_claim": "Thomasin McKenzie",
+        "faction_claim": "X-Men",
+        "power_claim": "Phasing, route mapping, and analog systems triage",
+    }
+    fields = repo.list_application_template_fields(community_id)
+    field_keys = {field.id: field.field_key for field in fields}
+    existing_values = {
+        field_keys[value.field_id]: value.value
+        for value in repo.list_application_field_values(community_id, application.id)
+        if value.field_id in field_keys
+    }
+    for field in fields:
+        value = seeded_values.get(field.field_key)
+        if value is not None and field.field_key not in existing_values:
+            repo.set_application_field_value(community_id, application.id, field.id, value)
+
+    events = repo.list_character_application_events(community_id, application.id)
+    if not events and application.status == "submitted":
+        repo.transition_character_application_status(
+            community_id,
+            application.id,
+            status="revision_requested",
+            actor_membership_id=staff_membership.id,
+            actor_character_id=staff_character.id,
+            note=(
+                "Please anchor the opening in one choice Kitty can make without explaining "
+                "what the signal is."
+            ),
+        )
+        repo.transition_character_application_status(
+            community_id,
+            application.id,
+            status="submitted",
+            actor_membership_id=applicant_membership.id,
+            actor_character_id=applicant_character.id,
+            note=(
+                "Resubmitted with a short route-check scene; the signal's cause stays open "
+                "for the writers to discover together."
+            ),
+        )
+
+    if not (application.revision_notes or application.staff_notes or application.checklist):
+        repo.update_character_application_review(
+            community_id,
+            application.id,
+            revision_notes="",
+            staff_notes=(
+                "Keep the moving map as evidence, not as a reveal. The writers should decide "
+                "whether the B-24 is wrong, tampered with, or reading a second route."
+            ),
+            checklist=(
+                "Face reference reviewed\n"
+                "X-Men roster lane checked\n"
+                "First-scene pressure is concrete\n"
+                "B-24 cause remains open"
+            ),
+        )
+
+
+def _seed_access_request_for_email(
+    repo: ForumRepository,
+    community_id: int,
+    email: str,
+) -> CommunityAccessRequest:
+    for access_request in repo.list_community_access_requests(community_id):
+        if access_request.email.casefold() == email.casefold():
+            return access_request
+    raise LookupError(f"access request not found for {email}")
+
+
 def _original_premise_character_membership(
     _character_slug: str,
     index: int,
@@ -6239,6 +7429,7 @@ def _ensure_studio_program_community(
     repo: ForumRepository,
     program: ProgramBlueprint,
 ) -> Community:
+    launch_status = STUDIO_PROGRAM_LAUNCH_STATUSES.get(program.slug, "public-preview")
     try:
         community = repo.get_community_by_slug(program.slug)
     except LookupError:
@@ -6250,8 +7441,8 @@ def _ensure_studio_program_community(
                 slug=program.slug,
                 name=program.name,
             )
-    if community.launch_status != "public-preview":
-        community = repo.update_community_launch_status(community.id, "public-preview")
+    if community.launch_status != launch_status:
+        community = repo.update_community_launch_status(community.id, launch_status)
     return community
 
 
@@ -6260,19 +7451,35 @@ def _ensure_community_media_defaults(
     community: Community,
     media_seed: CommunityMediaSeed,
 ) -> Community:
-    mark_url = community.community_mark_url or media_seed.mark_url
+    legacy_hero_urls = LEGACY_SEED_HERO_URLS.get(community.slug, ())
+    replace_legacy_seed_hero = community.world_hero_image_url in legacy_hero_urls
+    replace_legacy_harbor_art = (
+        community.slug == "harbor-society"
+        and community.community_mark_url == f"{SEED_MEDIA_BASE}/smalltown-mark.svg"
+        and community.world_hero_image_url == f"{SEED_MEDIA_BASE}/smalltown-hero.svg"
+    )
+    replace_seeded_hero = replace_legacy_seed_hero or replace_legacy_harbor_art
+    mark_url = (
+        media_seed.mark_url
+        if community.community_mark_url is None or replace_legacy_harbor_art
+        else community.community_mark_url
+    )
     mark_alt = community.community_mark_alt
-    if community.community_mark_url is None:
+    if community.community_mark_url is None or replace_legacy_harbor_art:
         mark_alt = media_seed.mark_alt
-    hero_url = community.world_hero_image_url or media_seed.hero_url
+    hero_url = (
+        media_seed.hero_url
+        if community.world_hero_image_url is None or replace_seeded_hero
+        else community.world_hero_image_url
+    )
     hero_alt = community.world_hero_image_alt
-    if community.world_hero_image_url is None:
+    if community.world_hero_image_url is None or replace_seeded_hero:
         hero_alt = media_seed.hero_alt
     hero_treatment = community.world_hero_treatment
     hero_focal_point = community.world_hero_focal_point
     hero_overlay = community.world_hero_overlay
     hero_height = community.world_hero_height
-    if community.world_hero_image_url is None:
+    if community.world_hero_image_url is None or replace_seeded_hero:
         hero_treatment = media_seed.hero_treatment
         hero_focal_point = media_seed.hero_focal_point
         hero_overlay = media_seed.hero_overlay
@@ -6321,6 +7528,7 @@ def _seed_original_premise_depth(
     if program.slug == "harbor-society":
         opening_slug = "ledger-page-under-table-six"
         opening_title = "The Ledger Page Under Table Six"
+        opening_timeline = "Founders Gala week"
         opening_summary = (
             "Maris turns the Shoreline Club seating meeting into a test of who "
             "knew last year's auction covered a private debt."
@@ -6336,6 +7544,7 @@ def _seed_original_premise_depth(
         )
         followup_slug = "breakfast-before-the-vote"
         followup_title = "Breakfast Before The Vote"
+        followup_timeline = "The morning after the seating meeting"
         followup_summary = (
             "Celia, August, and Talia compare rumors in public while donor calls "
             "and campaign flyers make silence impossible."
@@ -6351,6 +7560,7 @@ def _seed_original_premise_depth(
     elif program.slug == "signal-creek":
         opening_slug = "voice-on-the-old-feed"
         opening_title = "The Voice On The Old Feed"
+        opening_timeline = "The night the old feed answers"
         opening_summary = (
             "Ira keeps the observatory recording live while Mae and Lena argue "
             "over why the missing hiker is describing 1998."
@@ -6365,6 +7575,7 @@ def _seed_original_premise_depth(
         )
         followup_slug = "diner-map-of-missing-hours"
         followup_title = "Diner Map Of Missing Hours"
+        followup_timeline = "The morning after the broadcast"
         followup_summary = (
             "Mae, Lena, and Cal turn a breakfast crowd into witnesses when three "
             "trail reports disagree about the same twelve hours."
@@ -6380,6 +7591,7 @@ def _seed_original_premise_depth(
     elif program.slug == "nocturne-row":
         opening_slug = "witness-video-at-last-call"
         opening_title = "Witness Video At Last Call"
+        opening_timeline = "The night the footage breaks"
         opening_summary = (
             "Marcel tries to contain the Emberline footage while Eliana and Ren "
             "count which treaty protections failed on camera."
@@ -6394,6 +7606,7 @@ def _seed_original_premise_depth(
         )
         followup_slug = "emergency-court-before-dawn"
         followup_title = "Emergency Court Before Dawn"
+        followup_timeline = "Before dawn at Covenant Hall"
         followup_summary = (
             "Eliana, Ren, and Jules arrive at Covenant Hall before sunrise with "
             "different reasons to keep the wrong witness alive."
@@ -6406,9 +7619,207 @@ def _seed_original_premise_depth(
             "Ren Maddox brought the clinic list anyway, because every missing "
             "name had started to look like faction math."
         )
+    elif program.slug == "crownfall":
+        opening_slug = "black-flame-at-the-opal-court"
+        opening_title = "When the Crown Flame Turns Black"
+        opening_timeline = "Coronation day"
+        opening_summary = (
+            "Seren's oath catches in a black flame just as the border bell reports "
+            "a fallen tower. The court has to decide which crisis gets a witness first."
+        )
+        opening_first_post = (
+            "The crown flame turned black before Seren Vale finished the oath. "
+            "By the time the doors opened, a border courier's mud was already "
+            "darkening the opal floor."
+        )
+        opening_second_post = (
+            "Maelor Cairn asked the court to hold its questions until the survivor "
+            "was safe. He did not explain why the spymaster already knew the tower's name."
+        )
+        followup_slug = "the-tower-names-a-house"
+        followup_title = "The Tower Names a House"
+        followup_timeline = "First watch after the fall"
+        followup_summary = (
+            "At Border Watch, the survivor's account implicates a noble house "
+            "before the signal fire has gone cold."
+        )
+        followup_first_post = (
+            "Maelor Cairn laid the courier's scorched badge on the watch desk. "
+            "The name stamped beneath it belonged to a house still seated at court. "
+            "He had seen it before the survivor spoke."
+        )
+        followup_second_post = (
+            "Ivra Senn recognized the soot around the seal from her coronation notes. "
+            "It was not ash from a tower fire."
+        )
+    elif program.slug == "afterlight-accord":
+        opening_slug = "the-name-beneath-the-seal"
+        opening_title = "The Name Beneath the Seal"
+        opening_timeline = "The night the Accord seal fails"
+        opening_summary = (
+            "A prisoner the archive records as dead walks out of the remembrance "
+            "ceremony, carrying a name the Accord has spent years removing."
+        )
+        opening_first_post = (
+            "The remembrance bell gave its final note as Orin Vale watched the "
+            "broken seal fall from the archive doors. The prisoner inside knew "
+            "his name and called him by the one his order had buried."
+        )
+        opening_second_post = (
+            "Maia Renn moved between the returned prisoner and the council guard. "
+            "She had been paid to escort the dead out of the city, not bring one back."
+        )
+        followup_slug = "a-place-held-for-the-dead"
+        followup_title = "A Place Held for the Dead"
+        followup_timeline = "After the remembrance ceremony"
+        followup_summary = (
+            "At the Old Academy, Sel finds a place in the attendance ledger for "
+            "the returned prisoner—and a second name scraped away beside it."
+        )
+        followup_first_post = (
+            "Maia Renn held the attendance ledger open under the old lecture lamp. "
+            "Someone had recorded the prisoner's return before the seal ever broke."
+        )
+        followup_second_post = (
+            "Sel Archa looked at the blank line beside the prisoner's name. The archive "
+            "had made room for him once already, then decided he had never existed."
+        )
+    elif program.slug == "brightline":
+        opening_slug = "awards-night-without-a-track"
+        opening_title = "Awards Night, Without a Track"
+        opening_timeline = "Minutes before the awards"
+        opening_summary = (
+            "A missing backing track stops Viv's performance minutes before a "
+            "contract leak reaches the press line. The two failures may share a source."
+        )
+        opening_first_post = (
+            "Viv Marlowe heard the stage manager count down from ten. Her in-ear "
+            "went silent at six, and the teleprompter kept displaying a contract "
+            "clause she had never agreed to."
+        )
+        opening_second_post = (
+            "Rex Arden pulled the stage door shut before the cameras found the "
+            "room. He had a working copy of the contract and no clean answer for "
+            "how it got into the cue system."
+        )
+        followup_slug = "the-contract-between-takes"
+        followup_title = "The Contract Between Takes"
+        followup_timeline = "During the awards broadcast"
+        followup_summary = (
+            "In the Blue Room, Dahlia offers to stop the leak if Viv signs a "
+            "different deal before the broadcast ends."
+        )
+        followup_first_post = (
+            "Rex Arden set two contracts beside Viv's untouched glass. One could "
+            "save the performance. The other would decide who owned the story afterward."
+        )
+        followup_second_post = (
+            "Dahlia Voss did not choose either contract. Someone had already sent "
+            "the press a third version, and this one named a source."
+        )
+    elif program.slug == "emberhouse":
+        opening_slug = "the-roster-before-roll-call"
+        opening_title = "The Roster Before Roll Call"
+        opening_timeline = "Selection morning"
+        opening_summary = (
+            "Three names move into the wrong trial tier before the candidates "
+            "wake. Nara's score makes the change look like a favor; Cassian's "
+            "makes it look like a warning."
+        )
+        opening_first_post = (
+            "Nara Vale found the new roster pinned over yesterday's before the "
+            "hall filled. Her name had moved up three tiers. The correction line "
+            "was blank."
+        )
+        opening_second_post = (
+            "Cassian Rook read the list twice, then turned it toward the candidates "
+            "whose names had moved down. He would not let the instructors call it "
+            "a clerical error before roll call."
+        )
+        followup_slug = "three-names-in-the-wrong-tier"
+        followup_title = "Three Names in the Wrong Tier"
+        followup_timeline = "Before the first trial"
+        followup_summary = (
+            "The altered list follows the candidates to the Trial Grounds, where "
+            "the instructors must decide whether to pause the test or run it as written."
+        )
+        followup_first_post = (
+            "Cassian stood at the Trial Grounds with the original roster folded "
+            "inside his sleeve. The posted version put his sister on the course "
+            "with the broken bridge."
+        )
+        followup_second_post = (
+            "Maeve Torr called for the trial to stop, then looked toward the "
+            "sponsor's box when nobody moved to obey."
+        )
+    elif program.slug == "gaslight-ward":
+        opening_slug = "the-morning-edition-knows-too-much"
+        opening_title = "The Morning Edition Knows Too Much"
+        opening_timeline = "The morning after the debut"
+        opening_summary = (
+            "Ada brings three witness statements to the Newspaper Office. Each "
+            "describes the locked room correctly, and none agrees who left it."
+        )
+        opening_first_post = (
+            "Ada Vale put the three statements beside Edwin Frost's first edition. "
+            "The headline named a murderer; every witness described a different door."
+        )
+        opening_second_post = (
+            "Lucien Rowe asked which statement the paper planned to print. He "
+            "recognized one signature and would not say from where."
+        )
+        followup_slug = "every-witness-saw-a-different-door"
+        followup_title = "Every Witness Saw a Different Door"
+        followup_timeline = "First hearing at Police Court"
+        followup_summary = (
+            "A court clerk finds a fourth account in the case file, written in "
+            "a hand the police say was never in the room."
+        )
+        followup_first_post = (
+            "Lucien Rowe recognized the handwriting before the clerk finished "
+            "reading. It belonged to someone the police said was never in the room."
+        )
+        followup_second_post = (
+            "Mira Bell looked at the signature beneath it. The dead woman had "
+            "never learned to write."
+        )
+    elif program.slug == "wayfarer-station":
+        opening_slug = "clearance-for-a-missing-convoy"
+        opening_title = "Clearance for a Missing Convoy"
+        opening_timeline = "The first watch after the signal"
+        opening_summary = (
+            "Wayfarer receives a docking clearance for a convoy that has not "
+            "arrived. Its timestamp predates the last transmission from outside the chart."
+        )
+        opening_first_post = (
+            "Mara Voss checked the docking log against the station clock. The "
+            "convoy clearance had been stamped twelve minutes before the ship "
+            "sent its last signal."
+        )
+        opening_second_post = (
+            "Jace Ren recognized the cargo code on the manifest. He had removed "
+            "that marker from a crate himself, and it was not supposed to be on "
+            "any station record."
+        )
+        followup_slug = "the-filter-with-two-ledgers"
+        followup_title = "The Filter with Two Ledgers"
+        followup_timeline = "Before the next ration count"
+        followup_summary = (
+            "Sol finds two histories in the med-bay air filter: the station's "
+            "maintenance record and a second set of convoy coordinates."
+        )
+        followup_first_post = (
+            "Jace brought the air filter to Med Bay still wrapped in its service seal. "
+            "The serial matched a convoy cargo tag the manifest said had never existed."
+        )
+        followup_second_post = (
+            "Sol Kade read the second set of coordinates and shut the med-bay door. "
+            "The convoy had not gone missing. Something had filed it under arrival."
+        )
     else:
         opening_slug = "opening-pressure"
         opening_title = "Opening pressure"
+        opening_timeline = f"Current chapter in {community.name}"
         opening_summary = (
             f"{characters[0].name} pulls the first public thread into "
             f"{community.name}'s current premise."
@@ -6423,6 +7834,7 @@ def _seed_original_premise_depth(
         )
         followup_slug = "wanted-thread-start"
         followup_title = f"{boards[1].name} first-scene ask"
+        followup_timeline = f"Current chapter in {community.name}"
         followup_summary = (
             f"A public ask at {boards[1].name} pulls {characters[2].name} "
             f"and {characters[3].name} toward {community.name}'s current chapter."
@@ -6435,7 +7847,7 @@ def _seed_original_premise_depth(
             f"{characters[2].name} took the hook seriously enough to make it "
             "someone else's problem before the next scene could settle."
         )
-    if program.slug in {"harbor-society", "signal-creek", "nocturne-row"}:
+    if program.slug in ORIGINAL_PREMISE_SEED_SLUGS:
         _archive_legacy_original_premise_thread(
             repo, community.id, boards[0].id, "opening-pressure"
         )
@@ -6460,6 +7872,8 @@ def _seed_original_premise_depth(
         community.id,
         opening.id,
         visibility="public_preview",
+        timeline=opening_timeline,
+        summary=opening_summary,
     )
     repo.set_thread_participants(
         community.id,
@@ -6473,6 +7887,18 @@ def _seed_original_premise_depth(
         characters[0].id,
         opening_first_post,
     )
+    if program.slug == "afterlight-accord":
+        _ensure_seed_post_revision(
+            repo,
+            community.id,
+            opening.id,
+            characters[0].id,
+            previous_body=(
+                "The remembrance bell gave its final note as Orin Vale watched the "
+                "archive doors open. The prisoner inside knew the name the Accord "
+                "had spent years trying to erase."
+            ),
+        )
     _ensure_post(
         repo,
         community.id,
@@ -6498,6 +7924,8 @@ def _seed_original_premise_depth(
         community.id,
         followup.id,
         visibility="public_preview",
+        timeline=followup_timeline,
+        summary=followup_summary,
     )
     repo.set_thread_participants(
         community.id,
@@ -6518,6 +7946,51 @@ def _seed_original_premise_depth(
         characters[2].id,
         followup_second_post,
     )
+    sample_replies = ORIGINAL_PREMISE_SAMPLE_REPLIES.get(program.slug)
+    if sample_replies is not None:
+        opening_replies, followup_replies = sample_replies
+        _ensure_post(
+            repo,
+            community.id,
+            opening.id,
+            characters[2].id,
+            opening_replies[0],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            opening.id,
+            characters[0].id,
+            opening_replies[1],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            followup.id,
+            characters[3].id,
+            followup_replies[0],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            followup.id,
+            characters[1].id,
+            followup_replies[1],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            opening.id,
+            characters[1].id,
+            opening_replies[2],
+        )
+        _ensure_post(
+            repo,
+            community.id,
+            followup.id,
+            characters[2].id,
+            followup_replies[2],
+        )
     repo.watch_thread(community.id, followup.id, membership.id)
     repo.mark_thread_read(community.id, opening.id, membership.id)
 
@@ -6575,8 +8048,13 @@ def _ensure_character_identity(
     post_title_style: str = "standard",
     post_density: str = "calm",
 ) -> Character:
+    seed_avatar_url = f"{CHARACTER_AVATAR_BASE}/{character.slug}.jpg"
+    avatar_url = character.avatar_url
+    if avatar_url is None or avatar_url.startswith(f"{CHARACTER_AVATAR_BASE}/"):
+        avatar_url = seed_avatar_url
     if (
-        character.poster_url == poster_url
+        character.avatar_url == avatar_url
+        and character.poster_url == poster_url
         and character.poster_alt == poster_alt
         and character.tagline == tagline
         and character.accent_color == accent_color
@@ -6592,7 +8070,7 @@ def _ensure_character_identity(
         character.id,
         slug=character.slug,
         name=character.name,
-        avatar_url=character.avatar_url,
+        avatar_url=avatar_url,
         poster_url=poster_url,
         poster_alt=poster_alt,
         tagline=tagline,
@@ -6604,6 +8082,34 @@ def _ensure_character_identity(
         post_title_style=post_title_style,
         post_density=post_density,
     )
+
+
+def _ensure_seed_membership_avatar(
+    repo: ForumRepository,
+    community_id: int,
+    membership: CommunityMembership,
+    email: str,
+) -> CommunityMembership:
+    avatar_slug = SEED_MEMBER_AVATAR_SLUGS.get(email)
+    if avatar_slug is None:
+        return membership
+    avatar_url = f"{MEMBER_AVATAR_BASE}/{avatar_slug}.jpg"
+    if membership.avatar_url == avatar_url:
+        return membership
+    if membership.avatar_url is not None and not membership.avatar_url.startswith(
+        f"{MEMBER_AVATAR_BASE}/"
+    ):
+        return membership
+    repo.connection.execute(
+        """
+        UPDATE community_memberships
+        SET avatar_url = ?
+        WHERE community_id = ? AND id = ?
+        """,
+        (avatar_url, community_id, membership.id),
+    )
+    repo.connection.commit()
+    return repo.get_membership(community_id, membership.id)
 
 
 def _ensure_board(
@@ -6651,7 +8157,11 @@ def _ensure_board_media_default(
     board: Board,
     media_seed: BoardMediaSeed,
 ) -> Board:
-    if board.image_url is not None:
+    if board.image_url == media_seed.image_url:
+        return board
+    if board.image_url is not None and board.image_url not in _legacy_seed_image_urls(
+        media_seed.image_url
+    ):
         return board
     return repo.update_board(
         community_id,
@@ -6685,7 +8195,9 @@ def _ensure_board_seed_media(
     image_focal_point: str,
     image_overlay: str,
 ) -> Board:
-    if image_url is None or board.image_url is not None:
+    if image_url is None or board.image_url == image_url:
+        return board
+    if board.image_url is not None and board.image_url not in _legacy_seed_image_urls(image_url):
         return board
     return repo.update_board(
         community_id,
@@ -6706,6 +8218,13 @@ def _ensure_board_seed_media(
         navigation_order=board.navigation_order,
         show_in_navigation=board.show_in_navigation,
     )
+
+
+def _legacy_seed_image_urls(image_url: str) -> frozenset[str]:
+    legacy_urls = set(LEGACY_SEED_BOARD_IMAGE_URLS.get(image_url, ()))
+    if image_url.endswith(".jpg"):
+        legacy_urls.add(f"{image_url[:-4]}.svg")
+    return frozenset(legacy_urls)
 
 
 def _ensure_material(
@@ -6835,6 +8354,50 @@ def _seed_realm_interactions(
                 )
 
 
+def _seed_realm_interaction_responses(
+    repo: ForumRepository,
+    community_id: int,
+    interactions: tuple[InteractionSeed, ...],
+    respondents: tuple[CommunityMembership, ...],
+) -> None:
+    """Give seeded artifacts a small, repeatable amount of writer activity."""
+
+    for interaction_seed in interactions:
+        try:
+            interaction = repo.get_realm_interaction_by_slug(
+                community_id,
+                interaction_seed.slug,
+            )
+        except LookupError:
+            continue
+        response_memberships = (
+            respondents[:3] if interaction_seed.placement == "general" else respondents[:1]
+        )
+        questions = repo.list_realm_interaction_questions(community_id, interaction.id)
+        if not questions:
+            continue
+        for respondent_index, respondent in enumerate(response_memberships):
+            if not respondent.is_active:
+                continue
+            selected_option_ids: dict[int, int] = {}
+            for question_index, question in enumerate(questions):
+                options = repo.list_realm_interaction_options(community_id, question.id)
+                if options:
+                    option_index = (respondent_index + question_index) % len(options)
+                    selected_option_ids[question.id] = options[option_index].id
+                elif question.is_required:
+                    raise ValueError(
+                        f"seeded interaction question has no options: {interaction_seed.slug}"
+                    )
+            repo.submit_realm_interaction_response(
+                community_id,
+                interaction.id,
+                respondent.id,
+                character_id=respondent.default_character_id,
+                selected_option_ids=selected_option_ids,
+            )
+
+
 def _seed_intake_claims(
     repo: ForumRepository,
     community_id: int,
@@ -6962,6 +8525,96 @@ def _ensure_post(
     repo.create_post(community_id, thread_id, character_id, body)
 
 
+def _ensure_seed_post_revision(
+    repo: ForumRepository,
+    community_id: int,
+    thread_id: int,
+    character_id: int,
+    *,
+    previous_body: str,
+) -> None:
+    post = next(
+        (
+            item
+            for item in repo.list_posts(community_id, thread_id)
+            if item.author_character_id == character_id
+        ),
+        None,
+    )
+    if post is None:
+        return
+    revisions = repo.list_post_revisions(community_id, post.id)
+    if revisions:
+        if post.updated_at == post.created_at:
+            repo.update_post_body(community_id, post.id, post.body)
+        return
+    repo.create_post_revision(
+        community_id,
+        post.id,
+        post.author_membership_id,
+        previous_body,
+        post.body,
+    )
+    repo.update_post_body(community_id, post.id, post.body)
+
+
+def _ensure_notification(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    membership_id: int,
+    kind: str,
+    actor_membership_id: int,
+    actor_character_id: int | None = None,
+    thread_id: int | None = None,
+    post_id: int | None = None,
+    wanted_ad_id: int | None = None,
+    wanted_ad_interest_id: int | None = None,
+    character_plot_hook_id: int | None = None,
+    plotting_room_id: int | None = None,
+) -> None:
+    try:
+        if post_id is not None:
+            repo.get_notification_for_post(community_id, membership_id, kind, post_id)
+        elif wanted_ad_interest_id is not None:
+            repo.get_notification_for_wanted_interest(
+                community_id,
+                membership_id,
+                kind,
+                wanted_ad_interest_id,
+            )
+        elif character_plot_hook_id is not None:
+            repo.get_notification_for_plot_hook(
+                community_id,
+                membership_id,
+                kind,
+                character_plot_hook_id,
+            )
+        elif plotting_room_id is not None:
+            repo.get_notification_for_plotting_room(
+                community_id,
+                membership_id,
+                kind,
+                plotting_room_id,
+            )
+        else:
+            raise ValueError("seed notification requires a stable target")
+    except LookupError:
+        repo.create_notification(
+            community_id,
+            membership_id,
+            kind=kind,
+            thread_id=thread_id,
+            post_id=post_id,
+            wanted_ad_id=wanted_ad_id,
+            wanted_ad_interest_id=wanted_ad_interest_id,
+            character_plot_hook_id=character_plot_hook_id,
+            plotting_room_id=plotting_room_id,
+            actor_membership_id=actor_membership_id,
+            actor_character_id=actor_character_id,
+        )
+
+
 def _seed_materials(
     repo: ForumRepository,
     community_id: int,
@@ -7051,13 +8704,15 @@ def _seed_materials(
         material_type="application",
         summary="What directors want to know before approving a new character.",
         body=(
-            "Applications should tell staff what kind of story the character creates, "
-            "not only what powers they have.\n\n"
-            "Cover identity, faction fit, relationships wanted, boundaries, and at "
-            "least one open hook another writer could pick up immediately.\n\n"
-            "Future Elbysodic applications should become structured submissions with "
-            "director-defined fields, facet choices, private review notes, and a clean "
-            "acceptance path into the roster."
+            "Send a face application through Applications. The director-defined form "
+            "collects a face reference, primary faction, and power or role claim so "
+            "staff can review roster fit with the same context.\n\n"
+            "Tell us what kind of story the character creates: a concrete first-scene "
+            "choice, relationships wanted, and boundaries other writers should know. "
+            "Pressure Lane Finder is there if you want a nudge toward an opening.\n\n"
+            "You can follow revision requests and resubmit from the same application. "
+            "Directors keep their review notes and checklist in the staff room; when "
+            "the face is accepted, its story can move onto the roster and into play."
         ),
         is_featured=True,
         sort_order=40,
@@ -7074,7 +8729,7 @@ def _seed_materials(
         repo,
         community_id,
         "b-24-winter",
-        "Current Event: B-24 Winter",
+        "B-24 Winter",
         material_type="event",
         summary="Iceman is infected with B-24 and New York is freezing around him.",
         body=(
@@ -7299,6 +8954,368 @@ def _seed_plot_hooks(
         magneto_hook.id,
         facets,
         ["mutant", "brotherhood", "political", "history"],
+    )
+
+
+def _seed_current_casting_handoffs(
+    repo: ForumRepository,
+    community_id: int,
+    *,
+    rogue: Character,
+    xavier: Character,
+    trask: Character,
+    prospective_membership: CommunityMembership,
+) -> None:
+    """Seed live wanted, reserve, plot-hook, and private plotting handoffs."""
+
+    rescue_wanted = repo.get_wanted_ad_by_slug(
+        community_id,
+        "iceman-winter-rescue-specialist",
+    )
+    rescue_interest = _get_or_create(
+        lambda: repo.get_wanted_ad_interest_for_character(
+            community_id,
+            rescue_wanted.id,
+            rogue.id,
+        ),
+        lambda: repo.create_wanted_ad_interest(
+            community_id,
+            rescue_wanted.id,
+            rogue.membership_id,
+            rogue.id,
+            note=(
+                "Rogue can lead an evacuation through the icebound service tunnel; "
+                "keep the rescue choice with the writers in the room."
+            ),
+        ),
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=rescue_wanted.creator_membership_id,
+        kind="wanted_interest",
+        actor_membership_id=rogue.membership_id,
+        actor_character_id=rogue.id,
+        wanted_ad_id=rescue_wanted.id,
+        wanted_ad_interest_id=rescue_interest.id,
+    )
+    rescue_interest = repo.update_wanted_ad_interest_status(
+        community_id,
+        rescue_interest.id,
+        "reserved",
+    )
+    rescue_wanted = repo.update_wanted_ad_status(
+        community_id,
+        rescue_wanted.id,
+        "reserved",
+    )
+    _get_or_create(
+        lambda: repo.get_character_reserve_for_wanted_interest(
+            community_id,
+            rescue_interest.id,
+        ),
+        lambda: repo.create_character_reserve(
+            community_id,
+            rogue.membership_id,
+            rogue.id,
+            rescue_wanted.title,
+            wanted_ad_id=rescue_wanted.id,
+            wanted_ad_interest_id=rescue_interest.id,
+            notes=(
+                "Rogue is held for the first response beat; the writers can decide "
+                "whether she takes the tunnel or stays with the evacuees."
+            ),
+        ),
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=rogue.membership_id,
+        kind="wanted_reserved",
+        actor_membership_id=rescue_wanted.creator_membership_id,
+        actor_character_id=trask.id,
+        wanted_ad_id=rescue_wanted.id,
+        wanted_ad_interest_id=rescue_interest.id,
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=rogue.membership_id,
+        kind="reserve_created",
+        actor_membership_id=rescue_wanted.creator_membership_id,
+        actor_character_id=trask.id,
+        wanted_ad_id=rescue_wanted.id,
+        wanted_ad_interest_id=rescue_interest.id,
+    )
+
+    liaison_wanted = repo.get_wanted_ad_by_slug(community_id, "human-un-liaison-for-b24")
+    prospective_name = "Dr. Dana Park"
+    prospective_interest = _get_or_create(
+        lambda: repo.get_prospective_wanted_ad_interest_for_membership(
+            community_id,
+            liaison_wanted.id,
+            prospective_membership.id,
+        ),
+        lambda: repo.create_wanted_ad_interest(
+            community_id,
+            liaison_wanted.id,
+            prospective_membership.id,
+            prospective_character_name=prospective_name,
+            note=(
+                "Dana can question the B-24 model without becoming its spokesperson. "
+                "Her first scene begins with an audit log that is missing one crucial page."
+            ),
+        ),
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=liaison_wanted.creator_membership_id,
+        kind="wanted_interest",
+        actor_membership_id=prospective_membership.id,
+        wanted_ad_id=liaison_wanted.id,
+        wanted_ad_interest_id=prospective_interest.id,
+    )
+    prospective_room = _get_or_create(
+        lambda: repo.get_plotting_room_for_wanted_interest(
+            community_id,
+            prospective_interest.id,
+        ),
+        lambda: repo.create_plotting_room(
+            community_id,
+            liaison_wanted.creator_membership_id,
+            f"{liaison_wanted.title}: {prospective_name}",
+            source_wanted_ad_id=liaison_wanted.id,
+            source_wanted_ad_interest_id=prospective_interest.id,
+            summary=liaison_wanted.summary,
+            status="brainstorming",
+        ),
+    )
+    repo.update_wanted_ad_interest_status(
+        community_id,
+        prospective_interest.id,
+        "plotting",
+    )
+    _ensure_plotting_room_participant(
+        repo,
+        community_id,
+        prospective_room.id,
+        xavier.membership_id,
+        character_id=xavier.id,
+        participant_role="owner",
+    )
+    _ensure_plotting_room_participant(
+        repo,
+        community_id,
+        prospective_room.id,
+        prospective_membership.id,
+        prospective_character_name=prospective_name,
+    )
+    repo.update_plotting_room_plan(
+        community_id,
+        prospective_room.id,
+        notes=(
+            "Dana has enough authority to question the model, not enough to shut it down. "
+            "Charles has the audit trail; neither writer decides what the other face "
+            "believes or reveals."
+        ),
+        next_step="Open at the UN annex while the winter response model is being revised.",
+        target_board_id=repo.get_board_by_slug(community_id, "united-nations").id,
+        status="brainstorming",
+    )
+    _ensure_plotting_room_message(
+        repo,
+        community_id,
+        prospective_room.id,
+        xavier.membership_id,
+        "I can bring the audit trail. You decide how much of it Dana is ready to show.",
+        author_character_id=xavier.id,
+    )
+    _ensure_plotting_room_message(
+        repo,
+        community_id,
+        prospective_room.id,
+        prospective_membership.id,
+        "Dana will bring the page the model says never existed. I would like the first beat to leave her room to be wrong.",
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=prospective_membership.id,
+        kind="plotting_room_created",
+        actor_membership_id=xavier.membership_id,
+        actor_character_id=xavier.id,
+        plotting_room_id=prospective_room.id,
+    )
+
+    rogue_hook = repo.get_character_plot_hook_by_slug(
+        community_id,
+        rogue.id,
+        "old-ghosts-new-lines",
+    )
+    hook_interest = _get_or_create(
+        lambda: repo.get_character_plot_hook_interest_for_character(
+            community_id,
+            rogue_hook.id,
+            xavier.id,
+        ),
+        lambda: repo.create_character_plot_hook_interest(
+            community_id,
+            rogue_hook.id,
+            xavier.membership_id,
+            xavier.id,
+            note=(
+                "Charles has an old mission report, but he offers it as a question rather "
+                "than a claim about Rogue's past."
+            ),
+        ),
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=rogue.membership_id,
+        kind="plot_hook_interest",
+        actor_membership_id=xavier.membership_id,
+        actor_character_id=xavier.id,
+        character_plot_hook_id=rogue_hook.id,
+    )
+    hook_room = _get_or_create(
+        lambda: repo.get_plotting_room_for_plot_hook_interest(
+            community_id,
+            hook_interest.id,
+        ),
+        lambda: repo.create_plotting_room(
+            community_id,
+            rogue.membership_id,
+            f"{rogue_hook.title}: {xavier.name}",
+            source_plot_hook_id=rogue_hook.id,
+            source_plot_hook_interest_id=hook_interest.id,
+            summary=rogue_hook.summary,
+            status="brainstorming",
+        ),
+    )
+    repo.update_character_plot_hook_interest_status(
+        community_id,
+        hook_interest.id,
+        "plotting",
+    )
+    if rogue_hook.status == "open":
+        repo.update_character_plot_hook(
+            community_id,
+            rogue_hook.id,
+            title=rogue_hook.title,
+            hook_type=rogue_hook.hook_type,
+            summary=rogue_hook.summary,
+            body=rogue_hook.body,
+            status="plotting",
+            related_material_id=rogue_hook.related_material_id,
+        )
+    _ensure_plotting_room_participant(
+        repo,
+        community_id,
+        hook_room.id,
+        rogue.membership_id,
+        character_id=rogue.id,
+        participant_role="owner",
+    )
+    _ensure_plotting_room_participant(
+        repo,
+        community_id,
+        hook_room.id,
+        xavier.membership_id,
+        character_id=xavier.id,
+    )
+    repo.update_plotting_room_plan(
+        community_id,
+        hook_room.id,
+        notes=(
+            "The report opens a conversation; it does not define Rogue's memories or "
+            "consent. Let the writers choose what the old mission changes."
+        ),
+        next_step=(
+            "Open a Mutant Underground scene when Rogue is ready to decide what the report means."
+        ),
+        target_board_id=repo.get_board_by_slug(community_id, "mutant-underground").id,
+        status="threaded" if hook_room.target_thread_id is not None else "ready",
+    )
+    _ensure_plotting_room_message(
+        repo,
+        community_id,
+        hook_room.id,
+        rogue.membership_id,
+        "I can look at the report. I do not want it used as a map that tells me who I was.",
+        author_character_id=rogue.id,
+    )
+    _ensure_plotting_room_message(
+        repo,
+        community_id,
+        hook_room.id,
+        xavier.membership_id,
+        "Understood. The file offers a question; you decide which memories belong in the room.",
+        author_character_id=xavier.id,
+    )
+    _ensure_notification(
+        repo,
+        community_id,
+        membership_id=xavier.membership_id,
+        kind="plotting_room_created",
+        actor_membership_id=rogue.membership_id,
+        actor_character_id=rogue.id,
+        plotting_room_id=hook_room.id,
+    )
+
+
+def _ensure_plotting_room_participant(
+    repo: ForumRepository,
+    community_id: int,
+    plotting_room_id: int,
+    membership_id: int,
+    *,
+    character_id: int | None = None,
+    prospective_character_name: str = "",
+    participant_role: str = "participant",
+) -> None:
+    _get_or_create(
+        lambda: repo.get_plotting_room_participant_for_identity(
+            community_id,
+            plotting_room_id,
+            membership_id,
+            character_id=character_id,
+            prospective_character_name=prospective_character_name,
+        ),
+        lambda: repo.create_plotting_room_participant(
+            community_id,
+            plotting_room_id,
+            membership_id,
+            character_id=character_id,
+            prospective_character_name=prospective_character_name,
+            participant_role=participant_role,
+        ),
+    )
+
+
+def _ensure_plotting_room_message(
+    repo: ForumRepository,
+    community_id: int,
+    plotting_room_id: int,
+    author_membership_id: int,
+    body: str,
+    *,
+    author_character_id: int | None = None,
+) -> None:
+    if any(
+        message.author_membership_id == author_membership_id
+        and message.author_character_id == author_character_id
+        and message.body == body
+        for message in repo.list_plotting_room_messages(community_id, plotting_room_id)
+    ):
+        return
+    repo.create_plotting_room_message(
+        community_id,
+        plotting_room_id,
+        author_membership_id,
+        body,
+        author_character_id=author_character_id,
     )
 
 

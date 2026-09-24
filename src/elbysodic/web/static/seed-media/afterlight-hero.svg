@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Afterlight Accord border town at the last light</title>
+  <desc id="desc">A broken treaty halo hangs above an old border town, with a lit road passing through its open gate toward the horizon.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#15182b"/>
+      <stop offset="0.5" stop-color="#40304b"/>
+      <stop offset="1" stop-color="#bb7550"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#e4ad70" stop-opacity=".74"/>
+      <stop offset="1" stop-color="#433b49" stop-opacity=".1"/>
+    </linearGradient>
+    <radialGradient id="afterglow">
+      <stop offset="0" stop-color="#f7d898" stop-opacity=".62"/>
+      <stop offset=".55" stop-color="#d99c70" stop-opacity=".19"/>
+      <stop offset="1" stop-color="#d99c70" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="maplines" width="72" height="72" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)">
+      <path d="M0 0h72M0 0v72" fill="none" stroke="#f1d9b0" stroke-opacity=".08" stroke-width="1"/>
+      <circle cx="0" cy="0" r="2" fill="#f1d9b0" fill-opacity=".18"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="1190" cy="300" r="360" fill="url(#afterglow)"/>
+  <g fill="#f4d9ae" opacity=".65">
+    <circle cx="975" cy="126" r="2"/><circle cx="1054" cy="207" r="3"/>
+    <circle cx="1360" cy="129" r="2"/><circle cx="1494" cy="261" r="2"/>
+    <circle cx="1130" cy="91" r="1.5"/><circle cx="1423" cy="365" r="2"/>
+  </g>
+  <circle cx="1210" cy="310" r="112" fill="#e6b875" fill-opacity=".2"/>
+  <circle cx="1210" cy="310" r="76" fill="#f5d49c" fill-opacity=".78"/>
+  <path d="M1140 272a76 76 0 0 1 139 17M1278 341a76 76 0 0 1-118 36M1151 384a76 76 0 0 1-16-43" fill="none" stroke="#f7e2bd" stroke-width="8" stroke-linecap="round"/>
+  <path d="m1187 237 24 40-20 25 29 27-19 28 29 28" fill="none" stroke="#8c5c55" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+  <path d="M0 563c173-80 314-82 437-7 111-135 265-180 462-82 133-115 260-137 382-65 115-81 223-102 319-65v556H0z" fill="#342d42"/>
+  <path d="M0 631c199-99 369-91 511 24 163-119 316-126 460-21 116-120 255-145 417-74 81-45 151-60 212-47v387H0z" fill="#25283b"/>
+  <g fill="#1a2031">
+    <path d="M825 538h114v192H825zM858 484h49v54h-49zM926 572h112v158H926zM964 520h38v52h-38z"/>
+    <path d="M1230 500h176v230h-176zM1260 432h115v68h-115zM1290 371h54v61h-54z"/>
+    <path d="M1440 552h160v178h-160zM1470 494h90v58h-90z"/>
+  </g>
+  <g fill="#e9b77b" opacity=".76">
+    <path d="M850 571h12v24h-12zM892 571h12v24h-12zM950 603h12v22h-12zM1001 603h12v22h-12z"/>
+    <path d="M1264 528h18v28h-18zM1312 528h18v28h-18zM1360 528h18v28h-18zM1480 580h16v25h-16zM1532 580h16v25h-16z"/>
+  </g>
+  <path d="M1136 558h174v205h-174z" fill="#191f30"/>
+  <path d="M1117 564v-85c0-62 48-112 106-112s106 50 106 112v85" fill="none" stroke="#c89162" stroke-width="25"/>
+  <path d="M1191 763c8-88 17-144 32-179 15 35 24 91 32 179 112 32 227 74 345 137H808c118-63 233-105 383-137z" fill="url(#road)"/>
+  <path d="M0 767c180-36 332-34 458 6 122 39 237 46 344 22 144-32 264-31 360 3 145 51 291 50 438-3v105H0z" fill="#171e2d"/>
+  <path d="M0 814c251-27 453 6 605 48 164 45 330 44 497-2 171-46 337-49 498-8" fill="none" stroke="#c58b66" stroke-opacity=".66" stroke-width="3"/>
+  <path d="M0 0h1600v900H0z" fill="url(#maplines)"/>
+  <path d="M0 0h880c-119 188-172 391-161 609C614 712 534 808 426 900H0z" fill="#101725" fill-opacity=".48"/>
+  <g fill="none" stroke="#e6bd88" stroke-opacity=".45" stroke-width="3">
+    <path d="M1400 0c-87 92-130 192-129 301s43 208 127 298"/>
+    <path d="M1464 0c-72 95-107 196-106 302s36 208 109 297"/>
+  </g>
+</svg>

@@ -5,15 +5,17 @@
     display: grid;
     gap: clamp(1rem, 3vw, 1.6rem);
     grid-template-columns: minmax(0, 1fr) minmax(min(100%, 18rem), 0.35fr);
-    padding: clamp(2rem, 6vw, 5rem) 0 clamp(1rem, 2vw, 2rem);
+    padding: clamp(1.5rem, 4vw, 3.5rem) 0 clamp(1rem, 2vw, 1.5rem);
 }
 
 .elbysodic-director-hero h1 {
     font-family: var(--elbysodic-display-font-family);
-    font-size: clamp(3.5rem, 8vw, 6.5rem);
+    font-size: clamp(2.3rem, 4.4vw, 3.9rem);
     letter-spacing: 0;
-    line-height: 0.86;
+    line-height: 1;
     margin: 0;
+    max-width: 18ch;
+    text-wrap: balance;
 }
 
 .elbysodic-director-hero p {

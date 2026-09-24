@@ -1,13 +1,13 @@
 {% imports %}
   {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/inline_counter.html" import inline_counter %}
   {% from "chirpui/surface.html" import surface %}
   {% from "_components/facets.html" import facet_pills %}
+  {% from "_components/icons.html" import icon_counter %}
   {% from "_components/ui.html" import cast_faces, latest_line %}
 {% end %}
 
 {% def thread_card(board, thread, author, author_membership, participants, facets, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post, episode=None) %}
-{% call surface(variant="elevated") %}
+{% call surface(variant="elevated", cls="elbysodic-thread-card-shell") %}
 <article class="elbysodic-thread-card {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
   <a class="elbysodic-thread-card__poster elbysodic-board-media--{{ board.slug }}"
      href="/boards/{{ board.slug }}/threads/{{ thread.slug }}"
@@ -93,7 +93,7 @@
     </div>
     {% if reply_count %}
     <div class="elbysodic-thread-card__metrics">
-      {{ inline_counter("chat" | icon, reply_count, "replies") }}
+      {{ icon_counter("reply", reply_count, "replies") }}
     </div>
     {% end %}
     {% if facets %}
@@ -115,7 +115,7 @@
 {% end %}
 
 {% def compact_thread_card(board, thread, author, author_membership, participants, facets, latest_post, jump_post, jump_label, last_own_post, reply_count, is_unread, badges, heading_level, show_board_name, show_last_own_post, episode=None) %}
-{% call surface(variant="elevated") %}
+{% call surface(variant="elevated", cls="elbysodic-thread-card-shell") %}
 <article class="elbysodic-thread-card elbysodic-thread-card--compact {{ "elbysodic-thread-card--unread" if is_unread else "" }}">
   <div class="elbysodic-thread-card__main">
     {% if heading_level == "h2" %}
@@ -152,7 +152,7 @@
     {% for item_badge in badges %}
     {{ badge(item_badge.label, variant=item_badge.variant) }}
     {% end %}
-    {{ inline_counter("R", reply_count, "replies") if reply_count else "" }}
+    {{ icon_counter("reply", reply_count, "replies") if reply_count else "" }}
     {{ cast_faces(participants, label="Cast") }}
   </div>
   {% if latest_post %}

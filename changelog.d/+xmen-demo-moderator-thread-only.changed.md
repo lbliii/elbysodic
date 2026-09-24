@@ -1,1 +1,1 @@
-The X-Men demo Moderator now has thread-moderation access only, while the separate Staff persona retains application and Studio review access.
+The X-Men demo Moderator now has thread moderation access only, while the separate Staff persona retains application and Studio review access. The thread controls are labeled “Thread moderation” so they read correctly for both Moderators and Staff.

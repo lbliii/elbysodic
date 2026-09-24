@@ -95,7 +95,7 @@ def test_public_preview_handoff_templates_and_docs_name_viewer_states() -> None:
         assert snippet in gateway
     for snippet in [
         "Browse public previews first",
-        "Explore cards stay public-preview safe",
+        "Find your next story.",
         "Search story fit",
     ]:
         assert snippet in network
@@ -203,7 +203,7 @@ def test_faceless_member_gets_first_face_continuation_without_active_face_contro
             )
 
         assert desk.status == 200
-        assert "No faces on your roster yet." in desk.text
+        assert "Your story starts here" in desk.text
         assert "First face" in desk.text
         assert "playing as" not in desk.text
         assert "Application Review Room" not in desk.text

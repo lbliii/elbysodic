@@ -1,0 +1,1 @@
+Original-premise demo realms now open with distinct, event-specific scenes instead of repeated starter threads. Seeded premise and event titles lead with the story across discovery and realm gateways.

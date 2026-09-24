@@ -11,6 +11,8 @@
 
 .chirpui-surface {
     border-color: var(--chirpui-border-subtle);
+    border-radius: var(--chirpui-radius);
+    box-shadow: none;
 }
 
 .chirpui-field__input {
@@ -124,7 +126,7 @@
 .elbysodic-field__input {
     display: block;
     width: 100%;
-    padding: var(--elbysodic-space-sm);
+    padding: var(--elbysodic-control-padding-block) var(--elbysodic-control-padding-inline);
     border: 1px solid var(--chirpui-border);
     border-radius: var(--elbysodic-radius-sm);
     font: inherit;
@@ -210,13 +212,12 @@ a.elbysodic-btn {
     background: var(--chirpui-surface);
     color: var(--chirpui-text);
     cursor: pointer;
-    box-shadow: var(--chirpui-shadow-sm);
+    box-shadow: none;
     transition:
         background var(--elbysodic-motion-feedback),
         border-color var(--elbysodic-motion-feedback),
         color var(--elbysodic-motion-feedback),
-        transform var(--elbysodic-motion-feedback),
-        box-shadow var(--elbysodic-motion-feedback);
+        transform var(--elbysodic-motion-feedback);
 }
 
 .elbysodic-btn:hover:not(:disabled) {
@@ -265,7 +266,7 @@ a.elbysodic-btn {
 
 .elbysodic-btn--ghost {
     background: transparent;
-    border-color: var(--chirpui-border);
+    border-color: transparent;
     box-shadow: none;
 }
 
@@ -291,8 +292,7 @@ a.elbysodic-btn {
 
 @media (prefers-reduced-motion: no-preference) {
     .elbysodic-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: var(--chirpui-shadow-md);
+        transform: translateY(-1px);
     }
 
     .elbysodic-btn:active:not(:disabled) {

@@ -16,36 +16,61 @@
   {% end %}
 
   {% call surface(variant="elevated") %}
-  <article class="elbysodic-interest-card">
-    <a class="elbysodic-character-chip" href="/characters/{{ room.character_view.character.slug }}">
-      <span class="elbysodic-character-avatar" aria-hidden="true">
+  <article class="elbysodic-application-card">
+    <div class="elbysodic-application-card__face">
+      <a class="elbysodic-application-card__avatar"
+         href="/characters/{{ room.character_view.character.slug }}"
+         aria-label="{{ room.character_view.character.name }}">
         {% if room.character_view.character.avatar_url %}
         <img src="{{ room.character_view.character.avatar_url }}" alt="">
         {% else %}
         {{ room.character_view.character.name[:1] }}
         {% end %}
-      </span>
-      <span>{{ room.character_view.character.name }}</span>
-    </a>
-    <div>
-      <h3>{{ room.application.title }}</h3>
+      </a>
+      <div class="elbysodic-application-card__identity">
+        <h3>
+          <a class="chirpui-link" href="/characters/{{ room.character_view.character.slug }}">
+            {{ room.character_view.character.name }}
+          </a>
+        </h3>
+        <p class="elbysodic-copy-meta">
+          writer
+          <a class="chirpui-link" href="/members/{{ room.character_view.membership.username }}">
+            {{ room.character_view.membership.display_name }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="elbysodic-application-card__body">
       <p class="elbysodic-copy-summary">
         {{ room.application.summary if room.application.summary else room.character_view.character.summary }}
       </p>
-      <p class="elbysodic-copy-meta">
-        writer
-        <a class="chirpui-link" href="/members/{{ room.character_view.membership.username }}">
-          {{ room.character_view.membership.display_name }}
-        </a>
-      </p>
       {{ facet_pills(room.character_view.facets) }}
     </div>
-    <div class="elbysodic-interest-card__meta">
-      {{ badge(room.character_view.status_label, variant=room.character_view.status_variant) }}
-      {{ badge("yours", variant="success") if room.character_view.is_owned_by_viewer else "" }}
-      {{ badge("director view", variant="info") if room.can_review else "" }}
+    <div class="elbysodic-application-card__review">
+      <div class="elbysodic-application-card__badges">
+        {{ badge(room.character_view.status_label, variant=room.character_view.status_variant) }}
+        {{ badge("yours", variant="success") if room.character_view.is_owned_by_viewer else "" }}
+        {{ badge("director view", variant="info") if room.can_review else "" }}
+      </div>
     </div>
   </article>
+  {% end %}
+
+  {% if room.source_wanted_hook %}
+  <section class="chirpui-stack chirpui-stack--md">
+    {% call section_header("From a wanted hook") %}
+    The original open call connected to this face.
+    {% end %}
+    {% call surface(variant="elevated") %}
+    <div class="chirpui-stack chirpui-stack--sm">
+      <a class="chirpui-link" href="/wanted/{{ room.source_wanted_hook.slug }}">
+        {{ room.source_wanted_hook.title }}
+      </a>
+      <p class="elbysodic-copy-summary">{{ room.source_wanted_hook.summary }}</p>
+    </div>
+    {% end %}
+  </section>
   {% end %}
 
   {% if room.field_values and not room.can_edit_application %}

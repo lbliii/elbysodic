@@ -301,7 +301,10 @@ def test_export_manifest_redacts_auth_material_and_cross_realm_shared_account() 
         and item.character_id == xmen_character.id
         for item in manifest.ownership
     )
-    assert all(item.record_id != hp_character.id for item in manifest.ownership)
+    assert not any(
+        item.kind == "character" and item.record_id == hp_character.id
+        for item in manifest.ownership
+    )
     assert "Shared Export X-Men Face" in rendered_manifest
     assert "Shared Export HP Face" not in rendered_manifest
     assert "shared-export@example.com" not in rendered_manifest

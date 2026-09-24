@@ -12,11 +12,11 @@
   <section class="elbysodic-desk-hero elbysodic-desk-hero--v2">
     <div class="elbysodic-stack elbysodic-stack--sm">
       <h1>Writer Desk</h1>
-      <p class="elbysodic-copy-lead">Return to a scene, catch up on reading, or move a plot forward.</p>
+      <p class="elbysodic-copy-lead">{{ desk.hero_summary }}</p>
     </div>
   </section>
 
-  {% call page_pulse("Up next", "Pick up where you left off", desk.current_focus_label, "desk-queue-heading", "elbysodic-page-pulse--desk") %}
+  {% call page_pulse(desk.focus_kicker, desk.focus_title, desk.current_focus_label, "desk-queue-heading", "elbysodic-page-pulse--desk") %}
     {% if desk.has_attention_counts %}
     <div class="elbysodic-desk-queue__metrics" aria-label="Desk queue totals">
       {% if desk.needs_reply_count %}
@@ -40,9 +40,7 @@
     {% end %}
   {% end %}
 
-  {% if desk.needs_first_face %}
-  {{ empty_policy_block("No faces on your roster yet.", desk.activation.summary, "First face", desk.activation.primary_label, desk.activation.primary_href) }}
-  {% elif not desk.lanes %}
+  {% if not desk.needs_first_face and not desk.lanes %}
   {{ empty_policy_block("No desk lanes need you right now.", "When replies, watched scenes, plotting movement, applications, or notifications need attention, they will appear here.", "Caught up") }}
   {% end %}
 
