@@ -595,13 +595,14 @@ def notification_item(
             snippet = f"{actor_label} created a reserve from this wanted hook."
         else:
             snippet = f"{actor_label} is interested in this wanted hook."
-        if interest is not None and interest.character_id is None:
-            snippet = (
-                f"{actor_membership.display_name} would create "
-                f"{interest.prospective_character_name} for this hook."
-            )
-        if interest is not None and interest.note:
-            snippet = interest.note
+        if notification.kind == "wanted_interest" and interest is not None:
+            if interest.character_id is None:
+                snippet = (
+                    f"{actor_membership.display_name} would create "
+                    f"{interest.prospective_character_name} for this hook."
+                )
+            if interest.note:
+                snippet = interest.note
         return NotificationItem(
             notification=notification,
             board=None,

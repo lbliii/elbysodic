@@ -42,7 +42,7 @@ obvious.
 
 | Key | Account | Community | Membership | Role | Face | QA Purpose |
 | --- | --- | --- | --- | --- | --- | --- |
-| `xmen_writer` | `writer@example.com` | X-Men Apocalypse | `starlane` | Member | Rogue | ordinary writer, active-face reserve, casting handoffs, scene posting |
+| `xmen_writer` | `writer@example.com` | X-Men Apocalypse | `starlane` | Member | Rogue | ordinary writer, active-face reserve, a watched scene waiting on Rogue, casting handoffs, and scene posting |
 | `xmen_staff` | `moira@example.com` | X-Men Apocalypse | `moira` | Staff | Moira MacTaggert | Studio, applications, claims, private production rooms |
 | `xmen_mod` | `alex@example.com` | X-Men Apocalypse | `alex` | Moderator | Cyclops | thread moderation QA on readable boards: pin, lock, move, and update scene status |
 | `xmen_partner` | `charlie@example.com` | X-Men Apocalypse | `charlie` | Member | Charles Xavier | wanted and character plot-hook interest, private plotting rooms, notification handoffs, and counterparty checks |
@@ -83,6 +83,11 @@ a scene in Mutant Underground, so `xmen_writer` opens `/plotting` to review the
 room and start the handoff as Rogue. These records populate the casting desk,
 plotting list, and relevant notification inboxes without treating Dana as an
 accepted face or exposing room notes on public pages.
+
+Rogue's watched Danger Room scene also has a fresh reply from Charles that
+leaves the next choice with Rogue's writer. `xmen_writer` opens `/desk` with
+that reply prioritized, alongside the separate waiting, plotting, discovery,
+reserve, and notification work.
 
 Kitty's application is a complete review-room example: it has answered
 director-defined claim fields, a prior revision request, a writer resubmission,

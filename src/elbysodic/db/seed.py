@@ -6250,6 +6250,30 @@ def seed_demo_forum(repo: ForumRepository) -> DemoSeed:
             "Rogue drops from the observation gantry, gloves already off, and grins at the first incoming target.",
         ),
     )
+    drill_reply_body = (
+        "The second Sentinel unfolded before the first had finished its turn. From the "
+        "observation booth, Charles watched the safety panel switch from blue to amber "
+        "and tried the cutoff once. The console gave him a polite refusal.\n\n"
+        "He leaned over the intercom, keeping his voice level even as the drill kept "
+        "changing around her. \"Rogue, this isn't the program we loaded. I can keep "
+        "trying to stop it from up here, but tell me what you're seeing first.\""
+    )
+    _ensure_post(repo, community.id, drill.id, xavier.id, drill_reply_body)
+    drill_reply = next(
+        post
+        for post in repo.list_posts(community.id, drill.id)
+        if post.author_character_id == xavier.id and post.body == drill_reply_body
+    )
+    _ensure_notification(
+        repo,
+        community.id,
+        membership_id=rogue.membership_id,
+        kind="thread_reply",
+        actor_membership_id=xavier.membership_id,
+        actor_character_id=xavier.id,
+        thread_id=drill.id,
+        post_id=drill_reply.id,
+    )
 
     claims = _get_or_create(
         lambda: repo.get_thread_by_slug(community.id, applications.id, "reserves-and-claims"),
