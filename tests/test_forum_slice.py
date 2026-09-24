@@ -10544,7 +10544,12 @@ def test_plotting_room_sse_closes_cleanly_on_worker_draining(caplog) -> None:
         assert len(close_events) == 1
         assert close_events[0].data == "complete"
         messages = [record.getMessage() for record in caplog.records]
-        assert "event=worker_draining plotting_streams_active=1" in messages
+        drain_messages = [
+            message for message in messages if message.startswith("event=worker_draining")
+        ]
+        assert len(drain_messages) == 1
+        assert drain_messages[0].startswith("event=worker_draining plotting_streams_active=1")
+        assert "worker_id=0 generation=1" in drain_messages[0]
         assert "event=plotting_stream_closed plotting_streams_active=0" in messages
 
     asyncio.run(run())
