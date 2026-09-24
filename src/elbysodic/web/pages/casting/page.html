@@ -1,15 +1,16 @@
 {% imports %}
-  {% from "chirpui/badge.html" import badge %}
-  {% from "chirpui/layout.html" import container, stack, cluster, section_header %}
-  {% from "chirpui/stat.html" import stat %}
-  {% from "chirpui/surface.html" import surface %}
-  {% from "_components/ui.html" import empty_policy_block %}
+  {% from "_components/ui.html" import empty_policy_block, page_section %}
+  {% from "_components/vocabulary.html" import metric_item %}
   {% from "_components/wanted.html" import thread_signal %}
 {% end %}
 
+{% def casting_label(label, strong=false) %}
+<span class="elbysodic-reader-chip{{ " elbysodic-reader-chip--strong" if strong else "" }}">{{ label }}</span>
+{% end %}
+
 {% def reserve_card(item) %}
-{% call surface(variant="elevated") %}
-<article class="elbysodic-interest-card">
+<div class="chirpui-surface chirpui-surface--elevated">
+<article class="elbysodic-interest-card elbysodic-interest-card--reserve">
   <a class="elbysodic-character-chip" href="/characters/{{ item.character.slug }}">
     <span class="elbysodic-character-avatar" aria-hidden="true">
       {% if item.character.avatar_url %}
@@ -31,26 +32,27 @@
     {% end %}
   </div>
   <div class="elbysodic-interest-card__meta">
-    {{ badge(item.reserve.status, variant="success") }}
+    {{ casting_label(item.reserve.status, true) }}
     <span>{{ item.created_at_label }}</span>
   </div>
 </article>
-{% end %}
+</div>
 {% end %}
 
 {% block page_root %}
 <div id="page-root">
 {% block page_root_inner %}
 {% block page_content %}
-{% call container(max_width="72rem") %}
-{% call stack(gap="lg") %}
-  {% call section_header("Casting desk") %}
-  Interest, active reserves, and wanted handoffs across {{ viewer.community.name }}.
-  {% end %}
+<div class="chirpui-container" style="--chirpui-container-max: 72rem">
+<div class="elbysodic-stack elbysodic-stack--lg">
+  <header class="elbysodic-page-section__header">
+    <h2>Casting desk</h2>
+    <p>Interest, active reserves, and wanted handoffs across {{ viewer.community.name }}.</p>
+  </header>
 
-  {% call surface(variant="elevated") %}
-  <article class="chirpui-stack chirpui-stack--md elbysodic-casting-desk-hero">
-    <div class="chirpui-cluster elbysodic-cluster--between">
+  <div class="chirpui-surface chirpui-surface--elevated">
+  <article class="elbysodic-stack elbysodic-stack--md elbysodic-casting-desk-hero">
+    <div class="elbysodic-cluster elbysodic-cluster--between">
       <div class="elbysodic-casting-desk-hero__identity">
         {{ thread_signal() }}
         <div>
@@ -71,16 +73,16 @@
         </div>
       </div>
     </div>
-    {% call cluster(gap="sm") %}
-      {{ stat(value=desk.active_reserves | length, label="Active reserves") }}
-      {{ stat(value=desk.wanted_with_interest | length, label="Hooks with interest") }}
-      {{ stat(value=desk.my_reserves | length, label="My reserves") }}
+    <div class="elbysodic-cluster elbysodic-cluster--sm">
       {% if desk.active_face %}
-      {{ stat(value=desk.active_face_reserves | length, label="Active face reserves") }}
+      {{ metric_item(desk.active_face_reserves | length, "Active face reserves") }}
       {% end %}
-    {% end %}
+      {{ metric_item(desk.my_reserves | length, "My active reserves") }}
+      {{ metric_item(desk.wanted_with_interest | length, "Hooks with interest") }}
+      {{ metric_item(desk.active_reserves | length, "Community reserves") }}
+    </div>
   </article>
-  {% end %}
+  </div>
 
   {% set has_handoffs = desk.active_face_reserves or desk.wanted_with_interest or desk.active_reserves %}
   {% if not has_handoffs %}
@@ -89,29 +91,23 @@
 
   {% if desk.active_face %}
   {% if desk.active_face_reserves %}
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Active face reserves") %}
-    Hooks and claims attached to the active face.
-    {% end %}
+  {% call page_section("Active face reserves", "Hooks and claims attached to the active face.") %}
     <div class="elbysodic-interest-list">
       {% for item in desk.active_face_reserves %}
       {{ reserve_card(item) }}
       {% end %}
     </div>
-  </section>
+  {% end %}
   {% end %}
   {% end %}
 
   {% if desk.wanted_with_interest %}
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Wanted handoffs") %}
-    Hooks with raised hands, plotting movement, or created reserves.
-    {% end %}
+  {% call page_section("Wanted handoffs", "Hooks with raised hands, plotting movement, or created reserves.") %}
     <div class="elbysodic-interest-list">
       {% for item in desk.wanted_with_interest %}
-      {% call surface(variant="elevated") %}
-      <article class="chirpui-stack chirpui-stack--md elbysodic-casting-thread-card">
-        <div class="chirpui-cluster elbysodic-cluster--between">
+      <div class="chirpui-surface chirpui-surface--elevated">
+      <article class="elbysodic-stack elbysodic-stack--md elbysodic-casting-thread-card">
+        <div class="elbysodic-cluster elbysodic-cluster--between">
           <div class="elbysodic-wanted-card__heading">
             {{ thread_signal() }}
             <div>
@@ -126,9 +122,9 @@
             </div>
           </div>
           <div class="elbysodic-interest-card__meta">
-            {{ badge(item.wanted_ad.wanted_ad.status, variant="success" if item.wanted_ad.wanted_ad.status == "open" else "muted") }}
+            {{ casting_label(item.wanted_ad.wanted_ad.status, item.wanted_ad.wanted_ad.status == "open") }}
             {% if item.is_created_by_viewer %}
-            {{ badge("mine", variant="info") }}
+            {{ casting_label("mine", true) }}
             {% end %}
           </div>
         </div>
@@ -147,12 +143,12 @@
                 {% end %}
               </span>
               <span>{{ interest.character.name }}</span>
-              {{ badge(interest.interest.status, variant="warning" if interest.interest.status == "reserved" else "info") }}
+              {{ casting_label(interest.interest.status, interest.interest.status == "reserved") }}
             </a>
             {% else %}
             <span class="elbysodic-character-chip">
               <span>{{ interest.interest.prospective_character_name }}</span>
-              {{ badge(interest.interest.status, variant="warning" if interest.interest.status == "reserved" else "info") }}
+              {{ casting_label(interest.interest.status, interest.interest.status == "reserved") }}
             </span>
             {% end %}
             {% end %}
@@ -179,27 +175,24 @@
         </div>
         {% end %}
       </article>
-      {% end %}
+      </div>
       {% end %}
     </div>
-  </section>
+  {% end %}
   {% end %}
 
   {% if desk.active_reserves %}
-  <section class="chirpui-stack chirpui-stack--md">
-    {% call section_header("Active Reserves") %}
-    Community-wide claims that have moved beyond a raised hand.
-    {% end %}
+  {% call page_section("Community reserves", "Current holds across every face in the realm.") %}
     <div class="elbysodic-interest-list">
       {% for item in desk.active_reserves %}
       {{ reserve_card(item) }}
       {% end %}
     </div>
-  </section>
   {% end %}
   {% end %}
-{% end %}
-{% end %}
+  {% end %}
+  </div>
+  </div>
 {% end %}
 {% endblock %}
 </div>
