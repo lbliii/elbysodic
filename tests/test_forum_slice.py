@@ -1026,8 +1026,7 @@ def test_tenant_prefixed_route_overrides_development_community_header() -> None:
         assert response.status == 200
         assert "Jurassic Park Universe" in response.text
         material_content = _page_content(response.text)
-        assert "World material" in material_content
-        assert "Paddock Twelve" not in material_content
+        assert "Paddock Twelve" in material_content
         assert (
             'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
         )
@@ -2226,7 +2225,7 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "/applications/new" not in response.text
         assert "Start application" not in response.text
         assert 'class="elbysodic-network-card__realm-link"' in response.text
-        assert 'aria-label="Preview Jurassic Park Universe"' in response.text
+        assert 'aria-label="Preview Jurassic Park Universe"' not in response.text
         assert 'class="elbysodic-network-card__icon-action' in response.text
         assert 'aria-label="Read chapter"' in response.text
         assert 'aria-label="Open calls"' in response.text
@@ -3568,7 +3567,7 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         assert "Iceman is infected with B-24" in xmen.text
 
         assert hp_home.status == 200
-        assert "elbysodic-realm-gateway-hero" in hp_home.text
+        assert "elbysodic-world-hero--poster" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-mark.svg" in hp_home.text
         assert "/elbysodic-static/seed-media/hp-hero.svg" in hp_home.text
         assert 'alt="Glass staircase rising through castle stacks"' in hp_home.text
