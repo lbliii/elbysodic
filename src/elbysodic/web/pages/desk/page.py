@@ -86,6 +86,14 @@ class DeskOverview:
         return self.activation.needs_first_face
 
     @property
+    def focus_kicker(self) -> str:
+        return "First face" if self.needs_first_face else "Up next"
+
+    @property
+    def focus_title(self) -> str:
+        return "Your story starts here" if self.needs_first_face else "Pick up where you left off"
+
+    @property
     def next_queue_href(self) -> str:
         if self.queue.needs_reply:
             item = self.queue.needs_reply[0]
@@ -106,6 +114,8 @@ class DeskOverview:
 
     @property
     def current_focus_label(self) -> str:
+        if self.needs_first_face:
+            return "Choose who enters the realm first."
         if self.activation.stage != "active_scene":
             return self.activation.headline
         if self.queue.needs_reply:

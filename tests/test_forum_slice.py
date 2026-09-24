@@ -3755,9 +3755,11 @@ def test_writer_hubs_give_faceless_members_a_first_face_path() -> None:
             assert 'href="/c/x-men-apocalypse/locations"' in realm_home.text
 
             assert desk.status == 200
-            assert "Start with a first face" in desk.text
-            assert "No faces on your roster yet." in desk.text
+            assert "Your story starts here" in desk.text
+            assert "Choose who enters the realm first." in desk.text
+            assert "No faces on your roster yet." not in desk.text
             assert "Start first face" in desk.text
+            assert desk.text.count("Start first face") == 1
             assert 'href="/applications/new"' in desk.text
             assert "Your roster is caught up" not in desk.text
 

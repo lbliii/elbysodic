@@ -275,8 +275,10 @@ def test_no_face_and_application_states_keep_next_move_visible_without_staff_lea
             )
 
         assert no_face_desk.status == 200
-        assert "No faces on your roster yet." in no_face_desk.text
+        assert "Your story starts here" in no_face_desk.text
+        assert "No faces on your roster yet." not in no_face_desk.text
         assert "Start first face" in no_face_desk.text
+        assert no_face_desk.text.count("Start first face") == 1
         assert "playing as" not in no_face_desk.text
         assert "Application Review Room" not in no_face_desk.text
 
