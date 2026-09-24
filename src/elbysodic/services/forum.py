@@ -1453,7 +1453,9 @@ class AppServices:
         viewer = self.viewer()
         if not policies.can_manage_world(viewer.membership, viewer.role):
             raise PermissionError("director access is required to update launch status")
-        return self.repo.update_community_launch_status(viewer.community.id, launch_status)
+        updated = self.repo.update_community_launch_status(viewer.community.id, launch_status)
+        self._invalidate_viewer()
+        return updated
 
     def apply_guided_realm_builder_minimum(
         self,

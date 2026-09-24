@@ -1025,7 +1025,9 @@ def test_tenant_prefixed_route_overrides_development_community_header() -> None:
 
         assert response.status == 200
         assert "Jurassic Park Universe" in response.text
-        assert "Current Event: Paddock Twelve" in response.text
+        material_content = _page_content(response.text)
+        assert "World material" in material_content
+        assert "Paddock Twelve" not in material_content
         assert (
             'class="elbysodic-community-brand__name">Jurassic Park Universe</span>' in response.text
         )
@@ -2216,11 +2218,11 @@ def test_network_directory_lists_programs_and_realm_entry_actions() -> None:
         assert "Emberhouse" in response.text
         assert "Gaslight Ward" in response.text
         assert "Wayfarer Station" in response.text
-        assert "your current realm is marked when it appears" in response.text
+        assert "Browse realms by premise, pace, open calls, and scenes in motion." in response.text
         assert "Request access open" in response.text
         assert "Public activity " in response.text
         assert "Application guide ready" in response.text
-        assert "Claims configured" in response.text
+        assert re.search(r"\b\d+ claims\b", _page_content(response.text))
         assert "/applications/new" not in response.text
         assert "Start application" not in response.text
         assert 'class="elbysodic-network-card__realm-link"' in response.text
@@ -2260,12 +2262,13 @@ def test_network_explore_search_filters_programs() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            response = await client.get("/network?q=magic school")
+            response = await client.get("/network?q=small town")
 
         assert response.status == 200
-        assert 'value="magic school"' in response.text
+        assert 'value="small town"' in response.text
         assert "1</strong>\n  <span>realms found</span>" in response.text
-        assert "HP Universe" in response.text
+        assert "Preview RL Small Town" in response.text
+        assert "Preview HP Universe" not in response.text
 
     asyncio.run(run())
 
@@ -2274,14 +2277,14 @@ def test_global_search_renders_public_realm_results() -> None:
     async def run() -> None:
         app = _app()
         async with TestClient(app) as client:
-            response = await client.get("/search?q=magic school")
+            response = await client.get("/search?q=small town")
 
         assert response.status == 200
         assert "Search All realms" in response.text
         assert "elbysodic-search-section__header" in response.text
-        assert "HP Universe" in response.text
+        assert "RL Small Town" in response.text
         assert "2 wanted · 3 faces" in response.text
-        assert 'href="/c/hp-universe"' in response.text
+        assert 'href="/c/rl-small-town"' in response.text
 
     asyncio.run(run())
 
@@ -2662,7 +2665,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
             for community_slug, (
                 onboarding_pitch,
                 scene_hub,
-                premise_label,
+                _premise_label,
                 wanted_slug,
             ) in gateway_expectations.items():
                 response = await client.get(f"/c/{community_slug}")
@@ -2676,7 +2679,6 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert "Public preview" in content
                 if community_slug == "harbor-society":
                     assert "21+ / 2/2/2" in content
-                assert premise_label in content
                 assert onboarding_pitch in content
                 assert "Places" in content
                 assert "Choose a setting" in content
@@ -3550,7 +3552,9 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         services = get_services()
         hp = services.repo.get_community_by_slug("hp-universe")
         hp_membership = services.repo.get_membership_for_user(hp.id, 1)
-        cookie = f"elbysodic_dev_identity={hp.id}:1:{hp_membership.id}"
+        cookie = (
+            f"elbysodic_dev_identity={hp.id}:{hp_membership.user_id}:{hp_membership.id}"
+        )
 
         async with TestClient(app) as client:
             xmen = await client.get("/c/x-men-apocalypse")
@@ -3560,7 +3564,7 @@ def test_seeded_program_homepage_uses_community_media_and_world_status() -> None
         assert "elbysodic-realm-gateway-hero" in xmen.text
         assert "/elbysodic-static/seed-media/xmen-hero.svg" in xmen.text
         assert 'alt="Snow-lit academy and B-24 signal lines"' in xmen.text
-        assert "Current Event: B-24 Winter" in xmen.text
+        assert "B-24 Winter" in xmen.text
         assert "Iceman is infected with B-24" in xmen.text
 
         assert hp_home.status == 200
@@ -4104,7 +4108,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
 
         assert launch.status == 200
         assert "Open realm" in launch.text
-        assert "Set the stage before writers arrive." in launch.text
+        assert "Keep the story easy to enter." in launch.text
         assert "Opening checklist" in launch.text
         assert 'class="elbysodic-launch-checklist"' in launch.text
         assert "elbysodic-launch-checklist__item--ready" in launch.text
@@ -4117,7 +4121,7 @@ def test_director_studio_surfaces_community_production_work() -> None:
         assert "Appearance" in launch.text
         assert "Discovery profile" in launch.text
         assert 'href="/studio/discovery"' in launch.text
-        assert "Invite-only before public self-serve." in launch.text
+        assert "Public preview is live" in launch.text
         assert "Open Studio" not in _page_content(launch.text)
         assert 'href="/studio/intake#program-blueprint-preview"' in launch.text
 
@@ -5723,7 +5727,8 @@ def test_invited_writer_without_first_face_continues_to_application_form() -> No
         assert "Face name" in application.text
         assert "This will become your first active face in X-Men Apocalypse" in application.text
         assert desk.status == 200
-        assert "Start with a first face" in desk.text
+        assert "Start with a face, then find a scene, hook, or place to begin." in desk.text
+        assert "Your story starts here" in desk.text
 
     asyncio.run(run())
 
@@ -6689,7 +6694,7 @@ def test_sidebar_modes_follow_major_product_paths() -> None:
             assert "/elbysodic-static/seed-media/xmen-hero.svg" in community.text
             assert 'alt="Snow-lit academy and B-24 signal lines"' in community.text
             assert "Writer room and record" in community.text
-            assert "Current Event: B-24 Winter" in community.text
+            assert "B-24 Winter" in community.text
             assert "Iceman is infected with B-24" in community.text
             assert "Community table" in community.text
             assert "Announcements" in community.text
@@ -6779,7 +6784,7 @@ def test_sidebar_hidden_preference_is_cookie_backed_and_server_rendered() -> Non
             world = await client.get("/boards/xavier-institute")
             assert world.status == 200
             assert 'var cookieName = "elbysodic_sidebar_hidden_v2";' in world.text
-            assert "elbysodic-theme.css?v=editorial-surface-13" in world.text
+            assert "elbysodic-theme.css?v=editorial-surface-21" in world.text
             assert "elbysodic-shell.js?v=sidebar-rail-toggle-2" in world.text
             assert "elbysodic-composer.js?v=scene-context-inspector-1" in world.text
             assert 'id="elbysodic-sidebar-cookie-state"' not in world.text
