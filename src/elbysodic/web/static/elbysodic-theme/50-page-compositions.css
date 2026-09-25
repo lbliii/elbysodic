@@ -86,7 +86,7 @@
 .elbysodic-realm-gateway-story-frame {
     border-block: 1px solid var(--chirpui-border-subtle);
     gap: 0;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     padding-block: 1.1rem;
 }
 
