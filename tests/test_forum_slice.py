@@ -2691,7 +2691,7 @@ def test_original_premise_gateways_surface_premise_entry_and_scene_hubs() -> Non
                 assert onboarding_pitch in content
                 assert "Places" in content
                 assert "Choose a setting" in content
-                assert "Guidebook" in content
+                assert "Guidebook" not in content
                 assert "Know the world" in content
                 assert "Find your place here" not in content
                 assert "Featured faces" not in content
@@ -2871,7 +2871,7 @@ def test_public_realm_gateway_contract_uses_fallbacks_and_denies_backstage() -> 
             assert response.status == 200
             assert "Quiet Harbor Premise" in content
             assert "Public preview" in content
-            assert "Standing premise: Quiet Harbor Premise" in content
+            assert "Standing premise: Quiet Harbor Premise" not in content
             assert "1 public place in play." in content
             assert "No public wanted pressure is open right now." in content
             assert 'aria-label="Realm at a glance"' in response.text
@@ -2938,7 +2938,7 @@ def test_public_realm_gateway_scene_previews_hide_private_threads() -> None:
             content = _page_content(response.text)
 
             assert response.status == 200
-            assert "Scenes" in content
+            assert "Scenes" not in content
             assert "Underway now" in content
             assert "Public gateway scene" in content
             assert "Private gateway scene" not in content

@@ -12,9 +12,8 @@
 {% end %}
 {% end %}
 
-{% def gateway_section_header(kicker, title, summary="", heading_id="") %}
+{% def gateway_section_header(title, summary="", heading_id="") %}
 <header class="elbysodic-home-section-header elbysodic-home-section-header--qualified">
-  <p class="elbysodic-section-kicker">{{ kicker }}</p>
   {% if heading_id %}
   <h2 id="{{ heading_id }}">{{ title }}</h2>
   {% else %}
@@ -26,9 +25,9 @@
 </header>
 {% end %}
 
-{% def gateway_section(kicker, title, summary="", heading_id="", modifier="") %}
+{% def gateway_section(title, summary="", heading_id="", modifier="") %}
 <section class="elbysodic-realm-gateway-section{{ " " ~ modifier if modifier else "" }}" {% if heading_id %}aria-labelledby="{{ heading_id }}"{% end %}>
-  {{ gateway_section_header(kicker, title, summary, heading_id) }}
+  {{ gateway_section_header(title, summary, heading_id) }}
   {% slot %}
 </section>
 {% end %}
@@ -65,19 +64,15 @@
 </section>
 <dl class="elbysodic-realm-gateway-story-frame" aria-label="Realm at a glance">
   <div>
-    <dt>Happening now</dt>
-    <dd>{{ gateway.story_frame.featured_signal }}</dd>
-  </div>
-  <div>
-    <dt>Places</dt>
+    <dt class="elbysodic-visually-hidden">Places</dt>
     <dd>{{ gateway.story_frame.places_signal }}</dd>
   </div>
   <div>
-    <dt>Cast</dt>
+    <dt class="elbysodic-visually-hidden">Cast</dt>
     <dd>{{ gateway.story_frame.cast_signal }}</dd>
   </div>
   <div>
-    <dt>Wanted</dt>
+    <dt class="elbysodic-visually-hidden">Wanted</dt>
     <dd>{{ gateway.story_frame.wanted_pressure }}</dd>
   </div>
 </dl>
@@ -87,7 +82,6 @@
 {% set premise_evolution = gateway | get("premise_evolution", none) %}
 <section class="elbysodic-realm-stage" aria-labelledby="realm-stage-title">
   <div class="elbysodic-realm-stage__story">
-    <p class="elbysodic-section-kicker">{{ gateway.premise_stage.label }}</p>
     <h2 id="realm-stage-title">{{ gateway.premise_stage.title }}</h2>
     <p>{{ gateway.premise_stage.summary }}</p>
   </div>
@@ -178,7 +172,7 @@
 
 {% def gateway_scene_hubs(gateway) %}
 {% if gateway.scene_hubs %}
-{% call gateway_section("Places", "Choose a setting", heading_id="realm-scene-hubs-title") %}
+{% call gateway_section("Choose a setting", heading_id="realm-scene-hubs-title") %}
   <div class="elbysodic-realm-hub-grid">
     {% for hub in gateway.scene_hubs %}
     <a class="elbysodic-realm-hub-card elbysodic-realm-hub-card--{{ hub.emphasis }}" href="{{ hub.href }}">
@@ -201,7 +195,7 @@
 {% def gateway_scene_previews(gateway) %}
 {% set scene_previews = gateway | get("scene_previews", ()) %}
 {% if scene_previews %}
-{% call gateway_section("Scenes", "Underway now", heading_id="realm-scenes-title") %}
+{% call gateway_section("Underway now", heading_id="realm-scenes-title") %}
   <div class="elbysodic-realm-scene-list">
     {% for scene in scene_previews %}
     <a class="elbysodic-realm-scene-row" href="{{ scene.href }}">
@@ -220,7 +214,7 @@
 {% def gateway_lore(gateway) %}
 {% set guidebook_previews = gateway | get("guidebook_previews", ()) %}
 {% if guidebook_previews %}
-{% call gateway_section("Guidebook", "Know the world", heading_id="realm-guide-title") %}
+{% call gateway_section("Know the world", heading_id="realm-guide-title") %}
   <div class="elbysodic-material-grid">
     {% for item in guidebook_previews %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.material.slug }}">
@@ -231,7 +225,7 @@
   </div>
 {% end %}
 {% elif gateway.guidebook.featured or gateway.guidebook.events %}
-{% call gateway_section("Guidebook", "Know the world", heading_id="realm-guide-title") %}
+{% call gateway_section("Know the world", heading_id="realm-guide-title") %}
   <div class="elbysodic-material-grid">
     {% for item in gateway.guidebook.featured %}
     <a class="elbysodic-current-event-card elbysodic-current-event-card--{{ item.material.material_type }}" href="{{ gateway.program.entry_href }}/world/{{ item.material.slug }}">
@@ -252,7 +246,7 @@
 
 {% def gateway_wanted(gateway) %}
 {% if gateway.program.open_wanted_count %}
-{% call gateway_section("Wanted", "Characters and connections wanted", heading_id="realm-wanted-title") %}
+{% call gateway_section("Characters and connections wanted", heading_id="realm-wanted-title") %}
   {% if gateway.wanted_previews %}
   <div class="elbysodic-realm-wanted-grid">
     {% for wanted in gateway.wanted_previews %}
